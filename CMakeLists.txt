@@ -3,7 +3,7 @@ project(r3d3)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_FLAGS "-O3")
+SET(CMAKE_CXX_FLAGS "-O3 -g")
  
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})

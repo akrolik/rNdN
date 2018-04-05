@@ -5,11 +5,6 @@
 
 #include "GPUUtil/CUDAUtils.h"
 
-CUDA::CUDA()
-{
-
-}
-
 void CUDA::Initialize()
 {
 	if (!m_initialized)
@@ -25,20 +20,17 @@ void CUDA::Initialize()
 void CUDA::LoadDevices()
 {
 	int count = 0;
-	checkDriverResult(cuDeviceGetCount(&count));
+	checkRuntimeError(cudaGetDeviceCount(&count));
 
 	std::cout << "Connected devices (" << count << ")" << std::endl;
 	for (int i = 0; i < count; ++i)
 	{
-		CUdevice d;
-		checkDriverResult(cuDeviceGet(&d, i));
+		std::unique_ptr<CUDADevice> device = std::make_unique<CUDADevice>(i);
 
-                CUDADevice device(i, d);
+		float mem_f = float(device->GetMemorySize()) / 1024 / 1024 / 1024;
+		std::cout << "[" << i << "] " << device->GetName() << " (" << std::setprecision(3) << mem_f << " GB)" << std::endl;
 
-		float mem_f = float(device.GetMemSize()) / 1024 / 1024 / 1024;
-		std::cout << "[" << i << "] " << device.GetName() << " (" << std::setprecision(3) << mem_f << " GB)" << std::endl;
-
-		m_devices.push_back(device);
+		m_devices.push_back(std::move(device));
 	}
 }
 
@@ -47,9 +39,15 @@ int CUDA::GetDeviceCount()
 	return m_devices.size();
 }
 
-CUDADevice& CUDA::GetDevice(int index)
+std::unique_ptr<CUDADevice>& CUDA::GetDevice(int index)
 {
 	return m_devices.at(index);
+}
+
+void CUDA::CreateContext(std::unique_ptr<CUDADevice>& device)
+{
+	checkDriverResult(cuCtxCreate(&m_context, 0, device->GetDevice()));
+	checkDriverResult(cuCtxSetCurrent(m_context));
 }
 
 void CUDA::_checkDriverResult(CUresult result, const char *file, int line)
@@ -82,7 +80,7 @@ void CUDA::_checkRuntimeError(cudaError_t error, const char *file, int line)
 		return;
 	}
 
-	std::cerr << "[Runtime Error] " << cudaGetErrorString(error) << " <" << file << ":" << ">" << std::endl;
+	std::cerr << "[Runtime Error] " << cudaGetErrorString(error) << " <" << file << ":" << line << ">" << std::endl;
 	std::exit(EXIT_FAILURE);
 
 }

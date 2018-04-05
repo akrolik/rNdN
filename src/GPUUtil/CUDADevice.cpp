@@ -4,23 +4,10 @@
 
 #include "GPUUtil/CUDAUtils.h"
 
-CUDADevice::CUDADevice(CUdevice device, int index) : m_device(device), m_index(index)
+CUDADevice::CUDADevice(int index) : m_index(index)
 {
-
-}
-
-std::string CUDADevice::GetName()
-{
-	char name[40];
-	checkDriverResult(cuDeviceGetName(name, 40, m_device));
-	return std::string(name);
-}
-
-size_t CUDADevice::GetMemSize()
-{
-	size_t mem;
-	checkDriverResult(cuDeviceTotalMem(&mem, m_device));
-	return mem;
+	checkDriverResult(cuDeviceGet(&m_device, m_index));
+	checkRuntimeError(cudaGetDeviceProperties(&m_properties, m_index));
 }
 
 void CUDADevice::SetActive()
