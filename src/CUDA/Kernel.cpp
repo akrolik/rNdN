@@ -1,15 +1,17 @@
-#include "GPUUtil/CUDAKernel.h"
+#include "CUDA/Kernel.h"
 
 #include <iostream>
 
-#include "GPUUtil/CUDAUtils.h"
+#include "CUDA/Utils.h"
 
-CUDAKernel::CUDAKernel(std::string name, std::string ptx, unsigned int parametersCount) : m_name(name), m_ptx(ptx), m_parametersCount(parametersCount)
+namespace CUDA {
+
+Kernel::Kernel(std::string name, std::string ptx, unsigned int parametersCount) : m_name(name), m_ptx(ptx), m_parametersCount(parametersCount)
 {
 	Compile();
 }
 
-void CUDAKernel::Compile()
+void Kernel::Compile()
 {
 	CUjit_option optionKeys[6];
 	void *optionVals[6];
@@ -53,4 +55,6 @@ void CUDAKernel::Compile()
 	std::cout << "[INFO] PTX compiled in " << l_wallTime << "ms" << std::endl << l_infoLog << std::endl;
 
 	checkDriverResult(cuLinkDestroy(linkerState));
+}
+
 }

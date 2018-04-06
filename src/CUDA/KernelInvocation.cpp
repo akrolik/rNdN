@@ -1,18 +1,20 @@
-#include "GPUUtil/CUDAKernelInvocation.h"
+#include "CUDA/KernelInvocation.h"
 
-#include "GPUUtil/CUDAUtils.h"
+#include "CUDA/Utils.h"
 
-CUDAKernelInvocation::CUDAKernelInvocation(CUDAKernel& kernel) : m_kernel(kernel)
+namespace CUDA {
+
+KernelInvocation::KernelInvocation(Kernel& kernel) : m_kernel(kernel)
 {
 	m_parameters = ::operator new(m_kernel.GetParametersCount());
 }
 
-CUDAKernelInvocation::~CUDAKernelInvocation()
+KernelInvocation::~KernelInvocation()
 {
 	::operator delete(m_parameters);
 }
 
-void CUDAKernelInvocation::SetParam(unsigned int index, CUDABuffer &buffer)
+void KernelInvocation::SetParam(unsigned int index, Buffer &buffer)
 {
 	((void **)m_parameters)[index] = &buffer.GetGPUBuffer();
 
@@ -20,7 +22,7 @@ void CUDAKernelInvocation::SetParam(unsigned int index, CUDABuffer &buffer)
 	// m_paramSize += buffer.GetSize();
 }
 
-void CUDAKernelInvocation::Launch()
+void KernelInvocation::Launch()
 {
 	checkDriverResult(cuLaunchKernel(
 				m_kernel.GetKernel(),
@@ -30,4 +32,6 @@ void CUDAKernelInvocation::Launch()
 	));
 
 	std::cout << "Kernel '" << m_kernel.GetName() << "' launched" << std::endl;
+}
+
 }

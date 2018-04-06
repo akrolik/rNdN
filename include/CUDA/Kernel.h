@@ -1,15 +1,16 @@
-#ifndef R3D3_GPUUTIL_CUDAKERNEL
-#define R3D3_GPUUTIL_CUDAKERNEL
+#pragma once
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include <string>
 
-class CUDAKernel
+namespace CUDA {
+
+class Kernel
 {
 public:
-	CUDAKernel(std::string name, std::string ptx, unsigned int paramCount);
+	Kernel(std::string name, std::string ptx, unsigned int paramCount);
 
 	std::string GetName() { return m_name; }
 	unsigned int GetParametersCount() { return m_parametersCount; }
@@ -30,4 +31,4 @@ private:
 	void Compile();
 };
 
-#endif
+}

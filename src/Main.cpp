@@ -1,11 +1,12 @@
 #include <iostream>
 #include <cstring>
 
-#include "GPUUtil/CUDA.h"
-#include "GPUUtil/CUDABuffer.h"
-#include "GPUUtil/CUDAKernel.h"
-#include "GPUUtil/CUDAKernelInvocation.h"
-#include "GPUUtil/CUDAModule.h"
+#include "CUDA/Buffer.h"
+#include "CUDA/Kernel.h"
+#include "CUDA/KernelInvocation.h"
+#include "CUDA/Module.h"
+#include "CUDA/Platform.h"
+
 
 int yyparse();
 
@@ -19,21 +20,22 @@ int main(int argc, char *argv[])
 		std::exit(EXIT_FAILURE);
 	}
 
-	CUDA c;
-	c.Initialize();
+	CUDA::Platform p;
+	p.Initialize();
 
-	if (c.GetDeviceCount() == 0)
+	if (p.GetDeviceCount() == 0)
 	{
 		std::cerr << "[Error] No connected devices detected" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
-	std::unique_ptr<CUDADevice>& device = c.GetDevice(0);
+	std::unique_ptr<CUDA::Device>& device = p.GetDevice(0);
 	device->SetActive();
 
-	c.CreateContext(device);
+	p.CreateContext(device);
 
-	CUDAModule module;
+	CUDA::Module module;
+
 
 	char myPtx64[] = "\n\
 	.version 3.2\n\
@@ -62,18 +64,18 @@ int main(int argc, char *argv[])
 	}\n\
 	";
 
-	CUDAKernel kernel("_Z8myKernelPi", std::string(myPtx64), 1);
+	CUDA::Kernel kernel("_Z8myKernelPi", std::string(myPtx64), 1);
 	module.AddKernel(kernel);
 
 	size_t size = sizeof(int) * 1024;
         int *data = (int *)malloc(size);
 	std::memset(data, 0, size);
 
-	CUDABuffer buffer(data, size);
+	CUDA::Buffer buffer(data, size);
 	buffer.AllocateOnGPU();
 	buffer.TransferToGPU();
 
-	CUDAKernelInvocation invocation(kernel);
+	CUDA::KernelInvocation invocation(kernel);
         invocation.SetBlockShape(1024, 1, 1);
         invocation.SetGridShape(1, 1, 1);
 	invocation.SetParam(0, buffer);

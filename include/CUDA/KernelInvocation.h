@@ -1,17 +1,18 @@
-#ifndef R3D3_GPUUTIL_CUDAKERNELINVOCATION
-#define R3D3_GPUUTIL_CUDAKERNELINVOCATION
+#pragma once
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "GPUUtil/CUDABuffer.h"
-#include "GPUUtil/CUDAKernel.h"
+#include "CUDA/Buffer.h"
+#include "CUDA/Kernel.h"
 
-class CUDAKernelInvocation
+namespace CUDA {
+
+class KernelInvocation
 {
 public:
-	CUDAKernelInvocation(CUDAKernel& kernel);
-	~CUDAKernelInvocation();
+	KernelInvocation(Kernel& kernel);
+	~KernelInvocation();
 
 	void SetBlockShape(unsigned int x, unsigned int y, unsigned int z)
 	{
@@ -27,11 +28,11 @@ public:
 		m_blocksZ = z;
 	}
 
-	void SetParam(unsigned int index, CUDABuffer &buffer);
+	void SetParam(unsigned int index, Buffer &buffer);
 	void Launch();
 
 private:
-	CUDAKernel& m_kernel;
+	Kernel& m_kernel;
 
 	unsigned int m_shapeX = 0;
 	unsigned int m_shapeY = 0;
@@ -44,4 +45,4 @@ private:
 	void *m_parameters = nullptr;
 };
 
-#endif
+}

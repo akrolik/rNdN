@@ -1,13 +1,14 @@
-#ifndef R3D3_GPUUTIL_CUDABUFFER
-#define R3D3_GPUUTIL_CUDABUFFER
+#pragma once
 
 #include <cuda.h>
 #include <cuda_runtime.h>
  
-class CUDABuffer
+namespace CUDA {
+
+class Buffer
 {
 public:
-	CUDABuffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size) {}
+	Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size) {}
 
 	void AllocateOnGPU();
 	void TransferToGPU();
@@ -24,4 +25,4 @@ private:
 	size_t m_size = 0;
 };
 
-#endif
+}

@@ -1,5 +1,4 @@
-#ifndef R3D3_GPUUTIL_CUDADEVICE
-#define R3D3_GPUUTIL_CUDADEVICE
+#pragma once
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -7,10 +6,12 @@
 #include <string>
 #include <iostream>
 
-class CUDADevice
+namespace CUDA {
+
+class Device
 {
 public:
-	CUDADevice(int index);
+	Device(int index);
 
 	int GetIndex() { return m_index; }
 	CUdevice& GetDevice() { return m_device; }
@@ -27,4 +28,4 @@ private:
 	cudaDeviceProp m_properties;
 };
 
-#endif
+}

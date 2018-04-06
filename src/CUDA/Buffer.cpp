@@ -1,18 +1,22 @@
-#include "GPUUtil/CUDABuffer.h"
+#include "CUDA/Buffer.h"
 
-#include "GPUUtil/CUDAUtils.h"
+#include "CUDA/Utils.h"
 
-void CUDABuffer::AllocateOnGPU()
+namespace CUDA {
+
+void Buffer::AllocateOnGPU()
 {
 	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_size));
 }
 
-void CUDABuffer::TransferToGPU()
+void Buffer::TransferToGPU()
 {
 	checkDriverResult(cuMemcpyHtoD(m_GPUBuffer, m_CPUBuffer, m_size));
 }
 
-void CUDABuffer::TransferToCPU()
+void Buffer::TransferToCPU()
 {
 	checkDriverResult(cuMemcpyDtoH(m_CPUBuffer, m_GPUBuffer, m_size));
+}
+
 }
