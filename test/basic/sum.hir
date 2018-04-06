@@ -1,0 +1,16 @@
+module default {
+	import Builtin;
+
+	def main() : table {
+		t:table   = @load_table(`Table);
+		a:i64     = check_cast(@column_value(t, `A), i64);
+		b:i64     = check_cast(@column_value(t, `B), i64);
+
+		s:i64     = @plus(a, b);
+
+		h:string  = ("sum"):string;
+		c:list<?> = @list(s);
+		ret:table = @table(h, c);
+		return ret;
+	}
+}

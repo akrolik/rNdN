@@ -7,8 +7,12 @@
 #include "GPUUtil/CUDAKernelInvocation.h"
 #include "GPUUtil/CUDAModule.h"
 
+int yyparse();
+
 int main(int argc, char *argv[])
 {
+	yyparse();
+
 	if (sizeof(void *) == 4)
 	{
 		std::cerr << "[Error] 64-bit platform required" << std::endl;
