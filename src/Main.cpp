@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 
 	p.CreateContext(device);
 
-	CUDA::Module module;
 
 
 	char myPtx64[] = "\n\
@@ -64,8 +63,8 @@ int main(int argc, char *argv[])
 	}\n\
 	";
 
-	CUDA::Kernel kernel("_Z8myKernelPi", std::string(myPtx64), 1);
-	module.AddKernel(kernel);
+	CUDA::Module cModule(ptx);
+	CUDA::Kernel kernel(function->GetName(), 1, cModule);
 
 	size_t size = sizeof(int) * 1024;
         int *data = (int *)malloc(size);

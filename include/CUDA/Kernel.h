@@ -7,28 +7,22 @@
 
 namespace CUDA {
 
+class Module;
 class Kernel
 {
 public:
-	Kernel(std::string name, std::string ptx, unsigned int paramCount);
+	Kernel(std::string name, unsigned int paramsCount, Module& module);
 
 	std::string GetName() { return m_name; }
-	unsigned int GetParametersCount() { return m_parametersCount; }
-	void *GetBinary() { return m_binary; }
-
+	unsigned int GetParamsCount() { return m_paramsCount; }
 	CUfunction& GetKernel() { return m_kernel; }
 
 private:
 	std::string m_name;
-	std::string m_ptx;
-	unsigned int m_parametersCount;
-
-	void *m_binary = nullptr;
-	size_t m_binarySize = 0;
-
+	unsigned int m_paramsCount;
 	CUfunction m_kernel;
 
-	void Compile();
+	Module& m_module;
 };
 
 }

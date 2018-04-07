@@ -6,7 +6,7 @@ namespace CUDA {
 
 KernelInvocation::KernelInvocation(Kernel& kernel) : m_kernel(kernel)
 {
-	m_parameters = ::operator new(m_kernel.GetParametersCount());
+	m_parameters = ::operator new(m_kernel.GetParamsCount());
 }
 
 KernelInvocation::~KernelInvocation()

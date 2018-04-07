@@ -21,7 +21,6 @@ public:
 private:
 	void *m_CPUBuffer = nullptr;
 	CUdeviceptr m_GPUBuffer;
-
 	size_t m_size = 0;
 };
 

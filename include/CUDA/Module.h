@@ -12,12 +12,20 @@ namespace CUDA {
 class Module
 {
 public:
-	void AddKernel(Kernel &kernel);
+	Module(std::string ptx);
+
+	void *GetBinary() { return m_binary; }
+	CUmodule& GetModule() { return m_module; }
 
 private:
-	CUmodule m_module;
-	std::vector<Kernel> m_kernels;
+	std::string m_ptx;
 
+	void *m_binary = nullptr;
+	size_t m_binarySize = 0;
+
+	CUmodule m_module;
+
+	void Compile();
 };
 
 }
