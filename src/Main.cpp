@@ -7,6 +7,9 @@
 #include "CUDA/Module.h"
 #include "CUDA/Platform.h"
 
+#include "PTX/Function.h"
+#include "PTX/Module.h"
+#include "PTX/Register.h"
 
 int yyparse();
 
@@ -35,7 +38,22 @@ int main(int argc, char *argv[])
 	p.CreateContext(device);
 
 
+	PTX::Module module;
 
+	module.SetVersion(3, 2);
+	module.SetDeviceTarget("sm_20");
+	module.SetAddressSize(PTX::Module::AddressSize64);
+
+	PTX::Function *function = new PTX::Function();
+	function->SetName("_Z8myKernelPi");
+	function->SetVisible(true);
+	function->SetEntry(true);
+	// (\n\
+	// 	.param .u64 _Z8myKernelPi_param_0\n\
+	// )\n\
+	function.AddParameter();
+
+        /*
 	char myPtx64[] = "\n\
 	.version 3.2\n\
 	.target sm_20\n\
@@ -62,6 +80,34 @@ int main(int argc, char *argv[])
 		ret;\n\
 	}\n\
 	";
+	*/
+
+	char bodyText[] = "\
+	.reg .s32 	%r<6>;\n\
+	.reg .s64 	%rd<5>;\n\
+	ld.param.u64 	%rd1, [_Z8myKernelPi_param_0];\n\
+	cvta.to.global.u64 	%rd2, %rd1;\n\
+	.loc 1 3 1\n\
+	mov.u32 	%r1, %ntid.x;\n\
+	mov.u32 	%r2, %ctaid.x;\n\
+	mov.u32 	%r3, %tid.x;\n\
+	mad.lo.s32 	%r4, %r1, %r2, %r3;\n\
+	mul.wide.s32 	%rd3, %r4, 4;\n\
+	add.s64 	%rd4, %rd2, %rd3;\n\
+	.loc 1 4 1\n\
+	add.u32         %r5, %r4, 1;\n\
+	st.global.u32 	[%rd4], %r5;\n\
+	.loc 1 5 2\n\
+	ret;\
+	";
+
+	PTX::Block *body = new PTX::Block();
+	function->SetBody(body);
+
+	module.AddFunction(function);
+	std::string ptx = module.ToString();
+
+	std::cout << ptx << std::endl;
 
 	CUDA::Module cModule(ptx);
 	CUDA::Kernel kernel(function->GetName(), 1, cModule);
