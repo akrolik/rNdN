@@ -5,8 +5,7 @@ namespace PTX {
 class Statement
 {
 public:
-
-private:
+	virtual std::string ToString() = 0;
 };
 
 }

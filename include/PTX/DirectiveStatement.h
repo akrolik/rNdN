@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-class DirectiveStatement : Statement
+class DirectiveStatement : public Statement
 {
 public:
 

@@ -1,16 +1,15 @@
 #pragma once
 
-#include "PTX/Type.h"
+#include "PTX/DirectiveStatement.h"
 
 namespace PTX {
 
-class StateSpace
+template<typename T>
+class StateSpace : public DirectiveStatement
 {
 public:
-	StateSpace(Type type) : m_type(type) {}
-
-private:
-	Type m_type;
+	virtual std::string SpaceName() = 0;
+	virtual std::string GetName() = 0;
 };
 
 }

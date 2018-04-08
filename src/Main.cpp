@@ -8,14 +8,20 @@
 #include "CUDA/Platform.h"
 
 #include "PTX/Function.h"
+#include "PTX/EntryFunction.h"
+#include "PTX/DataFunction.h"
 #include "PTX/Module.h"
 #include "PTX/Register.h"
+#include "PTX/ParameterSpace.h"
+#include "PTX/RegisterSpace.h"
+#include "PTX/Type.h"
+#include "PTX/LoadInstruction.h"
 
 int yyparse();
 
 int main(int argc, char *argv[])
 {
-	yyparse();
+	// yyparse();
 
 	if (sizeof(void *) == 4)
 	{
@@ -37,21 +43,34 @@ int main(int argc, char *argv[])
 
 	p.CreateContext(device);
 
-
 	PTX::Module module;
 
 	module.SetVersion(3, 2);
 	module.SetDeviceTarget("sm_20");
 	module.SetAddressSize(PTX::Module::AddressSize64);
 
-	PTX::Function *function = new PTX::Function();
+	PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64>> *function = new PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64>>();
 	function->SetName("_Z8myKernelPi");
 	function->SetVisible(true);
-	function->SetEntry(true);
-	// (\n\
-	// 	.param .u64 _Z8myKernelPi_param_0\n\
-	// )\n\
-	function.AddParameter();
+
+	PTX::ParameterSpace<PTX::UInt64> *parameter = new PTX::ParameterSpace<PTX::UInt64>(PTX::ParameterSpace<PTX::UInt64>::GenericSpace, "_Z8myKernelPi_param_0");
+	function->SetParameters(parameter);
+
+	PTX::Block *block = new PTX::Block();
+
+	PTX::RegisterSpace<PTX::UInt32> *r32 = new PTX::RegisterSpace<PTX::UInt32>("r", 5);
+	block->AddStatement(r32);
+	PTX::RegisterSpace<PTX::UInt64> *r64 = new PTX::RegisterSpace<PTX::UInt64>("rd", 4);
+	block->AddStatement(r64);
+
+	PTX::Register<PTX::UInt64> *rd1 = new PTX::Register<PTX::UInt64>("rd", 1);
+	PTX::Register<PTX::UInt64> *rd2 = new PTX::Register<PTX::UInt64>("rd", 2);
+	PTX::Register<PTX::UInt64> *rd3 = new PTX::Register<PTX::UInt64>("rd", 3);
+	PTX::Register<PTX::UInt64> *rd4 = new PTX::Register<PTX::UInt64>("rd", 4);
+	PTX::Register<PTX::UInt64> *rd5 = new PTX::Register<PTX::UInt64>("rd", 5);
+
+	PTX::LoadInstruction<PTX::UInt64> *ld = new PTX::LoadInstruction<PTX::UInt64>(rd2, parameter);
+	block->AddStatement(ld);
 
         /*
 	char myPtx64[] = "\n\
@@ -101,14 +120,14 @@ int main(int argc, char *argv[])
 	ret;\
 	";
 
-	PTX::Block *body = new PTX::Block();
-	function->SetBody(body);
+	function->SetBody(block);
 
 	module.AddFunction(function);
+
 	std::string ptx = module.ToString();
+	std::cout << ptx;
 
-	std::cout << ptx << std::endl;
-
+	std::exit(1);
 	CUDA::Module cModule(ptx);
 	CUDA::Kernel kernel(function->GetName(), 1, cModule);
 

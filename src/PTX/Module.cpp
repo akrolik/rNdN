@@ -17,7 +17,7 @@ std::string Module::ToString()
 	for (std::vector<Function*>::iterator it = m_functions.begin(); it != m_functions.end(); ++it)
 	{
 		Function *function = *it;
-		code << function->ToString() << std::endl;
+		code << function->ToString();
 	}
 
 	return code.str();

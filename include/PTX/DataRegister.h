@@ -1,18 +1,19 @@
 #pragma once
 
 #include "PTX/Register.h"
-#include "PTX/Type.h"
 
 namespace PTX {
 
 template<Type T>
-class DataRegister : Register
+class DataRegister : Register<T>
 {
 public:
-	std::string m_name;
-	unsigned int m_index = -1;
+	DataRegister(std::string name) : m_name(name) {}
+	DataRegister(std::string prefixm, unsigned int index) : m_name(prefix), m_index(index) {}
 
 private:
+	std::string m_name;
+	unsigned int m_index = -1;
 };
 
 }
