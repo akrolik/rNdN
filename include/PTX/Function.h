@@ -1,12 +1,8 @@
 #pragma once
 
-#include <map>
 #include <string>
-#include <vector>
 
 #include "PTX/Block.h"
-#include "PTX/ParameterSpace.h"
-#include "PTX/StateSpace.h"
 
 namespace PTX {
 

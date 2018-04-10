@@ -1,15 +1,15 @@
 #pragma once
 
-#include "PTX/Statements/DirectiveStatement.h"
-#include "PTX/Type.h"
+#include "PTX/StateSpace.h"
 
 namespace PTX {
 
 template<Type T, VectorSize V = Scalar>
-class StateSpace : public DirectiveStatement
+class MemorySpace : public StateSpace<T, V>
 {
 public:
 	virtual std::string SpaceName() = 0;
+	virtual std::string Name() = 0;
 
 	virtual std::string ToString() = 0;
 };

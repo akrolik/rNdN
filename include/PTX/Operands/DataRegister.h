@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Register.h"
+#include "PTX/Operands/Register.h"
 
 namespace PTX {
 

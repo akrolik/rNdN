@@ -1,15 +1,16 @@
 #pragma once
 
 #include "PTX/Function.h"
+#include "PTX/StateSpace.h"
 
 namespace PTX {
 
-template<typename R, typename... Args>
+template<Type R, typename... Args>
 class DataFunction : public Function
 {
 public:
-	template<typename Q=R>
-	void SetReturnSpace(std::enable_if_t<!std::is_void<Q>::value, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
+	template<Type Q=R>
+	void SetReturnSpace(std::enable_if_t<Q != Void, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
 	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
 
 	std::string ToString()

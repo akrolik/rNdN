@@ -7,15 +7,17 @@
 #include "CUDA/Module.h"
 #include "CUDA/Platform.h"
 
-#include "PTX/Function.h"
-#include "PTX/EntryFunction.h"
-#include "PTX/DataFunction.h"
 #include "PTX/Module.h"
-#include "PTX/Register.h"
-#include "PTX/ParameterSpace.h"
-#include "PTX/RegisterSpace.h"
 #include "PTX/Type.h"
-#include "PTX/LoadInstruction.h"
+#include "PTX/Function.h"
+#include "PTX/Functions/EntryFunction.h"
+#include "PTX/Functions/DataFunction.h"
+#include "PTX/Operands/Register.h"
+#include "PTX/Operands/IndexedRegister.h"
+#include "PTX/Statements/LoadInstruction.h"
+#include "PTX/Statements/MoveInstruction.h"
+#include "PTX/StateSpaces/ParameterSpace.h"
+#include "PTX/StateSpaces/RegisterSpace.h"
 
 int yyparse();
 
@@ -49,28 +51,39 @@ int main(int argc, char *argv[])
 	module.SetDeviceTarget("sm_20");
 	module.SetAddressSize(PTX::Module::AddressSize64);
 
-	PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64>> *function = new PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64>>();
+	PTX::EntryFunction<PTX::ParameterSpace<PTX::Type::UInt64>> *function = new PTX::EntryFunction<PTX::ParameterSpace<PTX::Type::UInt64>>();
 	function->SetName("_Z8myKernelPi");
 	function->SetVisible(true);
 
-	PTX::ParameterSpace<PTX::UInt64> *parameter = new PTX::ParameterSpace<PTX::UInt64>(PTX::ParameterSpace<PTX::UInt64>::GenericSpace, "_Z8myKernelPi_param_0");
+	PTX::ParameterSpace<PTX::Type::UInt64> *parameter = new PTX::ParameterSpace<PTX::Type::UInt64>(PTX::ParameterSpace<PTX::Type::UInt64>::GenericSpace, "_Z8myKernelPi_param_0");
 	function->SetParameters(parameter);
 
 	PTX::Block *block = new PTX::Block();
 
-	PTX::RegisterSpace<PTX::UInt32> *r32 = new PTX::RegisterSpace<PTX::UInt32>("r", 5);
+	PTX::RegisterSpace<PTX::Type::UInt32> *r32 = new PTX::RegisterSpace<PTX::Type::UInt32>("r", 5);
 	block->AddStatement(r32);
-	PTX::RegisterSpace<PTX::UInt64> *r64 = new PTX::RegisterSpace<PTX::UInt64>("rd", 4);
+	PTX::RegisterSpace<PTX::Type::UInt64> *r64 = new PTX::RegisterSpace<PTX::Type::UInt64>("rd", 4);
 	block->AddStatement(r64);
 
-	PTX::Register<PTX::UInt64> *rd1 = new PTX::Register<PTX::UInt64>("rd", 1);
-	PTX::Register<PTX::UInt64> *rd2 = new PTX::Register<PTX::UInt64>("rd", 2);
-	PTX::Register<PTX::UInt64> *rd3 = new PTX::Register<PTX::UInt64>("rd", 3);
-	PTX::Register<PTX::UInt64> *rd4 = new PTX::Register<PTX::UInt64>("rd", 4);
-	PTX::Register<PTX::UInt64> *rd5 = new PTX::Register<PTX::UInt64>("rd", 5);
+	PTX::Register<PTX::Type::UInt32> *r1 = new PTX::Register<PTX::Type::UInt32>(r32, 0);
+	PTX::Register<PTX::Type::UInt32> *r2 = new PTX::Register<PTX::Type::UInt32>(r32, 1);
+	PTX::Register<PTX::Type::UInt32> *r3 = new PTX::Register<PTX::Type::UInt32>(r32, 2);
+	PTX::Register<PTX::Type::UInt32> *r4 = new PTX::Register<PTX::Type::UInt32>(r32, 3);
+	PTX::Register<PTX::Type::UInt32> *r5 = new PTX::Register<PTX::Type::UInt32>(r32, 4);
 
-	PTX::LoadInstruction<PTX::UInt64> *ld = new PTX::LoadInstruction<PTX::UInt64>(rd2, parameter);
+	PTX::Register<PTX::Type::UInt64> *rd1 = new PTX::Register<PTX::Type::UInt64>(r64, 0);
+	PTX::Register<PTX::Type::UInt64> *rd2 = new PTX::Register<PTX::Type::UInt64>(r64, 1);
+	PTX::Register<PTX::Type::UInt64> *rd3 = new PTX::Register<PTX::Type::UInt64>(r64, 2);
+	PTX::Register<PTX::Type::UInt64> *rd4 = new PTX::Register<PTX::Type::UInt64>(r64, 3);
+
+	PTX::Address<PTX::Type::UInt64> *address = new PTX::Address<PTX::Type::UInt64>(parameter);
+	PTX::LoadInstruction<PTX::Type::UInt64> *ld = new PTX::LoadInstruction<PTX::Type::UInt64>(rd1, address);
 	block->AddStatement(ld);
+
+	PTX::RegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4> *sregntid = new PTX::RegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4>({"ntid"});
+	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = new PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4>(sregntid, 0, PTX::Element::X);
+	PTX::MoveInstruction<PTX::Type::UInt32> *mv = new PTX::MoveInstruction<PTX::Type::UInt32>(r1, ntidx);
+	block->AddStatement(mv);
 
         /*
 	char myPtx64[] = "\n\

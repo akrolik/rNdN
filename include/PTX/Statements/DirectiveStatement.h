@@ -6,9 +6,7 @@ namespace PTX {
 
 class DirectiveStatement : public Statement
 {
-public:
 
-private:
 };
 
 }
