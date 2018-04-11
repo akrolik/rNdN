@@ -62,6 +62,11 @@ public:
 		m_elements.push_back(new Element(prefix, count));
 	}
 
+	RegisterSpace(std::string name)
+	{
+		m_elements.push_back(new Element(name));
+	}
+
 	RegisterSpace(std::vector<std::string> names)
 	{
 		for (typename std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)

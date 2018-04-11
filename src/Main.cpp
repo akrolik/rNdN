@@ -18,6 +18,7 @@
 #include "PTX/Statements/MoveInstruction.h"
 #include "PTX/StateSpaces/ParameterSpace.h"
 #include "PTX/StateSpaces/RegisterSpace.h"
+#include "PTX/StateSpaces/SpecialRegisterSpace.h"
 
 int yyparse();
 
@@ -60,10 +61,17 @@ int main(int argc, char *argv[])
 
 	PTX::Block *block = new PTX::Block();
 
+	PTX::SpecialRegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4> *srtid = new PTX::SpecialRegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4>("tid");
+	PTX::SpecialRegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4> *srntid = new PTX::SpecialRegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4>("ntid");
+	PTX::SpecialRegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4> *srctaid = new PTX::SpecialRegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4>("ctaid");
 	PTX::RegisterSpace<PTX::Type::UInt32> *r32 = new PTX::RegisterSpace<PTX::Type::UInt32>("r", 5);
 	PTX::RegisterSpace<PTX::Type::UInt64> *r64 = new PTX::RegisterSpace<PTX::Type::UInt64>("rd", 4);
 	block->AddStatement(r32);
 	block->AddStatement(r64);
+
+	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *tidx = srtid->GetRegister(0, PTX::VectorElement::X);
+	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = srntid->GetRegister(0, PTX::VectorElement::X);
+	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ctaidx = srctaid->GetRegister(0, PTX::VectorElement::X);
 
 	PTX::Register<PTX::Type::UInt32> *r1 = r32->GetRegister(0);
 	PTX::Register<PTX::Type::UInt32> *r2 = r32->GetRegister(1);
@@ -77,14 +85,10 @@ int main(int argc, char *argv[])
 	PTX::Register<PTX::Type::UInt64> *rd4 = r64->GetRegister(3);
 
 	PTX::Address<PTX::Type::UInt64> *address = new PTX::Address<PTX::Type::UInt64>(parameter);
-	PTX::LoadInstruction<PTX::Type::UInt64> *ld = new PTX::LoadInstruction<PTX::Type::UInt64>(rd1, address);
-	block->AddStatement(ld);
-
-	PTX::RegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4> *sregntid = new PTX::RegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4>({"ntid"});
-	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = sregntid->GetRegister(0, PTX::VectorElement::X);
-	// PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = new PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4>(sregntid, 0, PTX::VectorElement::X);
-	PTX::MoveInstruction<PTX::Type::UInt32> *mv = new PTX::MoveInstruction<PTX::Type::UInt32>(r1, ntidx);
-	block->AddStatement(mv);
+	block->AddStatement(new PTX::LoadInstruction<PTX::Type::UInt64>(rd1, address));
+	block->AddStatement(new PTX::MoveInstruction<PTX::Type::UInt32>(r1, ntidx));
+	block->AddStatement(new PTX::MoveInstruction<PTX::Type::UInt32>(r2, ctaidx));
+	block->AddStatement(new PTX::MoveInstruction<PTX::Type::UInt32>(r3, tidx));
 
         /*
 	char myPtx64[] = "\n\
