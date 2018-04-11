@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tuple>
+#include <sstream>
+
 #include "PTX/Function.h"
 #include "PTX/StateSpace.h"
 
@@ -17,10 +20,10 @@ public:
 	{
 		std::ostringstream code;
 
-		if (m_visible)
-		{
-			code << ".visible ";
-		}
+		// if (m_visible)
+		// {
+		// 	code << ".visible ";
+		// }
 
 		code << m_name << "(" << std::endl;
 		CodeArgs(code, m_parameterSpaces, int_<sizeof...(Args)>());
@@ -39,7 +42,7 @@ private:
 	template<std::size_t> struct int_{};
 
 	template <typename T, size_t P>
-	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<P> )
+	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<P>)
 	{
 		auto arg = std::get<std::tuple_size<T>::value-P>(t);
 		code << arg->ToString();

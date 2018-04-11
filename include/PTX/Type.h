@@ -1,11 +1,19 @@
 #pragma once
 
+#include <string>
+
 namespace PTX {
 
 enum VectorSize {
 	Scalar,
 	Vector2,
 	Vector4
+};
+
+enum VectorElement {
+	X,
+	Y,
+	Z
 };
 
 enum Type {

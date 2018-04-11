@@ -12,6 +12,7 @@ public:
 	{
 		return ".entry " + DataFunction<Void, Args...>::ToString();
 	}
+
 };
 
 }

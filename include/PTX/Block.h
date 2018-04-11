@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <sstream>
+#include <vector>
 
 #include "PTX/Statement.h"
 
@@ -10,7 +10,10 @@ namespace PTX {
 class Block
 {
 public:
-	void AddStatement(Statement *statement) { m_statements.push_back(statement); }
+	void AddStatement(Statement *statement)
+	{
+		m_statements.push_back(statement);
+	}
 
 	std::string ToString()
 	{

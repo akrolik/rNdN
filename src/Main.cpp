@@ -61,27 +61,28 @@ int main(int argc, char *argv[])
 	PTX::Block *block = new PTX::Block();
 
 	PTX::RegisterSpace<PTX::Type::UInt32> *r32 = new PTX::RegisterSpace<PTX::Type::UInt32>("r", 5);
-	block->AddStatement(r32);
 	PTX::RegisterSpace<PTX::Type::UInt64> *r64 = new PTX::RegisterSpace<PTX::Type::UInt64>("rd", 4);
+	block->AddStatement(r32);
 	block->AddStatement(r64);
 
-	PTX::Register<PTX::Type::UInt32> *r1 = new PTX::Register<PTX::Type::UInt32>(r32, 0);
-	PTX::Register<PTX::Type::UInt32> *r2 = new PTX::Register<PTX::Type::UInt32>(r32, 1);
-	PTX::Register<PTX::Type::UInt32> *r3 = new PTX::Register<PTX::Type::UInt32>(r32, 2);
-	PTX::Register<PTX::Type::UInt32> *r4 = new PTX::Register<PTX::Type::UInt32>(r32, 3);
-	PTX::Register<PTX::Type::UInt32> *r5 = new PTX::Register<PTX::Type::UInt32>(r32, 4);
+	PTX::Register<PTX::Type::UInt32> *r1 = r32->GetRegister(0);
+	PTX::Register<PTX::Type::UInt32> *r2 = r32->GetRegister(1);
+	PTX::Register<PTX::Type::UInt32> *r3 = r32->GetRegister(2);
+	PTX::Register<PTX::Type::UInt32> *r4 = r32->GetRegister(3);
+	PTX::Register<PTX::Type::UInt32> *r5 = r32->GetRegister(4);
 
-	PTX::Register<PTX::Type::UInt64> *rd1 = new PTX::Register<PTX::Type::UInt64>(r64, 0);
-	PTX::Register<PTX::Type::UInt64> *rd2 = new PTX::Register<PTX::Type::UInt64>(r64, 1);
-	PTX::Register<PTX::Type::UInt64> *rd3 = new PTX::Register<PTX::Type::UInt64>(r64, 2);
-	PTX::Register<PTX::Type::UInt64> *rd4 = new PTX::Register<PTX::Type::UInt64>(r64, 3);
+	PTX::Register<PTX::Type::UInt64> *rd1 = r64->GetRegister(0);
+	PTX::Register<PTX::Type::UInt64> *rd2 = r64->GetRegister(1);
+	PTX::Register<PTX::Type::UInt64> *rd3 = r64->GetRegister(2);
+	PTX::Register<PTX::Type::UInt64> *rd4 = r64->GetRegister(3);
 
 	PTX::Address<PTX::Type::UInt64> *address = new PTX::Address<PTX::Type::UInt64>(parameter);
 	PTX::LoadInstruction<PTX::Type::UInt64> *ld = new PTX::LoadInstruction<PTX::Type::UInt64>(rd1, address);
 	block->AddStatement(ld);
 
 	PTX::RegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4> *sregntid = new PTX::RegisterSpace<PTX::Type::UInt32, PTX::VectorSize::Vector4>({"ntid"});
-	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = new PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4>(sregntid, 0, PTX::Element::X);
+	PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = sregntid->GetRegister(0, PTX::VectorElement::X);
+	// PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4> *ntidx = new PTX::IndexedRegister<PTX::Type::UInt32, PTX::VectorSize::Vector4>(sregntid, 0, PTX::VectorElement::X);
 	PTX::MoveInstruction<PTX::Type::UInt32> *mv = new PTX::MoveInstruction<PTX::Type::UInt32>(r1, ntidx);
 	block->AddStatement(mv);
 
@@ -140,7 +141,6 @@ int main(int argc, char *argv[])
 	std::string ptx = module.ToString();
 	std::cout << ptx;
 
-	std::exit(1);
 	CUDA::Module cModule(ptx);
 	CUDA::Kernel kernel(function->GetName(), 1, cModule);
 

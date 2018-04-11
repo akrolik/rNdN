@@ -27,7 +27,7 @@ public:
 			{
 				code << "!";
 			}
-			code << m_predicate->Name() << " ";
+			code << m_predicate->VariableName() << " ";
 		}
 		code << "\t" << OpCode() << " " << Operands() << ";" << std::endl;
 		return code.str();

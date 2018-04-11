@@ -6,31 +6,25 @@
 
 namespace PTX {
 
-enum Element {
-	X,
-	Y,
-	Z
-};
-
 template<Type T, VectorSize V>
 class IndexedRegister : public Register<T, Scalar>
 {
 public:
-	IndexedRegister(RegisterSpace<T, V> *space, unsigned int index, Element e) : Register<T, Scalar>(nullptr, index), m_space(space), m_element(e) {}
-
-	std::string ToString()
-	{
-		return "%" + m_space->Name(this->m_index) + ElementName();
-	}
+	IndexedRegister(typename RegisterSpace<T, V>::Element *element, unsigned int index, VectorElement vectorElement) : Register<T, Scalar>(nullptr, index), m_element(element), m_index(index), m_vectorElement(vectorElement) {}
 
 	std::string Name()
 	{
-		return m_space->Name(this->m_index) + ElementName();
+		return m_element->VariableName(m_index) + VectorElementName();
 	}
 
-	std::string ElementName()
+	std::string ToString()
 	{
-		switch (m_element)
+		return m_element->Name(m_index) + VectorElementName();
+	}
+
+	std::string VectorElementName()
+	{
+		switch (m_vectorElement)
 		{
 			case X:
 				return ".x";
@@ -42,8 +36,9 @@ public:
 	}
 
 private:
-	RegisterSpace<T, V> *m_space = nullptr;
-	Element m_element;
+	typename RegisterSpace<T, V>::Element *m_element = nullptr;
+	unsigned int m_index;
+	VectorElement m_vectorElement;
 };
 
 }

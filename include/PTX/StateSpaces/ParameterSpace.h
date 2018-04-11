@@ -25,8 +25,7 @@ public:
 
 	std::string SpaceName() { return ".param"; }
 	std::string Name() { return m_name; }
-
-	std::string ParamSpaceName()
+	std::string ParameterSpaceName()
 	{
 		switch (m_space)
 		{
@@ -52,7 +51,7 @@ public:
 			code << ".ptr";
 			if (m_space != GenericSpace)
 			{
-				code << ParamSpaceName();
+				code << ParameterSpaceName();
 			}
 			if (m_alignment != 4)
 			{

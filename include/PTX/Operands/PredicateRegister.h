@@ -8,7 +8,12 @@ namespace PTX {
 class PredicateRegister : public Register<Predicate>
 {
 public:
-	PredicateRegister(RegisterSpace<Predicate> *space, unsigned int index) : Register(space, index) {}
+	PredicateRegister(typename RegisterSpace<Predicate>::Element *element, unsigned int index = 0) : Register(element, index) {}
+
+	std::string VariableName()
+	{
+		return m_element->VariableName(0);
+	}
 };
 
 }
