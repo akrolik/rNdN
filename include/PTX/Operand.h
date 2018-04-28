@@ -4,9 +4,10 @@
 
 namespace PTX {
 
-template<Type T, VectorSize = Scalar>
+template<class T, VectorSize V = Scalar>
 class Operand
 {
+	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
 	virtual std::string ToString() = 0;
 };

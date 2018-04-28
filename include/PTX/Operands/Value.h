@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-template<typename T>
+template<class T>
 class Value : Operand<T>
 {
 public:

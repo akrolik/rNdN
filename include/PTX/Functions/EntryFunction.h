@@ -5,12 +5,12 @@
 namespace PTX {
 
 template<typename... Args>
-class EntryFunction : public DataFunction<Void, Args...>
+class EntryFunction : public DataFunction<VoidType, Args...>
 {
 public:
 	std::string ToString()
 	{
-		return ".entry " + DataFunction<Void, Args...>::ToString();
+		return ".entry " + DataFunction<VoidType, Args...>::ToString();
 	}
 
 };

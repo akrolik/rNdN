@@ -8,12 +8,13 @@
 
 namespace PTX {
 
-template<Type R, typename... Args>
+template<class R, typename... Args>
 class DataFunction : public Function
 {
+	static_assert(std::is_base_of<Type, R>::value, "T must be a PTX::Type");
 public:
-	template<Type Q=R>
-	void SetReturnSpace(std::enable_if_t<Q != Void, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
+	// template<class Q=R>
+	// void SetReturnSpace(std::enable_if_t<Q != Void, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
 	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
 
 	std::string ToString()

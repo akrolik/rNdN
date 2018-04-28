@@ -6,15 +6,16 @@
 
 namespace PTX {
 
-template<Type T, VectorSize V = Scalar>
+template<Bits A, class T, VectorSize V = Scalar>
 class LoadInstruction : public InstructionStatement
 {
+	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	LoadInstruction(Register<T, V> *reg, Address<T, V> *address) : m_register(reg), m_address(address) {}
+	LoadInstruction(Register<T, V> *reg, Address<A, T, V> *address) : m_register(reg), m_address(address) {}
 
 	std::string OpCode()
 	{
-		return "ld" + m_address->Space()->SpaceName() + PTX::TypeName<T>();
+		return "ld" + m_address->SpaceName() + PTX::TypeName<T>();
 	}
 	
 	std::string Operands()
@@ -24,7 +25,7 @@ public:
 
 private:
 	Register<T, V> *m_register = nullptr;
-	Address<T, V> *m_address = nullptr;
+	Address<A, T, V> *m_address = nullptr;
 };
 
 }

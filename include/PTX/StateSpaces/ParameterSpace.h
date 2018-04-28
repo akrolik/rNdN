@@ -6,9 +6,10 @@
 
 namespace PTX {
 
-template<Type T, VectorSize V = Scalar>
+template<class T, VectorSize V = Scalar>
 class ParameterSpace : public MemorySpace<T, V>
 {
+	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
 	enum Space {
 		GenericSpace,

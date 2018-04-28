@@ -7,13 +7,13 @@
 
 namespace PTX {
 
-template<Type T, VectorSize V = Scalar>
+template<class T, VectorSize V = Scalar>
 class Register : public Operand<T, V>
 {
 public:
 	Register(typename RegisterSpace<T, V>::Element *element, unsigned int index = 0) : m_element(element), m_index(index) {}
 
-	std::string Name()
+	virtual std::string Name()
 	{
 		return m_element->VariableName(m_index);
 	}

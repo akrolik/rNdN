@@ -9,15 +9,16 @@
 
 namespace PTX {
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 class Register;
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 class IndexedRegister;
 
-template<Type T, VectorSize V = Scalar>
+template<class T, VectorSize V = Scalar>
 class RegisterSpace : public StateSpace<T, V>
 {
+	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
 	struct Element {
 	public:
@@ -40,17 +41,17 @@ public:
 
 		std::string Name(unsigned int index)
 		{
-			return "%" + VariableName(index);
+			return VariableName(index);
 		}
 
 		std::string ToString()
 		{
 			if (m_count > 1)
 			{
-				return "%" + m_name + "<" + std::to_string(m_count + 1) + ">";
+				return m_name + "<" + std::to_string(m_count + 1) + ">";
 			}
 
-			return "%" + m_name;
+			return m_name;
 		}
 	private:
 		std::string m_name;
@@ -111,13 +112,13 @@ private:
 #include "PTX/Operands/Register.h"
 // #include "PTX/Operands/IndexedRegister.h"
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 Register<T, V> *RegisterSpace<T, V>::GetRegister(unsigned int index, unsigned int element)
 {
 	return new Register<T, V>(m_elements.at(element), index);
 }
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 Register<T, V> *RegisterSpace<T, V>::GetRegister(std::string& name)
 {
 	for (typename std::vector<Element *>::const_iterator it = m_elements.begin(); it != m_elements.end(); ++it)
@@ -130,13 +131,13 @@ Register<T, V> *RegisterSpace<T, V>::GetRegister(std::string& name)
 	return nullptr;
 }
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 IndexedRegister<T, V> *RegisterSpace<T, V>::GetRegister(unsigned int index, VectorElement vectorElement, unsigned int element)
 {
 	return new IndexedRegister<T, V>(m_elements.at(element), index, vectorElement);
 }
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 IndexedRegister<T, V> *RegisterSpace<T, V>::GetRegister(std::string& name, VectorElement vectorElement, unsigned int element)
 {
 	for (typename std::vector<Element *>::const_iterator it = m_elements.begin(); it != m_elements.end(); ++it)

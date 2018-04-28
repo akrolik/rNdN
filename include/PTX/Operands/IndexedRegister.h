@@ -6,7 +6,7 @@
 
 namespace PTX {
 
-template<Type T, VectorSize V>
+template<class T, VectorSize V>
 class IndexedRegister : public Register<T, Scalar>
 {
 public:
