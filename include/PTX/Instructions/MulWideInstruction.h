@@ -10,7 +10,7 @@ class MulWideInstruction : public InstructionStatement
 	static_assert(std::is_base_of<Type, T1>::value, "T1 must be a PTX::Type");
 	static_assert(std::is_base_of<Type, T2>::value, "T2 must be a PTX::Type");
 public:
-	MulWideInstruction(Register<T1> *dest, Operand<T2> *src1, Operand<T2> *src2) : m_destination(dest), m_source1(src1), m_source2(src2) {}
+	MulWideInstruction(Register<T1> *destination, Operand<T2> *sourceA, Operand<T2> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
 	std::string OpCode()
 	{
@@ -19,13 +19,13 @@ public:
 
 	std::string Operands()
 	{
-		return m_destination->ToString() + ", " + m_source1->ToString() + ", " + m_source2->ToString();
+		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
 	}
 
 private:
 	Register<T1> *m_destination = nullptr;
-	Operand<T2> *m_source1 = nullptr;
-	Operand<T2> *m_source2 = nullptr;
+	Operand<T2> *m_sourceA = nullptr;
+	Operand<T2> *m_sourceB = nullptr;
 };
 
 }

@@ -6,10 +6,10 @@
 namespace PTX {
 
 template<Bits B>
-class ConverAddressInstruction : public InstructionStatement
+class ConvertAddressInstruction : public InstructionStatement
 {
 public:
-	ConverAddressInstruction(Register<UIntType<B>> *dest, Register<UIntType<B>> *src) : m_destination(dest), m_source(src) {}
+	ConvertAddressInstruction(Register<UIntType<B>> *destination, Register<UIntType<B>> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode()
 	{
@@ -26,5 +26,8 @@ private:
 	Register<UIntType<B>> *m_destination = nullptr;
 	Register<UIntType<B>> *m_source = nullptr;
 };
+
+using ConvertAddress32Instruction = ConvertAddressInstruction<Bits::Bits32>;
+using ConvertAddress64Instruction = ConvertAddressInstruction<Bits::Bits64>;
 
 }

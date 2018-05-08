@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Operand.h"
+#include "PTX/Operands/Address.h"
 #include "PTX/StateSpaces/MemorySpace.h"
 
 namespace PTX {

@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-#include "PTX/Statement.h"
+#include "PTX/Statements/Statement.h"
 #include "PTX/Operands/PredicateRegister.h"
 
 namespace PTX {

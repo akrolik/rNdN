@@ -9,7 +9,7 @@ class AddInstruction : public InstructionStatement
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	AddInstruction(Register<T> *dest, Operand<T> *src1, Operand<T> *src2) : m_destination(dest), m_source1(src1), m_source2(src2) {}
+	AddInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
 	std::string OpCode()
 	{
@@ -18,13 +18,13 @@ public:
 
 	std::string Operands()
 	{
-		return m_destination->ToString() + ", " + m_source1->ToString() + ", " + m_source2->ToString();
+		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
 	}
 
 private:
 	Register<T> *m_destination = nullptr;
-	Operand<T> *m_source1 = nullptr;
-	Operand<T> *m_source2 = nullptr;
+	Operand<T> *m_sourceA = nullptr;
+	Operand<T> *m_sourceB = nullptr;
 };
 
 }

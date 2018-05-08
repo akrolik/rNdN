@@ -11,7 +11,7 @@ class MadInstruction : public InstructionStatement
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	MadInstruction(Register<T> *dest, Operand<T> *src1, Operand<T> *src2, Operand<T> *src3) : m_destination(dest), m_source1(src1), m_source2(src2), m_source3(src3) {}
+	MadInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
 
 	void SetLower(bool lower)
 	{
@@ -34,7 +34,6 @@ public:
 	std::string OpCode()
 	{
 		std::ostringstream code;
-
 		code << "mad";
 		if (m_lower)
 		{
@@ -50,14 +49,14 @@ public:
 
 	std::string Operands()
 	{
-		return m_destination->ToString() + ", " + m_source1->ToString() + ", " + m_source2->ToString() + ", " + m_source3->ToString();
+		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString() + ", " + m_sourceC->ToString();
 	}
 
 private:
 	Register<T> *m_destination = nullptr;
-	Operand<T> *m_source1 = nullptr;
-	Operand<T> *m_source2 = nullptr;
-	Operand<T> *m_source3 = nullptr;
+	Operand<T> *m_sourceA = nullptr;
+	Operand<T> *m_sourceB = nullptr;
+	Operand<T> *m_sourceC = nullptr;
 
 	bool m_lower = false;
 	bool m_upper = false;

@@ -9,7 +9,7 @@
 
 #include "PTX/Module.h"
 #include "PTX/Type.h"
-#include "PTX/Function.h"
+#include "PTX/Functions/Function.h"
 #include "PTX/Functions/EntryFunction.h"
 #include "PTX/Functions/DataFunction.h"
 #include "PTX/Operands/Address.h"
@@ -18,9 +18,9 @@
 #include "PTX/Operands/IndexedRegister.h"
 #include "PTX/Operands/Int32Value.h"
 #include "PTX/Operands/VariableAddress.h"
-#include "PTX/Operands/SignedAdapter.h"
+#include "PTX/Operands/Adapters/SignedAdapter.h"
 #include "PTX/Operands/UInt32Value.h"
-#include "PTX/Operands/UnsignedAdapter.h"
+#include "PTX/Operands/Adapters/UnsignedAdapter.h"
 #include "PTX/Operands/ZeroExtendAddress.h"
 #include "PTX/Operands/ZeroExtendRegister.h"
 #include "PTX/Instructions/AddInstruction.h"
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
 	PTX::VariableAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address1 = new PTX::VariableAddress<PTX::Bits::Bits64, PTX::UInt64Type>(parameter);
 	block->AddStatement(new PTX::LoadInstruction<PTX::Bits::Bits64, PTX::UInt64Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd1), address1));
-	block->AddStatement(new PTX::ConverAddressInstruction<PTX::Bits::Bits64>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd2), new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd1)));
+	block->AddStatement(new PTX::ConvertAddressInstruction<PTX::Bits::Bits64>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd2), new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd1)));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r1), ntidx));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r2), ctaidx));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r3), tidx));

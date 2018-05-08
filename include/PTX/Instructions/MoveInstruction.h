@@ -10,7 +10,7 @@ class MoveInstruction : public InstructionStatement
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	MoveInstruction(Register<T> *dest, Register<T> *src) : m_destination(dest), m_source(src) {}
+	MoveInstruction(Register<T> *destination, Register<T> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode()
 	{

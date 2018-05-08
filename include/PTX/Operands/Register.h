@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "PTX/Operand.h"
+#include "PTX/Operands/Operand.h"
 #include "PTX/StateSpaces/RegisterSpace.h"
 
 namespace PTX {

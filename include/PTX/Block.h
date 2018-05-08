@@ -3,7 +3,7 @@
 #include <sstream>
 #include <vector>
 
-#include "PTX/Statement.h"
+#include "PTX/Statements/Statement.h"
 
 namespace PTX {
 

@@ -28,4 +28,9 @@ private:
 	Register<T, V> *m_register = nullptr;
 };
 
+template<class T, VectorSize V = Scalar>
+using Store32Instruction = StoreInstruction<Bits::Bits32, T, V>;
+template<class T, VectorSize V = Scalar>
+using Store64Instruction = StoreInstruction<Bits::Bits64, T, V>;
+
 }

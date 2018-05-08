@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "PTX/StateSpace.h"
+#include "PTX/StateSpaces/StateSpace.h"
 
 namespace PTX {
 
@@ -83,6 +83,11 @@ public:
 	IndexedRegister<T, V> *GetRegister(std::string& name, VectorElement vectorElement, unsigned int element = 0);
 
 	std::string SpaceName() { return ".reg"; }
+
+	std::string Name()
+	{
+		return ElementNames();
+	}
 
 	std::string ElementNames()
 	{

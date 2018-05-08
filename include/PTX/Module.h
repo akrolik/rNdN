@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "PTX/Function.h"
+#include "PTX/Functions/Function.h"
 #include "PTX/Type.h"
 
 namespace PTX

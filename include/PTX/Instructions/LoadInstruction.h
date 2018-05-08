@@ -28,4 +28,9 @@ private:
 	Address<A, T, V> *m_address = nullptr;
 };
 
+template<class T, VectorSize V = Scalar>
+using Load32Instruction = LoadInstruction<Bits::Bits32, T, V>;
+template<class T, VectorSize V = Scalar>
+using Load64Instruction = LoadInstruction<Bits::Bits64, T, V>;
+
 }

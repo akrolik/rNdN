@@ -3,8 +3,8 @@
 #include <tuple>
 #include <sstream>
 
-#include "PTX/Function.h"
-#include "PTX/StateSpace.h"
+#include "PTX/Functions/Function.h"
+#include "PTX/StateSpaces/StateSpace.h"
 
 namespace PTX {
 

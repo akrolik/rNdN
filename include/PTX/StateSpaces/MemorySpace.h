@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/StateSpace.h"
+#include "PTX/StateSpaces/StateSpace.h"
 
 namespace PTX {
 
