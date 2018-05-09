@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Operands/Register.h"
+#include "PTX/Operands/Register/Register.h"
 
 namespace PTX {
 
@@ -10,12 +10,12 @@ class ZeroExtendRegister : public Register<T1, V>
 public:
 	ZeroExtendRegister(Register<T2, V> *reg) : Register<T1, V>(nullptr, -1), m_register(reg) {}
 
-	std::string Name()
+	std::string Name() const
 	{
 		return m_register->Name();
 	}
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		return m_register->ToString();
 	}

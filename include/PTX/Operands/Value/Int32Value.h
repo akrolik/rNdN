@@ -9,10 +9,10 @@ class Int32Value : public Operand<Int32Type>
 public:
 	Int32Value(int32_t value) : m_value(value) {}
 
-	int32_t GetValue() { return m_value; }
+	int32_t GetValue() const { return m_value; }
 	void SetValue(int32_t value) { m_value = value; }
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		return std::to_string(m_value);
 	}

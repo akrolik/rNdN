@@ -11,6 +11,35 @@ enum Bits {
 	Bits64 = (1 << 6)
 };
 
+enum AddressSpace {
+	Generic,
+	Const,
+	Global,
+	Local,
+	Param,
+	Shared
+};
+
+static std::string GetAddressSpaceName(AddressSpace addressSpace)
+{
+	switch (addressSpace)
+	{
+		case Generic:
+			return "";
+		case Const:
+			return ".const";
+		case Global:
+			return ".global";
+		case Local:
+			return ".local";
+		case Param:
+			return ".param";
+		case Shared:
+			return ".shared";
+	}
+	return ".<unknown>";
+}
+
 enum VectorSize {
 	Scalar,
 	Vector2,
@@ -23,6 +52,22 @@ enum VectorElement {
 	Z,
 	W
 };
+
+static std::string GetVectorElementName(VectorElement vectorElement)
+{
+	switch (vectorElement)
+	{
+		case X:
+			return ".x";
+		case Y:
+			return ".y";
+		case Z:
+			return ".z";
+		case W:
+			return ".w";
+	}
+	return ".<unknown>";
+}
 
 class Type {}; 
 

@@ -17,7 +17,7 @@ public:
 	// void SetReturnSpace(std::enable_if_t<Q != Void, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
 	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		std::ostringstream code;
 
@@ -43,7 +43,7 @@ private:
 	template<std::size_t> struct int_{};
 
 	template <typename T, size_t P>
-	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<P>)
+	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<P>) const
 	{
 		auto arg = std::get<std::tuple_size<T>::value-P>(t);
 		code << arg->ToString();
@@ -51,7 +51,7 @@ private:
 	}
 
 	template <typename T>
-	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<0>)
+	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<0>) const
 	{
 		return code;
 	}

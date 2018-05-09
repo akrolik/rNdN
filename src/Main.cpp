@@ -12,15 +12,15 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/EntryFunction.h"
 #include "PTX/Functions/DataFunction.h"
-#include "PTX/Operands/Address.h"
-#include "PTX/Operands/Register.h"
-#include "PTX/Operands/RegisterAddress.h"
-#include "PTX/Operands/IndexedRegister.h"
-#include "PTX/Operands/Int32Value.h"
-#include "PTX/Operands/VariableAddress.h"
 #include "PTX/Operands/Adapters/SignedAdapter.h"
-#include "PTX/Operands/UInt32Value.h"
 #include "PTX/Operands/Adapters/UnsignedAdapter.h"
+#include "PTX/Operands/Address/Address.h"
+#include "PTX/Operands/Address/RegisterAddress.h"
+#include "PTX/Operands/Address/VariableAddress.h"
+#include "PTX/Operands/Register/Register.h"
+#include "PTX/Operands/Register/IndexedRegister.h"
+#include "PTX/Operands/Value/Int32Value.h"
+#include "PTX/Operands/Value/UInt32Value.h"
 #include "PTX/Operands/ZeroExtendAddress.h"
 #include "PTX/Operands/ZeroExtendRegister.h"
 #include "PTX/Instructions/AddInstruction.h"
@@ -71,8 +71,10 @@ int main(int argc, char *argv[])
 	function->SetName("_Z8myKernelPi");
 	function->SetVisible(true);
 
-	PTX::ParameterSpace<PTX::UInt64Type> *parameter = new PTX::ParameterSpace<PTX::UInt64Type>(PTX::ParameterSpace<PTX::UInt64Type>::GenericSpace, "_Z8myKernelPi_param_0");
-	function->SetParameters(parameter);
+	PTX::ParameterSpace<PTX::UInt64Type> *parameterSpace = new PTX::ParameterSpace<PTX::UInt64Type>("_Z8myKernelPi_param_0");
+	function->SetParameters(parameterSpace);
+
+	PTX::Variable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z87myKernelPi_param_0");
 
 	PTX::Block *block = new PTX::Block();
 
@@ -113,8 +115,10 @@ int main(int argc, char *argv[])
 	block->AddStatement(new PTX::MulWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd3, r4, new PTX::Int32Value(4)));
 	block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd4, rd2, rd3));
 	block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r5), new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r4), new PTX::UInt32Value(1)));
+
+	PTX::AddressRegister<PTX::UInt64Type> *addressReg = nullptr; //new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd4);
 	
-	PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address2 = new PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd4));
+	PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address2 = new PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type>(addressReg);
 
 	PTX::Address<PTX::Bits::Bits64, PTX::UInt32Type> *address3 = new PTX::ZeroExtendAddress<PTX::Bits::Bits64, PTX::UInt32Type, PTX::UInt64Type>(address2);
 	block->AddStatement(new PTX::StoreInstruction<PTX::Bits::Bits64, PTX::UInt32Type>(address3, new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r5)));

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Statements/InstructionStatement.h"
-#include "PTX/Operands/Register.h"
+#include "PTX/Operands/Register/Register.h"
 
 namespace PTX {
 
@@ -12,12 +12,12 @@ class MoveInstruction : public InstructionStatement
 public:
 	MoveInstruction(Register<T> *destination, Register<T> *source) : m_destination(destination), m_source(source) {}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
 		return "mov" + PTX::TypeName<T>();
 	}
 
-	std::string Operands()
+	std::string Operands() const
 	{
 		return m_destination->ToString() + ", " + m_source->ToString();
 	}

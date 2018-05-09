@@ -11,48 +11,28 @@ class ParameterSpace : public MemorySpace<T, V>
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	enum Space {
-		GenericSpace,
-		ConstSpace,
-		GlobalSpace,
-		LocalSpace,
-		SharedSpace
-	};
-
-	ParameterSpace(std::string name) : m_name(name) {}
-	ParameterSpace(Space space, std::string name) : m_space(space), m_name(name) {}
+	ParameterSpace(std::string prefix, unsigned int count, AddressSpace addressSpace = AddressSpace::Generic) : MemorySpace<T, V>(prefix, count), m_addressSpace(addressSpace) {}
+	ParameterSpace(std::string name, AddressSpace addressSpace = AddressSpace::Generic) : MemorySpace<T, V>(name), m_addressSpace(addressSpace) {}
+	ParameterSpace(std::vector<std::string> names, AddressSpace addressSpace = AddressSpace::Generic) : MemorySpace<T, V>(names), m_addressSpace(addressSpace) {}
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 
-	std::string SpaceName() { return ".param"; }
-	std::string Name() { return m_name; }
-	std::string ParameterSpaceName()
-	{
-		switch (m_space)
-		{
-			case GenericSpace:
-				return "";
-			case ConstSpace:
-				return ".const";
-			case GlobalSpace:
-				return ".global";
-			case LocalSpace:
-				return ".local";
-			case SharedSpace:
-				return ".shared";
-		}
-	}
+	std::string Specifier() const { return ".param"; }
 
-	std::string ToString()
+	AddressSpace GetAddressSpace() const { return m_addressSpace; }
+
+	using MemorySpace<T, V>::GetElementNames;
+
+	std::string ToString() const
 	{
 		std::ostringstream code;
-		code << "\t" << SpaceName() << " " << TypeName<T>() << " ";
-		if (m_space != GenericSpace || m_alignment != 4)
+		code << "\t" << Specifier() << " " << TypeName<T>() << " ";
+		if (m_addressSpace != AddressSpace::Generic || m_alignment != 4)
 		{
 			code << ".ptr";
-			if (m_space != GenericSpace)
+			if (m_addressSpace != AddressSpace::Generic)
 			{
-				code << ParameterSpaceName();
+				code << GetAddressSpaceName(m_addressSpace);
 			}
 			if (m_alignment != 4)
 			{
@@ -60,14 +40,13 @@ public:
 			}
 			code << " ";
 		}
-		code << m_name << std::endl;
+		code << GetElementNames() << std::endl;
 		return code.str();
 	}
 
 private:
-	Space m_space = GenericSpace;
 	unsigned int m_alignment = 4;
-	std::string m_name;
+	AddressSpace m_addressSpace = AddressSpace::Generic;
 };
 
 }

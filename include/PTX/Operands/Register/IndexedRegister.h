@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "PTX/Operands/Register.h"
+#include "PTX/Operands/Register/Register.h"
 
 namespace PTX {
 
@@ -12,28 +12,12 @@ class IndexedRegister : public Register<T, Scalar>
 public:
 	IndexedRegister(typename RegisterSpace<T, V>::Element *element, unsigned int index, VectorElement vectorElement) : Register<T, Scalar>(nullptr, index), m_element(element), m_index(index), m_vectorElement(vectorElement) {}
 
-	std::string Name()
+	std::string GetName() const
 	{
-		return m_element->VariableName(m_index) + VectorElementName();
+		return m_element->GetName(m_index) + GetVectorElementName(m_vectorElement);
 	}
 
-	std::string ToString()
-	{
-		return m_element->Name(m_index) + VectorElementName();
-	}
-
-	std::string VectorElementName()
-	{
-		switch (m_vectorElement)
-		{
-			case X:
-				return ".x";
-			case Y:
-				return ".y";
-			case Z:
-				return ".z";
-		}
-	}
+	virtual VectorElement GetVectorElement() const { return m_vectorElement; }
 
 private:
 	typename RegisterSpace<T, V>::Element *m_element = nullptr;

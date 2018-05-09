@@ -1,8 +1,8 @@
 #pragma once
 
 #include "PTX/Statements/InstructionStatement.h"
-#include "PTX/Operands/Register.h"
-#include "PTX/Operands/Address.h"
+#include "PTX/Operands/Register/Register.h"
+#include "PTX/Operands/Address/Address.h"
 
 namespace PTX {
 
@@ -13,12 +13,12 @@ class LoadInstruction : public InstructionStatement
 public:
 	LoadInstruction(Register<T, V> *reg, Address<A, T, V> *address) : m_register(reg), m_address(address) {}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
-		return "ld" + m_address->SpaceName() + PTX::TypeName<T>();
+		return "ld" + GetAddressSpaceName(m_address->GetSpace()) + PTX::TypeName<T>();
 	}
 	
-	std::string Operands()
+	std::string Operands() const
 	{
 		return m_register->ToString() + ", " + m_address->ToString();
 	}

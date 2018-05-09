@@ -10,17 +10,18 @@ namespace PTX {
 template<class T, VectorSize V = Scalar>
 class Register : public Operand<T, V>
 {
+	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
 	Register(typename RegisterSpace<T, V>::Element *element, unsigned int index = 0) : m_element(element), m_index(index) {}
 
-	virtual std::string Name()
+	virtual std::string GetName() const
 	{
-		return m_element->VariableName(m_index);
+		return m_element->GetName(m_index);
 	}
 
-	std::string ToString()
+	std::string ToString() const
 	{
-		return m_element->Name(m_index);
+		return GetName();
 	}
 
 protected:

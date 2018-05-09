@@ -12,12 +12,12 @@ class MulWideInstruction : public InstructionStatement
 public:
 	MulWideInstruction(Register<T1> *destination, Operand<T2> *sourceA, Operand<T2> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
 		return "mul.wide" + PTX::TypeName<T2>();
 	}
 
-	std::string Operands()
+	std::string Operands() const
 	{
 		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
 	}

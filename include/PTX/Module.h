@@ -21,7 +21,7 @@ public:
 		m_functions.push_back(function);
 	}
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		std::ostringstream code;
 
@@ -29,7 +29,7 @@ public:
 		code << ".target " << m_target << std::endl;
 		code << ".address_size " << std::to_string(int(m_addressSize)) << std::endl;
 
-		for (std::vector<Function*>::iterator it = m_functions.begin(); it != m_functions.end(); ++it)
+		for (std::vector<Function*>::const_iterator it = m_functions.begin(); it != m_functions.end(); ++it)
 		{
 			Function *function = *it;
 			code << function->ToString();

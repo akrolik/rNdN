@@ -31,7 +31,7 @@ public:
 		}
 	}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
 		std::ostringstream code;
 		code << "mad";
@@ -47,7 +47,7 @@ public:
 		return code.str();
 	}
 
-	std::string Operands()
+	std::string Operands() const
 	{
 		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString() + ", " + m_sourceC->ToString();
 	}

@@ -13,7 +13,7 @@ public:
 	SpecialRegisterSpace(std::string name) : RegisterSpace<T, V>(name) {}
 	SpecialRegisterSpace(std::vector<std::string> names) : RegisterSpace<T, V>(names) {}
 
-	std::string SpaceName() { return ".sreg"; }
+	std::string Specifier() const { return ".sreg"; }
 };
 
 }

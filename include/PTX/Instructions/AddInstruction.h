@@ -11,12 +11,12 @@ class AddInstruction : public InstructionStatement
 public:
 	AddInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
 		return "add" + PTX::TypeName<T>();
 	}
 
-	std::string Operands()
+	std::string Operands() const
 	{
 		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
 	}

@@ -1,26 +1,25 @@
 
 #pragma once
 
-#include "PTX/Operands/Register.h"
+#include "PTX/Operands/Register/Register.h"
 
 namespace PTX {
 
-//T1 and T2 should be bit sizes of types
+//TODO: T1 and T2 should be bit sizes of types
 template<Bits A, class T1, class T2, VectorSize V = Scalar>
 class ZeroExtendAddress : public Address<A, T1, V>
 {
 public:
 	ZeroExtendAddress(Address<A, T2, V> *address) : m_address(address) {}
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		return m_address->ToString();
 	}
 
-	std::string SpaceName()
+	AddressSpace GetSpace() const
 	{
-		//TODO: have the actual space name
-		return ".global";
+		return m_address->GetSpace();
 	}
 
 private:

@@ -9,7 +9,7 @@ class ReturnInstruction : public InstructionStatement
 public:
 	ReturnInstruction(bool uniform = false) : m_uniform(uniform) {}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
 		if (m_uniform)
 		{
@@ -18,7 +18,7 @@ public:
 		return "ret";
 	}
 
-	std::string Operands()
+	std::string Operands() const
 	{
 		return "";
 	}

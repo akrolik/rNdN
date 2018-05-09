@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Statements/InstructionStatement.h"
-#include "PTX/Operands/Register.h"
+#include "PTX/Operands/Register/Register.h"
 
 namespace PTX {
 
@@ -11,13 +11,13 @@ class ConvertAddressInstruction : public InstructionStatement
 public:
 	ConvertAddressInstruction(Register<UIntType<B>> *destination, Register<UIntType<B>> *source) : m_destination(destination), m_source(source) {}
 
-	std::string OpCode()
+	std::string OpCode() const
 	{
 		//TODO: add state spaces
 		return "cvta.to.global" + PTX::TypeName<UIntType<B>>();
 	}
 
-	std::string Operands()
+	std::string Operands() const
 	{
 		return m_destination->ToString() + ", " + m_source->ToString();
 	}
