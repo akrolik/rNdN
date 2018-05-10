@@ -13,18 +13,20 @@ class DataFunction : public Function
 {
 	static_assert(std::is_base_of<Type, R>::value, "T must be a PTX::Type");
 public:
-	// template<class Q=R>
-	// void SetReturnSpace(std::enable_if_t<Q != Void, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
+	template<class Q=R>
+	void SetReturnSpace(std::enable_if_t<std::is_same<Q, VoidType>::value, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
 	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
 
 	std::string ToString() const
 	{
 		std::ostringstream code;
 
-		// if (m_visible)
-		// {
-		// 	code << ".visible ";
-		// }
+		code << Directives() << " ";
+		
+		if (m_returnSpace != nullptr)
+		{
+			code << "(" << m_returnSpace->ToString() << ") ";
+		}
 
 		code << m_name << "(" << std::endl;
 		CodeArgs(code, m_parameterSpaces, int_<sizeof...(Args)>());
@@ -34,6 +36,15 @@ public:
 		code << "}" << std::endl;
 		
 		return code.str();
+	}
+
+	std::string Directives() const
+	{
+		if (m_visible)
+		{
+			return ".visible .func";
+		}
+		return ".func";
 	}
 
 private:
