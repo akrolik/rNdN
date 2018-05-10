@@ -8,10 +8,22 @@
 
 namespace PTX {
 
+// template <bool... B> struct All;
+
+// template <bool... T>
+// struct All<true, T...> : All<T...> {};
+
+// template <bool... T>
+// struct All<false, T...> : std::false_type {};
+
+// template <> struct All<> : std::true_type {};
+
 template<class R, typename... Args>
 class DataFunction : public Function
 {
 	static_assert(std::is_base_of<Type, R>::value, "T must be a PTX::Type");
+	// static_assert(All<std::is_base_of<StateSpace, Args>::value...>::value, "Args must be PTX::Types");
+	
 public:
 	template<class Q=R>
 	void SetReturnSpace(std::enable_if_t<std::is_same<Q, VoidType>::value, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
@@ -21,7 +33,7 @@ public:
 	{
 		std::ostringstream code;
 
-		code << Directives() << " ";
+		code << GetDirectives() << " ";
 		
 		if (m_returnSpace != nullptr)
 		{
@@ -38,7 +50,7 @@ public:
 		return code.str();
 	}
 
-	std::string Directives() const
+	virtual std::string GetDirectives() const
 	{
 		if (m_visible)
 		{

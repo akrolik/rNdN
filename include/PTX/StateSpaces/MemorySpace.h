@@ -12,9 +12,7 @@ class MemorySpace : public StateSpace<T, V>
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	MemorySpace(std::string prefix, unsigned int count) : StateSpace<T, V>(prefix, count) {}
-	MemorySpace(std::string name) : StateSpace<T, V>(name) {}
-	MemorySpace(std::vector<std::string> names) : StateSpace<T, V>(names) {}
+	using StateSpace<T, V>::StateSpace;
 
 	Variable<T, V> *GetVariable(unsigned int index, unsigned int element = 0) const;
 	Variable<T, V> *GetVariable(std::string name) const;
@@ -23,8 +21,6 @@ public:
 private:
 	using StateSpace<T, V>::m_elements;
 };
-
-// #include "PTX/Operands/Variable.h"
 
 template<class T, VectorSize V>
 Variable<T, V> *MemorySpace<T, V>::GetVariable(unsigned int index, unsigned int element) const

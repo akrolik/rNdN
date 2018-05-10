@@ -10,7 +10,7 @@ class RegisterAddress : public Address<A, T, V>
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	RegisterAddress(AddressRegister<UIntType<A>> *reg, int offset = 0) : m_register(reg), m_offset(offset) {}
+	RegisterAddress(AddressRegister<A> *reg, int offset = 0) : m_register(reg), m_offset(offset) {}
 
 	AddressSpace GetSpace() const { return m_register->GetAddressSpace(); }
 
@@ -30,11 +30,11 @@ public:
 		}
 	}
 
-	AddressRegister<UIntType<A>> *GetRegister() const { return m_register; }
+	AddressRegister<A> *GetRegister() const { return m_register; }
 	int GetOffset() const { return m_offset; }
 
 private:
-	AddressRegister<UIntType<A>> *m_register = nullptr;
+	AddressRegister<A> *m_register = nullptr;
 	int m_offset = 0;
 };
 

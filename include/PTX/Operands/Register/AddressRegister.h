@@ -5,12 +5,11 @@
 
 namespace PTX {
 
-template<class T>
-class AddressRegister : public Register<T, Scalar>
+template<Bits A>
+class AddressRegister : public Register<UIntType<A>, Scalar>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	AddressRegister(typename RegisterSpace<T>::Element *element, unsigned int index = 0, AddressSpace addressSpace = AddressSpace::Generic) : Register<T, Scalar>(element, index), m_addressSpace(addressSpace) {}
+	AddressRegister(Register<UIntType<A>, Scalar> *reg, AddressSpace addressSpace = AddressSpace::Generic) : Register<UIntType<A>, Scalar>(reg->m_structure, reg->m_index), m_addressSpace(addressSpace) {}
 
 	virtual AddressSpace GetAddressSpace() const { return m_addressSpace; }
 

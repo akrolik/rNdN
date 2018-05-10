@@ -20,60 +20,28 @@ class RegisterSpace : public StateSpace<T, V>
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	RegisterSpace(std::string prefix, unsigned int count) : StateSpace<T, V>(prefix, count) {}
-	RegisterSpace(std::string name) : StateSpace<T, V>(name) {}
-	RegisterSpace(std::vector<std::string> names) : StateSpace<T, V>(names) {}
+	using StateSpace<T, V>::StateSpace;
 
-	Register<T, V> *GetRegister(std::string name) const;
-	Register<T, V> *GetRegister(unsigned int index, unsigned int element = 0) const;
-
-	IndexedRegister<T, V> *GetRegister(unsigned int index, VectorElement vectorElement, unsigned int element = 0) const;
-	IndexedRegister<T, V> *GetRegister(std::string name, VectorElement vectorElement, unsigned int element = 0) const;
+	Register<T, V> *GetRegister(std::string name, unsigned int index = 0) const;
+	IndexedRegister<T, V> *GetRegister(std::string name, unsigned int index, VectorElement vectorElement) const;
 
 	std::string Specifier() const { return ".reg"; }
 private:
-	using StateSpace<T, V>::m_elements;
+	using StateSpace<T, V>::GetStructure;
 };
 
 #include "PTX/Operands/Register/Register.h"
-// #include "PTX/Operands/IndexedRegister.h"
 
 template<class T, VectorSize V>
-Register<T, V> *RegisterSpace<T, V>::GetRegister(unsigned int index, unsigned int element) const
+Register<T, V> *RegisterSpace<T, V>::GetRegister(std::string name, unsigned int index) const
 {
-	return new Register<T, V>(m_elements.at(element), index);
+	return new Register<T, V>(GetStructure(name), index);
 }
 
 template<class T, VectorSize V>
-Register<T, V> *RegisterSpace<T, V>::GetRegister(std::string name) const
+IndexedRegister<T, V> *RegisterSpace<T, V>::GetRegister(std::string name, unsigned int index, VectorElement vectorElement) const
 {
-	for (typename std::vector<typename StateSpace<T, V>::Element *>::const_iterator it = m_elements.begin(); it != m_elements.end(); ++it)
-	{
-		if ((*it)->GetName(0) == name)
-		{
-			return new Register<T, V>(*it, 0);
-		}
-	}
-	return nullptr;
-}
-
-template<class T, VectorSize V>
-IndexedRegister<T, V> *RegisterSpace<T, V>::GetRegister(unsigned int index, VectorElement vectorElement, unsigned int element) const
-{
-	return new IndexedRegister<T, V>(m_elements.at(element), index, vectorElement);
-}
-
-template<class T, VectorSize V>
-IndexedRegister<T, V> *RegisterSpace<T, V>::GetRegister(std::string name, VectorElement vectorElement, unsigned int element) const
-{
-	for (typename std::vector<typename StateSpace<T, V>::Element *>::const_iterator it = m_elements.begin(); it != m_elements.end(); ++it)
-	{
-		if ((*it)->GetName(0) == name)
-		{
-			return new IndexedRegister<T, V>(*it, 0, vectorElement);
-		}
-	}
-	return nullptr;
+	return new IndexedRegister<T, V>(GetStructure(name), index, vectorElement); 
 }
 
 }

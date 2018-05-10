@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	PTX::ParameterSpace<PTX::UInt64Type> *parameterSpace = new PTX::ParameterSpace<PTX::UInt64Type>("_Z8myKernelPi_param_0");
 	function->SetParameters(parameterSpace);
 
-	PTX::Variable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z87myKernelPi_param_0");
+	PTX::Variable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z8myKernelPi_param_0");
 
 	PTX::Block *block = new PTX::Block();
 
@@ -86,20 +86,20 @@ int main(int argc, char *argv[])
 	block->AddStatement(r32);
 	block->AddStatement(r64);
 
-	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *tidx = srtid->GetRegister(0, PTX::VectorElement::X);
-	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *ntidx = srntid->GetRegister(0, PTX::VectorElement::X);
-	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *ctaidx = srctaid->GetRegister(0, PTX::VectorElement::X);
+	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *tidx = srtid->GetRegister("%tid", 0, PTX::VectorElement::X);
+	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *ntidx = srntid->GetRegister("%ntid", 0, PTX::VectorElement::X);
+	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *ctaidx = srctaid->GetRegister("%ctaid", 0, PTX::VectorElement::X);
 
-	PTX::Register<PTX::Int32Type> *r1 = r32->GetRegister(0);
-	PTX::Register<PTX::Int32Type> *r2 = r32->GetRegister(1);
-	PTX::Register<PTX::Int32Type> *r3 = r32->GetRegister(2);
-	PTX::Register<PTX::Int32Type> *r4 = r32->GetRegister(3);
-	PTX::Register<PTX::Int32Type> *r5 = r32->GetRegister(4);
+	PTX::Register<PTX::Int32Type> *r1 = r32->GetRegister("%r", 0);
+	PTX::Register<PTX::Int32Type> *r2 = r32->GetRegister("%r", 1);
+	PTX::Register<PTX::Int32Type> *r3 = r32->GetRegister("%r", 2);
+	PTX::Register<PTX::Int32Type> *r4 = r32->GetRegister("%r", 3);
+	PTX::Register<PTX::Int32Type> *r5 = r32->GetRegister("%r", 4);
 
-	PTX::Register<PTX::Int64Type> *rd1 = r64->GetRegister(0);
-	PTX::Register<PTX::Int64Type> *rd2 = r64->GetRegister(1);
-	PTX::Register<PTX::Int64Type> *rd3 = r64->GetRegister(2);
-	PTX::Register<PTX::Int64Type> *rd4 = r64->GetRegister(3);
+	PTX::Register<PTX::Int64Type> *rd1 = r64->GetRegister("%rd", 0);
+	PTX::Register<PTX::Int64Type> *rd2 = r64->GetRegister("%rd", 1);
+	PTX::Register<PTX::Int64Type> *rd3 = r64->GetRegister("%rd", 2);
+	PTX::Register<PTX::Int64Type> *rd4 = r64->GetRegister("%rd", 3);
 
 	PTX::VariableAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address1 = new PTX::VariableAddress<PTX::Bits::Bits64, PTX::UInt64Type>(parameter);
 	block->AddStatement(new PTX::LoadInstruction<PTX::Bits::Bits64, PTX::UInt64Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd1), address1));
@@ -116,8 +116,7 @@ int main(int argc, char *argv[])
 	block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd4, rd2, rd3));
 	block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r5), new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r4), new PTX::UInt32Value(1)));
 
-	PTX::AddressRegister<PTX::UInt64Type> *addressReg = nullptr; //new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd4);
-	
+	PTX::AddressRegister<PTX::Bits::Bits64> *addressReg = new PTX::AddressRegister<PTX::Bits::Bits64>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd4), PTX::AddressSpace::Global);
 	PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address2 = new PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type>(addressReg);
 
 	PTX::Address<PTX::Bits::Bits64, PTX::UInt32Type> *address3 = new PTX::ZeroExtendAddress<PTX::Bits::Bits64, PTX::UInt32Type, PTX::UInt64Type>(address2);
