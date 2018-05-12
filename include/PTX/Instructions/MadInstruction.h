@@ -4,6 +4,9 @@
 
 #include "PTX/Statements/InstructionStatement.h"
 
+#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Variable.h"
+
 namespace PTX {
 
 template<class T>
@@ -43,7 +46,7 @@ public:
 		{
 			code << ".hi";
 		}
-		code << PTX::TypeName<T>();
+		code << T::Name();
 		return code.str();
 	}
 

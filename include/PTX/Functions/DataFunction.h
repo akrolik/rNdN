@@ -69,6 +69,11 @@ private:
 	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<P>) const
 	{
 		auto arg = std::get<std::tuple_size<T>::value-P>(t);
+		if (arg == nullptr)
+		{
+			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-P << " not set in function " << m_name << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
 		code << arg->ToString();
 		return CodeArgs(code, t, int_<P-1>());
 	}

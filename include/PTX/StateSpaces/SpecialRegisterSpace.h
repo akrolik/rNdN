@@ -4,12 +4,11 @@
 
 namespace PTX {
 
-template<class T, VectorSize V = Scalar>
-class SpecialRegisterSpace : public RegisterSpace<T, V>
+template<class T>
+class SpecialRegisterSpace : public RegisterSpace<T>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	using RegisterSpace<T, V>::RegisterSpace;
+	using RegisterSpace<T>::RegisterSpace;
 
 	std::string Specifier() const { return ".sreg"; }
 };

@@ -1,44 +1,67 @@
 #pragma once
 
 #include "PTX/StateSpaces/StateSpace.h"
+#include "PTX/Operands/VariableSet.h"
 
 namespace PTX {
 
-template<class T, VectorSize V>
-class Variable;
-
-template<class T, VectorSize V = Scalar>
-class MemorySpace : public StateSpace<T, V>
+template<class T>
+class MemorySpace : public StateSpace<T>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	using StateSpace<T, V>::StateSpace;
+	MemorySpace() {}
 
-	Variable<T, V> *GetVariable(unsigned int index, unsigned int element = 0) const;
-	Variable<T, V> *GetVariable(std::string name) const;
-
-	virtual AddressSpace GetAddressSpace() const = 0;
-private:
-	using StateSpace<T, V>::m_elements;
-};
-
-template<class T, VectorSize V>
-Variable<T, V> *MemorySpace<T, V>::GetVariable(unsigned int index, unsigned int element) const
-{
-	return new Variable<T, V>(m_elements.at(element), index);
-}
-
-template<class T, VectorSize V>
-Variable<T, V> *MemorySpace<T, V>::GetVariable(std::string name) const
-{
-	for (typename std::vector<typename StateSpace<T, V>::Element *>::const_iterator it = m_elements.begin(); it != m_elements.end(); ++it)
+	MemorySpace(std::string prefix, unsigned int count)
 	{
-		if ((*it)->GetName(0) == name)
+		m_variables.push_back(new VariableSet<T, MemorySpace<T>>(prefix, count, this));
+	}
+
+	MemorySpace(std::string name)
+	{
+		m_variables.push_back(new Variable<T, MemorySpace<T>>(name, this));
+	}
+
+	MemorySpace(std::vector<std::string> names)
+	{
+		for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
 		{
-			return new Variable<T, V>(*it, 0);
+			m_variables.push_back(new Variable<T, MemorySpace<T>>(*it, this));
 		}
 	}
-	return nullptr;
-}
+
+	virtual Variable<T, MemorySpace<T>> *GetVariable(std::string name, unsigned int index = 0) const
+	{
+		for (typename std::vector<VariableSet<T, MemorySpace<T>> *>::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
+		{
+			if ((*it)->GetPrefix() == name)
+			{
+				return (*it)->GetVariable(index);
+			}
+		}
+		std::cerr << "[Error] Variable " << name << " not found in StateSpace" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
+	virtual AddressSpace GetAddressSpace() const = 0;
+
+protected:
+	std::string VariableNames() const
+	{
+		std::ostringstream code;
+		bool first = true;
+		for (typename std::vector<VariableSet<T, MemorySpace<T>> *>::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
+		{
+			if (!first)
+			{
+				code << ", ";
+				first = false;
+			}
+			code << (*it)->ToString();
+		}
+		return code.str();
+	}
+
+	std::vector<VariableSet<T, MemorySpace<T>> *> m_variables;
+};
 
 }

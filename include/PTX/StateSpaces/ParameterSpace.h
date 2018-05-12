@@ -6,28 +6,24 @@
 
 namespace PTX {
 
-template<class T, VectorSize V = Scalar>
-class ParameterSpace : public MemorySpace<T, V>
+template<class T>
+class ParameterSpace : public MemorySpace<T>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	ParameterSpace(std::string prefix, unsigned int count, AddressSpace addressSpace = AddressSpace::Generic) : MemorySpace<T, V>(prefix, count), m_addressSpace(addressSpace) {}
-	ParameterSpace(std::string name, AddressSpace addressSpace = AddressSpace::Generic) : MemorySpace<T, V>(name), m_addressSpace(addressSpace) {}
-	ParameterSpace(std::vector<std::string> names, AddressSpace addressSpace = AddressSpace::Generic) : MemorySpace<T, V>(names), m_addressSpace(addressSpace) {}
+	ParameterSpace() {}
+
+	ParameterSpace(std::string prefix, unsigned int count, AddressSpace addressSpace = AddressSpace::Param) : MemorySpace<T>(prefix, count), m_addressSpace(addressSpace) {}
+	ParameterSpace(std::string name, AddressSpace addressSpace = AddressSpace::Param) : MemorySpace<T>(name), m_addressSpace(addressSpace) {}
+	ParameterSpace(std::vector<std::string> names, AddressSpace addressSpace = AddressSpace::Param) : MemorySpace<T>(names), m_addressSpace(addressSpace) {}
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 
 	std::string Specifier() const { return ".param"; }
 
-	AddressSpace GetAddressSpace() const { return m_addressSpace; }
-
-	using MemorySpace<T, V>::GetElementNames;
-
-	std::string ToString() const
+	std::string Directives() const
 	{
 		std::ostringstream code;
-		code << "\t" << Specifier() << " " << TypeName<T>() << " ";
-		if (m_addressSpace != AddressSpace::Generic || m_alignment != 4)
+		if (m_addressSpace != AddressSpace::Param || m_alignment != 4)
 		{
 			code << ".ptr";
 			if (m_addressSpace != AddressSpace::Generic)
@@ -40,9 +36,10 @@ public:
 			}
 			code << " ";
 		}
-		code << GetElementNames() << std::endl;
 		return code.str();
 	}
+
+	AddressSpace GetAddressSpace() const { return m_addressSpace; }
 
 private:
 	unsigned int m_alignment = 4;

@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "PTX/Statements/Statement.h"
-#include "PTX/Operands/Register/PredicateRegister.h"
+#include "PTX/Operands/Variable.h"
 
 namespace PTX {
 
@@ -11,7 +11,7 @@ class InstructionStatement : public Statement
 {
 public:
 	void SetLabel(std::string label) { m_label = label; }
-	void SetPredicate(PredicateRegister *predicate, bool negate) { m_predicate = predicate; m_negatePredicate = negate; }
+	void SetPredicate(Register<PredicateType> *predicate, bool negate) { m_predicate = predicate; m_negatePredicate = negate; }
 
 	std::string ToString() const
 	{
@@ -27,9 +27,9 @@ public:
 			{
 				code << "!";
 			}
-			code << m_predicate->GetName() << " ";
+			// code << m_predicate->GetName() << " ";
 		}
-		code << "\t" << OpCode() << " " << Operands() << ";" << std::endl;
+		code << "\t" << OpCode() << " " << Operands();
 		return code.str();
 	}
 
@@ -38,7 +38,7 @@ public:
 
 private:
 	std::string m_label;
-	PredicateRegister *m_predicate = nullptr;
+	Register<PredicateType> *m_predicate = nullptr;
 	bool m_negatePredicate = false;
 };
 

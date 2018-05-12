@@ -1,47 +1,66 @@
 #pragma once
 
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-
 #include "PTX/StateSpaces/StateSpace.h"
 
 namespace PTX {
 
-template<class T, VectorSize V>
-class Register;
-
-template<class T, VectorSize V>
-class IndexedRegister;
-
-template<class T, VectorSize V = Scalar>
-class RegisterSpace : public StateSpace<T, V>
+template<class T>
+class RegisterSpace : public StateSpace<T>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	using StateSpace<T, V>::StateSpace;
+	RegisterSpace() {}
 
-	Register<T, V> *GetRegister(std::string name, unsigned int index = 0) const;
-	IndexedRegister<T, V> *GetRegister(std::string name, unsigned int index, VectorElement vectorElement) const;
+	RegisterSpace(std::string prefix, unsigned int count)
+	{
+		m_variables.push_back(new VariableSet<T, RegisterSpace<T>>(prefix, count, this));
+	}
+
+	RegisterSpace(std::string name)
+	{
+		m_variables.push_back(new Variable<T, RegisterSpace<T>>(name, this));
+	}
+
+	RegisterSpace(std::vector<std::string> names)
+	{
+		for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
+		{
+			m_variables.push_back(new Variable<T, RegisterSpace<T>>(*it, this));
+		}
+	}
+
+	virtual Variable<T, RegisterSpace<T>> *GetVariable(std::string name, unsigned int index = 0) const
+	{
+		for (typename std::vector<VariableSet<T, RegisterSpace<T>> *>::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
+		{
+			if ((*it)->GetPrefix() == name)
+			{
+				return (*it)->GetVariable(index);
+			}
+		}
+		std::cerr << "[Error] Variable " << name << " not found in StateSpace" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
 
 	std::string Specifier() const { return ".reg"; }
-private:
-	using StateSpace<T, V>::GetStructure;
+
+protected:
+	std::string VariableNames() const
+	{
+		std::ostringstream code;
+		bool first = true;
+		for (typename std::vector<VariableSet<T, RegisterSpace<T>> *>::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
+		{
+			if (!first)
+			{
+				code << ", ";
+				first = false;
+			}
+			code << (*it)->ToString();
+		}
+		return code.str();
+	}
+
+	std::vector<VariableSet<T, RegisterSpace<T>> *> m_variables;
 };
-
-#include "PTX/Operands/Register/Register.h"
-
-template<class T, VectorSize V>
-Register<T, V> *RegisterSpace<T, V>::GetRegister(std::string name, unsigned int index) const
-{
-	return new Register<T, V>(GetStructure(name), index);
-}
-
-template<class T, VectorSize V>
-IndexedRegister<T, V> *RegisterSpace<T, V>::GetRegister(std::string name, unsigned int index, VectorElement vectorElement) const
-{
-	return new IndexedRegister<T, V>(GetStructure(name), index, vectorElement); 
-}
 
 }

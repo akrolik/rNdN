@@ -1,16 +1,15 @@
 
 #pragma once
 
-#include "PTX/Operands/Register/Register.h"
+#include "PTX/Operands/Address/Address.h"
 
 namespace PTX {
 
-//TODO: T1 and T2 should be bit sizes of types
-template<Bits A, class T1, class T2, VectorSize V = Scalar>
-class ZeroExtendAddress : public Address<A, T1, V>
+template<Bits S, Bits D, class T>
+class ZeroExtendAddress : public Address<D, T>
 {
 public:
-	ZeroExtendAddress(Address<A, T2, V> *address) : m_address(address) {}
+	ZeroExtendAddress(Address<S, T> *address) : m_address(address) {}
 
 	std::string ToString() const
 	{
@@ -23,7 +22,7 @@ public:
 	}
 
 private:
-	Address<A, T2, V> *m_address = nullptr;
+	Address<S, T> *m_address = nullptr;
 };
 
 }

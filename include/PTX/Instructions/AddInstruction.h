@@ -2,6 +2,9 @@
 
 #include "PTX/Statements/InstructionStatement.h"
 
+#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Variable.h"
+
 namespace PTX {
 
 template<class T>
@@ -13,7 +16,7 @@ public:
 
 	std::string OpCode() const
 	{
-		return "add" + PTX::TypeName<T>();
+		return "add" + T::Name();
 	}
 
 	std::string Operands() const

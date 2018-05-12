@@ -2,6 +2,9 @@
 
 #include "PTX/Statements/InstructionStatement.h"
 
+#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Variable.h"
+
 namespace PTX {
 
 template<class T1, class T2>
@@ -14,7 +17,7 @@ public:
 
 	std::string OpCode() const
 	{
-		return "mul.wide" + PTX::TypeName<T2>();
+		return "mul.wide" + T2::Name();
 	}
 
 	std::string Operands() const

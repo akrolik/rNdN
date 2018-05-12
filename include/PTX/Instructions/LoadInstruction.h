@@ -1,21 +1,22 @@
 #pragma once
 
 #include "PTX/Statements/InstructionStatement.h"
-#include "PTX/Operands/Register/Register.h"
+
 #include "PTX/Operands/Address/Address.h"
+#include "PTX/Operands/Variable.h"
 
 namespace PTX {
 
-template<Bits A, class T, VectorSize V = Scalar>
+template<Bits A, class T>
 class LoadInstruction : public InstructionStatement
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	LoadInstruction(Register<T, V> *reg, Address<A, T, V> *address) : m_register(reg), m_address(address) {}
+	LoadInstruction(Register<T> *reg, Address<A, T> *address) : m_register(reg), m_address(address) {}
 
 	std::string OpCode() const
 	{
-		return "ld" + GetAddressSpaceName(m_address->GetSpace()) + PTX::TypeName<T>();
+		return "ld" + GetAddressSpaceName(m_address->GetSpace()) + T::Name();
 	}
 	
 	std::string Operands() const
@@ -24,13 +25,13 @@ public:
 	}
 
 private:
-	Register<T, V> *m_register = nullptr;
-	Address<A, T, V> *m_address = nullptr;
+	Register<T> *m_register = nullptr;
+	Address<A, T> *m_address = nullptr;
 };
 
-template<class T, VectorSize V = Scalar>
-using Load32Instruction = LoadInstruction<Bits::Bits32, T, V>;
-template<class T, VectorSize V = Scalar>
-using Load64Instruction = LoadInstruction<Bits::Bits64, T, V>;
+template<class T>
+using Load32Instruction = LoadInstruction<Bits::Bits32, T>;
+template<class T>
+using Load64Instruction = LoadInstruction<Bits::Bits64, T>;
 
 }

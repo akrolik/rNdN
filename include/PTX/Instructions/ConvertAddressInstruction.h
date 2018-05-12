@@ -1,7 +1,9 @@
 #pragma once
 
 #include "PTX/Statements/InstructionStatement.h"
-#include "PTX/Operands/Register/Register.h"
+
+#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Variable.h"
 
 namespace PTX {
 
@@ -14,7 +16,7 @@ public:
 	std::string OpCode() const
 	{
 		//TODO: add state spaces
-		return "cvta.to.global" + PTX::TypeName<UIntType<B>>();
+		return "cvta.to.global" + UIntType<B>::Name();
 	}
 
 	std::string Operands() const

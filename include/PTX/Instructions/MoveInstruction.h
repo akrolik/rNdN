@@ -1,7 +1,8 @@
 #pragma once
 
 #include "PTX/Statements/InstructionStatement.h"
-#include "PTX/Operands/Register/Register.h"
+
+#include "PTX/Operands/Variable.h"
 
 namespace PTX {
 
@@ -14,7 +15,7 @@ public:
 
 	std::string OpCode() const
 	{
-		return "mov" + PTX::TypeName<T>();
+		return "mov" + T::Name();
 	}
 
 	std::string Operands() const

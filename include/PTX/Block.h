@@ -21,7 +21,7 @@ public:
 		for (std::vector<Statement *>::iterator it = m_statements.begin(); it != m_statements.end(); it++)
 		{
 			Statement *stmt = *it;
-			code << stmt->ToString();
+			code << stmt->ToString() << ";" << std::endl;
 		}
 		return code.str();
 	}

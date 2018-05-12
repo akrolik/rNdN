@@ -12,17 +12,15 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/EntryFunction.h"
 #include "PTX/Functions/DataFunction.h"
-#include "PTX/Operands/Adapters/SignedAdapter.h"
+// #include "PTX/Operands/Adapters/SignedAdapter.h"
 #include "PTX/Operands/Adapters/UnsignedAdapter.h"
 #include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Address/RegisterAddress.h"
-#include "PTX/Operands/Address/VariableAddress.h"
-#include "PTX/Operands/Register/Register.h"
-#include "PTX/Operands/Register/IndexedRegister.h"
+#include "PTX/Operands/Address/MemoryAddress.h"
 #include "PTX/Operands/Value/Int32Value.h"
 #include "PTX/Operands/Value/UInt32Value.h"
 #include "PTX/Operands/ZeroExtendAddress.h"
-#include "PTX/Operands/ZeroExtendRegister.h"
+// #include "PTX/Operands/ZeroExtendRegister.h"
 #include "PTX/Instructions/AddInstruction.h"
 #include "PTX/Instructions/ConvertAddressInstruction.h"
 #include "PTX/Instructions/LoadInstruction.h"
@@ -31,9 +29,11 @@
 #include "PTX/Instructions/MulWideInstruction.h"
 #include "PTX/Instructions/ReturnInstruction.h"
 #include "PTX/Instructions/StoreInstruction.h"
+#include "PTX/Operands/Variable.h"
 #include "PTX/StateSpaces/ParameterSpace.h"
 #include "PTX/StateSpaces/RegisterSpace.h"
 #include "PTX/StateSpaces/SpecialRegisterSpace.h"
+#include "PTX/StateSpaces/SpaceAdapter.h"
 
 int yyparse();
 
@@ -74,39 +74,43 @@ int main(int argc, char *argv[])
 	PTX::ParameterSpace<PTX::UInt64Type> *parameterSpace = new PTX::ParameterSpace<PTX::UInt64Type>("_Z8myKernelPi_param_0");
 	function->SetParameters(parameterSpace);
 
-	PTX::Variable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z8myKernelPi_param_0");
-
-	PTX::Block *block = new PTX::Block();
-
-	PTX::SpecialRegisterSpace<PTX::UInt32Type, PTX::VectorSize::Vector4> *srtid = new PTX::SpecialRegisterSpace<PTX::UInt32Type, PTX::VectorSize::Vector4>("%tid");
-	PTX::SpecialRegisterSpace<PTX::UInt32Type, PTX::VectorSize::Vector4> *srntid = new PTX::SpecialRegisterSpace<PTX::UInt32Type, PTX::VectorSize::Vector4>("%ntid");
-	PTX::SpecialRegisterSpace<PTX::UInt32Type, PTX::VectorSize::Vector4> *srctaid = new PTX::SpecialRegisterSpace<PTX::UInt32Type, PTX::VectorSize::Vector4>("%ctaid");
+	PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>> *srtid = new PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>>("%tid");
+	PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>> *srntid = new PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>>("%ntid");
+	PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>> *srctaid = new PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>>("%ctaid");
 	PTX::RegisterSpace<PTX::Int32Type> *r32 = new PTX::RegisterSpace<PTX::Int32Type>("%r", 5);
 	PTX::RegisterSpace<PTX::Int64Type> *r64 = new PTX::RegisterSpace<PTX::Int64Type>("%rd", 4);
+
+	PTX::MemoryVariable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z8myKernelPi_param_0");
+
+	PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
+	PTX::Register<PTX::UInt32Type> *ntidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srntid->GetVariable("%ntid"), PTX::VectorElement::X);
+	PTX::Register<PTX::UInt32Type> *ctaidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+                                                                                                                                               
+	PTX::Register<PTX::Int32Type> *r1 = r32->GetVariable("%r", 0);
+	PTX::Register<PTX::Int32Type> *r2 = r32->GetVariable("%r", 1);
+	PTX::Register<PTX::Int32Type> *r3 = r32->GetVariable("%r", 2);
+	PTX::Register<PTX::Int32Type> *r4 = r32->GetVariable("%r", 3);
+	PTX::Register<PTX::Int32Type> *r5 = r32->GetVariable("%r", 4);
+
+	PTX::Register<PTX::Int64Type> *rd1 = r64->GetVariable("%rd", 0);
+	PTX::Register<PTX::Int64Type> *rd2 = r64->GetVariable("%rd", 1);
+	PTX::Register<PTX::Int64Type> *rd3 = r64->GetVariable("%rd", 2);
+	PTX::Register<PTX::Int64Type> *rd4 = r64->GetVariable("%rd", 3);
+
+	PTX::Block *block = new PTX::Block();
 	block->AddStatement(r32);
-	block->AddStatement(r64);
+	block->AddStatement(r64); 
 
-	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *tidx = srtid->GetRegister("%tid", 0, PTX::VectorElement::X);
-	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *ntidx = srntid->GetRegister("%ntid", 0, PTX::VectorElement::X);
-	PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4> *ctaidx = srctaid->GetRegister("%ctaid", 0, PTX::VectorElement::X);
+// 	//TODO: make the MemorySpace::Element point to the container
+// 	//TODO: make the Element access the container for the address space
+// 	//TODO: adjust the Variable to contain an AddressSpace field (?), or we can use the type of the address space with a static cast -- or can we:
+// 	// this would require having 2 structures: Structure -> RegisterStructure, AddressableStructure (which contains the method). the Variable can point to an AddressableStructure!
 
-	PTX::Register<PTX::Int32Type> *r1 = r32->GetRegister("%r", 0);
-	PTX::Register<PTX::Int32Type> *r2 = r32->GetRegister("%r", 1);
-	PTX::Register<PTX::Int32Type> *r3 = r32->GetRegister("%r", 2);
-	PTX::Register<PTX::Int32Type> *r4 = r32->GetRegister("%r", 3);
-	PTX::Register<PTX::Int32Type> *r5 = r32->GetRegister("%r", 4);
-
-	PTX::Register<PTX::Int64Type> *rd1 = r64->GetRegister("%rd", 0);
-	PTX::Register<PTX::Int64Type> *rd2 = r64->GetRegister("%rd", 1);
-	PTX::Register<PTX::Int64Type> *rd3 = r64->GetRegister("%rd", 2);
-	PTX::Register<PTX::Int64Type> *rd4 = r64->GetRegister("%rd", 3);
-
-	PTX::VariableAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address1 = new PTX::VariableAddress<PTX::Bits::Bits64, PTX::UInt64Type>(parameter);
-	block->AddStatement(new PTX::LoadInstruction<PTX::Bits::Bits64, PTX::UInt64Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd1), address1));
-	block->AddStatement(new PTX::ConvertAddressInstruction<PTX::Bits::Bits64>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd2), new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd1)));
-	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r1), ntidx));
-	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r2), ctaidx));
-	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r3), tidx));
+	block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type>(new PTX::Unsigned64Adapter(rd1), new PTX::MemoryAddress64<PTX::UInt64Type>(parameter)));
+	block->AddStatement(new PTX::ConvertAddress64Instruction(new PTX::Unsigned64Adapter(rd2), new PTX::Unsigned64Adapter(rd1)));
+	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ntidx));
+	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), ctaidx));
+	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r3), tidx));
 
 	PTX::MadInstruction<PTX::Int32Type> *madInstruction = new PTX::MadInstruction<PTX::Int32Type>(r4, r1, r2, r3);
 	madInstruction->SetLower(true);
@@ -114,13 +118,10 @@ int main(int argc, char *argv[])
 
 	block->AddStatement(new PTX::MulWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd3, r4, new PTX::Int32Value(4)));
 	block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd4, rd2, rd3));
-	block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r5), new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r4), new PTX::UInt32Value(1)));
+	block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r5), new PTX::Unsigned32Adapter(r4), new PTX::UInt32Value(1)));
 
-	PTX::AddressRegister<PTX::Bits::Bits64> *addressReg = new PTX::AddressRegister<PTX::Bits::Bits64>(new PTX::UnsignedAdapter<PTX::Bits::Bits64>(rd4), PTX::AddressSpace::Global);
-	PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type> *address2 = new PTX::RegisterAddress<PTX::Bits::Bits64, PTX::UInt64Type>(addressReg);
-
-	PTX::Address<PTX::Bits::Bits64, PTX::UInt32Type> *address3 = new PTX::ZeroExtendAddress<PTX::Bits::Bits64, PTX::UInt32Type, PTX::UInt64Type>(address2);
-	block->AddStatement(new PTX::StoreInstruction<PTX::Bits::Bits64, PTX::UInt32Type>(address3, new PTX::UnsignedAdapter<PTX::Bits::Bits32>(r5)));
+	PTX::Address64Register<PTX::UInt32Type> *addressRegister = new PTX::Address64Register<PTX::UInt32Type>(new PTX::Unsigned64Adapter(rd4), new PTX::ParameterSpaceAdapter<PTX::UInt64Type, PTX::UInt32Type>(parameterSpace), PTX::AddressSpace::Global);
+	block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type>(new PTX::RegisterAddress64<PTX::UInt32Type>(addressRegister), new PTX::Unsigned32Adapter(r5)));
 	block->AddStatement(new PTX::ReturnInstruction());
 
         /*
