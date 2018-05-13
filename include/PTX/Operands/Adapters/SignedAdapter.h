@@ -1,14 +1,19 @@
 #pragma once
 
-#include "PTX/Operands/Register/Register.h"
+#include "PTX/Operands/Variables/Register.h"
+
+#include "PTX/StateSpaces/SpaceAdapter.h"
 
 namespace PTX {
 
-template<Bits B, VectorSize V = Scalar>
-class SignedAdapter : public Register<IntType<B>, V>
+template<Bits B>
+class SignedAdapter : public Register<IntType<B>>
 {
 public:
-	SignedAdapter(Register<UIntType<B>> *reg) : Register<IntType<B>, V>(reg->m_structure, reg->m_index) {}
+	SignedAdapter(Register<UIntType<B>> *variable) : Register<IntType<B>>(variable->GetName(), new RegisterSpaceAdapter<IntType<B>, UIntType<B>>(variable->GetStateSpace())) {}
 };
+
+using Signed32Adapter = SignedAdapter<Bits::Bits32>;
+using Signed64Adapter = SignedAdapter<Bits::Bits64>;
 
 }
