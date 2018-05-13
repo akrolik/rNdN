@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "PTX/Statements/Statement.h"
-#include "PTX/Operands/Variable.h"
+#include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 

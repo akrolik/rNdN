@@ -2,7 +2,7 @@
 
 #include "PTX/StateSpaces/StateSpace.h"
 
-#include "PTX/Operands/Variable.h"
+#include "PTX/Operands/Variables/Variable.h"
 
 namespace PTX {
 
@@ -61,13 +61,8 @@ protected:
 	AddressSpace m_addressSpace = A;
 };
 
+
 template<class T>
 using ParameterSpace = AddressableSpace<T, Param>;
-
-template<class T, AddressSpace A>
-using AddressableVariable = Variable<T, AddressableSpace<T, A>>;
-
-template<class T>
-using ParameterVariable = AddressableVariable<T, Param>;
 
 }

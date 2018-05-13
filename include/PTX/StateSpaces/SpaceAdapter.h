@@ -1,6 +1,5 @@
 #pragma once
 
-#include "PTX/Operands/Variable.h"
 #include "PTX/StateSpaces/AddressableSpace.h"
 #include "PTX/StateSpaces/RegisterSpace.h"
 

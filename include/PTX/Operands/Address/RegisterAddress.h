@@ -1,7 +1,8 @@
 #pragma once
 
 #include "PTX/Operands/Address/Address.h"
-#include "PTX/Operands/Variable.h"
+
+#include "PTX/Operands/Variables/AddressRegister.h"
 
 namespace PTX {
 

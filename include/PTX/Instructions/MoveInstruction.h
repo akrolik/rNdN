@@ -2,7 +2,7 @@
 
 #include "PTX/Statements/InstructionStatement.h"
 
-#include "PTX/Operands/Variable.h"
+#include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 

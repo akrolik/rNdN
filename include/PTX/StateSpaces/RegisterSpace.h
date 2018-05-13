@@ -2,7 +2,7 @@
 
 #include "PTX/StateSpaces/StateSpace.h"
 
-#include "PTX/Operands/Variable.h"
+#include "PTX/Operands/Variables/Variable.h"
 
 namespace PTX {
 
@@ -30,8 +30,5 @@ public:
 protected:
 	using StateSpace<T>::m_names;
 };
-
-template<class T>
-using Register = Variable<T, RegisterSpace<T>>;
 
 }

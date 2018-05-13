@@ -1,6 +1,7 @@
 #pragma once
 
-#include "PTX/Operands/Variable.h"
+#include "PTX/Operands/Variables/Register.h"
+
 #include "PTX/StateSpaces/SpaceAdapter.h"
 
 namespace PTX {

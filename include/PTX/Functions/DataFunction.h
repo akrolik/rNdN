@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "PTX/Functions/Function.h"
+
 #include "PTX/StateSpaces/StateSpace.h"
 
 namespace PTX {
