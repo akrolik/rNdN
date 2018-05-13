@@ -30,7 +30,7 @@
 #include "PTX/Instructions/ReturnInstruction.h"
 #include "PTX/Instructions/StoreInstruction.h"
 #include "PTX/Operands/Variable.h"
-#include "PTX/StateSpaces/ParameterSpace.h"
+#include "PTX/StateSpaces/AddressableSpace.h"
 #include "PTX/StateSpaces/RegisterSpace.h"
 #include "PTX/StateSpaces/SpecialRegisterSpace.h"
 #include "PTX/StateSpaces/SpaceAdapter.h"
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	PTX::RegisterSpace<PTX::Int32Type> *r32 = new PTX::RegisterSpace<PTX::Int32Type>("%r", 5);
 	PTX::RegisterSpace<PTX::Int64Type> *r64 = new PTX::RegisterSpace<PTX::Int64Type>("%rd", 4);
 
-	PTX::MemoryVariable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z8myKernelPi_param_0");
+	PTX::ParameterVariable<PTX::UInt64Type> *parameter = parameterSpace->GetVariable("_Z8myKernelPi_param_0");
 
 	PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
 	PTX::Register<PTX::UInt32Type> *ntidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srntid->GetVariable("%ntid"), PTX::VectorElement::X);
@@ -101,12 +101,7 @@ int main(int argc, char *argv[])
 	block->AddStatement(r32);
 	block->AddStatement(r64); 
 
-// 	//TODO: make the MemorySpace::Element point to the container
-// 	//TODO: make the Element access the container for the address space
-// 	//TODO: adjust the Variable to contain an AddressSpace field (?), or we can use the type of the address space with a static cast -- or can we:
-// 	// this would require having 2 structures: Structure -> RegisterStructure, AddressableStructure (which contains the method). the Variable can point to an AddressableStructure!
-
-	block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type>(new PTX::Unsigned64Adapter(rd1), new PTX::MemoryAddress64<PTX::UInt64Type>(parameter)));
+	block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type, PTX::AddressSpace::Param>(new PTX::Unsigned64Adapter(rd1), new PTX::MemoryAddress64<PTX::UInt64Type, PTX::AddressSpace::Param>(parameter)));
 	block->AddStatement(new PTX::ConvertAddress64Instruction(new PTX::Unsigned64Adapter(rd2), new PTX::Unsigned64Adapter(rd1)));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ntidx));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), ctaidx));
@@ -120,8 +115,8 @@ int main(int argc, char *argv[])
 	block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd4, rd2, rd3));
 	block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r5), new PTX::Unsigned32Adapter(r4), new PTX::UInt32Value(1)));
 
-	PTX::Address64Register<PTX::UInt32Type> *addressRegister = new PTX::Address64Register<PTX::UInt32Type>(new PTX::Unsigned64Adapter(rd4), new PTX::ParameterSpaceAdapter<PTX::UInt64Type, PTX::UInt32Type>(parameterSpace), PTX::AddressSpace::Global);
-	block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type>(new PTX::RegisterAddress64<PTX::UInt32Type>(addressRegister), new PTX::Unsigned32Adapter(r5)));
+	PTX::Address64Register<PTX::UInt32Type, PTX::AddressSpace::Global> *addressRegister = new PTX::Address64Register<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::Unsigned64Adapter(rd4), nullptr /*new PTX::ParameterSpaceAdapter<PTX::UInt32Type, PTX::UInt64Type>(parameterSpace)*/);
+	block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::AddressSpace::Global>(addressRegister), new PTX::Unsigned32Adapter(r5)));
 	block->AddStatement(new PTX::ReturnInstruction());
 
         /*
@@ -204,7 +199,7 @@ int main(int argc, char *argv[])
 		}
 
 		success = false;
-		std::cerr << "[Error] Result incorrect at index " << i << " [" << data[i] << " != " << i << "]" << std::endl;
+		std::cerr << "[Error] Result incorrect at index " << i << " [" << data[i] << " != " << i + 1 << "]" << std::endl;
 		break;
 	}
 	if (success)

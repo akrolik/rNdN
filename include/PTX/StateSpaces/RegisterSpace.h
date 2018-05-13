@@ -2,39 +2,23 @@
 
 #include "PTX/StateSpaces/StateSpace.h"
 
+#include "PTX/Operands/Variable.h"
+
 namespace PTX {
 
 template<class T>
 class RegisterSpace : public StateSpace<T>
 {
 public:
-	RegisterSpace() {}
+	using StateSpace<T>::StateSpace;
 
-	RegisterSpace(std::string prefix, unsigned int count)
+	virtual Variable<T, RegisterSpace<T>> *GetVariable(std::string name, unsigned int index = 0)
 	{
-		m_variables.push_back(new VariableSet<T, RegisterSpace<T>>(prefix, count, this));
-	}
-
-	RegisterSpace(std::string name)
-	{
-		m_variables.push_back(new Variable<T, RegisterSpace<T>>(name, this));
-	}
-
-	RegisterSpace(std::vector<std::string> names)
-	{
-		for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
+		for (typename std::vector<NameSet>::const_iterator it = m_names.begin(); it != m_names.end(); ++it)
 		{
-			m_variables.push_back(new Variable<T, RegisterSpace<T>>(*it, this));
-		}
-	}
-
-	virtual Variable<T, RegisterSpace<T>> *GetVariable(std::string name, unsigned int index = 0) const
-	{
-		for (typename std::vector<VariableSet<T, RegisterSpace<T>> *>::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
-		{
-			if ((*it)->GetPrefix() == name)
+			if (it->GetPrefix() == name)
 			{
-				return (*it)->GetVariable(index);
+				return new Variable<T, RegisterSpace<T>>(it->GetName(index), this);
 			}
 		}
 		std::cerr << "[Error] Variable " << name << " not found in StateSpace" << std::endl;
@@ -44,23 +28,10 @@ public:
 	std::string Specifier() const { return ".reg"; }
 
 protected:
-	std::string VariableNames() const
-	{
-		std::ostringstream code;
-		bool first = true;
-		for (typename std::vector<VariableSet<T, RegisterSpace<T>> *>::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
-		{
-			if (!first)
-			{
-				code << ", ";
-				first = false;
-			}
-			code << (*it)->ToString();
-		}
-		return code.str();
-	}
-
-	std::vector<VariableSet<T, RegisterSpace<T>> *> m_variables;
+	using StateSpace<T>::m_names;
 };
+
+template<class T>
+using Register = Variable<T, RegisterSpace<T>>;
 
 }

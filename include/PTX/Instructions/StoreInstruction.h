@@ -7,16 +7,16 @@
 
 namespace PTX {
 
-template<Bits A, class T>
+template<Bits A, class T, AddressSpace S>
 class StoreInstruction : public InstructionStatement
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	StoreInstruction(Address<A, T> *address, Register<T> *reg) : m_address(address), m_register(reg) {}
+	StoreInstruction(Address<A, T, S> *address, Register<T> *reg) : m_address(address), m_register(reg) {}
 
 	std::string OpCode() const
 	{
-		return "st" + GetAddressSpaceName(m_address->GetSpace()) + T::Name();
+		return "st" + AddressSpaceName<S>() + T::Name();
 	}
 	
 	std::string Operands() const
@@ -25,13 +25,13 @@ public:
 	}
 
 private:
-	Address<A, T> *m_address = nullptr;
+	Address<A, T, S> *m_address = nullptr;
 	Register<T> *m_register = nullptr;
 };
 
-template<class T>
-using Store32Instruction = StoreInstruction<Bits::Bits32, T>;
-template<class T>
-using Store64Instruction = StoreInstruction<Bits::Bits64, T>;
+template<class T, AddressSpace S>
+using Store32Instruction = StoreInstruction<Bits::Bits32, T, S>;
+template<class T, AddressSpace S>
+using Store64Instruction = StoreInstruction<Bits::Bits64, T, S>;
 
 }

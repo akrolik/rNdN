@@ -20,6 +20,15 @@ enum AddressSpace {
 	Shared
 };
 
+template<AddressSpace S> std::string AddressSpaceName() { return ".<unknown>"; }
+
+template<> inline std::string AddressSpaceName<Generic>() { return std::string(""); }
+template<> inline std::string AddressSpaceName<Const>() { return std::string(".const"); }
+template<> inline std::string AddressSpaceName<Global>() { return std::string(".global"); }
+template<> inline std::string AddressSpaceName<Local>() { return std::string(".local"); }
+template<> inline std::string AddressSpaceName<Param>() { return std::string(".param"); }
+template<> inline std::string AddressSpaceName<Shared>() { return std::string(".shared"); }
+
 static std::string GetAddressSpaceName(AddressSpace addressSpace)
 {
 	switch (addressSpace)
@@ -34,8 +43,6 @@ static std::string GetAddressSpaceName(AddressSpace addressSpace)
 			return ".local";
 		case Param:
 			return ".param";
-		case Shared:
-			return ".shared";
 	}
 	return ".<unknown>";
 }

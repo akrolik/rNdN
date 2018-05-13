@@ -5,24 +5,19 @@
 
 namespace PTX {
 
-template<Bits S, Bits D, class T>
-class ZeroExtendAddress : public Address<D, T>
+template<Bits S, Bits D, class T, AddressSpace SP>
+class ZeroExtendAddress : public Address<D, T, SP>
 {
 public:
-	ZeroExtendAddress(Address<S, T> *address) : m_address(address) {}
+	ZeroExtendAddress(Address<S, T, SP> *address) : m_address(address) {}
 
 	std::string ToString() const
 	{
 		return m_address->ToString();
 	}
 
-	AddressSpace GetSpace() const
-	{
-		return m_address->GetSpace();
-	}
-
 private:
-	Address<S, T> *m_address = nullptr;
+	Address<S, T, SP> *m_address = nullptr;
 };
 
 }

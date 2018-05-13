@@ -5,14 +5,12 @@
 
 namespace PTX {
 
-template<Bits A, class T>
-class MemoryAddress : public Address<A, T>
+template<Bits A, class T, AddressSpace S>
+class MemoryAddress : public Address<A, T, S>
 {
 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
-	MemoryAddress(MemoryVariable<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
-
-	AddressSpace GetSpace() const { return m_variable->GetStateSpace()->GetAddressSpace(); }
+	MemoryAddress(AddressableVariable<T, S> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
 	std::string ToString() const
 	{
@@ -30,17 +28,17 @@ public:
 		}
 	}
 
-	MemoryVariable<T> *GetVariable() const { return m_variable; }
+	AddressableVariable<T, S> *GetVariable() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
 private:
-	MemoryVariable<T> *m_variable = nullptr;
+	AddressableVariable<T, S> *m_variable = nullptr;
 	int m_offset = 0;
 };
 
-template<class T>
-using MemoryAddress32 = MemoryAddress<Bits::Bits32, T>;
-template<class T>
-using MemoryAddress64 = MemoryAddress<Bits::Bits64, T>;
+template<class T, AddressSpace S>
+using MemoryAddress32 = MemoryAddress<Bits::Bits32, T, S>;
+template<class T, AddressSpace S>
+using MemoryAddress64 = MemoryAddress<Bits::Bits64, T, S>;
 
 }

@@ -9,7 +9,7 @@ template<Bits B>
 class UnsignedAdapter : public Register<UIntType<B>>
 {
 public:
-	UnsignedAdapter(Register<IntType<B>> *variable) : Register<UIntType<B>>(variable->GetName(), new RegisterSpaceAdapter<IntType<B>, UIntType<B>>(variable->GetStateSpace())) {}
+	UnsignedAdapter(Register<IntType<B>> *variable) : Register<UIntType<B>>(variable->GetName(), new RegisterSpaceAdapter<UIntType<B>, IntType<B>>(variable->GetStateSpace())) {}
 };
 
 using Unsigned32Adapter = UnsignedAdapter<Bits::Bits32>;
