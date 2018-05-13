@@ -22,14 +22,13 @@
 #include "PTX/Operands/ZeroExtendAddress.h"
 // #include "PTX/Operands/ZeroExtendRegister.h"
 #include "PTX/Instructions/AddInstruction.h"
-#include "PTX/Instructions/ConvertAddressInstruction.h"
+#include "PTX/Instructions/ConvertToAddressInstruction.h"
 #include "PTX/Instructions/LoadInstruction.h"
 #include "PTX/Instructions/MadInstruction.h"
 #include "PTX/Instructions/MoveInstruction.h"
 #include "PTX/Instructions/MulWideInstruction.h"
 #include "PTX/Instructions/ReturnInstruction.h"
 #include "PTX/Instructions/StoreInstruction.h"
-#include "PTX/Operands/Variables/AddressRegister.h"
 #include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Operands/Variables/IndexedRegister.h"
 #include "PTX/Operands/Variables/Register.h"
@@ -105,7 +104,7 @@ int main(int argc, char *argv[])
 	block->AddStatement(r64); 
 
 	block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type, PTX::AddressSpace::Param>(new PTX::Unsigned64Adapter(rd1), new PTX::MemoryAddress64<PTX::UInt64Type, PTX::AddressSpace::Param>(parameter)));
-	block->AddStatement(new PTX::ConvertAddress64Instruction(new PTX::Unsigned64Adapter(rd2), new PTX::Unsigned64Adapter(rd1)));
+	block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::AddressSpace::Global>(new PTX::Unsigned64Adapter(rd2), new PTX::Unsigned64Adapter(rd1)));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ntidx));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), ctaidx));
 	block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r3), tidx));
@@ -118,8 +117,7 @@ int main(int argc, char *argv[])
 	block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd4, rd2, rd3));
 	block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r5), new PTX::Unsigned32Adapter(r4), new PTX::UInt32Value(1)));
 
-	PTX::Address64Register<PTX::UInt32Type, PTX::AddressSpace::Global> *addressRegister = new PTX::Address64Register<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::Unsigned64Adapter(rd4), nullptr /*new PTX::ParameterSpaceAdapter<PTX::UInt32Type, PTX::UInt64Type>(parameterSpace)*/);
-	block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::AddressSpace::Global>(addressRegister), new PTX::Unsigned32Adapter(r5)));
+	block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::UnsignedAdapter(rd4)), new PTX::Unsigned32Adapter(r5)));
 	block->AddStatement(new PTX::ReturnInstruction());
 
         /*

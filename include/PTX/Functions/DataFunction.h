@@ -75,8 +75,21 @@ private:
 			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-P << " not set in function " << m_name << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		code << arg->ToString();
+		code << arg->ToString() << "," << std::endl;
 		return CodeArgs(code, t, int_<P-1>());
+	}
+
+	template <typename T>
+	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<1>) const
+	{
+		auto arg = std::get<std::tuple_size<T>::value-1>(t);
+		if (arg == nullptr)
+		{
+			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-1 << " not set in function " << m_name << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		code << arg->ToString() << std::endl;
+		return code;
 	}
 
 	template <typename T>

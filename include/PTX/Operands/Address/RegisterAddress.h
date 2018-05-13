@@ -2,7 +2,7 @@
 
 #include "PTX/Operands/Address/Address.h"
 
-#include "PTX/Operands/Variables/AddressRegister.h"
+#include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 
@@ -10,29 +10,29 @@ template<Bits A, class T, AddressSpace S>
 class RegisterAddress : public Address<A, T, S>
 {
 public:
-	RegisterAddress(AddressRegister<A, T, S> *reg, int offset = 0) : m_register(reg), m_offset(offset) {}
+	RegisterAddress(Register<UIntType<A>> *reg, int offset = 0) : m_variable(reg), m_offset(offset) {}
 
 	std::string ToString() const
 	{
 		if (m_offset > 0)
 		{
-			return "[" + m_register->ToString() + "+" + std::to_string(m_offset) + "]";
+			return "[" + m_variable->ToString() + "+" + std::to_string(m_offset) + "]";
 		}
 		else if (m_offset < 0)
 		{
-			return "[" + m_register->ToString() + std::to_string(m_offset) + "]";
+			return "[" + m_variable->ToString() + std::to_string(m_offset) + "]";
 		}
 		else
 		{
-			return "[" + m_register->ToString() + "]";
+			return "[" + m_variable->ToString() + "]";
 		}
 	}
 
-	AddressRegister<A, T, S> *GetRegister() const { return m_register; }
+	Register<UIntType<A>> *GetRegister() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
 private:
-	AddressRegister<A, T, S> *m_register = nullptr;
+	Register<UIntType<A>> *m_variable;
 	int m_offset = 0;
 };
 

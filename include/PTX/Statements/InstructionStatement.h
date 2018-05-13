@@ -27,9 +27,14 @@ public:
 			{
 				code << "!";
 			}
-			// code << m_predicate->GetName() << " ";
+			code << m_predicate->GetName() << " ";
 		}
-		code << "\t" << OpCode() << " " << Operands();
+		code << "\t" << OpCode();
+		std::string operands = Operands();
+		if (operands.length() > 0)
+		{
+			code << " " << operands;
+		}
 		return code.str();
 	}
 
