@@ -147,22 +147,6 @@ int main(int argc, char *argv[])
 	";
 	*/
 
-	char bodyText[] = "\
-		.reg .s32 	%r<6>;\n\
-		.reg .s64 	%rd<5>;\n\
-		ld.param.u64 	%rd1, [_Z8myKernelPi_param_0];\n\
-		cvta.to.global.u64 	%rd2, %rd1;\n\
-		mov.u32 	%r1, %ntid.x;\n\
-		mov.u32 	%r2, %ctaid.x;\n\
-		mov.u32 	%r3, %tid.x;\n\
-		mad.lo.s32 	%r4, %r1, %r2, %r3;\n\
-		mul.wide.s32 	%rd3, %r4, 4;\n\
-		add.s64 	%rd4, %rd2, %rd3;\n\
-		add.u32         %r5, %r4, 1;\n\
-	st.global.u32 	[%rd4], %r5;\n\
-		ret;\
-	";
-
 	function->SetBody(block);
 
 	module.AddFunction(function);
