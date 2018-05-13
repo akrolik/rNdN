@@ -52,7 +52,9 @@ struct Type { static std::string Name() { return ".<unknown>"; } };
 struct PredicateType : public Type { static std::string Name() { return ".pred"; } };
 struct VoidType : public Type {};
 
-struct ScalarType : public Type {};
+struct ValueType : public Type {};
+
+struct ScalarType : public ValueType {};
 
 template<Bits B>
 struct BitType : public ScalarType {};
@@ -87,7 +89,7 @@ template<> inline std::string VectorName<Vector2>() { return std::string(".v2");
 template<> inline std::string VectorName<Vector4>() { return std::string(".v4"); }
 
 template<class T, VectorSize V>
-struct VectorType : public Type
+struct VectorType : public ValueType
 {
 	static_assert(std::is_base_of<ScalarType, T>::value, "T must be a PTX::ScalarType");
 
@@ -120,36 +122,5 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 	}
 	return ".<unknown>";
 }
- 
-// template<class T> std::string TypeName()
-// {
-// 	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
-// 	return ".<unknown>";
-// }
-
-// template<> inline std::string TypeName<PredicateType>() { return std::string(".pred"); }
-
-// template<> inline std::string TypeName<IntType<Bits8>>() { return std::string(".s8"); }
-// template<> inline std::string TypeName<IntType<Bits16>>() { return std::string(".s16"); }
-// template<> inline std::string TypeName<IntType<Bits32>>() { return std::string(".s32"); }
-// template<> inline std::string TypeName<IntType<Bits64>>() { return std::string(".s64"); } 
-
-// template<> inline std::string TypeName<UIntType<Bits8>>() { return std::string(".u8"); }
-// template<> inline std::string TypeName<UIntType<Bits16>>() { return std::string(".u16"); }
-// template<> inline std::string TypeName<UIntType<Bits32>>() { return std::string(".u32"); }
-// template<> inline std::string TypeName<UIntType<Bits64>>() { return std::string(".u64"); } 
-
-// template<> inline std::string TypeName<FloatType<Bits16>>() { return std::string(".f16"); }
-// // template<> inline std::string TypeName<Float16x2>() { return std::string(".f16x2"); }
-// template<> inline std::string TypeName<FloatType<Bits32>>() { return std::string(".f32"); }
-// template<> inline std::string TypeName<FloatType<Bits64>>() { return std::string(".f64"); } 
-
-// template<> inline std::string TypeName<BitType<Bits8>>() { return std::string(".b8"); }
-// template<> inline std::string TypeName<BitType<Bits16>>() { return std::string(".b16"); }
-// template<> inline std::string TypeName<BitType<Bits32>>() { return std::string(".b32"); }
-// template<> inline std::string TypeName<BitType<Bits64>>() { return std::string(".b64"); } 
-
-// template<class T, VectorSize V>
-// template<> inline std::string TypeName<VectorType<T, V>>() { return VectorName<V>() + " " + TypeName<T>(); }
 
 }

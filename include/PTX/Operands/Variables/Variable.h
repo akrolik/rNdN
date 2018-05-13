@@ -15,7 +15,6 @@ class Variable : public Operand<T>
 {
 	friend S;
 
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 	static_assert(std::is_base_of<StateSpace<T>, S>::value, "S must be a PTX::StateSpace<T>");
 public:
 	virtual std::string GetName() const

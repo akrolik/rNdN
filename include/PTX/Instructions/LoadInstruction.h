@@ -10,7 +10,7 @@ namespace PTX {
 template<Bits A, class T, AddressSpace S>
 class LoadInstruction : public InstructionStatement
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
+	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
 public:
 	LoadInstruction(Register<T> *reg, Address<A, T, S> *address) : m_register(reg), m_address(address) {}
 

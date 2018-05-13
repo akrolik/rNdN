@@ -9,7 +9,6 @@ namespace PTX {
 template<Bits A, class T, AddressSpace S>
 class RegisterAddress : public Address<A, T, S>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
 	RegisterAddress(AddressRegister<A, T, S> *reg, int offset = 0) : m_register(reg), m_offset(offset) {}
 

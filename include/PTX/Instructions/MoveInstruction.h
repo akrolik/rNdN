@@ -9,7 +9,7 @@ namespace PTX {
 template<class T>
 class MoveInstruction : public InstructionStatement
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
+	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
 public:
 	MoveInstruction(Register<T> *destination, Register<T> *source) : m_destination(destination), m_source(source) {}
 

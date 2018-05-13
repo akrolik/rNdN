@@ -22,8 +22,8 @@ namespace PTX {
 template<class R, typename... Args>
 class DataFunction : public Function
 {
-	static_assert(std::is_base_of<Type, R>::value, "T must be a PTX::Type");
-	// static_assert(All<std::is_base_of<StateSpace, Args>::value...>::value, "Args must be PTX::Types");
+	static_assert(std::is_base_of<ValueType, R>::value || std::is_same<VoidType, R>::value, "T must be a PTX::ValueType or PTX::VoidType");
+	// static_assert(All<std::is_base_of<StateSpace, Args>::value...>::value, "Args must be PTX::ValueTypes");
 	
 public:
 	template<class Q=R>

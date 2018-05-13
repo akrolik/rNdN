@@ -9,6 +9,7 @@ namespace PTX {
 template<class T, AddressSpace A>
 class AddressableSpace : public StateSpace<T>
 {
+	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
 public:
 	using StateSpace<T>::StateSpace;
 

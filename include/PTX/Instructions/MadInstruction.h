@@ -12,7 +12,7 @@ namespace PTX {
 template<class T>
 class MadInstruction : public InstructionStatement
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
+	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
 public:
 	MadInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
 

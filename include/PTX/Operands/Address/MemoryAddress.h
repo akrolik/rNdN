@@ -9,7 +9,6 @@ namespace PTX {
 template<Bits A, class T, AddressSpace S>
 class MemoryAddress : public Address<A, T, S>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 public:
 	MemoryAddress(AddressableVariable<T, S> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 

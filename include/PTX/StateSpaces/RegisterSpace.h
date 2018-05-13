@@ -9,6 +9,7 @@ namespace PTX {
 template<class T>
 class RegisterSpace : public StateSpace<T>
 {
+	static_assert(std::is_base_of<ValueType, T>::value || std::is_same<PredicateType, T>::value, "T must be a PTX::ValueType or PTX::PredicateType");
 public:
 	using StateSpace<T>::StateSpace;
 

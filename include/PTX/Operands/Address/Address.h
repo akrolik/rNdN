@@ -7,7 +7,6 @@ namespace PTX {
 template<Bits A, class T, AddressSpace S>
 class Address : public Operand<T>
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
 };
 
 template<class T, AddressSpace S>
