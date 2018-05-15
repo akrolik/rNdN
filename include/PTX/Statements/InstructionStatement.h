@@ -10,16 +10,11 @@ namespace PTX {
 class InstructionStatement : public Statement
 {
 public:
-	void SetLabel(std::string label) { m_label = label; }
-	void SetPredicate(Register<PredicateType> *predicate, bool negate) { m_predicate = predicate; m_negatePredicate = negate; }
+	void SetPredicate(Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
 	std::string ToString() const
 	{
 		std::ostringstream code;
-		if (m_label.length() > 0)
-		{
-			code << m_label << ": ";
-		}
 		if (m_predicate != nullptr)
 		{
 			code << "@";
@@ -38,11 +33,12 @@ public:
 		return code.str();
 	}
 
+	std::string Terminator() const { return ";"; }
+
 	virtual std::string OpCode() const = 0;
 	virtual std::string Operands() const = 0;
 
 private:
-	std::string m_label;
 	Register<PredicateType> *m_predicate = nullptr;
 	bool m_negatePredicate = false;
 };

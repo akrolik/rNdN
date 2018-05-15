@@ -8,6 +8,7 @@ class Statement
 {
 public:
 	virtual std::string ToString() const = 0;
+	virtual std::string Terminator() const = 0;
 };
 
 }
