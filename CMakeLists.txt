@@ -13,6 +13,7 @@ find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
 include_directories(include)
+include_directories(tests)
 set(CMAKE_SOURCE_DIR src)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/FrontEnd)
