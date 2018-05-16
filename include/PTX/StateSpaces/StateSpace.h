@@ -36,7 +36,7 @@ public:
 	{
 		if (m_count > 1)
 		{
-			return m_name + "<" + std::to_string(m_count + 1) + ">";
+			return m_name + "<" + std::to_string(m_count) + ">";
 		}
 		return m_name;
 	}

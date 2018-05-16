@@ -47,8 +47,8 @@ public:
 	{
 		PTX::Module module;
 
-		module.SetVersion(3, 2);
-		module.SetDeviceTarget("sm_20");
+		module.SetVersion(6, 1);
+		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
 		PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64Type>> *function = new PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64Type>>();

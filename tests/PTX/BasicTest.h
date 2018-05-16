@@ -47,8 +47,8 @@ public:
 	{
 		PTX::Module module;
 
-		module.SetVersion(3, 2);
-		module.SetDeviceTarget("sm_20");
+		module.SetVersion(6, 1);
+		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
 		PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64Type>> *function = new PTX::EntryFunction<PTX::ParameterSpace<PTX::UInt64Type>>();
@@ -70,36 +70,36 @@ public:
 		PTX::Register<PTX::UInt32Type> *ntidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srntid->GetVariable("%ntid"), PTX::VectorElement::X);
 		PTX::Register<PTX::UInt32Type> *ctaidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
 																		       
-		PTX::Register<PTX::Int32Type> *r1 = r32->GetVariable("%r", 0);
-		PTX::Register<PTX::Int32Type> *r2 = r32->GetVariable("%r", 1);
-		PTX::Register<PTX::Int32Type> *r3 = r32->GetVariable("%r", 2);
-		PTX::Register<PTX::Int32Type> *r4 = r32->GetVariable("%r", 3);
-		PTX::Register<PTX::Int32Type> *r5 = r32->GetVariable("%r", 4);
+		PTX::Register<PTX::Int32Type> *r0 = r32->GetVariable("%r", 0);
+		PTX::Register<PTX::Int32Type> *r1 = r32->GetVariable("%r", 1);
+		PTX::Register<PTX::Int32Type> *r2 = r32->GetVariable("%r", 2);
+		PTX::Register<PTX::Int32Type> *r3 = r32->GetVariable("%r", 3);
+		PTX::Register<PTX::Int32Type> *r4 = r32->GetVariable("%r", 4);
 
-		PTX::Register<PTX::Int64Type> *rd1 = r64->GetVariable("%rd", 0);
-		PTX::Register<PTX::Int64Type> *rd2 = r64->GetVariable("%rd", 1);
-		PTX::Register<PTX::Int64Type> *rd3 = r64->GetVariable("%rd", 2);
-		PTX::Register<PTX::Int64Type> *rd4 = r64->GetVariable("%rd", 3);
+		PTX::Register<PTX::Int64Type> *rd0 = r64->GetVariable("%rd", 0);
+		PTX::Register<PTX::Int64Type> *rd1 = r64->GetVariable("%rd", 1);
+		PTX::Register<PTX::Int64Type> *rd2 = r64->GetVariable("%rd", 2);
+		PTX::Register<PTX::Int64Type> *rd3 = r64->GetVariable("%rd", 3);
 
 		PTX::Block *block = new PTX::Block();
 		block->AddStatement(r32);
 		block->AddStatement(r64); 
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type, PTX::AddressSpace::Param>(new PTX::Unsigned64Adapter(rd1), new PTX::MemoryAddress64<PTX::UInt64Type, PTX::AddressSpace::Param>(parameter)));
-		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::AddressSpace::Global>(new PTX::Unsigned64Adapter(rd2), new PTX::Unsigned64Adapter(rd1)));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ntidx));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), ctaidx));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r3), tidx));
+		block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type, PTX::AddressSpace::Param>(new PTX::Unsigned64Adapter(rd0), new PTX::MemoryAddress64<PTX::UInt64Type, PTX::AddressSpace::Param>(parameter)));
+		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::AddressSpace::Global>(new PTX::Unsigned64Adapter(rd1), new PTX::Unsigned64Adapter(rd0)));
+		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r0), ntidx));
+		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ctaidx));
+		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), tidx));
 
-		PTX::MadInstruction<PTX::Int32Type> *madInstruction = new PTX::MadInstruction<PTX::Int32Type>(r4, r1, r2, r3);
+		PTX::MadInstruction<PTX::Int32Type> *madInstruction = new PTX::MadInstruction<PTX::Int32Type>(r3, r0, r1, r2);
 		madInstruction->SetLower(true);
 		block->AddStatement(madInstruction);
 
-		block->AddStatement(new PTX::MulWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd3, r4, new PTX::Int32Value(4)));
-		block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd4, rd2, rd3));
-		block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r5), new PTX::Unsigned32Adapter(r4), new PTX::UInt32Value(1)));
+		block->AddStatement(new PTX::MulWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd2, r3, new PTX::Int32Value(4)));
+		block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd3, rd1, rd2));
+		block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r4), new PTX::Unsigned32Adapter(r3), new PTX::UInt32Value(1)));
 
-		block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::UnsignedAdapter(rd4)), new PTX::Unsigned32Adapter(r5)));
+		block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::AddressSpace::Global>(new PTX::Unsigned64Adapter(rd3)), new PTX::Unsigned32Adapter(r4)));
 		block->AddStatement(new PTX::ReturnInstruction());
 
 		function->SetBody(block);
@@ -127,22 +127,16 @@ public:
 
 		buffer.TransferToCPU();
 
-		bool success = true;
 		for (int i = 0; i < 1024; ++i)
 		{
 			if (data[i] == i + 1)
 			{
 				continue;
 			}
-
-			success = false;
 			std::cerr << "[Error] Result incorrect at index " << i << " [" << data[i] << " != " << i + 1 << "]" << std::endl;
-			break;
+			return;
 		}
-		if (success)
-		{
-			std::cerr << "[Info] Kernel execution successful" << std::endl;
-		}
+		std::cout << "[Info] Kernel execution successful" << std::endl;
 	}
 };
 

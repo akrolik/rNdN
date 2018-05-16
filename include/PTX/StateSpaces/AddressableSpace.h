@@ -18,21 +18,11 @@ public:
 
 	std::string Directives() const
 	{
-		std::ostringstream code;
-		if (m_addressSpace != A || m_alignment != 4)
+		if (m_alignment != 4)
 		{
-			code << ".ptr";
-			if (m_addressSpace != A)
-			{
-				code << GetAddressSpaceName(m_addressSpace);
-			}
-			if (m_alignment != 4)
-			{
-				code << ".align " << m_alignment;
-			}
-			code << " ";
+			return ".ptr.align " + std::to_string(m_alignment);
 		}
-		return code.str();
+		return "";
 	}
 
 	virtual Variable<T, AddressableSpace<T, A>> *GetVariable(std::string name, unsigned int index = 0)
@@ -48,22 +38,42 @@ public:
 		std::exit(EXIT_FAILURE);
 	}
 
-	
-	void SetAddressSpace(std::enable_if_t<A == Param, AddressSpace> addressSpace) { m_addressSpace = addressSpace; }
-	// AddressSpace GetAddressSpace(std::enable_if_t<A == Param, void>) const { return m_addressSpace; }
-	// AddressSpace GetAddressSpace(std::enable_if_t<A != Param, void>) const { return m_addressSpace; }
-
+	//TODO: space
 	std::string Specifier() const { return ".param"; }
 
 protected:
 	using StateSpace<T>::m_names;
 
 	unsigned int m_alignment = 4;
-	AddressSpace m_addressSpace = A;
 };
 
+template<class T, AddressSpace A = Generic>
+class ParameterSpace : public AddressableSpace<T, Param>
+{
+public:
+	using AddressableSpace<T, Param>::AddressableSpace;
 
-template<class T>
-using ParameterSpace = AddressableSpace<T, Param>;
+	std::string Directives() const
+	{
+		std::ostringstream code;
+		if (A != Generic || m_alignment != 4)
+		{
+			code << ".ptr";
+			if (A != Generic)
+			{
+				code << A;
+			}
+			if (m_alignment != 4)
+			{
+				code << ".align " << m_alignment;
+			}
+			code << " ";
+		}
+		return code.str();
+	}
+
+protected:
+	using AddressableSpace<T, Param>::m_alignment;
+};
 
 }
