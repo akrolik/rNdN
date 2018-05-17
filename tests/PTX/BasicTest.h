@@ -22,9 +22,9 @@
 #include "PTX/Instructions/AddInstruction.h"
 #include "PTX/Instructions/ConvertToAddressInstruction.h"
 #include "PTX/Instructions/LoadInstruction.h"
-#include "PTX/Instructions/MadInstruction.h"
+#include "PTX/Instructions/MADInstruction.h"
 #include "PTX/Instructions/MoveInstruction.h"
-#include "PTX/Instructions/MulWideInstruction.h"
+#include "PTX/Instructions/MultiplyWideInstruction.h"
 #include "PTX/Instructions/ReturnInstruction.h"
 #include "PTX/Instructions/StoreInstruction.h"
 #include "PTX/Operands/Variables/Variable.h"
@@ -91,11 +91,11 @@ public:
 		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ctaidx));
 		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), tidx));
 
-		PTX::MadInstruction<PTX::Int32Type> *madInstruction = new PTX::MadInstruction<PTX::Int32Type>(r3, r0, r1, r2);
+		PTX::MADInstruction<PTX::Int32Type> *madInstruction = new PTX::MADInstruction<PTX::Int32Type>(r3, r0, r1, r2);
 		madInstruction->SetLower(true);
 		block->AddStatement(madInstruction);
 
-		block->AddStatement(new PTX::MulWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd2, r3, new PTX::Int32Value(4)));
+		block->AddStatement(new PTX::MultiplyWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd2, r3, new PTX::Int32Value(4)));
 		block->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd3, rd1, rd2));
 		block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r4), new PTX::Unsigned32Adapter(r3), new PTX::UInt32Value(1)));
 

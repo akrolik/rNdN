@@ -10,7 +10,9 @@ namespace PTX {
 template<class T>
 class RemainderInstruction : public InstructionStatement
 {
-	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
+	REQUIRE_TYPE(RemainderInstruction, ScalarType);
+	DISABLE_TYPE(RemainderInstruction, Int8Type);
+	DISABLE_TYPES(RemainderInstruction, FloatType);
 public:
 	RemainderInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 

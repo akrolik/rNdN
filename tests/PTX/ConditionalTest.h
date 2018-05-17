@@ -22,7 +22,7 @@
 #include "PTX/Instructions/SetPredicateInstruction.h"
 #include "PTX/Instructions/ConvertToAddressInstruction.h"
 #include "PTX/Instructions/LoadInstruction.h"
-#include "PTX/Instructions/MulWideInstruction.h"
+#include "PTX/Instructions/MultiplyWideInstruction.h"
 #include "PTX/Instructions/RemainderInstruction.h"
 #include "PTX/Instructions/ReturnInstruction.h"
 #include "PTX/Instructions/StoreInstruction.h"
@@ -85,7 +85,7 @@ public:
 		block->AddStatement(new PTX::Load64Instruction<PTX::UInt64Type, PTX::AddressSpace::Param>(rd0, new PTX::MemoryAddress64<PTX::UInt64Type, PTX::AddressSpace::Param>(parameter)));
 		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::AddressSpace::Global>(rd1, rd0));
 		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
-		block->AddStatement(new PTX::MulWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(4)));
+		block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(4)));
 		block->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
 
 		block->AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(r1, r0, new PTX::UInt32Value(2)));

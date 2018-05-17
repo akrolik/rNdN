@@ -1,5 +1,9 @@
 #pragma once
 
+#include "PTX/Statements/InstructionStatement.h"
+
+#include "PTX/Type.h"
+
 namespace PTX {
 
 class PredicatedInstruction : public InstructionStatement

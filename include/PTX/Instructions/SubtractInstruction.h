@@ -8,17 +8,17 @@
 namespace PTX {
 
 template<class T>
-class AddInstruction : public PredicatedInstruction
+class SubtractInstruction : public PredicatedInstruction
 {
-	REQUIRE_TYPE(AddInstruction, ScalarType);
-	DISABLE_TYPE(AddInstruction, Int8Type);
-	DISABLE_TYPE(AddInstruction, UInt8Type);
+	REQUIRE_TYPE(SubtractInstruction, ScalarType);
+	DISABLE_TYPE(SubtractInstruction, Int8Type);
+	DISABLE_TYPE(SubtractInstruction, UInt8Type);
 public:
-	AddInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	SubtractInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
 	std::string OpCode() const
 	{
-		return "add" + T::Name();
+		return "sub" + T::Name();
 	}
 
 	std::string Operands() const
@@ -33,9 +33,9 @@ private:
 };
 
 template<>
-class AddInstruction<Int32Type> : public PredicatedInstruction
+class SubtractInstruction<Int32Type> : public PredicatedInstruction
 {
-	AddInstruction(Register<Int32Type> *destination, Operand<Int32Type> *sourceA, Operand<Int32Type> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	SubtractInstruction(Register<Int32Type> *destination, Operand<Int32Type> *sourceA, Operand<Int32Type> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
 	void SetSaturate(bool saturate) { m_saturate = saturate; }
 
@@ -43,10 +43,10 @@ class AddInstruction<Int32Type> : public PredicatedInstruction
 	{
 		if (m_saturate)
 		{
-			return "add.sat" + Int32Type::Name();
+			return "sub.sat" + Int32Type::Name();
 
 		}
-		return "add" + Int32Type::Name();
+		return "sub" + Int32Type::Name();
 	}
 
 	std::string Operands() const
@@ -63,10 +63,10 @@ private:
 };
 
 template<Bits B>
-class AddInstruction<FloatType<B>> : public PredicatedInstruction
+class SubtractInstruction<FloatType<B>> : public PredicatedInstruction
 {
 public:
-	AddInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_roundingMode(roundingMode) {}
+	SubtractInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_roundingMode(roundingMode) {}
 
 	void SetRoundingMode(typename FloatType<B>::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 	void SetFlushSubNormal(bool flush) { m_flush = flush; }
@@ -74,7 +74,7 @@ public:
 
 	std::string OpCode() const
 	{
-		return "add" + FloatType<B>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
+		return "sub" + FloatType<B>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
 	}
 
 	std::string Operands() const
@@ -92,16 +92,16 @@ private:
 };
 
 template<>
-class AddInstruction<Float64Type> : public PredicatedInstruction
+class SubtractInstruction<Float64Type> : public PredicatedInstruction
 {
 public:
-	AddInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_roundingMode(roundingMode) {}
+	SubtractInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_roundingMode(roundingMode) {}
 
 	void SetRoundingMode(Float64Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
 	std::string OpCode() const
 	{
-		return "add" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
+		return "sub" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
 	}
 
 	std::string Operands() const

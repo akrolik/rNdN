@@ -2,6 +2,9 @@
 
 #include <string>
 
+#define __TO_STRING(S) #S
+#define TO_STRING(S) __TO_STRING(S)
+
 namespace PTX {
 
 enum Bits {
@@ -74,10 +77,69 @@ using UInt32Type = UIntType<Bits::Bits32>;
 using UInt64Type = UIntType<Bits::Bits64>;
 
 template<Bits B>
-struct FloatType : public BitType<B> { static std::string Name() { return ".f" + std::to_string(B); } };
+struct FloatType : public BitType<B>
+{
+	static std::string Name() { return ".f" + std::to_string(B); }
+
+	enum RoundingMode {
+		None,
+		Nearest,
+		Zero,
+		NegativeInfinity,
+		PositiveInfinity
+	};
+
+	static std::string RoundingModeString(RoundingMode roundingMode)
+	{
+		switch (roundingMode)
+		{
+			case Nearest:
+				return ".rn";
+			case Zero:
+				return ".rz";
+			case NegativeInfinity:
+				return ".rm";
+			case PositiveInfinity:
+				return ".rp";
+		}
+		return "";
+	}
+};
+
+template<>
+struct FloatType<Bits::Bits16> : public BitType<Bits::Bits16>
+{
+	static std::string Name() { return ".f16"; }
+
+	enum RoundingMode {
+		None,
+		Nearest,
+	};
+
+	static std::string RoundingModeString(RoundingMode roundingMode)
+	{
+		if (roundingMode == None)
+		{
+			return "";
+		}
+		return ".rn";
+	}
+};
+
 using Float16Type = FloatType<Bits::Bits16>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
+
+template <class T, template <Bits> class Template>
+struct is_type_specialization : std::false_type {};
+
+template <template <Bits> class Template, Bits Args>
+struct is_type_specialization<Template<Args>, Template> : std::true_type {};
+ 
+#define DISABLE_TYPE(inst, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
+#define DISABLE_TYPES(inst, type) static_assert(!is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
+#define DISABLE_BITS(inst, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
+#define REQUIRE_TYPE(inst, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
 
 enum VectorSize {
 	Vector2 = 2,
