@@ -94,7 +94,7 @@ private:
 template<Bits B>
 class MADInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 3>
 {
-	DISABLE_BITS(MADInstruction, FloatType, Bits16);
+	DISABLE_TYPE_BITS(MADInstruction, FloatType, Bits16);
 public:
 	using InstructionBase<FloatType<B>, 3>::InstructionBase;
 

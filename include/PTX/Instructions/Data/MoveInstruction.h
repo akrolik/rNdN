@@ -1,15 +1,20 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
 
 #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 
 template<class T>
-class MoveInstruction : public InstructionStatement
+class MoveInstruction : public PredicatedInstruction
 {
-	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
+	REQUIRE_TYPE(MoveInstruction, ValueType);
+	//TODO: Disable vectors
+	// DISABLE_TYPES(MoveInstruction, VectorType);
+	DISABLE_TYPE(MoveInstruction, Int8Type);
+	DISABLE_TYPE(MoveInstruction, UInt8Type);
+	DISABLE_TYPE(MoveInstruction, Float16Type);
 public:
 	MoveInstruction(Register<T> *destination, Register<T> *source) : m_destination(destination), m_source(source) {}
 

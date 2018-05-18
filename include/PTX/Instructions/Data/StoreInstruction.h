@@ -10,7 +10,8 @@ namespace PTX {
 template<Bits A, class T, AddressSpace S>
 class StoreInstruction : public InstructionStatement
 {
-	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
+	REQUIRE_TYPE(StoreInstruction, DataType);
+	DISABLE_TYPE(StoreInstruction, Float16Type);
 public:
 	StoreInstruction(Address<A, T, S> *address, Register<T> *reg) : m_address(address), m_register(reg) {}
 

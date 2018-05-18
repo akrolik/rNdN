@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
 
 #include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Variables/Register.h"
@@ -8,9 +8,10 @@
 namespace PTX {
 
 template<Bits A, class T, AddressSpace S>
-class LoadInstruction : public InstructionStatement
+class LoadInstruction : public PredicatedInstruction
 {
-	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
+	REQUIRE_TYPE(LoadInstruction, DataType);
+	DISABLE_TYPE(LoadInstruction, Float16Type);
 public:
 	LoadInstruction(Register<T> *reg, Address<A, T, S> *address) : m_register(reg), m_address(address) {}
 
@@ -30,8 +31,10 @@ private:
 };
 
 template<Bits A, class T>
-class LoadInstruction<A, T, Param> : public InstructionStatement
+class LoadInstruction<A, T, Param> : public PredicatedInstruction
 {
+	REQUIRE_TYPE(LoadInstruction, DataType);
+	DISABLE_TYPE(LoadInstruction, Float16Type);
 public:
 	LoadInstruction(Register<UIntType<A>> *reg, Address<A, T, Param> *address) : m_register(reg), m_address(address) {}
 

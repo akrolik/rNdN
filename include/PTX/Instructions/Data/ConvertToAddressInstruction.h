@@ -10,6 +10,8 @@ namespace PTX {
 template<Bits B, AddressSpace S>
 class ConvertToAddressInstruction : public InstructionStatement
 {
+	DISABLE_BITS(ConvertToAddressInstruction, Bits8);
+	DISABLE_BITS(ConvertToAddressInstruction, Bits16);
 public:
 	ConvertToAddressInstruction(Register<UIntType<B>> *destination, Register<UIntType<B>> *source) : m_destination(destination), m_source(source) {}
 

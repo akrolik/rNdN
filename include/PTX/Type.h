@@ -143,7 +143,8 @@ struct is_type_specialization<Template<Args>, Template> : std::true_type {};
 
 #define DISABLE_TYPE(inst, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
 #define DISABLE_TYPES(inst, type) static_assert(!is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-#define DISABLE_BITS(inst, type, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type) " with bits" TO_STRING(bits))
+#define DISABLE_TYPE_BITS(inst, type, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type) " with PTX::Bits::" TO_STRING(bits))
+#define DISABLE_BITS(inst, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::Bits::" TO_STRING(bits))
 
 #define REQUIRE_TYPE(inst, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
 #define REQUIRE_TYPES(inst, type) static_assert(is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
