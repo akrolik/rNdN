@@ -52,12 +52,15 @@ static std::string GetAddressSpaceName(AddressSpace addressSpace)
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
-struct PredicateType : public Type { static std::string Name() { return ".pred"; } };
 struct VoidType : public Type {};
 
 struct ValueType : public Type {};
 
-struct ScalarType : public ValueType {};
+struct PredicateType : public ValueType { static std::string Name() { return ".pred"; } };
+
+struct DataType : public ValueType {};
+
+struct ScalarType : public DataType {};
 
 template<Bits B>
 struct BitType : public ScalarType {};
@@ -155,7 +158,7 @@ template<> inline std::string VectorName<Vector2>() { return std::string(".v2");
 template<> inline std::string VectorName<Vector4>() { return std::string(".v4"); }
 
 template<class T, VectorSize V>
-struct VectorType : public ValueType
+struct VectorType : public DataType
 {
 	static_assert(std::is_base_of<ScalarType, T>::value, "T must be a PTX::ScalarType");
 

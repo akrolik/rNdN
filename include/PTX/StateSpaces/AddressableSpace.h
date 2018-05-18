@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, AddressSpace A>
 class AddressableSpace : public StateSpace<T>
 {
-	static_assert(std::is_base_of<ValueType, T>::value, "T must be a PTX::ValueType");
+	REQUIRE_TYPE(AddressableSpace, DataType);
 public:
 	using StateSpace<T>::StateSpace;
 
@@ -37,9 +37,6 @@ public:
 		std::cerr << "[Error] Variable " << name << " not found in StateSpace" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-
-	//TODO: space
-	std::string Specifier() const { return ".param"; }
 
 protected:
 	using StateSpace<T>::m_names;
@@ -71,6 +68,8 @@ public:
 		}
 		return code.str();
 	}
+
+	std::string Specifier() const { return ".param"; }
 
 protected:
 	using AddressableSpace<T, Param>::m_alignment;
