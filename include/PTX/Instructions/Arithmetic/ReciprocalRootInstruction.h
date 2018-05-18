@@ -1,19 +1,16 @@
 #pragma once
 
-#include "PTX/Instructions/PredicatedInstruction.h"
-
-#include "PTX/Operands/Operand.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Instructions/InstructionBase.h"
 
 namespace PTX {
 
 template<class T>
-class ReciprocalRootInstruction : public PredicatedInstruction
+class ReciprocalRootInstruction : public InstructionBase<T, 1>
 {
 	REQUIRE_TYPES(ReciprocalRootInstruction, FloatType);
 	DISABLE_TYPE(ReciprocalRootInstruction, Float16Type);
 public:
-	ReciprocalRootInstruction(Register<T> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
+	using InstructionBase<T, 1>::InstructionBase;
 
 	void SetFlushSubNormal(bool flush) { m_flush = flush; }
 
@@ -26,14 +23,7 @@ public:
 		return "rsqrt.approx" + T::Name();
 	}
 
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_source->ToString();
-	}
 private:
-	Register<T> *m_destination = nullptr;
-	Operand<T> *m_source = nullptr;
-
 	bool m_flush = false;
 };
 

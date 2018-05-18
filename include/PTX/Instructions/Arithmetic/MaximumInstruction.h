@@ -1,43 +1,30 @@
 #pragma once
 
-#include "PTX/Instructions/PredicatedInstruction.h"
-
-#include "PTX/Operands/Operand.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Instructions/InstructionBase.h"
 
 namespace PTX {
 
 template<class T>
-class MaximumInstruction : public PredicatedInstruction
+class MaximumInstruction : public InstructionBase<T, 2>
 {
 	REQUIRE_TYPE(MaximumInstruction, ScalarType);
 	DISABLE_TYPE(MaximumInstruction, Int8Type);
 	DISABLE_TYPE(MaximumInstruction, UInt8Type);
 	DISABLE_TYPE(MaximumInstruction, Float16Type);
 public:
-	MaximumInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	using InstructionBase<T, 2>::InstructionBase;
 
 	std::string OpCode() const
 	{
 		return "max" + T::Name();
 	}
-
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
-	}
-
-private:
-	Register<T> *m_destination = nullptr;
-	Operand<T> *m_sourceA = nullptr;
-	Operand<T> *m_sourceB = nullptr;
 };
 
 template<>
-class MaximumInstruction<Float32Type> : public PredicatedInstruction
+class MaximumInstruction<Float32Type> : public InstructionBase<Float32Type, 2>
 {
 public:
-	MaximumInstruction(Register<Float32Type> *destination, Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	using InstructionBase<Float32Type, 2>::InstructionBase;
 
 	void SetFlushSubNormal(bool flush) { m_flush = flush; }
 
@@ -50,15 +37,7 @@ public:
 		return "max" + Float32Type::Name();
 	}
 
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
-	}
 private:
-	Register<Float32Type> *m_destination = nullptr;
-	Operand<Float32Type> *m_sourceA = nullptr;
-	Operand<Float32Type> *m_sourceB = nullptr;
-
 	bool m_flush = false;
 };
 

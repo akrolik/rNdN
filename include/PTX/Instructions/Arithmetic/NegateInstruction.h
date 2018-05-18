@@ -1,42 +1,30 @@
 #pragma once
 
-#include "PTX/Instructions/PredicatedInstruction.h"
-
-#include "PTX/Operands/Operand.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Instructions/InstructionBase.h"
 
 namespace PTX {
 
 template<class T>
-class NegateInstruction : public PredicatedInstruction
+class NegateInstruction : public InstructionBase<T, 1>
 {
 	REQUIRE_TYPE(NegateInstruction, ScalarType);
 	DISABLE_TYPE(NegateInstruction, Int8Type);
 	DISABLE_TYPES(NegateInstruction, UIntType);
 	DISABLE_TYPE(NegateInstruction, Float16Type); //TODO: Missing from PTX specification
 public:
-	NegateInstruction(Register<T> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
+	using InstructionBase<T, 1>::InstructionBase;
 
 	std::string OpCode() const
 	{
 		return "neg" + T::Name();
 	}
-
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_source->ToString();
-	}
-
-private:
-	Register<T> *m_destination = nullptr;
-	Operand<T> *m_source = nullptr;
 };
 
 template<>
-class NegateInstruction<Float32Type> : public PredicatedInstruction
+class NegateInstruction<Float32Type> : public InstructionBase<Float32Type, 1>
 {
 public:
-	NegateInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source) : m_destination(destination), m_source(source) {}
+	using InstructionBase<Float32Type, 1>::InstructionBase;
 
 	void SetFlushSubNormal(bool flush) { m_flush = flush; }
 
@@ -49,14 +37,7 @@ public:
 		return "neg" + Float32Type::Name();
 	}
 
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_source->ToString();
-	}
 private:
-	Register<Float32Type> *m_destination = nullptr;
-	Operand<Float32Type> *m_source = nullptr;
-
 	bool m_flush = false;
 };
 

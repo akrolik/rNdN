@@ -1,23 +1,20 @@
 #pragma once
 
-#include "PTX/Instructions/PredicatedInstruction.h"
-
-#include "PTX/Operands/Operand.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Instructions/InstructionBase.h"
 
 namespace PTX {
 
 template<class T>
-class RootInstruction : public PredicatedInstruction
+class RootInstruction : public InstructionBase<T, 1>
 {
 	DISABLE_ALL(RootInstruction, T);
 };
 
 template<>
-class RootInstruction<Float32Type> : public PredicatedInstruction
+class RootInstruction<Float32Type> : public InstructionBase<Float32Type, 1>
 {
 public:
-	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : m_destination(destination), m_source(source), m_roundingMode(roundingMode)
+	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), m_roundingMode(roundingMode)
 	{
 		if (m_roundingMode == Float32Type::RoundingMode::None)
 		{
@@ -66,24 +63,17 @@ public:
 		}
 	}
 
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_source->ToString();
-	}
 private:
-	Register<Float32Type> *m_destination = nullptr;
-	Operand<Float32Type> *m_source = nullptr;
-
 	bool m_approximate = false;
 	Float32Type::RoundingMode m_roundingMode = Float32Type::RoundingMode::None;
 	bool m_flush = false;
 };
 
 template<>
-class RootInstruction<Float64Type> : public PredicatedInstruction
+class RootInstruction<Float64Type> : public InstructionBase<Float64Type, 1>
 {
 public:
-	RootInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : m_destination(destination), m_source(source), m_roundingMode(roundingMode)
+	RootInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 1>(destination, source), m_roundingMode(roundingMode)
 	{
 		if (m_roundingMode == Float64Type::RoundingMode::None)
 		{
@@ -107,14 +97,7 @@ public:
 		return "rcp" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
 	}
 
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_source->ToString();
-	}
 private:
-	Register<Float64Type> *m_destination = nullptr;
-	Operand<Float64Type> *m_source = nullptr;
-
 	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
 };
 

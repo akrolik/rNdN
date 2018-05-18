@@ -1,0 +1,67 @@
+#pragma once
+
+#include "PTX/Instructions/PredicatedInstruction.h"
+
+#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Variables/Register.h"
+
+namespace PTX {
+
+template<class T, unsigned int N>
+class InstructionBase : public PredicatedInstruction
+{
+
+};
+
+template<class T>
+class InstructionBase<T, 1> : public PredicatedInstruction
+{
+public:
+	InstructionBase(Register<T> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
+
+	std::string Operands() const
+	{
+		return m_destination->ToString() + ", " + m_source->ToString();
+	}
+
+private:
+	Register<T> *m_destination = nullptr;
+	Operand<T> *m_source = nullptr;
+};
+
+template<class T>
+class InstructionBase<T, 2> : public PredicatedInstruction
+{
+public:
+	InstructionBase(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+
+	std::string Operands() const
+	{
+		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
+	}
+
+private:
+	Register<T> *m_destination = nullptr;
+	Operand<T> *m_sourceA = nullptr;
+	Operand<T> *m_sourceB = nullptr;
+};
+
+template<class T>
+class InstructionBase<T, 3> : public PredicatedInstruction
+{
+public:
+	InstructionBase(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
+
+	std::string Operands() const
+	{
+		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString() + ", " + m_sourceC->ToString();
+	}
+
+private:
+	Register<T> *m_destination = nullptr;
+	Operand<T> *m_sourceA = nullptr;
+	Operand<T> *m_sourceB = nullptr;
+	Operand<T> *m_sourceC = nullptr;
+};
+
+}
