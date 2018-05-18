@@ -117,9 +117,9 @@ private:
 template<Bits B>
 class MADInstruction<FloatType<B>> : public PredicatedInstruction
 {
-	DISABLE_BITS(MADInstruction, Bits16);
+	DISABLE_BITS(MADInstruction, FloatType, Bits16);
 public:
-	MADInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_roundingMode(roundingMode) {}
+	MADInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, Operand<FloatType<B>> *sourceC, typename FloatType<B>::RoundingMode roundingMode) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_roundingMode(roundingMode) {}
 
 	void SetRoundingMode(typename FloatType<B>::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 	void SetFlushSubNormal(bool flush) { m_flush = flush; }
@@ -149,7 +149,7 @@ template<>
 class MADInstruction<Float64Type> : public PredicatedInstruction
 {
 public:
-	MADInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, typename Float64Type::RoundingMode roundingMode) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_roundingMode(roundingMode) {}
+	MADInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Operand<Float64Type> *sourceC, typename Float64Type::RoundingMode roundingMode) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_roundingMode(roundingMode) {}
 
 	void SetRoundingMode(Float64Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 

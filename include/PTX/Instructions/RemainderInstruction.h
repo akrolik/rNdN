@@ -12,6 +12,7 @@ class RemainderInstruction : public InstructionStatement
 {
 	REQUIRE_TYPE(RemainderInstruction, ScalarType);
 	DISABLE_TYPE(RemainderInstruction, Int8Type);
+	DISABLE_TYPE(RemainderInstruction, UInt8Type);
 	DISABLE_TYPES(RemainderInstruction, FloatType);
 public:
 	RemainderInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}

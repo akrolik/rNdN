@@ -12,6 +12,7 @@ class SADInstruction : public PredicatedInstruction
 {
 	REQUIRE_TYPE(SADInstruction, ScalarType);
 	DISABLE_TYPE(SADInstruction, Int8Type);
+	DISABLE_TYPE(SADInstruction, UInt8Type);
 	DISABLE_TYPES(SADInstruction, FloatType);
 public:
 	SADInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
