@@ -133,6 +133,34 @@ using Float16Type = FloatType<Bits::Bits16>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
 
+template<template<Bits B> class T, Bits B, unsigned int N>
+struct PackedType : public BitType<Bits(B * N)>
+{
+	static std::string Name() { return T<B>::Name() + "x" + std::to_string(N); }
+};
+
+template<unsigned int N>
+struct PackedType<FloatType, Bits::Bits16, N>
+{
+	static std::string Name() { return Float16Type::Name() + "x" + std::to_string(N); }
+
+	enum RoundingMode {
+		None,
+		Nearest
+	};
+
+	static std::string RoundingModeString(RoundingMode roundingMode)
+	{
+		if (roundingMode == None)
+		{
+			return "";
+		}
+		return ".rn";
+	}
+};
+
+using Float16x2 = PackedType<FloatType, Bits::Bits16, 2>;
+
 template <class T, template <Bits> class Template>
 struct is_type_specialization : std::false_type {};
 
