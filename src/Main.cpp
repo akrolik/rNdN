@@ -3,9 +3,10 @@
 
 #include "CUDA/Platform.h"
 
+#include "PTX/AddTest.h"
+#include "PTX/ArithmeticTest.h"
 #include "PTX/BasicTest.h"
 #include "PTX/ConditionalTest.h"
-#include "PTX/ArithmeticTest.h"
 
 int yyparse();
 
@@ -33,7 +34,8 @@ int main(int argc, char *argv[])
 
 	p.CreateContext(device);
 
-	Test::BasicTest test;
+	Test::AddTest test;
+	// Test::BasicTest test;
 	// Test::ConditionalTest test;
 	test.Execute();
 }
