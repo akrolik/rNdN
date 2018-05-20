@@ -4,14 +4,14 @@
 
 namespace PTX {
 
-template<Bits A, class T, AddressSpace S>
+template<Bits B, class T, AddressSpace A>
 class Address : public Operand<T>
 {
 };
 
-template<class T, AddressSpace S>
-using Address32 = Address<Bits::Bits32, T, S>;
-template<class T, AddressSpace S>
-using Address64 = Address<Bits::Bits64, T, S>;
+template<class T, AddressSpace A>
+using Address32 = Address<Bits::Bits32, T, A>;
+template<class T, AddressSpace A>
+using Address64 = Address<Bits::Bits64, T, A>;
 
 }

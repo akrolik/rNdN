@@ -7,17 +7,17 @@
 
 namespace PTX {
 
-template<Bits B, AddressSpace S>
+template<class T, Bits B, AddressSpace A>
 class ConvertToAddressInstruction : public InstructionStatement
 {
 	DISABLE_BITS(ConvertToAddressInstruction, Bits8);
 	DISABLE_BITS(ConvertToAddressInstruction, Bits16);
 public:
-	ConvertToAddressInstruction(Register<UIntType<B>> *destination, Register<UIntType<B>> *source) : m_destination(destination), m_source(source) {}
+	ConvertToAddressInstruction(Register<PointerType<T, B, A>> *destination, Register<PointerType<T, B, AddressSpace::Generic>> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const
 	{
-		return "cvta.to" + AddressSpaceName<S>() + UIntType<B>::Name();
+		return "cvta.to" + AddressSpaceName<A>() + PointerType<T, B, A>::Name();
 	}
 
 	std::string Operands() const
@@ -26,13 +26,13 @@ public:
 	}
 
 private:
-	Register<UIntType<B>> *m_destination = nullptr;
-	Register<UIntType<B>> *m_source = nullptr;
+	Register<PointerType<T, B, A>> *m_destination = nullptr;
+	Register<PointerType<T, B, AddressSpace::Generic>> *m_source = nullptr;
 };
 
-template<AddressSpace S>
-using ConvertToAddress32Instruction = ConvertToAddressInstruction<Bits::Bits32, S>;
-template<AddressSpace S>
-using ConvertToAddress64Instruction = ConvertToAddressInstruction<Bits::Bits64, S>;
+template<class T, AddressSpace A>
+using ConvertToAddress32Instruction = ConvertToAddressInstruction<T, Bits::Bits32, A>;
+template<class T, AddressSpace A>
+using ConvertToAddress64Instruction = ConvertToAddressInstruction<T, Bits::Bits64, A>;
 
 }

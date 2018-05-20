@@ -4,11 +4,11 @@
 
 namespace PTX {
 
-template<class T, AddressSpace P = Generic>
-class PointerSpace : public AddressableSpace<T, AddressSpace::Param>
+template<class T, Bits B, AddressSpace A = Generic>
+class PointerSpace : public AddressableSpace<PointerType<T, B, A>, AddressSpace::Param>
 {
 public:
-	using AddressableSpace<T, AddressSpace::Param>::AddressableSpace;
+	using AddressableSpace<PointerType<T, B, A>, AddressSpace::Param>::AddressableSpace;
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 
@@ -17,12 +17,12 @@ public:
 	std::string Directives() const
 	{
 		std::ostringstream code;
-		if (P != Generic || m_alignment != 4)
+		if (A != Generic || m_alignment != 4)
 		{
 			code << ".ptr";
-			if (P != Generic)
+			if (A != Generic)
 			{
-				code << P;
+				code << AddressSpaceName<A>();
 			}
 			if (m_alignment != 4)
 			{
@@ -33,10 +33,15 @@ public:
 		return code.str();
 	}
 
-	std::string Specifier() const { return ".param"; }
-
 protected:
+	using StateSpace<PointerType<T, B, A>>::m_names;
+
 	unsigned int m_alignment = 4;
 };
+
+template<class T, AddressSpace A = Generic>
+using Pointer32Space = PointerSpace<T, Bits::Bits32, A>;
+template<class T, AddressSpace A = Generic>
+using Pointer64Space = PointerSpace<T, Bits::Bits64, A>;
 
 }

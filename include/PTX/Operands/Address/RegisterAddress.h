@@ -6,11 +6,11 @@
 
 namespace PTX {
 
-template<Bits A, class T, AddressSpace S>
-class RegisterAddress : public Address<A, T, S>
+template<Bits B, class T, AddressSpace A>
+class RegisterAddress : public Address<B, T, A>
 {
 public:
-	RegisterAddress(Register<UIntType<A>> *reg, int offset = 0) : m_variable(reg), m_offset(offset) {}
+	RegisterAddress(Register<PointerType<T, B, A>> *reg, int offset = 0) : m_variable(reg), m_offset(offset) {}
 
 	std::string ToString() const
 	{
@@ -28,17 +28,17 @@ public:
 		}
 	}
 
-	Register<UIntType<A>> *GetRegister() const { return m_variable; }
+	Register<PointerType<T, B, A>> *GetRegister() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
 private:
-	Register<UIntType<A>> *m_variable;
+	Register<PointerType<T, B, A>> *m_variable;
 	int m_offset = 0;
 };
 
-template<class T, AddressSpace S>
-using RegisterAddress32 = RegisterAddress<Bits::Bits32, T, S>;
-template<class T, AddressSpace S>
-using RegisterAddress64 = RegisterAddress<Bits::Bits64, T, S>;
+template<class T, AddressSpace A>
+using RegisterAddress32 = RegisterAddress<Bits::Bits32, T, A>;
+template<class T, AddressSpace A>
+using RegisterAddress64 = RegisterAddress<Bits::Bits64, T, A>;
 
 }

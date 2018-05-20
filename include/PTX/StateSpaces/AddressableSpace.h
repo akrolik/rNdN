@@ -26,6 +26,8 @@ public:
 		std::exit(EXIT_FAILURE);
 	}
 
+	std::string Specifier() const { return AddressSpaceName<A>(); }
+
 protected:
 	using StateSpace<T>::m_names;
 };
