@@ -221,4 +221,17 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 	return ".<unknown>";
 }
 
+template<class T, Bits B, AddressSpace A = AddressSpace::Generic>
+struct PointerType : public UIntType<B>
+{
+	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
+
+	static std::string Name() { return UIntType<B>::Name(); }
+};
+
+template<class T, AddressSpace A = AddressSpace::Generic>
+using Pointer32Type = PointerType<T, Bits::Bits32, A>;
+template<class T, AddressSpace A = AddressSpace::Generic>
+using Pointer64Type = PointerType<T, Bits::Bits64, A>;
+
 }
