@@ -3,27 +3,36 @@
 #include <tuple>
 #include <sstream>
 
+#include "PTX/Type.h"
+
 #include "PTX/Functions/Function.h"
 
 #include "PTX/StateSpaces/StateSpace.h"
+#include "PTX/StateSpaces/PointerSpace.h"
 
 namespace PTX {
 
-// template <bool... B> struct All;
+// template <class T, template <typename> class Template>
+// struct is_space_specialization : std::false_type {};
+
+// template <template <typename> class Template, class Args>
+// struct is_space_specialization<Template<Args>, Template> : std::true_type {};
+
+// template <bool... B> struct is_all;
 
 // template <bool... T>
-// struct All<true, T...> : All<T...> {};
+// struct is_all<true, T...> : is_all<T...> {};
 
 // template <bool... T>
-// struct All<false, T...> : std::false_type {};
+// struct is_all<false, T...> : std::false_type {};
 
-// template <> struct All<> : std::true_type {};
+// template <> struct is_all<> : std::true_type {};
 
 template<class R, typename... Args>
 class DataFunction : public Function
 {
 	static_assert(std::is_base_of<DataType, R>::value || std::is_same<VoidType, R>::value, "PTX::DataFunction return type must be a PTX::DataType or PTX::VoidType");
-	// static_assert(All<std::is_base_of<StateSpace, Args>::value...>::value, "Args must be PTX::ValueTypes");
+	// static_assert(is_all<is_space_specialization<Args, StateSpace>::value...>::value, "Args must be PTX::StateSpaces");
 	
 public:
 	template<class Q=R>
