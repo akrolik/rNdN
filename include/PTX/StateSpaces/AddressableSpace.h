@@ -22,7 +22,7 @@ public:
 				return new Variable<T, AddressableSpace<T, A>>(it->GetName(index), this);
 			}
 		}
-		std::cerr << "[Error] Variable " << name << " not found in StateSpace" << std::endl;
+		std::cerr << "[Error] PTX::Variable(" << name << ") not found in PTX::AddressableSpace" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 

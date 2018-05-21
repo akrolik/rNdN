@@ -15,7 +15,4 @@ private:
 	const RegisterSpace<S> *m_space;
 };
 
-// template<class S, class D>
-// using ParameterSpaceAdapter = SpaceAdapter<ParameterSpace<S>, ParameterSpace<D>>;
-
 }
