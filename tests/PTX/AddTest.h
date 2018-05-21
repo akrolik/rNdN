@@ -64,7 +64,7 @@ public:
 
 		PTX::ParameterVariable<PTX::Pointer64Type<PTX::Float64Type>> *parameter = parameterSpace->GetVariable("AddTest_0");
 
-		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
+		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
 																		       
 		PTX::Register<PTX::UInt32Type> *r0 = r32->GetVariable("%r", 0);
 

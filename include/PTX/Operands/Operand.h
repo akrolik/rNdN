@@ -7,7 +7,7 @@ namespace PTX {
 template<class T>
 class Operand
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
+	REQUIRE_TYPE(Operand, Type);
 public:
 	virtual std::string ToString() const = 0;
 };

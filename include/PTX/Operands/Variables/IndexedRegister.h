@@ -23,4 +23,9 @@ protected:
 	VectorElement m_vectorElement;
 };
 
+template<class T>
+using IndexedRegister2 = IndexedRegister<T, VectorSize::Vector2>;
+template<class T>
+using IndexedRegister4 = IndexedRegister<T, VectorSize::Vector4>;
+
 }

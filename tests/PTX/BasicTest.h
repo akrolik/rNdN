@@ -67,9 +67,9 @@ public:
 
 		PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>> *parameter = parameterSpace->GetVariable("BasicTest_0");
 
-		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
-		PTX::Register<PTX::UInt32Type> *ntidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srntid->GetVariable("%ntid"), PTX::VectorElement::X);
-		PTX::Register<PTX::UInt32Type> *ctaidx = new PTX::IndexedRegister<PTX::UInt32Type, PTX::VectorSize::Vector4>(srctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
+		PTX::Register<PTX::UInt32Type> *ntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srntid->GetVariable("%ntid"), PTX::VectorElement::X);
+		PTX::Register<PTX::UInt32Type> *ctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
 																		       
 		PTX::Register<PTX::Int32Type> *r0 = r32->GetVariable("%r", 0);
 		PTX::Register<PTX::Int32Type> *r1 = r32->GetVariable("%r", 1);
