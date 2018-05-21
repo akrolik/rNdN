@@ -25,6 +25,7 @@ class SubtractInstruction<Int32Type> : public InstructionBase<Int32Type, 2>
 public:
 	using InstructionBase<Int32Type, 2>::InstructionBase;
 
+	bool GetSaturate() const { return m_saturate; }
 	void SetSaturate(bool saturate) { m_saturate = saturate; }
 
 	std::string OpCode() const
@@ -47,8 +48,13 @@ class SubtractInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 2
 public:
 	SubtractInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : InstructionBase<FloatType<B>, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
 
+	typename FloatType<B>::RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(typename FloatType<B>::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
+
+	bool GetFlushSubnormal() const { return m_flush; }
+	void SetFlushSubnormal(bool flush) { m_flush = flush; }
+
+	bool GetSaturate() const { return m_saturate; }
 	void SetSaturate(bool saturate) { m_saturate = saturate; }
 
 	std::string OpCode() const
@@ -68,6 +74,7 @@ class SubtractInstruction<Float64Type> : public InstructionBase<Float64Type, 2>
 public:
 	SubtractInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
 
+	Float64Type::RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(Float64Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
 	std::string OpCode() const
