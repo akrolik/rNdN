@@ -34,8 +34,6 @@ public:
 	}
 
 protected:
-	using StateSpace<PointerType<T, B, A>>::m_names;
-
 	unsigned int m_alignment = 4;
 };
 

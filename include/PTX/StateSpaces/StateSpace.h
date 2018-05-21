@@ -49,7 +49,7 @@ protected:
 template<class T>
 class StateSpace : public DirectiveStatement
 {
-	static_assert(std::is_base_of<Type, T>::value, "T must be a PTX::Type");
+	REQUIRE_TYPE(StateSpace, Type);
 public:
 	virtual std::string Specifier() const = 0;
 	virtual std::string Directives() const { return ""; }
