@@ -37,13 +37,13 @@ template<> inline std::string AddressSpaceName<Shared>() { return std::string(".
 //     PredicateType
 //     DataType
 //       ScalarType
-//         BitType
+//         BitType<Bits>
 //           IntType
 //           UIntType
-//             PointerType
+//             PointerType<AddressSpace>
 //           FloatType
-//           PackedType
-//       VectorType
+//           PackedType<T, N>
+//       VectorType<ScalarType, VectorSize>
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
@@ -161,7 +161,7 @@ struct PackedType<FloatType, Bits::Bits16, N>
 	}
 };
 
-using Float16x2 = PackedType<FloatType, Bits::Bits16, 2>;
+using Float16x2Type = PackedType<FloatType, Bits::Bits16, 2>;
 
 enum VectorSize {
 	Vector2 = 2,
