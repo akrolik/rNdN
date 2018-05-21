@@ -7,17 +7,17 @@
 
 namespace PTX {
 
-template<Bits A, class T, AddressSpace S>
+template<Bits B, class T, AddressSpace A>
 class LoadInstruction : public PredicatedInstruction
 {
 	REQUIRE_TYPE(LoadInstruction, DataType);
 	DISABLE_TYPE(LoadInstruction, Float16Type);
 public:
-	LoadInstruction(Register<T> *reg, Address<A, T, S> *address) : m_register(reg), m_address(address) {}
+	LoadInstruction(Register<T> *reg, Address<B, T, A> *address) : m_register(reg), m_address(address) {}
 
 	std::string OpCode() const
 	{
-		return "ld" + AddressSpaceName<S>() + T::Name();
+		return "ld" + AddressSpaceName<A>() + T::Name();
 	}
 	
 	std::string Operands() const
@@ -27,12 +27,12 @@ public:
 
 private:
 	Register<T> *m_register = nullptr;
-	Address<A, T, S> *m_address = nullptr;
+	Address<B, T, A> *m_address = nullptr;
 };
 
-template<class T, AddressSpace S>
-using Load32Instruction = LoadInstruction<Bits::Bits32, T, S>;
-template<class T, AddressSpace S>
-using Load64Instruction = LoadInstruction<Bits::Bits64, T, S>;
+template<class T, AddressSpace A>
+using Load32Instruction = LoadInstruction<Bits::Bits32, T, A>;
+template<class T, AddressSpace A>
+using Load64Instruction = LoadInstruction<Bits::Bits64, T, A>;
 
 }
