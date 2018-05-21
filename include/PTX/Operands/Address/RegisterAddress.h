@@ -10,7 +10,7 @@ template<Bits B, class T, AddressSpace A>
 class RegisterAddress : public Address<B, T, A>
 {
 public:
-	RegisterAddress(Register<PointerType<T, B, A>> *reg, int offset = 0) : m_variable(reg), m_offset(offset) {}
+	RegisterAddress(Register<PointerType<T, B, A>> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
 	std::string ToString() const
 	{

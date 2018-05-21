@@ -7,12 +7,9 @@
 
 namespace PTX {
 
-enum Bits {
-	Bits8  = (1 << 3),
-	Bits16 = (1 << 4),
-	Bits32 = (1 << 5),
-	Bits64 = (1 << 6)
-};
+// @enum AddressSpace
+//
+// Storage space used for addressable state spaces
 
 enum AddressSpace {
 	Generic,
@@ -32,23 +29,21 @@ template<> inline std::string AddressSpaceName<Local>() { return std::string(".l
 template<> inline std::string AddressSpaceName<Param>() { return std::string(".param"); }
 template<> inline std::string AddressSpaceName<Shared>() { return std::string(".shared"); }
 
-static std::string GetAddressSpaceName(AddressSpace addressSpace)
-{
-	switch (addressSpace)
-	{
-		case Generic:
-			return "";
-		case Const:
-			return ".const";
-		case Global:
-			return ".global";
-		case Local:
-			return ".local";
-		case Param:
-			return ".param";
-	}
-	return ".<unknown>";
-}
+// @struct Type
+//
+// Type
+//   VoidType
+//   ValueType
+//     PredicateType
+//     DataType
+//       ScalarType
+//         BitType
+//           IntType
+//           UIntType
+//             PointerType
+//           FloatType
+//           PackedType
+//       VectorType
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
@@ -61,6 +56,13 @@ struct PredicateType : public ValueType { static std::string Name() { return ".p
 struct DataType : public ValueType {};
 
 struct ScalarType : public DataType {};
+
+enum Bits {
+	Bits8  = (1 << 3),
+	Bits16 = (1 << 4),
+	Bits32 = (1 << 5),
+	Bits64 = (1 << 6)
+};
 
 template<Bits B>
 struct BitType : public ScalarType {};
@@ -161,22 +163,6 @@ struct PackedType<FloatType, Bits::Bits16, N>
 
 using Float16x2 = PackedType<FloatType, Bits::Bits16, 2>;
 
-template <class T, template <Bits> class Template>
-struct is_type_specialization : std::false_type {};
-
-template <template <Bits> class Template, Bits Args>
-struct is_type_specialization<Template<Args>, Template> : std::true_type {};
- 
-#define DISABLE_ALL(inst, type) static_assert(std::is_same<type, T>::value && !std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-
-#define DISABLE_TYPE(inst, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-#define DISABLE_TYPES(inst, type) static_assert(!is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-#define DISABLE_TYPE_BITS(inst, type, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type) " with PTX::Bits::" TO_STRING(bits))
-#define DISABLE_BITS(inst, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::Bits::" TO_STRING(bits))
-
-#define REQUIRE_TYPE(inst, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
-#define REQUIRE_TYPES(inst, type) static_assert(is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
-
 enum VectorSize {
 	Vector2 = 2,
 	Vector4 = 4
@@ -193,6 +179,7 @@ struct VectorType : public DataType
 
 	static std::string Name() { return ".v" + std::to_string(V) + " " + T::Name(); }
 };
+
 template<class T>
 using Vector2Type = VectorType<T, Vector2>;
 template<class T>
@@ -233,5 +220,25 @@ template<class T, AddressSpace A = AddressSpace::Generic>
 using Pointer32Type = PointerType<T, Bits::Bits32, A>;
 template<class T, AddressSpace A = AddressSpace::Generic>
 using Pointer64Type = PointerType<T, Bits::Bits64, A>;
+
+// @struct is_type_specialization
+//
+// Helper struct for determining if a type is a specialization of some template
+
+template <class T, template <Bits> class Template>
+struct is_type_specialization : std::false_type {};
+
+template <template <Bits> class Template, Bits Args>
+struct is_type_specialization<Template<Args>, Template> : std::true_type {};
+ 
+#define DISABLE_ALL(inst, type) static_assert(std::is_same<type, T>::value && !std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
+
+#define DISABLE_TYPE(inst, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
+#define DISABLE_TYPES(inst, type) static_assert(!is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
+#define DISABLE_TYPE_BITS(inst, type, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type) " with PTX::Bits::" TO_STRING(bits))
+#define DISABLE_BITS(inst, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::Bits::" TO_STRING(bits))
+
+#define REQUIRE_TYPE(inst, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
+#define REQUIRE_TYPES(inst, type) static_assert(is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " must be a PTX::" TO_STRING(type))
 
 }
