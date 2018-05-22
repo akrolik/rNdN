@@ -38,19 +38,19 @@ public:
 	}
 };
 
-template<Bits B>
-class AddInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 2>, public RoundingModifier<FloatType<B>>, public FlushSubnormalModifier, public SaturateModifier
+template<Bits B, unsigned int N>
+class AddInstruction<FloatType<B, N>> : public InstructionBase<FloatType<B, N>, 2>, public RoundingModifier<FloatType<B, N>>, public FlushSubnormalModifier, public SaturateModifier
 {
 public:
-	AddInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : InstructionBase<FloatType<B>, 2>(destination, sourceA, sourceB), RoundingModifier<FloatType<B>>(roundingMode) {}
+	AddInstruction(Register<FloatType<B, N>> *destination, Operand<FloatType<B, N>> *sourceA, Operand<FloatType<B, N>> *sourceB, typename FloatType<B, N>::RoundingMode roundingMode = FloatType<B, N>::RoundingMode::None) : InstructionBase<FloatType<B, N>, 2>(destination, sourceA, sourceB), RoundingModifier<FloatType<B, N>>(roundingMode) {}
 
 	std::string OpCode() const
 	{
-		return "add" + FloatType<B>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
+		return "add" + FloatType<B, N>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
 	}
 
 private:
-	using RoundingModifier<FloatType<B>>::m_roundingMode;
+	using RoundingModifier<FloatType<B, N>>::m_roundingMode;
 };
 
 template<>

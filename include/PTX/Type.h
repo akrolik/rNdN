@@ -64,26 +64,36 @@ enum Bits {
 	Bits64 = (1 << 6)
 };
 
-template<Bits B>
+template<Bits B, unsigned int N = 1>
 struct BitType : public ScalarType {};
 
-template<Bits B>
-struct IntType : public BitType<B> { static std::string Name() { return ".s" + std::to_string(B); } };
+template<Bits B, unsigned int N = 1>
+struct IntType : public BitType<B, N>
+{
+	static std::string Name() { return ".s" + std::to_string(B); }
+};
+
 using Int8Type = IntType<Bits::Bits8>;
 using Int16Type = IntType<Bits::Bits16>;
 using Int32Type = IntType<Bits::Bits32>;
 using Int64Type = IntType<Bits::Bits64>;
 
 template<Bits B>
-struct UIntType : public BitType<B> { static std::string Name() { return ".u" + std::to_string(B); } };
+struct UIntType : public BitType<B>
+{
+	static std::string Name() { return ".u" + std::to_string(B); }
+};
+
 using UInt8Type = UIntType<Bits::Bits8>;
 using UInt16Type = UIntType<Bits::Bits16>;
 using UInt32Type = UIntType<Bits::Bits32>;
 using UInt64Type = UIntType<Bits::Bits64>;
 
-template<Bits B>
-struct FloatType : public BitType<B>
+template<Bits B, unsigned int N = 1>
+struct FloatType : public BitType<B, N>
 {
+	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
+
 	static std::string Name() { return ".f" + std::to_string(B); }
 
 	enum RoundingMode {
@@ -111,10 +121,14 @@ struct FloatType : public BitType<B>
 	}
 };
 
-template<>
-struct FloatType<Bits::Bits16> : public BitType<Bits::Bits16>
+template<unsigned int N>
+struct FloatType<Bits::Bits16, N> : public BitType<Bits::Bits16, N>
 {
-	static std::string Name() { return ".f16"; }
+	template<unsigned int P = N>
+	static std::enable_if_t<P == 1, std::string> Name() { return ".f16"; }
+
+	template<unsigned int P = N>
+	static std::enable_if_t<P != 1, std::string> Name() { return ".f16x" + std::to_string(N); }
 
 	enum RoundingMode {
 		None,
@@ -134,34 +148,7 @@ struct FloatType<Bits::Bits16> : public BitType<Bits::Bits16>
 using Float16Type = FloatType<Bits::Bits16>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
-
-template<template<Bits B> class T, Bits B, unsigned int N>
-struct PackedType : public BitType<Bits(B * N)>
-{
-	static std::string Name() { return T<B>::Name() + "x" + std::to_string(N); }
-};
-
-template<unsigned int N>
-struct PackedType<FloatType, Bits::Bits16, N>
-{
-	static std::string Name() { return Float16Type::Name() + "x" + std::to_string(N); }
-
-	enum RoundingMode {
-		None,
-		Nearest
-	};
-
-	static std::string RoundingModeString(RoundingMode roundingMode)
-	{
-		if (roundingMode == None)
-		{
-			return "";
-		}
-		return ".rn";
-	}
-};
-
-using Float16x2Type = PackedType<FloatType, Bits::Bits16, 2>;
+using Float16x2Type = FloatType<Bits::Bits16, 2>;
 
 enum VectorSize {
 	Vector2 = 2,
