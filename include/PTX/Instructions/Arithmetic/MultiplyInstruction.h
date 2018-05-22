@@ -1,14 +1,15 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-
-#include "PTX/Operands/Operand.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/HalfModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/SaturateModifier.h"
 
 namespace PTX {
 
 template<class T>
-class MultiplyInstruction : public InstructionBase<T, 2>
+class MultiplyInstruction : public InstructionBase<T, 2>, public HalfModifier
 {
 	REQUIRE_TYPE(MultiplyInstruction, ScalarType);
 	DISABLE_TYPE(MultiplyInstruction, Int8Type);
@@ -16,62 +17,40 @@ class MultiplyInstruction : public InstructionBase<T, 2>
 public:
 	using InstructionBase<T, 2>::InstructionBase;
 
-	void SetLower(bool lower)
-	{
-		m_lower = lower;
-		if (lower)
-		{
-			m_upper = false;
-		}
-	}
-
-	void SetUpper(bool upper)
-	{
-		m_upper = upper;
-		if (upper)
-		{
-			m_lower = false;
-		}
-	}
-
 	std::string OpCode() const
 	{
+		if (m_upper)
+		{
+			return "mul.hi" + T::Name();
+		}
+		else if (m_lower)
+		{
+			return "mul.lo" + T::Name();
+		}
 		return "mul" + T::Name();
 	}
-
-private:
-	bool m_upper = false;
-	bool m_lower = false;
 };
 
-template<Bits B>
-class MultiplyInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 2>
+template<Bits B, unsigned int N>
+class MultiplyInstruction<FloatType<B, N>> : public InstructionBase<FloatType<B, N>, 2>, public RoundingModifier<FloatType<B, N>>, public FlushSubnormalModifier, public SaturateModifier
 {
 public:
-	MultiplyInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : InstructionBase<FloatType<B>, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
-
-	void SetRoundingMode(typename FloatType<B>::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
-	void SetSaturate(bool saturate) { m_saturate = saturate; }
+	MultiplyInstruction(Register<FloatType<B, N>> *destination, Operand<FloatType<B, N>> *sourceA, Operand<FloatType<B, N>> *sourceB, typename FloatType<B, N>::RoundingMode roundingMode = FloatType<B, N>::RoundingMode::None) : InstructionBase<FloatType<B, N>, 2>(destination, sourceA, sourceB), RoundingModifier<FloatType<B, N>>(roundingMode) {}
 
 	std::string OpCode() const
 	{
-		return "mul" + FloatType<B>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
+		return "mul" + FloatType<B, N>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B, N>::Name();
 	}
 
 private:
-	typename FloatType<B>::RoundingMode m_roundingMode = FloatType<B>::RoundingMode::None;
-	bool m_flush = false;
-	bool m_saturate = false;
+	using RoundingModifier<FloatType<B, N>>::m_roundingMode;
 };
 
 template<>
-class MultiplyInstruction<Float64Type> : public InstructionBase<Float64Type, 2>
+class MultiplyInstruction<Float64Type> : public InstructionBase<Float64Type, 2>, public RoundingModifier<Float64Type>
 {
 public:
-	MultiplyInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
-
-	void SetRoundingMode(Float64Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
+	MultiplyInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), RoundingModifier<Float64Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -79,7 +58,7 @@ public:
 	}
 
 private:
-	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
+	using RoundingModifier<Float64Type>::m_roundingMode;
 };
 
 }

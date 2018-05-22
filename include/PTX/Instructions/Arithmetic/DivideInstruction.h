@@ -11,6 +11,7 @@ class DivideInstruction : public InstructionBase<T, 2>
 	DISABLE_TYPE(DivideInstruction, Int8Type);
 	DISABLE_TYPE(DivideInstruction, UInt8Type);
 	DISABLE_TYPE(DivideInstruction, Float16Type);
+	DISABLE_TYPE(DivideInstruction, Float16x2Type);
 public:
 	using InstructionBase<T, 2>::InstructionBase;
 
@@ -21,13 +22,21 @@ public:
 };
 
 template<>
-class DivideInstruction<Float32Type> : public InstructionBase<Float32Type, 2>
+class DivideInstruction<Float32Type> : public InstructionBase<Float32Type, 2>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier
 {
 public:
-	DivideInstruction(Register<Float32Type> *destination, Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
+	DivideInstruction(Register<Float32Type> *destination, Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 2>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
 
-	void SetRoundingMode(Float32Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
+	void SetRoundingMode(Float32Type::RoundingMode roundingMode)
+	{
+		if (roundingMode != Float32Type::RoundingMode::None)
+		{
+			m_full = false;
+		}
+		m_roundingMode = roundingMode;
+	}
 
+	bool GetFull() const { return m_full; }
 	void SetFull(bool full)
 	{
 		if (full)
@@ -36,8 +45,6 @@ public:
 		}
 		m_full = full;
 	}
-
-	void SetFlush(bool flush) { m_flush = flush; }
 
 	std::string OpCode() const
 	{
@@ -53,33 +60,15 @@ public:
 	}
 
 private:
-	Float32Type::RoundingMode m_roundingMode = Float32Type::RoundingMode::None;
+	using RoundingModifier<Float32Type>::m_roundingMode;
 	bool m_full = false;
-	bool m_flush = false;
 };
 
 template<>
-class DivideInstruction<Float64Type> : public InstructionBase<Float64Type, 2>
+class DivideInstruction<Float64Type> : public InstructionBase<Float64Type, 2>, public RoundingModifier<Float64Type, true>
 {
 public:
-	DivideInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode)
-	{
-		if (roundingMode == Float64Type::RoundingMode::None)
-		{
-			std::cerr << "PTX::FMAInstruction requires rounding mode with PTX::Float64Type" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-	}
-
-	void SetRoundingMode(Float64Type::RoundingMode roundingMode)
-	{
-		if (roundingMode == Float64Type::RoundingMode::None)
-		{
-			std::cerr << "PTX::FMAInstruction requires rounding mode with PTX::Float64Type" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-		m_roundingMode = roundingMode;
-	}
+	DivideInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -87,7 +76,7 @@ public:
 	}
 
 private:
-	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
+	using RoundingModifier<Float64Type, true>::m_roundingMode;
 };
 
 }

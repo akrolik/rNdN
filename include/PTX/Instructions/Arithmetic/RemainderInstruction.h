@@ -1,36 +1,23 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
-
-#include "PTX/Operands/Operand.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Instructions/InstructionBase.h"
 
 namespace PTX {
 
 template<class T>
-class RemainderInstruction : public InstructionStatement
+class RemainderInstruction : public InstructionBase<T, 2>
 {
 	REQUIRE_TYPE(RemainderInstruction, ScalarType);
 	DISABLE_TYPE(RemainderInstruction, Int8Type);
 	DISABLE_TYPE(RemainderInstruction, UInt8Type);
 	DISABLE_TYPES(RemainderInstruction, FloatType);
 public:
-	RemainderInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	using InstructionBase<T, 2>::InstructionBase;
 
 	std::string OpCode() const
 	{
 		return "rem" + T::Name();
 	}
-
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString();
-	}
-
-private:
-	Register<T> *m_destination = nullptr;
-	Operand<T> *m_sourceA = nullptr;
-	Operand<T> *m_sourceB = nullptr;
 };
 
 }

@@ -1,29 +1,21 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/HalfModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/SaturateModifier.h"
 
 namespace PTX {
 
 template<class T>
-class MADInstruction : public InstructionBase<T, 3>
+class MADInstruction : public InstructionBase<T, 3>, public HalfModifier
 {
 	REQUIRE_TYPE(MADInstruction, ScalarType);
 	DISABLE_TYPE(MADInstruction, Int8Type);
 	DISABLE_TYPE(MADInstruction, UInt8Type);
 public:
 	using InstructionBase<T, 3>::InstructionBase;
-
-	void SetLower(bool lower)
-	{
-		m_lower = lower;
-		if (lower) { m_upper = false; }
-	}
-
-	void SetUpper(bool upper)
-	{
-		m_upper = upper;
-		if (upper) { m_lower = false; }
-	}
 
 	std::string OpCode() const
 	{
@@ -37,29 +29,13 @@ public:
 		}
 		return "mad" + T::Name();
 	}
-
-private:
-	bool m_lower = false;
-	bool m_upper = false;
 };
 
 template<>
-class MADInstruction<Int32Type> : public InstructionBase<Int32Type, 3>
+class MADInstruction<Int32Type> : public InstructionBase<Int32Type, 3>, public HalfModifier, public SaturateModifier
 {
 public:
 	using InstructionBase<Int32Type, 3>::InstructionBase;
-
-	void SetLower(bool lower)
-	{
-		m_lower = lower;
-		if (lower) { m_upper = false; }
-	}
-
-	void SetUpper(bool upper)
-	{
-		m_upper = upper;
-		if (upper) { m_lower = false; }
-	}
 
 	std::string OpCode() const
 	{
@@ -83,43 +59,29 @@ public:
 		}
 		return "mad" + Int32Type::Name();
 	}
-
-private:
-	bool m_lower = false;
-	bool m_upper = false;
-	bool m_saturate = false;
 };
 
-
-template<Bits B>
-class MADInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 3>
+template<Bits B, unsigned int N>
+class MADInstruction<FloatType<B, N>> : public InstructionBase<FloatType<B, N>, 3>, public RoundingModifier<FloatType<B, N>>, public FlushSubnormalModifier, public SaturateModifier
 {
 	DISABLE_TYPE_BITS(MADInstruction, FloatType, Bits16);
 public:
-	using InstructionBase<FloatType<B>, 3>::InstructionBase;
-
-	void SetRoundingMode(typename FloatType<B>::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
-	void SetSaturate(bool saturate) { m_saturate = saturate; }
+	using InstructionBase<FloatType<B, N>, 3>::InstructionBase;
 
 	std::string OpCode() const
 	{
-		return "mad" + FloatType<B>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
+		return "mad" + FloatType<B, N>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
 	}
 
 private:
-	typename FloatType<B>::RoundingMode m_roundingMode = FloatType<B>::RoundingMode::None;
-	bool m_flush = false;
-	bool m_saturate = false;
+	using RoundingModifier<FloatType<B, N>>::m_roundingMode;
 };
 
 template<>
-class MADInstruction<Float64Type> : public InstructionBase<Float64Type, 3>
+class MADInstruction<Float64Type> : public InstructionBase<Float64Type, 3>, public RoundingModifier<Float64Type>
 {
 public:
 	using InstructionBase<Float64Type, 3>::InstructionBase;
-
-	void SetRoundingMode(Float64Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
 	std::string OpCode() const
 	{
@@ -127,7 +89,7 @@ public:
 	}
 
 private:
-	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
+	using RoundingModifier<Float64Type>::m_roundingMode;
 };
 
 }

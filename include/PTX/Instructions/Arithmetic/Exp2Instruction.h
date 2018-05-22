@@ -1,15 +1,14 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
-class Exp2Instruction : public InstructionBase<Float32Type, 1>
+class Exp2Instruction : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier
 {
 public:
 	using InstructionBase<Float32Type, 1>::InstructionBase;
-
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
 
 	std::string OpCode() const
 	{
@@ -19,9 +18,6 @@ public:
 		}
 		return "ex2.approx" + Float32Type::Name();
 	}
-
-private:
-	bool m_flush = false;
 };
 
 }

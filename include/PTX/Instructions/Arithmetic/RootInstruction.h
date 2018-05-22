@@ -1,6 +1,8 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
 
 namespace PTX {
 
@@ -11,41 +13,14 @@ class RootInstruction : public InstructionBase<T, 1>
 };
 
 template<>
-class RootInstruction<Float32Type> : public InstructionBase<Float32Type, 1>
+class RootInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier
 {
 public:
-	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), m_roundingMode(roundingMode)
-	{
-		if (m_roundingMode == Float32Type::RoundingMode::None)
-		{
-			m_approximate = true;
-		}
-	}
-
-	void SetApproximate(bool approximate)
-	{
-		m_approximate = approximate;
-		m_roundingMode = Float32Type::RoundingMode::None;
-	}
-
-	void SetRoundingMode(Float32Type::RoundingMode roundingMode)
-	{
-		if (roundingMode == Float32Type::RoundingMode::None)
-		{
-			m_approximate = true;
-		}
-		else
-		{
-			m_approximate = false;
-		}
-		m_roundingMode = roundingMode;
-	}
-
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
+	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
-		if (m_approximate)
+		if (m_roundingMode == Float32Type::RoundingMode::None)
 		{
 			if (m_flush)
 			{
@@ -64,33 +39,14 @@ public:
 	}
 
 private:
-	bool m_approximate = false;
-	Float32Type::RoundingMode m_roundingMode = Float32Type::RoundingMode::None;
-	bool m_flush = false;
+	using RoundingModifier<Float32Type>::m_roundingMode;
 };
 
 template<>
-class RootInstruction<Float64Type> : public InstructionBase<Float64Type, 1>
+class RootInstruction<Float64Type> : public InstructionBase<Float64Type, 1>, RoundingModifier<Float64Type, true>
 {
 public:
-	RootInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 1>(destination, source), m_roundingMode(roundingMode)
-	{
-		if (m_roundingMode == Float64Type::RoundingMode::None)
-		{
-			std::cerr << "PTX::RootInstruction requires rounding mode with Float64Type" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-	}
-
-	void SetRoundingMode(Float64Type::RoundingMode roundingMode)
-	{
-		if (m_roundingMode == Float64Type::RoundingMode::None)
-		{
-			std::cerr << "PTX::RootInstruction requires rounding mode with Float64Type" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-		m_roundingMode = roundingMode;
-	}
+	RootInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 1>(destination, source), RoundingModifier<Float64Type, true>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -98,7 +54,7 @@ public:
 	}
 
 private:
-	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
+	using RoundingModifier<Float64Type, true>::m_roundingMode;
 };
 
 }

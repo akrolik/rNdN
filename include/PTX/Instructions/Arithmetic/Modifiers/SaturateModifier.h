@@ -1,5 +1,8 @@
 #pragma once
 
+namespace PTX
+{
+
 class SaturateModifier
 {
 public:
@@ -12,3 +15,5 @@ public:
 protected:
 	bool m_saturate = false;
 };
+
+}

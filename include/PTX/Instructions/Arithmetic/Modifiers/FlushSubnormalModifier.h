@@ -1,5 +1,8 @@
 #pragma once
 
+namespace PTX
+{
+
 class FlushSubnormalModifier
 {
 public:
@@ -12,3 +15,5 @@ public:
 protected:
 	bool m_flush = false;
 };
+
+}

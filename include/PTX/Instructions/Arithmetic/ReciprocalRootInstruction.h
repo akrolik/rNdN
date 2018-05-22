@@ -1,18 +1,18 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
 template<class T>
-class ReciprocalRootInstruction : public InstructionBase<T, 1>
+class ReciprocalRootInstruction : public InstructionBase<T, 1>, public FlushSubnormalModifier
 {
 	REQUIRE_TYPES(ReciprocalRootInstruction, FloatType);
 	DISABLE_TYPE(ReciprocalRootInstruction, Float16Type);
+	DISABLE_TYPE(ReciprocalRootInstruction, Float16x2Type);
 public:
 	using InstructionBase<T, 1>::InstructionBase;
-
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
 
 	std::string OpCode() const
 	{
@@ -22,9 +22,6 @@ public:
 		}
 		return "rsqrt.approx" + T::Name();
 	}
-
-private:
-	bool m_flush = false;
 };
 
 }

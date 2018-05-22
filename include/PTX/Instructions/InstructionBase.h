@@ -7,17 +7,17 @@
 
 namespace PTX {
 
-template<class T, unsigned int N>
+template<class T, unsigned int N, class D = T>
 class InstructionBase : public PredicatedInstruction
 {
 
 };
 
-template<class T>
-class InstructionBase<T, 1> : public PredicatedInstruction
+template<class T, class D>
+class InstructionBase<T, 1, D> : public PredicatedInstruction
 {
 public:
-	InstructionBase(Register<T> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
+	InstructionBase(Register<D> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
 
 	std::string Operands() const
 	{
@@ -25,15 +25,15 @@ public:
 	}
 
 private:
-	Register<T> *m_destination = nullptr;
+	Register<D> *m_destination = nullptr;
 	Operand<T> *m_source = nullptr;
 };
 
-template<class T>
-class InstructionBase<T, 2> : public PredicatedInstruction
+template<class T, class D>
+class InstructionBase<T, 2, D> : public PredicatedInstruction
 {
 public:
-	InstructionBase(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	InstructionBase(Register<D> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
 	std::string Operands() const
 	{
@@ -41,16 +41,16 @@ public:
 	}
 
 private:
-	Register<T> *m_destination = nullptr;
+	Register<D> *m_destination = nullptr;
 	Operand<T> *m_sourceA = nullptr;
 	Operand<T> *m_sourceB = nullptr;
 };
 
-template<class T>
-class InstructionBase<T, 3> : public PredicatedInstruction
+template<class T, class D>
+class InstructionBase<T, 3, D> : public PredicatedInstruction
 {
 public:
-	InstructionBase(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
+	InstructionBase(Register<D> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
 
 	std::string Operands() const
 	{
@@ -58,7 +58,7 @@ public:
 	}
 
 private:
-	Register<T> *m_destination = nullptr;
+	Register<D> *m_destination = nullptr;
 	Operand<T> *m_sourceA = nullptr;
 	Operand<T> *m_sourceB = nullptr;
 	Operand<T> *m_sourceC = nullptr;

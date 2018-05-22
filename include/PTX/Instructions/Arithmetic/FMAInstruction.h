@@ -5,32 +5,11 @@
 namespace PTX {
 
 template<class T>
-class FMAInstruction : public InstructionBase<T, 3>
+class FMAInstruction : public InstructionBase<T, 3>, public RoundingModifier<T, true>, public FlushSubnormalModifier, public SaturateModifier
 {
 	REQUIRE_TYPES(FMAInstruction, FloatType);
 public:
-	FMAInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase<T, 3>(destination, sourceA, sourceB, sourceC), m_roundingMode(roundingMode)
-	{
-		if (m_roundingMode == T::RoundingMode::None)
-		{
-			std::cerr << "PTX::FMAInstruction requires rounding mode " << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-	}
-
-	void SetRoundingMode(typename T::RoundingMode roundingMode)
-	{
-		if (m_roundingMode == T::RoundingMode::None)
-		{
-			std::cerr << "PTX::FMAInstruction requires rounding mode " << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-
-	}
-
-	void SetFlush(bool flush) { m_flush = flush; }
-
-	void SetSaturate(bool saturate) { m_saturate = saturate; }
+	FMAInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase<T, 3>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -38,32 +17,14 @@ public:
 	}
 
 private:
-	typename T::RoundingMode m_roundingMode = T::RoundingMode::None;
-	bool m_flush = false;
-	bool m_saturate = false;
+	using RoundingModifier<T, true>::m_roundingMode;
 };
 
 template<>
-class FMAInstruction<Float64Type> : public InstructionBase<Float64Type, 3>
+class FMAInstruction<Float64Type> : public InstructionBase<Float64Type, 3>, public RoundingModifier<Float64Type, true>
 {
 public:
-	FMAInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Operand<Float64Type> *sourceC, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 3>(destination, sourceA, sourceB, sourceC), m_roundingMode(roundingMode)
-	{
-		if (m_roundingMode == Float64Type::RoundingMode::None)
-		{
-			std::cerr << "PTX::FMAInstruction requires rounding mode" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-	}
-
-	void SetRoundingMode(Float64Type::RoundingMode roundingMode)
-	{
-		if (m_roundingMode == Float64Type::RoundingMode::None)
-		{
-			std::cerr << "PTX::FMAInstruction requires rounding mode" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-	}
+	FMAInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Operand<Float64Type> *sourceC, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 3>(destination, sourceA, sourceB, sourceC), RoundingModifier<Float64Type, true>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -71,7 +32,7 @@ public:
 	}
 
 private:
-	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
+	using RoundingModifier<Float64Type, true>::m_roundingMode;
 };
 
 }

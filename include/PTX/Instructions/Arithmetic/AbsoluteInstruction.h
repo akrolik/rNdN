@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
@@ -10,6 +11,7 @@ class AbsoluteInstruction : public InstructionBase<T, 1>
 	REQUIRE_TYPE(AbsoluteInstruction, ScalarType);
 	DISABLE_TYPE(AbsoluteInstruction, Int8Type);
 	DISABLE_TYPE(AbsoluteInstruction, Float16Type);
+	DISABLE_TYPE(AbsoluteInstruction, Float16x2Type);
 	DISABLE_TYPES(AbsoluteInstruction, UIntType);
 public:
 	using InstructionBase<T, 1>::InstructionBase;
@@ -21,12 +23,10 @@ public:
 };
 
 template<>
-class AbsoluteInstruction<Float32Type> : public InstructionBase<Float32Type, 1>
+class AbsoluteInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier
 {
 public:
 	using InstructionBase<Float32Type, 1>::InstructionBase;
-
-	void SetFlushSubNormal(bool flush) { m_flush = flush; }
 
 	std::string OpCode() const
 	{
@@ -36,9 +36,6 @@ public:
 		}
 		return "abs" + Float32Type::Name();
 	}
-
-private:
-	bool m_flush = false;
 };
 
 }
