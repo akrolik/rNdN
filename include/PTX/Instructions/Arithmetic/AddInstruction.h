@@ -1,6 +1,9 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Arithmetic/Modifiers/SaturateModifier.h"
 
 namespace PTX {
 
@@ -20,42 +23,26 @@ public:
 };
 
 template<>
-class AddInstruction<Int32Type> : public InstructionBase<Int32Type, 2>
+class AddInstruction<Int32Type> : public InstructionBase<Int32Type, 2>, public SaturateModifier
 {
 public:
 	using InstructionBase<Int32Type, 2>::InstructionBase;
-
-	bool GetSaturate() const { return m_saturate; }
-	void SetSaturate(bool saturate) { m_saturate = saturate; }
 
 	std::string OpCode() const
 	{
 		if (m_saturate)
 		{
 			return "add.sat" + Int32Type::Name();
-
 		}
 		return "add" + Int32Type::Name();
 	}
-
-private:
-	bool m_saturate = false;
 };
 
 template<Bits B>
-class AddInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 2>
+class AddInstruction<FloatType<B>> : public InstructionBase<FloatType<B>, 2>, public RoundingModifier<FloatType<B>>, public FlushSubnormalModifier, public SaturateModifier
 {
 public:
-	AddInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : InstructionBase<FloatType<B>, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
-
-	typename FloatType<B>::RoundingMode GetRoundingMode() const { return m_roundingMode; }
-	void SetRoundingMode(typename FloatType<B>::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
-
-	bool GetFlushSubnormal() const { return m_flush; }
-	void SetFlushSubnormal(bool flush) { m_flush = flush; }
-
-	bool GetSaturate() const { return m_saturate; }
-	void SetSaturate(bool saturate) { m_saturate = saturate; }
+	AddInstruction(Register<FloatType<B>> *destination, Operand<FloatType<B>> *sourceA, Operand<FloatType<B>> *sourceB, typename FloatType<B>::RoundingMode roundingMode = FloatType<B>::RoundingMode::None) : InstructionBase<FloatType<B>, 2>(destination, sourceA, sourceB), RoundingModifier<FloatType<B>>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -63,19 +50,14 @@ public:
 	}
 
 private:
-	typename FloatType<B>::RoundingMode m_roundingMode = FloatType<B>::RoundingMode::None;
-	bool m_flush = false;
-	bool m_saturate = false;
+	using RoundingModifier<FloatType<B>>::m_roundingMode;
 };
 
 template<>
-class AddInstruction<Float64Type> : public InstructionBase<Float64Type, 2>
+class AddInstruction<Float64Type> : public InstructionBase<Float64Type, 2>, public RoundingModifier<Float64Type>
 {
 public:
-	AddInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), m_roundingMode(roundingMode) {}
-
-	Float64Type::RoundingMode GetRoundingMode() const { return m_roundingMode; }
-	void SetRoundingMode(Float64Type::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
+	AddInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), RoundingModifier<Float64Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -83,7 +65,7 @@ public:
 	}
 
 private:
-	Float64Type::RoundingMode m_roundingMode = Float64Type::RoundingMode::None;
+	using RoundingModifier<Float64Type>::m_roundingMode;
 };
 
 }
