@@ -67,6 +67,11 @@ enum Bits {
 template<Bits B, unsigned int N = 1>
 struct BitType : public ScalarType {};
 
+using Bit8Type = BitType<Bits::Bits8>;
+using Bit16Type = BitType<Bits::Bits16>;
+using Bit32Type = BitType<Bits::Bits32>;
+using Bit64Type = BitType<Bits::Bits64>;
+
 template<Bits B, unsigned int N = 1>
 struct IntType : public BitType<B, N>
 {
