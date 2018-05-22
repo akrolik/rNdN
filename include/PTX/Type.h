@@ -70,6 +70,8 @@ struct BitType : public ScalarType {};
 template<Bits B, unsigned int N = 1>
 struct IntType : public BitType<B, N>
 {
+	static_assert(N == 1, "PTX::IntType expects data packing of 1");
+
 	static std::string Name() { return ".s" + std::to_string(B); }
 };
 
@@ -78,9 +80,11 @@ using Int16Type = IntType<Bits::Bits16>;
 using Int32Type = IntType<Bits::Bits32>;
 using Int64Type = IntType<Bits::Bits64>;
 
-template<Bits B>
-struct UIntType : public BitType<B>
+template<Bits B, unsigned int N = 1>
+struct UIntType : public BitType<B, N>
 {
+	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
+
 	static std::string Name() { return ".u" + std::to_string(B); }
 };
 
@@ -212,11 +216,11 @@ using Pointer64Type = PointerType<T, Bits::Bits64, A>;
 //
 // Helper struct for determining if a type is a specialization of some template
 
-template <class T, template <Bits> class Template>
+template <class T, template <Bits, unsigned int N> class Template>
 struct is_type_specialization : std::false_type {};
 
-template <template <Bits> class Template, Bits Args>
-struct is_type_specialization<Template<Args>, Template> : std::true_type {};
+template <template <Bits, unsigned int> class Template, Bits Args, unsigned int N>
+struct is_type_specialization<Template<Args, N>, Template> : std::true_type {};
  
 #define DISABLE_ALL(inst, type) static_assert(std::is_same<type, T>::value && !std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
 
