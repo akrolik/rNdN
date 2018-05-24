@@ -3,8 +3,8 @@
 
 #include "CUDA/Platform.h"
 
-#include "PTX/AddTest.h"
 #include "PTX/ArithmeticTest.h"
+#include "PTX/AddTest.h"
 #include "PTX/BasicTest.h"
 #include "PTX/ConditionalTest.h"
 

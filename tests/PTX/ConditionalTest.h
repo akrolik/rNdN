@@ -95,7 +95,7 @@ public:
 		block->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
 
 		block->AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(r1, r0, new PTX::UInt32Value(2)));
-		block->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(p, r1, new PTX::UInt32Value(0), PTX::SetPredicateInstruction<PTX::UInt32Type>::ComparisonOperator::NotEqual));
+		block->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(p, r1, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 
 		PTX::Label *labelFalse = new PTX::Label("false");
 		PTX::Label *labelEnd = new PTX::Label("end");
