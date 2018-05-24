@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, AddressSpace A>
 class AddressableSpace : public StateSpace<T>
 {
-	REQUIRE_TYPE(AddressableSpace, DataType);
+	REQUIRE_BASE_TYPE(AddressableSpace, DataType);
 public:
 	using StateSpace<T>::StateSpace;
 

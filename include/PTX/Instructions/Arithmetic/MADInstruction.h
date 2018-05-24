@@ -1,19 +1,22 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/HalfModifier.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/SaturateModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Modifiers/HalfModifier.h"
+#include "PTX/Instructions/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Modifiers/SaturateModifier.h"
 
 namespace PTX {
 
 template<class T>
 class MADInstruction : public InstructionBase<T, 3>, public HalfModifier
 {
-	REQUIRE_TYPE(MADInstruction, ScalarType);
-	DISABLE_TYPE(MADInstruction, Int8Type);
-	DISABLE_TYPE(MADInstruction, UInt8Type);
+	REQUIRE_BASE_TYPE(MADInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(MADInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(MADInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE(MADInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(MADInstruction, Float16x2Type);
+	DISABLE_EXACT_TYPE_TEMPLATE(MADInstruction, BitType);
 public:
 	using InstructionBase<T, 3>::InstructionBase;
 
@@ -61,20 +64,19 @@ public:
 	}
 };
 
-template<Bits B, unsigned int N>
-class MADInstruction<FloatType<B, N>> : public InstructionBase<FloatType<B, N>, 3>, public RoundingModifier<FloatType<B, N>>, public FlushSubnormalModifier, public SaturateModifier
+template<>
+class MADInstruction<Float32Type> : public InstructionBase<Float32Type, 3>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier, public SaturateModifier
 {
-	DISABLE_TYPE_BITS(MADInstruction, FloatType, Bits16);
 public:
-	using InstructionBase<FloatType<B, N>, 3>::InstructionBase;
+	using InstructionBase<Float32Type, 3>::InstructionBase;
 
 	std::string OpCode() const
 	{
-		return "mad" + FloatType<B, N>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
+		return "mad" + Float32Type::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + Float32Type::Name();
 	}
 
 private:
-	using RoundingModifier<FloatType<B, N>>::m_roundingMode;
+	using RoundingModifier<Float32Type>::m_roundingMode;
 };
 
 template<>

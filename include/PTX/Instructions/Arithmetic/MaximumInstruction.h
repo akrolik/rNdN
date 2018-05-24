@@ -1,18 +1,19 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
 template<class T>
 class MaximumInstruction : public InstructionBase<T, 2>
 {
-	REQUIRE_TYPE(MaximumInstruction, ScalarType);
-	DISABLE_TYPE(MaximumInstruction, Int8Type);
-	DISABLE_TYPE(MaximumInstruction, UInt8Type);
-	DISABLE_TYPE(MaximumInstruction, Float16Type);
-	DISABLE_TYPE(MaximumInstruction, Float16x2Type);
+	REQUIRE_BASE_TYPE(MaximumInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(MaximumInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(MaximumInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE(MaximumInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(MaximumInstruction, Float16x2Type);
+	DISABLE_EXACT_TYPE_TEMPLATE(MaximumInstruction, BitType);
 public:
 	using InstructionBase<T, 2>::InstructionBase;
 

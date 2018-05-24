@@ -7,9 +7,9 @@ namespace PTX {
 template<class T>
 class BitReverseInstruction : public InstructionBase<T, 1>
 {
-	REQUIRE_TYPES(BitReverseInstruction, BitType);
-	DISABLE_TYPE(BitReverseInstruction, Bit8Type);
-	DISABLE_TYPE(BitReverseInstruction, Bit16Type);
+	REQUIRE_EXACT_TYPE_TEMPLATE(BitReverseInstruction, BitType);
+	DISABLE_EXACT_TYPE(BitReverseInstruction, Bit8Type);
+	DISABLE_EXACT_TYPE(BitReverseInstruction, Bit16Type);
 public:
 	using InstructionBase<T, 1>::InstructionBase;
 

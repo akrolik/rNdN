@@ -1,18 +1,19 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/SaturateModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Modifiers/SaturateModifier.h"
 
 namespace PTX {
 
 template<class T>
 class SubtractInstruction : public InstructionBase<T, 2>
 {
-	REQUIRE_TYPE(SubtractInstruction, ScalarType);
-	DISABLE_TYPE(SubtractInstruction, Int8Type);
-	DISABLE_TYPE(SubtractInstruction, UInt8Type);
+	REQUIRE_BASE_TYPE(SubtractInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(SubtractInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(SubtractInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE_TEMPLATE(SubtractInstruction, BitType);
 public:
 	using InstructionBase<T, 2>::InstructionBase;
 

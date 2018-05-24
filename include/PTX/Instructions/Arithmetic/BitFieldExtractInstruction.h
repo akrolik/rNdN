@@ -7,12 +7,13 @@ namespace PTX {
 template<class T>
 class BitFieldExtractInstruction : public PredicatedInstruction
 {
-	REQUIRE_TYPE(BitFieldExtractInstruction, ScalarType);
-	DISABLE_TYPE(BitFieldExtractInstruction, Int8Type);
-	DISABLE_TYPE(BitFieldExtractInstruction, UInt8Type);
-	DISABLE_TYPE(BitFieldExtractInstruction, Int16Type);
-	DISABLE_TYPE(BitFieldExtractInstruction, UInt16Type);
-	DISABLE_TYPES(BitFieldExtractInstruction, FloatType);
+	REQUIRE_BASE_TYPE(BitFieldExtractInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, Int16Type);
+	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, UInt16Type);
+	DISABLE_EXACT_TYPE_TEMPLATE(BitFieldExtractInstruction, BitType);
+	DISABLE_EXACT_TYPE_TEMPLATE(BitFieldExtractInstruction, FloatType);
 public:
 	BitFieldExtractInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<UInt32Type> *sourceB, Operand<UInt32Type> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
 

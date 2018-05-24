@@ -49,7 +49,7 @@ protected:
 template<class T>
 class StateSpace : public DirectiveStatement
 {
-	REQUIRE_TYPE(StateSpace, Type);
+	REQUIRE_BASE_TYPE(StateSpace, Type);
 public:
 	virtual std::string Specifier() const = 0;
 	virtual std::string Directives() const { return ""; }

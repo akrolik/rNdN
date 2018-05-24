@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 

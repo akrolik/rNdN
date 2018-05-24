@@ -7,9 +7,9 @@ namespace PTX {
 template<class T>
 class BitFieldInsertInstruction : public PredicatedInstruction
 {
-	REQUIRE_TYPES(BitFieldInsertInstruction, BitType);
-	DISABLE_TYPE(BitFieldInsertInstruction, Bit8Type);
-	DISABLE_TYPE(BitFieldInsertInstruction, Bit16Type);
+	REQUIRE_EXACT_TYPE_TEMPLATE(BitFieldInsertInstruction, BitType);
+	DISABLE_EXACT_TYPE(BitFieldInsertInstruction, Bit8Type);
+	DISABLE_EXACT_TYPE(BitFieldInsertInstruction, Bit16Type);
 public:
 	BitFieldInsertInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<UInt32Type> *sourceC, Operand<UInt32Type> *sourceD) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_sourceD(sourceD) {}
 

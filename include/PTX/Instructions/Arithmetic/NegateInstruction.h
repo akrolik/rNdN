@@ -1,18 +1,19 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
 template<class T>
 class NegateInstruction : public InstructionBase<T, 1>
 {
-	REQUIRE_TYPE(NegateInstruction, ScalarType);
-	DISABLE_TYPE(NegateInstruction, Int8Type);
-	DISABLE_TYPES(NegateInstruction, UIntType);
-	DISABLE_TYPE(NegateInstruction, Float16Type); //TODO: Missing from PTX specification
-	DISABLE_TYPE(NegateInstruction, Float16x2Type); //TODO: Missing from PTX specification
+	REQUIRE_BASE_TYPE(NegateInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(NegateInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(NegateInstruction, Float16Type); //TODO: Missing from PTX specification
+	DISABLE_EXACT_TYPE(NegateInstruction, Float16x2Type); //TODO: Missing from PTX specification
+	DISABLE_EXACT_TYPE_TEMPLATE(NegateInstruction, BitType);
+	DISABLE_EXACT_TYPE_TEMPLATE(NegateInstruction, UIntType);
 public:
 	using InstructionBase<T, 1>::InstructionBase;
 

@@ -1,15 +1,17 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/FlushSubnormalModifier.h"
-#include "PTX/Instructions/Arithmetic/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Instructions/Modifiers/RoundingModifier.h"
 
 namespace PTX {
 
 template<class T>
 class ReciprocalInstruction : public InstructionBase<T, 1>
 {
-	DISABLE_ALL(ReciprocalInstruction, T);
+	REQUIRE_EXACT_TYPE_TEMPLATE(ReciprocalInstruction, FloatType);
+	DISABLE_EXACT_TYPE(ReciprocalInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(ReciprocalInstruction, Float16x2Type);
 };
 
 template<>

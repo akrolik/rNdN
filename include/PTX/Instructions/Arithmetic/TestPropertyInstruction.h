@@ -7,9 +7,9 @@ namespace PTX {
 template<class T>
 class TestPropertyInstruction : public InstructionBase<T, 1, PredicateType>
 {
-	REQUIRE_TYPES(TestPropertyInstruction, FloatType);
-	DISABLE_TYPE(TestPropertyInstruction, Float16Type);
-	DISABLE_TYPE(TestPropertyInstruction, Float16x2Type);
+	REQUIRE_EXACT_TYPE_TEMPLATE(TestPropertyInstruction, FloatType);
+	DISABLE_EXACT_TYPE(TestPropertyInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(TestPropertyInstruction, Float16x2Type);
 public:
 	enum Property {
 		Finite,

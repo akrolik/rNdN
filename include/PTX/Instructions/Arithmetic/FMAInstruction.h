@@ -7,7 +7,7 @@ namespace PTX {
 template<class T>
 class FMAInstruction : public InstructionBase<T, 3>, public RoundingModifier<T, true>, public FlushSubnormalModifier, public SaturateModifier
 {
-	REQUIRE_TYPES(FMAInstruction, FloatType);
+	REQUIRE_EXACT_TYPE_TEMPLATE(FMAInstruction, FloatType);
 public:
 	FMAInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase<T, 3>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 

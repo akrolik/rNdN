@@ -9,7 +9,7 @@ namespace PTX {
 template<class T>
 class RegisterSpace : public StateSpace<T>
 {
-	REQUIRE_TYPE(RegisterSpace, ValueType);
+	REQUIRE_BASE_TYPE(RegisterSpace, ValueType);
 public:
 	using StateSpace<T>::StateSpace;
 

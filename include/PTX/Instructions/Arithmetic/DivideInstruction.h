@@ -7,11 +7,12 @@ namespace PTX {
 template<class T>
 class DivideInstruction : public InstructionBase<T, 2>
 {
-	REQUIRE_TYPE(DivideInstruction, ScalarType);
-	DISABLE_TYPE(DivideInstruction, Int8Type);
-	DISABLE_TYPE(DivideInstruction, UInt8Type);
-	DISABLE_TYPE(DivideInstruction, Float16Type);
-	DISABLE_TYPE(DivideInstruction, Float16x2Type);
+	REQUIRE_BASE_TYPE(DivideInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(DivideInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(DivideInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE(DivideInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(DivideInstruction, Float16x2Type);
+	DISABLE_EXACT_TYPE_TEMPLATE(DivideInstruction, BitType);
 public:
 	using InstructionBase<T, 2>::InstructionBase;
 
