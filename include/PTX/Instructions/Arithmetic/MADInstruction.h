@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Modifiers/CarryModifier.h"
 #include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 #include "PTX/Instructions/Modifiers/HalfModifier.h"
 #include "PTX/Instructions/Modifiers/RoundingModifier.h"
@@ -9,7 +10,7 @@
 namespace PTX {
 
 template<class T>
-class MADInstruction : public InstructionBase<T, 3>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
+class MADInstruction : public InstructionBase<T, 3>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>, public CarryModifier<T>
 {
 	REQUIRE_BASE_TYPE(MADInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MADInstruction, Int8Type);
@@ -23,6 +24,13 @@ public:
 	std::string OpCode() const
 	{
 		std::string code = "mad";
+		if constexpr(T::CarryModifier)
+		{
+			if (this->m_carryIn)
+			{
+				code += "c";
+			}
+		}
 		if constexpr(T::HalfModifier)
 		{
 			if (this->m_lower)
@@ -32,15 +40,6 @@ public:
 			else if (this->m_upper)
 			{
 				code += ".hi";
-
-				// Only applies in .hi mode
-				if constexpr(T::SaturateModifier)
-				{
-					if (this->m_saturate)
-					{
-						code += ".sat";
-					}
-				}
 			}
 		}
 		if constexpr(is_rounding_type<T>::value)
@@ -54,11 +53,43 @@ public:
 				code += ".ftz";
 			}
 		}
-		if constexpr(T::SaturateModifier && !T::HalfModifier)
+		if constexpr(T::SaturateModifier)
 		{
-			if (this->m_saturate)
+			// Only applies in .hi mode
+			if constexpr(T::HalfModifier)
 			{
-				code += ".sat";
+				if constexpr(T::CarryModifier)
+				{
+					if (!this->m_carryIn && !this->m_carryOut && this->m_upper && this->m_saturate)
+					{
+						code += ".sat";
+
+					}
+				}
+				else
+				{
+					if (this->m_upper && this->m_saturate)
+					{
+						code += ".sat";
+					}
+				}
+			}
+			else
+			{
+				if constexpr(T::CarryModifier)
+				{
+					if (!this->m_carryIn && !this->m_carryOut && this->m_saturate)
+					{
+						code += ".sat";
+					}
+				}
+				else
+				{
+					if (this->m_saturate)
+					{
+						code += ".sat";
+					}
+				}
 			}
 		}
 		return code + T::Name();

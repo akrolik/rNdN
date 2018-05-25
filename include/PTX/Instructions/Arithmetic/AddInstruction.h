@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Modifiers/CarryModifier.h"
 #include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 #include "PTX/Instructions/Modifiers/RoundingModifier.h"
 #include "PTX/Instructions/Modifiers/SaturateModifier.h"
@@ -8,7 +9,7 @@
 namespace PTX {
 
 template<class T>
-class AddInstruction : public InstructionBase<T, 2>, public SaturateModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>
+class AddInstruction : public InstructionBase<T, 2>, public SaturateModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public CarryModifier<T>
 {
 	REQUIRE_BASE_TYPE(AddInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(AddInstruction, Int8Type);
@@ -20,6 +21,17 @@ public:
 	std::string OpCode() const
 	{
 		std::string code = "add";
+		if constexpr(T::CarryModifier)
+		{
+			if (this->m_carryIn)
+			{
+				code += "c";
+			}
+			if (this->m_carryOut)
+			{
+				code += ".cc";
+			}
+		}
 		if constexpr(is_rounding_type<T>::value)
 		{
 			code += T::RoundingModeString(this->m_roundingMode);
@@ -33,9 +45,19 @@ public:
 		}
 		if constexpr(T::SaturateModifier)
 		{
-			if (this->m_saturate)
+			if constexpr(T::CarryModifier)
 			{
-				code += ".sat";
+				if (!this->m_carryIn && !this->m_carryOut && this->m_saturate)
+				{
+					code += ".sat";
+				}
+			}
+			else
+			{
+				if (this->m_saturate)
+				{
+					code += ".sat";
+				}
 			}
 		}
 		return code + T::Name();

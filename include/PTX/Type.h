@@ -95,6 +95,7 @@ struct IntType : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
+	static const bool CarryModifier = (B == Bits::Bits32 || B == Bits::Bits64);
 	static const bool HalfModifier = true;
 	static const bool FlushModifier = false;
 	static const bool SaturateModifier = (B == Bits::Bits32);
@@ -143,6 +144,7 @@ struct UIntType : private BitType<B, N>
 
 	static std::string Name() { return ".u" + std::to_string(B); }
 
+	static const bool CarryModifier = (B == Bits::Bits32 || B == Bits::Bits64);
 	static const bool HalfModifier = true;
 	static const bool FlushModifier = false;
 	static const bool SaturateModifier = false;
@@ -189,6 +191,7 @@ struct FloatType : private BitType<B, N>
 
 	static std::string Name() { return ".f" + std::to_string(B); }
 
+	static const bool CarryModifier = false;
 	static const bool HalfModifier = false;
 	static const bool FlushModifier = (B == Bits::Bits32);
 	static const bool SaturateModifier = (B == Bits::Bits32);
@@ -284,6 +287,7 @@ struct FloatType<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 			return ".f16x" + std::to_string(N);
 	}
 
+	static const bool CarryModifier = false;
 	static const bool HalfModifier = false;
 	static const bool FlushModifier = true;
 	static const bool SaturateModifier = true;
