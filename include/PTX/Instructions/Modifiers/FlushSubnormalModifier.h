@@ -1,9 +1,14 @@
 #pragma once
 
-namespace PTX
-{
+namespace PTX {
 
+template<class T, bool force = false, typename Enable = void>
 class FlushSubnormalModifier
+{
+};
+
+template<class T, bool force>
+class FlushSubnormalModifier<T, force, std::enable_if_t<force || T::FlushModifier>>
 {
 public:
 	FlushSubnormalModifier() {}

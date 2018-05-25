@@ -1,9 +1,14 @@
 #pragma once
 
-namespace PTX
-{
+namespace PTX {
 
+template<class T, bool force = false, typename Enable = void>
 class SaturateModifier
+{
+};
+
+template<class T, bool force>
+class SaturateModifier<T, force, std::enable_if_t<force || T::SaturateModifier>>
 {
 public:
 	SaturateModifier() {}

@@ -37,7 +37,7 @@ public:
 			case Subnormal:
 				return ".subnormal";
 		}
-		return ".<unknow>";
+		return ".<unknown>";
 	}
 
 	TestPropertyInstruction(Register<PredicateType> *destination, Operand<T> *source, Property property) : InstructionBase<T, 1, PredicateType>(destination, source), m_property(property) {}

@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class AbsoluteInstruction : public InstructionBase<T, 1>
+class AbsoluteInstruction : public InstructionBase<T, 1>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(AbsoluteInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(AbsoluteInstruction, Int8Type);
@@ -16,26 +16,21 @@ class AbsoluteInstruction : public InstructionBase<T, 1>
 	DISABLE_EXACT_TYPE_TEMPLATE(AbsoluteInstruction, UIntType);
 public:
 	using InstructionBase<T, 1>::InstructionBase;
-
+  	
 	std::string OpCode() const
 	{
-		return "abs" + T::Name();
-	}
-};
-
-template<>
-class AbsoluteInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier
-{
-public:
-	using InstructionBase<Float32Type, 1>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		if (m_flush)
+		if constexpr(T::FlushModifier)
 		{
-			return "abs.ftz" + Float32Type::Name();
+			if (this->m_flush)
+			{
+				return "abs.ftz" + T::Name();
+			}
+			return "abs" + T::Name();
 		}
-		return "abs" + Float32Type::Name();
+		else
+		{
+			return "abs" + T::Name();
+		}
 	}
 };
 

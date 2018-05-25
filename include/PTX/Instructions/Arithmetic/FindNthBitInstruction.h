@@ -18,7 +18,7 @@ public:
 
 	std::string OpCode() const
 	{
-		return "fns.b32";
+		return "fns" + T::Name();
 	}
 
 	std::string Operands() const

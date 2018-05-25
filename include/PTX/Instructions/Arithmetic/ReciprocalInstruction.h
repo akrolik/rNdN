@@ -15,33 +15,28 @@ class ReciprocalInstruction : public InstructionBase<T, 1>
 };
 
 template<>
-class ReciprocalInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier
+class ReciprocalInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
 	ReciprocalInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
+		std::string code = "rcp";
 		if (m_roundingMode == Float32Type::RoundingMode::None)
 		{
-			if (m_flush)
-			{
-				return "rcp.approx.ftz" + Float32Type::Name();
-			}
-			return "rcp.approx" + Float32Type::Name();
+			code += ".approx";
 		}
 		else
 		{
-			if (m_flush)
-			{
-				return "rcp" + Float32Type::RoundingModeString(m_roundingMode) + ".ftz" + Float32Type::Name();
-			}
-			return "rcp" + Float32Type::RoundingModeString(m_roundingMode) + Float32Type::Name();
+			code += Float32Type::RoundingModeString(this->m_roundingMode);
 		}
+		if (m_flush)
+		{
+			code += ".ftz";
+		}
+		return code + Float32Type::Name();
 	}
-
-private:
-	using RoundingModifier<Float32Type>::m_roundingMode;
 };
 
 template<>
@@ -52,15 +47,17 @@ public:
 
 	std::string OpCode() const
 	{
+		std::string code = "rcp";
 		if (m_roundingMode == Float64Type::RoundingMode::None)
 		{
-			return "rcp.approx.ftz" + Float64Type::Name();
+			code += ".approx.ftz";
 		}
-		return "rcp" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
+		else
+		{
+			code += Float64Type::RoundingModeString(this->m_roundingMode);
+		}
+		return code + Float64Type::Name();
 	}
-
-private:
-	using RoundingModifier<Float64Type>::m_roundingMode;
 };
 
 }

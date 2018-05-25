@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class NegateInstruction : public InstructionBase<T, 1>
+class NegateInstruction : public InstructionBase<T, 1>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(NegateInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(NegateInstruction, Int8Type);
@@ -19,23 +19,18 @@ public:
 
 	std::string OpCode() const
 	{
-		return "neg" + T::Name();
-	}
-};
-
-template<>
-class NegateInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier
-{
-public:
-	using InstructionBase<Float32Type, 1>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		if (m_flush)
+		if constexpr(T::FlushModifier)
 		{
-			return "neg.ftz" + Float32Type::Name();
+			if (this->m_flush)
+			{
+				return "neg.ftz" + T::Name();
+			}
+			return "neg" + T::Name();
 		}
-		return "neg" + Float32Type::Name();
+		else
+		{
+			return "neg" + T::Name();
+		}
 	}
 };
 

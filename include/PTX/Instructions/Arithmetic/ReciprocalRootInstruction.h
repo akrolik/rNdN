@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class ReciprocalRootInstruction : public InstructionBase<T, 1>, public FlushSubnormalModifier
+class ReciprocalRootInstruction : public InstructionBase<T, 1>, public FlushSubnormalModifier<T, true>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(ReciprocalRootInstruction, FloatType);
 	DISABLE_EXACT_TYPE(ReciprocalRootInstruction, Float16Type);
@@ -16,7 +16,7 @@ public:
 
 	std::string OpCode() const
 	{
-		if (m_flush)
+		if (this->m_flush)
 		{
 			return "rsqrt.approx.ftz" + T::Name();
 		}

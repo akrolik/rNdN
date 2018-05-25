@@ -15,16 +15,16 @@ class RootInstruction : public InstructionBase<T, 1>
 };
 
 template<>
-class RootInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier
+class RootInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
 	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
-		if (m_roundingMode == Float32Type::RoundingMode::None)
+		if (this->m_roundingMode == Float32Type::RoundingMode::None)
 		{
-			if (m_flush)
+			if (this->m_flush)
 			{
 				return "sqrt.approx.ftz" + Float32Type::Name();
 			}
@@ -32,16 +32,13 @@ public:
 		}
 		else
 		{
-			if (m_flush)
+			if (this->m_flush)
 			{
-				return "sqrt" + Float32Type::RoundingModeString(m_roundingMode) + ".ftz" + Float32Type::Name();
+				return "sqrt" + Float32Type::RoundingModeString(this->m_roundingMode) + ".ftz" + Float32Type::Name();
 			}
-			return "sqrt" + Float32Type::RoundingModeString(m_roundingMode) + Float32Type::Name();
+			return "sqrt" + Float32Type::RoundingModeString(this->m_roundingMode) + Float32Type::Name();
 		}
 	}
-
-private:
-	using RoundingModifier<Float32Type>::m_roundingMode;
 };
 
 template<>
@@ -52,11 +49,8 @@ public:
 
 	std::string OpCode() const
 	{
-		return "rcp" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
+		return "sqrt" + Float64Type::RoundingModeString(this->m_roundingMode) + Float64Type::Name();
 	}
-
-private:
-	using RoundingModifier<Float64Type, true>::m_roundingMode;
 };
 
 }

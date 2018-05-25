@@ -95,6 +95,10 @@ struct IntType : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
+	static const bool HalfModifier = true;
+	static const bool FlushModifier = false;
+	static const bool SaturateModifier = (B == Bits::Bits32);
+
 	static std::string Name() { return ".s" + std::to_string(B); }
 
 	enum ComparisonOperator {
@@ -139,6 +143,10 @@ struct UIntType : private BitType<B, N>
 
 	static std::string Name() { return ".u" + std::to_string(B); }
 
+	static const bool HalfModifier = true;
+	static const bool FlushModifier = false;
+	static const bool SaturateModifier = false;
+
 	enum ComparisonOperator {
 		Equal,
 		NotEqual,
@@ -180,6 +188,10 @@ struct FloatType : private BitType<B, N>
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
 	static std::string Name() { return ".f" + std::to_string(B); }
+
+	static const bool HalfModifier = false;
+	static const bool FlushModifier = (B == Bits::Bits32);
+	static const bool SaturateModifier = (B == Bits::Bits32);
 
 	enum RoundingMode {
 		None,
@@ -271,6 +283,10 @@ struct FloatType<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 		else
 			return ".f16x" + std::to_string(N);
 	}
+
+	static const bool HalfModifier = false;
+	static const bool FlushModifier = true;
+	static const bool SaturateModifier = true;
 
 	enum RoundingMode {
 		None,
@@ -404,6 +420,12 @@ template<class T, AddressSpace A = AddressSpace::Generic>
 using Pointer32Type = PointerType<T, Bits::Bits32, A>;
 template<class T, AddressSpace A = AddressSpace::Generic>
 using Pointer64Type = PointerType<T, Bits::Bits64, A>;
+
+template <class T, typename E = void>
+struct is_rounding_type : std::false_type {};
+
+template <class T>
+struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
 
 // @struct is_type_specialization
 //

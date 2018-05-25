@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
 	p.CreateContext(device);
 
-	Test::AddTest test;
+	Test::ArithmeticTest test;
 	// Test::BasicTest test;
 	// Test::ConditionalTest test;
 	test.Execute();

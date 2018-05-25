@@ -8,7 +8,7 @@
 namespace PTX {
 
 template<class T>
-class AddInstruction : public InstructionBase<T, 2>
+class AddInstruction : public InstructionBase<T, 2>, public SaturateModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(AddInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(AddInstruction, Int8Type);
@@ -19,54 +19,27 @@ public:
 
 	std::string OpCode() const
 	{
-		return "add" + T::Name();
-	}
-};
-
-template<>
-class AddInstruction<Int32Type> : public InstructionBase<Int32Type, 2>, public SaturateModifier
-{
-public:
-	using InstructionBase<Int32Type, 2>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		if (m_saturate)
+		std::string code = "add";
+		if constexpr(is_rounding_type<T>::value)
 		{
-			return "add.sat" + Int32Type::Name();
+			code += T::RoundingModeString(this->m_roundingMode);
 		}
-		return "add" + Int32Type::Name();
+		if constexpr(T::FlushModifier)
+		{
+			if (this->m_flush)
+			{
+				code += ".ftz";
+			}
+		}
+		if constexpr(T::SaturateModifier)
+		{
+			if (this->m_saturate)
+			{
+				code += ".sat";
+			}
+		}
+		return code + T::Name();
 	}
-};
-
-template<Bits B, unsigned int N>
-class AddInstruction<FloatType<B, N>> : public InstructionBase<FloatType<B, N>, 2>, public RoundingModifier<FloatType<B, N>>, public FlushSubnormalModifier, public SaturateModifier
-{
-public:
-	AddInstruction(Register<FloatType<B, N>> *destination, Operand<FloatType<B, N>> *sourceA, Operand<FloatType<B, N>> *sourceB, typename FloatType<B, N>::RoundingMode roundingMode = FloatType<B, N>::RoundingMode::None) : InstructionBase<FloatType<B, N>, 2>(destination, sourceA, sourceB), RoundingModifier<FloatType<B, N>>(roundingMode) {}
-
-	std::string OpCode() const
-	{
-		return "add" + FloatType<B, N>::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + FloatType<B>::Name();
-	}
-
-private:
-	using RoundingModifier<FloatType<B, N>>::m_roundingMode;
-};
-
-template<>
-class AddInstruction<Float64Type> : public InstructionBase<Float64Type, 2>, public RoundingModifier<Float64Type>
-{
-public:
-	AddInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 2>(destination, sourceA, sourceB), RoundingModifier<Float64Type>(roundingMode) {}
-
-	std::string OpCode() const
-	{
-		return "add" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
-	}
-
-private:
-	using RoundingModifier<Float64Type>::m_roundingMode;
 };
 
 }

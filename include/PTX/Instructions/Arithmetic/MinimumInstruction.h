@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class MinimumInstruction : public InstructionBase<T, 2>
+class MinimumInstruction : public InstructionBase<T, 2>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(MinimumInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MinimumInstruction, Int8Type);
@@ -19,23 +19,18 @@ public:
 
 	std::string OpCode() const
 	{
-		return "min" + T::Name();
-	}
-};
-
-template<>
-class MinimumInstruction<Float32Type> : public InstructionBase<Float32Type, 2>, public FlushSubnormalModifier
-{
-public:
-	using InstructionBase<Float32Type, 2>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		if (m_flush)
+		if constexpr(T::FlushModifier)
 		{
-			return "min.ftz" + Float32Type::Name();
+			if (this->m_flush)
+			{
+				return "min.ftz" + T::Name();
+			}
+			return "min" + T::Name();
 		}
-		return "min" + Float32Type::Name();
+		else
+		{
+			return "min" + T::Name();
+		}
 	}
 };
 

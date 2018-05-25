@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class MaximumInstruction : public InstructionBase<T, 2>
+class MaximumInstruction : public InstructionBase<T, 2>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(MaximumInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MaximumInstruction, Int8Type);
@@ -19,23 +19,18 @@ public:
 
 	std::string OpCode() const
 	{
-		return "max" + T::Name();
-	}
-};
-
-template<>
-class MaximumInstruction<Float32Type> : public InstructionBase<Float32Type, 2>, public FlushSubnormalModifier
-{
-public:
-	using InstructionBase<Float32Type, 2>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		if (m_flush)
+		if constexpr(T::FlushModifier)
 		{
-			return "max.ftz" + Float32Type::Name();
+			if (this->m_flush)
+			{
+				return "max.ftz" + T::Name();
+			}
+			return "max" + T::Name();
 		}
-		return "max" + Float32Type::Name();
+		else
+		{
+			return "max" + T::Name();
+		}
 	}
 };
 

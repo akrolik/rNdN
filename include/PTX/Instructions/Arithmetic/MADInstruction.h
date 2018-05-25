@@ -9,7 +9,7 @@
 namespace PTX {
 
 template<class T>
-class MADInstruction : public InstructionBase<T, 3>, public HalfModifier
+class MADInstruction : public InstructionBase<T, 3>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
 	REQUIRE_BASE_TYPE(MADInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MADInstruction, Int8Type);
@@ -22,76 +22,47 @@ public:
 
 	std::string OpCode() const
 	{
-		if (m_lower)
+		std::string code = "mad";
+		if constexpr(T::HalfModifier)
 		{
-			return "mad.lo" + T::Name();
-		}
-		else if (m_upper)
-		{
-			return "mad.hi" + T::Name();
-		}
-		return "mad" + T::Name();
-	}
-};
-
-template<>
-class MADInstruction<Int32Type> : public InstructionBase<Int32Type, 3>, public HalfModifier, public SaturateModifier
-{
-public:
-	using InstructionBase<Int32Type, 3>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		if (m_lower)
-		{
-			return "mad.lo" + Int32Type::Name();
-		}
-		else if (m_upper)
-		{
-			// Only applies in .hi mode
-			if (m_saturate)
+			if (this->m_lower)
 			{
-				return "mad.hi.sat" + Int32Type::Name();
+				code += ".lo";
 			}
-			return "mad.hi" + Int32Type::Name();
-		}
+			else if (this->m_upper)
+			{
+				code += ".hi";
 
-		if (m_saturate)
+				// Only applies in .hi mode
+				if constexpr(T::SaturateModifier)
+				{
+					if (this->m_saturate)
+					{
+						code += ".sat";
+					}
+				}
+			}
+		}
+		if constexpr(is_rounding_type<T>::value)
 		{
-			return "mad.sat" + Int32Type::Name();
+			code += T::RoundingModeString(this->m_roundingMode);
 		}
-		return "mad" + Int32Type::Name();
+		if constexpr(T::FlushModifier)
+		{
+			if (this->m_flush)
+			{
+				code += ".ftz";
+			}
+		}
+		if constexpr(T::SaturateModifier && !T::HalfModifier)
+		{
+			if (this->m_saturate)
+			{
+				code += ".sat";
+			}
+		}
+		return code + T::Name();
 	}
-};
-
-template<>
-class MADInstruction<Float32Type> : public InstructionBase<Float32Type, 3>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier, public SaturateModifier
-{
-public:
-	using InstructionBase<Float32Type, 3>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		return "mad" + Float32Type::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + ((m_saturate) ? ".sat" : "") + Float32Type::Name();
-	}
-
-private:
-	using RoundingModifier<Float32Type>::m_roundingMode;
-};
-
-template<>
-class MADInstruction<Float64Type> : public InstructionBase<Float64Type, 3>, public RoundingModifier<Float64Type>
-{
-public:
-	using InstructionBase<Float64Type, 3>::InstructionBase;
-
-	std::string OpCode() const
-	{
-		return "mad" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
-	}
-
-private:
-	using RoundingModifier<Float64Type>::m_roundingMode;
 };
 
 }

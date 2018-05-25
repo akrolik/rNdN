@@ -23,7 +23,7 @@ public:
 };
 
 template<>
-class DivideInstruction<Float32Type> : public InstructionBase<Float32Type, 2>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier
+class DivideInstruction<Float32Type> : public InstructionBase<Float32Type, 2>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
 	DivideInstruction(Register<Float32Type> *destination, Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 2>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
@@ -49,19 +49,27 @@ public:
 
 	std::string OpCode() const
 	{
-		if (m_roundingMode == Float32Type::RoundingMode::None)
+		std::string code = "div";
+		if (this->m_roundingMode != Float32Type::RoundingMode::None)
 		{
-			return "div" + Float32Type::RoundingModeString(m_roundingMode) + ((m_flush) ? ".ftz" : "") + Float32Type::Name();
+			code += Float32Type::RoundingModeString(this->m_roundingMode);
 		}
 		else if (m_full)
 		{
-			return std::string("div.full") + ((m_flush) ? ".ftz" : "") + Float32Type::Name();
+			code += "full";
 		}
-		return std::string("div.approx") + ((m_flush) ? ".ftz" : "") + Float32Type::Name();
+		else
+		{
+			code += ".approx";
+		}
+		if (m_flush)
+		{
+			code += ".ftz";
+		}
+		return code + Float32Type::Name();
 	}
 
 private:
-	using RoundingModifier<Float32Type>::m_roundingMode;
 	bool m_full = false;
 };
 
@@ -73,11 +81,8 @@ public:
 
 	std::string OpCode() const
 	{
-		return "div" + Float64Type::RoundingModeString(m_roundingMode) + Float64Type::Name();
+		return "div" + Float64Type::RoundingModeString(this->m_roundingMode) + Float64Type::Name();
 	}
-
-private:
-	using RoundingModifier<Float64Type, true>::m_roundingMode;
 };
 
 }

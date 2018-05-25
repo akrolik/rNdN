@@ -5,7 +5,7 @@
 
 namespace PTX {
 
-class SineInstruction : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier
+class SineInstruction : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier<Float32Type>
 {
 public:
 	using InstructionBase<Float32Type, 1>::InstructionBase;

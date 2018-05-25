@@ -3,8 +3,13 @@
 namespace PTX
 {
 
-template<class T, bool R = false>
+template<class T, bool R = false, typename Enable = void>
 class RoundingModifier
+{
+};
+
+template<class T>
+class RoundingModifier<T, false, typename std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>>
 {
 public:
 	RoundingModifier() {}
@@ -18,7 +23,7 @@ protected:
 };
 
 template<class T>
-class RoundingModifier<T, true>
+class RoundingModifier<T, true, typename std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>>
 {
 public:
 	RoundingModifier(typename T::RoundingMode roundingMode) : m_roundingMode(roundingMode)
