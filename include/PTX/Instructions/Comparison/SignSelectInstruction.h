@@ -23,6 +23,8 @@ class SignSelectInstruction : public PredicatedInstruction, public FlushSubnorma
 	DISABLE_EXACT_TYPE(SignSelectInstruction, Bit8Type);
 	DISABLE_EXACT_TYPE(SignSelectInstruction, Int8Type);
 	DISABLE_EXACT_TYPE(SignSelectInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE(SignSelectInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(SignSelectInstruction, Float16x2Type);
 public:
 	SignSelectInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<S> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
 
