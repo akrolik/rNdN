@@ -8,6 +8,7 @@ template<class T>
 class PopulationCountInstruction : public InstructionBase<T, 1, UInt32Type>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(PopulationCountInstruction, BitType);
+	DISABLE_EXACT_TYPE(PopulationCountInstruction, PredicateType);
 	DISABLE_EXACT_TYPE(PopulationCountInstruction, Bit8Type);
 	DISABLE_EXACT_TYPE(PopulationCountInstruction, Bit16Type);
 public:

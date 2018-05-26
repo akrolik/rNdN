@@ -29,15 +29,44 @@ template<> inline std::string AddressSpaceName<Local>() { return std::string(".l
 template<> inline std::string AddressSpaceName<Param>() { return std::string(".param"); }
 template<> inline std::string AddressSpaceName<Shared>() { return std::string(".shared"); }
 
+// @struct is_rounding_type
+//
+// Type trait for determining if a PTX::Type has a rounding mode
+
+template <class T, typename E = void>
+struct is_rounding_type : std::false_type {};
+
+template <class T>
+struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
+
+// @struct is_type_specialization
+//
+// Type trait for determining if a type is a specialization of some template
+
+enum Bits : int;
+
+template <class T, template <Bits, unsigned int> class Template>
+struct is_type_specialization : std::false_type {};
+
+template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
+struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
+ 
+#define DISABLE_EXACT_TYPE(context, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(context) " does not support type PTX::" TO_STRING(type))
+#define DISABLE_EXACT_TYPE_TEMPLATE(context, template) static_assert(!is_type_specialization<T, template>::value, "PTX::" TO_STRING(context) " does not support type template PTX::" TO_STRING(template)) 
+
+#define REQUIRE_BASE_TYPE(context, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(context) " requires base type PTX::" TO_STRING(type))
+#define REQUIRE_EXACT_TYPE(context, type) static_assert(std::is_same<type, T>::value, "PTX::" TO_STRING(context) " requires exact type PTX::" TO_STRING(type))
+#define REQUIRE_EXACT_TYPE_TEMPLATE(context, type) static_assert(is_type_specialization<T, type>::value, "PTX::" TO_STRING(context) " requires exact type template PTX::" TO_STRING(type))
+
 // @struct Type
 //
 // Type
 //   VoidType
 //   ValueType
-//     PredicateType
 //     DataType
 //       ScalarType
 //         BitType<Bits>
+//           PredicateType
 //           IntType
 //           UIntType
 //             PointerType<AddressSpace>
@@ -51,13 +80,13 @@ struct VoidType : private Type { static std::string Name() { return ""; } };
 
 struct ValueType : private Type {};
 
-struct PredicateType : private ValueType { static std::string Name() { return ".pred"; } };
 
 struct DataType : private ValueType {};
 
 struct ScalarType : private DataType {};
 
-enum Bits {
+enum Bits : int {
+	Bits1  = (1 << 0),
 	Bits8  = (1 << 3),
 	Bits16 = (1 << 4),
 	Bits32 = (1 << 5),
@@ -67,6 +96,8 @@ enum Bits {
 template<Bits B, unsigned int N = 1>
 struct BitType : private ScalarType
 {
+	static std::string Name() { return ".b" + std::to_string(B); }
+
 	enum ComparisonOperator {
 		Equal,
 		NotEqual
@@ -85,6 +116,13 @@ struct BitType : private ScalarType
 	}
 };
 
+template<>
+struct BitType<Bits::Bits1, 1> : private ScalarType
+{
+	static std::string Name() { return ".pred"; }
+};
+
+using PredicateType = BitType<Bits::Bits1>;
 using Bit8Type = BitType<Bits::Bits8>;
 using Bit16Type = BitType<Bits::Bits16>;
 using Bit32Type = BitType<Bits::Bits32>;
@@ -379,7 +417,8 @@ template<> inline std::string VectorName<Vector4>() { return std::string(".v4");
 template<class T, VectorSize V>
 struct VectorType : private DataType
 {
-	static_assert(std::is_base_of<ScalarType, T>::value, "T must be a PTX::ScalarType");
+	REQUIRE_BASE_TYPE(VectorType, ScalarType);
+	DISABLE_EXACT_TYPE(VectorType, PredicateType);
 
 	static std::string Name() { return ".v" + std::to_string(V) + " " + T::Name(); }
 };
@@ -415,7 +454,8 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 template<class T, Bits B, AddressSpace A = AddressSpace::Generic>
 struct PointerType : private UIntType<B>
 {
-	static_assert(std::is_base_of<Type, T>::value, "PTX::PointerType must be a PTX::Type");
+	REQUIRE_BASE_TYPE(PointerType, Type);
+	DISABLE_EXACT_TYPE(PointerType, PredicateType);
 
 	static std::string Name() { return UIntType<B>::Name(); }
 };
@@ -424,36 +464,5 @@ template<class T, AddressSpace A = AddressSpace::Generic>
 using Pointer32Type = PointerType<T, Bits::Bits32, A>;
 template<class T, AddressSpace A = AddressSpace::Generic>
 using Pointer64Type = PointerType<T, Bits::Bits64, A>;
-
-template <class T, typename E = void>
-struct is_rounding_type : std::false_type {};
-
-template <class T>
-struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
-
-// @struct is_type_specialization
-//
-// Helper struct for determining if a type is a specialization of some template
-
-template <class T, template <Bits, unsigned int> class Template>
-struct is_type_specialization : std::false_type {};
-
-template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
-struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
- 
-// #define DISABLE_ALL(inst, type) static_assert(std::is_same<type, T>::value && !std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-
-//TODO: check all of these for base vs inheritance vs convertible
-// #define DISABLE_TYPE(inst, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-// #define DISABLE_TYPES(inst, type) static_assert(!is_type_specialization<T, type>::value, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type))
-// #define DISABLE_TYPE_BITS(inst, type, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::" TO_STRING(type) " with PTX::Bits::" TO_STRING(bits))
-// #define DISABLE_BITS(inst, bits) static_assert(B != bits, "PTX::" TO_STRING(inst) " does not support PTX::Bits::" TO_STRING(bits))
-
-#define DISABLE_EXACT_TYPE(context, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(context) " does not support type PTX::" TO_STRING(type))
-#define DISABLE_EXACT_TYPE_TEMPLATE(context, template) static_assert(!is_type_specialization<T, template>::value, "PTX::" TO_STRING(context) " does not support type template PTX::" TO_STRING(template)) 
-
-#define REQUIRE_BASE_TYPE(context, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(context) " requires base type PTX::" TO_STRING(type))
-#define REQUIRE_EXACT_TYPE(context, type) static_assert(std::is_same<type, T>::value, "PTX::" TO_STRING(context) " requires exact type PTX::" TO_STRING(type))
-#define REQUIRE_EXACT_TYPE_TEMPLATE(context, type) static_assert(is_type_specialization<T, type>::value, "PTX::" TO_STRING(context) " requires exact type template PTX::" TO_STRING(type))
 
 }

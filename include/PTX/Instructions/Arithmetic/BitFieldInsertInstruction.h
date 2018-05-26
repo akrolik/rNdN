@@ -8,6 +8,7 @@ template<class T>
 class BitFieldInsertInstruction : public PredicatedInstruction
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(BitFieldInsertInstruction, BitType);
+	DISABLE_EXACT_TYPE(BitFieldInsertInstruction, PredicateType);
 	DISABLE_EXACT_TYPE(BitFieldInsertInstruction, Bit8Type);
 	DISABLE_EXACT_TYPE(BitFieldInsertInstruction, Bit16Type);
 public:
