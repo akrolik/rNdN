@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
 #include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 
 #include "PTX/Operands/Operand.h"
@@ -11,9 +11,10 @@
 namespace PTX {
 
 template<class T>
-class SetPredicateInstruction : public InstructionStatement, public FlushSubnormalModifier<T>
+class SetPredicateInstruction : public PredicatedInstruction, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(SetPredicateInstruction, ScalarType);
+	DISABLE_EXACT_TYPE(SetPredicateInstruction, PredicateType);
 	DISABLE_EXACT_TYPE(SetPredicateInstruction, Bit8Type);
 	DISABLE_EXACT_TYPE(SetPredicateInstruction, Int8Type);
 	DISABLE_EXACT_TYPE(SetPredicateInstruction, UInt8Type);
