@@ -11,7 +11,7 @@
 namespace PTX {
 
 template<class T>
-class SetPredicateInstruction : public InstructionStatement
+class SetPredicateInstruction : public InstructionStatement, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(SetPredicateInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(SetPredicateInstruction, Bit8Type);
@@ -45,6 +45,13 @@ public:
 				case Xor:
 					code << ".xor";
 					break;
+			}
+		}
+		if constexpr(T::FlushModifier)
+		{
+			if (this->m_flush)
+			{
+				code << ".ftz";
 			}
 		}
 		code << T::Name();
@@ -85,83 +92,8 @@ private:
 	bool m_negateSourcePredicate = false;
 };
 
-template<Bits B, unsigned int N>
-class SetPredicateInstruction<FloatType<B, N>> : public InstructionStatement, public FlushSubnormalModifier
-{
-public:
-	enum BoolOperator {
-		And,
-		Or,
-		Xor
-	};
-
-	SetPredicateInstruction(Register<PredicateType> *destination, Operand<FloatType<B, N>> *sourceA, Operand<FloatType<B, N>> *sourceB, typename FloatType<B, N>::ComparisonOperator comparator) : SetPredicateInstruction(destination, nullptr, sourceA, sourceB, comparator, nullptr, And, false) {}
-
-	SetPredicateInstruction(Register<PredicateType> *destinationP, Register<PredicateType> *destinationQ, Operand<FloatType<B, N>> *sourceA, Operand<FloatType<B, N>> *sourceB, typename FloatType<B, N>::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), m_comparator(comparator), m_sourceC(sourceC), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
-
-	std::string OpCode() const
-	{
-		std::ostringstream code;
-		code << "setp" << FloatType<B, N>::ComparisonOperatorString(m_comparator);
-		if (m_sourceC != nullptr)
-		{
-			switch (m_boolOperator)
-			{
-				case And:
-					code << ".and";
-					break;
-				case Or:
-					code << ".or";
-					break;
-				case Xor:
-					code << ".xor";
-					break;
-			}
-		}
-		if (m_flush)
-		{
-			code << ".ftz";
-		}
-		code << FloatType<B, N>::Name();
-		return code.str();
-	}
-
-	std::string Operands() const
-	{
-		std::ostringstream code;
-		code << m_destinationP->ToString();
-		if (m_destinationQ != nullptr)
-		{
-			code << "|" << m_destinationQ->ToString();
-		}
-
-		code << ", " << m_sourceA->ToString() << ", " << m_sourceB->ToString();
-		if (m_sourceC != nullptr)
-		{
-			code << ", ";
-			if (m_negateSourcePredicate)
-			{
-				code << "!";
-			}
-			code << m_sourceC->ToString();
-		}
-		return code.str();
-	}
-
-private:
-	Register<PredicateType> *m_destinationP = nullptr;
-	Register<PredicateType> *m_destinationQ = nullptr;
-	Operand<FloatType<B, N>> *m_sourceA = nullptr;
-	Operand<FloatType<B, N>> *m_sourceB = nullptr;
-	typename FloatType<B, N>::ComparisonOperator m_comparator;
-
-	Register<PredicateType> *m_sourceC = nullptr;
-	BoolOperator m_boolOperator = And;
-	bool m_negateSourcePredicate = false;
-};
-
 template<>
-class SetPredicateInstruction<Float16Type> : public InstructionStatement, public FlushSubnormalModifier
+class SetPredicateInstruction<Float16Type> : public InstructionStatement, public FlushSubnormalModifier<Float16Type>
 {
 public:
 	enum BoolOperator {

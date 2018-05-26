@@ -10,8 +10,8 @@ namespace PTX {
 template<Bits B, class T, AddressSpace A>
 class LoadInstruction : public PredicatedInstruction
 {
-	REQUIRE_TYPE(LoadInstruction, DataType);
-	DISABLE_TYPE(LoadInstruction, Float16Type);
+	REQUIRE_BASE_TYPE(LoadInstruction, DataType);
+	DISABLE_EXACT_TYPE(LoadInstruction, Float16Type);
 public:
 	LoadInstruction(Register<T> *reg, Address<B, T, A> *address) : m_register(reg), m_address(address) {}
 

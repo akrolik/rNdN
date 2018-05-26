@@ -10,8 +10,9 @@ namespace PTX {
 template<class T, Bits B, AddressSpace A>
 class ConvertToAddressInstruction : public InstructionStatement
 {
-	DISABLE_BITS(ConvertToAddressInstruction, Bits8);
-	DISABLE_BITS(ConvertToAddressInstruction, Bits16);
+	//TODO: Update this instruction
+	// DISABLE_BITS(ConvertToAddressInstruction, Bits8);
+	// DISABLE_BITS(ConvertToAddressInstruction, Bits16);
 public:
 	ConvertToAddressInstruction(Register<PointerType<T, B, A>> *destination, Register<PointerType<T, B, AddressSpace::Generic>> *source) : m_destination(destination), m_source(source) {}
 

@@ -9,12 +9,12 @@ namespace PTX {
 template<class T>
 class MoveInstruction : public PredicatedInstruction
 {
-	REQUIRE_TYPE(MoveInstruction, ValueType);
+	REQUIRE_BASE_TYPE(MoveInstruction, ValueType);
 	//TODO: Disable vectors
 	// DISABLE_TYPES(MoveInstruction, VectorType);
-	DISABLE_TYPE(MoveInstruction, Int8Type);
-	DISABLE_TYPE(MoveInstruction, UInt8Type);
-	DISABLE_TYPE(MoveInstruction, Float16Type);
+	DISABLE_EXACT_TYPE(MoveInstruction, Int8Type);
+	DISABLE_EXACT_TYPE(MoveInstruction, UInt8Type);
+	DISABLE_EXACT_TYPE(MoveInstruction, Float16Type);
 public:
 	MoveInstruction(Register<T> *destination, Register<T> *source) : m_destination(destination), m_source(source) {}
 

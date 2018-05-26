@@ -10,8 +10,8 @@ namespace PTX {
 template<Bits A, class T, AddressSpace S>
 class StoreInstruction : public InstructionStatement
 {
-	REQUIRE_TYPE(StoreInstruction, DataType);
-	DISABLE_TYPE(StoreInstruction, Float16Type);
+	REQUIRE_BASE_TYPE(StoreInstruction, DataType);
+	DISABLE_EXACT_TYPE(StoreInstruction, Float16Type);
 public:
 	StoreInstruction(Address<A, T, S> *address, Register<T> *reg) : m_address(address), m_register(reg) {}
 
