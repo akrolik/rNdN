@@ -62,26 +62,22 @@ struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
 //
 // Type
 //   VoidType
-//   ValueType
-//     DataType
-//       ScalarType
-//         BitType<Bits>
-//           PredicateType
-//           IntType
-//           UIntType
-//             PointerType<AddressSpace>
-//           FloatType
-//           PackedType<T, N>
-//       VectorType<ScalarType, VectorSize>
+//   DataType
+//     ScalarType
+//       BitType<Bits>
+//         PredicateType
+//         IntType
+//         UIntType
+//           PointerType<AddressSpace>
+//         FloatType
+//         PackedType<T, N>
+//     VectorType<ScalarType, VectorSize>
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
 struct VoidType : private Type { static std::string Name() { return ""; } };
 
-struct ValueType : private Type {};
-
-
-struct DataType : private ValueType {};
+struct DataType : private Type {};
 
 struct ScalarType : private DataType {};
 
