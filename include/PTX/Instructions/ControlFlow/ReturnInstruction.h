@@ -1,13 +1,14 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
+#include "PTX/Instructions/Modifiers/UniformModifier.h"
 
 namespace PTX {
 
-class ReturnInstruction : public InstructionStatement
+class ReturnInstruction : public InstructionStatement, public UniformModifier
 {
 public:
-	ReturnInstruction(bool uniform = false) : m_uniform(uniform) {}
+	ReturnInstruction(bool uniform = false) : UniformModifier(uniform) {}
 
 	std::string OpCode() const
 	{
@@ -22,9 +23,6 @@ public:
 	{
 		return "";
 	}
-
-private:
-	bool m_uniform = false;
 };
 
 }

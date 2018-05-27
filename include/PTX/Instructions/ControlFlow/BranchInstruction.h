@@ -1,15 +1,16 @@
 #pragma once
 
 #include "PTX/Instructions/PredicatedInstruction.h"
+#include "PTX/Instructions/Modifiers/UniformModifier.h"
 
 #include "PTX/Statements/Label.h"
 
 namespace PTX {
 
-class BranchInstruction : public PredicatedInstruction
+class BranchInstruction : public PredicatedInstruction, public UniformModifier
 {
 public:
-	BranchInstruction(Label *label, bool uniform = false) : m_label(label), m_uniform(uniform) {}
+	BranchInstruction(Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
 
 	std::string OpCode() const
 	{
@@ -27,7 +28,6 @@ public:
 
 private:
 	Label *m_label = nullptr;
-	bool m_uniform = false;
 };
 
 }
