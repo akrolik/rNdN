@@ -10,8 +10,6 @@ class NegateInstruction : public InstructionBase<T, 1>, public FlushSubnormalMod
 {
 	REQUIRE_BASE_TYPE(NegateInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(NegateInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(NegateInstruction, Float16Type); //TODO: Missing from PTX specification
-	DISABLE_EXACT_TYPE(NegateInstruction, Float16x2Type); //TODO: Missing from PTX specification
 	DISABLE_EXACT_TYPE_TEMPLATE(NegateInstruction, BitType);
 	DISABLE_EXACT_TYPE_TEMPLATE(NegateInstruction, UIntType);
 public:
