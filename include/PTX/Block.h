@@ -15,13 +15,13 @@ public:
 		m_statements.push_back(statement);
 	}
 
-	std::string ToString()
+	std::string ToString() const
 	{
 		std::ostringstream code;
-		for (std::vector<Statement *>::iterator it = m_statements.begin(); it != m_statements.end(); it++)
+		for (std::vector<Statement *>::const_iterator it = m_statements.cbegin(); it != m_statements.cend(); it++)
 		{
 			Statement *stmt = *it;
-			code << stmt->ToString() << stmt->Terminator() << std::endl;
+			code << "\t" << stmt->ToString() << stmt->Terminator() << std::endl;
 		}
 		return code.str();
 	}

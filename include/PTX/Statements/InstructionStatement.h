@@ -14,7 +14,7 @@ public:
 	std::string ToString() const
 	{
 		std::ostringstream code;
-		code << "\t" << OpCode();
+		code << OpCode();
 		std::string operands = Operands();
 		if (operands.length() > 0)
 		{

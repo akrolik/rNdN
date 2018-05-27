@@ -73,7 +73,7 @@ public:
 
 	std::string ToString() const
 	{
-		return "\t" + Specifier() + " " + T::Name() + " " + Directives() + VariableNames();
+		return Specifier() + " " + T::Name() + " " + Directives() + VariableNames();
 	}
 
 protected:

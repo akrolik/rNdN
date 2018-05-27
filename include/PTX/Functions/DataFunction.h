@@ -50,11 +50,18 @@ public:
 			code << "(" << m_returnSpace->ToString() << ") ";
 		}
 
-		code << m_name << "(" << std::endl;
+		code << m_name << "(";
+		if constexpr(sizeof...(Args) > 0)
+		{
+			code << std::endl;
+		}
 		CodeArgs(code, m_parameterSpaces, int_<sizeof...(Args)>());
 		code << ")" << std::endl;
 		code << "{" << std::endl;
-		code << m_body->ToString();
+		if (m_body != nullptr)
+		{
+			code << m_body->ToString();
+		}
 		code << "}" << std::endl;
 		
 		return code.str();
@@ -84,7 +91,7 @@ private:
 			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-P << " not set in function " << m_name << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		code << arg->ToString() << "," << std::endl;
+		code << "\t" << arg->ToString() << "," << std::endl;
 		return CodeArgs(code, t, int_<P-1>());
 	}
 
@@ -97,7 +104,7 @@ private:
 			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-1 << " not set in function " << m_name << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		code << arg->ToString() << std::endl;
+		code << "\t" << arg->ToString() << std::endl;
 		return code;
 	}
 
