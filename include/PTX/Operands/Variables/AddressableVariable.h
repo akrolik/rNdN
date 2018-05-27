@@ -6,9 +6,9 @@
 namespace PTX {
 
 template<class T, AddressSpace A>
-using AddressableVariable = Variable<T, AddressableSpace<T, A>>;
+using AddressableVariable = Variable<AddressableSpace<T, A>>;
 
 template<class T>
-using ParameterVariable = AddressableVariable<T, Param>;
+using ParameterVariable = AddressableVariable<T, AddressSpace::Param>;
 
 }

@@ -6,6 +6,6 @@
 namespace PTX {
 
 template<class T>
-using Register = Variable<T, RegisterSpace<T>>;
+using Register = Variable<RegisterSpace<T>>;
 
 }

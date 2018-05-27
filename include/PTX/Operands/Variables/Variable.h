@@ -2,20 +2,20 @@
 
 #include "PTX/Operands/Operand.h"
 
-#include "PTX/Type.h"
+// #include "PTX/Type.h"
 #include "PTX/StateSpaces/StateSpace.h"
 
 namespace PTX {
 
-template<class T>
-class StateSpace;
+// template<class T>
+// class StateSpace;
 
-template<class T, class S>
-class Variable : public Operand<T>
+template<class S>
+class Variable : public Operand<typename S::SpaceType>
 {
 	friend S;
 
-	static_assert(std::is_base_of<StateSpace<T>, S>::value, "PTX::Variable<T, S> must have a PTX::StateSpace<T>");
+	// static_assert(std::is_base_of<StateSpace<T>, S>::value, "PTX::Variable<T, S> must have a PTX::StateSpace<T>");
 public:
 	virtual std::string GetName() const
 	{

@@ -13,13 +13,13 @@ class RegisterSpace : public StateSpace<T>
 public:
 	using StateSpace<T>::StateSpace;
 
-	virtual Variable<T, RegisterSpace<T>> *GetVariable(std::string name, unsigned int index = 0)
+	virtual Variable<RegisterSpace<T>> *GetVariable(std::string name, unsigned int index = 0)
 	{
 		for (typename std::vector<NameSet>::const_iterator it = m_names.begin(); it != m_names.end(); ++it)
 		{
 			if (it->GetPrefix() == name)
 			{
-				return new Variable<T, RegisterSpace<T>>(it->GetName(index), this);
+				return new Variable<RegisterSpace<T>>(it->GetName(index), this);
 			}
 		}
 		std::cerr << "[Error] PTX::Variable(" << name << ") not found in PTX::RegisterSpace" << std::endl;
