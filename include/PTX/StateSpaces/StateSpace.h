@@ -51,6 +51,8 @@ class StateSpace : public DirectiveStatement
 {
 	REQUIRE_BASE_TYPE(StateSpace, Type);
 public:
+	using SpaceType = T;
+
 	virtual std::string Specifier() const = 0;
 	virtual std::string Directives() const { return ""; }
 

@@ -31,12 +31,14 @@ namespace PTX {
 template<class R, typename... Args>
 class DataFunction : public Function
 {
-	static_assert(std::is_base_of<DataType, R>::value || std::is_same<VoidType, R>::value, "PTX::DataFunction return type must be a PTX::DataType or PTX::VoidType");
+	// static_assert(std::is_base_of<DataType, R>::value || std::is_same<VoidType, R>::value, "PTX::DataFunction return type must be a PTX::DataType or PTX::VoidType");
 	// static_assert(is_all<is_space_specialization<Args, StateSpace>::value...>::value, "Args must be PTX::StateSpaces");
 	
 public:
-	template<class Q=R>
-	void SetReturnSpace(std::enable_if_t<std::is_same<Q, VoidType>::value, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
+	void SetReturnSpace(R *returnSpace) { m_returnSpace = returnSpace; }
+	// template<class Q=R>
+	// void SetReturnSpace(std::enable_if_t<!std::is_same<Q, VoidType>::value, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
+	// void SetReturnSpace(std::enable_if_t<!std::is_same<Q, VoidType>::value, StateSpace<Q>> *returnSpace) { m_returnSpace = returnSpace; }
 	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
 
 	std::string ToString() const
@@ -77,7 +79,7 @@ public:
 	}
 
 private:
-	StateSpace<R> *m_returnSpace = nullptr;
+	R *m_returnSpace = nullptr;
 	std::tuple<Args* ...> m_parameterSpaces;
 
 	template<std::size_t> struct int_{};

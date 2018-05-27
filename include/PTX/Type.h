@@ -75,7 +75,8 @@ struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
-struct VoidType : private Type { static std::string Name() { return ""; } };
+//TODO: temporary ToString for function printing
+struct VoidType : private Type { static std::string Name() { return ""; }  std::string ToString() { return ""; } };
 
 struct DataType : private Type {};
 
