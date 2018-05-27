@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-template<Bits B, class T, AddressSpace A>
+template<Bits B, class T, AddressSpace A = AddressSpace::Generic>
 class Address : public Operand<T>
 {
 };
