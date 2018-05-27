@@ -4,6 +4,7 @@
 #include "PTX/Instructions/Modifiers/UniformModifier.h"
 
 #include "PTX/Functions/DataFunction.h"
+#include "PTX/Utils.h"
 
 namespace PTX {
 
@@ -27,7 +28,7 @@ public:
 		std::ostringstream code;
 
 		code << "(" + m_returnVariable->ToString() + "), " + m_function->GetName() + ", (";
-		CodeArgs(code, m_parameters, int_<sizeof...(Args)>());
+		CodeTuple(code, " ", m_parameters, int_<sizeof...(Args)>());
 		code << ")";
 
 		return code.str();
@@ -37,40 +38,37 @@ private:
 	DataFunction<R, Args...> *m_function = nullptr;
 	Variable<typename R::SpaceType, R> *m_returnVariable = nullptr;
 	std::tuple<Variable<typename Args::SpaceType, Args>* ...> m_parameters;
+};
 
-	template<std::size_t> struct int_{};
+template<typename... Args>
+class CallInstruction<VoidType, Args...> : public InstructionStatement, public UniformModifier
+{
+public:
+	CallInstruction(DataFunction<VoidType, Args...> *function, Variable<typename Args::SpaceType, Args>* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_parameters(std::make_tuple(args...)) {}
 
-	template <typename T, size_t P>
-	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<P>) const
+	std::string OpCode() const
 	{
-		auto arg = std::get<std::tuple_size<T>::value-P>(t);
-		if (arg == nullptr)
+		if (m_uniform)
 		{
-			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-P << " not set in call" << std::endl;
-			std::exit(EXIT_FAILURE);
+			return "call.uni";
 		}
-		code << arg->ToString() << ", ";
-		return CodeArgs(code, t, int_<P-1>());
+		return "call";
 	}
 
-	template <typename T>
-	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<1>) const
+	std::string Operands() const
 	{
-		auto arg = std::get<std::tuple_size<T>::value-1>(t);
-		if (arg == nullptr)
-		{
-			std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-1 << " not set in call" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-		code << arg->ToString();
-		return code;
+		std::ostringstream code;
+
+		code << m_function->GetName() + ", (";
+		CodeTuple(code, " ", m_parameters, int_<sizeof...(Args)>());
+		code << ")";
+
+		return code.str();
 	}
 
-	template <typename T>
-	std::ostringstream& CodeArgs(std::ostringstream& code, const T& t, int_<0>) const
-	{
-		return code;
-	}
+private:
+	DataFunction<VoidType, Args...> *m_function = nullptr;
+	std::tuple<Variable<typename Args::SpaceType, Args>* ...> m_parameters;
 };
 
 }

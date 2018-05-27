@@ -5,10 +5,10 @@
 namespace PTX {
 
 template<class T, Bits B, AddressSpace A = Generic>
-class PointerSpace : public AddressableSpace<PointerType<T, B, A>, AddressSpace::Param>
+class PointerSpace : public ParameterSpace<PointerType<T, B, A>>
 {
 public:
-	using AddressableSpace<PointerType<T, B, A>, AddressSpace::Param>::AddressableSpace;
+	using ParameterSpace<PointerType<T, B, A>>::ParameterSpace;
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 

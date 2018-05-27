@@ -32,4 +32,7 @@ protected:
 	using StateSpace<T>::m_names;
 };
 
+template<class T>
+using ParameterSpace = AddressableSpace<T, AddressSpace::Param>;
+
 }
