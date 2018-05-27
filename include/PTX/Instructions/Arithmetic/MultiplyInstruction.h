@@ -9,14 +9,14 @@
 namespace PTX {
 
 template<class T>
-class MultiplyInstruction : public InstructionBase<T, 2>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
+class MultiplyInstruction : public InstructionBase_2<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
 	REQUIRE_BASE_TYPE(MultiplyInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MultiplyInstruction, Int8Type);
 	DISABLE_EXACT_TYPE(MultiplyInstruction, UInt8Type);
 	DISABLE_EXACT_TYPE_TEMPLATE(MultiplyInstruction, BitType);
 public:
-	using InstructionBase<T, 2>::InstructionBase;
+	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const
 	{
@@ -55,10 +55,10 @@ public:
 };
 
 template<>
-class MultiplyInstruction<Int32Type> : public InstructionBase<Int32Type, 2>, public HalfModifier<Int32Type>
+class MultiplyInstruction<Int32Type> : public InstructionBase_2<Int32Type>, public HalfModifier<Int32Type>
 {
 public:
-	using InstructionBase<Int32Type, 2>::InstructionBase;
+	using InstructionBase_2<Int32Type>::InstructionBase_2;
 
 	std::string OpCode() const
 	{

@@ -5,12 +5,12 @@
 namespace PTX {
 
 template<class T>
-class AndInstruction : public InstructionBase<T, 2>
+class AndInstruction : public InstructionBase_2<T>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(AndInstruction, BitType);
 	DISABLE_EXACT_TYPE(AndInstruction, Bit8Type);
 public:
-	using InstructionBase<T, 2>::InstructionBase;
+	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const
 	{

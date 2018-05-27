@@ -8,18 +8,11 @@
 
 namespace PTX {
 
-template<class T, unsigned int N, class D = T>
-class InstructionBase : public PredicatedInstruction
+template<class D, class S = D>
+class InstructionBase_1 : public PredicatedInstruction
 {
-	REQUIRE_BASE_TYPE(InstructionBase, Type);
-};
-
-template<class T, class D>
-class InstructionBase<T, 1, D> : public PredicatedInstruction
-{
-	REQUIRE_BASE_TYPE(InstructionBase, Type);
 public:
-	InstructionBase(Register<D> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
+	InstructionBase_1(Register<D> *destination, Operand<S> *source) : m_destination(destination), m_source(source) {}
 
 	std::string Operands() const
 	{
@@ -28,15 +21,14 @@ public:
 
 private:
 	Register<D> *m_destination = nullptr;
-	Operand<T> *m_source = nullptr;
+	Operand<S> *m_source = nullptr;
 };
 
-template<class T, class D>
-class InstructionBase<T, 2, D> : public PredicatedInstruction
+template<class D, class S1 = D, class S2 = S1>
+class InstructionBase_2 : public PredicatedInstruction
 {
-	REQUIRE_BASE_TYPE(InstructionBase, Type);
 public:
-	InstructionBase(Register<D> *destination, Operand<T> *sourceA, Operand<T> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	InstructionBase_2(Register<D> *destination, Operand<S1> *sourceA, Operand<S2> *sourceB) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
 	std::string Operands() const
 	{
@@ -45,16 +37,15 @@ public:
 
 private:
 	Register<D> *m_destination = nullptr;
-	Operand<T> *m_sourceA = nullptr;
-	Operand<T> *m_sourceB = nullptr;
+	Operand<S1> *m_sourceA = nullptr;
+	Operand<S2> *m_sourceB = nullptr;
 };
 
-template<class T, class D>
-class InstructionBase<T, 3, D> : public PredicatedInstruction
+template<class D, class S1 = D, class S2 = S1, class S3 = S1>
+class InstructionBase_3 : public PredicatedInstruction
 {
-	REQUIRE_BASE_TYPE(InstructionBase, Type);
 public:
-	InstructionBase(Register<D> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
+	InstructionBase_3(Register<D> *destination, Operand<S1> *sourceA, Operand<S2> *sourceB, Operand<S3> *sourceC) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC) {}
 
 	std::string Operands() const
 	{
@@ -63,9 +54,28 @@ public:
 
 private:
 	Register<D> *m_destination = nullptr;
-	Operand<T> *m_sourceA = nullptr;
-	Operand<T> *m_sourceB = nullptr;
-	Operand<T> *m_sourceC = nullptr;
+	Operand<S1> *m_sourceA = nullptr;
+	Operand<S2> *m_sourceB = nullptr;
+	Operand<S3> *m_sourceC = nullptr;
+};
+
+template<class D, class S1 = D, class S2 = S1, class S3 = S1, class S4 = S1>
+class InstructionBase_4 : public PredicatedInstruction
+{
+public:
+	InstructionBase_4(Register<D> *destination, Operand<S1> *sourceA, Operand<S2> *sourceB, Operand<S3> *sourceC, Operand<S4> *sourceD) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_sourceD(sourceD) {}
+
+	std::string Operands() const
+	{
+		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString() + ", " + m_sourceC->ToString() + ", " + m_sourceD->ToString();
+	}
+
+private:
+	Register<D> *m_destination = nullptr;
+	Operand<S1> *m_sourceA = nullptr;
+	Operand<S2> *m_sourceB = nullptr;
+	Operand<S3> *m_sourceC = nullptr;
+	Operand<S4> *m_sourceD = nullptr;
 };
 
 }

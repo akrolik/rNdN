@@ -5,10 +5,10 @@
 
 namespace PTX {
 
-class Log2Instruction : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier<Float32Type>
+class Log2Instruction : public InstructionBase_1<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	using InstructionBase<Float32Type, 1>::InstructionBase;
+	using InstructionBase_1<Float32Type>::InstructionBase_1;
 
 	std::string OpCode() const
 	{

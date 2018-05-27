@@ -10,7 +10,7 @@
 namespace PTX {
 
 template<class T>
-class MADInstruction : public InstructionBase<T, 3>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>, public CarryModifier<T>
+class MADInstruction : public InstructionBase_3<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>, public CarryModifier<T>
 {
 	REQUIRE_BASE_TYPE(MADInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MADInstruction, Int8Type);
@@ -19,7 +19,7 @@ class MADInstruction : public InstructionBase<T, 3>, public HalfModifier<T>, pub
 	DISABLE_EXACT_TYPE(MADInstruction, Float16x2Type);
 	DISABLE_EXACT_TYPE_TEMPLATE(MADInstruction, BitType);
 public:
-	using InstructionBase<T, 3>::InstructionBase;
+	using InstructionBase_3<T>::InstructionBase_3;
 
 	std::string OpCode() const
 	{

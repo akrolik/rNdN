@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T>
-class RemainderInstruction : public InstructionBase<T, 2>
+class RemainderInstruction : public InstructionBase_2<T>
 {
 	REQUIRE_BASE_TYPE(RemainderInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(RemainderInstruction, Int8Type);
@@ -13,7 +13,7 @@ class RemainderInstruction : public InstructionBase<T, 2>
 	DISABLE_EXACT_TYPE_TEMPLATE(RemainderInstruction, BitType);
 	DISABLE_EXACT_TYPE_TEMPLATE(RemainderInstruction, FloatType);
 public:
-	using InstructionBase<T, 2>::InstructionBase;
+	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const
 	{

@@ -7,7 +7,7 @@
 namespace PTX {
 
 template<class T>
-class ReciprocalInstruction : public InstructionBase<T, 1>
+class ReciprocalInstruction : public InstructionBase_1<T>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(ReciprocalInstruction, FloatType);
 	DISABLE_EXACT_TYPE(ReciprocalInstruction, Float16Type);
@@ -15,10 +15,10 @@ class ReciprocalInstruction : public InstructionBase<T, 1>
 };
 
 template<>
-class ReciprocalInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
+class ReciprocalInstruction<Float32Type> : public InstructionBase_1<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	ReciprocalInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
+	ReciprocalInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -40,10 +40,10 @@ public:
 };
 
 template<>
-class ReciprocalInstruction<Float64Type> : public InstructionBase<Float64Type, 1>, public RoundingModifier<Float64Type>
+class ReciprocalInstruction<Float64Type> : public InstructionBase_1<Float64Type>, public RoundingModifier<Float64Type>
 {
 public:
-	ReciprocalInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase<Float64Type, 1>(destination, source), RoundingModifier<Float64Type>(roundingMode) {}
+	ReciprocalInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{

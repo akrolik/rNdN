@@ -1,10 +1,10 @@
 #pragma once
 
-#include "PTX/Instructions/PredicatedInstruction.h"
+#include "PTX/Instructions/InstructionBase.h"
 
 namespace PTX {
 
-class FunnelShiftInstruction : public PredicatedInstruction
+class FunnelShiftInstruction : public InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>
 {
 public:
 	enum Direction {
@@ -17,7 +17,7 @@ public:
 		Wrap
 	};
 
-	FunnelShiftInstruction(Register<Bit32Type> *destination, Operand<Bit32Type> *sourceA, Operand<Bit32Type> *sourceB, Operand<UInt32Type> *shift, Direction direction, Mode mode) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_shift(shift), m_direction(direction), m_mode(mode) {}
+	FunnelShiftInstruction(Register<Bit32Type> *destination, Operand<Bit32Type> *sourceA, Operand<Bit32Type> *sourceB, Operand<UInt32Type> *shift, Direction direction, Mode mode) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
 
 	std::string OpCode() const
 	{
@@ -40,17 +40,8 @@ public:
 		}
 		return code + Bit32Type::Name();
 	}
-	
-	std::string Operands() const
-	{
-		return m_destination->ToString() + ", " + m_sourceA->ToString() + ", " + m_sourceB->ToString() + ", " + m_shift->ToString();
-	}
 
 private:
-	Register<Bit32Type> *m_destination = nullptr;
-	Operand<Bit32Type> *m_sourceA = nullptr;
-	Operand<Bit32Type> *m_sourceB = nullptr;
-	Operand<UInt32Type> *m_shift = nullptr;
 	Direction m_direction;
 	Mode m_mode;
 };

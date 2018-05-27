@@ -7,7 +7,7 @@
 namespace PTX {
 
 template<class T>
-class RootInstruction : public InstructionBase<T, 1>
+class RootInstruction : public InstructionBase_1<T>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(RootInstruction, FloatType);
 	DISABLE_EXACT_TYPE(RootInstruction, Float16Type);
@@ -15,10 +15,10 @@ class RootInstruction : public InstructionBase<T, 1>
 };
 
 template<>
-class RootInstruction<Float32Type> : public InstructionBase<Float32Type, 1>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
+class RootInstruction<Float32Type> : public InstructionBase_1<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase<Float32Type, 1>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
+	RootInstruction(Register<Float32Type> *destination, Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
 	std::string OpCode() const
 	{
@@ -42,10 +42,10 @@ public:
 };
 
 template<>
-class RootInstruction<Float64Type> : public InstructionBase<Float64Type, 1>, RoundingModifier<Float64Type, true>
+class RootInstruction<Float64Type> : public InstructionBase_1<Float64Type>, RoundingModifier<Float64Type, true>
 {
 public:
-	RootInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase<Float64Type, 1>(destination, source), RoundingModifier<Float64Type, true>(roundingMode) {}
+	RootInstruction(Register<Float64Type> *destination, Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type, true>(roundingMode) {}
 
 	std::string OpCode() const
 	{

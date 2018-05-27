@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T>
-class BitFindInstruction : public InstructionBase<T, 1, UInt32Type>
+class BitFindInstruction : public InstructionBase_1<UInt32Type, T>
 {
 	REQUIRE_BASE_TYPE(BitFindInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(BitFindInstruction, Int8Type);
@@ -15,7 +15,7 @@ class BitFindInstruction : public InstructionBase<T, 1, UInt32Type>
 	DISABLE_EXACT_TYPE_TEMPLATE(BitFindInstruction, BitType);
 	DISABLE_EXACT_TYPE_TEMPLATE(BitFindInstruction, FloatType);
 public:
-	using InstructionBase<T, 1, UInt32Type>::InstructionBase;
+	using InstructionBase_1<UInt32Type, T>::InstructionBase;
 
 	bool GetShiftAmount() const { return m_shiftAmount; }
 	void SetShiftAmount(bool shiftAmount) { m_shiftAmount; }

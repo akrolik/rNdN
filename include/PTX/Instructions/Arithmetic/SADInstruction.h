@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T>
-class SADInstruction : public InstructionBase<T, 2>
+class SADInstruction : public InstructionBase_2<T>
 {
 	REQUIRE_BASE_TYPE(SADInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(SADInstruction, Int8Type);
@@ -13,7 +13,7 @@ class SADInstruction : public InstructionBase<T, 2>
 	DISABLE_EXACT_TYPE_TEMPLATE(SADInstruction, BitType);
 	DISABLE_EXACT_TYPE_TEMPLATE(SADInstruction, FloatType);
 public:
-	using InstructionBase<T, 2>::InstructionBase;
+	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const
 	{

@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T>
-class TestPropertyInstruction : public InstructionBase<T, 1, PredicateType>
+class TestPropertyInstruction : public InstructionBase_1<PredicateType, T>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(TestPropertyInstruction, FloatType);
 	DISABLE_EXACT_TYPE(TestPropertyInstruction, Float16Type);
@@ -40,7 +40,7 @@ public:
 		return ".<unknown>";
 	}
 
-	TestPropertyInstruction(Register<PredicateType> *destination, Operand<T> *source, Property property) : InstructionBase<T, 1, PredicateType>(destination, source), m_property(property) {}
+	TestPropertyInstruction(Register<PredicateType> *destination, Operand<T> *source, Property property) : InstructionBase_1<PredicateType, T>(destination, source), m_property(property) {}
 
 	std::string OpCode() const
 	{

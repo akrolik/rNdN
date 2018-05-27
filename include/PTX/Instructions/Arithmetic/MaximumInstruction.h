@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class MaximumInstruction : public InstructionBase<T, 2>, public FlushSubnormalModifier<T>
+class MaximumInstruction : public InstructionBase_2<T>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(MaximumInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(MaximumInstruction, Int8Type);
@@ -15,7 +15,7 @@ class MaximumInstruction : public InstructionBase<T, 2>, public FlushSubnormalMo
 	DISABLE_EXACT_TYPE(MaximumInstruction, Float16x2Type);
 	DISABLE_EXACT_TYPE_TEMPLATE(MaximumInstruction, BitType);
 public:
-	using InstructionBase<T, 2>::InstructionBase;
+	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const
 	{

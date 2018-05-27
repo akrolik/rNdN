@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T1, class T2>
-class MADWideInstruction : public InstructionBase<T2, 3, T1>
+class MADWideInstruction : public InstructionBase_3<T1, T2>
 {
 	static_assert(
 		(std::is_same<Int32Type, T1>::value && std::is_same<Int16Type, T2>::value) ||
@@ -15,7 +15,7 @@ class MADWideInstruction : public InstructionBase<T2, 3, T1>
 		"PTX::MADWideInstruction requires 16-, 32-, or 64-bit integers (signed or unsigned) with destination = 2x source"
 	);
 public:
-	using InstructionBase<T2, 3, T1>::InstructionBase;
+	using InstructionBase_3<T1, T2>::InstructionBase_3;
 
 	std::string OpCode() const
 	{

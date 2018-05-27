@@ -5,11 +5,11 @@
 namespace PTX {
 
 template<class T>
-class FMAInstruction : public InstructionBase<T, 3>, public RoundingModifier<T, true>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
+class FMAInstruction : public InstructionBase_3<T>, public RoundingModifier<T, true>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(FMAInstruction, FloatType);
 public:
-	FMAInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase<T, 3>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
+	FMAInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 
 	std::string OpCode() const
 	{

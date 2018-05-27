@@ -5,10 +5,10 @@
 
 namespace PTX {
 
-class CosineInstruction : public InstructionBase<Float32Type, 1>, public FlushSubnormalModifier<Float32Type>
+class CosineInstruction : public InstructionBase_1<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	using InstructionBase<Float32Type, 1>::InstructionBase;
+	using InstructionBase_1<Float32Type>::InstructionBase_1;
 
 	std::string OpCode() const
 	{

@@ -4,10 +4,10 @@
 
 namespace PTX {
 
-class Logical3OpInstruction : public InstructionBase<Bit32Type, 3>
+class Logical3OpInstruction : public InstructionBase_3<Bit32Type>
 {
 public:
-	Logical3OpInstruction(Register<Bit32Type> *destination, Operand<Bit32Type> *sourceA, Operand<Bit32Type> *sourceB, Operand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase<Bit32Type, 3>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+	Logical3OpInstruction(Register<Bit32Type> *destination, Operand<Bit32Type> *sourceA, Operand<Bit32Type> *sourceB, Operand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
 	std::string OpCode() const
 	{
@@ -18,7 +18,7 @@ public:
 	{
 		std::ostringstream hex;
 		hex << std::hex << static_cast<int>(m_immLut);
-		return InstructionBase<Bit32Type, 3>::Operands() + ", 0x" + hex.str();
+		return InstructionBase_3<Bit32Type>::Operands() + ", 0x" + hex.str();
 	}
 
 private:

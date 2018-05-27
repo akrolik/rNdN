@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T>
-class AbsoluteInstruction : public InstructionBase<T, 1>, public FlushSubnormalModifier<T>
+class AbsoluteInstruction : public InstructionBase_1<T>, public FlushSubnormalModifier<T>
 {
 	REQUIRE_BASE_TYPE(AbsoluteInstruction, ScalarType);
 	DISABLE_EXACT_TYPE(AbsoluteInstruction, Int8Type);
@@ -15,7 +15,7 @@ class AbsoluteInstruction : public InstructionBase<T, 1>, public FlushSubnormalM
 	DISABLE_EXACT_TYPE_TEMPLATE(AbsoluteInstruction, BitType);
 	DISABLE_EXACT_TYPE_TEMPLATE(AbsoluteInstruction, UIntType);
 public:
-	using InstructionBase<T, 1>::InstructionBase;
+	using InstructionBase_1<T>::InstructionBase_1;
   	
 	std::string OpCode() const
 	{
