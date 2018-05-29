@@ -13,9 +13,8 @@ namespace PTX {
 template<class R, typename... Args>
 class DataFunction : public Function
 {
-	//TODO: static_assert R, Args...
-	// static_assert(std::is_same<RegisterSpace<typename R::SpaceType>, R>::value || std::is_base_of<ParameterSpace<typename R::SpaceType>, R>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
-	// static_assert(is_all<std::is_same<RegisterSpace<typename Args::SpaceType>, Args>::value || std::is_base_of<ParameterSpace<typename Args::SpaceType>, Args>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
+	static_assert(std::is_same<typename R::VariableSpace, RegisterSpace>::value || std::is_base_of<typename R::VariableSpace, ParameterSpace>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
+	static_assert(is_all<std::is_same<typename Args::VariableSpace, RegisterSpace>::value || std::is_base_of<typename Args::VariableSpace, ParameterSpace>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
 	
 public:
 	void SetReturn(VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
@@ -64,8 +63,7 @@ private:
 template<typename... Args>
 class DataFunction<VoidType, Args...> : public Function
 {
-	//TODO: static_assert Args...
-	// static_assert(is_all<std::is_same<RegisterSpace<typename Args::SpaceType>, Args>::value || std::is_base_of<ParameterSpace<typename Args::SpaceType>, Args>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
+	static_assert(is_all<std::is_same<typename Args::VariableSpace, RegisterSpace>::value || std::is_base_of<typename Args::VariableSpace, ParameterSpace>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
 	
 public:
 	void SetParameters(VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
