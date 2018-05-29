@@ -2,6 +2,10 @@
 
 #include "Test.h"
 
+#include "PTX/Type.h"
+#include "PTX/StateSpace.h"
+#include "PTX/Directives/VariableDeclaration.h"
+
 #include "PTX/Instructions/Arithmetic/AbsoluteInstruction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/BitFieldExtractInstruction.h"
@@ -41,43 +45,33 @@ class ArithmeticTest : public Test
 public:
 	void Execute()
 	{
-		PTX::RegisterSpace<PTX::Int32Type> *s32 = new PTX::RegisterSpace<PTX::Int32Type>("%r", 4);
-		PTX::Register<PTX::Int32Type> *regs32 = s32->GetVariable("%r", 0);
+		PTX::RegisterDeclaration<PTX::Int32Type> *s32 = new PTX::RegisterDeclaration<PTX::Int32Type>("%r", 4);
+		PTX::RegisterDeclaration<PTX::Float32Type> *f32 = new PTX::RegisterDeclaration<PTX::Float32Type>("%f", 4);
+		PTX::RegisterDeclaration<PTX::Float64Type> *f64 = new PTX::RegisterDeclaration<PTX::Float64Type>("%fd", 4);
 
-		PTX::AddInstruction<PTX::Int32Type> *test0 = new PTX::AddInstruction<PTX::Int32Type>(regs32, regs32, regs32);
-		std::cout << test0->ToString() << std::endl;
+		PTX::Register<PTX::Int32Type> *reg_s32 = s32->GetVariable("%r", 0);
+		PTX::Register<PTX::Float32Type> *reg_f32 = f32->GetVariable("%f", 0);
+		PTX::Register<PTX::Float64Type> *reg_f64 = f64->GetVariable("%fd", 0);
 
-		PTX::RegisterSpace<PTX::Float32Type> *f32 = new PTX::RegisterSpace<PTX::Float32Type>("%f", 4);
-		PTX::Register<PTX::Float32Type> *reg32 = f32->GetVariable("%f", 0);
-
-		PTX::AbsoluteInstruction<PTX::Float32Type> *test1 = new PTX::AbsoluteInstruction<PTX::Float32Type>(reg32, reg32);
-		test1->SetFlushSubnormal(true);
+		PTX::AddInstruction<PTX::Int32Type> *test1 = new PTX::AddInstruction<PTX::Int32Type>(reg_s32, reg_s32, reg_s32);
 		std::cout << test1->ToString() << std::endl;
 
-		PTX::RegisterSpace<PTX::Float64Type> *f64 = new PTX::RegisterSpace<PTX::Float64Type>("%fd", 4);
-		PTX::Register<PTX::Float64Type> *reg64 = f64->GetVariable("%fd", 0);
-
-		PTX::AbsoluteInstruction<PTX::Float64Type> *test2 = new PTX::AbsoluteInstruction<PTX::Float64Type>(reg64, reg64);
-		// test2->SetFlushSubnormal(true);
+		PTX::AbsoluteInstruction<PTX::Float32Type> *test2 = new PTX::AbsoluteInstruction<PTX::Float32Type>(reg_f32, reg_f32);
+		test2->SetFlushSubnormal(true);
 		std::cout << test2->ToString() << std::endl;
 
-		PTX::AddInstruction<PTX::Float32Type> *test3 = new PTX::AddInstruction<PTX::Float32Type>(reg32, reg32, reg32);
-		test3->SetRoundingMode(PTX::Float32Type::RoundingMode::Nearest);
-		test3->SetFlushSubnormal(true);
-		test3->SetSaturate(true);
+		PTX::AbsoluteInstruction<PTX::Float64Type> *test3 = new PTX::AbsoluteInstruction<PTX::Float64Type>(reg_f64, reg_f64);
 		std::cout << test3->ToString() << std::endl;
 
-		PTX::ReciprocalRootInstruction<PTX::Float64Type> *test4 = new PTX::ReciprocalRootInstruction<PTX::Float64Type>(reg64, reg64);
+		PTX::AddInstruction<PTX::Float32Type> *test4 = new PTX::AddInstruction<PTX::Float32Type>(reg_f32, reg_f32, reg_f32);
+		test4->SetRoundingMode(PTX::Float32Type::RoundingMode::Nearest);
 		test4->SetFlushSubnormal(true);
+		test4->SetSaturate(true);
 		std::cout << test4->ToString() << std::endl;
 
-		// PTX::SADInstruction<PTX::Float16x2Type> *test2 = new PTX::SADInstruction<PTX::Float16x2Type>(nullptr, nullptr, nullptr);
-		// PTX::MadInstruction<PTX::Int16Type> *mad1 = new PTX::MadInstruction<PTX::Int16Type>(nullptr, nullptr, nullptr, nullptr);
-		// PTX::MadInstruction<PTX::Int8Type> *mad2 = new PTX::MadInstruction<PTX::Int8Type>(nullptr, nullptr, nullptr, nullptr);
-		// PTX::MadInstruction<PTX::IntType<PTX::Bits::Bits8>> *mad3 = new PTX::MadInstruction<PTX::IntType<PTX::Bits::Bits8>>(nullptr, nullptr, nullptr, nullptr);
-
-		// PTX::SADInstruction<PTX::Int16Type> *sad1 = new PTX::SADInstruction<PTX::Int16Type>(nullptr, nullptr, nullptr);
-		// PTX::SADInstruction<PTX::Float32Type> *sad2 = new PTX::SADInstruction<PTX::Float32Type>(nullptr, nullptr, nullptr);
+		PTX::ReciprocalRootInstruction<PTX::Float64Type> *test5 = new PTX::ReciprocalRootInstruction<PTX::Float64Type>(reg_f64, reg_f64);
+		test5->SetFlushSubnormal(true);
+		std::cout << test5->ToString() << std::endl;
 	}
 };
 

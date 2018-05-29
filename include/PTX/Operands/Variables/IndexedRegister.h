@@ -2,15 +2,14 @@
 
 #include "PTX/Operands/Variables/Register.h"
 
-#include "PTX/StateSpaces/SpaceAdapter.h"
-
 namespace PTX {
 
 template<class T, VectorSize V>
 class IndexedRegister : public Register<T>
 {
+	REQUIRE_BASE_TYPE(IndexedRegister, ScalarType);
 public:
-	IndexedRegister(Register<VectorType<T, V>> *variable, VectorElement vectorElement) : Register<T>(variable->GetName(), new RegisterSpaceAdapter<T, VectorType<T, V>>(variable->GetStateSpace())), m_vectorElement(vectorElement) {}
+	IndexedRegister(Register<VectorType<T, V>> *variable, VectorElement vectorElement) : Register<T>(variable->GetName()), m_vectorElement(vectorElement) {}
 
 	virtual VectorElement GetVectorElement() const { return m_vectorElement; }
 

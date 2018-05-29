@@ -2,23 +2,22 @@
 
 #include "PTX/Statements/InstructionStatement.h"
 
+#include "PTX/StateSpace.h"
 #include "PTX/Operands/Operand.h"
 #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 
-template<class T, Bits B, AddressSpace A>
+template<class T, Bits B, class S>
 class ConvertToAddressInstruction : public InstructionStatement
 {
-	//TODO: Update this instruction
-	// DISABLE_BITS(ConvertToAddressInstruction, Bits8);
-	// DISABLE_BITS(ConvertToAddressInstruction, Bits16);
+	static_assert(B == Bits::Bits32 || B == Bits::Bits64, "PTX::ConvertToAddressInstruction requires PTX::Bits::Bits32 or PTX::Bits::Bits64");
 public:
-	ConvertToAddressInstruction(Register<PointerType<T, B, A>> *destination, Register<PointerType<T, B, AddressSpace::Generic>> *source) : m_destination(destination), m_source(source) {}
+	ConvertToAddressInstruction(Register<PointerType<T, B, S>> *destination, Register<PointerType<T, B>> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const
 	{
-		return "cvta.to" + AddressSpaceName<A>() + PointerType<T, B, A>::Name();
+		return "cvta.to" + S::Name() + PointerType<T, B, S>::Name();
 	}
 
 	std::string Operands() const
@@ -27,13 +26,13 @@ public:
 	}
 
 private:
-	Register<PointerType<T, B, A>> *m_destination = nullptr;
-	Register<PointerType<T, B, AddressSpace::Generic>> *m_source = nullptr;
+	Register<PointerType<T, B, S>> *m_destination = nullptr;
+	Register<PointerType<T, B>> *m_source = nullptr;
 };
 
-template<class T, AddressSpace A>
-using ConvertToAddress32Instruction = ConvertToAddressInstruction<T, Bits::Bits32, A>;
-template<class T, AddressSpace A>
-using ConvertToAddress64Instruction = ConvertToAddressInstruction<T, Bits::Bits64, A>;
+template<class T, class S>
+using ConvertToAddress32Instruction = ConvertToAddressInstruction<T, Bits::Bits32, S>;
+template<class T, class S>
+using ConvertToAddress64Instruction = ConvertToAddressInstruction<T, Bits::Bits64, S>;
 
 }

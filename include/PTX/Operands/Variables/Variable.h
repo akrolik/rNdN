@@ -2,29 +2,27 @@
 
 #include "PTX/Operands/Operand.h"
 
-// #include "PTX/Type.h"
-#include "PTX/StateSpaces/StateSpace.h"
+#include "PTX/Type.h"
+#include "PTX/StateSpace.h"
 
 namespace PTX {
 
-// template<class T>
-// class StateSpace;
-
-template<class S>
-class Variable : public Operand<typename S::SpaceType>
+template<class T, class S>
+class Variable : public Operand<T>
 {
-	friend S;
+	friend class VariableDeclaration<T, S>;
+	//TODO: remove this friend class
+	friend class VariableDeclaration<T, SpecialRegisterSpace>;
 
-	// static_assert(std::is_base_of<StateSpace<T>, S>::value, "PTX::Variable<T, S> must have a PTX::StateSpace<T>");
+	REQUIRE_BASE_TYPE(Variable, Type);
+	REQUIRE_BASE_SPACE(Variable, StateSpace);
 public:
+	using VariableType = T;
+	using VariableSpace = S;
+
 	virtual std::string GetName() const
 	{
 		return m_name;
-	}
-
-	virtual S *GetStateSpace() const
-	{
-		return m_stateSpace;
 	}
 
 	std::string ToString() const
@@ -33,11 +31,9 @@ public:
 	}
 
 protected:
-	Variable(std::string name, S *stateSpace) : m_name(name), m_stateSpace(stateSpace) {}
+	Variable(std::string name) : m_name(name) {}
 
 	std::string m_name;
-	S *m_stateSpace = nullptr;
 };
-
 
 }

@@ -2,12 +2,13 @@
 
 #include "PTX/Statements/InstructionStatement.h"
 
+#include "PTX/StateSpace.h"
 #include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 
-template<Bits A, class T, AddressSpace S>
+template<Bits A, class T, class S>
 class StoreInstruction : public InstructionStatement
 {
 	REQUIRE_BASE_TYPE(StoreInstruction, DataType);
@@ -17,7 +18,7 @@ public:
 
 	std::string OpCode() const
 	{
-		return "st" + AddressSpaceName<S>() + T::Name();
+		return "st" + S::Name() + T::Name();
 	}
 	
 	std::string Operands() const
@@ -30,9 +31,9 @@ private:
 	Register<T> *m_register = nullptr;
 };
 
-template<class T, AddressSpace S>
+template<class T, class S>
 using Store32Instruction = StoreInstruction<Bits::Bits32, T, S>;
-template<class T, AddressSpace S>
+template<class T, class S>
 using Store64Instruction = StoreInstruction<Bits::Bits64, T, S>;
 
 }

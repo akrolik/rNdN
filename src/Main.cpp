@@ -4,6 +4,12 @@
 #include "CUDA/Platform.h"
 
 #include "PTX/ArithmeticTest.h"
+#include "PTX/ComparisonTest.h"
+#include "PTX/ControlFlowTest.h"
+#include "PTX/DataTest.h"
+#include "PTX/LogicalTest.h"
+#include "PTX/ShiftTest.h"
+
 #include "PTX/AddTest.h"
 #include "PTX/BasicTest.h"
 #include "PTX/ConditionalTest.h"
@@ -34,8 +40,6 @@ int main(int argc, char *argv[])
 
 	p.CreateContext(device);
 
-	Test::ArithmeticTest test;
-	// Test::BasicTest test;
-	// Test::ConditionalTest test;
+	Test::ConditionalTest test;
 	test.Execute();
 }

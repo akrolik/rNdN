@@ -8,10 +8,12 @@
 #include "CUDA/Module.h"
 
 #include "PTX/Module.h"
+#include "PTX/StateSpace.h"
 #include "PTX/Type.h"
+#include "PTX/Directives/VariableDeclaration.h"
 #include "PTX/Functions/Function.h"
-#include "PTX/Functions/EntryFunction.h"
 #include "PTX/Functions/DataFunction.h"
+#include "PTX/Functions/EntryFunction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
@@ -21,18 +23,14 @@
 #include "PTX/Instructions/Data/StoreInstruction.h"
 #include "PTX/Operands/Adapters/PointerAdapter.h"
 #include "PTX/Operands/Address/Address.h"
-#include "PTX/Operands/Address/RegisterAddress.h"
 #include "PTX/Operands/Address/MemoryAddress.h"
+#include "PTX/Operands/Address/RegisterAddress.h"
 #include "PTX/Operands/Value.h"
-#include "PTX/Operands/Variables/Variable.h"
+#include "PTX/Operands/Variables/AddressableVariable.h"
 #include "PTX/Operands/Variables/IndexedRegister.h"
 #include "PTX/Operands/Variables/Register.h"
+#include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Statements/Label.h"
-#include "PTX/StateSpaces/AddressableSpace.h"
-#include "PTX/StateSpaces/RegisterSpace.h"
-#include "PTX/StateSpaces/PointerSpace.h"
-#include "PTX/StateSpaces/SpecialRegisterSpace.h"
-#include "PTX/StateSpaces/SpaceAdapter.h"
 
 namespace Test
 {
@@ -50,19 +48,19 @@ public:
 		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
-		PTX::EntryFunction<PTX::Pointer64Space<PTX::Float64Type>> *function = new PTX::EntryFunction<PTX::Pointer64Space<PTX::Float64Type>>();
+		PTX::EntryFunction<PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>> *function = new PTX::EntryFunction<PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>>();
 		function->SetName("AddTest");
 		function->SetVisible(true);
 
-		PTX::Pointer64Space<PTX::Float64Type> *parameterSpace = new PTX::Pointer64Space<PTX::Float64Type>("AddTest_0");
-		function->SetParameters(parameterSpace);
+		PTX::Pointer64Declaration<PTX::Float64Type> *parameterDeclaration = new PTX::Pointer64Declaration<PTX::Float64Type>("AddTest_0");
+		function->SetParameters(parameterDeclaration);
 
-		PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>> *srtid = new PTX::SpecialRegisterSpace<PTX::Vector4Type<PTX::UInt32Type>>("%tid");
-		PTX::RegisterSpace<PTX::UInt32Type> *r32 = new PTX::RegisterSpace<PTX::UInt32Type>("%r", 1);
-		PTX::RegisterSpace<PTX::UInt64Type> *r64 = new PTX::RegisterSpace<PTX::UInt64Type>("%rd", 4);
-		PTX::RegisterSpace<PTX::Float64Type> *f64 = new PTX::RegisterSpace<PTX::Float64Type>("%f", 2);
+		PTX::SpecialRegisterDeclaration<PTX::Vector4Type<PTX::UInt32Type>> *srtid = new PTX::SpecialRegisterDeclaration<PTX::Vector4Type<PTX::UInt32Type>>("%tid");
+		PTX::RegisterDeclaration<PTX::UInt32Type> *r32 = new PTX::RegisterDeclaration<PTX::UInt32Type>("%r", 1);
+		PTX::RegisterDeclaration<PTX::UInt64Type> *r64 = new PTX::RegisterDeclaration<PTX::UInt64Type>("%rd", 4);
+		PTX::RegisterDeclaration<PTX::Float64Type> *f64 = new PTX::RegisterDeclaration<PTX::Float64Type>("%f", 2);
 
-		PTX::ParameterVariable<PTX::Pointer64Type<PTX::Float64Type>> *parameter = parameterSpace->GetVariable("AddTest_0");
+		PTX::ParameterVariable<PTX::Pointer64Type<PTX::Float64Type>> *parameter = parameterDeclaration->GetVariable("AddTest_0");
 
 		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
 																		       
@@ -77,24 +75,24 @@ public:
 		PTX::Register<PTX::Float64Type> *f1 = f64->GetVariable("%f", 1);
 
 		PTX::Register<PTX::Pointer64Type<PTX::Float64Type>> *rd0_ptr = new PTX::Pointer64Adapter<PTX::Float64Type>(rd0);
-		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::AddressSpace::Global>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::AddressSpace::Global>(rd1);
+		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd1);
 
 		PTX::Block *block = new PTX::Block();
 		block->AddStatement(r32);
 		block->AddStatement(r64); 
 		block->AddStatement(f64); 
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::Float64Type>, PTX::AddressSpace::Param>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::Float64Type>, PTX::AddressSpace::Param>(parameter)));
-		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::Float64Type, PTX::AddressSpace::Global>(rd1_ptr, rd0_ptr));
+		block->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>(parameter)));
+		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
 		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
 		block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(8)));
 		block->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::Float64Type, PTX::AddressSpace::Global>(f0, new PTX::RegisterAddress64<PTX::Float64Type, PTX::AddressSpace::Global>(rd1_ptr)));
+		block->AddStatement(new PTX::Load64Instruction<PTX::Float64Type, PTX::GlobalSpace>(f0, new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr)));
 		block->AddStatement(new PTX::AddInstruction<PTX::Float64Type>(f1, f0, new PTX::Float64Value(2)));
 
-		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::AddressSpace::Global>> *rd3_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::AddressSpace::Global>(rd3);
-		block->AddStatement(new PTX::Store64Instruction<PTX::Float64Type, PTX::AddressSpace::Global>(new PTX::RegisterAddress64<PTX::Float64Type, PTX::AddressSpace::Global>(rd3_ptr), f1));
+		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd3);
+		block->AddStatement(new PTX::Store64Instruction<PTX::Float64Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd3_ptr), f1));
 		block->AddStatement(new PTX::ReturnInstruction());
 
 		function->SetBody(block);

@@ -12,7 +12,7 @@ template<class R, typename... Args>
 class CallInstruction : public InstructionStatement, public UniformModifier
 {
 public:
-	CallInstruction(DataFunction<R, Args...> *function, Variable<R> *returnVariable, Variable<Args>* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable), m_parameters(std::make_tuple(args...)) {}
+	CallInstruction(DataFunction<R, Args...> *function, R *returnVariable, Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable), m_parameters(std::make_tuple(args...)) {}
 
 	std::string OpCode() const
 	{
@@ -36,15 +36,15 @@ public:
 
 private:
 	DataFunction<R, Args...> *m_function = nullptr;
-	Variable<R> *m_returnVariable = nullptr;
-	std::tuple<Variable<Args>* ...> m_parameters;
+	R *m_returnVariable = nullptr;
+	std::tuple<Args* ...> m_parameters;
 };
 
 template<typename... Args>
 class CallInstruction<VoidType, Args...> : public InstructionStatement, public UniformModifier
 {
 public:
-	CallInstruction(DataFunction<VoidType, Args...> *function, Variable<Args>* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_parameters(std::make_tuple(args...)) {}
+	CallInstruction(DataFunction<VoidType, Args...> *function, Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_parameters(std::make_tuple(args...)) {}
 
 	std::string OpCode() const
 	{
@@ -68,7 +68,7 @@ public:
 
 private:
 	DataFunction<VoidType, Args...> *m_function = nullptr;
-	std::tuple<Variable<Args>* ...> m_parameters;
+	std::tuple<Args* ...> m_parameters;
 };
 
 }

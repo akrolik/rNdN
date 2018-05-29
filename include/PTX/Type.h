@@ -2,32 +2,12 @@
 
 #include <string>
 
+#include "PTX/StateSpace.h"
+
 #define __TO_STRING(S) #S
 #define TO_STRING(S) __TO_STRING(S)
 
 namespace PTX {
-
-// @enum AddressSpace
-//
-// Storage space used for addressable state spaces
-
-enum AddressSpace {
-	Generic,
-	Const,
-	Global,
-	Local,
-	Param,
-	Shared
-};
-
-template<AddressSpace S> std::string AddressSpaceName() { return ".<unknown>"; }
-
-template<> inline std::string AddressSpaceName<Generic>() { return std::string(""); }
-template<> inline std::string AddressSpaceName<Const>() { return std::string(".const"); }
-template<> inline std::string AddressSpaceName<Global>() { return std::string(".global"); }
-template<> inline std::string AddressSpaceName<Local>() { return std::string(".local"); }
-template<> inline std::string AddressSpaceName<Param>() { return std::string(".param"); }
-template<> inline std::string AddressSpaceName<Shared>() { return std::string(".shared"); }
 
 // @struct is_rounding_type
 //
@@ -447,18 +427,19 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 	return ".<unknown>";
 }
 
-template<class T, Bits B, AddressSpace A = AddressSpace::Generic>
+template<class T, Bits B, class S = AddressableSpace>
 struct PointerType : private UIntType<B>
 {
 	REQUIRE_BASE_TYPE(PointerType, Type);
 	DISABLE_EXACT_TYPE(PointerType, PredicateType);
+	REQUIRE_BASE_SPACE(PointerType, AddressableSpace);
 
 	static std::string Name() { return UIntType<B>::Name(); }
 };
 
-template<class T, AddressSpace A = AddressSpace::Generic>
-using Pointer32Type = PointerType<T, Bits::Bits32, A>;
-template<class T, AddressSpace A = AddressSpace::Generic>
-using Pointer64Type = PointerType<T, Bits::Bits64, A>;
+template<class T, class S = AddressableSpace>
+using Pointer32Type = PointerType<T, Bits::Bits32, S>;
+template<class T, class S = AddressableSpace>
+using Pointer64Type = PointerType<T, Bits::Bits64, S>;
 
 }

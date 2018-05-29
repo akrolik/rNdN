@@ -3,40 +3,38 @@
 #include <tuple>
 #include <sstream>
 
+#include "PTX/StateSpace.h"
 #include "PTX/Type.h"
 #include "PTX/Utils.h"
 #include "PTX/Functions/Function.h"
-
-#include "PTX/StateSpaces/StateSpace.h"
-#include "PTX/StateSpaces/RegisterSpace.h"
-#include "PTX/StateSpaces/AddressableSpace.h"
 
 namespace PTX {
 
 template<class R, typename... Args>
 class DataFunction : public Function
 {
-	static_assert(std::is_same<RegisterSpace<typename R::SpaceType>, R>::value || std::is_base_of<ParameterSpace<typename R::SpaceType>, R>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
-	static_assert(is_all<std::is_same<RegisterSpace<typename Args::SpaceType>, Args>::value || std::is_base_of<ParameterSpace<typename Args::SpaceType>, Args>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
+	//TODO: static_assert R, Args...
+	// static_assert(std::is_same<RegisterSpace<typename R::SpaceType>, R>::value || std::is_base_of<ParameterSpace<typename R::SpaceType>, R>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
+	// static_assert(is_all<std::is_same<RegisterSpace<typename Args::SpaceType>, Args>::value || std::is_base_of<ParameterSpace<typename Args::SpaceType>, Args>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
 	
 public:
-	void SetReturnSpace(R *returnSpace) { m_returnSpace = returnSpace; }
-	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
+	void SetReturn(VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
+	void SetParameters(VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
 
 	std::string ToString() const
 	{
 		std::ostringstream code;
 
 		code << GetDirectives() << " ";
-		if (m_returnSpace != nullptr)
+		if (m_return != nullptr)
 		{
-			code << "(" << m_returnSpace->ToString() << ") ";
+			code << "(" << m_return->ToString() << ") ";
 		}
 		code << m_name << "(";
 		if constexpr(sizeof...(Args) > 0)
 		{
 			code << std::endl << "\t";
-			CodeTuple(code, "\t\n", m_parameterSpaces, int_<sizeof...(Args)>());
+			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>());
 		}
 		code << ")" << std::endl;
 		code << "{" << std::endl;
@@ -59,17 +57,18 @@ public:
 	}
 
 private:
-	R *m_returnSpace = nullptr;
-	std::tuple<Args* ...> m_parameterSpaces;
+	VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *m_return = nullptr;
+	std::tuple<VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...> m_parameters;
 };
 
 template<typename... Args>
 class DataFunction<VoidType, Args...> : public Function
 {
-	static_assert(is_all<std::is_same<RegisterSpace<typename Args::SpaceType>, Args>::value || std::is_base_of<ParameterSpace<typename Args::SpaceType>, Args>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
+	//TODO: static_assert Args...
+	// static_assert(is_all<std::is_same<RegisterSpace<typename Args::SpaceType>, Args>::value || std::is_base_of<ParameterSpace<typename Args::SpaceType>, Args>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
 	
 public:
-	void SetParameters(Args* ...parameterSpaces) { m_parameterSpaces = std::make_tuple(parameterSpaces...); }
+	void SetParameters(VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
 
 	std::string ToString() const
 	{
@@ -79,7 +78,7 @@ public:
 		if constexpr(sizeof...(Args) > 0)
 		{
 			code << std::endl << "\t";
-			CodeTuple(code, "\t\n", m_parameterSpaces, int_<sizeof...(Args)>());
+			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>());
 		}
 		code << ")" << std::endl;
 		code << "{" << std::endl;
@@ -102,6 +101,6 @@ public:
 	}
 
 private:
-	std::tuple<Args* ...> m_parameterSpaces;
+	std::tuple<VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...> m_parameters;
 };
 }

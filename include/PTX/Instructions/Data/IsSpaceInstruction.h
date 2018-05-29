@@ -7,15 +7,17 @@
 
 namespace PTX {
 
-template<Bits B, class T, AddressSpace A>
+template<Bits B, class T, class S>
 class IsSpaceInstruction : public InstructionStatement
 {
+	REQUIRE_BASE_TYPE(IsSpaceInstruction, Type);
+	REQUIRE_BASE_SPACE(IsSpaceInstruction, AddressableSpace);
 public:
 	IsSpaceInstruction(Register<PredicateType> *destination, Address<B, T> *address) : m_destination(destination), m_address(address) {}
 
 	std::string OpCode() const
 	{
-		return "isspacep" + AddressSpaceName<A>();
+		return "isspacep" + S::Name();
 	}
 
 	std::string Operands() const
@@ -28,9 +30,9 @@ private:
 	Address<B, T> *m_address = nullptr;
 };
 
-template<class T, AddressSpace A>
-using IsSpace32Instruction = IsSpaceInstruction<Bits::Bits32, T, A>;
-template<class T, AddressSpace A>
-using IsSpace64Instruction = IsSpaceInstruction<Bits::Bits64, T, A>;
+template<class T, class S>
+using IsSpace32Instruction = IsSpaceInstruction<Bits::Bits32, T, S>;
+template<class T, class S>
+using IsSpace64Instruction = IsSpaceInstruction<Bits::Bits64, T, S>;
 
 }

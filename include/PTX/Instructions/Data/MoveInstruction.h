@@ -2,7 +2,8 @@
 
 #include "PTX/Instructions/PredicatedInstruction.h"
 
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/StateSpace.h"
+// #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 

@@ -1,21 +1,22 @@
 #pragma once
 
+#include "PTX/StateSpace.h"
 #include "PTX/Operands/Variables/Register.h"
-
-#include "PTX/StateSpaces/SpaceAdapter.h"
 
 namespace PTX {
 
-template<class T, Bits B, AddressSpace A = AddressSpace::Generic>
-class PointerAdapter : public Register<PointerType<T, B, A>>
-{
+template<class T, Bits B, class S = AddressableSpace>
+class PointerAdapter : public Register<PointerType<T, B, S>>
+{ 
+	REQUIRE_BASE_TYPE(PointerAdapter, Type);
+	REQUIRE_BASE_SPACE(PointerAdapter, AddressableSpace);
 public:
-	PointerAdapter(Register<UIntType<B>> *variable) : Register<PointerType<T, B, A>>(variable->GetName(), new RegisterSpaceAdapter<PointerType<T, B, A>, UIntType<B>>(variable->GetStateSpace())) {}
+	PointerAdapter(Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}
 };
 
-template<class T, AddressSpace A = AddressSpace::Generic>
-using Pointer32Adapter = PointerAdapter<T, Bits::Bits32, A>;
-template<class T, AddressSpace A = AddressSpace::Generic>
-using Pointer64Adapter = PointerAdapter<T, Bits::Bits64, A>;
+template<class T, class S = AddressableSpace>
+using Pointer32Adapter = PointerAdapter<T, Bits::Bits32, S>;
+template<class T, class S = AddressableSpace>
+using Pointer64Adapter = PointerAdapter<T, Bits::Bits64, S>;
 
 }
