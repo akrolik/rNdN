@@ -6,6 +6,11 @@
 namespace PTX {
 
 template<class T>
-using Register = RegisterSpace::VariableType<T>;
+class Register : public Variable<T, RegisterSpace>
+{
+	friend class VariableDeclaration<T, SpecialRegisterSpace>;
+public:
+	using Variable<T, RegisterSpace>::Variable;
+};
 
 }

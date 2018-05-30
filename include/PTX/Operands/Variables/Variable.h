@@ -11,8 +11,6 @@ template<class T, class S>
 class Variable : public Operand<T>
 {
 	friend class VariableDeclaration<T, S>;
-	//TODO: remove this friend class
-	friend class VariableDeclaration<T, SpecialRegisterSpace>;
 
 	REQUIRE_BASE_TYPE(Variable, Type);
 	REQUIRE_BASE_SPACE(Variable, StateSpace);

@@ -11,13 +11,13 @@ namespace PTX {
  
 struct StateSpace { static std::string Name() { return ".<unknown>"; } }; 
 
-template<class T, class S>
-class Variable;
+template<class T>
+class Register;
 
 struct RegisterSpace : StateSpace
 {
 	template<class T>
-	using VariableType = Variable<T, RegisterSpace>;
+	using VariableType = Register<T>;
 
 	static std::string Name() { return ".reg"; }
 }; 
