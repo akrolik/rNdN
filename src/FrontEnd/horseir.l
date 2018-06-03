@@ -7,6 +7,7 @@
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
 %}
 
+NONZERODIGIT [1-9]
 DIGIT [0-9]
 LETTER [A-Za-z_]
 
@@ -51,6 +52,11 @@ return       return tRETURN;
 @{LETTER}({LETTER}|{DIGIT})* {
 	yylval.string_val = strdup(yytext);
 	return tFUNCTION;
+}
+
+0|({NONZERODIGIT}{DIGIT}*) {
+	yylval.int_val = atol(yytext);
+	return tINTVAL;
 }
 
 \"({LETTER}|{DIGIT})*\" {
