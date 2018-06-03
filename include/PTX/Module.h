@@ -6,8 +6,7 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Type.h"
 
-namespace PTX
-{
+namespace PTX {
 
 class Module
 {
