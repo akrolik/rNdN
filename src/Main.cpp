@@ -1,6 +1,11 @@
 #include <iostream>
 #include <cstring>
 
+#include "Codegen/CodeGenerator.h"
+#include "HorseIR/Tree/Program.h"
+#include "PTX/Program.h"
+#include "PTX/Type.h"
+
 #include "CUDA/Platform.h"
 
 #include "PTX/ArithmeticTest.h"
@@ -16,9 +21,17 @@
 
 int yyparse();
 
+HorseIR::Program *program;
+
 int main(int argc, char *argv[])
 {
-	// yyparse();
+	yyparse();
+	std::cout << program->ToString() << std::endl;
+
+	CodeGenerator *codegen = new CodeGenerator("sm_61", PTX::Bits::Bits64);
+	PTX::Program *ptxProgram = codegen->GenerateProgram(program);
+	std::cout << ptxProgram->ToString() << std::endl;
+	std::exit(EXIT_SUCCESS);
 
 	if (sizeof(void *) == 4)
 	{
