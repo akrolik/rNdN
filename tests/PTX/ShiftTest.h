@@ -2,7 +2,7 @@
 
 #include "Test.h"
 
-#include "PTX/Directives/VariableDeclaration.h"
+#include "PTX/Declarations/VariableDeclaration.h"
 
 #include "PTX/Instructions/Shift/FunnelShiftInstruction.h"
 #include "PTX/Instructions/Shift/ShiftLeftInstruction.h"

@@ -4,7 +4,7 @@
 
 #include "PTX/Type.h"
 #include "PTX/StateSpace.h"
-#include "PTX/Directives/VariableDeclaration.h"
+#include "PTX/Declarations/VariableDeclaration.h"
 
 #include "PTX/Instructions/Arithmetic/AbsoluteInstruction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"

@@ -18,10 +18,9 @@ public:
 	std::string ToString() const
 	{
 		std::ostringstream code;
-		for (std::vector<Statement *>::const_iterator it = m_statements.cbegin(); it != m_statements.cend(); it++)
+		for (auto it = m_statements.cbegin(); it != m_statements.cend(); it++)
 		{
-			Statement *stmt = *it;
-			code << "\t" << stmt->ToString() << stmt->Terminator() << std::endl;
+			code << "\t" << (*it)->ToString() << (*it)->Terminator() << std::endl;
 		}
 		return code.str();
 	}

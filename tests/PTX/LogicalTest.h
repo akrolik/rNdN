@@ -2,7 +2,7 @@
 
 #include "Test.h"
 
-#include "PTX/Directives/VariableDeclaration.h"
+#include "PTX/Declarations/VariableDeclaration.h"
 
 #include "PTX/Instructions/Logical/AndInstruction.h"
 #include "PTX/Instructions/Logical/OrInstruction.h"

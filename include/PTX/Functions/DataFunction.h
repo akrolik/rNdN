@@ -24,6 +24,10 @@ public:
 	{
 		std::ostringstream code;
 
+		if (m_linkDirective != LinkDirective::None)
+		{
+			code << LinkDirectiveString(m_linkDirective) << " ";
+		}
 		code << GetDirectives() << " ";
 		if (m_return != nullptr)
 		{
@@ -48,10 +52,6 @@ public:
 
 	virtual std::string GetDirectives() const
 	{
-		if (m_visible)
-		{
-			return ".visible .func";
-		}
 		return ".func";
 	}
 
@@ -72,6 +72,10 @@ public:
 	{
 		std::ostringstream code;
 
+		if (m_linkDirective != LinkDirective::None)
+		{
+			code << LinkDirectiveString(m_linkDirective) << " ";
+		}
 		code << GetDirectives() << " " << m_name << "(";
 		if constexpr(sizeof...(Args) > 0)
 		{
@@ -91,10 +95,6 @@ public:
 
 	virtual std::string GetDirectives() const
 	{
-		if (m_visible)
-		{
-			return ".visible .func";
-		}
 		return ".func";
 	}
 

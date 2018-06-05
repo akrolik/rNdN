@@ -24,7 +24,7 @@ public:
 	std::string Operands() const
 	{
 		std::string code = m_index->ToString();
-		for (std::vector<Label *>::const_iterator it = m_labels.cbegin(); it != m_labels.cend(); ++it)
+		for (auto it = m_labels.cbegin(); it != m_labels.cend(); ++it)
 		{
 			code += ", " + (*it)->ToString();
 		}

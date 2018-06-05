@@ -51,7 +51,7 @@ public:
 
 		PTX::EntryFunction<PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>> *function = new PTX::EntryFunction<PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>>();
 		function->SetName("ConditionalTest");
-		function->SetVisible(true);
+		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		PTX::Pointer64Declaration<PTX::UInt64Type> *parameterDeclaration = new PTX::Pointer64Declaration<PTX::UInt64Type>("ConditionalTest_0");
 		function->SetParameters(parameterDeclaration);
@@ -112,7 +112,7 @@ public:
 
 		function->SetBody(block);
 
-		module.AddFunction(function);
+		module.AddDeclaration(function);
 		std::string ptx = module.ToString();
 		std::cout << ptx;
 

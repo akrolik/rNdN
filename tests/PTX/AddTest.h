@@ -10,7 +10,7 @@
 #include "PTX/Module.h"
 #include "PTX/StateSpace.h"
 #include "PTX/Type.h"
-#include "PTX/Directives/VariableDeclaration.h"
+#include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/DataFunction.h"
 #include "PTX/Functions/EntryFunction.h"
@@ -50,7 +50,7 @@ public:
 
 		PTX::EntryFunction<PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>> *function = new PTX::EntryFunction<PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>>();
 		function->SetName("AddTest");
-		function->SetVisible(true);
+		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		PTX::Pointer64Declaration<PTX::Float64Type> *parameterDeclaration = new PTX::Pointer64Declaration<PTX::Float64Type>("AddTest_0");
 		function->SetParameters(parameterDeclaration);
@@ -97,7 +97,7 @@ public:
 
 		function->SetBody(block);
 
-		module.AddFunction(function);
+		module.AddDeclaration(function);
 		std::string ptx = module.ToString();
 		std::cout << ptx;
 

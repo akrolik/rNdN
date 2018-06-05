@@ -6,7 +6,7 @@
 
 #include "PTX/Block.h"
 #include "PTX/Module.h"
-#include "PTX/Directives/VariableDeclaration.h"
+#include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/EntryFunction.h"
 #include "PTX/Operands/Variables/AddressableVariable.h"
 
@@ -37,11 +37,11 @@ public:
 		deviceFunction->SetReturn(param_b32);
 		deviceFunction->SetParameters(param_s32, param_u64);
 
-		module.AddFunction(deviceFunction);
+		module.AddDeclaration(deviceFunction);
 
 		PTX::EntryFunction<> *entryFunction = new PTX::EntryFunction<>();
 		entryFunction->SetName("CallTest");
-		entryFunction->SetVisible(true);
+		entryFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		PTX::Block *block = new PTX::Block();
 
@@ -61,7 +61,7 @@ public:
 
 		entryFunction->SetBody(block);
 		
-		module.AddFunction(entryFunction);
+		module.AddDeclaration(entryFunction);
 
 		std::string ptx = module.ToString();
 		std::cout << ptx;

@@ -1,9 +1,10 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 #include <vector>
 
-#include "PTX/Functions/Function.h"
+#include "PTX/Declarations/Declaration.h"
 #include "PTX/Type.h"
 
 namespace PTX {
@@ -15,9 +16,9 @@ public:
 	void SetDeviceTarget(std::string target) { m_target = target; }
 	void SetAddressSize(Bits addressSize) { m_addressSize = addressSize; }
 
-	void AddFunction(Function *function)
+	void AddDeclaration(Declaration *declaration)
 	{
-		m_functions.push_back(function);
+		m_declarations.push_back(declaration);
 	}
 
 	std::string ToString() const
@@ -28,10 +29,9 @@ public:
 		code << ".target " << m_target << std::endl;
 		code << ".address_size " << std::to_string(int(m_addressSize)) << std::endl;
 
-		for (std::vector<Function*>::const_iterator it = m_functions.begin(); it != m_functions.end(); ++it)
+		for (auto it = m_declarations.cbegin(); it != m_declarations.cend(); ++it)
 		{
-			Function *function = *it;
-			code << function->ToString();
+			code << (*it)->ToString();
 		}
 
 		return code.str();
@@ -42,7 +42,7 @@ private:
 	std::string m_target;
 	Bits m_addressSize = Bits32;
 
-	std::vector<Function *> m_functions;
+	std::vector<Declaration *> m_declarations;
 };
 
 }

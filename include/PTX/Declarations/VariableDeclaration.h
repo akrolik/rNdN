@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 
+#include "PTX/Declarations/Declaration.h"
 #include "PTX/Statements/DirectiveStatement.h"
 
 #include "PTX/Type.h"
@@ -51,7 +52,7 @@ protected:
 };
 
 template<class T, class S>
-class VariableDeclaration : public DirectiveStatement
+class VariableDeclaration : public DirectiveStatement, public Declaration
 {
 	REQUIRE_BASE_TYPE(VariableDeclaration, Type);
 	REQUIRE_BASE_SPACE(VariableDeclaration, StateSpace);
@@ -65,7 +66,7 @@ public:
 
 	VariableDeclaration(std::vector<std::string> names)
 	{
-		for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
+		for (auto it = names.begin(); it != names.end(); ++it)
 		{
 			m_names.emplace_back(*it);
 		}
@@ -75,7 +76,7 @@ public:
 
 	typename S::template VariableType<T> *GetVariable(std::string name, unsigned int index = 0)
 	{
-		for (typename std::vector<NameSet>::const_iterator it = m_names.begin(); it != m_names.end(); ++it)
+		for (auto it = m_names.begin(); it != m_names.end(); ++it)
 		{
 			if (it->GetPrefix() == name)
 			{
@@ -98,7 +99,7 @@ protected:
 	{
 		std::ostringstream code;
 		bool first = true;
-		for (typename std::vector<NameSet>::const_iterator it = m_names.begin(); it != m_names.end(); ++it)
+		for (auto it = m_names.begin(); it != m_names.end(); ++it)
 		{
 			if (!first)
 			{
