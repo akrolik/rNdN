@@ -1,6 +1,12 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "HorseIR/Tree/Expressions/Expression.h"
+
+#include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Tree/Types/Type.h"
 
 namespace HorseIR {
 
@@ -11,20 +17,22 @@ public:
 	Literal(T value, Type *type) : m_values({value}), m_type(type) {}
 	Literal(std::vector<T> values, Type *type) : m_values(values), m_type(type) {}
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		std::string code = "(";
 		bool first = true;
-		for (auto it = m_values.cbegin(); it != m_values.cend(); ++it)
+		for (auto value : m_values)
 		{
 			if (!first)
 			{
 				code += ", ";
 			}
-			code += std::to_string(*it);
+			code += std::to_string(value);
 		}
 		return code + "):" + m_type->ToString();
 	}
+
+	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
 	std::vector<T> m_values;

@@ -1,6 +1,10 @@
 #pragma once
 
+#include <string>
+
 #include "HorseIR/Tree/Types/Type.h"
+
+#include "HorseIR/Traversal/Visitor.h"
 
 namespace HorseIR {
 
@@ -14,7 +18,7 @@ public:
 
 	PrimitiveType(Type type) : m_type(type) {}
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		switch (m_type)
 		{
@@ -26,6 +30,8 @@ public:
 				return "<unknown>";
 		}
 	}
+
+	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
 	Type m_type;

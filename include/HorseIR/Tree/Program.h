@@ -1,9 +1,11 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "HorseIR/Tree/Node.h"
 
+#include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/Module.h"
 
 namespace HorseIR {
@@ -15,15 +17,17 @@ public:
 
 	const std::vector<Module *>& GetModules() const { return m_modules; }
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		std::string code;
-		for (auto it = m_modules.cbegin(); it != m_modules.cend(); ++it)
+		for (auto module : m_modules)
 		{
-			code += (*it)->ToString() + "\n";
+			code += module->ToString() + "\n";
 		}
 		return code;
 	}
+
+	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
 	std::vector<Module *> m_modules;
