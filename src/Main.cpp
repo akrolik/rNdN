@@ -29,8 +29,11 @@ int main(int argc, char *argv[])
 	std::cout << program->ToString() << std::endl;
 
 	CodeGenerator *codegen = new CodeGenerator("sm_61", PTX::Bits::Bits64);
-	PTX::Program *ptxProgram = codegen->GenerateProgram(program);
-	std::cout << ptxProgram->ToString() << std::endl;
+	PTX::Program *ptxProgram = codegen->Generate(program);
+	for (auto module : ptxProgram->GetModules())
+	{
+		std::cout << module->ToString() << std::endl;
+	}
 	std::exit(EXIT_SUCCESS);
 
 	if (sizeof(void *) == 4)
