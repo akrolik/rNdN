@@ -11,7 +11,7 @@ class PointerAdapter : public Register<PointerType<T, B, S>>
 	REQUIRE_BASE_TYPE(PointerAdapter, Type);
 	REQUIRE_BASE_SPACE(PointerAdapter, AddressableSpace);
 public:
-	PointerAdapter(Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}
+	PointerAdapter(const Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}
 };
 
 template<class T, class S = AddressableSpace>

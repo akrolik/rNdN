@@ -10,7 +10,6 @@ namespace PTX {
 class InstructionStatement : public Statement
 {
 public:
-
 	std::string ToString() const
 	{
 		std::ostringstream code;

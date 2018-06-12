@@ -13,7 +13,7 @@ class Module
 {
 public:
 	void SetVersion(unsigned int major, unsigned int minor) { m_versionMajor = major; m_versionMinor = minor; }
-	void SetDeviceTarget(std::string target) { m_target = target; }
+	void SetDeviceTarget(const std::string& target) { m_target = target; }
 	void SetAddressSize(Bits addressSize) { m_addressSize = addressSize; }
 
 	void AddDeclaration(Declaration *declaration)

@@ -2,13 +2,14 @@
 
 #include "PTX/Operands/Operand.h"
 
-#include "PTX/Type.h"
+#include "PTX/Resource.h"
 #include "PTX/StateSpace.h"
+#include "PTX/Type.h"
 
 namespace PTX {
 
 template<class T, class S>
-class Variable : public Operand<T>
+class Variable : public Operand<T>, public Resource<S>
 {
 	friend class VariableDeclaration<T, S>;
 
@@ -29,7 +30,7 @@ public:
 	}
 
 protected:
-	Variable(std::string name) : m_name(name) {}
+	Variable(const std::string& name) : m_name(name) {}
 
 	std::string m_name;
 };

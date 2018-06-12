@@ -13,7 +13,6 @@
 #include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/DataFunction.h"
-#include "PTX/Functions/EntryFunction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
@@ -48,8 +47,9 @@ public:
 		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
-		PTX::EntryFunction<PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>> *function = new PTX::EntryFunction<PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>>();
+		PTX::DataFunction<PTX::VoidType(PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>)> *function = new PTX::DataFunction<PTX::VoidType(PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>)>();
 		function->SetName("AddTest");
+		function->SetEntry(true);
 		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		PTX::Pointer64Declaration<PTX::Float64Type> *parameterDeclaration = new PTX::Pointer64Declaration<PTX::Float64Type>("AddTest_0");
@@ -77,25 +77,22 @@ public:
 		PTX::Register<PTX::Pointer64Type<PTX::Float64Type>> *rd0_ptr = new PTX::Pointer64Adapter<PTX::Float64Type>(rd0);
 		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd1);
 
-		PTX::Block *block = new PTX::Block();
-		block->AddStatement(r32);
-		block->AddStatement(r64); 
-		block->AddStatement(f64); 
+		function->AddStatement(r32);
+		function->AddStatement(r64); 
+		function->AddStatement(f64); 
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>(parameter)));
-		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
-		block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(8)));
-		block->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
+		function->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>(parameter)));
+		function->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
+		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
+		function->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(8)));
+		function->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::Float64Type, PTX::GlobalSpace>(f0, new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr)));
-		block->AddStatement(new PTX::AddInstruction<PTX::Float64Type>(f1, f0, new PTX::Float64Value(2)));
+		function->AddStatement(new PTX::Load64Instruction<PTX::Float64Type, PTX::GlobalSpace>(f0, new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr)));
+		function->AddStatement(new PTX::AddInstruction<PTX::Float64Type>(f1, f0, new PTX::Float64Value(2)));
 
 		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd3);
-		block->AddStatement(new PTX::Store64Instruction<PTX::Float64Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd3_ptr), f1));
-		block->AddStatement(new PTX::ReturnInstruction());
-
-		function->SetBody(block);
+		function->AddStatement(new PTX::Store64Instruction<PTX::Float64Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd3_ptr), f1));
+		function->AddStatement(new PTX::ReturnInstruction());
 
 		module.AddDeclaration(function);
 		std::string ptx = module.ToString();

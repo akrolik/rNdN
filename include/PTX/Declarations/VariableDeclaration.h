@@ -14,7 +14,7 @@ namespace PTX {
 class NameSet
 {
 public:
-	NameSet(std::string name, unsigned int count = 1) : m_name(name), m_count(count) {}
+	NameSet(const std::string& name, unsigned int count = 1) : m_name(name), m_count(count) {}
 
 	virtual std::string GetPrefix() const
 	{
@@ -52,42 +52,54 @@ protected:
 };
 
 template<class T, class S>
-class VariableDeclaration : public DirectiveStatement, public Declaration
+class VariableDeclaration : public DirectiveStatement, public Declaration, public ResourceDeclaration<S>
 {
 	REQUIRE_BASE_TYPE(VariableDeclaration, Type);
 	REQUIRE_BASE_SPACE(VariableDeclaration, StateSpace);
 public:
+	VariableDeclaration() {}
+
+	VariableDeclaration(const std::string& prefix, unsigned int count = 1)
+	{
+		AddNames(prefix, count);
+	}
+
+	VariableDeclaration(const std::vector<std::string>& names)
+	{
+		AddNames(names);
+	}
+
+	VariableDeclaration(const std::vector<NameSet>& variables) : m_names(variables) {}
+
 	virtual std::string Directives() const { return ""; }
 
-	VariableDeclaration(std::string prefix, unsigned int count = 1)
+	void AddNames(const std::string& prefix, unsigned int count = 1)
 	{
 		m_names.emplace_back(prefix, count);
 	}
 
-	VariableDeclaration(std::vector<std::string> names)
+	void AddNames(const std::vector<std::string>& names)
 	{
-		for (auto it = names.begin(); it != names.end(); ++it)
+		for (const auto& name : names)
 		{
-			m_names.emplace_back(*it);
+			m_names.emplace_back(name);
 		}
 	}
 
-	VariableDeclaration(std::vector<NameSet> variables) : m_names(variables) {}
-
-	typename S::template VariableType<T> *GetVariable(std::string name, unsigned int index = 0)
+	typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
 	{
-		for (auto it = m_names.begin(); it != m_names.end(); ++it)
+		for (const auto &set : m_names)
 		{
-			if (it->GetPrefix() == name)
+			if (set.GetPrefix() == name)
 			{
-				return new typename S::template VariableType<T>(it->GetName(index));
+				return new typename S::template VariableType<T>(set.GetName(index));
 			}
 		}
 		std::cerr << "[Error] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
-	std::vector<NameSet> GetNames() const { return m_names; }
+	const std::vector<NameSet>& GetNames() const { return m_names; }
 
 	std::string ToString() const
 	{
@@ -99,14 +111,14 @@ protected:
 	{
 		std::ostringstream code;
 		bool first = true;
-		for (auto it = m_names.begin(); it != m_names.end(); ++it)
+		for (const auto& set : m_names)
 		{
 			if (!first)
 			{
 				code << ", ";
-				first = false;
 			}
-			code << it->ToString();
+			first = false;
+			code << set.ToString();
 		}
 		return code.str();
 	}

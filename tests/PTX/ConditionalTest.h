@@ -11,7 +11,6 @@
 #include "PTX/StateSpace.h"
 #include "PTX/Type.h"
 #include "PTX/Functions/Function.h"
-#include "PTX/Functions/EntryFunction.h"
 #include "PTX/Functions/DataFunction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
@@ -49,8 +48,9 @@ public:
 		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
-		PTX::EntryFunction<PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>> *function = new PTX::EntryFunction<PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>>();
+		PTX::DataFunction<PTX::VoidType(PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>)> *function = new PTX::DataFunction<PTX::VoidType(PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>)>();
 		function->SetName("ConditionalTest");
+		function->SetEntry(true);
 		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		PTX::Pointer64Declaration<PTX::UInt64Type> *parameterDeclaration = new PTX::Pointer64Declaration<PTX::UInt64Type>("ConditionalTest_0");
@@ -79,38 +79,35 @@ public:
 
 		PTX::Register<PTX::PredicateType> *p = pDeclaration->GetVariable("p");
 
-		PTX::Block *block = new PTX::Block();
-		block->AddStatement(r32);
-		block->AddStatement(r64); 
-		block->AddStatement(pDeclaration);
+		function->AddStatement(r32);
+		function->AddStatement(r64); 
+		function->AddStatement(pDeclaration);
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(parameter)));
-		block->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::UInt64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
-		block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(4)));
-		block->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
+		function->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(parameter)));
+		function->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::UInt64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
+		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
+		function->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(4)));
+		function->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));
 
-		block->AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(r1, r0, new PTX::UInt32Value(2)));
-		block->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(p, r1, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		function->AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(r1, r0, new PTX::UInt32Value(2)));
+		function->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(p, r1, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 
 		PTX::Label *labelFalse = new PTX::Label("false");
 		PTX::Label *labelEnd = new PTX::Label("end");
 
 		PTX::BranchInstruction *falseBranch = new PTX::BranchInstruction(labelFalse);
                 falseBranch->SetPredicate(p);
-		block->AddStatement(falseBranch);
-		block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(r2, r0, new PTX::UInt32Value(1)));
-		block->AddStatement(new PTX::BranchInstruction(labelEnd));
-		block->AddStatement(labelFalse);
-		block->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(r2, r0, new PTX::UInt32Value(2)));
-		block->AddStatement(labelEnd);
+		function->AddStatement(falseBranch);
+		function->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(r2, r0, new PTX::UInt32Value(1)));
+		function->AddStatement(new PTX::BranchInstruction(labelEnd));
+		function->AddStatement(labelFalse);
+		function->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(r2, r0, new PTX::UInt32Value(2)));
+		function->AddStatement(labelEnd);
 
 		PTX::Register<PTX::Pointer64Type<PTX::UInt32Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64Adapter<PTX::UInt32Type, PTX::GlobalSpace>(rd3);
 
-		block->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::GlobalSpace>(rd3_ptr), r2));
-		block->AddStatement(new PTX::ReturnInstruction());
-
-		function->SetBody(block);
+		function->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::GlobalSpace>(rd3_ptr), r2));
+		function->AddStatement(new PTX::ReturnInstruction());
 
 		module.AddDeclaration(function);
 		std::string ptx = module.ToString();

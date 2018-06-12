@@ -8,7 +8,7 @@ template<Bits B>
 class UnsignedAdapter : public Register<UIntType<B>>
 {
 public:
-	UnsignedAdapter(Register<IntType<B>> *variable) : Register<UIntType<B>>(variable->GetName()) {}
+	UnsignedAdapter(const Register<IntType<B>> *variable) : Register<UIntType<B>>(variable->GetName()) {}
 };
 
 using Unsigned32Adapter = UnsignedAdapter<Bits::Bits32>;

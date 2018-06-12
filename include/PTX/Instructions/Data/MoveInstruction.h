@@ -17,7 +17,7 @@ class MoveInstruction : public PredicatedInstruction
 	DISABLE_EXACT_TYPE(MoveInstruction, Float16Type);
 	DISABLE_EXACT_TYPE(MoveInstruction, Float16x2Type);
 public:
-	MoveInstruction(Register<T> *destination, Register<T> *source) : m_destination(destination), m_source(source) {}
+	MoveInstruction(Register<T> *destination, Operand<T> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const
 	{
@@ -31,7 +31,7 @@ public:
 
 private:
 	Register<T> *m_destination = nullptr;
-	Register<T> *m_source = nullptr;
+	Operand<T> *m_source = nullptr;
 };
 
 }
