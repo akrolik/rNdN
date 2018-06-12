@@ -16,6 +16,7 @@ class Method : public ModuleContent
 public:
 	Method(std::string name, Type *returnType, std::vector<Statement *> statements) : m_name(name), m_returnType(returnType), m_statements(statements) {}
 
+	std::string GetName() const { return m_name; }
 	Type* GetReturnType() const { return m_returnType; }
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
 

@@ -13,6 +13,8 @@ class Identifier : public Expression
 public:
 	Identifier(std::string name) : m_name(name) {}
 
+	std::string GetName() const { return m_name; }
+
 	std::string ToString() const override
 	{
 		return m_name;

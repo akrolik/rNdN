@@ -17,6 +17,8 @@ public:
 	Literal(T value, Type *type) : m_values({value}), m_type(type) {}
 	Literal(std::vector<T> values, Type *type) : m_values(values), m_type(type) {}
 
+	const std::vector<T>& GetValue() const { return m_values; }
+
 	std::string ToString() const override
 	{
 		std::string code = "(";
