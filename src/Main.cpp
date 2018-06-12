@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 	{
 		std::cout << module->ToString() << std::endl;
 	}
-	std::exit(EXIT_SUCCESS);
 
 	if (sizeof(void *) == 4)
 	{
@@ -56,6 +55,37 @@ int main(int argc, char *argv[])
 
 	p.CreateContext(device);
 
-	Test::ConditionalTest test;
-	test.Execute();
+	CUDA::Module cModule(ptxProgram->GetModules()[0]->ToString());
+	CUDA::Kernel kernel("main", 0, cModule);
+
+	size_t size = sizeof(int64_t) * 100;
+	int64_t *data = (int64_t *)malloc(size);
+	for (int i = 0; i < 100; ++i)
+	{
+		data[i] = 0;
+	}
+
+	CUDA::Buffer buffer(data, size);
+	buffer.AllocateOnGPU();
+
+	CUDA::KernelInvocation invocation(kernel);
+	invocation.SetBlockShape(100, 1, 1);
+	invocation.SetGridShape(1, 1, 1);
+	invocation.SetParam(0, buffer);
+	invocation.Launch();
+
+	buffer.TransferToCPU();
+	for (int i = 0; i < 100; ++i)
+	{
+		if (data[i] == 3)
+		{
+			continue;
+		}
+
+		std::cerr << "[Error] Result incorrect at index " << i << " [" << data[i] << " != " << 3 << "]" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
+	std::cerr << "[Info] Kernel execution successful" << std::endl;
+	std::exit(EXIT_SUCCESS);
 }
