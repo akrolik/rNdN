@@ -10,10 +10,4 @@ class Resource
 	REQUIRE_BASE_SPACE(Resource, StateSpace);
 };
 
-template<class S>
-class ResourceDeclaration
-{
-	REQUIRE_BASE_SPACE(Resource, StateSpace);
-};
-
 }

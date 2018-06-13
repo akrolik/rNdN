@@ -51,8 +51,14 @@ protected:
 	unsigned int m_count;
 };
 
+template<class S>
+class UntypedVariableDeclaration : public DirectiveStatement, public Declaration
+{
+
+};
+
 template<class T, class S>
-class VariableDeclaration : public DirectiveStatement, public Declaration, public ResourceDeclaration<S>
+class VariableDeclaration : public UntypedVariableDeclaration<S>
 {
 	REQUIRE_BASE_TYPE(VariableDeclaration, Type);
 	REQUIRE_BASE_SPACE(VariableDeclaration, StateSpace);

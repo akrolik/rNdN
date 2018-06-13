@@ -19,6 +19,10 @@ public:
 	{
 		m_statements.push_back(statement);
 	}
+	void AddStatements(const std::vector<Statement *>& statements)
+	{
+		m_statements.insert(std::end(m_statements), std::begin(statements), std::end(statements));
+	}
 
 	std::string ToString() const
 	{
