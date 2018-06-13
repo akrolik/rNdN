@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <chrono>
 
 #include "Codegen/CodeGenerator.h"
 #include "HorseIR/Tree/Program.h"
@@ -25,16 +26,7 @@ HorseIR::Program *program;
 
 int main(int argc, char *argv[])
 {
-	yyparse();
-	std::cout << program->ToString() << std::endl;
-
-	CodeGenerator *codegen = new CodeGenerator("sm_61", PTX::Bits::Bits64);
-	PTX::Program *ptxProgram = codegen->Generate(program);
-	for (auto module : ptxProgram->GetModules())
-	{
-		std::cout << module->ToString() << std::endl;
-	}
-
+	auto cuda_begin = std::chrono::steady_clock::now();
 	if (sizeof(void *) == 4)
 	{
 		std::cerr << "[Error] 64-bit platform required" << std::endl;
@@ -54,9 +46,28 @@ int main(int argc, char *argv[])
 	device->SetActive();
 
 	p.CreateContext(device);
+	auto cuda_end = std::chrono::steady_clock::now();
 
+	auto sp_begin = std::chrono::steady_clock::now();
+	yyparse();
+	auto sp_end = std::chrono::steady_clock::now();
+
+	std::cout << program->ToString() << std::endl;
+
+	auto code_begin = std::chrono::steady_clock::now();
+	CodeGenerator *codegen = new CodeGenerator("sm_61", PTX::Bits::Bits64);
+	PTX::Program *ptxProgram = codegen->Generate(program);
+	auto code_end = std::chrono::steady_clock::now();
+
+	for (auto module : ptxProgram->GetModules())
+	{
+		std::cout << module->ToString() << std::endl;
+	}
+
+	auto jit_begin = std::chrono::steady_clock::now();
 	CUDA::Module cModule(ptxProgram->GetModules()[0]->ToString());
 	CUDA::Kernel kernel("main", 0, cModule);
+	auto jit_end = std::chrono::steady_clock::now();
 
 	size_t size = sizeof(int64_t) * 100;
 	int64_t *data = (int64_t *)malloc(size);
@@ -65,6 +76,7 @@ int main(int argc, char *argv[])
 		data[i] = 0;
 	}
 
+	auto exec_begin = std::chrono::steady_clock::now();
 	CUDA::Buffer buffer(data, size);
 	buffer.AllocateOnGPU();
 
@@ -75,6 +87,8 @@ int main(int argc, char *argv[])
 	invocation.Launch();
 
 	buffer.TransferToCPU();
+	auto exec_end = std::chrono::steady_clock::now();
+
 	for (int i = 0; i < 100; ++i)
 	{
 		if (data[i] == 3)
@@ -86,6 +100,14 @@ int main(int argc, char *argv[])
 		std::exit(EXIT_FAILURE);
 	}
 
-	std::cerr << "[Info] Kernel execution successful" << std::endl;
+	std::cout << "[Info] Kernel execution successful" << std::endl;
+	std::cout << "[Timings]" << std::endl;
+	std::cout << "  CUDA Init: " << std::chrono::duration_cast<std::chrono::microseconds>(cuda_end - cuda_begin).count() << " mus\n";
+	std::cout << "  Scan+Parse: " << std::chrono::duration_cast<std::chrono::microseconds>(sp_end - sp_begin).count() << " mus\n";
+	std::cout << "  Codegen: " << std::chrono::duration_cast<std::chrono::microseconds>(code_end - code_begin).count() << " mus\n";
+	std::cout << "  PTX JIT: " << std::chrono::duration_cast<std::chrono::microseconds>(jit_end - jit_begin).count() << " mus\n";
+	std::cout << "    Total Compile Time: " << std::chrono::duration_cast<std::chrono::microseconds>(jit_end - sp_begin).count() << " mus\n";
+	std::cout << "  Execution: " << std::chrono::duration_cast<std::chrono::microseconds>(exec_end - exec_begin).count() << " mus\n";
+
 	std::exit(EXIT_SUCCESS);
 }
