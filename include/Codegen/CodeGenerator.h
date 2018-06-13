@@ -7,6 +7,7 @@
 #include "PTX/Resource.h"
 #include "PTX/StateSpace.h"
 #include "PTX/Type.h"
+#include "PTX/Declarations/Declaration.h"
 #include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/DataFunction.h"
@@ -75,8 +76,12 @@ public:
 		m_currentFunction->AddParameter(returnDeclaration);
 		m_returnDeclaration = returnDeclaration;
 
-		m_currentFunction->AddStatement(m_resources->GetRegisterDeclaration<PTX::UInt64Type>());
-		m_currentFunction->AddStatement(m_resources->GetRegisterDeclaration2<PTX::UInt32Type>());
+		for (const auto& declaration : m_resources->GetRegisterDeclarations())
+		{
+			m_currentFunction->AddStatement(declaration);
+		}
+		// m_currentFunction->AddStatements(m_resources->GetRegisterDeclarations());
+
 		m_currentModule->AddDeclaration(m_currentFunction);
 
 		HorseIR::ForwardTraversal::Visit(method);
@@ -84,7 +89,7 @@ public:
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
-		m_assignTarget = m_resources->GetRegisterResource<PTX::UInt64Type>(assign->GetIdentifier());
+		m_assignTarget = m_resources->GetRegister<PTX::UInt64Type>(assign->GetIdentifier());
 		HorseIR::ForwardTraversal::Visit(assign);
 	}
 
@@ -104,8 +109,8 @@ public:
 		{
 			std::string a1 = static_cast<HorseIR::Identifier*>(call->GetParameters()[0])->GetName();
 			std::string a2 = static_cast<HorseIR::Identifier*>(call->GetParameters()[1])->GetName();
-			auto src1 = m_resources->GetRegisterResource<PTX::UInt64Type>(a1);
-			auto src2 = m_resources->GetRegisterResource<PTX::UInt64Type>(a2);
+			auto src1 = m_resources->GetRegister<PTX::UInt64Type>(a1);
+			auto src2 = m_resources->GetRegister<PTX::UInt64Type>(a2);
 
 			m_currentFunction->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(target, src1, src2));
 		}
@@ -133,18 +138,18 @@ public:
 		auto srtid = new PTX::SpecialRegisterDeclaration<PTX::Vector4Type<PTX::UInt32Type>>("%tid");
 		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
 
-		auto r0 = m_resources->GetRegisterResource<PTX::UInt32Type>(name + "_4");
+		auto r0 = m_resources->GetRegister<PTX::UInt32Type>(name + "_4");
 
-		auto rd0 = m_resources->GetRegisterResource<PTX::UIntType<B>>(name + "_0");
-		auto rd1 = m_resources->GetRegisterResource<PTX::UIntType<B>>(name + "_1");
-		auto rd2 = m_resources->GetRegisterResource<PTX::UIntType<B>>(name + "_2");
-		auto rd3 = m_resources->GetRegisterResource<PTX::UIntType<B>>(name + "_3");
+		auto rd0 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_0");
+		auto rd1 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_1");
+		auto rd2 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_2");
+		auto rd3 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_3");
 
 		auto rd0_ptr = new PTX::PointerAdapter<T, B>(rd0);
 		auto rd1_ptr = new PTX::PointerAdapter<T, B, PTX::GlobalSpace>(rd1);
 		auto rd3_ptr = new PTX::PointerAdapter<T, B, PTX::GlobalSpace>(rd3);
 
-		auto returnValue = m_resources->GetRegisterResource<T>(ret->GetIdentifier());
+		auto returnValue = m_resources->GetRegister<T>(ret->GetIdentifier());
 
 		m_currentFunction->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(parameter)));
 		m_currentFunction->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
@@ -171,7 +176,7 @@ private:
 	PTX::Program *m_program = nullptr;
 	PTX::Module *m_currentModule = nullptr;
 	PTX::DataFunction<PTX::VoidType> *m_currentFunction = nullptr;
-	PTX::ResourceDeclaration<PTX::ParameterSpace> *m_returnDeclaration = nullptr;
+	PTX::UntypedVariableDeclaration<PTX::ParameterSpace> *m_returnDeclaration = nullptr;
 
 	PTX::Resource<PTX::RegisterSpace> *m_assignTarget = nullptr;
 
