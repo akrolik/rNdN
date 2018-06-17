@@ -14,41 +14,42 @@
 class Resources
 {
 public:
-	virtual PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
+	virtual const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
 };
 
 template<class T>
 class TypedResources : public Resources
 {
 public:
-	PTX::Register<T> *AllocateRegister(const std::string& identifier)
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
 		std::string name = "%" + identifier;
 		m_declaration->AddNames(name);
-		PTX::Register<T> *resource = m_declaration->GetVariable(name);
+		const PTX::Register<T> *resource = m_declaration->GetVariable(name);
 		m_registersMap.insert({identifier, resource});
 		return resource;
 	}
 
-	PTX::Register<T> *GetRegister(const std::string& identifier) const
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
 		return m_registersMap.at(identifier);
 	}
 
-	PTX::RegisterDeclaration<T> *GetDeclaration() const
+	const PTX::RegisterDeclaration<T> *GetDeclaration() const
 	{
 		return m_declaration;
 	}
 
 private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
-	std::unordered_map<std::string, PTX::Register<T> *> m_registersMap;
+	std::unordered_map<std::string, const PTX::Register<T> *> m_registersMap;
 };
 
+template<PTX::Bits B>
 class ResourceAllocator : public HorseIR::ForwardTraversal
 {
 public:
-	ResourceAllocator(PTX::Bits bits) : m_bits(bits) {}
+	ResourceAllocator() {}
 
 	void AllocateResources(HorseIR::Method *method)
 	{
@@ -57,14 +58,14 @@ public:
 	}
 
 	template<class T>
-	PTX::Register<T> *GetRegister(const std::string& identifier) const
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		return GetResources<T>()->GetRegister(identifier);
+		return GetResources<T>(false)->GetRegister(identifier);
 	}
 
-	std::vector<PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> GetRegisterDeclarations() const
+	std::vector<const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> GetRegisterDeclarations() const
 	{
-		std::vector<PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> declarations;
+		std::vector<const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> declarations;
 		for (const auto& resource : m_resourcesMap)
 		{
 			declarations.push_back(resource.second->GetDeclaration());
@@ -74,19 +75,19 @@ public:
 
 	void Visit(HorseIR::Method *method) override
 	{
-		//TODO: parameters allocation
-		//TODO: return allocation is hacky right now
+		//TODO: Allocate registers for accessing parameters
+		//TODO: Return allocation is hacky
 		HorseIR::Type *type = method->GetReturnType();
 		if (type != nullptr)
 		{
 			const std::string& name = method->GetName();
 
-			GetResources<PTX::UInt64Type>(true)->AllocateRegister(name + "_0");
-			GetResources<PTX::UInt64Type>(true)->AllocateRegister(name + "_1");
-			GetResources<PTX::UInt64Type>(true)->AllocateRegister(name + "_2");
-			GetResources<PTX::UInt64Type>(true)->AllocateRegister(name + "_3");
+			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_0");
+			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_1");
+			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_2");
+			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_3");
 
-			GetResources<PTX::UInt32Type>(true)->AllocateRegister(name + "_4");
+			GetResources<PTX::UInt32Type>()->AllocateRegister(name + "_4");
 		}
 
 		HorseIR::ForwardTraversal::Visit(method);
@@ -94,15 +95,31 @@ public:
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
-		//TODO: handle different types
-		GetResources<PTX::UInt64Type>(true)->AllocateRegister(assign->GetIdentifier());
+		AllocateRegister(assign->GetType(), assign->GetIdentifier());
 		HorseIR::ForwardTraversal::Visit(assign);
 	}
 
 private:
 
+	void AllocateRegister(HorseIR::Type *type, std::string name)
+	{
+		auto type = static_cast<HorseIR::PrimitiveType*>(type);
+		switch (type->GetType())
+		{
+			case HorseIR::PrimitiveType::Type::Int8:
+				GetResources<PTX::Int8Type>()->AllocateRegister(name);
+				break;
+			case HorseIR::PrimitiveType::Type::Int64:
+				GetResources<PTX::Int64Type>()->AllocateRegister(name);
+				break;
+			default:
+				std::cerr << "[ERROR] Unsupported resource type " << type->ToString() << std::endl;
+				std::exit(EXIT_FAILURE);
+		}
+	}
+
 	template<class T>
-	TypedResources<T> *GetResources(bool alloc = false) const
+	TypedResources<T> *GetResources(bool alloc = true) const
 	{
 		if (alloc && m_resourcesMap.find(typeid(T)) == m_resourcesMap.end())
 		{
@@ -111,7 +128,6 @@ private:
 		return static_cast<TypedResources<T> *>(m_resourcesMap.at(typeid(T)));
 	}
 
-	PTX::Bits m_bits = PTX::Bits::Bits64;
 	mutable std::unordered_map<std::type_index, Resources *> m_resourcesMap;
 };
 

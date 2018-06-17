@@ -9,6 +9,7 @@
 #include "PTX/Type.h"
 #include "PTX/Declarations/Declaration.h"
 #include "PTX/Declarations/VariableDeclaration.h"
+#include "PTX/Declarations/SpecialRegisterDeclarations.h"
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/DataFunction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
@@ -29,17 +30,18 @@
 
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Method.h"
-#include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literal.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
+#include "HorseIR/Tree/Types/PrimitiveType.h"
 
+#include "Codegen/ExpressionGenerator.h"
 #include "Codegen/ResourceAllocator.h"
 
+template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ForwardTraversal
 {
 public:
-	CodeGenerator(std::string target, PTX::Bits bits) : m_target(target), m_bits(bits) {}
+	CodeGenerator(std::string target) : m_target(target) {}
 
 	PTX::Program *Generate(HorseIR::Program *program)
 	{
@@ -53,7 +55,7 @@ public:
 		PTX::Module *ptxModule = new PTX::Module();
 		ptxModule->SetVersion(6, 1);
 		ptxModule->SetDeviceTarget(m_target);
-		ptxModule->SetAddressSize(m_bits);
+		ptxModule->SetAddressSize(B);
 
 		m_program->AddModule(ptxModule);
 		m_currentModule = ptxModule;
@@ -63,101 +65,98 @@ public:
 
 	void Visit(HorseIR::Method *method) override
 	{
-		m_resources = new ResourceAllocator(m_bits);
+		m_currentMethod = method;
+
 		m_resources->AllocateResources(method);
 
 		m_currentFunction = new PTX::DataFunction<PTX::VoidType>();
 		m_currentFunction->SetName(method->GetName());
 		m_currentFunction->SetEntry(true);
 		m_currentFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
-		//TODO: add parameters
-		//TODO: add return parameter with type (this is hacked for u64, and 64 bit addresses)
-		auto returnDeclaration = new PTX::Pointer64Declaration<PTX::UInt64Type>(m_currentFunction->GetName() + "_return");
-		m_currentFunction->AddParameter(returnDeclaration);
-		m_returnDeclaration = returnDeclaration;
-
+		//TODO: Generate declarations for parameters
 		for (const auto& declaration : m_resources->GetRegisterDeclarations())
 		{
 			m_currentFunction->AddStatement(declaration);
 		}
-		// m_currentFunction->AddStatements(m_resources->GetRegisterDeclarations());
-
 		m_currentModule->AddDeclaration(m_currentFunction);
 
 		HorseIR::ForwardTraversal::Visit(method);
+
+		m_currentMethod = nullptr;
 	}
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
-		m_assignTarget = m_resources->GetRegister<PTX::UInt64Type>(assign->GetIdentifier());
-		HorseIR::ForwardTraversal::Visit(assign);
+		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(assign->GetType());
+		switch (type->GetType())
+		{
+			case HorseIR::PrimitiveType::Type::Int8:
+				GenerateAssignment<PTX::Int8Type>(assign);
+				break;
+			case HorseIR::PrimitiveType::Type::Int64:
+				GenerateAssignment<PTX::Int64Type>(assign);
+				break;
+			default:
+				std::cerr << "[ERROR] Unsupported assignment type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
+				std::exit(EXIT_FAILURE);
+		}
 	}
 
-	void Visit(HorseIR::CallExpression *call) override
+	template<class T>
+	void GenerateAssignment(HorseIR::AssignStatement *assign)
 	{
-		//TODO: handle arguments through the visitor pattern to generate a vector of operands?
-		auto target = static_cast<PTX::Register<PTX::UInt64Type>*>(m_assignTarget);
-		std::string name = call->GetName();
-		if (name == "@fill")
-		{
-			int64_t v = static_cast<HorseIR::Literal<int64_t>*>(call->GetParameters()[1])->GetValue()[0];
-			auto value = new PTX::Value<PTX::UInt64Type>(v);
-
-			m_currentFunction->AddStatement(new PTX::MoveInstruction<PTX::UInt64Type>(target, value));
-		}
-		else if (name == "@plus")
-		{
-			std::string a1 = static_cast<HorseIR::Identifier*>(call->GetParameters()[0])->GetName();
-			std::string a2 = static_cast<HorseIR::Identifier*>(call->GetParameters()[1])->GetName();
-			auto src1 = m_resources->GetRegister<PTX::UInt64Type>(a1);
-			auto src2 = m_resources->GetRegister<PTX::UInt64Type>(a2);
-
-			m_currentFunction->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(target, src1, src2));
-		}
+		const PTX::Register<T> *target = m_resources->template GetRegister<T>(assign->GetIdentifier());
+		ExpressionGenerator<B, T> generator(m_resources, target, m_currentFunction);
+		assign->Accept(generator);
 	}
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		if (m_bits == PTX::Bits::Bits32)
+		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(m_currentMethod->GetReturnType());
+		switch (type->GetType())
 		{
-			GenerateReturn<PTX::Bits::Bits32, PTX::UInt64Type>(ret);
-		}
-		else if (m_bits == PTX::Bits::Bits64)
-		{
-			GenerateReturn<PTX::Bits::Bits64, PTX::UInt64Type>(ret);
+			case HorseIR::PrimitiveType::Type::Int8:
+				GenerateReturn<PTX::Int8Type>(ret);
+				break;
+			case HorseIR::PrimitiveType::Type::Int64:
+				GenerateReturn<PTX::Int64Type>(ret);
+				break;
+			default:
+				std::cerr << "[ERROR] Unsupported return type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
+				std::exit(EXIT_FAILURE);
 		}
 	}
 
-	template<PTX::Bits B, class T>
+	template<class T>
 	void GenerateReturn(HorseIR::ReturnStatement *ret)
 	{
 		std::string name = m_currentFunction->GetName();
-		auto returnDeclaration = static_cast<PTX::PointerDeclaration<T, B>*>(m_returnDeclaration);
-		auto parameter = returnDeclaration->GetVariable(name + "_return");
 
-		auto srtid = new PTX::SpecialRegisterDeclaration<PTX::Vector4Type<PTX::UInt32Type>>("%tid");
-		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto returnDeclaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_return");
+		m_currentFunction->AddParameter(returnDeclaration);
+		auto returnVariable = returnDeclaration->GetVariable(name + "_return");
 
-		auto r0 = m_resources->GetRegister<PTX::UInt32Type>(name + "_4");
+		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto r0 = m_resources->template GetRegister<PTX::UInt32Type>(name + "_4");
 
-		auto rd0 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_0");
-		auto rd1 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_1");
-		auto rd2 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_2");
-		auto rd3 = m_resources->GetRegister<PTX::UIntType<B>>(name + "_3");
+		auto rd0 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_0");
+		auto rd1 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_1");
+		auto rd2 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_2");
+		auto rd3 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_3");
 
 		auto rd0_ptr = new PTX::PointerAdapter<T, B>(rd0);
 		auto rd1_ptr = new PTX::PointerAdapter<T, B, PTX::GlobalSpace>(rd1);
 		auto rd3_ptr = new PTX::PointerAdapter<T, B, PTX::GlobalSpace>(rd3);
 
-		auto returnValue = m_resources->GetRegister<T>(ret->GetIdentifier());
+		auto returnValue = m_resources->template GetRegister<T>(ret->GetIdentifier());
 
-		m_currentFunction->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(parameter)));
+		m_currentFunction->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(returnVariable)));
 		m_currentFunction->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
 		m_currentFunction->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
-		//TODO: alignment needs fixing
+		//TODO: Dynamically compute alignment
 		if constexpr(B == PTX::Bits::Bits32)
 		{
-			//TODO: bit cast
+			//TODO: Implement bit cast for operands
 			// m_currentFunction->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(rd2, r0, new PTX::UInt32Value(4)));
 		}
 		else
@@ -171,15 +170,15 @@ public:
 
 private:
 	std::string m_target;
-	PTX::Bits m_bits;
 
 	PTX::Program *m_program = nullptr;
 	PTX::Module *m_currentModule = nullptr;
+
+	HorseIR::Method *m_currentMethod = nullptr;
 	PTX::DataFunction<PTX::VoidType> *m_currentFunction = nullptr;
-	PTX::UntypedVariableDeclaration<PTX::ParameterSpace> *m_returnDeclaration = nullptr;
 
-	PTX::Resource<PTX::RegisterSpace> *m_assignTarget = nullptr;
+	const PTX::Resource<PTX::RegisterSpace> *m_assignTarget = nullptr;
 
-	ResourceAllocator *m_resources = nullptr;
+	ResourceAllocator<B> *m_resources = new ResourceAllocator<B>();
 };
 
