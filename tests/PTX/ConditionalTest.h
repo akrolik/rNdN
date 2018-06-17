@@ -61,23 +61,23 @@ public:
 		PTX::RegisterDeclaration<PTX::UInt64Type> *r64 = new PTX::RegisterDeclaration<PTX::UInt64Type>("%rd", 4);
 		PTX::RegisterDeclaration<PTX::PredicateType> *pDeclaration = new PTX::RegisterDeclaration<PTX::PredicateType>("p");
 
-		PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>> *parameter = parameterDeclaration->GetVariable("ConditionalTest_0");
+		const PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>> *parameter = parameterDeclaration->GetVariable("ConditionalTest_0");
 
 		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
 																		       
-		PTX::Register<PTX::UInt32Type> *r0 = r32->GetVariable("%r", 0);
-		PTX::Register<PTX::UInt32Type> *r1 = r32->GetVariable("%r", 1);
-		PTX::Register<PTX::UInt32Type> *r2 = r32->GetVariable("%r", 2);
+		const PTX::Register<PTX::UInt32Type> *r0 = r32->GetVariable("%r", 0);
+		const PTX::Register<PTX::UInt32Type> *r1 = r32->GetVariable("%r", 1);
+		const PTX::Register<PTX::UInt32Type> *r2 = r32->GetVariable("%r", 2);
 
-		PTX::Register<PTX::UInt64Type> *rd0 = r64->GetVariable("%rd", 0);
-		PTX::Register<PTX::UInt64Type> *rd1 = r64->GetVariable("%rd", 1);
-		PTX::Register<PTX::UInt64Type> *rd2 = r64->GetVariable("%rd", 2);
-		PTX::Register<PTX::UInt64Type> *rd3 = r64->GetVariable("%rd", 3);
+		const PTX::Register<PTX::UInt64Type> *rd0 = r64->GetVariable("%rd", 0);
+		const PTX::Register<PTX::UInt64Type> *rd1 = r64->GetVariable("%rd", 1);
+		const PTX::Register<PTX::UInt64Type> *rd2 = r64->GetVariable("%rd", 2);
+		const PTX::Register<PTX::UInt64Type> *rd3 = r64->GetVariable("%rd", 3);
 
 		PTX::Register<PTX::Pointer64Type<PTX::UInt64Type>> *rd0_ptr = new PTX::Pointer64Adapter<PTX::UInt64Type>(rd0);
 		PTX::Register<PTX::Pointer64Type<PTX::UInt64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::UInt64Type, PTX::GlobalSpace>(rd1);
 
-		PTX::Register<PTX::PredicateType> *p = pDeclaration->GetVariable("p");
+		const PTX::Register<PTX::PredicateType> *p = pDeclaration->GetVariable("p");
 
 		function->AddStatement(r32);
 		function->AddStatement(r64); 

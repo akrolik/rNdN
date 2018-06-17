@@ -49,9 +49,9 @@ public:
 		PTX::RegisterDeclaration<PTX::Float32Type> *f32 = new PTX::RegisterDeclaration<PTX::Float32Type>("%f", 4);
 		PTX::RegisterDeclaration<PTX::Float64Type> *f64 = new PTX::RegisterDeclaration<PTX::Float64Type>("%fd", 4);
 
-		PTX::Register<PTX::Int32Type> *reg_s32 = s32->GetVariable("%r", 0);
-		PTX::Register<PTX::Float32Type> *reg_f32 = f32->GetVariable("%f", 0);
-		PTX::Register<PTX::Float64Type> *reg_f64 = f64->GetVariable("%fd", 0);
+		const PTX::Register<PTX::Int32Type> *reg_s32 = s32->GetVariable("%r", 0);
+		const PTX::Register<PTX::Float32Type> *reg_f32 = f32->GetVariable("%f", 0);
+		const PTX::Register<PTX::Float64Type> *reg_f64 = f64->GetVariable("%fd", 0);
 
 		PTX::AddInstruction<PTX::Int32Type> *test1 = new PTX::AddInstruction<PTX::Int32Type>(reg_s32, reg_s32, reg_s32);
 		std::cout << test1->ToString() << std::endl;

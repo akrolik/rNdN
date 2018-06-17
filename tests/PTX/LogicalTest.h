@@ -19,7 +19,7 @@ public:
 	void Execute()
 	{
 		PTX::RegisterDeclaration<PTX::Bit32Type> *b32 = new PTX::RegisterDeclaration<PTX::Bit32Type>("%b", 4);
-		PTX::Register<PTX::Bit32Type> *reg_b32 = b32->GetVariable("%b", 0);
+		const PTX::Register<PTX::Bit32Type> *reg_b32 = b32->GetVariable("%b", 0);
 
 		PTX::AndInstruction<PTX::Bit32Type> *test1 = new PTX::AndInstruction<PTX::Bit32Type>(reg_b32, reg_b32, reg_b32);
 		std::cout << test1->ToString() << std::endl;

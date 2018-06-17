@@ -60,19 +60,19 @@ public:
 		PTX::RegisterDeclaration<PTX::UInt64Type> *r64 = new PTX::RegisterDeclaration<PTX::UInt64Type>("%rd", 4);
 		PTX::RegisterDeclaration<PTX::Float64Type> *f64 = new PTX::RegisterDeclaration<PTX::Float64Type>("%f", 2);
 
-		PTX::ParameterVariable<PTX::Pointer64Type<PTX::Float64Type>> *parameter = parameterDeclaration->GetVariable("AddTest_0");
+		const PTX::ParameterVariable<PTX::Pointer64Type<PTX::Float64Type>> *parameter = parameterDeclaration->GetVariable("AddTest_0");
 
 		PTX::Register<PTX::UInt32Type> *tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(srtid->GetVariable("%tid"), PTX::VectorElement::X);
 																		       
-		PTX::Register<PTX::UInt32Type> *r0 = r32->GetVariable("%r", 0);
+		const PTX::Register<PTX::UInt32Type> *r0 = r32->GetVariable("%r", 0);
 
-		PTX::Register<PTX::UInt64Type> *rd0 = r64->GetVariable("%rd", 0);
-		PTX::Register<PTX::UInt64Type> *rd1 = r64->GetVariable("%rd", 1);
-		PTX::Register<PTX::UInt64Type> *rd2 = r64->GetVariable("%rd", 2);
-		PTX::Register<PTX::UInt64Type> *rd3 = r64->GetVariable("%rd", 3);
+		const PTX::Register<PTX::UInt64Type> *rd0 = r64->GetVariable("%rd", 0);
+		const PTX::Register<PTX::UInt64Type> *rd1 = r64->GetVariable("%rd", 1);
+		const PTX::Register<PTX::UInt64Type> *rd2 = r64->GetVariable("%rd", 2);
+		const PTX::Register<PTX::UInt64Type> *rd3 = r64->GetVariable("%rd", 3);
 
-		PTX::Register<PTX::Float64Type> *f0 = f64->GetVariable("%f", 0);
-		PTX::Register<PTX::Float64Type> *f1 = f64->GetVariable("%f", 1);
+		const PTX::Register<PTX::Float64Type> *f0 = f64->GetVariable("%f", 0);
+		const PTX::Register<PTX::Float64Type> *f1 = f64->GetVariable("%f", 1);
 
 		PTX::Register<PTX::Pointer64Type<PTX::Float64Type>> *rd0_ptr = new PTX::Pointer64Adapter<PTX::Float64Type>(rd0);
 		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd1);

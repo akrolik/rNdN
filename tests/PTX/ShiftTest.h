@@ -18,8 +18,8 @@ public:
 		PTX::RegisterDeclaration<PTX::Bit32Type> *b32 = new PTX::RegisterDeclaration<PTX::Bit32Type>("%b", 4);
 		PTX::RegisterDeclaration<PTX::UInt32Type> *u32 = new PTX::RegisterDeclaration<PTX::UInt32Type>("%u", 4);
 
-		PTX::Register<PTX::Bit32Type> *reg_b32 = b32->GetVariable("%b", 0);
-		PTX::Register<PTX::UInt32Type> *reg_u32 = u32->GetVariable("%u", 0);
+		const PTX::Register<PTX::Bit32Type> *reg_b32 = b32->GetVariable("%b", 0);
+		const PTX::Register<PTX::UInt32Type> *reg_u32 = u32->GetVariable("%u", 0);
 
 		PTX::ShiftLeftInstruction<PTX::Bit32Type> *test1 = new PTX::ShiftLeftInstruction<PTX::Bit32Type>(reg_b32, reg_b32, reg_u32);
 		std::cout << test1->ToString() << std::endl;
