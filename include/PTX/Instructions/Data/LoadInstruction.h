@@ -11,8 +11,8 @@ namespace PTX {
 template<Bits B, class T, class S>
 class LoadInstruction : public PredicatedInstruction
 {
-	REQUIRE_BASE_TYPE(LoadInstruction, DataType);
-	DISABLE_EXACT_TYPE(LoadInstruction, Float16Type);
+	// REQUIRE_BASE_TYPE(LoadInstruction, DataType);
+	// DISABLE_EXACT_TYPE(LoadInstruction, Float16Type);
 public:
 	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address) : m_register(reg), m_address(address) {}
 

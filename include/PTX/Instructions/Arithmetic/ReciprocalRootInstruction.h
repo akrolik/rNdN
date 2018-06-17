@@ -5,13 +5,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class ReciprocalRootInstruction : public InstructionBase_1<T>, public FlushSubnormalModifier<T, true>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(ReciprocalRootInstruction, FloatType);
-	DISABLE_EXACT_TYPE(ReciprocalRootInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(ReciprocalRootInstruction, Float16x2Type);
 public:
+	REQUIRE_TYPE(ReciprocalRootInstruction,
+		Float32Type, Float64Type
+	);
+
 	using InstructionBase_1<T>::InstructionBase_1;
 
 	std::string OpCode() const override

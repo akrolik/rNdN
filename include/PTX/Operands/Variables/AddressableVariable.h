@@ -10,7 +10,7 @@ class AddressableVariable : public Variable<T, S>
 {
 	friend class VariableDeclaration<T, S>;
 
-	REQUIRE_BASE_TYPE(AddressableVariable, Type);
+	REQUIRE_BASE_TYPE(AddressableVariable, DataType);
 	REQUIRE_BASE_SPACE(AddressableVariable, AddressableSpace);
 public:
 	using Variable<T, S>::Variable;

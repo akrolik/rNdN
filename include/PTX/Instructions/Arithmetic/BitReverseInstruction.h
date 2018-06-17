@@ -4,14 +4,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class BitReverseInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(BitReverseInstruction, BitType);
-	DISABLE_EXACT_TYPE(BitReverseInstruction, PredicateType);
-	DISABLE_EXACT_TYPE(BitReverseInstruction, Bit8Type);
-	DISABLE_EXACT_TYPE(BitReverseInstruction, Bit16Type);
 public:
+	REQUIRE_TYPE(BitReverseInstruction,
+		Bit32Type, Bit64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase;
 
 	std::string OpCode() const override

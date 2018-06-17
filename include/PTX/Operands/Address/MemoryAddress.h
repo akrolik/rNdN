@@ -7,7 +7,7 @@ namespace PTX {
 template<Bits B, class T, class S = AddressableSpace>
 class MemoryAddress : public Address<B, T, S>
 {
-	REQUIRE_BASE_TYPE(MemoryAddress, Type);
+	REQUIRE_BASE_TYPE(MemoryAddress, DataType);
 	REQUIRE_BASE_SPACE(MemoryAddress, AddressableSpace);
 public:
 	MemoryAddress(const typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}

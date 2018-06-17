@@ -5,14 +5,15 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class NegateInstruction : public InstructionBase_1<T>, public FlushSubnormalModifier<T>
 {
-	REQUIRE_BASE_TYPE(NegateInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(NegateInstruction, Int8Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(NegateInstruction, BitType);
-	DISABLE_EXACT_TYPE_TEMPLATE(NegateInstruction, UIntType);
 public:
+	REQUIRE_TYPE(NegateInstruction,
+		Int16Type, Int32Type, Int64Type,
+		Float16Type, Float16x2Type, Float32Type, Float64Type
+	);
+
 	using InstructionBase_1<T>::InstructionBase_1;
 
 	std::string OpCode() const override

@@ -4,17 +4,15 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class BitFieldExtractInstruction : public InstructionBase_3<T, T, UInt32Type, UInt32Type>
 {
-	REQUIRE_BASE_TYPE(BitFieldExtractInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, Int16Type);
-	DISABLE_EXACT_TYPE(BitFieldExtractInstruction, UInt16Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(BitFieldExtractInstruction, BitType);
-	DISABLE_EXACT_TYPE_TEMPLATE(BitFieldExtractInstruction, FloatType);
 public:
+	REQUIRE_TYPE(BitFieldExtractInstruction,
+		Int32Type, Int64Type,
+		UInt32Type, UInt64Type
+	);
+
 	using InstructionBase_3<T, T, UInt32Type, UInt32Type>::InstructionBase;
 
 	std::string OpCode() const override

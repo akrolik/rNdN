@@ -8,14 +8,16 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class MultiplyInstruction : public InstructionBase_2<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
-	REQUIRE_BASE_TYPE(MultiplyInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(MultiplyInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(MultiplyInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(MultiplyInstruction, BitType);
 public:
+	REQUIRE_TYPE(MultiplyInstruction,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float16Type, Float16x2Type, Float32Type, Float64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

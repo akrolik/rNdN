@@ -8,14 +8,16 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class AddInstruction : public InstructionBase_2<T>, public SaturateModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public CarryModifier<T>
 {
-	REQUIRE_BASE_TYPE(AddInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(AddInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(AddInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(AddInstruction, BitType);
 public:
+	REQUIRE_TYPE(AddInstruction,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float16Type, Float16x2Type, Float32Type, Float64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

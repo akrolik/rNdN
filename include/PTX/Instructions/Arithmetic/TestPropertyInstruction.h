@@ -4,13 +4,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class TestPropertyInstruction : public InstructionBase_1<PredicateType, T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(TestPropertyInstruction, FloatType);
-	DISABLE_EXACT_TYPE(TestPropertyInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(TestPropertyInstruction, Float16x2Type);
 public:
+	REQUIRE_TYPE(TestPropertyInstruction,
+		Float32Type, Float64Type
+	);
+
 	enum Property {
 		Finite,
 		Infinite,

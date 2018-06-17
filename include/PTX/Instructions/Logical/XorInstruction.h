@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class XorInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(XorInstruction, BitType);
-	DISABLE_EXACT_TYPE(XorInstruction, Bit8Type);
 public:
+	REQUIRE_TYPE(XorInstruction,
+		PredicateType, Bit16Type, Bit32Type, Bit64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

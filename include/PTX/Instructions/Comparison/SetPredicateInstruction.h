@@ -10,15 +10,17 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class SetPredicateInstruction : public PredicatedInstruction, public FlushSubnormalModifier<T>
 {
-	REQUIRE_BASE_TYPE(SetPredicateInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(SetPredicateInstruction, PredicateType);
-	DISABLE_EXACT_TYPE(SetPredicateInstruction, Bit8Type);
-	DISABLE_EXACT_TYPE(SetPredicateInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(SetPredicateInstruction, UInt8Type);
 public:
+	REQUIRE_TYPE(SetPredicateInstruction,
+		Bit16Type, Bit32Type, Bit64Type,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float16Type, Float16x2Type, Float32Type, Float64Type
+	);
+
 	enum BoolOperator {
 		And,
 		Or,

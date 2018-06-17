@@ -1,8 +1,11 @@
 #pragma once
 
+//TODO: enum class
+
 #include <string>
 
 #include "PTX/StateSpace.h"
+#include "PTX/Utils.h"
 
 #define __TO_STRING(S) #S
 #define TO_STRING(S) __TO_STRING(S)
@@ -30,9 +33,16 @@ struct is_type_specialization : std::false_type {};
 
 template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
 struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
- 
-#define DISABLE_EXACT_TYPE(context, type) static_assert(!std::is_same<type, T>::value, "PTX::" TO_STRING(context) " does not support type PTX::" TO_STRING(type))
-#define DISABLE_EXACT_TYPE_TEMPLATE(context, template) static_assert(!is_type_specialization<T, template>::value, "PTX::" TO_STRING(context) " does not support type template PTX::" TO_STRING(template)) 
+
+template<class T, class... R>
+struct TypeEnforcer
+{
+	constexpr static bool value = is_one<std::is_same<R, T>::value...>::value;
+};
+
+#define REQUIRE_TYPE(context, ...) \
+	constexpr static bool Enabled = TypeEnforcer<T, __VA_ARGS__>::value; \
+	static_assert(Typecheck == false || Enabled == true, "PTX::" TO_STRING(context) " does not support type PTX::" TO_STRING(T));
 
 #define REQUIRE_BASE_TYPE(context, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(context) " requires base type PTX::" TO_STRING(type))
 #define REQUIRE_EXACT_TYPE(context, type) static_assert(std::is_same<type, T>::value, "PTX::" TO_STRING(context) " requires exact type PTX::" TO_STRING(type))
@@ -42,10 +52,10 @@ struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
 //
 // Type
 //   VoidType
+//   PredicateType
 //   DataType
 //     ScalarType
 //       BitType<Bits>
-//         PredicateType
 //         IntType
 //         UIntType
 //           PointerType<AddressSpace>
@@ -93,7 +103,7 @@ struct BitType : private ScalarType
 };
 
 template<>
-struct BitType<Bits::Bits1, 1> : private ScalarType
+struct BitType<Bits::Bits1, 1> : private Type
 {
 	static std::string Name() { return ".pred"; }
 };
@@ -105,7 +115,7 @@ using Bit32Type = BitType<Bits::Bits32>;
 using Bit64Type = BitType<Bits::Bits64>;
 
 template<Bits B, unsigned int N = 1>
-struct IntType : private BitType<B, N>
+struct IntTypeBase : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
@@ -146,13 +156,19 @@ struct IntType : private BitType<B, N>
 	}
 };
 
+template<Bits B, unsigned int N = 1> struct IntType : public IntTypeBase<B, N> {};
+template<> struct IntType<Bits::Bits8, 1> : public IntTypeBase<Bits::Bits8> { using SystemType = int8_t; };
+template<> struct IntType<Bits::Bits16, 1> : public IntTypeBase<Bits::Bits16> { using SystemType = int16_t; };
+template<> struct IntType<Bits::Bits32, 1> : public IntTypeBase<Bits::Bits32> { using SystemType = int32_t; };
+template<> struct IntType<Bits::Bits64, 1> : public IntTypeBase<Bits::Bits64> { using SystemType = int64_t; };
+
 using Int8Type = IntType<Bits::Bits8>;
 using Int16Type = IntType<Bits::Bits16>;
 using Int32Type = IntType<Bits::Bits32>;
 using Int64Type = IntType<Bits::Bits64>;
 
 template<Bits B, unsigned int N = 1>
-struct UIntType : private BitType<B, N>
+struct UIntTypeBase : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
 
@@ -193,13 +209,19 @@ struct UIntType : private BitType<B, N>
 	}
 };
 
+template<Bits B, unsigned int N = 1> struct UIntType : public UIntTypeBase<B, N> {};
+template<> struct UIntType<Bits::Bits8, 1> : public UIntTypeBase<Bits::Bits8> { using SystemType = uint8_t; };
+template<> struct UIntType<Bits::Bits16, 1> : public UIntTypeBase<Bits::Bits16> { using SystemType = uint16_t; };
+template<> struct UIntType<Bits::Bits32, 1> : public UIntTypeBase<Bits::Bits32> { using SystemType = uint32_t; };
+template<> struct UIntType<Bits::Bits64, 1> : public UIntTypeBase<Bits::Bits64> { using SystemType = uint64_t; };
+
 using UInt8Type = UIntType<Bits::Bits8>;
 using UInt16Type = UIntType<Bits::Bits16>;
 using UInt32Type = UIntType<Bits::Bits32>;
 using UInt64Type = UIntType<Bits::Bits64>;
 
 template<Bits B, unsigned int N = 1>
-struct FloatType : private BitType<B, N>
+struct FloatTypeBase : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
@@ -291,7 +313,7 @@ struct FloatType : private BitType<B, N>
 };
 
 template<unsigned int N>
-struct FloatType<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
+struct FloatTypeBase<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 {
 	static std::string Name()
 	{
@@ -376,6 +398,11 @@ struct FloatType<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 	}
 };
 
+template<Bits B, unsigned int N = 1> struct FloatType : public FloatTypeBase<B, N> {};
+template<> struct FloatType<Bits::Bits16, 1> : public FloatTypeBase<Bits::Bits16> { using SystemType = float; };
+template<> struct FloatType<Bits::Bits32, 1> : public FloatTypeBase<Bits::Bits32> { using SystemType = float; };
+template<> struct FloatType<Bits::Bits64, 1> : public FloatTypeBase<Bits::Bits64> { using SystemType = double; };
+
 using Float16Type = FloatType<Bits::Bits16>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
@@ -394,7 +421,6 @@ template<class T, VectorSize V>
 struct VectorType : private DataType
 {
 	REQUIRE_BASE_TYPE(VectorType, ScalarType);
-	DISABLE_EXACT_TYPE(VectorType, PredicateType);
 
 	static std::string Name() { return ".v" + std::to_string(V) + " " + T::Name(); }
 };
@@ -430,8 +456,7 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 template<class T, Bits B, class S = AddressableSpace>
 struct PointerType : private UIntType<B>
 {
-	REQUIRE_BASE_TYPE(PointerType, Type);
-	DISABLE_EXACT_TYPE(PointerType, PredicateType);
+	REQUIRE_BASE_TYPE(PointerType, DataType);
 	REQUIRE_BASE_SPACE(PointerType, AddressableSpace);
 
 	static std::string Name() { return UIntType<B>::Name(); }

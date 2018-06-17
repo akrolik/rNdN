@@ -6,12 +6,13 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class ReciprocalInstruction : public InstructionBase_1<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(ReciprocalInstruction, FloatType);
-	DISABLE_EXACT_TYPE(ReciprocalInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(ReciprocalInstruction, Float16x2Type);
+public:
+	REQUIRE_TYPE(ReciprocalInstruction,
+		Float32Type, Float64Type
+	);
 };
 
 template<>

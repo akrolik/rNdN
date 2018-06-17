@@ -4,17 +4,15 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class BitFindInstruction : public InstructionBase_1<UInt32Type, T>
 {
-	REQUIRE_BASE_TYPE(BitFindInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(BitFindInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(BitFindInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(BitFindInstruction, Int16Type);
-	DISABLE_EXACT_TYPE(BitFindInstruction, UInt16Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(BitFindInstruction, BitType);
-	DISABLE_EXACT_TYPE_TEMPLATE(BitFindInstruction, FloatType);
 public:
+	REQUIRE_TYPE(BitFindInstruction,
+		Int32Type, Int64Type,
+		UInt32Type, UInt64Type
+	);
+
 	using InstructionBase_1<UInt32Type, T>::InstructionBase;
 
 	bool GetShiftAmount() const { return m_shiftAmount; }

@@ -4,13 +4,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class CNotInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(CNotInstruction, BitType);
-	DISABLE_EXACT_TYPE(CNotInstruction, PredicateType);
-	DISABLE_EXACT_TYPE(CNotInstruction, Bit8Type);
 public:
+	REQUIRE_TYPE(CNotInstruction,
+		PredicateType, Bit16Type, Bit32Type, Bit64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

@@ -5,22 +5,23 @@
 
 namespace PTX {
 
-template<class T, class S>
+template<class T, class S, bool Typecheck = true>
 class SignSelectInstruction : public InstructionBase_3<T, T, T, S>, public FlushSubnormalModifier<T>
 {
+	//TODO: macro this
 	static_assert(
 		std::is_same<S, Int32Type>::value ||
 		std::is_same<S, Float32Type>::value,
 		"PTX::SignSelectInstruction requires a signed 32-bit value"
 	);
-	REQUIRE_BASE_TYPE(SignSelectInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(SignSelectInstruction, PredicateType);
-	DISABLE_EXACT_TYPE(SignSelectInstruction, Bit8Type);
-	DISABLE_EXACT_TYPE(SignSelectInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(SignSelectInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(SignSelectInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(SignSelectInstruction, Float16x2Type);
 public:
+	REQUIRE_TYPE(SignSelectInstruction,
+		Bit16Type, Bit32Type, Bit64Type,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float32Type, Float64Type
+	);
+
 	using InstructionBase_3<T, T, T, S>::InstructionBase_3;
 
 	std::string OpCode() const override

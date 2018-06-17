@@ -10,7 +10,7 @@ namespace PTX {
 template<Bits B, class T, class S>
 class RegisterAddress : public Address<B, T, S>
 {
-	REQUIRE_BASE_TYPE(RegisterAddress, Type);
+	REQUIRE_BASE_TYPE(RegisterAddress, DataType);
 	REQUIRE_BASE_SPACE(RegisterAddress, AddressableSpace);
 public:
 	RegisterAddress(const Register<PointerType<T, B, S>> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}

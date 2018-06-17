@@ -10,21 +10,24 @@
 
 namespace PTX {
 
-template<class D, class T>
+template<class D, class T, bool Typecheck = true>
 class SetInstruction : public PredicatedInstruction, public FlushSubnormalModifier<T>
 {
+	//TODO: move this
 	static_assert(
 		std::is_same<D, Int32Type>::value ||
 		std::is_same<D, UInt32Type>::value ||
 		std::is_same<D, Float32Type>::value,
 		"PTX::SetInstruction requires a typed 32-bit value"
 	);
-	REQUIRE_BASE_TYPE(SetInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(SetInstruction, PredicateType);
-	DISABLE_EXACT_TYPE(SetInstruction, Bit8Type);
-	DISABLE_EXACT_TYPE(SetInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(SetInstruction, UInt8Type);
 public:
+	REQUIRE_TYPE(SetInstruction,
+		Bit16Type, Bit32Type, Bit64Type,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float16Type, Float16x2Type, Float32Type, Float64Type
+	);
+
 	enum BoolOperator {
 		And,
 		Or,

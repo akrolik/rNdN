@@ -4,11 +4,13 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class FMAInstruction : public InstructionBase_3<T>, public RoundingModifier<T, true>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(FMAInstruction, FloatType);
 public:
+	REQUIRE_TYPE(FMAInstruction,
+		Float16Type, Float16x2Type, Float32Type, Float64Type
+	);
 
 	FMAInstruction(const Register<T> *destination, const Operand<T> *sourceA, const Operand<T> *sourceB, const Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 

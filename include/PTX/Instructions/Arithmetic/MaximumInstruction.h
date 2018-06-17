@@ -5,16 +5,16 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class MaximumInstruction : public InstructionBase_2<T>, public FlushSubnormalModifier<T>
 {
-	REQUIRE_BASE_TYPE(MaximumInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(MaximumInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(MaximumInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(MaximumInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(MaximumInstruction, Float16x2Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(MaximumInstruction, BitType);
 public:
+	REQUIRE_TYPE(MaximumInstruction,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float32Type, Float64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

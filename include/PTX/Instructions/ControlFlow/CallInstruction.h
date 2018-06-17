@@ -4,7 +4,7 @@
 #include "PTX/Instructions/Modifiers/UniformModifier.h"
 
 #include "PTX/Functions/DataFunction.h"
-#include "PTX/Utils.h"
+#include "PTX/Tuple.h"
 
 namespace PTX {
 

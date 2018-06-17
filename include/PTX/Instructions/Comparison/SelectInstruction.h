@@ -6,17 +6,17 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class SelectInstruction : public InstructionBase_3<T, T, T, PredicateType>
 {
-	REQUIRE_BASE_TYPE(SelectInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(SelectInstruction, PredicateType);
-	DISABLE_EXACT_TYPE(SelectInstruction, Bit8Type);
-	DISABLE_EXACT_TYPE(SelectInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(SelectInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(SelectInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(SelectInstruction, Float16x2Type);
 public:
+	REQUIRE_TYPE(SelectInstruction,
+		Bit16Type, Bit32Type, Bit64Type,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float32Type, Float64Type
+	);
+
 	using InstructionBase_3<T, T, T, PredicateType>::InstructionBase_3;
 
 	std::string OpCode() const override

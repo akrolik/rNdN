@@ -4,15 +4,15 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class SADInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_BASE_TYPE(SADInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(SADInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(SADInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(SADInstruction, BitType);
-	DISABLE_EXACT_TYPE_TEMPLATE(SADInstruction, FloatType);
 public:
+	REQUIRE_TYPE(SADInstruction,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

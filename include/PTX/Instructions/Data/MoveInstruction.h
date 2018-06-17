@@ -2,21 +2,19 @@
 
 #include "PTX/Instructions/PredicatedInstruction.h"
 
-#include "PTX/StateSpace.h"
-// #include "PTX/Operands/Variables/Register.h"
-
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class MoveInstruction : public PredicatedInstruction
 {
-	REQUIRE_BASE_TYPE(MoveInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(MoveInstruction, Bit8Type);
-	DISABLE_EXACT_TYPE(MoveInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(MoveInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(MoveInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(MoveInstruction, Float16x2Type);
 public:
+	REQUIRE_TYPE(MoveInstruction,
+		PredicateType, Bit16Type, Bit32Type, Bit64Type,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float32Type, Float64Type
+	);
+
 	MoveInstruction(const Register<T> *destination, const Operand<T> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const override

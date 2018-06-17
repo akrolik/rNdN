@@ -4,8 +4,8 @@
 #include <sstream>
 
 #include "PTX/StateSpace.h"
+#include "PTX/Tuple.h"
 #include "PTX/Type.h"
-#include "PTX/Utils.h"
 #include "PTX/Declarations/Declaration.h"
 #include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/ReturnedFunction.h"

@@ -4,16 +4,16 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class DivideInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_BASE_TYPE(DivideInstruction, ScalarType);
-	DISABLE_EXACT_TYPE(DivideInstruction, Int8Type);
-	DISABLE_EXACT_TYPE(DivideInstruction, UInt8Type);
-	DISABLE_EXACT_TYPE(DivideInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(DivideInstruction, Float16x2Type);
-	DISABLE_EXACT_TYPE_TEMPLATE(DivideInstruction, BitType);
 public:
+	REQUIRE_TYPE(DivideInstruction,
+		Int16Type, Int32Type, Int64Type,
+		UInt16Type, UInt32Type, UInt64Type,
+		Float32Type, Float64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase;
 
 	std::string OpCode() const override

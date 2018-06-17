@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class AndInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(AndInstruction, BitType);
-	DISABLE_EXACT_TYPE(AndInstruction, Bit8Type);
 public:
+	REQUIRE_TYPE(AndInstruction,
+		PredicateType, Bit16Type, Bit32Type, Bit64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase_2;
 
 	std::string OpCode() const override

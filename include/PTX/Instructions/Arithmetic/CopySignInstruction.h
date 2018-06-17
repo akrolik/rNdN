@@ -4,13 +4,14 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class CopySignInstruction : public InstructionBase_2<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(CopySignInstruction, FloatType);
-	DISABLE_EXACT_TYPE(CopySignInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(CopySignInstruction, Float16x2Type);
 public:
+	REQUIRE_TYPE(CopySignInstruction,
+		Float32Type, Float64Type
+	);
+
 	using InstructionBase_2<T>::InstructionBase;
 	
 	std::string OpCode() const override

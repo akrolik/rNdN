@@ -8,7 +8,7 @@ namespace PTX {
 template<class T, Bits B, class S = AddressableSpace>
 class PointerAdapter : public Register<PointerType<T, B, S>>
 { 
-	REQUIRE_BASE_TYPE(PointerAdapter, Type);
+	REQUIRE_BASE_TYPE(PointerAdapter, DataType);
 	REQUIRE_BASE_SPACE(PointerAdapter, AddressableSpace);
 public:
 	PointerAdapter(const Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}

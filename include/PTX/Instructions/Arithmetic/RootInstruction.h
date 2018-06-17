@@ -6,12 +6,13 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Typecheck = true>
 class RootInstruction : public InstructionBase_1<T>
 {
-	REQUIRE_EXACT_TYPE_TEMPLATE(RootInstruction, FloatType);
-	DISABLE_EXACT_TYPE(RootInstruction, Float16Type);
-	DISABLE_EXACT_TYPE(RootInstruction, Float16x2Type);
+public:
+	REQUIRE_TYPE(RootInstruction,
+		Float32Type, Float64Type
+	);
 };
 
 template<>

@@ -10,8 +10,8 @@ namespace PTX {
 template<Bits B, class T, class S>
 class IsSpaceInstruction : public InstructionStatement
 {
-	REQUIRE_BASE_TYPE(IsSpaceInstruction, Type);
-	REQUIRE_BASE_SPACE(IsSpaceInstruction, AddressableSpace);
+	// REQUIRE_BASE_TYPE(IsSpaceInstruction, Type);
+	// REQUIRE_BASE_SPACE(IsSpaceInstruction, AddressableSpace);
 public:
 	IsSpaceInstruction(const Register<PredicateType> *destination, const Address<B, T> *address) : m_destination(destination), m_address(address) {}
 

@@ -11,8 +11,8 @@ namespace PTX {
 template<Bits A, class T, class S>
 class StoreInstruction : public InstructionStatement
 {
-	REQUIRE_BASE_TYPE(StoreInstruction, DataType);
-	DISABLE_EXACT_TYPE(StoreInstruction, Float16Type);
+	// REQUIRE_BASE_TYPE(StoreInstruction, DataType);
+	// DISABLE_EXACT_TYPE(StoreInstruction, Float16Type);
 public:
 	StoreInstruction(const Address<A, T, S> *address, const Register<T> *reg) : m_address(address), m_register(reg) {}
 
