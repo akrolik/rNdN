@@ -14,19 +14,17 @@ namespace PTX {
 template<class D, class T, bool Typecheck = true>
 class SetInstruction : public InstructionBase_2<D, T>, public FlushSubnormalModifier<T>, public PredicateModifier
 {
-	//TODO: move this
-	static_assert(
-		std::is_same<D, Int32Type>::value ||
-		std::is_same<D, UInt32Type>::value ||
-		std::is_same<D, Float32Type>::value,
-		"PTX::SetInstruction requires a typed 32-bit value"
-	);
 public:
-	REQUIRE_TYPE(SetInstruction,
-		Bit16Type, Bit32Type, Bit64Type,
-		Int16Type, Int32Type, Int64Type,
-		UInt16Type, UInt32Type, UInt64Type,
-		Float16Type, Float16x2Type, Float32Type, Float64Type
+	REQUIRE_TYPE_PARAMS(SetInstruction,
+		REQUIRE_TYPE_PARAM(D,
+			Int32Type, UInt32Type, Float32Type
+		),
+		REQUIRE_TYPE_PARAM(T,
+			Bit16Type, Bit32Type, Bit64Type,
+			Int16Type, Int32Type, Int64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Float16Type, Float16x2Type, Float32Type, Float64Type
+		)
 	);
 
 	SetInstruction(const Register<D> *destination, const Operand<T> *sourceA, const Operand<T> *sourceB, typename T::ComparisonOperator comparator) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator) {}

@@ -38,8 +38,15 @@ struct TypeEnforcer
 	constexpr static bool value = is_one<std::is_same<R, T>::value...>::value;
 };
 
+#define REQUIRE_TYPE_PARAMS(context, D_ENABLED, T_ENABLED) \
+	constexpr static bool Enabled = D_ENABLED && T_ENABLED; \
+	static_assert(Typecheck == false || Enabled == true, "PTX::" TO_STRING(context) " does not support types PTX::" TO_STRING(D) " and PTX::" TO_STRING(T));
+
+#define REQUIRE_TYPE_PARAM(P, ...) \
+	TypeEnforcer<P, __VA_ARGS__>::value
+
 #define REQUIRE_TYPE(context, ...) \
-	constexpr static bool Enabled = TypeEnforcer<T, __VA_ARGS__>::value; \
+	constexpr static bool Enabled = REQUIRE_TYPE_PARAM(T, __VA_ARGS__); \
 	static_assert(Typecheck == false || Enabled == true, "PTX::" TO_STRING(context) " does not support type PTX::" TO_STRING(T));
 
 #define REQUIRE_BASE_TYPE(context, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(context) " requires base type PTX::" TO_STRING(type))

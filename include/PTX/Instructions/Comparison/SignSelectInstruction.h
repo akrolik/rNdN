@@ -5,24 +5,23 @@
 
 namespace PTX {
 
-template<class T, class S, bool Typecheck = true>
-class SignSelectInstruction : public InstructionBase_3<T, T, T, S>, public FlushSubnormalModifier<T>
+template<class D, class T, bool Typecheck = true>
+class SignSelectInstruction : public InstructionBase_3<D, D, D, T>, public FlushSubnormalModifier<T>
 {
-	//TODO: macro this
-	static_assert(
-		std::is_same<S, Int32Type>::value ||
-		std::is_same<S, Float32Type>::value,
-		"PTX::SignSelectInstruction requires a signed 32-bit value"
-	);
 public:
-	REQUIRE_TYPE(SignSelectInstruction,
-		Bit16Type, Bit32Type, Bit64Type,
-		Int16Type, Int32Type, Int64Type,
-		UInt16Type, UInt32Type, UInt64Type,
-		Float32Type, Float64Type
+	REQUIRE_TYPE_PARAMS(SetInstruction,
+		REQUIRE_TYPE_PARAM(D,
+			Bit16Type, Bit32Type, Bit64Type,
+			Int16Type, Int32Type, Int64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Float32Type, Float64Type
+		),
+		REQUIRE_TYPE_PARAM(T,
+			Int32Type, Float32Type
+		)
 	);
 
-	using InstructionBase_3<T, T, T, S>::InstructionBase_3;
+	using InstructionBase_3<D, D, D, T>::InstructionBase_3;
 
 	std::string OpCode() const override
 	{
@@ -31,7 +30,7 @@ public:
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
-		return code + T::Name() + S::Name();
+		return code + D::Name() + T::Name();
 	}
 };
 
