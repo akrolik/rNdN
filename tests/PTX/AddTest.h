@@ -127,10 +127,10 @@ public:
 				continue;
 			}
 
-			std::cerr << "[Error] Result incorrect at index " << i << " [" << data[i] << " != " << 3 << "]" << std::endl;
+			std::cerr << "[ERROR] Result incorrect at index " << i << " [" << data[i] << " != " << 3 << "]" << std::endl;
 			return;
 		}
-		std::cerr << "[Info] Kernel execution successful" << std::endl;
+		std::cerr << "[INFO] Kernel execution successful" << std::endl;
 	}
 };
 

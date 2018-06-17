@@ -25,7 +25,7 @@ public:
 	{
 		if (index >= m_count)
 		{
-			std::cerr << "[Error] Variable index " << index << " out of bounds" << std::endl;
+			std::cerr << "[ERROR] Variable index " << index << " out of bounds" << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
 
@@ -101,7 +101,7 @@ public:
 				return new typename S::template VariableType<T>(set.GetName(index));
 			}
 		}
-		std::cerr << "[Error] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
+		std::cerr << "[ERROR] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 

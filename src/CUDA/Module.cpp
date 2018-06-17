@@ -45,8 +45,8 @@ void Module::Compile()
 
 	if (result != CUDA_SUCCESS)
 	{
-		std::cerr << "[Error] PTX failed to compile" << std::endl << l_errorLog << std::endl;
-		std::exit(1);
+		std::cerr << "[ERROR] PTX failed to compile" << std::endl << l_errorLog << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 
 	checkDriverResult(cuLinkComplete(linkerState, &m_binary, &m_binarySize));

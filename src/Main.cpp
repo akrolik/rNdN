@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	auto cuda_begin = std::chrono::steady_clock::now();
 	if (sizeof(void *) == 4)
 	{
-		std::cerr << "[Error] 64-bit platform required" << std::endl;
+		std::cerr << "[ERROR] 64-bit platform required" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
 	if (p.GetDeviceCount() == 0)
 	{
-		std::cerr << "[Error] No connected devices detected" << std::endl;
+		std::cerr << "[ERROR] No connected devices detected" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
@@ -98,11 +98,11 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		std::cerr << "[Error] Result incorrect at index " << i << " [" << data[i] << " != " << 3 << "]" << std::endl;
+		std::cerr << "[ERROR] Result incorrect at index " << i << " [" << data[i] << " != " << 3 << "]" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
-	std::cout << "[Info] Kernel execution successful" << std::endl;
+	std::cout << "[INFO] Kernel execution successful" << std::endl;
 	std::cout << "[Timings]" << std::endl;
 	std::cout << "  CUDA Init: " << std::chrono::duration_cast<std::chrono::microseconds>(cuda_end - cuda_begin).count() << " mus\n";
 	std::cout << "  Scan+Parse: " << std::chrono::duration_cast<std::chrono::microseconds>(sp_end - sp_begin).count() << " mus\n";

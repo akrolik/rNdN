@@ -71,7 +71,7 @@ return       return tRETURN;
 }
 
 . {
-	fprintf(stderr, "[Error] (line %d) Unexpected character %s\n", yylineno, yytext);
+	fprintf(stderr, "[ERROR] (line %d) Unexpected character %s\n", yylineno, yytext);
 	exit(1);
 }
 

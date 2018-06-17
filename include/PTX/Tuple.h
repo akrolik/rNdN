@@ -11,7 +11,7 @@ static std::ostringstream& CodeTuple(std::ostringstream& code, std::string separ
 	auto arg = std::get<std::tuple_size<T>::value-P>(t);
 	if (arg == nullptr)
 	{
-		std::cerr << "[Error] Parameter " << std::tuple_size<T>::value-P << " not set" << std::endl;
+		std::cerr << "[ERROR] Parameter " << std::tuple_size<T>::value-P << " not set" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	code << arg->ToString();

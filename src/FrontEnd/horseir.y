@@ -11,7 +11,7 @@ extern int yylineno;
 extern HorseIR::Program *program;
 
 int yylex();
-void yyerror(const char *s) { fprintf(stderr, "[Error] (line %d) %s\n", yylineno, s); exit(1); }
+void yyerror(const char *s) { fprintf(stderr, "[ERROR] (line %d) %s\n", yylineno, s); exit(1); }
 %}
 
 %code requires {

@@ -17,9 +17,6 @@ KernelInvocation::~KernelInvocation()
 void KernelInvocation::SetParam(unsigned int index, Buffer &buffer)
 {
 	((void **)m_parameters)[index] = &buffer.GetGPUBuffer();
-
-	// checkDriverResult(cuParamSetv(m_kernel.GetKernel(), m_paramSize, &buffer.GetGPUBuffer(), buffer.GetSize()));
-	// m_paramSize += buffer.GetSize();
 }
 
 void KernelInvocation::Launch()

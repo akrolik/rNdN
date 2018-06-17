@@ -22,7 +22,7 @@ protected:
 
 	void Unimplemented(std::string method)
 	{
-		std::cerr << "[Error] Unsupported type " << T::Name() << " in " << method << std::endl;
+		std::cerr << "[ERROR] Unsupported type " << T::Name() << " in " << method << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
