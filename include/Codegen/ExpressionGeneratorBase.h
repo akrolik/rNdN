@@ -53,7 +53,7 @@ public:
 		m_currentFunction->AddStatement(new PTX::MoveInstruction<T>(m_target, src));
 	}
 
-private:
+protected:
 	ResourceAllocator<B> *m_resources = nullptr;
 	const PTX::Register<T> *m_target = nullptr;
 	PTX::Function *m_currentFunction = nullptr;
