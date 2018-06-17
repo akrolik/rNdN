@@ -17,11 +17,11 @@ public:
 	std::string OpCode() const override
 	{
 		std::string code = "fma" + RoundingModifier<T, true>::OpCodeModifier();
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
-		if constexpr(T::SaturateModifier)
+		if constexpr(SaturateModifier<T>::Enabled)
 		{
 			code += SaturateModifier<T>::OpCodeModifier();
 		}

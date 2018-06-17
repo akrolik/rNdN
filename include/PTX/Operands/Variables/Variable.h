@@ -9,6 +9,9 @@
 namespace PTX {
 
 template<class T, class S>
+class VariableDeclaration;
+
+template<class T, class S>
 class Variable : public Operand<T>, public Resource<S>
 {
 	friend class VariableDeclaration<T, S>;

@@ -5,12 +5,17 @@ namespace PTX {
 template<class T, bool force = false, typename Enable = void>
 class SaturateModifier
 {
+public:
+	constexpr static bool Enabled = false;
 };
 
 template<class T, bool force>
-class SaturateModifier<T, force, std::enable_if_t<force || T::SaturateModifier>>
+class SaturateModifier<T, force,
+      std::enable_if_t<TypeEnforcer<T, Int32Type, Float16Type, Float16x2Type, Float32Type>::value || force>>
 {
 public:
+	constexpr static bool Enabled = true;
+
 	SaturateModifier() {}
 	SaturateModifier(bool saturate) : m_saturate(saturate) {}
 

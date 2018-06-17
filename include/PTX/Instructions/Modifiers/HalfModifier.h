@@ -8,7 +8,8 @@ class HalfModifier
 };
 
 template<class T, bool force>
-class HalfModifier<T, force, std::enable_if_t<force || T::HalfModifier>>
+class HalfModifier<T, force,
+      std::enable_if_t<TypeEnforcer<T, Int8Type, Int16Type, Int32Type, Int64Type, UInt8Type, UInt16Type, UInt64Type>::value || force>>
 {
 public:
 	HalfModifier() {}

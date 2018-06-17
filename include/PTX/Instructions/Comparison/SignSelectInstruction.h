@@ -26,7 +26,7 @@ public:
 	std::string OpCode() const override
 	{
 		std::string code = "slct";
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
