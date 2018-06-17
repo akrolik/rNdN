@@ -19,7 +19,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			return "max" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
 		}

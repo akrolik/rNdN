@@ -18,7 +18,7 @@ public:
   	
 	std::string OpCode() const override
 	{
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			return "abs" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
 		}

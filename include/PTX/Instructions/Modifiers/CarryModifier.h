@@ -5,12 +5,17 @@ namespace PTX {
 template<class T, bool force = false, typename Enable = void>
 class CarryModifier
 {
+public:
+	constexpr static bool Enabled = false;
 };
 
 template<class T, bool force>
-class CarryModifier<T, force, std::enable_if_t<force || T::CarryModifier>>
+class CarryModifier<T, force,
+      std::enable_if_t<TypeEnforcer<T, Int32Type, Int64Type, UInt32Type, UInt64Type>::value || force>>
 {
 public:
+	constexpr static bool Enabled = true;
+
 	CarryModifier() {}
 	CarryModifier(bool carryIn, bool carryOut) : m_carryIn(carryIn), m_carryOut(carryOut) {}
 

@@ -23,19 +23,19 @@ public:
 	std::string OpCode() const override
 	{
 		std::string code = "mul";
-		if constexpr(T::HalfModifier)
+		if constexpr(HalfModifier<T>::Enabled)
 		{
 			code += HalfModifier<T>::OpCodeModifier();
 		}
-		if constexpr(is_rounding_type<T>::value)
+		if constexpr(RoundingModifier<T>::Enabled)
 		{
 			code += RoundingModifier<T>::OpCodeModifier();
 		}
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
-		if constexpr(T::SaturateModifier)
+		if constexpr(SaturateModifier<T>::Enabled)
 		{
 			code += SaturateModifier<T>::OpCodeModifier();
 		}

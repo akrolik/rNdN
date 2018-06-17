@@ -5,12 +5,17 @@ namespace PTX {
 template<class T, bool force = false, typename Enable = void>
 class FlushSubnormalModifier
 {
+public:
+	constexpr static bool Enabled = false;
 };
 
 template<class T, bool force>
-class FlushSubnormalModifier<T, force, std::enable_if_t<force || T::FlushModifier>>
+class FlushSubnormalModifier<T, force,
+      std::enable_if_t<TypeEnforcer<T, Float16Type, Float16x2Type, Float32Type>::value || force>>
 {
 public:
+	constexpr static bool Enabled = true;
+
 	FlushSubnormalModifier() {}
 	FlushSubnormalModifier(bool flush) : m_flush(flush) {}
 

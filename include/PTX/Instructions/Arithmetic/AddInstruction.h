@@ -23,21 +23,21 @@ public:
 	std::string OpCode() const override
 	{
 		std::string code = "add";
-		if constexpr(T::CarryModifier)
+		if constexpr(CarryModifier<T>::Enabled)
 		{
 			code += CarryModifier<T>::OpCodeModifier();
 		}
-		if constexpr(is_rounding_type<T>::value)
+		if constexpr(RoundingModifier<T>::Enabled)
 		{
 			code += RoundingModifier<T>::OpCodeModifier();
 		}
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
-		if constexpr(T::SaturateModifier)
+		if constexpr(SaturateModifier<T>::Enabled)
 		{
-			if constexpr(T::CarryModifier)
+			if constexpr(CarryModifier<T>::Enabled)
 			{
 				if (!CarryModifier<T>::IsActive())
 				{

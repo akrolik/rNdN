@@ -6,12 +6,16 @@ namespace PTX
 template<class T, bool R = false, typename Enable = void>
 class RoundingModifier
 {
+public:
+	constexpr static bool Enabled = false;
 };
 
 template<class T>
-class RoundingModifier<T, false, typename std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>>
+class RoundingModifier<T, false, std::enable_if_t<is_rounding_type<T>::value>>
 {
 public:
+	constexpr static bool Enabled = true;
+
 	RoundingModifier() {}
 	RoundingModifier(typename T::RoundingMode roundingMode) : m_roundingMode(roundingMode) {}
 
@@ -33,9 +37,11 @@ protected:
 };
 
 template<class T>
-class RoundingModifier<T, true, typename std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>>
+class RoundingModifier<T, true, std::enable_if_t<is_rounding_type<T>::value>>
 {
 public:
+	constexpr static bool Enabled = true;
+
 	RoundingModifier(typename T::RoundingMode roundingMode) : m_roundingMode(roundingMode)
 	{
 		if (roundingMode == T::RoundingMode::None)

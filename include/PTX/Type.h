@@ -124,11 +124,6 @@ struct IntTypeBase : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
-	static const bool CarryModifier = (B == Bits::Bits32 || B == Bits::Bits64);
-	static const bool HalfModifier = true;
-	static const bool FlushModifier = false;
-	static const bool SaturateModifier = (B == Bits::Bits32);
-
 	static std::string Name() { return ".s" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
 
 	enum class ComparisonOperator {
@@ -179,11 +174,6 @@ struct UIntTypeBase : private BitType<B, N>
 
 	static std::string Name() { return ".u" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
 
-	static const bool CarryModifier = (B == Bits::Bits32 || B == Bits::Bits64);
-	static const bool HalfModifier = true;
-	static const bool FlushModifier = false;
-	static const bool SaturateModifier = false;
-
 	enum class ComparisonOperator {
 		Equal,
 		NotEqual,
@@ -231,11 +221,6 @@ struct FloatTypeBase : private BitType<B, N>
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
 	static std::string Name() { return ".f" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
-
-	static const bool CarryModifier = false;
-	static const bool HalfModifier = false;
-	static const bool FlushModifier = (B == Bits::Bits32);
-	static const bool SaturateModifier = (B == Bits::Bits32);
 
 	enum class RoundingMode {
 		None,
@@ -327,11 +312,6 @@ struct FloatTypeBase<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 		else
 			return ".f16x" + std::to_string(N);
 	}
-
-	static const bool CarryModifier = false;
-	static const bool HalfModifier = false;
-	static const bool FlushModifier = true;
-	static const bool SaturateModifier = true;
 
 	enum class RoundingMode {
 		None,

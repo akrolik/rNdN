@@ -5,12 +5,17 @@ namespace PTX {
 template<class T, bool force = false, typename Enable = void>
 class HalfModifier
 {
+public:
+	constexpr static bool Enabled = false;
 };
 
 template<class T, bool force>
-class HalfModifier<T, force, std::enable_if_t<force || T::HalfModifier>>
+class HalfModifier<T, force,
+      std::enable_if_t<TypeEnforcer<T, Int8Type, Int16Type, Int32Type, Int64Type, UInt8Type, UInt16Type, UInt64Type>::value || force>>
 {
 public:
+	constexpr static bool Enabled = true;
+
 	HalfModifier() {}
 
 	bool GetLower() const { return m_lower; }

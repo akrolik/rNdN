@@ -35,7 +35,7 @@ public:
 	{
 		std::ostringstream code;
 		code << "set" << T::ComparisonOperatorString(m_comparator) << PredicateModifier::OpCodeModifier();
-		if constexpr(T::FlushModifier)
+		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code << FlushSubnormalModifier<T>::OpCodeModifier();
 		}
