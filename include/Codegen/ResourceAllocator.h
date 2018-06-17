@@ -103,8 +103,8 @@ private:
 
 	void AllocateRegister(HorseIR::Type *type, std::string name)
 	{
-		auto type = static_cast<HorseIR::PrimitiveType*>(type);
-		switch (type->GetType())
+		auto primitiveType = static_cast<HorseIR::PrimitiveType*>(type);
+		switch (primitiveType->GetType())
 		{
 			case HorseIR::PrimitiveType::Type::Int8:
 				GetResources<PTX::Int8Type>()->AllocateRegister(name);
@@ -113,7 +113,7 @@ private:
 				GetResources<PTX::Int64Type>()->AllocateRegister(name);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported resource type " << type->ToString() << std::endl;
+				std::cerr << "[ERROR] Unsupported resource type " << primitiveType->ToString() << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
