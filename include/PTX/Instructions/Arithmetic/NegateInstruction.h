@@ -20,11 +20,7 @@ public:
 	{
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				return "neg.ftz" + T::Name();
-			}
-			return "neg" + T::Name();
+			return "neg" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
 		}
 		else
 		{

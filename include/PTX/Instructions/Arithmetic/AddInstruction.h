@@ -25,41 +25,28 @@ public:
 		std::string code = "add";
 		if constexpr(T::CarryModifier)
 		{
-			if (this->m_carryIn)
-			{
-				code += "c";
-			}
-			if (this->m_carryOut)
-			{
-				code += ".cc";
-			}
+			code += CarryModifier<T>::OpCodeModifier();
 		}
 		if constexpr(is_rounding_type<T>::value)
 		{
-			code += T::RoundingModeString(this->m_roundingMode);
+			code += RoundingModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				code += ".ftz";
-			}
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::SaturateModifier)
 		{
 			if constexpr(T::CarryModifier)
 			{
-				if (!this->m_carryIn && !this->m_carryOut && this->m_saturate)
+				if (!CarryModifier<T>::IsActive())
 				{
-					code += ".sat";
+					code += SaturateModifier<T>::OpCodeModifier();
 				}
 			}
 			else
 			{
-				if (this->m_saturate)
-				{
-					code += ".sat";
-				}
+				code += SaturateModifier<T>::OpCodeModifier();
 			}
 		}
 		return code + T::Name();

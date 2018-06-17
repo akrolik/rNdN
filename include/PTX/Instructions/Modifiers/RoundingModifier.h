@@ -18,6 +18,16 @@ public:
 	typename T::RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(typename T::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
+	std::string OpCodeModifier() const
+	{
+		return T::RoundingModeString(m_roundingMode);
+	}
+
+	bool IsActive() const
+	{
+		return m_roundingMode != T::RoundingMode::None;
+	}
+
 protected:
 	typename T::RoundingMode m_roundingMode = T::RoundingMode::None;
 };
@@ -44,6 +54,16 @@ public:
 			std::exit(EXIT_FAILURE);
 		}
 	       	m_roundingMode = roundingMode;
+	}
+
+	std::string OpCodeModifier() const
+	{
+		return T::RoundingModeString(m_roundingMode);
+	}
+
+	bool IsActive() const
+	{
+		return m_roundingMode != T::RoundingMode::None;
 	}
 
 protected:

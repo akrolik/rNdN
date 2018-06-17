@@ -50,9 +50,9 @@ public:
 	std::string OpCode() const override
 	{
 		std::string code = "div";
-		if (this->m_roundingMode != Float32Type::RoundingMode::None)
+		if (RoundingModifier<Float32Type>::IsActive())
 		{
-			code += Float32Type::RoundingModeString(this->m_roundingMode);
+			code += RoundingModifier<Float32Type>::OpCodeModifier();
 		}
 		else if (m_full)
 		{
@@ -62,11 +62,7 @@ public:
 		{
 			code += ".approx";
 		}
-		if (m_flush)
-		{
-			code += ".ftz";
-		}
-		return code + Float32Type::Name();
+		return code + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 
 private:
@@ -81,7 +77,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		return "div" + Float64Type::RoundingModeString(this->m_roundingMode) + Float64Type::Name();
+		return "div" + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
 	}
 };
 

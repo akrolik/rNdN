@@ -25,32 +25,19 @@ public:
 		std::string code = "mul";
 		if constexpr(T::HalfModifier)
 		{
-			if (this->m_upper)
-			{
-				code += ".hi";
-			}
-			else if (this->m_lower)
-			{
-				code += ".lo";
-			}
+			code += HalfModifier<T>::OpCodeModifier();
 		}
 		if constexpr(is_rounding_type<T>::value)
 		{
-			code += T::RoundingModeString(this->m_roundingMode);
+			code += RoundingModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				code += ".ftz";
-			}
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::SaturateModifier)
 		{
-			if (this->m_saturate)
-			{
-				code += ".sat";
-			}
+			code += SaturateModifier<T>::OpCodeModifier();
 		}
 		return code + T::Name();
 	}
@@ -64,16 +51,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		std::string code = "mul";
-		if (this->m_upper)
-		{
-			code += ".hi";
-		}
-		else if (this->m_lower)
-		{
-			code += ".lo";
-		}
-		return code + Int32Type::Name();
+		return "mul" + HalfModifier<Int32Type>::OpCodeModifier() + Int32Type::Name();
 	}
 };
 

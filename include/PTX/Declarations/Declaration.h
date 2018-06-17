@@ -5,7 +5,7 @@ namespace PTX {
 class Declaration
 {
 public:
-	enum LinkDirective {
+	enum class LinkDirective {
 		None,
 		Extern,
 		Visible,
@@ -17,21 +17,21 @@ public:
 	{
 		switch (linkDirective)
 		{
-			case None:
+			case LinkDirective::None:
 				return "";
-			case Extern:
+			case LinkDirective::Extern:
 				return ".extern";
-			case Visible:
+			case LinkDirective::Visible:
 				return ".visible";
-			case Common:
+			case LinkDirective::Common:
 				return ".common";
-			case Weak:
+			case LinkDirective::Weak:
 				return ".weak";
 		}
 		return ".<unknown>";
 	}
 
-	Declaration(LinkDirective linkDirective = None) : m_linkDirective(linkDirective) {}
+	Declaration(LinkDirective linkDirective = LinkDirective::None) : m_linkDirective(linkDirective) {}
 
 	LinkDirective GetLinkDirective() const { return m_linkDirective; }
 	void SetLinkDirective(LinkDirective linkDirective) { m_linkDirective = linkDirective; }
@@ -39,7 +39,7 @@ public:
 	virtual std::string ToString() const = 0;
 
 protected:
-	LinkDirective m_linkDirective = None;
+	LinkDirective m_linkDirective = LinkDirective::None;
 };
 
 }

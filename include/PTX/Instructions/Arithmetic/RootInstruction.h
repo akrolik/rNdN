@@ -23,21 +23,13 @@ public:
 
 	std::string OpCode() const override
 	{
-		if (this->m_roundingMode == Float32Type::RoundingMode::None)
+		if (RoundingModifier<Float32Type>::IsActive())
 		{
-			if (this->m_flush)
-			{
-				return "sqrt.approx.ftz" + Float32Type::Name();
-			}
-			return "sqrt.approx" + Float32Type::Name();
+			return "sqrt" + RoundingModifier<Float32Type>::OpCodeModifier() + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 		}
 		else
 		{
-			if (this->m_flush)
-			{
-				return "sqrt" + Float32Type::RoundingModeString(this->m_roundingMode) + ".ftz" + Float32Type::Name();
-			}
-			return "sqrt" + Float32Type::RoundingModeString(this->m_roundingMode) + Float32Type::Name();
+			return "sqrt.approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier()+ Float32Type::Name();
 		}
 	}
 };
@@ -50,7 +42,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		return "sqrt" + Float64Type::RoundingModeString(this->m_roundingMode) + Float64Type::Name();
+		return "sqrt" + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
 	}
 };
 

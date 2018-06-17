@@ -17,6 +17,15 @@ public:
 	bool GetSaturate() const { return m_saturate; }
 	void SetSaturate(bool saturate) { m_saturate = saturate; }
 
+	std::string OpCodeModifier() const
+	{
+		if (m_saturate)
+		{
+			return ".sat";
+		}
+		return "";
+	}
+
 protected:
 	bool m_saturate = false;
 };

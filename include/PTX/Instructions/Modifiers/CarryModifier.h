@@ -19,6 +19,25 @@ public:
 
 	bool GetCarryOut() const { return m_carryOut; }
 	void SetCarryOut(bool carryOut) { m_carryOut = carryOut; }
+	
+	std::string OpCodeModifier() const
+	{
+		std::string ret;
+		if (m_carryIn)
+		{
+			ret += "c";
+		}
+		if (m_carryOut)
+		{
+			ret += ".cc";
+		}
+		return ret;
+	}
+
+	bool IsActive() const
+	{
+		return m_carryIn || m_carryOut;
+	}
 
 protected:
 	bool m_carryIn = false;

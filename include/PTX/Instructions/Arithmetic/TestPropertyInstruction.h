@@ -12,7 +12,7 @@ public:
 		Float32Type, Float64Type
 	);
 
-	enum Property {
+	enum class Property {
 		Finite,
 		Infinite,
 		Number,
@@ -25,17 +25,17 @@ public:
 	{
 		switch (property)
 		{
-			case Finite:
+			case Property::Finite:
 				return ".finite";
-			case Infinite:
+			case Property::Infinite:
 				return ".infinite";
-			case Number:
+			case Property::Number:
 				return ".number";
-			case NaN:
+			case Property::NaN:
 				return ".notanumber";
-			case Normal:
+			case Property::Normal:
 				return ".normal";
-			case Subnormal:
+			case Property::Subnormal:
 				return ".subnormal";
 		}
 		return ".<unknown>";

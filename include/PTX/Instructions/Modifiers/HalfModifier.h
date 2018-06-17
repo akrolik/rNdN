@@ -33,6 +33,19 @@ public:
 		}
 	}
 
+	std::string OpCodeModifier() const
+	{
+		if (m_upper)
+		{
+			return ".hi";
+		}
+		else if (m_lower)
+		{
+			return ".lo";
+		}
+		return "";
+	}
+
 protected:
 	bool m_upper = false;
 	bool m_lower = false;

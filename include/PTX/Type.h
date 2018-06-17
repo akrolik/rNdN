@@ -1,7 +1,5 @@
 #pragma once
 
-//TODO: enum class
-
 #include <string>
 
 #include "PTX/StateSpace.h"
@@ -26,7 +24,7 @@ struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMod
 //
 // Type trait for determining if a type is a specialization of some template
 
-enum Bits : int;
+enum class Bits : int;
 
 template <class T, template <Bits, unsigned int> class Template>
 struct is_type_specialization : std::false_type {};
@@ -71,7 +69,7 @@ struct DataType : private Type {};
 
 struct ScalarType : private DataType {};
 
-enum Bits : int {
+enum class Bits : int {
 	Bits1  = (1 << 0),
 	Bits8  = (1 << 3),
 	Bits16 = (1 << 4),
@@ -82,9 +80,9 @@ enum Bits : int {
 template<Bits B, unsigned int N = 1>
 struct BitType : private ScalarType
 {
-	static std::string Name() { return ".b" + std::to_string(B); }
+	static std::string Name() { return ".b" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
 
-	enum ComparisonOperator {
+	enum class ComparisonOperator {
 		Equal,
 		NotEqual
 	};
@@ -93,9 +91,9 @@ struct BitType : private ScalarType
 	{
 		switch (comparisonOperator)
 		{
-			case Equal:
+			case ComparisonOperator::Equal:
 				return ".eq";
-			case NotEqual:
+			case ComparisonOperator::NotEqual:
 				return ".ne";
 		}
 		return "";
@@ -124,9 +122,9 @@ struct IntTypeBase : private BitType<B, N>
 	static const bool FlushModifier = false;
 	static const bool SaturateModifier = (B == Bits::Bits32);
 
-	static std::string Name() { return ".s" + std::to_string(B); }
+	static std::string Name() { return ".s" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
 
-	enum ComparisonOperator {
+	enum class ComparisonOperator {
 		Equal,
 		NotEqual,
 		Less,
@@ -139,17 +137,17 @@ struct IntTypeBase : private BitType<B, N>
 	{
 		switch (comparisonOperator)
 		{
-			case Equal:
+			case ComparisonOperator::Equal:
 				return ".eq";
-			case NotEqual:
+			case ComparisonOperator::NotEqual:
 				return ".ne";
-			case Less:
+			case ComparisonOperator::Less:
 				return ".lt";
-			case LessEqual:
+			case ComparisonOperator::LessEqual:
 				return ".le";
-			case Greater:
+			case ComparisonOperator::Greater:
 				return ".gt";
-			case GreaterEqual:
+			case ComparisonOperator::GreaterEqual:
 				return ".ge";
 		}
 		return "";
@@ -172,14 +170,14 @@ struct UIntTypeBase : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
 
-	static std::string Name() { return ".u" + std::to_string(B); }
+	static std::string Name() { return ".u" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
 
 	static const bool CarryModifier = (B == Bits::Bits32 || B == Bits::Bits64);
 	static const bool HalfModifier = true;
 	static const bool FlushModifier = false;
 	static const bool SaturateModifier = false;
 
-	enum ComparisonOperator {
+	enum class ComparisonOperator {
 		Equal,
 		NotEqual,
 		Lower,
@@ -192,17 +190,17 @@ struct UIntTypeBase : private BitType<B, N>
 	{
 		switch (comparisonOperator)
 		{
-			case Equal:
+			case ComparisonOperator::Equal:
 				return ".eq";
-			case NotEqual:
+			case ComparisonOperator::NotEqual:
 				return ".ne";
-			case Lower:
+			case ComparisonOperator::Lower:
 				return ".lo";
-			case LowerSame:
+			case ComparisonOperator::LowerSame:
 				return ".ls";
-			case Higher:
+			case ComparisonOperator::Higher:
 				return ".hi";
-			case HigherSame:
+			case ComparisonOperator::HigherSame:
 				return ".hs";
 		}
 		return "";
@@ -225,14 +223,14 @@ struct FloatTypeBase : private BitType<B, N>
 {
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
-	static std::string Name() { return ".f" + std::to_string(B); }
+	static std::string Name() { return ".f" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
 
 	static const bool CarryModifier = false;
 	static const bool HalfModifier = false;
 	static const bool FlushModifier = (B == Bits::Bits32);
 	static const bool SaturateModifier = (B == Bits::Bits32);
 
-	enum RoundingMode {
+	enum class RoundingMode {
 		None,
 		Nearest,
 		Zero,
@@ -244,19 +242,19 @@ struct FloatTypeBase : private BitType<B, N>
 	{
 		switch (roundingMode)
 		{
-			case Nearest:
+			case RoundingMode::Nearest:
 				return ".rn";
-			case Zero:
+			case RoundingMode::Zero:
 				return ".rz";
-			case NegativeInfinity:
+			case RoundingMode::NegativeInfinity:
 				return ".rm";
-			case PositiveInfinity:
+			case RoundingMode::PositiveInfinity:
 				return ".rp";
 		}
 		return "";
 	}
 
-	enum ComparisonOperator {
+	enum class ComparisonOperator {
 		Equal,
 		NotEqual,
 		Less,
@@ -279,33 +277,33 @@ struct FloatTypeBase : private BitType<B, N>
 	{
 		switch (comparisonOperator)
 		{
-			case Equal:
+			case ComparisonOperator::Equal:
 				return ".eq";
-			case NotEqual:
+			case ComparisonOperator::NotEqual:
 				return ".ne";
-			case Less:
+			case ComparisonOperator::Less:
 				return ".lt";
-			case LessEqual:
+			case ComparisonOperator::LessEqual:
 				return ".le";
-			case Greater:
+			case ComparisonOperator::Greater:
 				return ".gt";
-			case GreaterEqual:
+			case ComparisonOperator::GreaterEqual:
 				return ".ge";
-			case EqualUnordered:
+			case ComparisonOperator::EqualUnordered:
 				return ".equ";
-			case NotEqualUnordered:
+			case ComparisonOperator::NotEqualUnordered:
 				return ".neu";
-			case LessUnordered:
+			case ComparisonOperator::LessUnordered:
 				return ".ltu";
-			case LessEqualUnordered:
+			case ComparisonOperator::LessEqualUnordered:
 				return ".leu";
-			case GreaterUnordered:
+			case ComparisonOperator::GreaterUnordered:
 				return ".gtu";
-			case GreaterEqualUnordered:
+			case ComparisonOperator::GreaterEqualUnordered:
 				return ".geu";
-			case Number:
+			case ComparisonOperator::Number:
 				return ".num";
-			case NaN:
+			case ComparisonOperator::NaN:
 				return ".nan";
 		}
 		return "";
@@ -328,21 +326,21 @@ struct FloatTypeBase<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 	static const bool FlushModifier = true;
 	static const bool SaturateModifier = true;
 
-	enum RoundingMode {
+	enum class RoundingMode {
 		None,
 		Nearest,
 	};
 
 	static std::string RoundingModeString(RoundingMode roundingMode)
 	{
-		if (roundingMode == None)
+		if (roundingMode == RoundingMode::None)
 		{
 			return "";
 		}
 		return ".rn";
 	}
 
-	enum ComparisonOperator {
+	enum class ComparisonOperator {
 		Equal,
 		NotEqual,
 		Less,
@@ -365,33 +363,33 @@ struct FloatTypeBase<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
 	{
 		switch (comparisonOperator)
 		{
-			case Equal:
+			case ComparisonOperator::Equal:
 				return ".eq";
-			case NotEqual:
+			case ComparisonOperator::NotEqual:
 				return ".ne";
-			case Less:
+			case ComparisonOperator::Less:
 				return ".lt";
-			case LessEqual:
+			case ComparisonOperator::LessEqual:
 				return ".le";
-			case Greater:
+			case ComparisonOperator::Greater:
 				return ".gt";
-			case GreaterEqual:
+			case ComparisonOperator::GreaterEqual:
 				return ".ge";
-			case EqualUnordered:
+			case ComparisonOperator::EqualUnordered:
 				return ".equ";
-			case NotEqualUnordered:
+			case ComparisonOperator::NotEqualUnordered:
 				return ".neu";
-			case LessUnordered:
+			case ComparisonOperator::LessUnordered:
 				return ".ltu";
-			case LessEqualUnordered:
+			case ComparisonOperator::LessEqualUnordered:
 				return ".leu";
-			case GreaterUnordered:
+			case ComparisonOperator::GreaterUnordered:
 				return ".gtu";
-			case GreaterEqualUnordered:
+			case ComparisonOperator::GreaterEqualUnordered:
 				return ".geu";
-			case Number:
+			case ComparisonOperator::Number:
 				return ".num";
-			case NaN:
+			case ComparisonOperator::NaN:
 				return ".nan";
 		}
 		return "";
@@ -408,29 +406,29 @@ using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
 using Float16x2Type = FloatType<Bits::Bits16, 2>;
 
-enum VectorSize {
+enum class VectorSize : int {
 	Vector2 = 2,
 	Vector4 = 4
 };
 
 template<VectorSize V> std::string VectorName() { return std::string(".<unknown>"); }
-template<> inline std::string VectorName<Vector2>() { return std::string(".v2"); }
-template<> inline std::string VectorName<Vector4>() { return std::string(".v4"); }
+template<> inline std::string VectorName<VectorSize::Vector2>() { return std::string(".v2"); }
+template<> inline std::string VectorName<VectorSize::Vector4>() { return std::string(".v4"); }
 
 template<class T, VectorSize V>
 struct VectorType : private DataType
 {
 	REQUIRE_BASE_TYPE(VectorType, ScalarType);
 
-	static std::string Name() { return ".v" + std::to_string(V) + " " + T::Name(); }
+	static std::string Name() { return ".v" + std::to_string(static_cast<std::underlying_type<VectorSize>::type>(V)) + " " + T::Name(); }
 };
 
 template<class T>
-using Vector2Type = VectorType<T, Vector2>;
+using Vector2Type = VectorType<T, VectorSize::Vector2>;
 template<class T>
-using Vector4Type = VectorType<T, Vector4>;
+using Vector4Type = VectorType<T, VectorSize::Vector4>;
 
-enum VectorElement {
+enum class VectorElement {
 	X,
 	Y,
 	Z,
@@ -441,13 +439,13 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 {
 	switch (vectorElement)
 	{
-		case X:
+		case VectorElement::X:
 			return ".x";
-		case Y:
+		case VectorElement::Y:
 			return ".y";
-		case Z:
+		case VectorElement::Z:
 			return ".z";
-		case W:
+		case VectorElement::W:
 			return ".w";
 	}
 	return ".<unknown>";

@@ -16,20 +16,14 @@ public:
 
 	std::string OpCode() const override
 	{
-		std::string code = "fma" + T::RoundingModeString(this->m_roundingMode);
+		std::string code = "fma" + RoundingModifier<T, true>::OpCodeModifier();
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				code += ".ftz";
-			}
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::SaturateModifier)
 		{
-			if (this->m_saturate)
-			{
-				code += ".sat";
-			}
+			code += SaturateModifier<T>::OpCodeModifier();
 		}
 		return code + T::Name();
 	}

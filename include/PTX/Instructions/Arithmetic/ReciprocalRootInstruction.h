@@ -17,11 +17,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		if (this->m_flush)
-		{
-			return "rsqrt.approx.ftz" + T::Name();
-		}
-		return "rsqrt.approx" + T::Name();
+		return "rsqrt.approx" + FlushSubnormalModifier<T, true>::OpCodeModifier() + T::Name();
 	}
 };
 

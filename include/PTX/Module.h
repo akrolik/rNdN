@@ -40,7 +40,7 @@ public:
 private:
 	unsigned int m_versionMajor, m_versionMinor;
 	std::string m_target;
-	Bits m_addressSize = Bits32;
+	Bits m_addressSize = Bits::Bits32;
 
 	std::vector<Declaration *> m_declarations;
 };

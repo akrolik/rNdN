@@ -30,13 +30,9 @@ public:
 		}
 		else
 		{
-			code += Float32Type::RoundingModeString(this->m_roundingMode);
+			code += RoundingModifier<Float32Type>::OpCodeModifier();
 		}
-		if (m_flush)
-		{
-			code += ".ftz";
-		}
-		return code + Float32Type::Name();
+		return code + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 };
 
@@ -55,7 +51,7 @@ public:
 		}
 		else
 		{
-			code += Float64Type::RoundingModeString(this->m_roundingMode);
+			code += RoundingModifier<Float64Type>::OpCodeModifier();
 		}
 		return code + Float64Type::Name();
 	}

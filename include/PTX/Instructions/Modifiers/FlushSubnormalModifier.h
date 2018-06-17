@@ -17,6 +17,15 @@ public:
 	bool GetFlushSubnormal() const { return m_flush; }
 	void SetFlushSubnormal(bool flush) { m_flush = flush; }
 
+	std::string OpCodeModifier() const
+	{
+		if (m_flush)
+		{
+			return ".ftz";
+		}
+		return "";
+	}
+
 protected:
 	bool m_flush = false;
 };

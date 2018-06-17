@@ -26,51 +26,37 @@ public:
 		std::string code = "mad";
 		if constexpr(T::CarryModifier)
 		{
-			if (this->m_carryIn)
-			{
-				code += "c";
-			}
+			code += CarryModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::HalfModifier)
 		{
-			if (this->m_lower)
-			{
-				code += ".lo";
-			}
-			else if (this->m_upper)
-			{
-				code += ".hi";
-			}
+			code += HalfModifier<T>::OpCodeModifier();
 		}
 		if constexpr(is_rounding_type<T>::value)
 		{
-			code += T::RoundingModeString(this->m_roundingMode);
+			code += RoundingModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				code += ".ftz";
-			}
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
 		if constexpr(T::SaturateModifier)
 		{
 			// Only applies in .hi mode
 			if constexpr(T::HalfModifier)
 			{
-				if constexpr(T::CarryModifier)
+				if (HalfModifier<T>::GetUpper())
 				{
-					if (!this->m_carryIn && !this->m_carryOut && this->m_upper && this->m_saturate)
+					if constexpr(T::CarryModifier)
 					{
-						code += ".sat";
-
+						if (!CarryModifier<T>::IsActive())
+						{
+							code += SaturateModifier<T>::OpCodeModifier();
+						}
 					}
-				}
-				else
-				{
-					if (this->m_upper && this->m_saturate)
+					else
 					{
-						code += ".sat";
+						code += SaturateModifier<T>::OpCodeModifier();
 					}
 				}
 			}
@@ -78,17 +64,14 @@ public:
 			{
 				if constexpr(T::CarryModifier)
 				{
-					if (!this->m_carryIn && !this->m_carryOut && this->m_saturate)
+					if (!CarryModifier<T>::IsActive())
 					{
-						code += ".sat";
+						code += SaturateModifier<T>::OpCodeModifier();
 					}
 				}
 				else
 				{
-					if (this->m_saturate)
-					{
-						code += ".sat";
-					}
+					code += SaturateModifier<T>::OpCodeModifier();
 				}
 			}
 		}

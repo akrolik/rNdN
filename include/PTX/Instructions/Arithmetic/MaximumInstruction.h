@@ -21,11 +21,7 @@ public:
 	{
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				return "max.ftz" + T::Name();
-			}
-			return "max" + T::Name();
+			return "max" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
 		}
 		else
 		{

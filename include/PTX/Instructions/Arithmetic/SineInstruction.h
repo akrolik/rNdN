@@ -12,11 +12,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		if (m_flush)
-		{
-			return "sin.approx.ftz" + Float32Type::Name();
-		}
-		return "sin.approx" + Float32Type::Name();
+		return "sin.approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 };
 

@@ -29,10 +29,7 @@ public:
 		std::string code = "slct";
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				code += ".ftz";
-			}
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
 		return code + T::Name() + S::Name();
 	}

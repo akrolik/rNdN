@@ -21,11 +21,7 @@ public:
 	{
 		if constexpr(T::FlushModifier)
 		{
-			if (this->m_flush)
-			{
-				return "min.ftz" + T::Name();
-			}
-			return "min" + T::Name();
+			return "min" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
 		}
 		else
 		{
