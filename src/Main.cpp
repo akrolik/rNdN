@@ -57,8 +57,7 @@ int main(int argc, char *argv[])
 	std::cout << program->ToString() << std::endl;
 
 	auto code_begin = std::chrono::steady_clock::now();
-	//TODO: sm_61 dynamic
-	auto codegen = new CodeGenerator<PTX::Bits::Bits64>("sm_61");
+	auto codegen = new CodeGenerator<PTX::Bits::Bits64>(device->GetComputeCapability());
 	PTX::Program *ptxProgram = codegen->Generate(program);
 	auto code_end = std::chrono::steady_clock::now();
 

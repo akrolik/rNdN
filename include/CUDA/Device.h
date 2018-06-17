@@ -19,6 +19,11 @@ public:
 	std::string GetName() { return std::string(m_properties.name); }
 	size_t GetMemorySize() { return m_properties.totalGlobalMem; }
 
+	std::string GetComputeCapability() const
+	{
+		return "sm_" + std::to_string(m_properties.major) + std::to_string(m_properties.minor);
+	}
+
 	void SetActive();
 
 private:
