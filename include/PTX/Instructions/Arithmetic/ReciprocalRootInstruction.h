@@ -14,7 +14,7 @@ class ReciprocalRootInstruction : public InstructionBase_1<T>, public FlushSubno
 public:
 	using InstructionBase_1<T>::InstructionBase_1;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (this->m_flush)
 		{

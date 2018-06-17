@@ -16,7 +16,7 @@ class FindNthBitInstruction : public InstructionBase_3<Bit32Type, Bit32Type, T, 
 public:
 	using InstructionBase_3<Bit32Type, Bit32Type, T, Int32Type>::InstructionBase_3;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "fns" + T::Name();
 	}

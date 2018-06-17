@@ -14,7 +14,7 @@ class BitFieldInsertInstruction : public InstructionBase_4<T, T, T, UInt32Type, 
 public:
 	using InstructionBase_4<T, T, T, UInt32Type, UInt32Type>::InstructionBase;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "bfi" + T::Name();
 	}

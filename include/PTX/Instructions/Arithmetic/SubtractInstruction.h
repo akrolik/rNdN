@@ -18,7 +18,7 @@ class SubtractInstruction : public InstructionBase_2<T>, public SaturateModifier
 public:
 	using InstructionBase_2<T>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "sub";
 		if constexpr(T::CarryModifier)

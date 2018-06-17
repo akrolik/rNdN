@@ -15,7 +15,7 @@ class NegateInstruction : public InstructionBase_1<T>, public FlushSubnormalModi
 public:
 	using InstructionBase_1<T>::InstructionBase_1;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if constexpr(T::FlushModifier)
 		{

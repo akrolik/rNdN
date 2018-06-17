@@ -17,9 +17,9 @@ public:
 		Wrap
 	};
 
-	FunnelShiftInstruction(Register<Bit32Type> *destination, Operand<Bit32Type> *sourceA, Operand<Bit32Type> *sourceB, Operand<UInt32Type> *shift, Direction direction, Mode mode) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
+	FunnelShiftInstruction(const Register<Bit32Type> *destination, const Operand<Bit32Type> *sourceA, const Operand<Bit32Type> *sourceB, const Operand<UInt32Type> *shift, Direction direction, Mode mode) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "shf";
 		if (m_direction == Direction::Left)

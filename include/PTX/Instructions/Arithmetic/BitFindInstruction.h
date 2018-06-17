@@ -20,7 +20,7 @@ public:
 	bool GetShiftAmount() const { return m_shiftAmount; }
 	void SetShiftAmount(bool shiftAmount) { m_shiftAmount; }
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (m_shiftAmount)
 		{

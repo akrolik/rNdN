@@ -12,9 +12,9 @@ template<class R, typename... Args>
 class CallInstruction : public InstructionStatement, public UniformModifier
 {
 public:
-	CallInstruction(DataFunction<R(Args...)> *function, R *returnVariable, Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable), m_parameters(std::make_tuple(args...)) {}
+	CallInstruction(const DataFunction<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable), m_parameters(std::make_tuple(args...)) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (m_uniform)
 		{
@@ -23,7 +23,7 @@ public:
 		return "call";
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		std::ostringstream code;
 
@@ -35,18 +35,18 @@ public:
 	}
 
 private:
-	DataFunction<R(Args...)> *m_function = nullptr;
-	R *m_returnVariable = nullptr;
-	std::tuple<Args* ...> m_parameters;
+	const DataFunction<R(Args...)> *m_function = nullptr;
+	const R *m_returnVariable = nullptr;
+	std::tuple<const Args* ...> m_parameters;
 };
 
 template<typename... Args>
 class CallInstruction<VoidType, Args...> : public InstructionStatement, public UniformModifier
 {
 public:
-	CallInstruction(DataFunction<VoidType(Args...)> *function, Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_parameters(std::make_tuple(args...)) {}
+	CallInstruction(const DataFunction<VoidType(Args...)> *function, const Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_parameters(std::make_tuple(args...)) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (m_uniform)
 		{
@@ -55,7 +55,7 @@ public:
 		return "call";
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		std::ostringstream code;
 
@@ -67,8 +67,8 @@ public:
 	}
 
 private:
-	DataFunction<VoidType(Args...)> *m_function = nullptr;
-	std::tuple<Args* ...> m_parameters;
+	const DataFunction<VoidType(Args...)> *m_function = nullptr;
+	std::tuple<const Args* ...> m_parameters;
 };
 
 }

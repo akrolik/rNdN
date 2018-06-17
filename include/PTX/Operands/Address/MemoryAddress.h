@@ -10,9 +10,9 @@ class MemoryAddress : public Address<B, T, S>
 	REQUIRE_BASE_TYPE(MemoryAddress, Type);
 	REQUIRE_BASE_SPACE(MemoryAddress, AddressableSpace);
 public:
-	MemoryAddress(typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
+	MemoryAddress(const typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		if (m_offset > 0)
 		{
@@ -28,11 +28,11 @@ public:
 		}
 	}
 
-	typename S::template VariableType<T> *GetVariable() const { return m_variable; }
+	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
 private:
-	typename S::template VariableType<T> *m_variable = nullptr;
+	const typename S::template VariableType<T> *m_variable = nullptr;
 	int m_offset = 0;
 };
 

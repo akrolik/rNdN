@@ -19,7 +19,7 @@ class SelectInstruction : public InstructionBase_3<T, T, T, PredicateType>
 public:
 	using InstructionBase_3<T, T, T, PredicateType>::InstructionBase_3;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "selp" + T::Name();
 	}

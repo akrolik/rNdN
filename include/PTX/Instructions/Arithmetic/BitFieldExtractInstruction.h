@@ -17,7 +17,7 @@ class BitFieldExtractInstruction : public InstructionBase_3<T, T, UInt32Type, UI
 public:
 	using InstructionBase_3<T, T, UInt32Type, UInt32Type>::InstructionBase;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "bfe" + T::Name();
 	}

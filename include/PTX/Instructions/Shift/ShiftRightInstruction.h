@@ -13,7 +13,7 @@ class ShiftRightInstruction : public InstructionBase_2<T, T, UInt32Type>
 public:
 	using InstructionBase_2<T, T, UInt32Type>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "shr" + T::Name();
 	}

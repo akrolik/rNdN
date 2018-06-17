@@ -13,21 +13,21 @@ class IsSpaceInstruction : public InstructionStatement
 	REQUIRE_BASE_TYPE(IsSpaceInstruction, Type);
 	REQUIRE_BASE_SPACE(IsSpaceInstruction, AddressableSpace);
 public:
-	IsSpaceInstruction(Register<PredicateType> *destination, Address<B, T> *address) : m_destination(destination), m_address(address) {}
+	IsSpaceInstruction(const Register<PredicateType> *destination, const Address<B, T> *address) : m_destination(destination), m_address(address) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "isspacep" + S::Name();
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return m_destination->ToString() + ", " + m_address->ToString();
 	}
 
 private:
-	Register<PredicateType> *m_destination = nullptr;
-	Address<B, T> *m_address = nullptr;
+	const Register<PredicateType> *m_destination = nullptr;
+	const Address<B, T> *m_address = nullptr;
 };
 
 template<class T, class S>

@@ -18,7 +18,7 @@ class AddInstruction : public InstructionBase_2<T>, public SaturateModifier<T>, 
 public:
 	using InstructionBase_2<T>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "add";
 		if constexpr(T::CarryModifier)

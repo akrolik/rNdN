@@ -7,14 +7,14 @@ namespace PTX {
 class Logical3OpInstruction : public InstructionBase_3<Bit32Type>
 {
 public:
-	Logical3OpInstruction(Register<Bit32Type> *destination, Operand<Bit32Type> *sourceA, Operand<Bit32Type> *sourceB, Operand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+	Logical3OpInstruction(const Register<Bit32Type> *destination, const Operand<Bit32Type> *sourceA, const Operand<Bit32Type> *sourceB, const Operand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "lop3" + Bit32Type::Name();
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		std::ostringstream hex;
 		hex << std::hex << static_cast<int>(m_immLut);

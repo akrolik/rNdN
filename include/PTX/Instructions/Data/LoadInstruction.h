@@ -14,21 +14,21 @@ class LoadInstruction : public PredicatedInstruction
 	REQUIRE_BASE_TYPE(LoadInstruction, DataType);
 	DISABLE_EXACT_TYPE(LoadInstruction, Float16Type);
 public:
-	LoadInstruction(Register<T> *reg, Address<B, T, S> *address) : m_register(reg), m_address(address) {}
+	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address) : m_register(reg), m_address(address) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "ld" + S::Name() + T::Name();
 	}
 	
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return m_register->ToString() + ", " + m_address->ToString();
 	}
 
 private:
-	Register<T> *m_register = nullptr;
-	Address<B, T, S> *m_address = nullptr;
+	const Register<T> *m_register = nullptr;
+	const Address<B, T, S> *m_address = nullptr;
 };
 
 template<class T, class S>

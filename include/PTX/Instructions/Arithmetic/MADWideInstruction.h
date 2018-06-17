@@ -17,7 +17,7 @@ class MADWideInstruction : public InstructionBase_3<T1, T2>
 public:
 	using InstructionBase_3<T1, T2>::InstructionBase_3;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "mad.wide" + T2::Name();
 	}

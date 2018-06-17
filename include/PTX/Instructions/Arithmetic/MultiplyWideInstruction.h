@@ -17,7 +17,7 @@ class MultiplyWideInstruction : public InstructionBase_2<T1, T2>
 public:
 	using InstructionBase_2<T1, T2>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "mul.wide" + T2::Name();
 	}

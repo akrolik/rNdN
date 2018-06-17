@@ -18,7 +18,7 @@ class MultiplyInstruction : public InstructionBase_2<T>, public HalfModifier<T>,
 public:
 	using InstructionBase_2<T>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "mul";
 		if constexpr(T::HalfModifier)
@@ -60,7 +60,7 @@ class MultiplyInstruction<Int32Type> : public InstructionBase_2<Int32Type>, publ
 public:
 	using InstructionBase_2<Int32Type>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "mul";
 		if (this->m_upper)

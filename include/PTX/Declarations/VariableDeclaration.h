@@ -92,7 +92,7 @@ public:
 		}
 	}
 
-	typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
+	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
 	{
 		for (const auto &set : m_names)
 		{
@@ -107,7 +107,7 @@ public:
 
 	const std::vector<NameSet>& GetNames() const { return m_names; }
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		return S::Name() + " " + T::Name() + " " + Directives() + VariableNames();
 	}
@@ -148,10 +148,9 @@ public:
 	using VariableDeclaration<PointerType<T, B, S>, ParameterSpace>::VariableDeclaration;
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
-
 	unsigned int GetAlignment() const { return m_alignment; }
 
-	std::string Directives() const
+	std::string Directives() const override
 	{
 		std::ostringstream code;
 		if (!std::is_same<S, AddressableSpace>::value || m_alignment != 4)

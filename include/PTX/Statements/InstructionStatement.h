@@ -10,7 +10,7 @@ namespace PTX {
 class InstructionStatement : public Statement
 {
 public:
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		std::ostringstream code;
 		code << OpCode();
@@ -22,14 +22,10 @@ public:
 		return code.str();
 	}
 
-	std::string Terminator() const { return ";"; }
+	std::string Terminator() const override{ return ";"; }
 
 	virtual std::string OpCode() const = 0;
 	virtual std::string Operands() const = 0;
-
-private:
-	Register<PredicateType> *m_predicate = nullptr;
-	bool m_negatePredicate = false;
 };
 
 }

@@ -14,7 +14,7 @@ class PopulationCountInstruction : public InstructionBase_1<UInt32Type, T>
 public:
 	using InstructionBase_1<UInt32Type, T>::InstructionBase_1;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "popc" + T::Name();
 	}

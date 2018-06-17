@@ -9,12 +9,12 @@ class ExitInstruction : public InstructionStatement
 public:
 	ExitInstruction() {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "exit";
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return "";
 	}

@@ -10,7 +10,7 @@ class Log2Instruction : public InstructionBase_1<Float32Type>, public FlushSubno
 public:
 	using InstructionBase_1<Float32Type>::InstructionBase_1;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (m_flush)
 		{

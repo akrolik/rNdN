@@ -9,9 +9,10 @@ class FMAInstruction : public InstructionBase_3<T>, public RoundingModifier<T, t
 {
 	REQUIRE_EXACT_TYPE_TEMPLATE(FMAInstruction, FloatType);
 public:
-	FMAInstruction(Register<T> *destination, Operand<T> *sourceA, Operand<T> *sourceB, Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 
-	std::string OpCode() const
+	FMAInstruction(const Register<T> *destination, const Operand<T> *sourceA, const Operand<T> *sourceB, const Operand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
+
+	std::string OpCode() const override
 	{
 		std::string code = "fma" + T::RoundingModeString(this->m_roundingMode);
 		if constexpr(T::FlushModifier)

@@ -10,7 +10,7 @@ class ReturnInstruction : public InstructionStatement, public UniformModifier
 public:
 	ReturnInstruction(bool uniform = false) : UniformModifier(uniform) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (m_uniform)
 		{
@@ -19,7 +19,7 @@ public:
 		return "ret";
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return "";
 	}

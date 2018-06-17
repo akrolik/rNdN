@@ -14,7 +14,7 @@ class CountLeadingZerosInstruction : public InstructionBase_1<UInt32Type, T>
 public:
 	using InstructionBase_1<UInt32Type, T>::InstructionBase;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "clz" + T::Name();
 	}

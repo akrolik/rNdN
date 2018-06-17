@@ -9,11 +9,11 @@ class IndexedRegister : public Register<T>
 {
 	REQUIRE_BASE_TYPE(IndexedRegister, ScalarType);
 public:
-	IndexedRegister(Register<VectorType<T, V>> *variable, VectorElement vectorElement) : Register<T>(variable->GetName()), m_vectorElement(vectorElement) {}
+	IndexedRegister(const Register<VectorType<T, V>> *variable, VectorElement vectorElement) : Register<T>(variable->GetName()), m_vectorElement(vectorElement) {}
 
 	virtual VectorElement GetVectorElement() const { return m_vectorElement; }
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		return Register<T>::ToString() + GetVectorElementName(m_vectorElement);
 	}

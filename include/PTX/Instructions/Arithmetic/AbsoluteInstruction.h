@@ -17,7 +17,7 @@ class AbsoluteInstruction : public InstructionBase_1<T>, public FlushSubnormalMo
 public:
 	using InstructionBase_1<T>::InstructionBase_1;
   	
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if constexpr(T::FlushModifier)
 		{

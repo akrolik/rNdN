@@ -25,11 +25,11 @@ public:
 		Xor
 	};
 
-	SetPredicateInstruction(Register<PredicateType> *destination, Operand<T> *sourceA, Operand<T> *sourceB, typename T::ComparisonOperator comparator) : SetPredicateInstruction(destination, nullptr, sourceA, sourceB, comparator, nullptr, And, false) {}
+	SetPredicateInstruction(const Register<PredicateType> *destination, const Operand<T> *sourceA, const Operand<T> *sourceB, typename T::ComparisonOperator comparator) : SetPredicateInstruction(destination, nullptr, sourceA, sourceB, comparator, nullptr, And, false) {}
 
-	SetPredicateInstruction(Register<PredicateType> *destinationP, Register<PredicateType> *destinationQ, Operand<T> *sourceA, Operand<T> *sourceB, typename T::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), m_comparator(comparator), m_sourceC(sourceC), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
+	SetPredicateInstruction(const Register<PredicateType> *destinationP, const Register<PredicateType> *destinationQ, const Operand<T> *sourceA, const Operand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), m_comparator(comparator), m_sourceC(sourceC), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::ostringstream code;
 		code << "setp" << T::ComparisonOperatorString(m_comparator);
@@ -59,7 +59,7 @@ public:
 		return code.str();
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		std::ostringstream code;
 		code << m_destinationP->ToString();
@@ -82,13 +82,13 @@ public:
 	}
 
 private:
-	Register<PredicateType> *m_destinationP = nullptr;
-	Register<PredicateType> *m_destinationQ = nullptr;
-	Operand<T> *m_sourceA = nullptr;
-	Operand<T> *m_sourceB = nullptr;
+	const Register<PredicateType> *m_destinationP = nullptr;
+	const Register<PredicateType> *m_destinationQ = nullptr;
+	const Operand<T> *m_sourceA = nullptr;
+	const Operand<T> *m_sourceB = nullptr;
 	typename T::ComparisonOperator m_comparator;
 
-	Register<PredicateType> *m_sourceC = nullptr;
+	const Register<PredicateType> *m_sourceC = nullptr;
 	BoolOperator m_boolOperator = And;
 	bool m_negateSourcePredicate = false;
 };
@@ -103,11 +103,11 @@ public:
 		Xor
 	};
 
-	SetPredicateInstruction(Register<PredicateType> *destination, Operand<Float16Type> *sourceA, Operand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator) : SetPredicateInstruction(destination, sourceA, sourceB, comparator, nullptr, And, false) {}
+	SetPredicateInstruction(const Register<PredicateType> *destination, const Operand<Float16Type> *sourceA, const Operand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator) : SetPredicateInstruction(destination, sourceA, sourceB, comparator, nullptr, And, false) {}
 
-	SetPredicateInstruction(Register<PredicateType> *destination, Operand<Float16Type> *sourceA, Operand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_comparator(comparator), m_sourceC(sourceC), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
+	SetPredicateInstruction(const Register<PredicateType> *destination, const Operand<Float16Type> *sourceA, const Operand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_comparator(comparator), m_sourceC(sourceC), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::ostringstream code;
 		code << "setp" << Float16Type::ComparisonOperatorString(m_comparator);
@@ -134,7 +134,7 @@ public:
 		return code.str();
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		std::ostringstream code;
 		code << m_destination->ToString() << ", " << m_sourceA->ToString() << ", " << m_sourceB->ToString();
@@ -151,12 +151,12 @@ public:
 	}
 
 private:
-	Register<PredicateType> *m_destination = nullptr;
-	Operand<Float16Type> *m_sourceA = nullptr;
-	Operand<Float16Type> *m_sourceB = nullptr;
+	const Register<PredicateType> *m_destination = nullptr;
+	const Operand<Float16Type> *m_sourceA = nullptr;
+	const Operand<Float16Type> *m_sourceB = nullptr;
 	Float16Type::ComparisonOperator m_comparator;
 
-	Register<PredicateType> *m_sourceC = nullptr;
+	const Register<PredicateType> *m_sourceC = nullptr;
 	BoolOperator m_boolOperator = And;
 	bool m_negateSourcePredicate = false;
 };

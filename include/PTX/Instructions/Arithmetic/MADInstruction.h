@@ -21,7 +21,7 @@ class MADInstruction : public InstructionBase_3<T>, public HalfModifier<T>, publ
 public:
 	using InstructionBase_3<T>::InstructionBase_3;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "mad";
 		if constexpr(T::CarryModifier)

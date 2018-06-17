@@ -16,7 +16,7 @@ class DivideInstruction : public InstructionBase_2<T>
 public:
 	using InstructionBase_2<T>::InstructionBase;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "div" + T::Name();
 	}
@@ -26,7 +26,7 @@ template<>
 class DivideInstruction<Float32Type> : public InstructionBase_2<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	DivideInstruction(Register<Float32Type> *destination, Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
+	DivideInstruction(const Register<Float32Type> *destination, const Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
 
 	void SetRoundingMode(Float32Type::RoundingMode roundingMode)
 	{
@@ -47,7 +47,7 @@ public:
 		m_full = full;
 	}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "div";
 		if (this->m_roundingMode != Float32Type::RoundingMode::None)
@@ -77,9 +77,9 @@ template<>
 class DivideInstruction<Float64Type> : public InstructionBase_2<Float64Type>, public RoundingModifier<Float64Type, true>
 {
 public:
-	DivideInstruction(Register<Float64Type> *destination, Operand<Float64Type> *sourceA, Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
+	DivideInstruction(const Register<Float64Type> *destination, const Operand<Float64Type> *sourceA, const Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "div" + Float64Type::RoundingModeString(this->m_roundingMode) + Float64Type::Name();
 	}

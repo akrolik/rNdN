@@ -14,7 +14,7 @@ class BitReverseInstruction : public InstructionBase_2<T>
 public:
 	using InstructionBase_2<T>::InstructionBase;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "brev" + T::Name();
 	}

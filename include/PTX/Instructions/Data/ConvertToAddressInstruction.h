@@ -13,21 +13,21 @@ class ConvertToAddressInstruction : public InstructionStatement
 {
 	static_assert(B == Bits::Bits32 || B == Bits::Bits64, "PTX::ConvertToAddressInstruction requires PTX::Bits::Bits32 or PTX::Bits::Bits64");
 public:
-	ConvertToAddressInstruction(Register<PointerType<T, B, S>> *destination, Register<PointerType<T, B>> *source) : m_destination(destination), m_source(source) {}
+	ConvertToAddressInstruction(const Register<PointerType<T, B, S>> *destination, const Register<PointerType<T, B>> *source) : m_destination(destination), m_source(source) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "cvta.to" + S::Name() + PointerType<T, B, S>::Name();
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return m_destination->ToString() + ", " + m_source->ToString();
 	}
 
 private:
-	Register<PointerType<T, B, S>> *m_destination = nullptr;
-	Register<PointerType<T, B>> *m_source = nullptr;
+	const Register<PointerType<T, B, S>> *m_destination = nullptr;
+	const Register<PointerType<T, B>> *m_source = nullptr;
 };
 
 template<class T, class S>

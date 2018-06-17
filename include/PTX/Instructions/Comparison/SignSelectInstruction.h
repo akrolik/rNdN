@@ -23,7 +23,7 @@ class SignSelectInstruction : public InstructionBase_3<T, T, T, S>, public Flush
 public:
 	using InstructionBase_3<T, T, T, S>::InstructionBase_3;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		std::string code = "slct";
 		if constexpr(T::FlushModifier)

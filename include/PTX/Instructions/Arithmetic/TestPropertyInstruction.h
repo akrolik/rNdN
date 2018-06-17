@@ -40,9 +40,9 @@ public:
 		return ".<unknown>";
 	}
 
-	TestPropertyInstruction(Register<PredicateType> *destination, Operand<T> *source, Property property) : InstructionBase_1<PredicateType, T>(destination, source), m_property(property) {}
+	TestPropertyInstruction(const Register<PredicateType> *destination, const Operand<T> *source, Property property) : InstructionBase_1<PredicateType, T>(destination, source), m_property(property) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "testp" + GetPropertyString(m_property) + T::Name();
 	}

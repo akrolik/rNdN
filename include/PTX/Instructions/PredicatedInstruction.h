@@ -9,9 +9,9 @@ namespace PTX {
 class PredicatedInstruction : public InstructionStatement
 {
 public:
-	void SetPredicate(Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
+	void SetPredicate(const Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		std::ostringstream code;
 		if (m_predicate != nullptr)
@@ -28,7 +28,7 @@ public:
 	}
 
 private:
-	Register<PredicateType> *m_predicate = nullptr;
+	const Register<PredicateType> *m_predicate = nullptr;
 	bool m_negatePredicate = false;
 };
 

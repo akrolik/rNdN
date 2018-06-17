@@ -10,9 +10,9 @@ namespace PTX {
 class BranchInstruction : public PredicatedInstruction, public UniformModifier
 {
 public:
-	BranchInstruction(Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
+	BranchInstruction(const Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		if (m_uniform)
 		{
@@ -21,13 +21,13 @@ public:
 		return "bra";
 	}
 
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return m_label->ToString();
 	}
 
 private:
-	Label *m_label = nullptr;
+	const Label *m_label = nullptr;
 };
 
 }

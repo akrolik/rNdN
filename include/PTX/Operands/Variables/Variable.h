@@ -24,7 +24,7 @@ public:
 		return m_name;
 	}
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		return GetName();
 	}

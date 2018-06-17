@@ -12,7 +12,7 @@ class OrInstruction : public InstructionBase_2<T>
 public:
 	using InstructionBase_2<T>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "or" + T::Name();
 	}

@@ -12,7 +12,7 @@ class ReturnedFunction : public Function
 {
 	static_assert(std::is_same<typename R::VariableSpace, RegisterSpace>::value || std::is_base_of<typename R::VariableSpace, ParameterSpace>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
 public:
-	void SetReturn(VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
+	void SetReturn(const VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
 
 protected:
 	std::string GetDirectives() const override
@@ -29,7 +29,7 @@ protected:
 		return "<unset>";
 	}
 
-	VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *m_return = nullptr;
+	const VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *m_return = nullptr;
 };
 
 template<>

@@ -15,7 +15,7 @@ class RemainderInstruction : public InstructionBase_2<T>
 public:
 	using InstructionBase_2<T>::InstructionBase_2;
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "rem" + T::Name();
 	}

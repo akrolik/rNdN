@@ -14,17 +14,17 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 	std::string GetName() const { return m_name; }
 
-	const std::vector<Statement *>& GetStatements() const { return m_statements; }
-	void AddStatement(Statement *statement)
+	const std::vector<const Statement *>& GetStatements() const { return m_statements; }
+	void AddStatement(const Statement *statement)
 	{
 		m_statements.push_back(statement);
 	}
-	void AddStatements(const std::vector<Statement *>& statements)
+	void AddStatements(const std::vector<const Statement *>& statements)
 	{
 		m_statements.insert(std::end(m_statements), std::begin(statements), std::end(statements));
 	}
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		std::ostringstream code;
 
@@ -56,7 +56,7 @@ private:
 	virtual std::string GetParametersString() const = 0;
 
 	std::string m_name;
-	std::vector<Statement *> m_statements;
+	std::vector<const Statement *> m_statements;
 };
 
 }

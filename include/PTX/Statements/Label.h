@@ -11,12 +11,12 @@ public:
 
 	std::string GetName() const { return m_name; }
 
-	std::string ToString() const
+	std::string ToString() const override
 	{
 		return m_name;
 	}
 
-	std::string Terminator() const
+	std::string Terminator() const override
 	{
 		return ":";
 	}

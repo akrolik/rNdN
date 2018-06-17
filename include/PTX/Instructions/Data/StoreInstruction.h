@@ -14,21 +14,21 @@ class StoreInstruction : public InstructionStatement
 	REQUIRE_BASE_TYPE(StoreInstruction, DataType);
 	DISABLE_EXACT_TYPE(StoreInstruction, Float16Type);
 public:
-	StoreInstruction(Address<A, T, S> *address, Register<T> *reg) : m_address(address), m_register(reg) {}
+	StoreInstruction(const Address<A, T, S> *address, const Register<T> *reg) : m_address(address), m_register(reg) {}
 
-	std::string OpCode() const
+	std::string OpCode() const override
 	{
 		return "st" + S::Name() + T::Name();
 	}
 	
-	std::string Operands() const
+	std::string Operands() const override
 	{
 		return m_address->ToString() + ", " + m_register->ToString();
 	}
 
 private:
-	Address<A, T, S> *m_address = nullptr;
-	Register<T> *m_register = nullptr;
+	const Address<A, T, S> *m_address = nullptr;
+	const Register<T> *m_register = nullptr;
 };
 
 template<class T, class S>
