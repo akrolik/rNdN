@@ -2,7 +2,10 @@
 
 namespace PTX {
 
-//TODO: comment
+// @struct is_one
+//
+// Type trait for checking if at least one argument to a variadic template satisfies some condition
+
 template <bool... B> struct is_one;
 
 template <bool... T>
@@ -13,7 +16,10 @@ struct is_one<false, T...> : is_one<T...> {};
 
 template <> struct is_one<> : std::false_type {};
 
-//TODO: comment
+// @struct is_all
+//
+// Type trait for checking if all argument to a variadic template satisfies some condition
+
 template <bool... B> struct is_all;
 
 template <bool... T>

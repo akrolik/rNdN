@@ -2,7 +2,6 @@
 
 namespace PTX {
 
-//TODO: comment
 template<std::size_t> struct int_{};
 
 template <typename T, size_t P>
