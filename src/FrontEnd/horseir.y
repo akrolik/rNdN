@@ -60,7 +60,7 @@ void yyerror(const char *s) { fprintf(stderr, "[Error] (line %d) %s\n", yylineno
 }
 
 %token '(' ')' '{' '}' '<' '>'
-%token tI64 tSTRING tLIST tTABLE
+%token tI8 tI64 tSTRING tLIST tTABLE
 %token tMODULE tIMPORT tDEF tCHECKCAST tRETURN
 %token <int_val> tINTVAL
 %token <string_val> tSTRINGVAL
@@ -100,7 +100,8 @@ type : '?'                                                                      
      | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
      ;
 
-int_type : tI64                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int64); }
+int_type : tI8                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int8); }
+         | tI64                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int64); }
 	 ;
 
 statements : statements statement                                               { $1->push_back($2); $$ = $1; }
@@ -129,8 +130,8 @@ literalsne : literalsne ','  literal                                            
 
 literal : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier($1); }
 	| tSYMBOL                                                               { $$ = new HorseIR::Symbol($1); }
-	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<long>(*$1, $3); }
-        | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<long>(*$2, $5); }
+	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
+        | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
         | string_list ':' tSTRING                                               { $$ = new HorseIR::Literal<std::string>(*$1, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::String)); }
         | '(' string_list ')' ':' tSTRING                                       { $$ = new HorseIR::Literal<std::string>(*$2, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::String)); }
         ;

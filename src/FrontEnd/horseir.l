@@ -33,6 +33,7 @@ LETTER [A-Za-z_]
 "."          return '.';
 ","          return ',';
 
+i8           return tI8;
 i64          return tI64;
 string       return tSTRING;
 list         return tLIST;
