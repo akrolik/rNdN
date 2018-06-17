@@ -26,6 +26,8 @@ HorseIR::Program *program;
 
 int main(int argc, char *argv[])
 {
+	setenv("CUDA_CACHE_DISABLE", "1", 1);
+
 	auto cuda_begin = std::chrono::steady_clock::now();
 	if (sizeof(void *) == 4)
 	{
@@ -108,6 +110,4 @@ int main(int argc, char *argv[])
 	std::cout << "  PTX JIT: " << std::chrono::duration_cast<std::chrono::microseconds>(jit_end - jit_begin).count() << " mus\n";
 	std::cout << "    Total Compile Time: " << std::chrono::duration_cast<std::chrono::microseconds>(jit_end - sp_begin).count() << " mus\n";
 	std::cout << "  Execution: " << std::chrono::duration_cast<std::chrono::microseconds>(exec_end - exec_begin).count() << " mus\n";
-
-	std::exit(EXIT_SUCCESS);
 }
