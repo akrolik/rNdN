@@ -12,23 +12,24 @@ namespace HorseIR {
 class CallExpression : public Expression
 {
 public:
-	CallExpression(std::string name, std::vector<Expression *> parameters) : m_name(name), m_parameters(parameters) {}
+	CallExpression(std::string name, std::vector<Expression *> arguments) : m_name(name), m_arguments(arguments) {}
 
 	std::string GetName() const { return m_name; }
-	const std::vector<Expression *>& GetParameters() const { return m_parameters; }
+	const std::vector<Expression *>& GetArguments() const { return m_arguments; }
+	Expression *GetArgument(unsigned int index) const { return m_arguments.at(index); }
 
 	std::string ToString() const override
 	{
 		std::string code = m_name + "(";
 		bool first = true;
-		for (auto parameter : m_parameters)
+		for (auto argument : m_arguments)
 		{
 			if (!first)
 			{
 				code += ", ";
 			}
 			first = false;
-			code += parameter->ToString();
+			code += argument->ToString();
 		}
 		return code + ")";
 	}
@@ -37,7 +38,7 @@ public:
 
 private:
 	std::string m_name;
-	std::vector<Expression *> m_parameters;
+	std::vector<Expression *> m_arguments;
 };
 
 }

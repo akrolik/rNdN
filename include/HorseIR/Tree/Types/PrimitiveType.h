@@ -12,6 +12,7 @@ class PrimitiveType : public Type
 {
 public:
 	enum Type {
+		Int8,
 		Int64,
 		String
 	};
@@ -22,6 +23,8 @@ public:
 	{
 		switch (m_type)
 		{
+			case Int8:
+				return "i8";
 			case Int64:
 				return "i64";
 			case String:
@@ -30,6 +33,8 @@ public:
 				return "<unknown>";
 		}
 	}
+
+	Type GetType() const { return m_type; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
