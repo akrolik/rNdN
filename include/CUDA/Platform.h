@@ -20,6 +20,8 @@ public:
 
 	void CreateContext(std::unique_ptr<Device>& device);
 
+	~Platform();
+
 private:
 	bool m_initialized = false;
 
