@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
+
 namespace HorseIR {
 
 class Node;
@@ -18,7 +21,9 @@ class Expression;
 class CallExpression;
 class CastExpression;
 class Identifier;
-// class Literal<std::string>;
+
+template<class T>
+class Literal;
 class Symbol;
 
 class Type;
@@ -46,7 +51,8 @@ public:
 	virtual void Visit(CallExpression *call);
 	virtual void Visit(CastExpression *cast);
 	virtual void Visit(Identifier *identifier);
-	// virtual void Visit(Literal<std::string> *literal);
+	virtual void Visit(Literal<std::string> *literal);
+	virtual void Visit(Literal<int64_t> *literal);
 	virtual void Visit(Symbol *symbol);
 
 	virtual void Visit(Type *type);
