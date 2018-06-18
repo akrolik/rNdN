@@ -27,12 +27,16 @@ protected:
 		bool first = true;
 		for (const auto& param : m_parameters)
 		{
-			if (!first)
+			if (first)
+			{
+				code << std::endl;
+			}
+			else
 			{
 				code << ",";
 			}
 			first = false;
-			code << std::endl << "\t" << param->ToString();
+			code << "\t" << param->ToString() << std::endl;
 		}
 		return code.str();
 	}
@@ -55,6 +59,7 @@ protected:
 		{
 			code << std::endl << "\t";
 			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>());
+			code << std::endl;
 		}
 		return code.str();
 	}
