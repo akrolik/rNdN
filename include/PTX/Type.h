@@ -118,10 +118,26 @@ struct BitTypeBase<Bits::Bits1, 1> : Type
 enum class VectorSize : int;
 
 template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
-template<> struct BitType<Bits::Bits8, 1> : BitTypeBase<Bits::Bits8> { using SystemType = int8_t; };
-template<> struct BitType<Bits::Bits16, 1> : BitTypeBase<Bits::Bits16> { using SystemType = int16_t; };
-template<> struct BitType<Bits::Bits32, 1> : BitTypeBase<Bits::Bits32> { using SystemType = int32_t; };
-template<> struct BitType<Bits::Bits64, 1> : BitTypeBase<Bits::Bits64> { using SystemType = int64_t; };
+template<> struct BitType<Bits::Bits8, 1> : BitTypeBase<Bits::Bits8>
+{
+	using SystemType = int8_t;
+	constexpr static std::string_view RegisterPrefix = "bc";
+};
+template<> struct BitType<Bits::Bits16, 1> : BitTypeBase<Bits::Bits16>
+{
+	using SystemType = int16_t;
+	constexpr static std::string_view RegisterPrefix = "bs";
+};
+template<> struct BitType<Bits::Bits32, 1> : BitTypeBase<Bits::Bits32>
+{
+	using SystemType = int32_t;
+	constexpr static std::string_view RegisterPrefix = "b";
+};
+template<> struct BitType<Bits::Bits64, 1> : BitTypeBase<Bits::Bits64>
+{
+	using SystemType = int64_t;
+	constexpr static std::string_view RegisterPrefix = "bd";
+};
 
 using PredicateType = BitType<Bits::Bits1>;
 using Bit8Type = BitType<Bits::Bits8>;
@@ -167,10 +183,26 @@ struct IntTypeBase : BitType<B, N>
 };
 
 template<Bits B, unsigned int N = 1> struct IntType : IntTypeBase<B, N> {};
-template<> struct IntType<Bits::Bits8, 1> : IntTypeBase<Bits::Bits8> { using SystemType = int8_t; };
-template<> struct IntType<Bits::Bits16, 1> : IntTypeBase<Bits::Bits16> { using SystemType = int16_t; };
-template<> struct IntType<Bits::Bits32, 1> : IntTypeBase<Bits::Bits32> { using SystemType = int32_t; };
-template<> struct IntType<Bits::Bits64, 1> : IntTypeBase<Bits::Bits64> { using SystemType = int64_t; };
+template<> struct IntType<Bits::Bits8, 1> : IntTypeBase<Bits::Bits8>
+{
+	using SystemType = int8_t;
+	constexpr static std::string_view RegisterPrefix = "rc";
+};
+template<> struct IntType<Bits::Bits16, 1> : IntTypeBase<Bits::Bits16>
+{
+	using SystemType = int16_t;
+	constexpr static std::string_view RegisterPrefix = "rs";
+};
+template<> struct IntType<Bits::Bits32, 1> : IntTypeBase<Bits::Bits32>
+{
+	using SystemType = int32_t;
+	constexpr static std::string_view RegisterPrefix = "r";
+};
+template<> struct IntType<Bits::Bits64, 1> : IntTypeBase<Bits::Bits64>
+{
+	using SystemType = int64_t;
+	constexpr static std::string_view RegisterPrefix = "rd";
+};
 
 using Int8Type = IntType<Bits::Bits8>;
 using Int16Type = IntType<Bits::Bits16>;
@@ -215,10 +247,26 @@ struct UIntTypeBase : BitType<B, N>
 };
 
 template<Bits B, unsigned int N = 1> struct UIntType : UIntTypeBase<B, N> {};
-template<> struct UIntType<Bits::Bits8, 1> : UIntTypeBase<Bits::Bits8> { using SystemType = uint8_t; };
-template<> struct UIntType<Bits::Bits16, 1> : UIntTypeBase<Bits::Bits16> { using SystemType = uint16_t; };
-template<> struct UIntType<Bits::Bits32, 1> : UIntTypeBase<Bits::Bits32> { using SystemType = uint32_t; };
-template<> struct UIntType<Bits::Bits64, 1> : UIntTypeBase<Bits::Bits64> { using SystemType = uint64_t; };
+template<> struct UIntType<Bits::Bits8, 1> : UIntTypeBase<Bits::Bits8>
+{
+	using SystemType = uint8_t;
+	constexpr static std::string_view RegisterPrefix = "uc";
+};
+template<> struct UIntType<Bits::Bits16, 1> : UIntTypeBase<Bits::Bits16>
+{
+	using SystemType = uint16_t;
+	constexpr static std::string_view RegisterPrefix = "us";
+};
+template<> struct UIntType<Bits::Bits32, 1> : UIntTypeBase<Bits::Bits32>
+{
+	using SystemType = uint32_t;
+	constexpr static std::string_view RegisterPrefix = "u";
+};
+template<> struct UIntType<Bits::Bits64, 1> : UIntTypeBase<Bits::Bits64>
+{
+	using SystemType = uint64_t;
+	constexpr static std::string_view RegisterPrefix = "ud";
+};
 
 using UInt8Type = UIntType<Bits::Bits8>;
 using UInt16Type = UIntType<Bits::Bits16>;
@@ -394,14 +442,30 @@ struct FloatTypeBase<Bits::Bits16, N> : BitType<Bits::Bits16, N>
 };
 
 template<Bits B, unsigned int N = 1> struct FloatType : FloatTypeBase<B, N> {};
-template<> struct FloatType<Bits::Bits16, 1> : FloatTypeBase<Bits::Bits16> { using SystemType = float; };
-template<> struct FloatType<Bits::Bits32, 1> : FloatTypeBase<Bits::Bits32> { using SystemType = float; };
-template<> struct FloatType<Bits::Bits64, 1> : FloatTypeBase<Bits::Bits64> { using SystemType = double; };
+template<> struct FloatType<Bits::Bits16, 1> : FloatTypeBase<Bits::Bits16>
+{
+	using SystemType = float;
+	constexpr static std::string_view RegisterPrefix = "h";
+};
+template<> struct FloatType<Bits::Bits16, 2> : FloatTypeBase<Bits::Bits16>
+{
+	constexpr static std::string_view RegisterPrefix = "hh";
+};
+template<> struct FloatType<Bits::Bits32, 1> : FloatTypeBase<Bits::Bits32>
+{
+	using SystemType = float;
+	constexpr static std::string_view RegisterPrefix = "f";
+};
+template<> struct FloatType<Bits::Bits64, 1> : FloatTypeBase<Bits::Bits64>
+{
+	using SystemType = double;
+	constexpr static std::string_view RegisterPrefix = "fd";
+};
 
 using Float16Type = FloatType<Bits::Bits16>;
+using Float16x2Type = FloatType<Bits::Bits16, 2>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
-using Float16x2Type = FloatType<Bits::Bits16, 2>;
 
 enum class VectorSize : int {
 	Vector2 = 2,
