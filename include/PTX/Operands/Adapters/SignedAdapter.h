@@ -5,13 +5,15 @@
 namespace PTX {
 
 template<Bits B>
-class SignedAdapter : public Register<IntType<B>>
+class SignedRegisterAdapter : public Register<IntType<B>>
 {
 public:
-	SignedAdapter(const Register<UIntType<B>> *variable) : Register<IntType<B>>(variable->GetName()) {}
+	SignedRegisterAdapter(const Register<UIntType<B>> *variable) : Register<IntType<B>>(variable->GetName()) {}
 };
 
-using Signed32Adapter = SignedAdapter<Bits::Bits32>;
-using Signed64Adapter = SignedAdapter<Bits::Bits64>;
+using Signed8RegisterAdapter = SignedRegisterAdapter<Bits::Bits8>;
+using Signed16RegisterAdapter = SignedRegisterAdapter<Bits::Bits16>;
+using Signed32RegisterAdapter = SignedRegisterAdapter<Bits::Bits32>;
+using Signed64RegisterAdapter = SignedRegisterAdapter<Bits::Bits64>;
 
 }

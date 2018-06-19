@@ -6,17 +6,17 @@
 namespace PTX {
 
 template<class T, Bits B, class S = AddressableSpace>
-class PointerAdapter : public Register<PointerType<T, B, S>>
+class PointerRegisterAdapter : public Register<PointerType<T, B, S>>
 { 
-	REQUIRE_BASE_TYPE(PointerAdapter, DataType);
-	REQUIRE_BASE_SPACE(PointerAdapter, AddressableSpace);
+	REQUIRE_BASE_TYPE(PointerRegisterAdapter, DataType);
+	REQUIRE_BASE_SPACE(PointerRegisterAdapter, AddressableSpace);
 public:
-	PointerAdapter(const Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}
+	PointerRegisterAdapter(const Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}
 };
 
 template<class T, class S = AddressableSpace>
-using Pointer32Adapter = PointerAdapter<T, Bits::Bits32, S>;
+using Pointer32RegisterAdapter = PointerRegisterAdapter<T, Bits::Bits32, S>;
 template<class T, class S = AddressableSpace>
-using Pointer64Adapter = PointerAdapter<T, Bits::Bits64, S>;
+using Pointer64RegisterAdapter = PointerRegisterAdapter<T, Bits::Bits64, S>;
 
 }

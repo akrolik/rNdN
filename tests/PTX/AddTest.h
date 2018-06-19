@@ -74,8 +74,8 @@ public:
 		const PTX::Register<PTX::Float64Type> *f0 = f64->GetVariable("%f", 0);
 		const PTX::Register<PTX::Float64Type> *f1 = f64->GetVariable("%f", 1);
 
-		PTX::Register<PTX::Pointer64Type<PTX::Float64Type>> *rd0_ptr = new PTX::Pointer64Adapter<PTX::Float64Type>(rd0);
-		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd1);
+		PTX::Register<PTX::Pointer64Type<PTX::Float64Type>> *rd0_ptr = new PTX::Pointer64RegisterAdapter<PTX::Float64Type>(rd0);
+		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64RegisterAdapter<PTX::Float64Type, PTX::GlobalSpace>(rd1);
 
 		function->AddStatement(r32);
 		function->AddStatement(r64); 
@@ -90,7 +90,7 @@ public:
 		function->AddStatement(new PTX::Load64Instruction<PTX::Float64Type, PTX::GlobalSpace>(f0, new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd1_ptr)));
 		function->AddStatement(new PTX::AddInstruction<PTX::Float64Type>(f1, f0, new PTX::Float64Value(2)));
 
-		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64Adapter<PTX::Float64Type, PTX::GlobalSpace>(rd3);
+		PTX::Register<PTX::Pointer64Type<PTX::Float64Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64RegisterAdapter<PTX::Float64Type, PTX::GlobalSpace>(rd3);
 		function->AddStatement(new PTX::Store64Instruction<PTX::Float64Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::Float64Type, PTX::GlobalSpace>(rd3_ptr), f1));
 		function->AddStatement(new PTX::ReturnInstruction());
 

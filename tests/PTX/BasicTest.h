@@ -78,17 +78,17 @@ public:
 		const PTX::Register<PTX::Int64Type> *rd2 = r64->GetVariable("%rd", 2);
 		const PTX::Register<PTX::Int64Type> *rd3 = r64->GetVariable("%rd", 3);
 
-		PTX::Register<PTX::Pointer64Type<PTX::UInt64Type>> *rd0_ptr = new PTX::Pointer64Adapter<PTX::UInt64Type>(new PTX::Unsigned64Adapter(rd0));
-		PTX::Register<PTX::Pointer64Type<PTX::UInt64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64Adapter<PTX::UInt64Type, PTX::GlobalSpace>(new PTX::Unsigned64Adapter(rd1));
+		PTX::Register<PTX::Pointer64Type<PTX::UInt64Type>> *rd0_ptr = new PTX::Pointer64RegisterAdapter<PTX::UInt64Type>(new PTX::Unsigned64RegisterAdapter(rd0));
+		PTX::Register<PTX::Pointer64Type<PTX::UInt64Type, PTX::GlobalSpace>> *rd1_ptr = new PTX::Pointer64RegisterAdapter<PTX::UInt64Type, PTX::GlobalSpace>(new PTX::Unsigned64RegisterAdapter(rd1));
 
 		function->AddStatement(r32);
 		function->AddStatement(r64); 
 
 		function->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(parameter)));
 		function->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::UInt64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
-		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r0), ntidx));
-		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r1), ctaidx));
-		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r2), tidx));
+		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32RegisterAdapter(r0), ntidx));
+		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32RegisterAdapter(r1), ctaidx));
+		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(new PTX::Unsigned32RegisterAdapter(r2), tidx));
 
 		PTX::MADInstruction<PTX::Int32Type> *madInstruction = new PTX::MADInstruction<PTX::Int32Type>(r3, r0, r1, r2);
 		madInstruction->SetLower(true);
@@ -96,10 +96,10 @@ public:
 
 		function->AddStatement(new PTX::MultiplyWideInstruction<PTX::Int64Type, PTX::Int32Type>(rd2, r3, new PTX::Int32Value(4)));
 		function->AddStatement(new PTX::AddInstruction<PTX::Int64Type>(rd3, rd1, rd2));
-		function->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32Adapter(r4), new PTX::Unsigned32Adapter(r3), new PTX::UInt32Value(1)));
+		function->AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(new PTX::Unsigned32RegisterAdapter(r4), new PTX::Unsigned32RegisterAdapter(r3), new PTX::UInt32Value(1)));
 
-		PTX::Register<PTX::Pointer64Type<PTX::UInt32Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64Adapter<PTX::UInt32Type, PTX::GlobalSpace>(new PTX::Unsigned64Adapter(rd3));
-		function->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::GlobalSpace>(rd3_ptr), new PTX::Unsigned32Adapter(r4)));
+		PTX::Register<PTX::Pointer64Type<PTX::UInt32Type, PTX::GlobalSpace>> *rd3_ptr = new PTX::Pointer64RegisterAdapter<PTX::UInt32Type, PTX::GlobalSpace>(new PTX::Unsigned64RegisterAdapter(rd3));
+		function->AddStatement(new PTX::Store64Instruction<PTX::UInt32Type, PTX::GlobalSpace>(new PTX::RegisterAddress64<PTX::UInt32Type, PTX::GlobalSpace>(rd3_ptr), new PTX::Unsigned32RegisterAdapter(r4)));
 		function->AddStatement(new PTX::ReturnInstruction());
 
 		module.AddDeclaration(function);

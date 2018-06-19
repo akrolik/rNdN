@@ -2,7 +2,7 @@
 
 #include "Test.h"
 
-#include "PTX/Instructions/Data/IsSpaceInstruction.h"
+#include "PTX/Instructions/Data/ConvertInstruction.h"
 
 namespace Test {
 
