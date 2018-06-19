@@ -2,7 +2,19 @@
 
 #include "Codegen/ExpressionGeneratorBase.h"
 
+#include "PTX/Statements/BlockStatement.h"
+
 #include "PTX/Instructions/DevInstruction.h"
+#include "PTX/Instructions/Arithmetic/AddInstruction.h"
+#include "PTX/Instructions/Data/ConvertInstruction.h"
+#include "PTX/Instructions/Data/MoveInstruction.h"
+#include "PTX/Instructions/Data/PackInstruction.h"
+#include "PTX/Instructions/Data/UnpackInstruction.h"
+
+#include "PTX/Operands/BracedOperand.h"
+#include "PTX/Operands/Adapters/BitAdapter.h"
+#include "PTX/Operands/Variables/BracedRegister.h"
+#include "PTX/Operands/Variables/SinkRegister.h"
 
 template<PTX::Bits B, class T>
 class ExpressionGenerator : public ExpressionGeneratorBase<B, T> {
@@ -18,23 +30,37 @@ public:
 	
 	void GenerateAdd(const PTX::Operand<PTX::Int8Type> *src1, const PTX::Operand<PTX::Int8Type> *src2) override
 	{
-		//TODO: Update to use actual instuctions, decide on temporaries allocation
+		auto block = new PTX::BlockStatement();
+		auto declaration = new PTX::RegisterDeclaration<PTX::Int16Type>("%temp", 3);
 
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction(".reg .s16 %tmp_a1, %tmp_a2, %tmp_a3"));
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction("cvt.s16.s8 %tmp_a1, " + src1->ToString()));
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction("cvt.s16.s8 %tmp_a2, " + src2->ToString()));
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction("add.s16 %tmp_a3, %tmp_a1, %tmp_a2"));
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction("cvt.s8.s16 " + this->m_target->ToString() + ", %tmp_a3"));
+		auto temp0 = declaration->GetVariable("%temp", 0);
+		auto temp1 = declaration->GetVariable("%temp", 1);
+		auto temp2 = declaration->GetVariable("%temp", 2);
+
+		block->AddStatement(declaration);
+		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp0, src1));
+		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp1, src2));
+		block->AddStatement(new PTX::AddInstruction<PTX::Int16Type>(temp2, temp0, temp1));
+		block->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(this->m_target, temp2));
+
+		this->m_currentFunction->AddStatement(block);
 	}
 
 	void GenerateMove(const PTX::Operand<PTX::Int8Type> *src) override
 	{
-		//TODO: Update to use actual instuctions, decice on temporary allocation
+		auto block = new PTX::BlockStatement();
+		auto declaration = new PTX::RegisterDeclaration<PTX::Bit16Type>("%temp");
 
-		std::string temp = this->m_target->ToString() + "_tmp";
+		auto temp = declaration->GetVariable("%temp");
+		auto value = new PTX::Value<PTX::Bit8Type>(0);
 
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction(".reg .b16 " + temp));
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction("mov.b16 " + temp + ", {" + src->ToString() + ", 0}"));
-		this->m_currentFunction->AddStatement(new PTX::DevInstruction("mov.b16 {" + this->m_target->ToString() + ", _}, " + temp));
+		auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({new PTX::Bit8Adapter<PTX::IntType>(src), value});
+		auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({new PTX::Bit8RegisterAdapter<PTX::IntType>(this->m_target), new PTX::SinkRegister<PTX::Bit8Type>});
+
+		block->AddStatement(declaration);
+		block->AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
+		block->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
+
+		this->m_currentFunction->AddStatement(block);
 	}
 };

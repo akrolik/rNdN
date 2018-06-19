@@ -144,9 +144,9 @@ public:
 		auto rd2 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_2");
 		auto rd3 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_3");
 
-		auto rd0_ptr = new PTX::PointerAdapter<T, B>(rd0);
-		auto rd1_ptr = new PTX::PointerAdapter<T, B, PTX::GlobalSpace>(rd1);
-		auto rd3_ptr = new PTX::PointerAdapter<T, B, PTX::GlobalSpace>(rd3);
+		auto rd0_ptr = new PTX::PointerRegisterAdapter<T, B>(rd0);
+		auto rd1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(rd1);
+		auto rd3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(rd3);
 
 		auto returnValue = m_resources->template GetRegister<T>(ret->GetIdentifier());
 
