@@ -27,6 +27,7 @@
 #include "PTX/Operands/Variables/Register.h"
 #include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Operands/Value.h"
+#include "PTX/Statements/BlockStatement.h"
 
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Method.h"
@@ -52,6 +53,12 @@ public:
 
 	void Visit(HorseIR::Module *module) override
 	{
+		// Each HorseIR module corresponds to a PTX module. A PTX module consists of the
+		// PTX version, the device version and the address size.
+		//
+		// This compiler currently supports PTX version 6.1 from March 2018. The device
+		// properties are dynamically detected by the enclosing package.
+
 		PTX::Module *ptxModule = new PTX::Module();
 		ptxModule->SetVersion(6, 1);
 		ptxModule->SetDeviceTarget(m_target);
@@ -60,6 +67,7 @@ public:
 		m_program->AddModule(ptxModule);
 		m_currentModule = ptxModule;
 
+		// Visit the module contents
 		HorseIR::ForwardTraversal::Visit(module);
 	}
 
@@ -67,26 +75,40 @@ public:
 	{
 		m_currentMethod = method;
 
-		m_resources->AllocateResources(method);
+		// Create a dynamiclly typed kernel function for the HorseIR method.
+		// Dynamic typing is used since we don't (at the compiler compile time)
+		// know the types of the parameters.
+		//
+		// Kernel functions are set as entry points, and are visible to other
+		// PTX modules. Currently there is no use for the link directive, but it
+		// is provided for future proofing.
 
 		m_currentFunction = new PTX::DataFunction<PTX::VoidType>();
 		m_currentFunction->SetName(method->GetName());
 		m_currentFunction->SetEntry(true);
 		m_currentFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
-		//TODO: Generate declarations for parameters
-		for (const auto& declaration : m_resources->GetRegisterDeclarations())
-		{
-			m_currentFunction->AddStatement(declaration);
-		}
 		m_currentModule->AddDeclaration(m_currentFunction);
 
+		//TODO: Generate declarations for parameters
+		// for (const auto& parameter : method->GetParameters())
+		// {
+		//
+		// }
+
+		// Visit the method contents (i.e. statements!)
 		HorseIR::ForwardTraversal::Visit(method);
+
+		// Attach the resource declarations to the function. In PTX code, the declarations
+		// must come before use, and are typically grouped at the top of the function.
+
+		m_currentFunction->InsertStatements(m_resources->GetRegisterDeclarations(), 0);
 
 		m_currentMethod = nullptr;
 	}
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
+		//TODO: Static casting is bad sometimes (especially here)
 		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(assign->GetType());
 		switch (type->GetType())
 		{
@@ -105,13 +127,26 @@ public:
 	template<class T>
 	void GenerateAssignment(HorseIR::AssignStatement *assign)
 	{
-		const PTX::Register<T> *target = m_resources->template GetRegister<T>(assign->GetIdentifier());
-		ExpressionGenerator<B, T> generator(m_resources, target, m_currentFunction);
+		// An assignment in HorseIR consists of: name, type, and expression (typically a function call).
+		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements
+		// into a single instruction. We therefore can't completely separate the expression generation
+		// from the assignment as is typically done in McLab compilers.
+		//
+		// (1) First generate the target register for the assignment destination type T
+		// (2) Create a typed expression visitor (using the destination type) to evaluate the RHS of
+		//     the assignment. We assume that the RHS and target have the same types
+		// (3) Visit the expression
+		//
+		// In this setup, the expression visitor is expected to produce the full assignment
+
+		const PTX::Register<T> *target = m_resources->template AllocateRegister<T>(assign->GetIdentifier());
+		ExpressionGenerator<B, T> generator(target, m_currentFunction, m_resources);
 		assign->Accept(generator);
 	}
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
+		//TODO: Static casting will not work where we return non-primitives
 		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(m_currentMethod->GetReturnType());
 		switch (type->GetType())
 		{
@@ -137,35 +172,45 @@ public:
 		auto returnVariable = returnDeclaration->GetVariable(name + "_return");
 
 		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto r0 = m_resources->template GetRegister<PTX::UInt32Type>(name + "_4");
 
-		auto rd0 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_0");
-		auto rd1 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_1");
-		auto rd2 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_2");
-		auto rd3 = m_resources->template GetRegister<PTX::UIntType<B>>(name + "_3");
+		auto block = new PTX::BlockStatement();
 
-		auto rd0_ptr = new PTX::PointerRegisterAdapter<T, B>(rd0);
-		auto rd1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(rd1);
-		auto rd3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(rd3);
+		auto declaration_tidx = new PTX::RegisterDeclaration<PTX::UInt32Type>("%temp_tidx");
+		auto declaration_temp = new PTX::RegisterDeclaration<PTX::UIntType<B>>("%temp", 4);
 
-		auto returnValue = m_resources->template GetRegister<T>(ret->GetIdentifier());
+		auto temp_tidx = declaration_tidx->GetVariable("%temp_tidx");
 
-		m_currentFunction->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(returnVariable)));
-		m_currentFunction->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
-		m_currentFunction->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
+		auto temp0 = declaration_temp->GetVariable("%temp", 0);
+		auto temp1 = declaration_temp->GetVariable("%temp", 1);
+		auto temp2 = declaration_temp->GetVariable("%temp", 2);
+		auto temp3 = declaration_temp->GetVariable("%temp", 3);
+
+		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
+		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
+		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
+
+		auto returnValue = m_resources->template AllocateRegister<T>(ret->GetIdentifier());
+
+		block->AddStatement(declaration_tidx);
+		block->AddStatement(declaration_temp);
+		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(returnVariable)));
+		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
+		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
 		//TODO: Dynamically compute alignment
 		if constexpr(B == PTX::Bits::Bits32)
 		{
 			//TODO: Implement bit cast for operands
-			// m_currentFunction->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(rd2, r0, new PTX::UInt32Value(4)));
+			// block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2, temp_tidx, new PTX::UInt32Value(4)));
 		}
 		else
 		{
-			m_currentFunction->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(8)));
+			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(8)));
 		}
-		m_currentFunction->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(rd3, rd1, rd2));
-		m_currentFunction->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(rd3_ptr), returnValue));
-		m_currentFunction->AddStatement(new PTX::ReturnInstruction());
+		block->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
+		block->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr), returnValue));
+		block->AddStatement(new PTX::ReturnInstruction());
+		
+		m_currentFunction->AddStatement(block);
 	}
 
 private:
@@ -179,6 +224,6 @@ private:
 
 	const PTX::Resource<PTX::RegisterSpace> *m_assignTarget = nullptr;
 
-	ResourceAllocator<B> *m_resources = new ResourceAllocator<B>();
+	ResourceAllocator *m_resources = new ResourceAllocator();
 };
 

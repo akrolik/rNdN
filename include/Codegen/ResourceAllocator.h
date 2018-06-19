@@ -17,17 +17,29 @@ public:
 	virtual const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
 };
 
-template<class T>
+enum class ResourceType : char
+{
+	Internal = '_',
+	Temporary = '$',
+	Variable = '%'
+};
+
+template<class T, ResourceType R>
 class TypedResources : public Resources
 {
 public:
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
-		std::string name = "%" + identifier;
+		std::string name = std::string(1, static_cast<std::underlying_type<ResourceType>::type>(R)) + std::string(T::RegisterPrefix) + "_" + identifier;
 		m_declaration->AddNames(name);
 		const PTX::Register<T> *resource = m_declaration->GetVariable(name);
 		m_registersMap.insert({identifier, resource});
 		return resource;
+	}
+
+	bool ContainsKey(const std::string& identifier) const
+	{
+		return m_registersMap.find(identifier) != m_registersMap.end();
 	}
 
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
@@ -45,23 +57,10 @@ private:
 	std::unordered_map<std::string, const PTX::Register<T> *> m_registersMap;
 };
 
-template<PTX::Bits B>
-class ResourceAllocator : public HorseIR::ForwardTraversal
+class ResourceAllocator
 {
 public:
 	ResourceAllocator() {}
-
-	void AllocateResources(HorseIR::Method *method)
-	{
-		m_resourcesMap.clear();
-		method->Accept(*this);
-	}
-
-	template<class T>
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
-	{
-		return GetResources<T>(false)->GetRegister(identifier);
-	}
 
 	std::vector<const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> GetRegisterDeclarations() const
 	{
@@ -73,61 +72,55 @@ public:
 		return declarations;
 	}
 
-	void Visit(HorseIR::Method *method) override
+	template<class T, ResourceType R = ResourceType::Variable>
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		//TODO: Allocate registers for accessing parameters
-		//TODO: Return allocation is hacky
-		HorseIR::Type *type = method->GetReturnType();
-		if (type != nullptr)
-		{
-			const std::string& name = method->GetName();
-
-			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_0");
-			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_1");
-			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_2");
-			GetResources<PTX::UInt64Type>()->AllocateRegister(name + "_3");
-
-			GetResources<PTX::UInt32Type>()->AllocateRegister(name + "_4");
-		}
-
-		HorseIR::ForwardTraversal::Visit(method);
+		return GetResources<T, R>(false)->GetRegister(identifier);
 	}
 
-	void Visit(HorseIR::AssignStatement *assign) override
+	template<class T, ResourceType R = ResourceType::Variable>
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
 	{
-		AllocateRegister(assign->GetType(), assign->GetIdentifier());
-		HorseIR::ForwardTraversal::Visit(assign);
+		auto resources = GetResources<T, R>();
+		if (resources->ContainsKey(identifier))
+		{
+			return resources->GetRegister(identifier);
+		}
+		return GetResources<T, R>()->AllocateRegister(identifier);
 	}
 
 private:
-
-	void AllocateRegister(HorseIR::Type *type, std::string name)
+	using KeyType = std::tuple<std::type_index, ResourceType>;
+	struct KeyHash : public std::unary_function<KeyType, std::size_t>
 	{
-		auto primitiveType = static_cast<HorseIR::PrimitiveType*>(type);
-		switch (primitiveType->GetType())
+		std::size_t operator()(const KeyType& k) const
 		{
-			case HorseIR::PrimitiveType::Type::Int8:
-				GetResources<PTX::Int8Type>()->AllocateRegister(name);
-				break;
-			case HorseIR::PrimitiveType::Type::Int64:
-				GetResources<PTX::Int64Type>()->AllocateRegister(name);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported resource type " << primitiveType->ToString() << std::endl;
-				std::exit(EXIT_FAILURE);
+			return std::get<0>(k).hash_code() ^ static_cast<std::size_t>(std::get<1>(k));
 		}
+	};
+	 
+	struct KeyEqual : public std::binary_function<KeyType, KeyType, bool>
+	{
+		bool operator()(const KeyType& v0, const KeyType& v1) const
+		{
+			return (
+				std::get<0>(v0) == std::get<0>(v1) &&
+				std::get<1>(v0) == std::get<1>(v1)
+			);
+		}
+	};
+
+	template<class T, ResourceType R = ResourceType::Variable>
+	TypedResources<T, R> *GetResources(bool alloc = true) const
+	{
+		auto key = std::make_tuple<std::type_index, ResourceType>(typeid(T), R);
+		if (alloc && m_resourcesMap.find(key) == m_resourcesMap.end())
+		{
+			m_resourcesMap.insert({key, new TypedResources<T, R>()});
+		}
+		return static_cast<TypedResources<T, R> *>(m_resourcesMap.at(key));
 	}
 
-	template<class T>
-	TypedResources<T> *GetResources(bool alloc = true) const
-	{
-		if (alloc && m_resourcesMap.find(typeid(T)) == m_resourcesMap.end())
-		{
-			m_resourcesMap.insert({typeid(T), new TypedResources<T>()});
-		}
-		return static_cast<TypedResources<T> *>(m_resourcesMap.at(typeid(T)));
-	}
-
-	mutable std::unordered_map<std::type_index, Resources *> m_resourcesMap;
+	mutable std::unordered_map<KeyType, Resources *, KeyHash, KeyEqual> m_resourcesMap;
 };
 

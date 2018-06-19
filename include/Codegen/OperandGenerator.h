@@ -13,7 +13,7 @@ template<PTX::Bits B, class T>
 class OperandGenerator : public HorseIR::ForwardTraversal
 {
 public:
-	OperandGenerator(ResourceAllocator<B> *resources, PTX::Function *function) : m_resources(resources), m_currentFunction(function) {}
+	OperandGenerator(PTX::Function *function, ResourceAllocator *resources) : m_currentFunction(function), m_resources(resources) {}
 
 	const PTX::Operand<T> *GenerateOperand(HorseIR::Expression *expression)
 	{
@@ -54,8 +54,8 @@ public:
 	}
 
 private:
-	ResourceAllocator<B> *m_resources = nullptr;
 	PTX::Function *m_currentFunction = nullptr;
+	ResourceAllocator  *m_resources = nullptr;
 
 	const PTX::Operand<T> *m_operand = nullptr;
 };

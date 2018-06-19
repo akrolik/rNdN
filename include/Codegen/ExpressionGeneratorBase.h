@@ -21,20 +21,20 @@ template<PTX::Bits B, class T>
 class ExpressionGeneratorBase : public HorseIR::ForwardTraversal, public ExpressionGeneratorInterface<T>
 {
 public:
-	ExpressionGeneratorBase(ResourceAllocator<B> *resources, const PTX::Register<T> *target, PTX::Function *function) : m_resources(resources), m_target(target), m_currentFunction(function) {}
+	ExpressionGeneratorBase(const PTX::Register<T> *target, PTX::Function *function, ResourceAllocator *resources) : m_target(target), m_currentFunction(function), m_resources(resources) {}
 
 	void Visit(HorseIR::CallExpression *call) override
 	{
 		std::string name = call->GetName();
 		if (name == "@fill")
 		{
-			OperandGenerator<B, T> opGen(m_resources, m_currentFunction);
+			OperandGenerator<B, T> opGen(m_currentFunction, m_resources);
 			auto src = opGen.GenerateOperand(call->GetArgument(1));
 			this->GenerateMove(src);
 		}
 		else if (name == "@plus")
 		{
-			OperandGenerator<B, T> opGen(m_resources, m_currentFunction);
+			OperandGenerator<B, T> opGen(m_currentFunction, m_resources);
 			auto src1 = opGen.GenerateOperand(call->GetArgument(0));
 			auto src2 = opGen.GenerateOperand(call->GetArgument(1));
 			this->GenerateAdd(src1, src2);
@@ -54,7 +54,7 @@ public:
 	}
 
 protected:
-	ResourceAllocator<B> *m_resources = nullptr;
 	const PTX::Register<T> *m_target = nullptr;
 	PTX::Function *m_currentFunction = nullptr;
+	ResourceAllocator *m_resources = nullptr;
 };
