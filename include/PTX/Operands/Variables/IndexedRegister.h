@@ -13,9 +13,9 @@ public:
 
 	virtual VectorElement GetVectorElement() const { return m_vectorElement; }
 
-	std::string ToString() const override
+	std::string GetName() const override
 	{
-		return Register<T>::ToString() + GetVectorElementName(m_vectorElement);
+		return Register<T>::GetName() + GetVectorElementName(m_vectorElement);
 	}
 
 protected:
