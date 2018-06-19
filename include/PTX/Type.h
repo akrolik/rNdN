@@ -70,11 +70,11 @@ struct TypeEnforcer
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
-struct VoidType : private Type { static std::string Name() { return ""; } };
+struct VoidType : Type { static std::string Name() { return ""; } };
 
-struct DataType : private Type {};
+struct DataType : Type {};
 
-struct ScalarType : private DataType {};
+struct ScalarType : DataType {};
 
 enum class Bits : int {
 	Bits1  = (1 << 0),
@@ -85,9 +85,11 @@ enum class Bits : int {
 };
 
 template<Bits B, unsigned int N = 1>
-struct BitType : private ScalarType
+struct BitTypeBase : ScalarType
 {
-	static std::string Name() { return ".b" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
+	constexpr static std::underlying_type<Bits>::type BitSize = static_cast<std::underlying_type<Bits>::type>(B);
+
+	static std::string Name() { return ".b" + std::to_string(BitSize); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -108,10 +110,18 @@ struct BitType : private ScalarType
 };
 
 template<>
-struct BitType<Bits::Bits1, 1> : private Type
+struct BitTypeBase<Bits::Bits1, 1> : Type
 {
 	static std::string Name() { return ".pred"; }
 };
+
+enum class VectorSize : int;
+
+template<Bits B, unsigned int N = 1> struct BitType : public BitTypeBase<B, N> {};
+template<> struct BitType<Bits::Bits8, 1> : public BitTypeBase<Bits::Bits8> { using SystemType = int8_t; };
+template<> struct BitType<Bits::Bits16, 1> : public BitTypeBase<Bits::Bits16> { using SystemType = int16_t; };
+template<> struct BitType<Bits::Bits32, 1> : public BitTypeBase<Bits::Bits32> { using SystemType = int32_t; };
+template<> struct BitType<Bits::Bits64, 1> : public BitTypeBase<Bits::Bits64> { using SystemType = int64_t; };
 
 using PredicateType = BitType<Bits::Bits1>;
 using Bit8Type = BitType<Bits::Bits8>;
@@ -120,11 +130,11 @@ using Bit32Type = BitType<Bits::Bits32>;
 using Bit64Type = BitType<Bits::Bits64>;
 
 template<Bits B, unsigned int N = 1>
-struct IntTypeBase : private BitType<B, N>
+struct IntTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
-	static std::string Name() { return ".s" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
+	static std::string Name() { return ".s" + std::to_string(BitType<B, N>::BitSize); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -168,11 +178,11 @@ using Int32Type = IntType<Bits::Bits32>;
 using Int64Type = IntType<Bits::Bits64>;
 
 template<Bits B, unsigned int N = 1>
-struct UIntTypeBase : private BitType<B, N>
+struct UIntTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
 
-	static std::string Name() { return ".u" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
+	static std::string Name() { return ".u" + std::to_string(BitType<B, N>::BitSize); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -216,11 +226,11 @@ using UInt32Type = UIntType<Bits::Bits32>;
 using UInt64Type = UIntType<Bits::Bits64>;
 
 template<Bits B, unsigned int N = 1>
-struct FloatTypeBase : private BitType<B, N>
+struct FloatTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
-	static std::string Name() { return ".f" + std::to_string(static_cast<std::underlying_type<Bits>::type>(B)); }
+	static std::string Name() { return ".f" + std::to_string(BitType<B, N>::BitSize); }
 
 	enum class RoundingMode {
 		None,
@@ -303,7 +313,7 @@ struct FloatTypeBase : private BitType<B, N>
 };
 
 template<unsigned int N>
-struct FloatTypeBase<Bits::Bits16, N> : private BitType<Bits::Bits16, N>
+struct FloatTypeBase<Bits::Bits16, N> : BitType<Bits::Bits16, N>
 {
 	static std::string Name()
 	{
@@ -403,11 +413,14 @@ template<> inline std::string VectorName<VectorSize::Vector2>() { return std::st
 template<> inline std::string VectorName<VectorSize::Vector4>() { return std::string(".v4"); }
 
 template<class T, VectorSize V>
-struct VectorType : private DataType
+struct VectorType : DataType
 {
 	REQUIRE_BASE_TYPE(VectorType, ScalarType);
 
-	static std::string Name() { return ".v" + std::to_string(static_cast<std::underlying_type<VectorSize>::type>(V)) + " " + T::Name(); }
+	using ElementType = T;
+	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
+
+	static std::string Name() { return ".v" + std::to_string(ElementCount) + " " + T::Name(); }
 };
 
 template<class T>
@@ -439,7 +452,7 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 }
 
 template<class T, Bits B, class S = AddressableSpace>
-struct PointerType : private UIntType<B>
+struct PointerType : UIntType<B>
 {
 	REQUIRE_BASE_TYPE(PointerType, DataType);
 	REQUIRE_BASE_SPACE(PointerType, AddressableSpace);
