@@ -29,8 +29,6 @@ class Symbol;
 class Type;
 class ListType;
 class PrimitiveType;
-class TableType;
-class WildcardType;
 
 class Visitor
 {
@@ -58,8 +56,6 @@ public:
 	virtual void Visit(Type *type);
 	virtual void Visit(ListType *type);
 	virtual void Visit(PrimitiveType *type);
-	virtual void Visit(TableType *type);
-	virtual void Visit(WildcardType *type);
 };
 
 }

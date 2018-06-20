@@ -1,6 +1,5 @@
 %{
-#include <stdio.h>
-#include <string.h>
+#include <iostream>
 
 #include "HorseIR_Parser.hpp"
 
@@ -24,18 +23,31 @@ LETTER [A-Za-z_]
 ")"          return ')';
 "{"          return '{';
 "}"          return '}';
+"["          return '[';
+"]"          return ']';
 "<"          return '<';
 ">"          return '>';
 "="          return '=';
 ":"          return ':';
+"+"          return '+';
+"-"          return '-';
+"*"          return '*';
 "?"          return '?';
 ";"          return ';';
 "."          return '.';
 ","          return ',';
 
+bool         return tBOOL;
+char         return tCHAR;
 i8           return tI8;
+i16          return tI16;
+i32          return tI32;
 i64          return tI64;
-string       return tSTRING;
+f32          return tF32;
+f64          return tF64;
+complex      return tCOMPLEX;
+sym          return tSYMBOL;
+str          return tSTRING;
 list         return tLIST;
 table        return tTABLE;
 
@@ -46,13 +58,13 @@ check_cast   return tCHECKCAST;
 return       return tRETURN;
 
 `{LETTER}({LETTER}|{DIGIT})* {
-	yylval.string_val = strdup(yytext);
-	return tSYMBOL;
+	yylval.string_val = new std::string(yytext);
+	return tSYMBOLVAL;
 }
 
 @{LETTER}({LETTER}|{DIGIT})* {
-	yylval.string_val = strdup(yytext);
-	return tFUNCTION;
+	yylval.string_val = new std::string(yytext);
+	return tFUNCTIONVAL;
 }
 
 0|({NONZERODIGIT}{DIGIT}*) {
@@ -60,19 +72,26 @@ return       return tRETURN;
 	return tINTVAL;
 }
 
-\"({LETTER}|{DIGIT})*\" {
-	yylval.string_val = strdup(yytext);
+(0\.{DIGIT}*)|({NONZERODIGIT}{DIGIT}*\.{DIGIT}*) {
+	yylval.float_val = atof(yytext);
+	return tFLOATVAL;
+}
+
+\"[^"]*\" {
+	char *val = strdup(yytext + 1);
+	val[strlen(val) - 1] = 0;
+	yylval.string_val = new std::string(val);
 	return tSTRINGVAL;
 }
 
 {LETTER}({LETTER}|{DIGIT})* {
-	yylval.string_val = strdup(yytext);
+	yylval.string_val = new std::string(yytext);
 	return tIDENTIFIER;
 }
 
 . {
-	fprintf(stderr, "[ERROR] (line %d) Unexpected character %s\n", yylineno, yytext);
-	exit(1);
+	std::cerr << "[ERROR] (line " << yylineno << ") Unexpected character " << yytext << std::endl;
+	std::exit(EXIT_FAILURE);
 }
 
 %%

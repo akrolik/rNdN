@@ -20,8 +20,6 @@
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
-#include "HorseIR/Tree/Types/TableType.h"
-#include "HorseIR/Tree/Types/WildcardType.h"
 
 namespace HorseIR {
 
@@ -117,16 +115,6 @@ void Visitor::Visit(ListType *type)
 }
 
 void Visitor::Visit(PrimitiveType *type)
-{
-	Visit(static_cast<Type*>(type));
-}
-
-void Visitor::Visit(TableType *type)
-{
-	Visit(static_cast<Type*>(type));
-}
-
-void Visitor::Visit(WildcardType *type)
 {
 	Visit(static_cast<Type*>(type));
 }

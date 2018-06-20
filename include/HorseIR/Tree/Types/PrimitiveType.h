@@ -12,9 +12,19 @@ class PrimitiveType : public Type
 {
 public:
 	enum Type {
+		Wildcard,
+		Bool,
+		Char,
 		Int8,
+		Int16,
+		Int32,
 		Int64,
-		String
+		Float32,
+		Float64,
+		Complex,
+		Symbol,
+		String,
+		Table
 	};
 
 	PrimitiveType(Type type) : m_type(type) {}
