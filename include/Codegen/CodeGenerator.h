@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
 #include "PTX/Module.h"
@@ -189,15 +191,15 @@ public:
 		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(returnVariable)));
 		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
 		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
-		//TODO: Dynamically compute alignment
 		if constexpr(B == PTX::Bits::Bits32)
 		{
-			//TODO: Implement bit cast for operands
-			// block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2, temp_tidx, new PTX::UInt32Value(4)));
+			auto temp2_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp2);
+			auto tidx_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_tidx);
+			block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(T::BitSize / 8))));
 		}
 		else
 		{
-			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(8)));
+			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
 		}
 		block->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
 		block->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr), returnValue));
