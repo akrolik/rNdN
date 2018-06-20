@@ -9,6 +9,7 @@ namespace PTX {
 template<class T, VectorSize V>
 class BracedRegister : public Register<VectorType<T, V>>
 {
+	REQUIRE_BASE_TYPE(BracedOperand, ScalarType);
 public:
 	constexpr static int ElementCount = static_cast<int>(V);
 
