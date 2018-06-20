@@ -165,34 +165,27 @@ public:
 	template<class T>
 	void GenerateReturn(HorseIR::ReturnStatement *ret)
 	{
-		std::string name = m_currentFunction->GetName();
-
 		auto returnDeclaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_return");
 		m_currentFunction->AddParameter(returnDeclaration);
-		auto returnVariable = returnDeclaration->GetVariable(name + "_return");
-
-		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto returnVariable = returnDeclaration->GetVariable(m_currentFunction->GetName() + "_return");
+		auto returnValue = m_resources->template AllocateRegister<T>(ret->GetIdentifier());
 
 		auto block = new PTX::BlockStatement();
+		ResourceAllocator *localResources = new ResourceAllocator();
 
-		auto declaration_tidx = new PTX::RegisterDeclaration<PTX::UInt32Type>("%temp_tidx");
-		auto declaration_temp = new PTX::RegisterDeclaration<PTX::UIntType<B>>("%temp", 4);
+		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto temp_tidx = localResources->template AllocateRegister<PTX::UInt32Type, ResourceType::Temporary>("tidx");
 
-		auto temp_tidx = declaration_tidx->GetVariable("%temp_tidx");
-
-		auto temp0 = declaration_temp->GetVariable("%temp", 0);
-		auto temp1 = declaration_temp->GetVariable("%temp", 1);
-		auto temp2 = declaration_temp->GetVariable("%temp", 2);
-		auto temp3 = declaration_temp->GetVariable("%temp", 3);
+		auto temp0 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("0");
+		auto temp1 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("1");
+		auto temp2 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("2");
+		auto temp3 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("3");
 
 		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
 		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
 		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
 
-		auto returnValue = m_resources->template AllocateRegister<T>(ret->GetIdentifier());
-
-		block->AddStatement(declaration_tidx);
-		block->AddStatement(declaration_temp);
+		block->AddStatements(localResources->GetRegisterDeclarations());
 		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(returnVariable)));
 		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
 		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));

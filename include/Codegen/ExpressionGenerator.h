@@ -31,13 +31,13 @@ public:
 	void GenerateAdd(const PTX::Operand<PTX::Int8Type> *src1, const PTX::Operand<PTX::Int8Type> *src2) override
 	{
 		auto block = new PTX::BlockStatement();
-		auto declaration = new PTX::RegisterDeclaration<PTX::Int16Type>("%temp", 3);
+		auto localResources = new ResourceAllocator();
 
-		auto temp0 = declaration->GetVariable("%temp", 0);
-		auto temp1 = declaration->GetVariable("%temp", 1);
-		auto temp2 = declaration->GetVariable("%temp", 2);
+		auto temp0 = localResources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("0");
+		auto temp1 = localResources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("1");
+		auto temp2 = localResources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("2");
 
-		block->AddStatement(declaration);
+		block->AddStatements(localResources->GetRegisterDeclarations());
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp0, src1));
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp1, src2));
 		block->AddStatement(new PTX::AddInstruction<PTX::Int16Type>(temp2, temp0, temp1));
@@ -49,15 +49,15 @@ public:
 	void GenerateMove(const PTX::Operand<PTX::Int8Type> *src) override
 	{
 		auto block = new PTX::BlockStatement();
-		auto declaration = new PTX::RegisterDeclaration<PTX::Bit16Type>("%temp");
+		auto localResources = new ResourceAllocator();
 
-		auto temp = declaration->GetVariable("%temp");
+		auto temp = localResources->template AllocateRegister<PTX::Bit16Type, ResourceType::Temporary>("0");
 		auto value = new PTX::Value<PTX::Bit8Type>(0);
 
 		auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({new PTX::Bit8Adapter<PTX::IntType>(src), value});
 		auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({new PTX::Bit8RegisterAdapter<PTX::IntType>(this->m_target), new PTX::SinkRegister<PTX::Bit8Type>});
 
-		block->AddStatement(declaration);
+		block->AddStatements(localResources->GetRegisterDeclarations());
 		block->AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
 		block->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
 
