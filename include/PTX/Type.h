@@ -483,6 +483,7 @@ struct VectorType : DataType
 
 	using ElementType = T;
 	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
+	constexpr static std::underlying_type<Bits>::type BitSize = T::BitSize * ElementCount;
 
 	static std::string Name() { return ".v" + std::to_string(ElementCount) + " " + T::Name(); }
 };
