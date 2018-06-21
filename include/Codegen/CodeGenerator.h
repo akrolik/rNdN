@@ -25,6 +25,7 @@
 #include "PTX/Operands/Adapters/PointerAdapter.h"
 #include "PTX/Operands/Address/MemoryAddress.h"
 #include "PTX/Operands/Address/RegisterAddress.h"
+#include "PTX/Operands/Variables/AddressableVariable.h"
 #include "PTX/Operands/Variables/IndexedRegister.h"
 #include "PTX/Operands/Variables/Register.h"
 #include "PTX/Operands/Variables/Variable.h"
@@ -91,13 +92,13 @@ public:
 		m_currentFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 		m_currentModule->AddDeclaration(m_currentFunction);
 
-		//TODO: Generate declarations for parameters
-		// for (const auto& parameter : method->GetParameters())
-		// {
-		//
-		// }
+		for (const auto& parameter : method->GetParameters())
+		{
+			Dispatch<ForwardGenerateParameter, HorseIR::Parameter>(parameter->GetType(), parameter);
+		}
 
 		// Visit the method contents (i.e. statements!)
+
 		HorseIR::ForwardTraversal::Visit(method);
 
 		// Attach the resource declarations to the function. In PTX code, the declarations
@@ -108,23 +109,103 @@ public:
 		m_currentMethod = nullptr;
 	}
 
-	void Visit(HorseIR::AssignStatement *assign) override
+	template<class T>
+	PTX::Address<B, T, PTX::GlobalSpace>* GenerateAddress(const PTX::ParameterVariable<PTX::PointerType<T, B>> *variable, PTX::StatementList *block, ResourceAllocator *localResources)
+	{
+		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto temp_tidx = localResources->template AllocateRegister<PTX::UInt32Type, ResourceType::Temporary>("tidx");
+
+		auto temp0 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("0");
+		auto temp1 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("1");
+		auto temp2 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("2");
+		auto temp3 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("3");
+
+		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
+		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
+		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
+
+		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(variable)));
+		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
+		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
+		if constexpr(B == PTX::Bits::Bits32)
+		{
+			auto temp2_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp2);
+			auto tidx_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_tidx);
+			block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(T::BitSize / 8))));
+		}
+		else
+		{
+			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
+		}
+		block->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
+		return new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr);
+	}
+
+	template<template <class> class T, class N>
+	void Dispatch(HorseIR::Type *type, N *node)
 	{
 		//TODO: Static casting is bad sometimes (especially here)
-		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(assign->GetType());
-		switch (type->GetType())
+		HorseIR::PrimitiveType *primitive = static_cast<HorseIR::PrimitiveType *>(type);
+		switch (primitive->GetType())
 		{
 			case HorseIR::PrimitiveType::Type::Int8:
-				GenerateAssignment<PTX::Int8Type>(assign);
+				T<PTX::Int8Type>::Call(this, node);
+				break;
+			case HorseIR::PrimitiveType::Type::Int16:
+				T<PTX::Int16Type>::Call(this, node);
+				break;
+			case HorseIR::PrimitiveType::Type::Int32:
+				T<PTX::Int32Type>::Call(this, node);
 				break;
 			case HorseIR::PrimitiveType::Type::Int64:
-				GenerateAssignment<PTX::Int64Type>(assign);
+				T<PTX::Int64Type>::Call(this, node);
+				break;
+			case HorseIR::PrimitiveType::Type::Float32:
+				T<PTX::Float32Type>::Call(this, node);
+				break;
+			case HorseIR::PrimitiveType::Type::Float64:
+				T<PTX::Float64Type>::Call(this, node);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported assignment type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
+
+	template<class T> struct ForwardGenerateParameter {
+		static void Call(CodeGenerator *generator, HorseIR::Parameter *assign) {
+			generator->GenerateParameter<T>(assign);
+		}
+	};
+
+	template<class T>
+	void GenerateParameter(HorseIR::Parameter *parameter)
+	{
+		auto declaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_" + parameter->GetName());
+		m_currentFunction->AddParameter(declaration);
+		auto variable = declaration->GetVariable(m_currentFunction->GetName() + "_" + parameter->GetName());
+
+		auto block = new PTX::BlockStatement();
+		ResourceAllocator *localResources = new ResourceAllocator();
+
+		auto address = GenerateAddress<T>(variable, block, localResources);
+		auto value = m_resources->template AllocateRegister<T>(parameter->GetName());
+		block->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
+		block->InsertStatements(localResources->GetRegisterDeclarations(), 0);
+
+		m_currentFunction->AddStatement(block);
+	}
+
+	void Visit(HorseIR::AssignStatement *assign) override
+	{
+		Dispatch<ForwardGenerateAssignment, HorseIR::AssignStatement>(assign->GetType(), assign);
+	}
+	
+	template<class T> struct ForwardGenerateAssignment {
+		static void Call(CodeGenerator *generator, HorseIR::AssignStatement *assign) {
+			generator->GenerateAssignment<T>(assign);
+		}
+	};
 
 	template<class T>
 	void GenerateAssignment(HorseIR::AssignStatement *assign)
@@ -148,63 +229,31 @@ public:
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		//TODO: Static casting will not work where we return non-primitives
-		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(m_currentMethod->GetReturnType());
-		switch (type->GetType())
-		{
-			case HorseIR::PrimitiveType::Type::Int8:
-				GenerateReturn<PTX::Int8Type>(ret);
-				break;
-			case HorseIR::PrimitiveType::Type::Int64:
-				GenerateReturn<PTX::Int64Type>(ret);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported return type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
-				std::exit(EXIT_FAILURE);
-		}
+		Dispatch<ForwardGenerateReturn, HorseIR::ReturnStatement>(m_currentMethod->GetReturnType(), ret);
 	}
+
+	template<class T> struct ForwardGenerateReturn {
+		static void Call(CodeGenerator *generator, HorseIR::ReturnStatement *assign) {
+			generator->GenerateReturn<T>(assign);
+		}
+	};
 
 	template<class T>
 	void GenerateReturn(HorseIR::ReturnStatement *ret)
 	{
-		auto returnDeclaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_return");
-		m_currentFunction->AddParameter(returnDeclaration);
-		auto returnVariable = returnDeclaration->GetVariable(m_currentFunction->GetName() + "_return");
-		auto returnValue = m_resources->template AllocateRegister<T>(ret->GetIdentifier());
+		auto declaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_return");
+		m_currentFunction->AddParameter(declaration);
+		auto variable = declaration->GetVariable(m_currentFunction->GetName() + "_return");
 
 		auto block = new PTX::BlockStatement();
 		ResourceAllocator *localResources = new ResourceAllocator();
 
-		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto temp_tidx = localResources->template AllocateRegister<PTX::UInt32Type, ResourceType::Temporary>("tidx");
-
-		auto temp0 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("0");
-		auto temp1 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("1");
-		auto temp2 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("2");
-		auto temp3 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("3");
-
-		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
-		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
-		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
-
-		block->AddStatements(localResources->GetRegisterDeclarations());
-		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(returnVariable)));
-		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
-		if constexpr(B == PTX::Bits::Bits32)
-		{
-			auto temp2_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp2);
-			auto tidx_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_tidx);
-			block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(T::BitSize / 8))));
-		}
-		else
-		{
-			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
-		}
-		block->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
-		block->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr), returnValue));
+		auto address = GenerateAddress<T>(variable, block, localResources);
+		auto value = m_resources->template AllocateRegister<T>(ret->GetIdentifier());
+		block->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
 		block->AddStatement(new PTX::ReturnInstruction());
-		
+		block->InsertStatements(localResources->GetRegisterDeclarations(), 0);
+
 		m_currentFunction->AddStatement(block);
 	}
 
