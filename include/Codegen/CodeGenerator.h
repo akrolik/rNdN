@@ -9,28 +9,8 @@
 #include "PTX/Resource.h"
 #include "PTX/StateSpace.h"
 #include "PTX/Type.h"
-#include "PTX/Declarations/Declaration.h"
-#include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Declarations/SpecialRegisterDeclarations.h"
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/DataFunction.h"
-#include "PTX/Instructions/Arithmetic/AddInstruction.h"
-#include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
-#include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
-#include "PTX/Instructions/Data/ConvertToAddressInstruction.h"
-#include "PTX/Instructions/Data/LoadInstruction.h"
-#include "PTX/Instructions/Data/MoveInstruction.h"
-#include "PTX/Instructions/Data/StoreInstruction.h"
-#include "PTX/Instructions/Shift/ShiftLeftInstruction.h"
-#include "PTX/Operands/Adapters/PointerAdapter.h"
-#include "PTX/Operands/Address/MemoryAddress.h"
-#include "PTX/Operands/Address/RegisterAddress.h"
-#include "PTX/Operands/Variables/AddressableVariable.h"
-#include "PTX/Operands/Variables/IndexedRegister.h"
-#include "PTX/Operands/Variables/Register.h"
-#include "PTX/Operands/Variables/Variable.h"
-#include "PTX/Operands/Value.h"
-#include "PTX/Statements/BlockStatement.h"
 
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Method.h"
@@ -38,8 +18,11 @@
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
 
-#include "Codegen/ExpressionGenerator.h"
 #include "Codegen/ResourceAllocator.h"
+#include "Codegen/Generators/AssignmentGenerator.h"
+#include "Codegen/Generators/ParameterGenerator.h"
+#include "Codegen/Generators/ReturnGenerator.h"
+#include "Codegen/Generators/Expressions/ExpressionGenerator.h"
 
 template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ForwardTraversal
@@ -71,6 +54,7 @@ public:
 		m_currentModule = ptxModule;
 
 		// Visit the module contents
+
 		HorseIR::ForwardTraversal::Visit(module);
 	}
 
@@ -92,12 +76,7 @@ public:
 		m_currentFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 		m_currentModule->AddDeclaration(m_currentFunction);
 
-		for (const auto& parameter : method->GetParameters())
-		{
-			Dispatch<ForwardGenerateParameter, HorseIR::Parameter>(parameter->GetType(), parameter);
-		}
-
-		// Visit the method contents (i.e. statements!)
+		// Visit the method contents (i.e. parameters + statements!)
 
 		HorseIR::ForwardTraversal::Visit(method);
 
@@ -110,61 +89,29 @@ public:
 	}
 
 	template<class T>
-	PTX::Address<B, T, PTX::GlobalSpace>* GenerateAddress(const PTX::ParameterVariable<PTX::PointerType<T, B>> *variable, PTX::StatementList *block, ResourceAllocator *localResources)
-	{
-		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto temp_tidx = localResources->template AllocateRegister<PTX::UInt32Type, ResourceType::Temporary>("tidx");
-
-		auto temp0 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("0");
-		auto temp1 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("1");
-		auto temp2 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("2");
-		auto temp3 = localResources->template AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("3");
-
-		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
-		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
-		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
-
-		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(variable)));
-		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
-		if constexpr(B == PTX::Bits::Bits32)
-		{
-			auto temp2_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp2);
-			auto tidx_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_tidx);
-			block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(T::BitSize / 8))));
-		}
-		else
-		{
-			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
-		}
-		block->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
-		return new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr);
-	}
-
-	template<template <class> class T, class N>
-	void Dispatch(HorseIR::Type *type, N *node)
+	void Dispatch(HorseIR::Type *type, typename T::NodeType *node)
 	{
 		//TODO: Static casting is bad sometimes (especially here)
 		HorseIR::PrimitiveType *primitive = static_cast<HorseIR::PrimitiveType *>(type);
 		switch (primitive->GetType())
 		{
 			case HorseIR::PrimitiveType::Type::Int8:
-				T<PTX::Int8Type>::Call(this, node);
+				T::template Generate<PTX::Int8Type>(node, m_currentFunction, m_resources);
 				break;
 			case HorseIR::PrimitiveType::Type::Int16:
-				T<PTX::Int16Type>::Call(this, node);
+				T::template Generate<PTX::Int16Type>(node, m_currentFunction, m_resources);
 				break;
 			case HorseIR::PrimitiveType::Type::Int32:
-				T<PTX::Int32Type>::Call(this, node);
+				T::template Generate<PTX::Int32Type>(node, m_currentFunction, m_resources);
 				break;
 			case HorseIR::PrimitiveType::Type::Int64:
-				T<PTX::Int64Type>::Call(this, node);
+				T::template Generate<PTX::Int64Type>(node, m_currentFunction, m_resources);
 				break;
 			case HorseIR::PrimitiveType::Type::Float32:
-				T<PTX::Float32Type>::Call(this, node);
+				T::template Generate<PTX::Float32Type>(node, m_currentFunction, m_resources);
 				break;
 			case HorseIR::PrimitiveType::Type::Float64:
-				T<PTX::Float64Type>::Call(this, node);
+				T::template Generate<PTX::Float64Type>(node, m_currentFunction, m_resources);
 				break;
 			default:
 				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
@@ -172,89 +119,19 @@ public:
 		}
 	}
 
-	template<class T> struct ForwardGenerateParameter {
-		static void Call(CodeGenerator *generator, HorseIR::Parameter *assign) {
-			generator->GenerateParameter<T>(assign);
-		}
-	};
-
-	template<class T>
-	void GenerateParameter(HorseIR::Parameter *parameter)
+	void Visit(HorseIR::Parameter *parameter) override
 	{
-		auto declaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_" + parameter->GetName());
-		m_currentFunction->AddParameter(declaration);
-		auto variable = declaration->GetVariable(m_currentFunction->GetName() + "_" + parameter->GetName());
-
-		auto block = new PTX::BlockStatement();
-		ResourceAllocator *localResources = new ResourceAllocator();
-
-		auto address = GenerateAddress<T>(variable, block, localResources);
-		auto value = m_resources->template AllocateRegister<T>(parameter->GetName());
-		block->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
-		block->InsertStatements(localResources->GetRegisterDeclarations(), 0);
-
-		m_currentFunction->AddStatement(block);
+		Dispatch<ParameterGenerator<B>>(parameter->GetType(), parameter);
 	}
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
-		Dispatch<ForwardGenerateAssignment, HorseIR::AssignStatement>(assign->GetType(), assign);
-	}
-	
-	template<class T> struct ForwardGenerateAssignment {
-		static void Call(CodeGenerator *generator, HorseIR::AssignStatement *assign) {
-			generator->GenerateAssignment<T>(assign);
-		}
-	};
-
-	template<class T>
-	void GenerateAssignment(HorseIR::AssignStatement *assign)
-	{
-		// An assignment in HorseIR consists of: name, type, and expression (typically a function call).
-		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements
-		// into a single instruction. We therefore can't completely separate the expression generation
-		// from the assignment as is typically done in McLab compilers.
-		//
-		// (1) First generate the target register for the assignment destination type T
-		// (2) Create a typed expression visitor (using the destination type) to evaluate the RHS of
-		//     the assignment. We assume that the RHS and target have the same types
-		// (3) Visit the expression
-		//
-		// In this setup, the expression visitor is expected to produce the full assignment
-
-		const PTX::Register<T> *target = m_resources->template AllocateRegister<T>(assign->GetIdentifier());
-		ExpressionGenerator<B, T> generator(target, m_currentFunction, m_resources);
-		assign->Accept(generator);
+		Dispatch<AssignmentGenerator<B>>(assign->GetType(), assign);
 	}
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		Dispatch<ForwardGenerateReturn, HorseIR::ReturnStatement>(m_currentMethod->GetReturnType(), ret);
-	}
-
-	template<class T> struct ForwardGenerateReturn {
-		static void Call(CodeGenerator *generator, HorseIR::ReturnStatement *assign) {
-			generator->GenerateReturn<T>(assign);
-		}
-	};
-
-	template<class T>
-	void GenerateReturn(HorseIR::ReturnStatement *ret)
-	{
-		auto declaration = new PTX::PointerDeclaration<T, B>(m_currentFunction->GetName() + "_return");
-		m_currentFunction->AddParameter(declaration);
-		auto variable = declaration->GetVariable(m_currentFunction->GetName() + "_return");
-
-		auto block = new PTX::BlockStatement();
-		ResourceAllocator *localResources = new ResourceAllocator();
-
-		auto address = GenerateAddress<T>(variable, block, localResources);
-		auto value = m_resources->template AllocateRegister<T>(ret->GetIdentifier());
-		block->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		block->AddStatement(new PTX::ReturnInstruction());
-		block->InsertStatements(localResources->GetRegisterDeclarations(), 0);
-
-		m_currentFunction->AddStatement(block);
+		Dispatch<ReturnGenerator<B>>(m_currentMethod->GetReturnType(), ret);
 	}
 
 private:

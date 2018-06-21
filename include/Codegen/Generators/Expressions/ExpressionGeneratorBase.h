@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Codegen/Generators/Expressions/ExpressionGeneratorInterface.h"
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
 #include "HorseIR/Tree/Expressions/CallExpression.h"
@@ -13,8 +14,7 @@
 #include "PTX/Operands/Value.h"
 #include "PTX/Operands/Variables/Register.h"
 
-#include "Codegen/ExpressionGeneratorInterface.h"
-#include "Codegen/OperandGenerator.h"
+#include "Codegen/Generators/OperandGenerator.h"
 #include "Codegen/ResourceAllocator.h"
 
 template<PTX::Bits B, class T>

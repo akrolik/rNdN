@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Codegen/ExpressionGeneratorBase.h"
+#include "Codegen/Generators/Expressions/ExpressionGeneratorBase.h"
 
 #include "PTX/Statements/BlockStatement.h"
 
