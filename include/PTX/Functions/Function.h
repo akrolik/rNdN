@@ -4,36 +4,16 @@
 
 #include "PTX/Declarations/Declaration.h"
 
+#include "PTX/Statements/StatementList.h"
 #include "PTX/Statements/Statement.h"
 
 namespace PTX {
 
-class Function : public Declaration
+class Function : public Declaration, public StatementList
 {
 public:
 	void SetName(const std::string& name) { m_name = name; }
 	std::string GetName() const { return m_name; }
-
-	const std::vector<const Statement *>& GetStatements() const { return m_statements; }
-	void AddStatement(const Statement *statement)
-	{
-		m_statements.push_back(statement);
-	}
-	template<class T>
-	void AddStatements(const std::vector<T>& statements)
-	{
-		m_statements.insert(std::end(m_statements), std::begin(statements), std::end(statements));
-	}
-
-	void InsertStatement(const Statement *statement, unsigned int index)
-	{
-		m_statements.insert(std::begin(m_statements) + index, statement);
-	}
-	template<class T>
-	void InsertStatements(const std::vector<T>& statements, unsigned int index)
-	{
-		m_statements.insert(std::begin(m_statements) + index, std::begin(statements), std::end(statements));
-	}
 
 	std::string ToString() const override
 	{
@@ -67,7 +47,6 @@ private:
 	virtual std::string GetParametersString() const = 0;
 
 	std::string m_name;
-	std::vector<const Statement *> m_statements;
 };
 
 }

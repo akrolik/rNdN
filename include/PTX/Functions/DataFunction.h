@@ -33,10 +33,14 @@ protected:
 			}
 			else
 			{
-				code << ",";
+				code << "," << std::endl;
 			}
 			first = false;
-			code << "\t" << param->ToString() << std::endl;
+			code << "\t" << param->ToString();
+		}
+		if (!first)
+		{
+			code << std::endl;
 		}
 		return code.str();
 	}
