@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Codegen/GeneratorState.h"
 #include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/Expressions/ExpressionGenerator.h"
 
@@ -16,7 +17,7 @@ public:
 	using NodeType = HorseIR::AssignStatement;
 
 	template<class T>
-	static void Generate(HorseIR::AssignStatement *assign, PTX::Function *currentFunction, ResourceAllocator *resources)
+	static void Generate(HorseIR::AssignStatement *assign, GeneratorState *state)
 	{
 		// An assignment in HorseIR consists of: name, type, and expression (typically a function call).
 		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements
@@ -30,8 +31,11 @@ public:
 		//
 		// In this setup, the expression visitor is expected to produce the full assignment
 
+		auto function = state->GetCurrentFunction();
+		auto resources = state->GetCurrentResources();
+
 		const PTX::Register<T> *target = resources->template AllocateRegister<T>(assign->GetIdentifier());
-		ExpressionGenerator<B, T> generator(target, currentFunction, resources);
+		ExpressionGenerator<B, T> generator(target, function, resources);
 		assign->Accept(generator);
 	}
 };

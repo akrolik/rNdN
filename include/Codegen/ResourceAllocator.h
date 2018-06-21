@@ -123,4 +123,3 @@ private:
 
 	mutable std::unordered_map<KeyType, Resources *, KeyHash, KeyEqual> m_resourcesMap;
 };
-

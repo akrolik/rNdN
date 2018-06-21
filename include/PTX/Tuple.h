@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 namespace PTX {
 
 template<std::size_t> struct int_{};

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
+#include <vector>
 
 #include "PTX/Declarations/Declaration.h"
 #include "PTX/Statements/DirectiveStatement.h"

@@ -72,35 +72,46 @@ int main(int argc, char *argv[])
 	auto jit_end = std::chrono::steady_clock::now();
 
 	size_t size = sizeof(int64_t) * 100;
-	int64_t *data = (int64_t *)malloc(size);
+	int64_t *dataA = (int64_t *)malloc(size);
+	int64_t *dataB = (int64_t *)malloc(size);
+	int64_t *dataC = (int64_t *)malloc(size);
 	for (int i = 0; i < 100; ++i)
 	{
-		data[i] = 0;
+		dataA[i] = 1;
+		dataB[i] = 2;
+		dataC[i] = 0;
 	}
 
 	auto exec_begin = std::chrono::steady_clock::now();
-	CUDA::Buffer buffer(data, size);
-	buffer.AllocateOnGPU();
+	CUDA::Buffer bufferA(dataA, size);
+	CUDA::Buffer bufferB(dataB, size);
+	CUDA::Buffer bufferC(dataC, size);
+	bufferA.AllocateOnGPU(); bufferA.TransferToGPU();
+	bufferB.AllocateOnGPU(); bufferB.TransferToGPU();
+	bufferC.AllocateOnGPU();
 
 	CUDA::KernelInvocation invocation(kernel);
 	invocation.SetBlockShape(100, 1, 1);
 	invocation.SetGridShape(1, 1, 1);
-	invocation.SetParam(0, buffer);
+	invocation.SetParam(0, bufferA);
+	invocation.SetParam(1, bufferB);
+	invocation.SetParam(2, bufferC);
 	invocation.Launch();
 
-	buffer.TransferToCPU();
+	bufferC.TransferToCPU();
 	auto exec_end = std::chrono::steady_clock::now();
 
 	for (int i = 0; i < 100; ++i)
 	{
-		if (data[i] == 3)
+		if (dataC[i] == 3)
 		{
 			continue;
 		}
 
-		std::cerr << "[ERROR] Result incorrect at index " << i << " [" << data[i] << " != " << 3 << "]" << std::endl;
+		std::cerr << "[ERROR] Result incorrect at index " << i << " [" << dataC[i] << " != " << 3 << "]" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+
 
 	std::cout << "[INFO] Kernel execution successful" << std::endl;
 	std::cout << "[Timings]" << std::endl;

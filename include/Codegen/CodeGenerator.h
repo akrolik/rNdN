@@ -1,28 +1,18 @@
 #pragma once
 
-#include <cmath>
-
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
-#include "PTX/Module.h"
-#include "PTX/Program.h"
-#include "PTX/Resource.h"
-#include "PTX/StateSpace.h"
-#include "PTX/Type.h"
-#include "PTX/Functions/Function.h"
-#include "PTX/Functions/DataFunction.h"
-
-#include "HorseIR/Tree/Program.h"
-#include "HorseIR/Tree/Method.h"
-#include "HorseIR/Tree/Statements/AssignStatement.h"
-#include "HorseIR/Tree/Statements/ReturnStatement.h"
-#include "HorseIR/Tree/Types/PrimitiveType.h"
-
-#include "Codegen/ResourceAllocator.h"
+#include "Codegen/GeneratorState.h"
 #include "Codegen/Generators/AssignmentGenerator.h"
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
-#include "Codegen/Generators/Expressions/ExpressionGenerator.h"
+
+#include "HorseIR/Tree/Program.h"
+#include "HorseIR/Tree/Types/PrimitiveType.h"
+#include "HorseIR/Tree/Types/Type.h"
+
+#include "PTX/Program.h"
+#include "PTX/Type.h"
 
 template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ForwardTraversal
@@ -32,9 +22,15 @@ public:
 
 	PTX::Program *Generate(HorseIR::Program *program)
 	{
-		m_program = new PTX::Program();
+		// A HorseIR program consists of a list of named modules. PTX on the other hand
+		// only has the concept of modules. We therefore create a simple container
+		// containing a list of generated modules. If there is any cross-module interaction,
+		// the calling code is responsible for linking.
+
+		PTX::Program *ptxProgram = new PTX::Program();
+		m_state->SetCurrentProgram(ptxProgram);
 		program->Accept(*this);
-		return m_program;
+		return ptxProgram;
 	}
 
 	void Visit(HorseIR::Module *module) override
@@ -50,18 +46,25 @@ public:
 		ptxModule->SetDeviceTarget(m_target);
 		ptxModule->SetAddressSize(B);
 
-		m_program->AddModule(ptxModule);
-		m_currentModule = ptxModule;
+		// Update the state for this module
+
+		m_state->AddModule(ptxModule);
+		m_state->SetCurrentModule(ptxModule);
 
 		// Visit the module contents
+		//
+		// At the moment we only consider methods, but in the future we could support
+		// cross module calling using PTX extern declarations.
 
 		HorseIR::ForwardTraversal::Visit(module);
+
+		// Complete the codegen for the module
+
+		m_state->CloseModule();
 	}
 
 	void Visit(HorseIR::Method *method) override
 	{
-		m_currentMethod = method;
-
 		// Create a dynamiclly typed kernel function for the HorseIR method.
 		// Dynamic typing is used since we don't (at the compiler compile time)
 		// know the types of the parameters.
@@ -70,53 +73,25 @@ public:
 		// PTX modules. Currently there is no use for the link directive, but it
 		// is provided for future proofing.
 
-		m_currentFunction = new PTX::DataFunction<PTX::VoidType>();
-		m_currentFunction->SetName(method->GetName());
-		m_currentFunction->SetEntry(true);
-		m_currentFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
-		m_currentModule->AddDeclaration(m_currentFunction);
+		auto function = new PTX::DataFunction<PTX::VoidType>();
+		function->SetName(method->GetName());
+		function->SetEntry(true);
+		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
+
+		// Update the state for this function
+
+		m_state->AddFunction(function);
+		m_state->SetCurrentFunction(function);
+		m_state->SetCurrentMethod(method);
 
 		// Visit the method contents (i.e. parameters + statements!)
 
 		HorseIR::ForwardTraversal::Visit(method);
 
-		// Attach the resource declarations to the function. In PTX code, the declarations
-		// must come before use, and are typically grouped at the top of the function.
+		// Complete the codegen for the method
 
-		m_currentFunction->InsertStatements(m_resources->GetRegisterDeclarations(), 0);
-
-		m_currentMethod = nullptr;
-	}
-
-	template<class T>
-	void Dispatch(HorseIR::Type *type, typename T::NodeType *node)
-	{
-		//TODO: Static casting is bad sometimes (especially here)
-		HorseIR::PrimitiveType *primitive = static_cast<HorseIR::PrimitiveType *>(type);
-		switch (primitive->GetType())
-		{
-			case HorseIR::PrimitiveType::Type::Int8:
-				T::template Generate<PTX::Int8Type>(node, m_currentFunction, m_resources);
-				break;
-			case HorseIR::PrimitiveType::Type::Int16:
-				T::template Generate<PTX::Int16Type>(node, m_currentFunction, m_resources);
-				break;
-			case HorseIR::PrimitiveType::Type::Int32:
-				T::template Generate<PTX::Int32Type>(node, m_currentFunction, m_resources);
-				break;
-			case HorseIR::PrimitiveType::Type::Int64:
-				T::template Generate<PTX::Int64Type>(node, m_currentFunction, m_resources);
-				break;
-			case HorseIR::PrimitiveType::Type::Float32:
-				T::template Generate<PTX::Float32Type>(node, m_currentFunction, m_resources);
-				break;
-			case HorseIR::PrimitiveType::Type::Float64:
-				T::template Generate<PTX::Float64Type>(node, m_currentFunction, m_resources);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_currentFunction->GetName() << std::endl;
-				std::exit(EXIT_FAILURE);
-		}
+		m_state->CloseFunction();
+		m_state->SetCurrentMethod(nullptr);
 	}
 
 	void Visit(HorseIR::Parameter *parameter) override
@@ -131,20 +106,55 @@ public:
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		Dispatch<ReturnGenerator<B>>(m_currentMethod->GetReturnType(), ret);
+		Dispatch<ReturnGenerator<B>>(m_state->GetCurrentMethod()->GetReturnType(), ret);
 	}
 
 private:
+	// @method Dispatch<G> (G = Generator)
+	//
+	// @requires
+	// 	- G has a type field G::NodeType
+	// 	- G is a class containing a templated static method
+	// 		template<class G>
+	// 		static void Generate(NodeType*, GeneratorState*)
+	//
+	// Convenience method for converting between HorseIR dynamic types and PTX static types, and
+	// instantiating the statically typed PTX generator.
+	//
+	// This allows the code generator to centralize the type mapping for various constructs
+	// (assignments, returns, parameters) in a single place.
+
+	template<class G>
+	void Dispatch(HorseIR::Type *type, typename G::NodeType *node)
+	{
+		//TODO: Static casting is bad sometimes (especially here)
+		HorseIR::PrimitiveType *primitive = static_cast<HorseIR::PrimitiveType *>(type);
+		switch (primitive->GetType())
+		{
+			case HorseIR::PrimitiveType::Type::Int8:
+				G::template Generate<PTX::Int8Type>(node, m_state);
+				break;
+			case HorseIR::PrimitiveType::Type::Int16:
+				G::template Generate<PTX::Int16Type>(node, m_state);
+				break;
+			case HorseIR::PrimitiveType::Type::Int32:
+				G::template Generate<PTX::Int32Type>(node, m_state);
+				break;
+			case HorseIR::PrimitiveType::Type::Int64:
+				G::template Generate<PTX::Int64Type>(node, m_state);
+				break;
+			case HorseIR::PrimitiveType::Type::Float32:
+				G::template Generate<PTX::Float32Type>(node, m_state);
+				break;
+			case HorseIR::PrimitiveType::Type::Float64:
+				G::template Generate<PTX::Float64Type>(node, m_state);
+				break;
+			default:
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
+				std::exit(EXIT_FAILURE);
+		}
+	}
+
 	std::string m_target;
-
-	PTX::Program *m_program = nullptr;
-	PTX::Module *m_currentModule = nullptr;
-
-	HorseIR::Method *m_currentMethod = nullptr;
-	PTX::DataFunction<PTX::VoidType> *m_currentFunction = nullptr;
-
-	const PTX::Resource<PTX::RegisterSpace> *m_assignTarget = nullptr;
-
-	ResourceAllocator *m_resources = new ResourceAllocator();
+	GeneratorState *m_state = new GeneratorState();
 };
-
