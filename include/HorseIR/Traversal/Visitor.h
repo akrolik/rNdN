@@ -12,6 +12,7 @@ class Module;
 class ModuleContent;
 class Import;
 class Method;
+class Parameter;
 
 class Statement;
 class AssignStatement;
@@ -40,6 +41,7 @@ public:
 	virtual void Visit(ModuleContent *moduleContent);
 	virtual void Visit(Import *import);
 	virtual void Visit(Method *method);
+	virtual void Visit(Parameter *parameter);
 
 	virtual void Visit(Statement *statement);
 	virtual void Visit(AssignStatement *assign);

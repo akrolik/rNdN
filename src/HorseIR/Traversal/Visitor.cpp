@@ -54,6 +54,11 @@ void Visitor::Visit(Method *method)
 	Visit(static_cast<ModuleContent*>(method));
 }
 
+void Visitor::Visit(Parameter *parameter)
+{
+	Visit(static_cast<Node*>(parameter));
+}
+
 void Visitor::Visit(Statement *statement)
 {
 	Visit(static_cast<Node*>(statement));

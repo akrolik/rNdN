@@ -11,7 +11,7 @@ namespace HorseIR {
 //TODO: these don't call ForwardTraversal::Visit(Node *)
 void ForwardTraversal::Visit(Program *program)
 {
-	for (auto module : program->GetModules())
+	for (auto& module : program->GetModules())
 	{
 		module->Accept(*this);
 	}
@@ -19,7 +19,7 @@ void ForwardTraversal::Visit(Program *program)
 
 void ForwardTraversal::Visit(Module *module)
 {
-	for (auto content : module->GetContents())
+	for (auto& content : module->GetContents())
 	{
 		content->Accept(*this);
 	}
@@ -27,8 +27,12 @@ void ForwardTraversal::Visit(Module *module)
 
 void ForwardTraversal::Visit(Method *method)
 {
+	for (auto& parameter : method->GetParameters())
+	{
+		parameter->Accept(*this);
+	}
 	method->GetReturnType()->Accept(*this);
-	for (auto statement : method->GetStatements())
+	for (auto& statement : method->GetStatements())
 	{
 		statement->Accept(*this);
 	}
