@@ -4,6 +4,8 @@
 
 #include "Codegen/ResourceAllocator.h"
 
+#include "HorseIR/SymbolTable.h"
+
 #include "PTX/Module.h"
 #include "PTX/Program.h"
 #include "PTX/Type.h"
@@ -30,6 +32,10 @@ public:
 
 	HorseIR::Method *GetCurrentMethod() const { return m_method; }
 	void SetCurrentMethod(HorseIR::Method *method) { m_method = method; }
+
+	HorseIR::SymbolTable *GetCurrentSymbolTable() const { return m_symbols; }
+	void SetCurrentSymbolTable(HorseIR::SymbolTable *symbols) { m_symbols = symbols; }
+
 
 	void AddFunction(PTX::DataFunction<PTX::VoidType> *function)
 	{
@@ -92,6 +98,7 @@ private:
 	PTX::DataFunction<PTX::VoidType> *m_function = nullptr;
 
 	HorseIR::Method *m_method = nullptr;
+	HorseIR::SymbolTable *m_symbols = nullptr;
 
 	std::vector<ResourceAllocator *> m_resources;
 	std::stack<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;

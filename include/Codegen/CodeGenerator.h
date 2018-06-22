@@ -85,6 +85,11 @@ public:
 		m_builder->SetCurrentFunction(function);
 		m_builder->SetCurrentMethod(method);
 
+		HorseIR::SymbolTable *symbols = new HorseIR::SymbolTable();
+		symbols->Build(method);
+
+		m_builder->SetCurrentSymbolTable(symbols);
+
 		// Visit the method contents (i.e. parameters + statements!)
 
 		HorseIR::ForwardTraversal::Visit(method);
