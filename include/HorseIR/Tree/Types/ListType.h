@@ -11,7 +11,7 @@ namespace HorseIR {
 class ListType : public Type
 {
 public:
-	ListType(Type *elementType) : m_elementType(elementType) {}
+	ListType(Type *elementType) : Type(Type::Kind::List), m_elementType(elementType) {}
 
 	std::string ToString() const override
 	{

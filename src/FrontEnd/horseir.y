@@ -109,25 +109,25 @@ parametersne : parametersne ',' parameter                                       
 parameter : tIDENTIFIER ':' type                                                { $$ = new HorseIR::Parameter(*$1, $3); }
 	  ;
 
-type : '?'                                                                      { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Wildcard); }
-     | tBOOL                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Bool); }
-     | tCHAR                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Char); }
+type : '?'                                                                      { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Wildcard); }
+     | tBOOL                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Bool); }
+     | tCHAR                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Char); }
      | int_type                                                                 { $$ = $1; }
      | float_type                                                               { $$ = $1; }
-     | tSTRING                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::String); }
-     | tSYMBOL                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Symbol); }
-     | tTABLE                                                                   { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Table); }
+     | tSTRING                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String); }
+     | tSYMBOL                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Symbol); }
+     | tTABLE                                                                   { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Table); }
      | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
      ;
 
-int_type : tI8                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int8); }
-         | tI16                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int16); }
-         | tI32                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int32); }
-         | tI64                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Int64); }
+int_type : tI8                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int8); }
+         | tI16                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int16); }
+         | tI32                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int32); }
+         | tI64                                                                 { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int64); }
 	 ;
 
-float_type : tF32                                                               { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Float32); }
-           | tF64                                                               { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::Float64); }
+float_type : tF32                                                               { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Float32); }
+           | tF64                                                               { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Float64); }
            ;
 
 statements : statements statement                                               { $1->push_back($2); $$ = $1; }
@@ -158,8 +158,8 @@ literal : tIDENTIFIER                                                           
 	| tSYMBOLVAL                                                            { $$ = new HorseIR::Symbol(*$1); }
 	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
         | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
-        | string_list ':' tSTRING                                               { $$ = new HorseIR::Literal<std::string>(*$1, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::String)); }
-        | '(' string_list ')' ':' tSTRING                                       { $$ = new HorseIR::Literal<std::string>(*$2, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Type::String)); }
+        | string_list ':' tSTRING                                               { $$ = new HorseIR::Literal<std::string>(*$1, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String)); }
+        | '(' string_list ')' ':' tSTRING                                       { $$ = new HorseIR::Literal<std::string>(*$2, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String)); }
         ;
 
 int_list : int_list ',' tINTVAL                                                 { $1->push_back($3); $$ = $1; } 

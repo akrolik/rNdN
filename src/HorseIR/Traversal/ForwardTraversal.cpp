@@ -8,7 +8,6 @@
 
 namespace HorseIR {
 
-//TODO: these don't call ForwardTraversal::Visit(Node *)
 void ForwardTraversal::Visit(Program *program)
 {
 	for (auto& module : program->GetModules())

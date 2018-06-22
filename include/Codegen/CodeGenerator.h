@@ -8,6 +8,7 @@
 #include "Codegen/Generators/ReturnGenerator.h"
 
 #include "HorseIR/Tree/Program.h"
+#include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
 #include "HorseIR/Tree/Types/Type.h"
 
@@ -123,36 +124,58 @@ private:
 	//
 	// This allows the code generator to centralize the type mapping for various constructs
 	// (assignments, returns, parameters) in a single place.
-
+	
 	template<class G>
 	void Dispatch(HorseIR::Type *type, typename G::NodeType *node)
 	{
-		//TODO: Static casting is bad sometimes (especially here)
-		HorseIR::PrimitiveType *primitive = static_cast<HorseIR::PrimitiveType *>(type);
-		switch (primitive->GetType())
+		switch (type->GetKind())
 		{
-			case HorseIR::PrimitiveType::Type::Int8:
+			case HorseIR::Type::Kind::Primitive:
+				Dispatch<G>(static_cast<HorseIR::PrimitiveType *>(type), node);
+				break;
+			case HorseIR::Type::Kind::List:
+				Dispatch<G>(static_cast<HorseIR::ListType *>(type), node);
+				break;
+			default:
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
+				std::exit(EXIT_FAILURE);
+		}
+	}
+
+	template<class G>
+	void Dispatch(HorseIR::PrimitiveType *type, typename G::NodeType *node)
+	{
+		switch (type->GetKind())
+		{
+			case HorseIR::PrimitiveType::Kind::Int8:
 				G::template Generate<PTX::Int8Type>(node, m_state);
 				break;
-			case HorseIR::PrimitiveType::Type::Int16:
+			case HorseIR::PrimitiveType::Kind::Int16:
 				G::template Generate<PTX::Int16Type>(node, m_state);
 				break;
-			case HorseIR::PrimitiveType::Type::Int32:
+			case HorseIR::PrimitiveType::Kind::Int32:
 				G::template Generate<PTX::Int32Type>(node, m_state);
 				break;
-			case HorseIR::PrimitiveType::Type::Int64:
+			case HorseIR::PrimitiveType::Kind::Int64:
 				G::template Generate<PTX::Int64Type>(node, m_state);
 				break;
-			case HorseIR::PrimitiveType::Type::Float32:
+			case HorseIR::PrimitiveType::Kind::Float32:
 				G::template Generate<PTX::Float32Type>(node, m_state);
 				break;
-			case HorseIR::PrimitiveType::Type::Float64:
+			case HorseIR::PrimitiveType::Kind::Float64:
 				G::template Generate<PTX::Float64Type>(node, m_state);
 				break;
 			default:
 				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
+	}
+
+	template<class G>
+	void Dispatch(HorseIR::ListType *type, typename G::NodeType *node)
+	{
+		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 
 	std::string m_target;
