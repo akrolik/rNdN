@@ -73,7 +73,8 @@ int main(int argc, char *argv[])
 
 	size_t size = sizeof(int64_t) * 100;
 	int64_t *dataA = (int64_t *)malloc(size);
-	int64_t *dataB = (int64_t *)malloc(size);
+	// int64_t *dataB = (int64_t *)malloc(size);
+	int16_t *dataB = (int16_t *)malloc(size);
 	int64_t *dataC = (int64_t *)malloc(size);
 	for (int i = 0; i < 100; ++i)
 	{
