@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "Codegen/GeneratorState.h"
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
 
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
@@ -38,10 +38,9 @@ class AddressGenerator
 {
 public:
 	template<class T>
-	static PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<T, B>> *variable, GeneratorState *state)
+	static PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<T, B>> *variable, Builder *builder)
 	{
-		auto resources = state->GetCurrentResources();
-		auto block = state->GetCurrentBlock();
+		auto resources = builder->GetCurrentResources();
 
 		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
 		auto temp_tidx = resources->template AllocateRegister<PTX::UInt32Type, ResourceType::Temporary>("tidx");
@@ -55,20 +54,20 @@ public:
 		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
 		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
 
-		block->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(variable)));
-		block->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
-		block->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
+		builder->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(variable)));
+		builder->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
+		builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
 		if constexpr(B == PTX::Bits::Bits32)
 		{
 			auto temp2_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp2);
 			auto tidx_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_tidx);
-			block->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(T::BitSize / 8))));
+			builder->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(T::BitSize / 8))));
 		}
 		else
 		{
-			block->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
+			builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
 		}
-		block->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
+		builder->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
 		return new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr);
 	}
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Codegen/GeneratorState.h"
+#include "Codegen/Builder.h"
 #include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/AddressGenerator.h"
 
@@ -20,10 +20,10 @@ public:
 	using NodeType = HorseIR::ReturnStatement;
 
 	template<class T>
-	static void Generate(HorseIR::ReturnStatement *ret, GeneratorState *state)
+	static void Generate(HorseIR::ReturnStatement *ret, Builder *builder)
 	{
-		auto function = state->GetCurrentFunction();
-		auto resources = state->GetCurrentResources();
+		auto function = builder->GetCurrentFunction();
+		auto resources = builder->GetCurrentResources();
 
 		std::string variableName = function->GetName() + "_return";
 		auto declaration = new PTX::PointerDeclaration<T, B>(variableName);
@@ -31,14 +31,14 @@ public:
 		auto variable = declaration->GetVariable(variableName);
 
 		auto block = new PTX::BlockStatement();
-		ResourceAllocator *localResources = state->OpenScope(block);
+		builder->AddStatement(block);
+		builder->OpenScope(block);
 
-		auto address = AddressGenerator<B>::template Generate<T>(variable, state);
+		auto address = AddressGenerator<B>::template Generate<T>(variable, builder);
 		auto value = resources->template AllocateRegister<T>(ret->GetIdentifier());
-		block->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		block->AddStatement(new PTX::ReturnInstruction());
+		builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+		builder->AddStatement(new PTX::ReturnInstruction());
 
-		state->CloseScope();
-		function->AddStatement(block);
+		builder->CloseScope();
 	}
 };

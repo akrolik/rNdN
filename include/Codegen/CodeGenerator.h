@@ -2,7 +2,7 @@
 
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
-#include "Codegen/GeneratorState.h"
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/AssignmentGenerator.h"
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
@@ -29,7 +29,7 @@ public:
 		// the calling code is responsible for linking.
 
 		PTX::Program *ptxProgram = new PTX::Program();
-		m_state->SetCurrentProgram(ptxProgram);
+		m_builder->SetCurrentProgram(ptxProgram);
 		program->Accept(*this);
 		return ptxProgram;
 	}
@@ -49,8 +49,8 @@ public:
 
 		// Update the state for this module
 
-		m_state->AddModule(ptxModule);
-		m_state->SetCurrentModule(ptxModule);
+		m_builder->AddModule(ptxModule);
+		m_builder->SetCurrentModule(ptxModule);
 
 		// Visit the module contents
 		//
@@ -61,7 +61,7 @@ public:
 
 		// Complete the codegen for the module
 
-		m_state->CloseModule();
+		m_builder->CloseModule();
 	}
 
 	void Visit(HorseIR::Method *method) override
@@ -81,9 +81,9 @@ public:
 
 		// Update the state for this function
 
-		m_state->AddFunction(function);
-		m_state->SetCurrentFunction(function);
-		m_state->SetCurrentMethod(method);
+		m_builder->AddFunction(function);
+		m_builder->SetCurrentFunction(function);
+		m_builder->SetCurrentMethod(method);
 
 		// Visit the method contents (i.e. parameters + statements!)
 
@@ -91,8 +91,8 @@ public:
 
 		// Complete the codegen for the method
 
-		m_state->CloseFunction();
-		m_state->SetCurrentMethod(nullptr);
+		m_builder->CloseFunction();
+		m_builder->SetCurrentMethod(nullptr);
 	}
 
 	void Visit(HorseIR::Parameter *parameter) override
@@ -107,7 +107,7 @@ public:
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		Dispatch<ReturnGenerator<B>>(m_state->GetCurrentMethod()->GetReturnType(), ret);
+		Dispatch<ReturnGenerator<B>>(m_builder->GetCurrentMethod()->GetReturnType(), ret);
 	}
 
 private:
@@ -117,7 +117,7 @@ private:
 	// 	- G has a type field G::NodeType
 	// 	- G is a class containing a templated static method
 	// 		template<class G>
-	// 		static void Generate(NodeType*, GeneratorState*)
+	// 		static void Generate(NodeType*, Builder*)
 	//
 	// Convenience method for converting between HorseIR dynamic types and PTX static types, and
 	// instantiating the statically typed PTX generator.
@@ -137,7 +137,7 @@ private:
 				Dispatch<G>(static_cast<HorseIR::ListType *>(type), node);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
@@ -148,25 +148,25 @@ private:
 		switch (type->GetKind())
 		{
 			case HorseIR::PrimitiveType::Kind::Int8:
-				G::template Generate<PTX::Int8Type>(node, m_state);
+				G::template Generate<PTX::Int8Type>(node, m_builder);
 				break;
 			case HorseIR::PrimitiveType::Kind::Int16:
-				G::template Generate<PTX::Int16Type>(node, m_state);
+				G::template Generate<PTX::Int16Type>(node, m_builder);
 				break;
 			case HorseIR::PrimitiveType::Kind::Int32:
-				G::template Generate<PTX::Int32Type>(node, m_state);
+				G::template Generate<PTX::Int32Type>(node, m_builder);
 				break;
 			case HorseIR::PrimitiveType::Kind::Int64:
-				G::template Generate<PTX::Int64Type>(node, m_state);
+				G::template Generate<PTX::Int64Type>(node, m_builder);
 				break;
 			case HorseIR::PrimitiveType::Kind::Float32:
-				G::template Generate<PTX::Float32Type>(node, m_state);
+				G::template Generate<PTX::Float32Type>(node, m_builder);
 				break;
 			case HorseIR::PrimitiveType::Kind::Float64:
-				G::template Generate<PTX::Float64Type>(node, m_state);
+				G::template Generate<PTX::Float64Type>(node, m_builder);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
@@ -174,10 +174,10 @@ private:
 	template<class G>
 	void Dispatch(HorseIR::ListType *type, typename G::NodeType *node)
 	{
-		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_state->GetCurrentFunction()->GetName() << std::endl;
+		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
 	std::string m_target;
-	GeneratorState *m_state = new GeneratorState();
+	Builder *m_builder = new Builder();
 };

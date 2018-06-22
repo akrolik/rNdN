@@ -9,7 +9,7 @@
 #include "PTX/Type.h"
 #include "PTX/Functions/DataFunction.h"
 
-class GeneratorState
+class Builder
 {
 public:
 	PTX::Program *GetCurrentProgram() const { return m_program; }
@@ -64,6 +64,16 @@ public:
 
 		GetCurrentBlock()->InsertStatements(GetCurrentResources()->GetRegisterDeclarations(), 0);
 		m_scopes.pop();
+	}
+
+	void AddStatement(PTX::Statement *statement)
+	{
+		GetCurrentBlock()->AddStatement(statement);
+	}
+
+	void AddStatement(const std::vector<PTX::Statement *>& statement)
+	{
+		GetCurrentBlock()->AddStatements(statement);
 	}
 
 	PTX::StatementList *GetCurrentBlock() const

@@ -1,7 +1,5 @@
 #pragma once
 
-#define UNIMPLEMENTED
-
 #include "PTX/Operands/Operand.h"
 
 template<class T>

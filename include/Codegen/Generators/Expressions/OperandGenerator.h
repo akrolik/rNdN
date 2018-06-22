@@ -7,13 +7,13 @@
 
 #include "PTX/Operands/Value.h"
 
-#include "Codegen/ResourceAllocator.h"
+#include "Codegen/Builder.h"
 
 template<PTX::Bits B, class T>
 class OperandGenerator : public HorseIR::ForwardTraversal
 {
 public:
-	OperandGenerator(PTX::Function *function, ResourceAllocator *resources) : m_currentFunction(function), m_resources(resources) {}
+	OperandGenerator(Builder *builder) : m_builder(builder) {}
 
 	const PTX::Operand<T> *GenerateOperand(HorseIR::Expression *expression)
 	{
@@ -29,7 +29,7 @@ public:
 
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		m_operand = m_resources->template GetRegister<T>(identifier->GetName());
+		m_operand = m_builder->GetCurrentResources()->template GetRegister<T>(identifier->GetName());
 	}
 
 	void Visit(HorseIR::Literal<int64_t> *literal) override
@@ -54,8 +54,7 @@ public:
 	}
 
 private:
-	PTX::Function *m_currentFunction = nullptr;
-	ResourceAllocator  *m_resources = nullptr;
+	Builder *m_builder = nullptr;
 
 	const PTX::Operand<T> *m_operand = nullptr;
 };

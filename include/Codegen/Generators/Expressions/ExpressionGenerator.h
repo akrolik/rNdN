@@ -31,36 +31,36 @@ public:
 	void GenerateAdd(const PTX::Operand<PTX::Int8Type> *src1, const PTX::Operand<PTX::Int8Type> *src2) override
 	{
 		auto block = new PTX::BlockStatement();
-		auto localResources = new ResourceAllocator();
+		auto resources = this->m_builder->OpenScope(block);
 
-		auto temp0 = localResources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("0");
-		auto temp1 = localResources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("1");
-		auto temp2 = localResources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("2");
+		auto temp0 = resources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("0");
+		auto temp1 = resources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("1");
+		auto temp2 = resources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("2");
 
-		block->AddStatements(localResources->GetRegisterDeclarations());
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp0, src1));
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp1, src2));
 		block->AddStatement(new PTX::AddInstruction<PTX::Int16Type>(temp2, temp0, temp1));
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(this->m_target, temp2));
 
-		this->m_currentFunction->AddStatement(block);
+                this->m_builder->CloseScope();
+		this->m_builder->AddStatement(block);
 	}
 
 	void GenerateMove(const PTX::Operand<PTX::Int8Type> *src) override
 	{
 		auto block = new PTX::BlockStatement();
-		auto localResources = new ResourceAllocator();
+		auto resources = this->m_builder->OpenScope(block);
 
-		auto temp = localResources->template AllocateRegister<PTX::Bit16Type, ResourceType::Temporary>("0");
+		auto temp = resources->template AllocateRegister<PTX::Bit16Type, ResourceType::Temporary>("0");
 		auto value = new PTX::Value<PTX::Bit8Type>(0);
 
 		auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({new PTX::Bit8Adapter<PTX::IntType>(src), value});
 		auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({new PTX::Bit8RegisterAdapter<PTX::IntType>(this->m_target), new PTX::SinkRegister<PTX::Bit8Type>});
 
-		block->AddStatements(localResources->GetRegisterDeclarations());
 		block->AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
 		block->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
 
-		this->m_currentFunction->AddStatement(block);
+		this->m_builder->CloseScope();
+		this->m_builder->AddStatement(block);
 	}
 };
