@@ -2,7 +2,6 @@
 
 #include "PTX/Operands/Operand.h"
 
-#include "PTX/Resource.h"
 #include "PTX/StateSpace.h"
 #include "PTX/Type.h"
 
@@ -11,13 +10,8 @@ namespace PTX {
 template<class T, class S>
 class VariableDeclaration;
 
-class UntypedVariable
-{
-	virtual std::string ToString() const = 0;
-};
-
 template<class T, class S>
-class Variable : public Operand<T>, public Resource<S>
+class Variable : public TypedOperand<T>
 {
 	friend class VariableDeclaration<T, S>;
 
