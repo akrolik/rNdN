@@ -35,7 +35,7 @@ public:
 		builder->OpenScope(block);
 
 		auto address = AddressGenerator<B>::template Generate<T>(variable, builder);
-		auto value = resources->template AllocateRegister<T>(ret->GetIdentifier());
+		auto value = resources->template AllocateRegister<T>(ret->GetVariableName());
 		builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
 		builder->AddStatement(new PTX::ReturnInstruction());
 

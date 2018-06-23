@@ -13,21 +13,21 @@ namespace HorseIR {
 class AssignStatement : public Statement
 {
 public:
-	AssignStatement(std::string identifier, Type *type, Expression *expression) : m_identifier(identifier), m_type(type), m_expression(expression) {}
+	AssignStatement(std::string targetName, Type *type, Expression *expression) : m_targetName(targetName), m_type(type), m_expression(expression) {}
 
-	std::string GetIdentifier() const { return m_identifier; }
+	std::string GetTargetName() const { return m_targetName; }
 	Type *GetType() const { return m_type; }
 	Expression *GetExpression() const { return m_expression; }
 
 	std::string ToString() const override
 	{
-		return m_identifier + ":" + m_type->ToString() + " = " + m_expression->ToString();
+		return m_targetName + ":" + m_type->ToString() + " = " + m_expression->ToString();
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
-	std::string m_identifier;
+	std::string m_targetName;
 	Type *m_type = nullptr;
 	Expression *m_expression = nullptr;
 };

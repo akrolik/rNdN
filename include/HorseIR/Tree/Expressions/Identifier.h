@@ -11,19 +11,19 @@ namespace HorseIR {
 class Identifier : public Expression
 {
 public:
-	Identifier(std::string name) : m_name(name) {}
+	Identifier(std::string string) : m_string(string) {}
 
-	std::string GetName() const { return m_name; }
+	std::string GetString() const { return m_string; }
 
 	std::string ToString() const override
 	{
-		return m_name;
+		return m_string;
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
-	std::string m_name;
+	std::string m_string;
 };
 
 }

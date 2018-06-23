@@ -21,7 +21,7 @@ void SymbolTable::Visit(Parameter *parameter)
 
 void SymbolTable::Visit(AssignStatement *assign)
 {
-	m_table.insert({assign->GetIdentifier(), assign->GetType()});
+	m_table.insert({assign->GetTargetName(), assign->GetType()});
 }
 
 }

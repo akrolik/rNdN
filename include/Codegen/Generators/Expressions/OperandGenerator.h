@@ -34,7 +34,7 @@ public:
 
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		HorseIR::Type *type = m_builder->GetCurrentSymbolTable()->GetType(identifier->GetName());
+		HorseIR::Type *type = m_builder->GetCurrentSymbolTable()->GetType(identifier->GetString());
 		switch (type->GetKind())
 		{
 			case HorseIR::Type::Kind::Primitive:
@@ -88,12 +88,12 @@ public:
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
-			m_operand = m_builder->GetCurrentResources()->template GetRegister<T>(identifier->GetName());
+			m_operand = m_builder->GetCurrentResources()->template GetRegister<T>(identifier->GetString());
 		}
 		else
 		{
-			auto source = m_builder->GetCurrentResources()->template GetRegister<S>(identifier->GetName());
-			auto converted = m_builder->GetCurrentResources()->template AllocateRegister<T, ResourceType::Temporary>(identifier->GetName());
+			auto source = m_builder->GetCurrentResources()->template GetRegister<S>(identifier->GetString());
+			auto converted = m_builder->GetCurrentResources()->template AllocateRegister<T, ResourceType::Temporary>(identifier->GetString());
 			m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
 			m_operand = converted;
 		}

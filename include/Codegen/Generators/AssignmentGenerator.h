@@ -33,7 +33,7 @@ public:
 
 		auto resources = builder->GetCurrentResources();
 
-		const PTX::Register<T> *target = resources->template AllocateRegister<T>(assign->GetIdentifier());
+		const PTX::Register<T> *target = resources->template AllocateRegister<T>(assign->GetTargetName());
 		ExpressionGenerator<B, T> generator(target, builder);
 		assign->Accept(generator);
 	}
