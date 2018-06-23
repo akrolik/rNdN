@@ -99,6 +99,11 @@ void Visitor::Visit(Literal<int64_t> *literal)
 	Visit(static_cast<Expression*>(literal));
 }
 
+void Visitor::Visit(Literal<double> *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
 void Visitor::Visit(Literal<std::string> *literal)
 {
 	Visit(static_cast<Expression*>(literal));

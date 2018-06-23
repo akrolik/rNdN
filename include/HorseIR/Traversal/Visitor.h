@@ -51,8 +51,9 @@ public:
 	virtual void Visit(CallExpression *call);
 	virtual void Visit(CastExpression *cast);
 	virtual void Visit(Identifier *identifier);
-	virtual void Visit(Literal<std::string> *literal);
 	virtual void Visit(Literal<int64_t> *literal);
+	virtual void Visit(Literal<double> *literal);
+	virtual void Visit(Literal<std::string> *literal);
 	virtual void Visit(Symbol *symbol);
 
 	virtual void Visit(Type *type);

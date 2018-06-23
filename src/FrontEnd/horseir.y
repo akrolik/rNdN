@@ -53,6 +53,7 @@ void yyerror(const char *s)
 	std::vector<HorseIR::Expression *> *expressions;
 	std::vector<std::string> *strings;
 	std::vector<long> *ints;
+	std::vector<double> *floats;
 
 	HorseIR::ModuleContent *module_content;
 	HorseIR::Parameter *parameter;
@@ -81,6 +82,7 @@ void yyerror(const char *s)
 %type <expressions> literals literalsne
 %type <expression> expression call literal
 %type <ints> int_list
+%type <floats> float_list
 %type <strings> string_list
 
 %start program
@@ -158,6 +160,8 @@ literal : tIDENTIFIER                                                           
 	| tSYMBOLVAL                                                            { $$ = new HorseIR::Symbol(*$1); }
 	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
         | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
+	| float_list ':' float_type                                             { $$ = new HorseIR::Literal<double>(*$1, $3); }
+        | '(' float_list ')' ':' float_type                                     { $$ = new HorseIR::Literal<double>(*$2, $5); }
         | string_list ':' tSTRING                                               { $$ = new HorseIR::Literal<std::string>(*$1, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String)); }
         | '(' string_list ')' ':' tSTRING                                       { $$ = new HorseIR::Literal<std::string>(*$2, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String)); }
         ;
@@ -165,6 +169,10 @@ literal : tIDENTIFIER                                                           
 int_list : int_list ',' tINTVAL                                                 { $1->push_back($3); $$ = $1; } 
 	 | tINTVAL                                                              { $$ = new std::vector<long>({$1}); }
          ;
+
+float_list : float_list ',' tFLOATVAL                                           { $1->push_back($3); $$ = $1; } 
+           | tFLOATVAL                                                          { $$ = new std::vector<double>({$1}); }
+           ;
 
 string_list : string_list ',' tSTRINGVAL                                        { $1->push_back(*$3); $$ = $1; } 
 	    | tSTRINGVAL                                                        { $$ = new std::vector<std::string>({*$1}); }
