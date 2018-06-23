@@ -1,0 +1,8 @@
+module default {
+        import Builtin;
+
+        def main(a:f64) : f64 {
+		c:f64 = @plus(a, 2:i32);
+                return c;
+        }
+}

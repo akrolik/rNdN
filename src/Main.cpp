@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 	for (auto module : ptxProgram->GetModules())
 	{
 		std::cout << module->ToString() << std::endl;
+		std::cout << module->ToJSON().dump(4) << std::endl;
 	}
 
 	auto jit_begin = std::chrono::steady_clock::now();
@@ -72,31 +73,30 @@ int main(int argc, char *argv[])
 	auto jit_end = std::chrono::steady_clock::now();
 
 	size_t size = sizeof(int64_t) * 100;
-	int64_t *dataA = (int64_t *)malloc(size);
-	// int64_t *dataB = (int64_t *)malloc(size);
-	int16_t *dataB = (int16_t *)malloc(size);
-	int64_t *dataC = (int64_t *)malloc(size);
+	double *dataA = (double *)malloc(size);
+	// double *dataB = (double *)malloc(size);
+	double *dataC = (double *)malloc(size);
 	for (int i = 0; i < 100; ++i)
 	{
 		dataA[i] = 1;
-		dataB[i] = 2;
+		// dataB[i] = 2;
 		dataC[i] = 0;
 	}
 
 	auto exec_begin = std::chrono::steady_clock::now();
 	CUDA::Buffer bufferA(dataA, size);
-	CUDA::Buffer bufferB(dataB, size);
+	// CUDA::Buffer bufferB(dataB, size);
 	CUDA::Buffer bufferC(dataC, size);
 	bufferA.AllocateOnGPU(); bufferA.TransferToGPU();
-	bufferB.AllocateOnGPU(); bufferB.TransferToGPU();
+	// bufferB.AllocateOnGPU(); bufferB.TransferToGPU();
 	bufferC.AllocateOnGPU();
 
 	CUDA::KernelInvocation invocation(kernel);
 	invocation.SetBlockShape(100, 1, 1);
 	invocation.SetGridShape(1, 1, 1);
 	invocation.SetParam(0, bufferA);
-	invocation.SetParam(1, bufferB);
-	invocation.SetParam(2, bufferC);
+	// invocation.SetParam(1, bufferB);
+	invocation.SetParam(1, bufferC);
 	invocation.Launch();
 
 	bufferC.TransferToCPU();
