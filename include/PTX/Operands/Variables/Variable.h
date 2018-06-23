@@ -11,6 +11,11 @@ namespace PTX {
 template<class T, class S>
 class VariableDeclaration;
 
+class UntypedVariable
+{
+	virtual std::string ToString() const = 0;
+};
+
 template<class T, class S>
 class Variable : public Operand<T>, public Resource<S>
 {

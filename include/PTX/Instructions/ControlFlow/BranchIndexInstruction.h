@@ -14,11 +14,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		if (m_uniform)
-		{
-			return "brx.idx.uni";
-		}
-		return "brx.idx";
+		return "brx.idx" + UniformModifier::OpCodeModifier();
 	}
 
 	std::string Operands() const override

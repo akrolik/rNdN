@@ -55,7 +55,7 @@ public:
 		const PTX::Register<PTX::Int32Type> *regs32 = s32->GetVariable("%s");
 		const PTX::ParameterVariable<PTX::UInt64Type> *varu64 = u64->GetVariable("%u");
 
-		entryFunction->AddStatement(new PTX::CallInstruction<PTX::Register<PTX::Bit32Type>, PTX::Register<PTX::Int32Type>, PTX::ParameterVariable<PTX::UInt64Type>>(deviceFunction, regb32, regs32, varu64));
+		entryFunction->AddStatement(new PTX::CallInstruction<PTX::Register<PTX::Bit32Type>(PTX::Register<PTX::Int32Type>, PTX::ParameterVariable<PTX::UInt64Type>)>(deviceFunction, regb32, regs32, varu64));
 
 		module.AddDeclaration(entryFunction);
 

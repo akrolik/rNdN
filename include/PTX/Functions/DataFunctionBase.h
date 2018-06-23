@@ -8,7 +8,7 @@
 namespace PTX {
 
 template<class R>
-class ReturnedFunction : public Function
+class DataFunctionBase : public Function
 {
 	static_assert(std::is_same<typename R::VariableSpace, RegisterSpace>::value || std::is_base_of<typename R::VariableSpace, ParameterSpace>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
 public:
@@ -33,7 +33,7 @@ protected:
 };
 
 template<>
-class ReturnedFunction<VoidType> : public Function
+class DataFunctionBase<VoidType> : public Function
 {
 public:
 	bool GetEntry() const { return m_entry; }

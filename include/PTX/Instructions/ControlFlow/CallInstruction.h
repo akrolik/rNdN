@@ -1,74 +1,59 @@
 #pragma once
 
-#include "PTX/Instructions/PredicatedInstruction.h"
-#include "PTX/Instructions/Modifiers/UniformModifier.h"
+#include "PTX/Instructions/ControlFlow/CallInstructionBase.h"
 
 #include "PTX/Functions/DataFunction.h"
+#include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Tuple.h"
 
 namespace PTX {
 
-template<class R, typename... Args>
-class CallInstruction : public InstructionStatement, public UniformModifier
+
+template<class R>
+class CallInstruction : public CallInstructionBase<R>
 {
 public:
-	CallInstruction(const DataFunction<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable), m_parameters(std::make_tuple(args...)) {}
+	CallInstruction(const DataFunction<R> *function, const R *returnVariable, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform) {}
 
-	std::string OpCode() const override
+	template<class T, class S>
+	std::enable_if_t<std::is_same<S, RegisterSpace>::value || std::is_base_of<S, ParameterSpace>::value, void>
+	AddArgument(const Variable<T, S> *argument) { m_arguments.push_back(argument); }
+
+protected:
+	std::string GetArgumentsString() const override
 	{
-		if (m_uniform)
+		std::string code;
+		bool first = true;
+		for (const auto& argument : m_arguments)
 		{
-			return "call.uni";
+			if (!first)
+			{
+				code += ",";
+			}
+			first = false;
+			code += argument->ToString();
 		}
-		return "call";
+		return code;
 	}
 
-	std::string Operands() const override
-	{
-		std::ostringstream code;
-
-		code << "(" + m_returnVariable->ToString() + "), " + m_function->GetName() + ", (";
-		CodeTuple(code, " ", m_parameters, int_<sizeof...(Args)>());
-		code << ")";
-
-		return code.str();
-	}
-
-private:
-	const DataFunction<R(Args...)> *m_function = nullptr;
-	const R *m_returnVariable = nullptr;
-	std::tuple<const Args* ...> m_parameters;
+	std::vector<const UntypedVariable*> m_arguments;
 };
 
-template<typename... Args>
-class CallInstruction<VoidType, Args...> : public InstructionStatement, public UniformModifier
+template<class R, typename... Args>
+class CallInstruction<R(Args...)> : public CallInstructionBase<R>
 {
 public:
-	CallInstruction(const DataFunction<VoidType(Args...)> *function, const Args* ...args, bool uniform = false) : UniformModifier(uniform), m_function(function), m_parameters(std::make_tuple(args...)) {}
+	CallInstruction(const DataFunction<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform), m_arguments(std::make_tuple(args...)) {}
 
-	std::string OpCode() const override
-	{
-		if (m_uniform)
-		{
-			return "call.uni";
-		}
-		return "call";
-	}
-
-	std::string Operands() const override
+protected:
+	std::string GetArgumentsString() const override
 	{
 		std::ostringstream code;
-
-		code << m_function->GetName() + ", (";
-		CodeTuple(code, " ", m_parameters, int_<sizeof...(Args)>());
-		code << ")";
-
+		CodeTuple(code, " ", m_arguments, int_<sizeof...(Args)>());
 		return code.str();
 	}
 
-private:
-	const DataFunction<VoidType(Args...)> *m_function = nullptr;
-	std::tuple<const Args* ...> m_parameters;
+	std::tuple<const Args* ...> m_arguments;
 };
 
 }

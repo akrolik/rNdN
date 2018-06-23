@@ -8,17 +8,17 @@
 #include "PTX/Type.h"
 #include "PTX/Declarations/Declaration.h"
 #include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Functions/ReturnedFunction.h"
+#include "PTX/Functions/DataFunctionBase.h"
 
 namespace PTX {
 
 template<class R>
-class DataFunction : public ReturnedFunction<R>
+class DataFunction : public DataFunctionBase<R>
 {
 public:
 	template<class T, class S>
 	std::enable_if_t<std::is_same<S, RegisterSpace>::value || std::is_base_of<S, ParameterSpace>::value, void>
-	AddParameter(const VariableDeclaration<T, S>* parameter) { m_parameters.push_back(parameter); }
+	AddParameter(const VariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
 
 protected:
 	std::string GetParametersString() const override
@@ -49,7 +49,7 @@ protected:
 };
 
 template<class R, typename... Args>
-class DataFunction<R(Args...)> : public ReturnedFunction<R>
+class DataFunction<R(Args...)> : public DataFunctionBase<R>
 {
 	static_assert(is_all<std::is_same<typename Args::VariableSpace, RegisterSpace>::value || std::is_base_of<typename Args::VariableSpace, ParameterSpace>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
 public:

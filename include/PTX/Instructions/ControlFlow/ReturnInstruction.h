@@ -12,11 +12,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		if (m_uniform)
-		{
-			return "ret.uni";
-		}
-		return "ret";
+		return "ret" + UniformModifier::OpCodeModifier();
 	}
 
 	std::string Operands() const override

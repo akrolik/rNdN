@@ -14,11 +14,7 @@ public:
 
 	std::string OpCode() const override
 	{
-		if (m_uniform)
-		{
-			return "bra.uni";
-		}
-		return "bra";
+		return "bra" + UniformModifier::OpCodeModifier();
 	}
 
 	std::string Operands() const override
