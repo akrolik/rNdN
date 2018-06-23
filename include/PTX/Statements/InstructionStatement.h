@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "PTX/Statements/Statement.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Operands/Operand.h"
 
 namespace PTX {
 
@@ -14,10 +14,19 @@ public:
 	{
 		std::ostringstream code;
 		code << OpCode();
-		std::string operands = Operands();
-		if (operands.length() > 0)
+		bool first = true;
+		for (const auto& operand : Operands())
 		{
-			code << " " << operands;
+			if (first)
+			{
+				code << " ";
+				first = false;
+			}
+			else
+			{
+				code << ", ";
+			}
+			code << operand->ToString();
 		}
 		return code.str();
 	}
@@ -25,7 +34,7 @@ public:
 	std::string Terminator() const override{ return ";"; }
 
 	virtual std::string OpCode() const = 0;
-	virtual std::string Operands() const = 0;
+	virtual std::vector<const Operand *> Operands() const = 0;
 };
 
 }

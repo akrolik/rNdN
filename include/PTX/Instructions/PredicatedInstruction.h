@@ -3,6 +3,7 @@
 #include "PTX/Statements/InstructionStatement.h"
 
 #include "PTX/Type.h"
+#include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 

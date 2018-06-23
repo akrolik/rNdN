@@ -1,5 +1,8 @@
 #pragma once
 
+#include "PTX/Operands/Extended/InvertedOperand.h"
+#include "PTX/Operands/Variables/Register.h"
+
 namespace PTX {
 
 class PredicateModifier
@@ -32,17 +35,17 @@ public:
 		return "";
 	}
 
-	std::string OperandsModifier() const
+	const Operand *OperandsModifier() const
 	{
 		if (m_sourceC != nullptr)
 		{
 			if (m_negateSourcePredicate)
 			{
-				return ", !" + m_sourceC->ToString();
+				return new InvertedOperand(m_sourceC);
 			}
-			return ", " + m_sourceC->ToString();
+			return m_sourceC;
 		}
-		return "";
+		return nullptr;
 	}
 
 protected:

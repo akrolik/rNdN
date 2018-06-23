@@ -19,7 +19,7 @@ template<>
 class ReciprocalInstruction<Float32Type> : public InstructionBase_1<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	ReciprocalInstruction(const Register<Float32Type> *destination, const Operand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
+	ReciprocalInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
 	std::string OpCode() const override
 	{
@@ -40,7 +40,7 @@ template<>
 class ReciprocalInstruction<Float64Type> : public InstructionBase_1<Float64Type>, public RoundingModifier<Float64Type>
 {
 public:
-	ReciprocalInstruction(const Register<Float64Type> *destination, const Operand<Float64Type> *source, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type>(roundingMode) {}
+	ReciprocalInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *source, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type>(roundingMode) {}
 
 	std::string OpCode() const override
 	{

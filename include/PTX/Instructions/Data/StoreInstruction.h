@@ -21,9 +21,9 @@ public:
 		return "st" + S::Name() + T::Name();
 	}
 	
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return m_address->ToString() + ", " + m_register->ToString();
+		return { m_address, m_register };
 	}
 
 private:

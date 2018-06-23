@@ -17,9 +17,9 @@ public:
 		return "bra" + UniformModifier::OpCodeModifier();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return m_label->ToString();
+		return { m_label };
 	}
 
 private:

@@ -27,11 +27,11 @@ public:
 
 		code << ".version " << m_versionMajor << "." << m_versionMinor << std::endl;
 		code << ".target " << m_target << std::endl;
-		code << ".address_size " << std::to_string(int(m_addressSize)) << std::endl;
+		code << ".address_size " << std::to_string(static_cast<int>(m_addressSize)) << std::endl;
 
-		for (auto it = m_declarations.cbegin(); it != m_declarations.cend(); ++it)
+		for (const auto& declaration : m_declarations)
 		{
-			code << (*it)->ToString();
+			code << declaration->ToString();
 		}
 
 		return code.str();

@@ -19,7 +19,7 @@ class OperandGenerator : public HorseIR::ForwardTraversal
 public:
 	OperandGenerator(Builder *builder) : m_builder(builder) {}
 
-	const PTX::Operand<T> *GenerateOperand(HorseIR::Expression *expression)
+	const PTX::TypedOperand<T> *GenerateOperand(HorseIR::Expression *expression)
 	{
 		m_operand = nullptr;
 		expression->Accept(*this);
@@ -133,5 +133,5 @@ public:
 private:
 	Builder *m_builder = nullptr;
 
-	const PTX::Operand<T> *m_operand = nullptr;
+	const PTX::TypedOperand<T> *m_operand = nullptr;
 };

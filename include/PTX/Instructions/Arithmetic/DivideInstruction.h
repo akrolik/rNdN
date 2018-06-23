@@ -26,7 +26,7 @@ template<>
 class DivideInstruction<Float32Type> : public InstructionBase_2<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	DivideInstruction(const Register<Float32Type> *destination, const Operand<Float32Type> *sourceA, Operand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
+	DivideInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *sourceA, TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
 
 	void SetRoundingMode(Float32Type::RoundingMode roundingMode)
 	{
@@ -73,7 +73,7 @@ template<>
 class DivideInstruction<Float64Type> : public InstructionBase_2<Float64Type>, public RoundingModifier<Float64Type, true>
 {
 public:
-	DivideInstruction(const Register<Float64Type> *destination, const Operand<Float64Type> *sourceA, const Operand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
+	DivideInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *sourceA, const TypedOperand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
 
 	std::string OpCode() const override
 	{

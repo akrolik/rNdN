@@ -28,7 +28,7 @@ class ExpressionGenerator<B, PTX::Int8Type> : public ExpressionGeneratorBase<B, 
 public:
 	using ExpressionGeneratorBase<B, PTX::Int8Type>::ExpressionGeneratorBase;
 	
-	void GenerateAdd(const PTX::Operand<PTX::Int8Type> *src1, const PTX::Operand<PTX::Int8Type> *src2) override
+	void GenerateAdd(const PTX::TypedOperand<PTX::Int8Type> *src1, const PTX::TypedOperand<PTX::Int8Type> *src2) override
 	{
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
@@ -46,7 +46,7 @@ public:
 		this->m_builder->AddStatement(block);
 	}
 
-	void GenerateMove(const PTX::Operand<PTX::Int8Type> *src) override
+	void GenerateMove(const PTX::TypedOperand<PTX::Int8Type> *src) override
 	{
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);

@@ -4,6 +4,8 @@
 #include "PTX/Instructions/Modifiers/UniformModifier.h"
 
 #include "PTX/Functions/Function.h"
+#include "PTX/Operands/Extended/ListOperand.h"
+#include "PTX/Operands/Extended/StringOperand.h"
 
 namespace PTX {
 
@@ -18,13 +20,23 @@ public:
 		return "call" + UniformModifier::OpCodeModifier();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return "(" + m_returnVariable->ToString() + "), " + m_function->GetName() + ", (" + GetArgumentsString() + ")";
+		std::vector<const Operand *> operands;
+		operands.push_back(new ListOperand({ m_returnVariable }));
+		operands.push_back(new StringOperand(m_function->GetName()));
+
+		ListOperand *argumentList = new ListOperand();
+		for (const auto& argument : GetArguments())
+		{
+			argumentList->AddOperand(argument);
+		}
+		operands.push_back(argumentList);
+		return operands;
 	}
 
 protected:
-	virtual std::string GetArgumentsString() const = 0;
+	virtual std::vector<const Operand *> GetArguments() const = 0;
 
 	const Function *m_function = nullptr;
 	const R *m_returnVariable = nullptr;
@@ -41,13 +53,22 @@ public:
 		return "call" + UniformModifier::OpCodeModifier();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return m_function->GetName() + ", (" + GetArgumentsString() + ")";
+		std::vector<const Operand *> operands;
+		operands.push_back(new StringOperand(m_function->GetName()));
+
+		ListOperand *argumentList = new ListOperand();
+		for (const auto& argument : GetArguments())
+		{
+			argumentList->AddOperand(argument);
+		}
+		operands.push_back(argumentList);
+		return operands;
 	}
 
 protected:
-	virtual std::string GetArgumentsString() const = 0;
+	virtual std::vector<const Operand *> GetArguments() const = 0;
 
 	const Function *m_function = nullptr;
 };

@@ -27,9 +27,9 @@ public:
 		)
 	);
 
-	SetInstruction(const Register<D> *destination, const Operand<T> *sourceA, const Operand<T> *sourceB, typename T::ComparisonOperator comparator) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator) {}
+	SetInstruction(const Register<D> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator) {}
 
-	SetInstruction(const Register<D> *destination, const Operand<T> *sourceA, const Operand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+	SetInstruction(const Register<D> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
 	std::string OpCode() const override
 	{
@@ -43,9 +43,15 @@ public:
 		return code.str();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return InstructionBase_2<D, T>::Operands() + PredicateModifier::OperandsModifier();
+		auto operands = InstructionBase_2<D, T>::Operands();
+		const Operand *modifier = PredicateModifier::OperandsModifier();
+		if (modifier != nullptr)
+		{
+			operands.push_back(modifier);
+		}
+		return operands;
 	}
 
 private:

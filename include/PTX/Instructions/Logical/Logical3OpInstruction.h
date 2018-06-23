@@ -2,23 +2,27 @@
 
 #include "PTX/Instructions/InstructionBase.h"
 
+#include "PTX/Operands/Extended/StringOperand.h"
+
 namespace PTX {
 
 class Logical3OpInstruction : public InstructionBase_3<Bit32Type>
 {
 public:
-	Logical3OpInstruction(const Register<Bit32Type> *destination, const Operand<Bit32Type> *sourceA, const Operand<Bit32Type> *sourceB, const Operand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+	Logical3OpInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
 	std::string OpCode() const override
 	{
 		return "lop3" + Bit32Type::Name();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
+		auto operands = InstructionBase_3<Bit32Type>::Operands();
 		std::ostringstream hex;
 		hex << std::hex << static_cast<int>(m_immLut);
-		return InstructionBase_3<Bit32Type>::Operands() + ", 0x" + hex.str();
+		operands.push_back(new StringOperand(std::string("0x") + hex.str()));
+		return operands;
 	}
 
 private:

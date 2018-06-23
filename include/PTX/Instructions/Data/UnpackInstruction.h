@@ -16,21 +16,21 @@ public:
 
 	using PackType = BitType<static_cast<Bits>(T::BitSize / static_cast<int>(V))>;
 
-	UnpackInstruction(const BracedRegister<PackType, V> *destination, const Operand<T> *source) : m_destination(destination), m_source(source) {}
+	UnpackInstruction(const BracedRegister<PackType, V> *destination, const TypedOperand<T> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const override
 	{
 		return "mov" + T::Name();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return m_destination->ToString() + ", " + m_source->ToString();
+		return { m_destination, m_source };
 	}
 
 private:
 	const BracedRegister<PackType, V> *m_destination = nullptr;
-	const Operand<T> *m_source = nullptr;
+	const TypedOperand<T> *m_source = nullptr;
 };
 
 template<class T>

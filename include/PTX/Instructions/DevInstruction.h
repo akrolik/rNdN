@@ -14,9 +14,9 @@ public:
 		return m_instruction;
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return "";
+		return {};
 	}
 
 private:

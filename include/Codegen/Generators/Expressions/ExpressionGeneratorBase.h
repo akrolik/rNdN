@@ -37,13 +37,13 @@ public:
 	}
 
 	std::enable_if_t<PTX::AddInstruction<T, false>::Enabled, void>
-	GenerateAdd(const PTX::Operand<T> *src1, const PTX::Operand<T> *src2) override
+	GenerateAdd(const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2) override
 	{
 		m_builder->AddStatement(new PTX::AddInstruction<T>(m_target, src1, src2));
 	}
 
 	std::enable_if_t<PTX::MoveInstruction<T, false>::Enabled, void>
-	GenerateMove(const PTX::Operand<T> *src) override
+	GenerateMove(const PTX::TypedOperand<T> *src) override
 	{
 		m_builder->AddStatement(new PTX::MoveInstruction<T>(m_target, src));
 	}

@@ -17,14 +17,14 @@ public:
 		return "brx.idx" + UniformModifier::OpCodeModifier();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		std::string code = m_index->ToString();
-		for (auto it = m_labels.cbegin(); it != m_labels.cend(); ++it)
+		std::vector<const Operand *> operands({ m_index });
+		for (const auto& label : m_labels)
 		{
-			code += ", " + (*it)->ToString();
+			operands.push_back(label);
 		}
-		return code;
+		return operands;
 	}
 
 private:

@@ -23,9 +23,9 @@ public:
 		return "mov" + T::Name();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return m_destination->ToString() + ", " + m_source->ToString();
+		return { m_destination, m_source };
 	}
 
 private:

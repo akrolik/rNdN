@@ -8,7 +8,6 @@
 
 namespace PTX {
 
-
 template<class R>
 class CallInstruction : public CallInstructionBase<R>
 {
@@ -20,23 +19,12 @@ public:
 	AddArgument(const Variable<T, S> *argument) { m_arguments.push_back(argument); }
 
 protected:
-	std::string GetArgumentsString() const override
+	std::vector<const Operand *> GetArguments() const override
 	{
-		std::string code;
-		bool first = true;
-		for (const auto& argument : m_arguments)
-		{
-			if (!first)
-			{
-				code += ",";
-			}
-			first = false;
-			code += argument->ToString();
-		}
-		return code;
+		return m_arguments;
 	}
 
-	std::vector<const UntypedVariable*> m_arguments;
+	std::vector<const Operand *> m_arguments;
 };
 
 template<class R, typename... Args>
@@ -46,11 +34,30 @@ public:
 	CallInstruction(const DataFunction<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform), m_arguments(std::make_tuple(args...)) {}
 
 protected:
-	std::string GetArgumentsString() const override
+	std::vector<const Operand *> GetArguments() const override
 	{
-		std::ostringstream code;
-		CodeTuple(code, " ", m_arguments, int_<sizeof...(Args)>());
-		return code.str();
+		std::vector<const Operand *> arguments;
+		ExpandTuple(arguments, m_arguments, int_<sizeof...(Args)>());
+		return arguments;
+	}
+
+	template <typename T, size_t P>
+	static std::vector<const Operand *>& ExpandTuple(std::vector<const Operand *>& operands, const T& t, int_<P>)
+	{
+		auto arg = std::get<std::tuple_size<T>::value-P>(t);
+		if (arg == nullptr)
+		{
+			std::cerr << "[ERROR] Parameter " << std::tuple_size<T>::value-P << " not set" << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		operands.push_back(arg);
+		return ExpandTuple(operands, t, int_<P-1>());
+	}
+
+	template <typename T>
+	static std::vector<const Operand *>& ExpandTuple(std::vector<const Operand *>& operands, const T& t, int_<0>)
+	{
+		return operands;
 	}
 
 	std::tuple<const Args* ...> m_arguments;

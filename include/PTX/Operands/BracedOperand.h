@@ -7,13 +7,13 @@
 namespace PTX {
 
 template<class T, VectorSize V>
-class BracedOperand : public Operand<VectorType<T, V>>
+class BracedOperand : public TypedOperand<VectorType<T, V>>
 {
 	REQUIRE_BASE_TYPE(BracedOperand, ScalarType);
 public:
 	constexpr static int ElementCount = static_cast<int>(V);
 
-	BracedOperand(const std::array<const Operand<T> *, ElementCount>& operands) : m_operands(operands) {}
+	BracedOperand(const std::array<const TypedOperand<T> *, ElementCount>& operands) : m_operands(operands) {}
 
 	std::string ToString() const override
 	{
@@ -32,7 +32,7 @@ public:
 	}
 
 private:
-	const std::array<const Operand<T> *, ElementCount> m_operands;
+	const std::array<const TypedOperand<T> *, ElementCount> m_operands;
 };
 
 template<class T>

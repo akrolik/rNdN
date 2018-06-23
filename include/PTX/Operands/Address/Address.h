@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<Bits B, class T, class S = AddressableSpace>
-class Address : public Operand<T>
+class Address : public TypedOperand<T>
 {
 	REQUIRE_BASE_TYPE(Address, DataType);
 	REQUIRE_BASE_SPACE(Address, AddressableSpace);

@@ -9,7 +9,7 @@ template<template<Bits> class C, Bits B>
 class BitAdapter : public Adapter<BitType, C, B>
 {
 public:
-	BitAdapter(const Operand<C<B>> *operand) : Adapter<BitType, C, B>(operand) {}
+	BitAdapter(const TypedOperand<C<B>> *operand) : Adapter<BitType, C, B>(operand) {}
 };
 
 template<template<Bits> class C>

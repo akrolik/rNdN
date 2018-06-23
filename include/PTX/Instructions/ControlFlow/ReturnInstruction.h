@@ -15,9 +15,9 @@ public:
 		return "ret" + UniformModifier::OpCodeModifier();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return "";
+		return {};
 	}
 };
 

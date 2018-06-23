@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T>
-class Value : public Operand<T>
+class Value : public TypedOperand<T>
 {
 public:
 	Value(typename T::SystemType value) : m_value(value) {}
