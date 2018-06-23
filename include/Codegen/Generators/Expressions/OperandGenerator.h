@@ -5,6 +5,7 @@
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/Literal.h"
 #include "HorseIR/Tree/Types/Type.h"
+#include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
 
 #include "PTX/Instructions/Data/ConvertInstruction.h"
@@ -20,6 +21,7 @@ public:
 
 	const PTX::Operand<T> *GenerateOperand(HorseIR::Expression *expression)
 	{
+		m_operand = nullptr;
 		expression->Accept(*this);
 		if (m_operand != nullptr)
 		{
@@ -32,27 +34,14 @@ public:
 
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		//TODO: Handle list and primitive types
-		HorseIR::PrimitiveType *type = static_cast<HorseIR::PrimitiveType *>(m_builder->GetCurrentSymbolTable()->GetType(identifier->GetName()));
+		HorseIR::Type *type = m_builder->GetCurrentSymbolTable()->GetType(identifier->GetName());
 		switch (type->GetKind())
 		{
-			case HorseIR::PrimitiveType::Kind::Int8:
-				GenerateOperand<PTX::Int8Type>(identifier);
+			case HorseIR::Type::Kind::Primitive:
+				Dispatch(static_cast<HorseIR::PrimitiveType *>(type), identifier);
 				break;
-			case HorseIR::PrimitiveType::Kind::Int16:
-				GenerateOperand<PTX::Int16Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int32:
-				GenerateOperand<PTX::Int32Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int64:
-				GenerateOperand<PTX::Int64Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Float32:
-				GenerateOperand<PTX::Float32Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Float64:
-				GenerateOperand<PTX::Float64Type>(identifier);
+			case HorseIR::Type::Kind::List:
+				Dispatch(static_cast<HorseIR::ListType *>(type), identifier);
 				break;
 			default:
 				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
@@ -60,8 +49,42 @@ public:
 		}
 	}
 
+	void Dispatch(HorseIR::PrimitiveType *type, HorseIR::Identifier *identifier)
+	{
+		switch (type->GetKind())
+		{
+			case HorseIR::PrimitiveType::Kind::Int8:
+				GenerateIdentifier<PTX::Int8Type>(identifier);
+				break;
+			case HorseIR::PrimitiveType::Kind::Int16:
+				GenerateIdentifier<PTX::Int16Type>(identifier);
+				break;
+			case HorseIR::PrimitiveType::Kind::Int32:
+				GenerateIdentifier<PTX::Int32Type>(identifier);
+				break;
+			case HorseIR::PrimitiveType::Kind::Int64:
+				GenerateIdentifier<PTX::Int64Type>(identifier);
+				break;
+			case HorseIR::PrimitiveType::Kind::Float32:
+				GenerateIdentifier<PTX::Float32Type>(identifier);
+				break;
+			case HorseIR::PrimitiveType::Kind::Float64:
+				GenerateIdentifier<PTX::Float64Type>(identifier);
+				break;
+			default:
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+				std::exit(EXIT_FAILURE);
+		}
+	}
+
+	void Dispatch(HorseIR::ListType *type, HorseIR::Identifier *identifier)
+	{
+		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
 	template<class S>
-	void GenerateOperand(HorseIR::Identifier *identifier)
+	void GenerateIdentifier(HorseIR::Identifier *identifier)
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
@@ -78,16 +101,26 @@ public:
 
 	void Visit(HorseIR::Literal<int64_t> *literal) override
 	{
+		GenerateLiteral<int64_t>(literal);
+	}
+
+	void Visit(HorseIR::Literal<double> *literal) override
+	{
+		GenerateLiteral<double>(literal);
+	}
+
+	template<class L>
+	void GenerateLiteral(HorseIR::Literal<L> *literal)
+	{
 		if (literal->GetCount() == 1)
 		{
-			if constexpr(std::is_same<T, PTX::Int64Type>::value)
+			if constexpr(std::is_same<typename T::SystemType, L>::value)
 			{
 				m_operand = new PTX::Value<T>(literal->GetValue(0));
 			}
 			else
 			{
-				//TODO: Convert type for other types
-				m_operand = new PTX::Value<T>((typename T::SystemType)literal->GetValue(0));
+				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(literal->GetValue(0)));
 			}
 		}
 		else
