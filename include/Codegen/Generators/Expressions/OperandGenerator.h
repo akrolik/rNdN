@@ -93,7 +93,7 @@ public:
 		else
 		{
 			auto source = m_builder->GetRegister<S>(identifier->GetString());
-			auto converted = m_builder->AllocateRegister<T, ResourceType::Temporary>(identifier->GetString());
+			auto converted = m_builder->AllocateRegister<T, ResourceKind::Internal>(identifier->GetString());
 			m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
 			m_operand = converted;
 		}

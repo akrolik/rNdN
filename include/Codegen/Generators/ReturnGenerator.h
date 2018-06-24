@@ -22,9 +22,10 @@ public:
 	template<class T>
 	static void Generate(HorseIR::ReturnStatement *ret, Builder *builder)
 	{
-		auto declaration = new PTX::PointerDeclaration<T, B>(builder->GetReturnName());
+		const std::string returnName = "$return";
+		auto declaration = new PTX::PointerDeclaration<T, B>(returnName);
 		builder->AddParameter(declaration);
-		auto variable = declaration->GetVariable(builder->GetReturnName());
+		auto variable = declaration->GetVariable(returnName);
 
 		auto block = new PTX::BlockStatement();
 		builder->AddStatement(block);

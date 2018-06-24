@@ -41,12 +41,12 @@ public:
 	static PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<T, B>> *variable, Builder *builder)
 	{
 		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto temp_tidx = builder->AllocateRegister<PTX::UInt32Type, ResourceType::Temporary>("tidx");
+		auto temp_tidx = builder->AllocateRegister<PTX::UInt32Type, ResourceKind::Internal>("tidx");
 
-		auto temp0 = builder->AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("0");
-		auto temp1 = builder->AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("1");
-		auto temp2 = builder->AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("2");
-		auto temp3 = builder->AllocateRegister<PTX::UIntType<B>, ResourceType::Temporary>("3");
+		auto temp0 = builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("0");
+		auto temp1 = builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("1");
+		auto temp2 = builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("2");
+		auto temp3 = builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("3");
 
 		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
 		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);

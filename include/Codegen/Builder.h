@@ -44,11 +44,6 @@ public:
 		m_currentMethod = method;
 	}
 
-	std::string GetReturnName() const
-	{
-		return m_currentFunction->GetName() + "_return";
-
-	}
 	HorseIR::Type *GetReturnType() const
 	{
 		return m_currentMethod->GetReturnType();
@@ -90,7 +85,7 @@ public:
 		m_scopes.pop_back();
 	}
 
-	template<class T, ResourceType R = ResourceType::Variable>
+	template<class T, ResourceKind R = ResourceKind::User>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
 		for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
@@ -106,7 +101,7 @@ public:
 		std::exit(EXIT_FAILURE);
 	}
 
-	template<class T, ResourceType R = ResourceType::Variable>
+	template<class T, ResourceKind R = ResourceKind::User>
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
 	{
 		return GetCurrentResources()->AllocateRegister<T, R>(identifier);

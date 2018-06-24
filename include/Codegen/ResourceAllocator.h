@@ -17,20 +17,19 @@ public:
 	virtual const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
 };
 
-enum class ResourceType : char
+enum class ResourceKind : char
 {
-	Internal = '_',
-	Temporary = '$',
-	Variable = '%'
+	Internal = '$',
+	User = '%'
 };
 
-template<class T, ResourceType R>
+template<class T, ResourceKind R>
 class TypedResources : public Resources
 {
 public:
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
-		std::string name = std::string(1, static_cast<std::underlying_type<ResourceType>::type>(R)) + std::string(T::RegisterPrefix) + "_" + identifier;
+		std::string name = std::string(1, static_cast<std::underlying_type<ResourceKind>::type>(R)) + std::string(T::RegisterPrefix) + "_" + identifier;
 		m_declaration->AddNames(name);
 		const PTX::Register<T> *resource = m_declaration->GetVariable(name);
 		m_registersMap.insert({identifier, resource});
@@ -72,7 +71,7 @@ public:
 		return declarations;
 	}
 
-	template<class T, ResourceType R = ResourceType::Variable>
+	template<class T, ResourceKind R = ResourceKind::User>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
 		TypedResources<T, R> *resources = GetResources<T, R>(false);
@@ -83,7 +82,7 @@ public:
 		return nullptr;
 	}
 
-	template<class T, ResourceType R = ResourceType::Variable>
+	template<class T, ResourceKind R = ResourceKind::User>
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
 	{
 		auto resources = GetResources<T, R>();
@@ -95,7 +94,7 @@ public:
 	}
 
 private:
-	using KeyType = std::tuple<std::type_index, ResourceType>;
+	using KeyType = std::tuple<std::type_index, ResourceKind>;
 	struct KeyHash : public std::unary_function<KeyType, std::size_t>
 	{
 		std::size_t operator()(const KeyType& k) const
@@ -115,10 +114,10 @@ private:
 		}
 	};
 
-	template<class T, ResourceType R = ResourceType::Variable>
+	template<class T, ResourceKind R = ResourceKind::User>
 	TypedResources<T, R> *GetResources(bool alloc = true) const
 	{
-		auto key = std::make_tuple<std::type_index, ResourceType>(typeid(T), R);
+		auto key = std::make_tuple<std::type_index, ResourceKind>(typeid(T), R);
 		if (m_resourcesMap.find(key) == m_resourcesMap.end())
 		{
 			if (!alloc)

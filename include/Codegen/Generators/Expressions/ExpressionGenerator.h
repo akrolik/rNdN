@@ -33,9 +33,9 @@ public:
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
 
-		auto temp0 = resources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("0");
-		auto temp1 = resources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("1");
-		auto temp2 = resources->template AllocateRegister<PTX::Int16Type, ResourceType::Temporary>("2");
+		auto temp0 = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("0");
+		auto temp1 = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("1");
+		auto temp2 = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("2");
 
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp0, src1));
 		block->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp1, src2));
@@ -51,7 +51,7 @@ public:
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
 
-		auto temp = resources->template AllocateRegister<PTX::Bit16Type, ResourceType::Temporary>("0");
+		auto temp = resources->template AllocateRegister<PTX::Bit16Type, ResourceKind::Internal>("0");
 		auto value = new PTX::Value<PTX::Bit8Type>(0);
 
 		auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({new PTX::Bit8Adapter<PTX::IntType>(src), value});
