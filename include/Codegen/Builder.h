@@ -4,8 +4,6 @@
 
 #include "Codegen/ResourceAllocator.h"
 
-#include "HorseIR/SymbolTable.h"
-
 #include "PTX/Module.h"
 #include "PTX/Program.h"
 #include "PTX/Type.h"
@@ -14,52 +12,72 @@
 class Builder
 {
 public:
-	PTX::Program *GetCurrentProgram() const { return m_program; }
-	void SetCurrentProgram(PTX::Program *program) { m_program = program; }
+	std::string GetContextString(std::string string = "") const
+	{
+		std::string context;
+		if (m_currentModule != nullptr)
+		{
+			context += "Module::";
+		}
+		if (m_currentFunction != nullptr)
+		{
+			context += "Function['" + m_currentFunction->GetName() + "']::";
+		}
+		return context + string;
+	}
+
+	void SetCurrentProgram(PTX::Program *program) { m_currentProgram = program; }
 
 	void AddModule(PTX::Module *module)
 	{
-		m_program->AddModule(module);
+		m_currentProgram->AddModule(module);
 	}
-
-	PTX::Module *GetCurrentModule() const { return m_module; }
-	void SetCurrentModule(PTX::Module *module) { m_module = module; }
-
-	void CloseModule()
-	{
-		m_module = nullptr;
-	}
-
-	HorseIR::Method *GetCurrentMethod() const { return m_method; }
-	void SetCurrentMethod(HorseIR::Method *method) { m_method = method; }
-
-	HorseIR::SymbolTable *GetCurrentSymbolTable() const { return m_symbols; }
-	void SetCurrentSymbolTable(HorseIR::SymbolTable *symbols) { m_symbols = symbols; }
-
+	void SetCurrentModule(PTX::Module *module) { m_currentModule = module; }
 
 	void AddFunction(PTX::DataFunction<PTX::VoidType> *function)
 	{
-		m_module->AddDeclaration(function);
+		m_currentModule->AddDeclaration(function);
+	}
+	void SetCurrentFunction(PTX::DataFunction<PTX::VoidType> *function, HorseIR::Method *method)
+	{
+		m_currentFunction = function;
+		m_currentMethod = method;
 	}
 
-	PTX::DataFunction<PTX::VoidType> *GetCurrentFunction() const { return m_function; }
-	void SetCurrentFunction(PTX::DataFunction<PTX::VoidType> *function)
+	std::string GetReturnName() const
 	{
-		m_function = function;
-		OpenScope(function);
+		return m_currentFunction->GetName() + "_return";
+
+	}
+	HorseIR::Type *GetReturnType() const
+	{
+		return m_currentMethod->GetReturnType();
 	}
 
-	void CloseFunction()
+	template<class T, class S>
+	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
+	AddParameter(const PTX::VariableDeclaration<T, S> *parameter)
 	{
-		CloseScope();
-		m_function = nullptr;
+		m_currentFunction->AddParameter(parameter);
+	}
+
+	void AddStatement(const PTX::Statement *statement)
+	{
+		GetCurrentBlock()->AddStatement(statement);
+	}
+	void AddStatements(const std::vector<const PTX::Statement *>& statement)
+	{
+		GetCurrentBlock()->AddStatements(statement);
 	}
 
 	ResourceAllocator *OpenScope(PTX::StatementList *block)
 	{
-		ResourceAllocator *resources = new ResourceAllocator();
-		m_resources.push_back(resources);
-		m_scopes.push({block, resources});
+		if (m_resources.find(block) == m_resources.end())
+		{
+			m_resources.insert({block, new ResourceAllocator()});
+		}
+		ResourceAllocator *resources = m_resources.at(block);
+		m_scopes.push_back({block, resources});
 		return resources;
 	}
 
@@ -69,37 +87,48 @@ public:
 		// must come before use, and are typically grouped at the top of the function.
 
 		GetCurrentBlock()->InsertStatements(GetCurrentResources()->GetRegisterDeclarations(), 0);
-		m_scopes.pop();
+		m_scopes.pop_back();
 	}
 
-	void AddStatement(PTX::Statement *statement)
+	template<class T, ResourceType R = ResourceType::Variable>
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		GetCurrentBlock()->AddStatement(statement);
+		for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
+		{
+			const PTX::Register<T> *reg = std::get<1>(*it)->GetRegister<T, R>(identifier);
+			if (reg != nullptr)
+			{
+				return reg;
+			}
+		}
+
+		std::cerr << "[ERROR] PTX::Register(" << identifier << ") not found" << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 
-	void AddStatement(const std::vector<PTX::Statement *>& statement)
+	template<class T, ResourceType R = ResourceType::Variable>
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
 	{
-		GetCurrentBlock()->AddStatements(statement);
+		return GetCurrentResources()->AllocateRegister<T, R>(identifier);
 	}
 
+private:
 	PTX::StatementList *GetCurrentBlock() const
 	{
-		return std::get<0>(m_scopes.top());
+		return std::get<0>(m_scopes.back());
 	}
 
 	ResourceAllocator *GetCurrentResources() const
 	{
-		return std::get<1>(m_scopes.top());
+		return std::get<1>(m_scopes.back());
 	}
 
-private:
-	PTX::Program *m_program = nullptr;
-	PTX::Module *m_module = nullptr;
-	PTX::DataFunction<PTX::VoidType> *m_function = nullptr;
+	PTX::Program *m_currentProgram = nullptr;
+	PTX::Module *m_currentModule = nullptr;
 
-	HorseIR::Method *m_method = nullptr;
-	HorseIR::SymbolTable *m_symbols = nullptr;
+	PTX::DataFunction<PTX::VoidType> *m_currentFunction = nullptr;
+	HorseIR::Method *m_currentMethod = nullptr;
 
-	std::vector<ResourceAllocator *> m_resources;
-	std::stack<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
+	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;
+	std::vector<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
 };

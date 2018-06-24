@@ -21,20 +21,16 @@ public:
 	template<class T>
 	static void Generate(HorseIR::Parameter *parameter, Builder *builder)
 	{
-		auto function = builder->GetCurrentFunction();
-		auto resources = builder->GetCurrentResources();
-
-		std::string variableName = function->GetName() + "_" + parameter->GetName();
-		auto declaration = new PTX::PointerDeclaration<T, B>(variableName);
-		function->AddParameter(declaration);
-		auto variable = declaration->GetVariable(variableName);
+		auto declaration = new PTX::PointerDeclaration<T, B>(parameter->GetName());
+		builder->AddParameter(declaration);
+		auto variable = declaration->GetVariable(parameter->GetName());
+		auto value = builder->AllocateRegister<T>(parameter->GetName());
 
 		auto block = new PTX::BlockStatement();
 		builder->AddStatement(block);
 		builder->OpenScope(block);
 
 		auto address = AddressGenerator<B>::template Generate<T>(variable, builder);
-		auto value = resources->template AllocateRegister<T>(parameter->GetName());
 		builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
 
 		builder->CloseScope();

@@ -8,7 +8,7 @@ void SymbolTable::Build(HorseIR::Method *method)
 	method->Accept(*this);
 }
 
-HorseIR::Type *SymbolTable::GetType(const std::string& identifier)
+Type *SymbolTable::GetType(const std::string& identifier)
 {
 	return m_table.at(identifier);
 }
@@ -16,12 +16,19 @@ HorseIR::Type *SymbolTable::GetType(const std::string& identifier)
 void SymbolTable::Visit(Parameter *parameter)
 {
 	m_table.insert({parameter->GetName(), parameter->GetType()});
-
+	ForwardTraversal::Visit(parameter);
 }
 
 void SymbolTable::Visit(AssignStatement *assign)
 {
 	m_table.insert({assign->GetTargetName(), assign->GetType()});
+	ForwardTraversal::Visit(assign);
+}
+
+void SymbolTable::Visit(Identifier *identifier)
+{
+	identifier->SetType(GetType(identifier->GetString()));
+	ForwardTraversal::Visit(identifier);
 }
 
 }

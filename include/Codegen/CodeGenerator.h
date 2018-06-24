@@ -7,6 +7,7 @@
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
 
+#include "HorseIR/SymbolTable.h"
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
@@ -61,7 +62,7 @@ public:
 
 		// Complete the codegen for the module
 
-		m_builder->CloseModule();
+		m_builder->SetCurrentModule(nullptr);
 	}
 
 	void Visit(HorseIR::Method *method) override
@@ -82,13 +83,12 @@ public:
 		// Update the state for this function
 
 		m_builder->AddFunction(function);
-		m_builder->SetCurrentFunction(function);
-		m_builder->SetCurrentMethod(method);
+		m_builder->SetCurrentFunction(function, method);
+		m_builder->OpenScope(function);
 
 		HorseIR::SymbolTable *symbols = new HorseIR::SymbolTable();
 		symbols->Build(method);
-
-		m_builder->SetCurrentSymbolTable(symbols);
+		method->SetSymbolTable(symbols);
 
 		// Visit the method contents (i.e. parameters + statements!)
 
@@ -96,8 +96,8 @@ public:
 
 		// Complete the codegen for the method
 
-		m_builder->CloseFunction();
-		m_builder->SetCurrentMethod(nullptr);
+		m_builder->CloseScope();
+		m_builder->SetCurrentFunction(nullptr, nullptr);
 	}
 
 	void Visit(HorseIR::Parameter *parameter) override
@@ -112,7 +112,7 @@ public:
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		Dispatch<ReturnGenerator<B>>(m_builder->GetCurrentMethod()->GetReturnType(), ret);
+		Dispatch<ReturnGenerator<B>>(m_builder->GetReturnType(), ret);
 	}
 
 private:
@@ -142,7 +142,7 @@ private:
 				Dispatch<G>(static_cast<HorseIR::ListType *>(type), node);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
@@ -171,7 +171,7 @@ private:
 				G::template Generate<PTX::Float64Type>(node, m_builder);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
@@ -179,7 +179,7 @@ private:
 	template<class G>
 	void Dispatch(HorseIR::ListType *type, typename G::NodeType *node)
 	{
-		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in context " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 

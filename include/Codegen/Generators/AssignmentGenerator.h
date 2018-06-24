@@ -31,9 +31,7 @@ public:
 		//
 		// In this setup, the expression visitor is expected to produce the full assignment
 
-		auto resources = builder->GetCurrentResources();
-
-		const PTX::Register<T> *target = resources->template AllocateRegister<T>(assign->GetTargetName());
+		const PTX::Register<T> *target = builder->template AllocateRegister<T>(assign->GetTargetName());
 		ExpressionGenerator<B, T> generator(target, builder);
 		assign->Accept(generator);
 	}

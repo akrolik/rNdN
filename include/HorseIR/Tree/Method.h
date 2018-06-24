@@ -10,7 +10,10 @@
 #include "HorseIR/Tree/Statements/Statement.h"
 #include "HorseIR/Tree/Types/Type.h"
 
+
 namespace HorseIR {
+
+class SymbolTable;
 
 class Method : public ModuleContent
 {
@@ -21,6 +24,8 @@ public:
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
 	Type* GetReturnType() const { return m_returnType; }
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
+
+	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
 
 	std::string ToString() const override
 	{
@@ -50,6 +55,8 @@ private:
 	std::vector<Parameter *> m_parameters;
 	Type *m_returnType;
 	std::vector<Statement *> m_statements;
+
+	SymbolTable *m_symbolTable = nullptr;
 };
 
 }

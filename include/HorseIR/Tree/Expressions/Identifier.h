@@ -13,6 +13,12 @@ class Identifier : public Expression
 public:
 	Identifier(std::string string) : m_string(string) {}
 
+	Type *GetType() const { return m_type; }
+	void SetType(Type *type)
+	{
+		m_type = type;
+	}
+
 	std::string GetString() const { return m_string; }
 
 	std::string ToString() const override
@@ -24,6 +30,7 @@ public:
 
 private:
 	std::string m_string;
+	Type *m_type = nullptr;
 };
 
 }

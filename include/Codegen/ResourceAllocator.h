@@ -75,7 +75,12 @@ public:
 	template<class T, ResourceType R = ResourceType::Variable>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		return GetResources<T, R>(false)->GetRegister(identifier);
+		TypedResources<T, R> *resources = GetResources<T, R>(false);
+		if (resources != nullptr && resources->ContainsKey(identifier))
+		{
+			return resources->GetRegister(identifier);
+		}
+		return nullptr;
 	}
 
 	template<class T, ResourceType R = ResourceType::Variable>
@@ -114,8 +119,12 @@ private:
 	TypedResources<T, R> *GetResources(bool alloc = true) const
 	{
 		auto key = std::make_tuple<std::type_index, ResourceType>(typeid(T), R);
-		if (alloc && m_resourcesMap.find(key) == m_resourcesMap.end())
+		if (m_resourcesMap.find(key) == m_resourcesMap.end())
 		{
+			if (!alloc)
+			{
+				return nullptr;
+			}
 			m_resourcesMap.insert({key, new TypedResources<T, R>()});
 		}
 		return static_cast<TypedResources<T, R> *>(m_resourcesMap.at(key));

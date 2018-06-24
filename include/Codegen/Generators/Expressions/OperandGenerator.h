@@ -34,7 +34,7 @@ public:
 
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		HorseIR::Type *type = m_builder->GetCurrentSymbolTable()->GetType(identifier->GetString());
+		HorseIR::Type *type = identifier->GetType();
 		switch (type->GetKind())
 		{
 			case HorseIR::Type::Kind::Primitive:
@@ -44,7 +44,7 @@ public:
 				Dispatch(static_cast<HorseIR::ListType *>(type), identifier);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
@@ -72,14 +72,14 @@ public:
 				GenerateIdentifier<PTX::Float64Type>(identifier);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
 				std::exit(EXIT_FAILURE);
 		}
 	}
 
 	void Dispatch(HorseIR::ListType *type, HorseIR::Identifier *identifier)
 	{
-		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetCurrentFunction()->GetName() << std::endl;
+		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
@@ -88,12 +88,12 @@ public:
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
-			m_operand = m_builder->GetCurrentResources()->template GetRegister<T>(identifier->GetString());
+			m_operand = m_builder->GetRegister<T>(identifier->GetString());
 		}
 		else
 		{
-			auto source = m_builder->GetCurrentResources()->template GetRegister<S>(identifier->GetString());
-			auto converted = m_builder->GetCurrentResources()->template AllocateRegister<T, ResourceType::Temporary>(identifier->GetString());
+			auto source = m_builder->GetRegister<S>(identifier->GetString());
+			auto converted = m_builder->AllocateRegister<T, ResourceType::Temporary>(identifier->GetString());
 			m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
 			m_operand = converted;
 		}
