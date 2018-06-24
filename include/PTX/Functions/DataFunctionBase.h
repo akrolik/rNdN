@@ -14,6 +14,13 @@ class DataFunctionBase : public Function
 public:
 	void SetReturn(const VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
 
+	json ToJSON() const override
+	{
+		json j = Function::ToJSON();
+		j["return"] = m_return->ToJSON();
+		return j;
+	}
+
 protected:
 	std::string GetDirectives() const override
 	{

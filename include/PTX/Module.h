@@ -7,6 +7,8 @@
 #include "PTX/Declarations/Declaration.h"
 #include "PTX/Type.h"
 
+#include "Libraries/json.hpp"
+
 namespace PTX {
 
 class Module
@@ -35,6 +37,20 @@ public:
 		}
 
 		return code.str();
+	}
+
+	json ToJSON() const
+	{
+		json j;
+		j["version_major"] = m_versionMajor;
+		j["version_minor"] = m_versionMinor;
+		j["target"] = m_target;
+		j["address_size"] = static_cast<int>(m_addressSize);
+		for (const auto& declaration : m_declarations)
+		{
+			j["declarations"].push_back(declaration->ToJSON());
+		}
+		return j;
 	}
 
 private:

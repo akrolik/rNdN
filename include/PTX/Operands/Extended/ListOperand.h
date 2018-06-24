@@ -4,7 +4,6 @@
 
 #include "PTX/Operands/Operand.h"
 
-
 namespace PTX {
 
 class ListOperand : public Operand
@@ -32,6 +31,17 @@ public:
 			code += operand->ToString();
 		}
 		return code + ")";
+	}
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::ListOperand";
+		for (const auto& operand : m_operands)
+		{
+			j["operands"].push_back(operand->ToJSON());
+		}
+		return j;
 	}
 
 private:

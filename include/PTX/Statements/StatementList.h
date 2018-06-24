@@ -2,6 +2,8 @@
 
 #include "PTX/Statements/Statement.h"
 
+#include "Libraries/json.hpp"
+
 namespace PTX {
 
 class StatementList
@@ -26,6 +28,16 @@ public:
 	void InsertStatements(const std::vector<T>& statements, unsigned int index)
 	{
 		m_statements.insert(std::begin(m_statements) + index, std::begin(statements), std::end(statements));
+	}
+
+	json ToJSON() const
+	{
+		json j;
+		for (const auto& statement : m_statements)
+		{
+			j.push_back(statement->ToJSON());
+		}
+		return j;
 	}
 
 protected:

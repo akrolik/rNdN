@@ -21,6 +21,15 @@ public:
 	{
 		return ":";
 	}
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::Label";
+		j["name"] = m_name;
+		return j;
+	}
+
 private:
 	std::string m_name;
 };

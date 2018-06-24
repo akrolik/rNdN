@@ -114,6 +114,31 @@ public:
 		return S::Name() + " " + T::Name() + " " + Directives() + VariableNames();
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::VariableDeclaration";
+		j["type"] = T::Name();
+		j["space"] = S::Name();
+		std::string directives = Directives();
+		if (directives.length() > 0)
+		{
+			j["directives"] = directives;
+		}
+		if (m_names.size() == 1)
+		{
+			j["names"] = m_names.at(0).ToString();
+		}
+		else
+		{
+			for (const auto& set : m_names)
+			{
+				j["names"].push_back(set.ToString());
+			}
+		}
+		return j;
+	}
+
 protected:
 	virtual std::string VariableNames() const
 	{

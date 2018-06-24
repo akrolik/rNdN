@@ -14,6 +14,13 @@ class AddressableVariable : public Variable<T, S>
 	REQUIRE_BASE_SPACE(AddressableVariable, AddressableSpace);
 public:
 	using Variable<T, S>::Variable;
+
+	json ToJSON() const override
+	{
+		json j = Variable<T, S>::ToJSON();
+		j["kind"] = "PTX::AddressableVariable";
+		return j;
+	}
 };
 
 template<class T>

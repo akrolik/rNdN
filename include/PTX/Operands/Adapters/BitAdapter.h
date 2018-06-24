@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Operands/Adapters/Adapter.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Operands/Adapters/RegisterAdapter.h"
 
 namespace PTX {
 
@@ -22,10 +22,17 @@ template<template<Bits> class C>
 using Bit64Adapter = BitAdapter<C, Bits::Bits64>;
 
 template<template<Bits> class C, Bits B>
-class BitRegisterAdapter : public Register<BitType<B>>
+class BitRegisterAdapter : public RegisterAdapter<BitType<B>, C<B>>
 {
 public:
-	BitRegisterAdapter(const Register<C<B>> *variable) : Register<BitType<B>>(variable->GetName()) {}
+	using RegisterAdapter<BitType<B>, C<B>>::RegisterAdapter;
+
+	json ToJSON() const override
+	{
+		json j = RegisterAdapter<BitType<B>, C<B>>::ToJSON();
+		j["kind"] = "PTX::BitRegisterAdapter";
+		return j;
+	}
 };
 
 template<template<Bits> class C>

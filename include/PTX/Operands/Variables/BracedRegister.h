@@ -31,6 +31,20 @@ public:
 		return code + "}";
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+
+		j["type"] = VectorType<T, V>::Name();
+		j["space"] = RegisterSpace::Name();
+		for (const auto& reg : m_registers)
+		{
+			j["registers"].push_back(reg->ToJSON());
+		}
+
+		return j;
+	}
+
 private:
 	const std::array<const Register<T> *, ElementCount> m_registers;
 };

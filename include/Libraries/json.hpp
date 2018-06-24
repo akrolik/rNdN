@@ -17296,5 +17296,12 @@ inline nlohmann::json::json_pointer operator "" _json_pointer(const char* s, std
 #undef NLOHMANN_BASIC_JSON_TPL
 #undef NLOHMANN_JSON_HAS_HELPER
 
+#include "Libraries/fifo_map.hpp"
+
+// Ordered JSON (this is not fully JSON, but it helps keeping the debug printing organized)
+
+template<class K, class V, class dummy_compare, class A>
+using my_workaround_fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
+using json = nlohmann::basic_json<my_workaround_fifo_map>;
 
 #endif

@@ -1,14 +1,21 @@
 #pragma once
 
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Operands/Adapters/RegisterAdapter.h"
 
 namespace PTX {
 
 template<Bits B>
-class UnsignedRegisterAdapter : public Register<UIntType<B>>
+class UnsignedRegisterAdapter : public RegisterAdapter<UIntType<B>, IntType<B>>
 {
 public:
-	UnsignedRegisterAdapter(const Register<IntType<B>> *variable) : Register<UIntType<B>>(variable->GetName()) {}
+	using RegisterAdapter<UIntType<B>, IntType<B>>::RegisterAdapter;
+
+	json ToJSON() const override
+	{
+		json j = RegisterAdapter<UIntType<B>, IntType<B>>::ToJSON();
+		j["kind"] = "PTX::UnsignedRegisterAdapter";
+		return j;
+	}
 };
 
 using Unsigned8RegisterAdapter = UnsignedRegisterAdapter<Bits::Bits8>;

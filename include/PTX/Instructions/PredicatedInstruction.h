@@ -28,6 +28,19 @@ public:
 		return code.str();
 	}
 
+	json ToJSON() const override
+	{
+		json j = InstructionStatement::ToJSON();
+
+		if (m_predicate != nullptr)
+		{
+			j["predicate"] = m_predicate->ToJSON();
+			j["negate_predicate"] = m_negatePredicate;
+		}
+
+		return j;
+	}
+
 private:
 	const Register<PredicateType> *m_predicate = nullptr;
 	bool m_negatePredicate = false;

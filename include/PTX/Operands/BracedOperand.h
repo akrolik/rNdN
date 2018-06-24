@@ -31,6 +31,18 @@ public:
 		return code + "}";
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::BracedOperand";
+		for (const auto& operand : m_operands)
+		{
+			j["operands"].push_back(operand->ToJSON());
+		}
+		return j;
+	}
+
+
 private:
 	const std::array<const TypedOperand<T> *, ElementCount> m_operands;
 };

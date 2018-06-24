@@ -28,6 +28,18 @@ public:
 		}
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::MemoryAddress";
+		j["variable"] = m_variable->ToJSON();
+		if (m_offset != 0)
+		{
+			j["offset"] = m_offset;
+		}
+		return j;
+	}
+
 	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 

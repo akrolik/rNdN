@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Libraries/json.hpp"
+
 namespace PTX {
 
 class Declaration
@@ -37,6 +39,7 @@ public:
 	void SetLinkDirective(LinkDirective linkDirective) { m_linkDirective = linkDirective; }
 
 	virtual std::string ToString() const = 0;
+	virtual json ToJSON() const = 0;
 
 protected:
 	LinkDirective m_linkDirective = LinkDirective::None;

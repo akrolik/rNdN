@@ -23,7 +23,15 @@ public:
 		return code.str();
 	}
 
-	std::string Terminator() const override{ return ""; }
+	std::string Terminator() const override { return ""; }
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::BlockStatement";
+		j["statements"] = StatementList::ToJSON();
+		return j;
+	}
 };
 
 }

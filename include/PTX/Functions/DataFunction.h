@@ -20,12 +20,22 @@ public:
 	std::enable_if_t<std::is_same<S, RegisterSpace>::value || std::is_base_of<S, ParameterSpace>::value, void>
 	AddParameter(const VariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
 
+	json ToJSON() const override
+	{
+		json j = DataFunctionBase<R>::ToJSON();
+		for (const auto& parameter : m_parameters)
+		{
+			j["parameters"].push_back(parameter->ToJSON());
+		}
+		return j;
+	}
+
 protected:
 	std::string GetParametersString() const override
 	{
 		std::ostringstream code;
 		bool first = true;
-		for (const auto& param : m_parameters)
+		for (const auto& parameter : m_parameters)
 		{
 			if (first)
 			{
@@ -36,7 +46,7 @@ protected:
 				code << "," << std::endl;
 			}
 			first = false;
-			code << "\t" << param->ToString();
+			code << "\t" << parameter->ToString();
 		}
 		if (!first)
 		{
@@ -55,6 +65,18 @@ class DataFunction<R(Args...)> : public DataFunctionBase<R>
 public:
 	void SetParameters(const VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
 
+	json ToJSON() const override
+	{
+		json j = DataFunctionBase<R>::ToJSON();
+		std::vector<const Declaration *> parameters;
+		ExpandTuple(parameters, m_parameters, int_<sizeof...(Args)>());
+		for (const auto& parameter : parameters)
+		{
+			j["parameters"].push_back(parameter->ToJSON());
+		}
+		return j;
+	}
+
 protected:
 	std::string GetParametersString() const override
 	{
@@ -66,6 +88,25 @@ protected:
 			code << std::endl;
 		}
 		return code.str();
+	}
+
+	template <typename T, size_t P>
+	static std::vector<const Declaration *>& ExpandTuple(std::vector<const Declaration *>& declarations, const T& t, int_<P>)
+	{
+		auto arg = std::get<std::tuple_size<T>::value-P>(t);
+		if (arg == nullptr)
+		{
+			std::cerr << "[ERROR] Parameter " << std::tuple_size<T>::value-P << " not set" << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		declarations.push_back(arg);
+		return ExpandTuple(declarations, t, int_<P-1>());
+	}
+
+	template <typename T>
+	static std::vector<const Declaration *>& ExpandTuple(std::vector<const Declaration *>& declarations, const T& t, int_<0>)
+	{
+		return declarations;
 	}
 
 	std::tuple<const VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...> m_parameters;

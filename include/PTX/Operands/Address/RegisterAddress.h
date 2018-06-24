@@ -31,6 +31,18 @@ public:
 		}
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::RegisterAddress";
+		j["register"] = m_variable->ToJSON();
+		if (m_offset != 0)
+		{
+			j["offset"] = m_offset;
+		}
+		return j;
+	}
+
 	const Register<PointerType<T, B, S>> *GetRegister() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 

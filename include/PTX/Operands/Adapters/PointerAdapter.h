@@ -1,17 +1,26 @@
 #pragma once
 
 #include "PTX/StateSpace.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/Operands/Adapters/RegisterAdapter.h"
 
 namespace PTX {
 
 template<class T, Bits B, class S = AddressableSpace>
-class PointerRegisterAdapter : public Register<PointerType<T, B, S>>
+class PointerRegisterAdapter : public RegisterAdapter<PointerType<T, B, S>, UIntType<B>>
 { 
 	REQUIRE_BASE_TYPE(PointerRegisterAdapter, DataType);
 	REQUIRE_BASE_SPACE(PointerRegisterAdapter, AddressableSpace);
 public:
-	PointerRegisterAdapter(const Register<UIntType<B>> *variable) : Register<PointerType<T, B, S>>(variable->GetName()) {}
+	using RegisterAdapter<PointerType<T, B, S>, UIntType<B>>::RegisterAdapter;
+
+	json ToJSON() const override
+	{
+		json j = RegisterAdapter<PointerType<T, B, S>, UIntType<B>>::ToJSON();
+		j["kind"] = "PTX::PointerRegisterAdapter";
+		j.erase("destination");
+		j.erase("source");
+		return j;
+	}
 };
 
 template<class T, class S = AddressableSpace>

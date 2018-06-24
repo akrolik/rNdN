@@ -7,6 +7,8 @@
 #include "PTX/Statements/StatementList.h"
 #include "PTX/Statements/Statement.h"
 
+#include "Libraries/json.hpp"
+
 namespace PTX {
 
 class Function : public Declaration, public StatementList
@@ -39,6 +41,18 @@ public:
 		code << "}" << std::endl;
 
 		return code.str();
+	}
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::Function";
+		j["name"] = m_name;
+		j["directies"] = GetDirectives();
+		j["return"] = json::object();
+		j["parameters"] = json::array();
+		j["statements"] = StatementList::ToJSON();
+		return j;
 	}
 
 private:

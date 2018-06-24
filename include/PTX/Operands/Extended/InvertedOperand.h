@@ -2,7 +2,6 @@
 
 #include "PTX/Operands/Operand.h"
 
-
 namespace PTX {
 
 class InvertedOperand : public Operand
@@ -13,6 +12,14 @@ public:
 	std::string ToString() const override
 	{
 		return "!" + m_operand->ToString();
+	}
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::InvertedOperand";
+		j["operand"] = m_operand->ToJSON();
+		return j;
 	}
 
 private:

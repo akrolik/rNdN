@@ -18,6 +18,16 @@ public:
 		return std::to_string(m_value);
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+
+		j["type"] = T::Name();
+		j["value"] = m_value;
+
+		return j;
+	}
+
 private:
 	typename T::SystemType m_value;
 };

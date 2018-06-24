@@ -5,6 +5,8 @@
 #include "PTX/Statements/Statement.h"
 #include "PTX/Operands/Operand.h"
 
+#include "Libraries/json.hpp"
+
 namespace PTX {
 
 class InstructionStatement : public Statement
@@ -31,7 +33,19 @@ public:
 		return code.str();
 	}
 
-	std::string Terminator() const override{ return ";"; }
+	std::string Terminator() const override { return ";"; }
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::InstructionStatement";
+		j["opcode"] = OpCode();
+		for (const auto& operand : Operands())
+		{
+			j["operands"].push_back(operand->ToJSON());
+		}
+		return j;
+	}
 
 	virtual std::string OpCode() const = 0;
 	virtual std::vector<const Operand *> Operands() const = 0;

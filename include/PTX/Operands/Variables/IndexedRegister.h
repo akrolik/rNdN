@@ -18,6 +18,15 @@ public:
 		return Register<T>::GetName() + GetVectorElementName(m_vectorElement);
 	}
 
+	json ToJSON() const override
+	{
+		json j = Register<T>::ToJSON();
+		j["kind"] = "PTX::IndexedRegister";
+		j["type"] = VectorType<T, V>::Name();
+		j["index"] = GetVectorElementName(m_vectorElement);
+		return j;
+	}
+
 protected:
 	VectorElement m_vectorElement;
 };

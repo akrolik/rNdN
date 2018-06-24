@@ -14,6 +14,14 @@ public:
 		return m_string;
 	}
 
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::StringOperand";
+		j["string"] = m_string;
+		return j;
+	}
+
 private:
 	std::string m_string;
 

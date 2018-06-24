@@ -31,6 +31,16 @@ public:
 		return GetName();
 	}
 
+	json ToJSON () const override
+	{
+		json j;
+		j["kind"] = "PTX::Variable";
+		j["name"] = m_name;
+		j["type"] = T::Name();
+		j["space"] = S::Name();
+		return j;
+	}
+
 protected:
 	Variable(const std::string& name) : m_name(name) {}
 
