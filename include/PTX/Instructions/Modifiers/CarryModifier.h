@@ -11,7 +11,7 @@ public:
 
 template<class T, bool force>
 class CarryModifier<T, force,
-      std::enable_if_t<TypeEnforcer<T, Int32Type, Int64Type, UInt32Type, UInt64Type>::value || force>>
+      std::enable_if_t<REQUIRE_EXACT(T, Int32Type, Int64Type, UInt32Type, UInt64Type) || force>>
 {
 public:
 	constexpr static bool Enabled = true;

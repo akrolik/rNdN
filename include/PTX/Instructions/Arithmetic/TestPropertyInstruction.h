@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class TestPropertyInstruction : public InstructionBase_1<PredicateType, T>
 {
 public:
-	REQUIRE_TYPE(TestPropertyInstruction,
-		Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(TestPropertyInstruction,
+		REQUIRE_EXACT(T,
+			Float32Type, Float64Type
+		)
 	);
 
 	enum class Property {

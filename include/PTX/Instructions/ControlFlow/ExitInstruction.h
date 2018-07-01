@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-class ExitInstruction : public InstructionStatement
+class ExitInstruction : public PredicatedInstruction
 {
 public:
 	ExitInstruction() {}

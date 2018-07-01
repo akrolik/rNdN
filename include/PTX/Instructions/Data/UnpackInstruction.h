@@ -6,12 +6,14 @@
 
 namespace PTX {
 
-template<class T, VectorSize V, bool Typecheck = true>
+template<class T, VectorSize V, bool Assert = true>
 class UnpackInstruction : public PredicatedInstruction
 {
 public:
-	REQUIRE_TYPE(UnpackInstruction,
-		Bit16Type, Bit32Type, Bit64Type
+	REQUIRE_TYPE_PARAM(UnpackInstruction,
+		REQUIRE_EXACT(T,
+			Bit16Type, Bit32Type, Bit64Type
+		)
 	);
 
 	using PackType = BitType<static_cast<Bits>(T::BitSize / static_cast<int>(V))>;

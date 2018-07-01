@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "PTX/Concepts.h"
 #include "PTX/StateSpace.h"
 #include "PTX/Utils.h"
 
@@ -32,26 +33,13 @@ struct is_type_specialization : std::false_type {};
 template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
 struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
 
-template<class T, class... R>
-struct TypeEnforcer
-{
-	constexpr static bool value = is_one<std::is_same<R, T>::value...>::value;
-};
+#define REQUIRE_TYPE_PARAM(CONTEXT, ENABLED) \
+	constexpr static bool TypeSupported = ENABLED; \
+	static_assert(Assert == false || TypeSupported == true, "PTX::" TO_STRING(CONTEXT) " does not support PTX type");
 
 #define REQUIRE_TYPE_PARAMS(context, D_ENABLED, T_ENABLED) \
-	constexpr static bool Enabled = D_ENABLED && T_ENABLED; \
-	static_assert(Typecheck == false || Enabled == true, "PTX::" TO_STRING(context) " does not support types PTX::" TO_STRING(D) " and PTX::" TO_STRING(T));
-
-#define REQUIRE_TYPE_PARAM(P, ...) \
-	TypeEnforcer<P, __VA_ARGS__>::value
-
-#define REQUIRE_TYPE(context, ...) \
-	constexpr static bool Enabled = REQUIRE_TYPE_PARAM(T, __VA_ARGS__); \
-	static_assert(Typecheck == false || Enabled == true, "PTX::" TO_STRING(context) " does not support type PTX::" TO_STRING(T));
-
-#define REQUIRE_BASE_TYPE(context, type) static_assert(std::is_base_of<type, T>::value, "PTX::" TO_STRING(context) " requires base type PTX::" TO_STRING(type))
-#define REQUIRE_EXACT_TYPE(context, type) static_assert(std::is_same<type, T>::value, "PTX::" TO_STRING(context) " requires exact type PTX::" TO_STRING(type))
-#define REQUIRE_EXACT_TYPE_TEMPLATE(context, type) static_assert(is_type_specialization<T, type>::value, "PTX::" TO_STRING(context) " requires exact type template PTX::" TO_STRING(type))
+	constexpr static bool TypeSupported = D_ENABLED && T_ENABLED; \
+	static_assert(Assert == false || TypeSupported == true, "PTX::" TO_STRING(context) " does not support PTX types");
 
 // @struct Type
 //
@@ -479,7 +467,9 @@ template<> inline std::string VectorName<VectorSize::Vector4>() { return std::st
 template<class T, VectorSize V>
 struct VectorType : DataType
 {
-	REQUIRE_BASE_TYPE(VectorType, ScalarType);
+	REQUIRE_TYPE_PARAM(VectorType, 
+		REQUIRE_BASE(T, ScalarType)
+	);
 
 	using ElementType = T;
 	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
@@ -519,8 +509,12 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 template<class T, Bits B, class S = AddressableSpace>
 struct PointerType : UIntType<B>
 {
-	REQUIRE_BASE_TYPE(PointerType, DataType);
-	REQUIRE_BASE_SPACE(PointerType, AddressableSpace);
+	REQUIRE_TYPE_PARAM(PointerType, 
+		REQUIRE_BASE(T, DataType)
+	);
+	REQUIRE_SPACE_PARAM(PointerType,
+		REQUIRE_BASE(S, AddressableSpace)
+	);
 
 	static std::string Name() { return UIntType<B>::Name(); }
 };

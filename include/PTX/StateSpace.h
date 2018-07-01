@@ -1,9 +1,12 @@
 #pragma once
 
+#include "PTX/Concepts.h"
+
 namespace PTX {
 
-#define REQUIRE_BASE_SPACE(context, space) static_assert(std::is_base_of<space, S>::value, "PTX::" TO_STRING(context) " requires base state space PTX::" TO_STRING(space))
-#define REQUIRE_EXACT_SPACE(context, space) static_assert(std::is_same<space, S>::value, "PTX::" TO_STRING(context) " requires exact state space PTX::" TO_STRING(space))
+#define REQUIRE_SPACE_PARAM(CONTEXT, ENABLED) \
+	constexpr static bool SpaceSupported = ENABLED; \
+	static_assert(Assert == false || SpaceSupported == true, "PTX::" TO_STRING(CONTEXT) " does not support PTX state space");
 
 // @struct StateSpace
 //

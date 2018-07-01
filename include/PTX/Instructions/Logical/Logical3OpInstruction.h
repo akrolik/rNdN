@@ -2,7 +2,7 @@
 
 #include "PTX/Instructions/InstructionBase.h"
 
-#include "PTX/Operands/Extended/StringOperand.h"
+#include "PTX/Operands/Extended/HexOperand.h"
 
 namespace PTX {
 
@@ -19,9 +19,7 @@ public:
 	std::vector<const Operand *> Operands() const override
 	{
 		auto operands = InstructionBase_3<Bit32Type>::Operands();
-		std::ostringstream hex;
-		hex << std::hex << static_cast<int>(m_immLut);
-		operands.push_back(new StringOperand(std::string("0x") + hex.str()));
+		operands.push_back(new HexOperand(m_immLut));
 		return operands;
 	}
 

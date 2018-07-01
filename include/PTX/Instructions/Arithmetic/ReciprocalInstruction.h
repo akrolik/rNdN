@@ -6,12 +6,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class ReciprocalInstruction : public InstructionBase_1<T>
 {
 public:
-	REQUIRE_TYPE(ReciprocalInstruction,
-		Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(ReciprocalInstruction,
+		REQUIRE_EXACT(T,
+			Float32Type, Float64Type
+		)
 	);
 };
 

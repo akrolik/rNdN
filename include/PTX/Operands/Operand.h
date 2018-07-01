@@ -16,7 +16,9 @@ public:
 template<class T>
 class TypedOperand : public Operand
 {
-	REQUIRE_BASE_TYPE(Operand, Type);
+	REQUIRE_TYPE_PARAM(Operand,
+		REQUIRE_BASE(T, Type)
+	);
 };
 
 }

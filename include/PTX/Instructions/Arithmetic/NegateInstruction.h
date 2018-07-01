@@ -5,13 +5,15 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class NegateInstruction : public InstructionBase_1<T>, public FlushSubnormalModifier<T>
 {
 public:
-	REQUIRE_TYPE(NegateInstruction,
-		Int16Type, Int32Type, Int64Type,
-		Float16Type, Float16x2Type, Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(NegateInstruction,
+		REQUIRE_EXACT(T,
+			Int16Type, Int32Type, Int64Type,
+			Float16Type, Float16x2Type, Float32Type, Float64Type
+		)
 	);
 
 	using InstructionBase_1<T>::InstructionBase_1;

@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class ShiftLeftInstruction : public InstructionBase_2<T, T, UInt32Type>
 {
 public:
-	REQUIRE_TYPE(ShiftLeftInstruction,
-		Bit16Type, Bit32Type, Bit64Type
+	REQUIRE_TYPE_PARAM(ShiftLeftInstruction,
+		REQUIRE_EXACT(T,
+			Bit16Type, Bit32Type, Bit64Type
+		)
 	);
 
 	using InstructionBase_2<T, T, UInt32Type>::InstructionBase_2;

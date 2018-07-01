@@ -4,13 +4,15 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class BitFieldExtractInstruction : public InstructionBase_3<T, T, UInt32Type, UInt32Type>
 {
 public:
-	REQUIRE_TYPE(BitFieldExtractInstruction,
-		Int32Type, Int64Type,
-		UInt32Type, UInt64Type
+	REQUIRE_TYPE_PARAM(BitFieldExtractInstruction,
+		REQUIRE_EXACT(T,
+			Int32Type, Int64Type,
+			UInt32Type, UInt64Type
+		)
 	);
 
 	using InstructionBase_3<T, T, UInt32Type, UInt32Type>::InstructionBase;

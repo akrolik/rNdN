@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
 #include "PTX/Instructions/Modifiers/UniformModifier.h"
 
 #include "PTX/Functions/Function.h"
@@ -10,7 +10,7 @@
 namespace PTX {
 
 template<class R>
-class CallInstructionBase : public InstructionStatement, public UniformModifier
+class CallInstructionBase : public PredicatedInstruction, public UniformModifier
 {
 public:
 	CallInstructionBase(const Function *function, const R *returnVariable, bool uniform) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable) {}
@@ -43,7 +43,7 @@ protected:
 };
 
 template<>
-class CallInstructionBase<VoidType> : public InstructionStatement, public UniformModifier
+class CallInstructionBase<VoidType> : public PredicatedInstruction, public UniformModifier
 {
 public:
 	CallInstructionBase(const Function *function, bool uniform) : UniformModifier(uniform), m_function(function) {}

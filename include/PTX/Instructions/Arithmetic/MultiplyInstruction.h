@@ -8,14 +8,16 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class MultiplyInstruction : public InstructionBase_2<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
 public:
-	REQUIRE_TYPE(MultiplyInstruction,
-		Int16Type, Int32Type, Int64Type,
-		UInt16Type, UInt32Type, UInt64Type,
-		Float16Type, Float16x2Type, Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(MultiplyInstruction,
+		REQUIRE_EXACT(T,
+			Int16Type, Int32Type, Int64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Float16Type, Float16x2Type, Float32Type, Float64Type
+		)
 	);
 
 	using InstructionBase_2<T>::InstructionBase_2;

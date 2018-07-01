@@ -5,17 +5,17 @@
 
 namespace PTX {
 
-template<class D, class T, bool Typecheck = true>
+template<class D, class T, bool Assert = true>
 class ConvertInstruction : public InstructionBase_1<D, T>
 {
 public:
 	REQUIRE_TYPE_PARAMS(SetInstruction,
-		REQUIRE_TYPE_PARAM(D,
+		REQUIRE_EXACT(D,
 			Int8Type, Int16Type, Int32Type, Int64Type,
 			UInt8Type, UInt16Type, UInt32Type, UInt64Type,
 			Float16Type, Float32Type, Float64Type
 		),
-		REQUIRE_TYPE_PARAM(T,
+		REQUIRE_EXACT(T,
 			Int8Type, Int16Type, Int32Type, Int64Type,
 			UInt8Type, UInt16Type, UInt32Type, UInt64Type,
 			Float16Type, Float32Type, Float64Type

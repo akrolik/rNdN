@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class BitReverseInstruction : public InstructionBase_2<T>
 {
 public:
-	REQUIRE_TYPE(BitReverseInstruction,
-		Bit32Type, Bit64Type
+	REQUIRE_TYPE_PARAM(BitReverseInstruction,
+		REQUIRE_EXACT(T,
+			Bit32Type, Bit64Type
+		)
 	);
 
 	using InstructionBase_2<T>::InstructionBase;

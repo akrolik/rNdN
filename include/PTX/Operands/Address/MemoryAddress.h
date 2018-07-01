@@ -7,8 +7,12 @@ namespace PTX {
 template<Bits B, class T, class S = AddressableSpace>
 class MemoryAddress : public Address<B, T, S>
 {
-	REQUIRE_BASE_TYPE(MemoryAddress, DataType);
-	REQUIRE_BASE_SPACE(MemoryAddress, AddressableSpace);
+	REQUIRE_TYPE_PARAM(MemoryAddress,
+		REQUIRE_BASE(T, DataType)
+	);
+	REQUIRE_SPACE_PARAM(MemoryAddress,
+		REQUIRE_BASE(S, AddressableSpace)
+	);
 public:
 	MemoryAddress(const typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
@@ -16,15 +20,15 @@ public:
 	{
 		if (m_offset > 0)
 		{
-			return "[" + m_variable->ToString() + "+" + std::to_string(m_offset) + "]";
+			return m_variable->ToString() + "+" + std::to_string(m_offset);
 		}
 		else if (m_offset < 0)
 		{
-			return "[" + m_variable->ToString() + std::to_string(m_offset) + "]";
+			return m_variable->ToString() + std::to_string(m_offset);
 		}
 		else
 		{
-			return "[" + m_variable->ToString() + "]";
+			return m_variable->ToString();
 		}
 	}
 

@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class FindNthBitInstruction : public InstructionBase_3<Bit32Type, Bit32Type, T, Int32Type>
 {
 public:
-	REQUIRE_TYPE(FindNthBitInstruction,
-		Bit32Type, Int32Type, UInt32Type
+	REQUIRE_TYPE_PARAM(FindNthBitInstruction,
+		REQUIRE_EXACT(T,
+			Bit32Type, Int32Type, UInt32Type
+		)
 	);
 
 	using InstructionBase_3<Bit32Type, Bit32Type, T, Int32Type>::InstructionBase_3;

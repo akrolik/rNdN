@@ -4,12 +4,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class PopulationCountInstruction : public InstructionBase_1<UInt32Type, T>
 {
 public:
-	REQUIRE_TYPE(PopulationCountInstruction,
-		Bit32Type, Bit64Type
+	REQUIRE_TYPE_PARAM(PopulationCountInstruction,
+		REQUIRE_EXACT(T,
+			Bit32Type, Bit64Type
+		)
 	);
 
 	using InstructionBase_1<UInt32Type, T>::InstructionBase_1;

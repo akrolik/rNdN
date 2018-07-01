@@ -62,8 +62,12 @@ class UntypedVariableDeclaration : public DirectiveStatement, public Declaration
 template<class T, class S>
 class VariableDeclaration : public UntypedVariableDeclaration<S>
 {
-	REQUIRE_BASE_TYPE(VariableDeclaration, Type);
-	REQUIRE_BASE_SPACE(VariableDeclaration, StateSpace);
+	REQUIRE_TYPE_PARAM(VariableDeclaration,
+		REQUIRE_BASE(T, Type)
+	);
+	REQUIRE_SPACE_PARAM(VariableDeclaration,
+		REQUIRE_BASE(S, StateSpace)
+	);
 public:
 	VariableDeclaration() {}
 

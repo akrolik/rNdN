@@ -12,15 +12,17 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class SetPredicateInstruction : public PredicatedInstruction, public FlushSubnormalModifier<T>, public PredicateModifier
 {
 public:
-	REQUIRE_TYPE(SetPredicateInstruction,
-		Bit16Type, Bit32Type, Bit64Type,
-		Int16Type, Int32Type, Int64Type,
-		UInt16Type, UInt32Type, UInt64Type,
-		Float16Type, Float16x2Type, Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(SetPredicateInstruction,
+		REQUIRE_EXACT(T,
+			Bit16Type, Bit32Type, Bit64Type,
+			Int16Type, Int32Type, Int64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Float16Type, Float16x2Type, Float32Type, Float64Type
+		)
 	);
 
 	SetPredicateInstruction(const Register<PredicateType> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator) : m_destinationP(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_comparator(comparator) {}
@@ -42,7 +44,6 @@ public:
 	std::vector<const Operand *> Operands() const override
 	{
 		std::vector<const Operand *> operands;
-
 		if (m_destinationQ == nullptr)
 		{
 			operands.push_back(m_destinationP);

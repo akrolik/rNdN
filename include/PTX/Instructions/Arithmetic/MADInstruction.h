@@ -9,14 +9,16 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class MADInstruction : public InstructionBase_3<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>, public CarryModifier<T>
 {
 public:
-	REQUIRE_TYPE(MADInstruction,
-		Int16Type, Int32Type, Int64Type,
-		UInt16Type, UInt32Type, UInt64Type,
-		Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(MADInstruction,
+		REQUIRE_EXACT(T,
+			Int16Type, Int32Type, Int64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Float32Type, Float64Type
+		)
 	);
 
 	using InstructionBase_3<T>::InstructionBase_3;

@@ -9,16 +9,16 @@ namespace PTX {
 
 //TODO: add variable source
 
-template<class T, Bits B, AddressSpace A>
+template<class T, Bits B, class S>
 class ConvertAddressInstruction : public InstructionStatement
 {
 	static_assert(B == Bits::Bits32 || B == Bits::Bits64, "PTX::ConvertAddressInstruction requires PTX::Bits::Bits32 or PTX::Bits::Bits64");
 public:
-	ConvertAddressInstruction(const Register<PointerType<T, B>> *destination, const Register<PointerType<T, B, A>> *source) : m_destination(destination), m_source(source) {}
+	ConvertAddressInstruction(const Register<PointerType<T, B>> *destination, const Register<PointerType<T, B, S>> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const override
 	{
-		return "cvta" + AddressSpaceName<A>() + PointerType<T, B, A>::Name();
+		return "cvta" + S::Name() + PointerType<T, B, S>::Name();
 	}
 
 	std::string Operands() const override
@@ -28,12 +28,12 @@ public:
 
 private:
 	const Register<PointerType<T, B>> *m_destination = nullptr;
-	const Register<PointerType<T, B, A>> *m_source = nullptr;
+	const Register<PointerType<T, B, S>> *m_source = nullptr;
 };
 
-template<class T, AddressSpace A>
-using ConvertAddress32Instruction = ConvertAddressInstruction<T, Bits::Bits32, A>;
-template<class T, AddressSpace A>
-using ConvertAddress64Instruction = ConvertAddressInstruction<T, Bits::Bits64, A>;
+template<class T, class S>
+using ConvertAddress32Instruction = ConvertAddressInstruction<T, Bits::Bits32, S>;
+template<class T, class S>
+using ConvertAddress64Instruction = ConvertAddressInstruction<T, Bits::Bits64, S>;
 
 }

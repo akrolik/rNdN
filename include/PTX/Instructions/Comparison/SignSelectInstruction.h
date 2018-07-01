@@ -5,18 +5,18 @@
 
 namespace PTX {
 
-template<class D, class T, bool Typecheck = true>
+template<class D, class T, bool Assert = true>
 class SignSelectInstruction : public InstructionBase_3<D, D, D, T>, public FlushSubnormalModifier<T>
 {
 public:
 	REQUIRE_TYPE_PARAMS(SetInstruction,
-		REQUIRE_TYPE_PARAM(D,
+		REQUIRE_EXACT(D,
 			Bit16Type, Bit32Type, Bit64Type,
 			Int16Type, Int32Type, Int64Type,
 			UInt16Type, UInt32Type, UInt64Type,
 			Float32Type, Float64Type
 		),
-		REQUIRE_TYPE_PARAM(T,
+		REQUIRE_EXACT(T,
 			Int32Type, Float32Type
 		)
 	);

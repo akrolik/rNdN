@@ -11,15 +11,15 @@
 
 namespace PTX {
 
-template<class D, class T, bool Typecheck = true>
+template<class D, class T, bool Assert = true>
 class SetInstruction : public InstructionBase_2<D, T>, public FlushSubnormalModifier<T>, public PredicateModifier
 {
 public:
 	REQUIRE_TYPE_PARAMS(SetInstruction,
-		REQUIRE_TYPE_PARAM(D,
+		REQUIRE_EXACT(D,
 			Int32Type, UInt32Type, Float32Type
 		),
-		REQUIRE_TYPE_PARAM(T,
+		REQUIRE_EXACT(T,
 			Bit16Type, Bit32Type, Bit64Type,
 			Int16Type, Int32Type, Int64Type,
 			UInt16Type, UInt32Type, UInt64Type,

@@ -11,7 +11,7 @@ public:
 
 template<class T, bool force>
 class FlushSubnormalModifier<T, force,
-      std::enable_if_t<TypeEnforcer<T, Float16Type, Float16x2Type, Float32Type>::value || force>>
+      std::enable_if_t<REQUIRE_EXACT(T, Float16Type, Float16x2Type, Float32Type) || force>>
 {
 public:
 	constexpr static bool Enabled = true;

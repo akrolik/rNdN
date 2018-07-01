@@ -6,12 +6,14 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class RootInstruction : public InstructionBase_1<T>
 {
 public:
-	REQUIRE_TYPE(RootInstruction,
-		Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(RootInstruction,
+		REQUIRE_EXACT(T,
+			Float32Type, Float64Type
+		)
 	);
 };
 

@@ -5,14 +5,16 @@
 
 namespace PTX {
 
-template<class T, bool Typecheck = true>
+template<class T, bool Assert = true>
 class MinimumInstruction : public InstructionBase_2<T>, public FlushSubnormalModifier<T>
 {
 public:
-	REQUIRE_TYPE(MinimumInstruction,
-		Int16Type, Int32Type, Int64Type,
-		UInt16Type, UInt32Type, UInt64Type,
-		Float32Type, Float64Type
+	REQUIRE_TYPE_PARAM(MinimumInstruction,
+		REQUIRE_EXACT(T,
+			Int16Type, Int32Type, Int64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Float32Type, Float64Type
+		)
 	);
 
 	using InstructionBase_2<T>::InstructionBase_2;

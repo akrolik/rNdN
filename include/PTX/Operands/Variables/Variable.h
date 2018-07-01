@@ -15,8 +15,12 @@ class Variable : public TypedOperand<T>
 {
 	friend class VariableDeclaration<T, S>;
 
-	REQUIRE_BASE_TYPE(Variable, Type);
-	REQUIRE_BASE_SPACE(Variable, StateSpace);
+	REQUIRE_TYPE_PARAM(Variable,
+		REQUIRE_BASE(T, Type)
+	);
+	REQUIRE_SPACE_PARAM(Variable,
+		REQUIRE_BASE(S, StateSpace)
+	);	
 public:
 	using VariableType = T;
 	using VariableSpace = S;
