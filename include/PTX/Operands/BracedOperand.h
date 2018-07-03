@@ -9,10 +9,11 @@ namespace PTX {
 template<class T, VectorSize V>
 class BracedOperand : public TypedOperand<VectorType<T, V>>
 {
+public:
 	REQUIRE_TYPE_PARAM(BracedOperand,
 		REQUIRE_BASE(T, ScalarType)
 	);
-public:
+
 	constexpr static int ElementCount = static_cast<int>(V);
 
 	BracedOperand(const std::array<const TypedOperand<T> *, ElementCount>& operands) : m_operands(operands) {}

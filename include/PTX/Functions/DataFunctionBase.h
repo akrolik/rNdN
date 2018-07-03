@@ -10,8 +10,12 @@ namespace PTX {
 template<class R>
 class DataFunctionBase : public Function
 {
-	static_assert(std::is_same<typename R::VariableSpace, RegisterSpace>::value || std::is_base_of<typename R::VariableSpace, ParameterSpace>::value, "PTX::DataFunction return space must be a PTX::RegisterSpace or PTX::ParameterSpace");
 public:
+	REQUIRE_SPACE_PARAM(DataFunction,
+		REQUIRE_EXACT(typename R::VariableSpace, RegisterSpace) ||
+		REQUIRE_BASE(typename R::VariableSpace, ParameterSpace)
+	);
+
 	void SetReturn(const VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
 
 	json ToJSON() const override

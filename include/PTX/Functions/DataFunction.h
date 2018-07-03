@@ -17,7 +17,7 @@ class DataFunction : public DataFunctionBase<R>
 {
 public:
 	template<class T, class S>
-	std::enable_if_t<std::is_same<S, RegisterSpace>::value || std::is_base_of<S, ParameterSpace>::value, void>
+	std::enable_if_t<REQUIRE_EXACT(S, RegisterSpace) || REQUIRE_BASE(S, ParameterSpace), void>
 	AddParameter(const VariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
 
 	json ToJSON() const override
@@ -61,8 +61,11 @@ protected:
 template<class R, typename... Args>
 class DataFunction<R(Args...)> : public DataFunctionBase<R>
 {
-	static_assert(is_all<std::is_same<typename Args::VariableSpace, RegisterSpace>::value || std::is_base_of<typename Args::VariableSpace, ParameterSpace>::value...>::value, "PTX::DataFunction parameter spaces must be PTX::RegisterSpaces or PTX::ParameterSpaces");
 public:
+	REQUIRE_SPACE_PARAM(DataFunction,
+		is_all<REQUIRE_EXACT(typename Args::VariableSpace, RegisterSpace) || REQUIRE_BASE(typename Args::VariableSpace, ParameterSpace)...>::value
+	);
+
 	void SetParameters(const VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
 
 	json ToJSON() const override

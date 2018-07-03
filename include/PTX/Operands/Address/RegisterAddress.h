@@ -10,13 +10,14 @@ namespace PTX {
 template<Bits B, class T, class S>
 class RegisterAddress : public Address<B, T, S>
 {
+public:
 	REQUIRE_TYPE_PARAM(RegisterAddress,
 		REQUIRE_BASE(T, DataType)
 	);
 	REQUIRE_SPACE_PARAM(RegisterAddress,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
-public:
+
 	RegisterAddress(const Register<PointerType<T, B, S>> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
 	std::string ToString() const override

@@ -460,10 +460,6 @@ enum class VectorSize : int {
 	Vector4 = 4
 };
 
-template<VectorSize V> std::string VectorName() { return std::string(".<unknown>"); }
-template<> inline std::string VectorName<VectorSize::Vector2>() { return std::string(".v2"); }
-template<> inline std::string VectorName<VectorSize::Vector4>() { return std::string(".v4"); }
-
 template<class T, VectorSize V>
 struct VectorType : DataType
 {

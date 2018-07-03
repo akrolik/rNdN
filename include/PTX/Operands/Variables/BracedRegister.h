@@ -9,10 +9,11 @@ namespace PTX {
 template<class T, VectorSize V>
 class BracedRegister : public Register<VectorType<T, V>>
 {
+public:
 	REQUIRE_TYPE_PARAM(BracedRegister,
 		REQUIRE_BASE(T, ScalarType)
 	);
-public:
+
 	constexpr static int ElementCount = static_cast<int>(V);
 
 	BracedRegister(const std::array<const Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(""), m_registers(registers) {}

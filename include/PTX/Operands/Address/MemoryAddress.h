@@ -7,13 +7,14 @@ namespace PTX {
 template<Bits B, class T, class S = AddressableSpace>
 class MemoryAddress : public Address<B, T, S>
 {
+public:
 	REQUIRE_TYPE_PARAM(MemoryAddress,
 		REQUIRE_BASE(T, DataType)
 	);
 	REQUIRE_SPACE_PARAM(MemoryAddress,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
-public:
+
 	MemoryAddress(const typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
 	std::string ToString() const override

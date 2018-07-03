@@ -8,13 +8,14 @@ namespace PTX {
 template<class T, Bits B, class S = AddressableSpace>
 class PointerRegisterAdapter : public RegisterAdapter<PointerType<T, B, S>, UIntType<B>>
 { 
+public:
 	REQUIRE_TYPE_PARAM(PointerRegisterAdapter,
 		REQUIRE_BASE(T, DataType)
 	);
 	REQUIRE_SPACE_PARAM(PointerRegisterAdapter,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
-public:
+
 	using RegisterAdapter<PointerType<T, B, S>, UIntType<B>>::RegisterAdapter;
 
 	json ToJSON() const override

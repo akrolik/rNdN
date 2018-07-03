@@ -9,14 +9,14 @@ template<class T, class S>
 class AddressableVariable : public Variable<T, S>
 {
 	friend class VariableDeclaration<T, S>;
-
+public:
 	REQUIRE_TYPE_PARAM(AddressableVariable,
 		REQUIRE_BASE(T, DataType)
 	);
 	REQUIRE_SPACE_PARAM(AddressableVariable,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
-public:
+
 	using Variable<T, S>::Variable;
 
 	json ToJSON() const override

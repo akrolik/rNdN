@@ -62,13 +62,14 @@ class UntypedVariableDeclaration : public DirectiveStatement, public Declaration
 template<class T, class S>
 class VariableDeclaration : public UntypedVariableDeclaration<S>
 {
+public:
 	REQUIRE_TYPE_PARAM(VariableDeclaration,
 		REQUIRE_BASE(T, Type)
 	);
 	REQUIRE_SPACE_PARAM(VariableDeclaration,
 		REQUIRE_BASE(S, StateSpace)
 	);
-public:
+
 	VariableDeclaration() {}
 
 	VariableDeclaration(const std::string& prefix, unsigned int count = 1)
@@ -187,7 +188,7 @@ public:
 		if (!std::is_same<S, AddressableSpace>::value || m_alignment != 4)
 		{
 			code << ".ptr";
-			if (!std::is_same<S, AddressableSpace>::value)
+			if constexpr (!std::is_same<S, AddressableSpace>::value)
 			{
 				code << S::Name();
 			}

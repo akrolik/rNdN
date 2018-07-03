@@ -7,10 +7,11 @@ namespace PTX {
 template<class T, VectorSize V>
 class IndexedRegister : public Register<T>
 {
+public:
 	REQUIRE_TYPE_PARAM(IndexedRegister,
 		REQUIRE_BASE(T, ScalarType)
 	);
-public:
+
 	IndexedRegister(const Register<VectorType<T, V>> *variable, VectorElement vectorElement) : Register<T>(variable->GetName()), m_vectorElement(vectorElement) {}
 
 	virtual VectorElement GetVectorElement() const { return m_vectorElement; }
