@@ -502,7 +502,7 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 	return ".<unknown>";
 }
 
-template<class T, Bits B, class S = AddressableSpace>
+template<Bits B, class T, class S = AddressableSpace>
 struct PointerType : UIntType<B>
 {
 	REQUIRE_TYPE_PARAM(PointerType, 
@@ -516,8 +516,8 @@ struct PointerType : UIntType<B>
 };
 
 template<class T, class S = AddressableSpace>
-using Pointer32Type = PointerType<T, Bits::Bits32, S>;
+using Pointer32Type = PointerType<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>
-using Pointer64Type = PointerType<T, Bits::Bits64, S>;
+using Pointer64Type = PointerType<Bits::Bits64, T, S>;
 
 }

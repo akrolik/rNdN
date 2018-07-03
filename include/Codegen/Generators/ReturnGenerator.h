@@ -23,7 +23,7 @@ public:
 	static void Generate(HorseIR::ReturnStatement *ret, Builder *builder)
 	{
 		const std::string returnName = "$return";
-		auto declaration = new PTX::PointerDeclaration<T, B>(returnName);
+		auto declaration = new PTX::PointerDeclaration<B, T>(returnName);
 		builder->AddParameter(declaration);
 		auto variable = declaration->GetVariable(returnName);
 

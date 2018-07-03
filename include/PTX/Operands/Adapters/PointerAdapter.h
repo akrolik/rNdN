@@ -5,8 +5,8 @@
 
 namespace PTX {
 
-template<class T, Bits B, class S = AddressableSpace>
-class PointerRegisterAdapter : public RegisterAdapter<PointerType<T, B, S>, UIntType<B>>
+template<Bits B, class T, class S = AddressableSpace>
+class PointerRegisterAdapter : public RegisterAdapter<PointerType<B, T, S>, UIntType<B>>
 { 
 public:
 	REQUIRE_TYPE_PARAM(PointerRegisterAdapter,
@@ -16,11 +16,11 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	using RegisterAdapter<PointerType<T, B, S>, UIntType<B>>::RegisterAdapter;
+	using RegisterAdapter<PointerType<B, T, S>, UIntType<B>>::RegisterAdapter;
 
 	json ToJSON() const override
 	{
-		json j = RegisterAdapter<PointerType<T, B, S>, UIntType<B>>::ToJSON();
+		json j = RegisterAdapter<PointerType<B, T, S>, UIntType<B>>::ToJSON();
 		j["kind"] = "PTX::PointerRegisterAdapter";
 		j.erase("destination");
 		j.erase("source");
@@ -29,8 +29,8 @@ public:
 };
 
 template<class T, class S = AddressableSpace>
-using Pointer32RegisterAdapter = PointerRegisterAdapter<T, Bits::Bits32, S>;
+using Pointer32RegisterAdapter = PointerRegisterAdapter<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>
-using Pointer64RegisterAdapter = PointerRegisterAdapter<T, Bits::Bits64, S>;
+using Pointer64RegisterAdapter = PointerRegisterAdapter<Bits::Bits64, T, S>;
 
 }

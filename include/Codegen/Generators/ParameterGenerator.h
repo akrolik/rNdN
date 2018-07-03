@@ -21,7 +21,7 @@ public:
 	template<class T>
 	static void Generate(HorseIR::Parameter *parameter, Builder *builder)
 	{
-		auto declaration = new PTX::PointerDeclaration<T, B>(parameter->GetName());
+		auto declaration = new PTX::PointerDeclaration<B, T>(parameter->GetName());
 		builder->AddParameter(declaration);
 		auto variable = declaration->GetVariable(parameter->GetName());
 		auto value = builder->AllocateRegister<T>(parameter->GetName());

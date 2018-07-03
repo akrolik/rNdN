@@ -38,7 +38,7 @@ class AddressGenerator
 {
 public:
 	template<class T>
-	static PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<T, B>> *variable, Builder *builder)
+	static PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable, Builder *builder)
 	{
 		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
 		auto temp_tidx = builder->AllocateRegister<PTX::UInt32Type, ResourceKind::Internal>("tidx");
@@ -48,12 +48,12 @@ public:
 		auto temp2 = builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("2");
 		auto temp3 = builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("3");
 
-		auto temp0_ptr = new PTX::PointerRegisterAdapter<T, B>(temp0);
-		auto temp1_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp1);
-		auto temp3_ptr = new PTX::PointerRegisterAdapter<T, B, PTX::GlobalSpace>(temp3);
+		auto temp0_ptr = new PTX::PointerRegisterAdapter<B, T>(temp0);
+		auto temp1_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp1);
+		auto temp3_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp3);
 
-		builder->AddStatement(new PTX::Load64Instruction<PTX::PointerType<T, B>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<T, B>, PTX::ParameterSpace>(variable)));
-		builder->AddStatement(new PTX::ConvertToAddressInstruction<T, B, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
+		builder->AddStatement(new PTX::Load64Instruction<PTX::PointerType<B, T>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<B, T>, PTX::ParameterSpace>(variable)));
+		builder->AddStatement(new PTX::ConvertToAddressInstruction<B, T, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
 		builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
 		if constexpr(B == PTX::Bits::Bits32)
 		{

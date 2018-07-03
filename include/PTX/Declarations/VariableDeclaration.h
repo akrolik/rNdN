@@ -173,11 +173,11 @@ using SpecialRegisterDeclaration = VariableDeclaration<T, SpecialRegisterSpace>;
 template<class T>
 using ParameterDeclaration = VariableDeclaration<T, ParameterSpace>;
 
-template<class T, Bits B, class S = AddressableSpace>
-class PointerDeclaration : public ParameterDeclaration<PointerType<T, B, S>>
+template<Bits B, class T, class S = AddressableSpace>
+class PointerDeclaration : public ParameterDeclaration<PointerType<B, T, S>>
 {
 public:
-	using VariableDeclaration<PointerType<T, B, S>, ParameterSpace>::VariableDeclaration;
+	using VariableDeclaration<PointerType<B, T, S>, ParameterSpace>::VariableDeclaration;
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 	unsigned int GetAlignment() const { return m_alignment; }
@@ -206,7 +206,7 @@ protected:
 };
 
 template<class T, class S = AddressableSpace>
-using Pointer32Declaration = PointerDeclaration<T, Bits::Bits32, S>;
+using Pointer32Declaration = PointerDeclaration<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>
-using Pointer64Declaration = PointerDeclaration<T, Bits::Bits64, S>;
+using Pointer64Declaration = PointerDeclaration<Bits::Bits64, T, S>;
 }

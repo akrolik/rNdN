@@ -18,7 +18,7 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	RegisterAddress(const Register<PointerType<T, B, S>> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
+	RegisterAddress(const Register<PointerType<B, T, S>> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
 	std::string ToString() const override
 	{
@@ -48,11 +48,11 @@ public:
 		return j;
 	}
 
-	const Register<PointerType<T, B, S>> *GetRegister() const { return m_variable; }
+	const Register<PointerType<B, T, S>> *GetRegister() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
 private:
-	const Register<PointerType<T, B, S>> *m_variable;
+	const Register<PointerType<B, T, S>> *m_variable;
 	int m_offset = 0;
 };
 
