@@ -7,17 +7,17 @@
 namespace PTX {
 
 template<Bits B, class T, class S = AddressableSpace>
-class DereferenceOperand : public TypedOperand<T>
+class DereferencedAddress : public TypedOperand<T>
 {
 public:
-	REQUIRE_TYPE_PARAM(DereferenceOperand,
+	REQUIRE_TYPE_PARAM(DereferencedAddress,
 		REQUIRE_BASE(T, Type)
 	);
-	REQUIRE_SPACE_PARAM(DereferenceOperand,
+	REQUIRE_SPACE_PARAM(DereferencedAddress,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	DereferenceOperand(const Address<B, T, S> *address) : m_address(address) {}
+	DereferencedAddress(const Address<B, T, S> *address) : m_address(address) {}
 
 	std::string ToString() const override
 	{
@@ -27,7 +27,7 @@ public:
 	json ToJSON() const override
 	{
 		json j;
-		j["kind"] = "PTX::DereferenceOperand";
+		j["kind"] = "PTX::DereferencedAddress";
 		j["address"] = m_address->ToJSON();
 		return j;
 	}
@@ -37,8 +37,8 @@ private:
 };
 
 template<class T, class S>
-using Dereference32Operand = DereferenceOperand<Bits::Bits32, T, S>;
+using DereferencedAddress32 = DereferencedAddress<Bits::Bits32, T, S>;
 template<class T, class S>
-using Dereference64Operand = DereferenceOperand<Bits::Bits64, T, S>;
+using DereferencedAddress64 = DereferencedAddress<Bits::Bits64, T, S>;
 
 }

@@ -5,7 +5,7 @@
 #include "PTX/StateSpace.h"
 #include "PTX/Synchronization.h"
 #include "PTX/Operands/Address/Address.h"
-#include "PTX/Operands/Extended/DereferenceOperand.h"
+#include "PTX/Operands/Address/DereferencedAddress.h"
 #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
@@ -29,7 +29,7 @@ public:
 
 	std::vector<const Operand *> Operands() const override
 	{
-		return { new DereferenceOperand<B, T, S>(m_address), m_register };
+		return { new DereferencedAddress<B, T, S>(m_address), m_register };
 	}
 
 private:
