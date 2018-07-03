@@ -1,39 +1,52 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
 
-#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 
-//TODO: add variable source
-
-template<class T, Bits B, class S>
-class ConvertAddressInstruction : public InstructionStatement
+template<Bits B, class T, class D, class S>
+class ConvertAddressInstruction : public PredicatedInstruction
 {
-	static_assert(B == Bits::Bits32 || B == Bits::Bits64, "PTX::ConvertAddressInstruction requires PTX::Bits::Bits32 or PTX::Bits::Bits64");
 public:
-	ConvertAddressInstruction(const Register<PointerType<T, B>> *destination, const Register<PointerType<T, B, S>> *source) : m_destination(destination), m_source(source) {}
+	ConvertAddressInstruction(const Register<PointerType<B, T, D>> *destination, const Address<B, T, S> *source) : m_destination(destination), m_source(source) {}
 
 	std::string OpCode() const override
 	{
-		return "cvta" + S::Name() + PointerType<T, B, S>::Name();
+		std::string code = "cvta";
+		if constexpr(std::is_same<S, AddressableSpace>::value)
+		{
+			code += ".to" + D::Name();
+		}
+		else
+		{
+			code += S::Name();
+		}
+		return code + PointerType<B, T, D>::Name();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> Operands() const override
 	{
-		return m_destination->String() + ", " + m_source->String();
+		return { m_destination, m_source };
 	}
 
 private:
-	const Register<PointerType<T, B>> *m_destination = nullptr;
-	const Register<PointerType<T, B, S>> *m_source = nullptr;
+	const Register<PointerType<B, T, D>> *m_destination = nullptr;
+	const Address<B, T, S> *m_source = nullptr;
 };
 
-template<class T, class S>
-using ConvertAddress32Instruction = ConvertAddressInstruction<T, Bits::Bits32, S>;
-template<class T, class S>
-using ConvertAddress64Instruction = ConvertAddressInstruction<T, Bits::Bits64, S>;
+template<class T, class D, class S>
+using ConvertAddress32Instruction = ConvertAddressInstruction<Bits::Bits32, T, D, S>;
+template<class T, class D, class S>
+using ConvertAddress64Instruction = ConvertAddressInstruction<Bits::Bits64, T, D, S>;
+
+template<Bits B, class T, class D>
+using ConvertToAddressInstruction = ConvertAddressInstruction<B, T, D, AddressableSpace>;
+template<class T, class D>
+using ConvertToAddress32Instruction = ConvertToAddressInstruction<Bits::Bits32, T, D>;
+template<class T, class D>
+using ConvertToAddress64Instruction = ConvertToAddressInstruction<Bits::Bits64, T, D>;
 
 }

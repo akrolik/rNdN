@@ -12,7 +12,7 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
-#include "PTX/Instructions/Data/ConvertToAddressInstruction.h"
+#include "PTX/Instructions/Data/ConvertAddressInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
@@ -52,8 +52,8 @@ public:
 		auto temp1_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp1);
 		auto temp3_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp3);
 
-		builder->AddStatement(new PTX::Load64Instruction<PTX::PointerType<B, T>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress64<PTX::PointerType<B, T>, PTX::ParameterSpace>(variable)));
-		builder->AddStatement(new PTX::ConvertToAddressInstruction<B, T, PTX::GlobalSpace>(temp1_ptr, temp0_ptr));
+		builder->AddStatement(new PTX::LoadInstruction<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(variable)));
+		builder->AddStatement(new PTX::ConvertToAddressInstruction<B, T, PTX::GlobalSpace>(temp1_ptr, new PTX::RegisterAddress<B, T>(temp0_ptr)));
 		builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
 		if constexpr(B == PTX::Bits::Bits32)
 		{

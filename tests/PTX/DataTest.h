@@ -4,7 +4,6 @@
 
 #include "PTX/Instructions/Data/ConvertAddressInstruction.h"
 #include "PTX/Instructions/Data/ConvertInstruction.h"
-#include "PTX/Instructions/Data/ConvertToAddressInstruction.h"
 #include "PTX/Instructions/Data/IsSpaceInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"
 #include "PTX/Instructions/Data/LoadNCInstruction.h"

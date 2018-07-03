@@ -18,7 +18,7 @@
 #include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
 #include "PTX/Instructions/ControlFlow/BranchInstruction.h"
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
-#include "PTX/Instructions/Data/ConvertToAddressInstruction.h"
+#include "PTX/Instructions/Data/ConvertAddressInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
 #include "PTX/Instructions/Data/StoreInstruction.h"
@@ -84,7 +84,7 @@ public:
 		function->AddStatement(pDeclaration);
 
 		function->AddStatement(new PTX::Load64Instruction<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(rd0_ptr, new PTX::MemoryAddress64<PTX::Pointer64Type<PTX::UInt64Type>, PTX::ParameterSpace>(parameter)));
-		function->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::UInt64Type, PTX::GlobalSpace>(rd1_ptr, rd0_ptr));
+		function->AddStatement(new PTX::ConvertToAddress64Instruction<PTX::UInt64Type, PTX::GlobalSpace>(rd1_ptr, new PTX::RegisterAddress64<PTX::UInt64Type>(rd0_ptr)));
 		function->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(r0, tidx));
 		function->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt64Type, PTX::UInt32Type>(rd2, r0, new PTX::UInt32Value(4)));
 		function->AddStatement(new PTX::AddInstruction<PTX::UInt64Type>(rd3, rd1, rd2));

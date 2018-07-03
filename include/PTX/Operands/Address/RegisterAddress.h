@@ -7,7 +7,7 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S>
+template<Bits B, class T, class S = AddressableSpace>
 class RegisterAddress : public Address<B, T, S>
 {
 public:
@@ -56,9 +56,9 @@ private:
 	int m_offset = 0;
 };
 
-template<class T, class S>
+template<class T, class S = AddressableSpace>
 using RegisterAddress32 = RegisterAddress<Bits::Bits32, T, S>;
-template<class T, class S>
+template<class T, class S = AddressableSpace>
 using RegisterAddress64 = RegisterAddress<Bits::Bits64, T, S>;
 
 }
