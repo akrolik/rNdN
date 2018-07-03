@@ -62,6 +62,7 @@ public:
 	}
 
 private:
+	//TODO: Verify types of operands, as well as the membermask constant vs register
 	const Register<T> *m_destinationD = nullptr;
 	const Register<PredicateType> *m_destinationP = nullptr;
 

@@ -10,13 +10,14 @@ namespace PTX {
 template<Bits B, class T, class S>
 class IsSpaceInstruction : public PredicatedInstruction
 {
+public:
 	REQUIRE_TYPE_PARAM(IsSpaceInstruction,
 		REQUIRE_BASE(T, Type)
 	);
 	REQUIRE_SPACE_PARAM(IsSpaceInstruction,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
-public:
+
 	IsSpaceInstruction(const Register<PredicateType> *destination, const Address<B, T> *address) : m_destination(destination), m_address(address) {}
 
 	std::string OpCode() const override
