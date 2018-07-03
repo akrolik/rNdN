@@ -1,22 +1,24 @@
 #pragma once
 
-namespace PTX {
+#include <iostream>
 
-template<class T, bool force = false, typename Enable = void>
-class FlushSubnormalModifier
+namespace PTX
+{
+
+template<class D, class S, typename Enable = void>
+class ConvertFlushSubnormalModifier
 {
 public:
 	constexpr static bool Enabled = false;
 };
 
-template<class T, bool force>
-class FlushSubnormalModifier<T, force,
-      std::enable_if_t<REQUIRE_EXACT(T, Float16Type, Float16x2Type, Float32Type) || force>>
+template<class D, class S>
+class ConvertFlushSubnormalModifier<D, S, std::enable_if_t<(std::is_same<D, Float32Type>::value || std::is_same<S, Float32Type>::value)>>
 {
 public:
 	constexpr static bool Enabled = true;
 
-	FlushSubnormalModifier(bool flush = false) : m_flush(flush) {}
+	ConvertFlushSubnormalModifier(bool flush = false) : m_flush(flush) {}
 
 	bool GetFlushSubnormal() const { return m_flush; }
 	void SetFlushSubnormal(bool flush) { m_flush = flush; }

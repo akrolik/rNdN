@@ -51,6 +51,11 @@ public:
 		return "";
 	}
 
+	bool IsActive() const
+	{
+		return m_lower || m_upper;
+	}
+
 protected:
 	bool m_upper = false;
 	bool m_lower = false;

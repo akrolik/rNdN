@@ -16,8 +16,7 @@ class SaturateModifier<T, force,
 public:
 	constexpr static bool Enabled = true;
 
-	SaturateModifier() {}
-	SaturateModifier(bool saturate) : m_saturate(saturate) {}
+	SaturateModifier(bool saturate = false) : m_saturate(saturate) {}
 
 	bool GetSaturate() const { return m_saturate; }
 	void SetSaturate(bool saturate) { m_saturate = saturate; }

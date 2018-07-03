@@ -93,7 +93,7 @@ struct BitTypeBase : ScalarType
 			case ComparisonOperator::NotEqual:
 				return ".ne";
 		}
-		return "";
+		return ".<unknown>";
 	}
 };
 
@@ -166,7 +166,7 @@ struct IntTypeBase : BitType<B, N>
 			case ComparisonOperator::GreaterEqual:
 				return ".ge";
 		}
-		return "";
+		return ".<unknown>";
 	}
 };
 
@@ -230,7 +230,7 @@ struct UIntTypeBase : BitType<B, N>
 			case ComparisonOperator::HigherSame:
 				return ".hs";
 		}
-		return "";
+		return ".<unknown>";
 	}
 };
 
@@ -280,6 +280,8 @@ struct FloatTypeBase : BitType<B, N>
 	{
 		switch (roundingMode)
 		{
+			case RoundingMode::None:
+				return "";
 			case RoundingMode::Nearest:
 				return ".rn";
 			case RoundingMode::Zero:
@@ -289,7 +291,7 @@ struct FloatTypeBase : BitType<B, N>
 			case RoundingMode::PositiveInfinity:
 				return ".rp";
 		}
-		return "";
+		return ".<unknown>";
 	}
 
 	enum class ComparisonOperator {
@@ -344,7 +346,7 @@ struct FloatTypeBase : BitType<B, N>
 			case ComparisonOperator::NaN:
 				return ".nan";
 		}
-		return "";
+		return ".<unknown>";
 	}
 };
 
@@ -366,11 +368,14 @@ struct FloatTypeBase<Bits::Bits16, N> : BitType<Bits::Bits16, N>
 
 	static std::string RoundingModeString(RoundingMode roundingMode)
 	{
-		if (roundingMode == RoundingMode::None)
+		switch (roundingMode)
 		{
-			return "";
+			case RoundingMode::None:
+				return "";
+			case RoundingMode::Nearest:
+				return ".rn";
 		}
-		return ".rn";
+		return ".<unknown>";
 	}
 
 	enum class ComparisonOperator {
@@ -425,7 +430,7 @@ struct FloatTypeBase<Bits::Bits16, N> : BitType<Bits::Bits16, N>
 			case ComparisonOperator::NaN:
 				return ".nan";
 		}
-		return "";
+		return ".<unknown>";
 	}
 };
 
@@ -454,6 +459,21 @@ using Float16Type = FloatType<Bits::Bits16>;
 using Float16x2Type = FloatType<Bits::Bits16, 2>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
+
+template <class T, typename E = void>
+struct is_int_type : std::false_type {};
+
+template <class T>
+struct is_int_type<T, std::enable_if_t<
+	is_type_specialization<T, IntType>::value ||
+	is_type_specialization<T, UIntType>::value
+>> : std::true_type {};
+
+template <class T, typename E = void>
+struct is_float_type : std::false_type {};
+
+template <class T>
+struct is_float_type<T, std::enable_if_t<is_type_specialization<T, FloatType>::value>> : std::true_type {};
 
 enum class VectorSize : int {
 	Vector2 = 2,
