@@ -1,34 +1,125 @@
 #pragma once
 
-#include "PTX/Statements/InstructionStatement.h"
+#include "PTX/Instructions/PredicatedInstruction.h"
 
 #include "PTX/StateSpace.h"
+#include "PTX/Synchronization.h"
 #include "PTX/Operands/Address/Address.h"
+#include "PTX/Operands/Extended/DereferenceOperand.h"
 #include "PTX/Operands/Variables/Register.h"
 
 namespace PTX {
 
-template<Bits A, class T, class S>
-class StoreInstruction : public InstructionStatement
+template<Bits B, class T, class S>
+class StoreInstructionBase : public PredicatedInstruction
 {
-	// REQUIRE_BASE_TYPE(StoreInstruction, DataType);
-	// DISABLE_EXACT_TYPE(StoreInstruction, Float16Type);
 public:
-	StoreInstruction(const Address<A, T, S> *address, const Register<T> *reg) : m_address(address), m_register(reg) {}
+	REQUIRE_TYPE_PARAM(StoreInstruction,
+		REQUIRE_BASE(T, DataType) && !REQUIRE_EXACT(T,
+			Float16Type, Float16x2Type,
+			Vector2Type<Float16Type>, Vector2Type<Float16x2Type>,
+			Vector4Type<Float16Type>, Vector4Type<Float16x2Type>
+		)
+	);
+	REQUIRE_SPACE_PARAM(StoreInstruction,
+		REQUIRE_BASE(S, AddressableSpace)
+	);
 
-	std::string OpCode() const override
-	{
-		return "st" + S::Name() + T::Name();
-	}
-	
+	StoreInstructionBase(const Address<B, T, S> *address, const Register<T> *reg) : m_address(address), m_register(reg) {}
+
 	std::vector<const Operand *> Operands() const override
 	{
-		return { m_address, m_register };
+		return { new DereferenceOperand<B, T, S>(m_address), m_register };
 	}
 
 private:
-	const Address<A, T, S> *m_address = nullptr;
+	const Address<B, T, S> *m_address = nullptr;
 	const Register<T> *m_register = nullptr;
+};
+
+template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak>
+class StoreInstruction : public StoreInstructionBase<B, T, S>
+{
+public:
+	enum class CacheOperator {
+		WriteBack,
+		Global,
+		Streaming,
+		WriteThrough
+	};
+
+	static std::string CacheOperatorString(CacheOperator op)
+	{
+		switch (op)
+		{
+			case CacheOperator::WriteBack:
+				return ".wb";
+			case CacheOperator::Global:
+				return ".cg";
+			case CacheOperator::Streaming:
+				return ".cs";
+			case CacheOperator::WriteThrough:
+				return ".wt";
+		}
+		return ".<unknown>";
+	}
+
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, CacheOperator cacheOperator = CacheOperator::WriteBack) : StoreInstructionBase<B, T, S>(address, reg), m_cacheOperator(cacheOperator) {}
+
+	std::string OpCode() const override
+	{
+		std::string code = "st" + S::Name();
+		if (m_cacheOperator != CacheOperator::WriteBack)
+		{
+			code += CacheOperatorString(m_cacheOperator);
+		}
+		return code + T::Name();
+	}
+
+private:
+	CacheOperator m_cacheOperator = CacheOperator::All;
+};
+
+template<Bits B, class T, class S>
+class StoreInstruction<B, T, S, StoreSynchronization::Volatile> : public StoreInstructionBase<B, T, S>
+{
+public:
+	using StoreInstructionBase<B, T, S>::StoreInstructionBase;
+
+	std::string OpCode() const override
+	{
+		return "st.volatile" + S::Name() + T::Name();
+	}
+};
+
+template<Bits B, class T, class S>
+class StoreInstruction<B, T, S, StoreSynchronization::Relaxed> : public StoreInstructionBase<B, T, S>
+{
+public:
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), m_scope(scope) {}
+
+	std::string OpCode() const override
+	{
+		return "st.relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
+	}
+
+private:
+	Scope m_scope;
+};
+
+template<Bits B, class T, class S>
+class StoreInstruction<B, T, S, StoreSynchronization::Release> : public StoreInstructionBase<B, T, S>
+{
+public:
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), m_scope(scope) {}
+
+	std::string OpCode() const override
+	{
+		return "st.release" + ScopeString(m_scope) + S::Name() + T::Name();
+	}
+
+private:
+	Scope m_scope;
 };
 
 template<class T, class S>
