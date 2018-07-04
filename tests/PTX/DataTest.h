@@ -9,6 +9,7 @@
 #include "PTX/Instructions/Data/LoadNCInstruction.h"
 #include "PTX/Instructions/Data/LoadUniformInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
+#include "PTX/Instructions/Data/MoveAddressInstruction.h"
 #include "PTX/Instructions/Data/PackInstruction.h"
 #include "PTX/Instructions/Data/PermuteInstruction.h"
 #include "PTX/Instructions/Data/PrefetchInstruction.h"

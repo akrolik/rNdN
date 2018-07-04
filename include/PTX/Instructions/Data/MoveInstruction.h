@@ -2,6 +2,9 @@
 
 #include "PTX/Instructions/PredicatedInstruction.h"
 
+#include "PTX/Operands/Operand.h"
+#include "PTX/Operands/Variables/Register.h"
+
 namespace PTX {
 
 template<class T, bool Assert = true>
