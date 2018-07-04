@@ -36,7 +36,7 @@ public:
 		return ".<unknown>";
 	}
 
-	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit32Type> *sourceC, unsigned int memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
+	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, unsigned int sourceB, unsigned int sourceC, unsigned int memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
 
 	std::string OpCode() const override
 	{
@@ -55,22 +55,20 @@ public:
 			operands.push_back(new DualOperand(m_destinationD, m_destinationP));
 		}
 		operands.push_back(m_sourceA);
-		operands.push_back(m_sourceB);
-		operands.push_back(m_sourceC);
+		operands.push_back(new HexOperand(m_sourceB));
+		operands.push_back(new HexOperand(m_sourceC));
 		operands.push_back(new HexOperand(m_memberMask));
 		return operands;
 	}
 
 private:
-	//TODO: Verify types of operands, as well as the membermask constant vs register
 	const Register<T> *m_destinationD = nullptr;
 	const Register<PredicateType> *m_destinationP = nullptr;
+	const TypedOperand<T> *m_sourceA = nullptr;
 
 	Mode m_mode;
-
-	const TypedOperand<T> *m_sourceA = nullptr;
-	const TypedOperand<Bit32Type> *m_sourceB = nullptr;
-	const TypedOperand<Bit32Type> *m_sourceC = nullptr;
+	unsigned int m_sourceB = 0;
+	unsigned int m_sourceC = 0;
 	unsigned int m_memberMask = 0;
 };
 
