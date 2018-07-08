@@ -33,6 +33,8 @@
 #include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Variables/AddressableVariable.h"
 
+namespace Codegen {
+
 template<PTX::Bits B>
 class AddressGenerator
 {
@@ -69,3 +71,5 @@ public:
 		return new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr);
 	}
 };
+
+}

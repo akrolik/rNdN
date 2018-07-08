@@ -11,6 +11,8 @@
 #include "HorseIR/Traversal/ForwardTraversal.h"
 #include "HorseIR/Tree/Method.h"
 
+namespace Codegen {
+
 class Resources
 {
 public:
@@ -131,3 +133,5 @@ private:
 
 	mutable std::unordered_map<KeyType, Resources *, KeyHash, KeyEqual> m_resourcesMap;
 };
+
+}

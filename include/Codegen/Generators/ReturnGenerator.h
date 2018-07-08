@@ -13,6 +13,8 @@
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
 #include "PTX/Statements/BlockStatement.h"
 
+namespace Codegen {
+
 template<PTX::Bits B>
 class ReturnGenerator
 {
@@ -22,6 +24,9 @@ public:
 	template<class T>
 	static void Generate(HorseIR::ReturnStatement *ret, Builder *builder)
 	{
+		//TODO: remove check
+		if constexpr(!std::is_same<T, PTX::PredicateType>::value)
+		{
 		const std::string returnName = "$return";
 		auto declaration = new PTX::PointerDeclaration<B, T>(returnName);
 		builder->AddParameter(declaration);
@@ -37,5 +42,8 @@ public:
 		builder->AddStatement(new PTX::ReturnInstruction());
 
 		builder->CloseScope();
+		}
 	}
 };
+
+}

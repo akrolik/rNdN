@@ -10,6 +10,8 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Operands/Variables/Register.h"
 
+namespace Codegen {
+
 template<PTX::Bits B>
 class AssignmentGenerator
 {
@@ -36,3 +38,5 @@ public:
 		assign->Accept(generator);
 	}
 };
+
+}

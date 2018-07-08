@@ -13,6 +13,8 @@
 
 #include "Codegen/Builder.h"
 
+namespace Codegen {
+
 template<PTX::Bits B, class T>
 class OperandGenerator : public HorseIR::ForwardTraversal
 {
@@ -34,14 +36,14 @@ public:
 
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		HorseIR::Type *type = identifier->GetType();
+		const HorseIR::Type *type = identifier->GetType();
 		switch (type->GetKind())
 		{
 			case HorseIR::Type::Kind::Primitive:
-				Dispatch(static_cast<HorseIR::PrimitiveType *>(type), identifier);
+				Dispatch(static_cast<const HorseIR::PrimitiveType *>(type), identifier);
 				break;
 			case HorseIR::Type::Kind::List:
-				Dispatch(static_cast<HorseIR::ListType *>(type), identifier);
+				Dispatch(static_cast<const HorseIR::ListType *>(type), identifier);
 				break;
 			default:
 				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
@@ -49,10 +51,13 @@ public:
 		}
 	}
 
-	void Dispatch(HorseIR::PrimitiveType *type, HorseIR::Identifier *identifier)
+	void Dispatch(const HorseIR::PrimitiveType *type, HorseIR::Identifier *identifier)
 	{
 		switch (type->GetKind())
 		{
+			case HorseIR::PrimitiveType::Kind::Bool:
+				GenerateIdentifier<PTX::PredicateType>(identifier);
+				break;
 			case HorseIR::PrimitiveType::Kind::Int8:
 				GenerateIdentifier<PTX::Int8Type>(identifier);
 				break;
@@ -77,7 +82,7 @@ public:
 		}
 	}
 
-	void Dispatch(HorseIR::ListType *type, HorseIR::Identifier *identifier)
+	void Dispatch(const HorseIR::ListType *type, HorseIR::Identifier *identifier)
 	{
 		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
 		std::exit(EXIT_FAILURE);
@@ -92,10 +97,18 @@ public:
 		}
 		else
 		{
-			auto source = m_builder->GetRegister<S>(identifier->GetString());
-			auto converted = m_builder->AllocateRegister<T, ResourceKind::Internal>(identifier->GetString());
-			m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
-			m_operand = converted;
+			if constexpr(PTX::ConvertInstruction<T, S, false>::TypeSupported)
+			{
+				auto source = m_builder->GetRegister<S>(identifier->GetString());
+				auto converted = m_builder->AllocateRegister<T, ResourceKind::Internal>(identifier->GetString());
+				m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
+				m_operand = converted;
+			}
+			else
+			{
+				std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + T::Name() << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -135,3 +148,5 @@ private:
 
 	const PTX::TypedOperand<T> *m_operand = nullptr;
 };
+
+}

@@ -12,6 +12,8 @@
 #include "PTX/Instructions/Data/LoadInstruction.h"
 #include "PTX/Statements/BlockStatement.h"
 
+namespace Codegen {
+
 template<PTX::Bits B>
 class ParameterGenerator
 {
@@ -21,6 +23,9 @@ public:
 	template<class T>
 	static void Generate(HorseIR::Parameter *parameter, Builder *builder)
 	{
+		//TODO: Remove check for loading parameters
+		if constexpr(!std::is_same<T, PTX::PredicateType>::value)
+		{
 		auto declaration = new PTX::PointerDeclaration<B, T>(parameter->GetName());
 		builder->AddParameter(declaration);
 		auto variable = declaration->GetVariable(parameter->GetName());
@@ -34,5 +39,8 @@ public:
 		builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
 
 		builder->CloseScope();
+		}
 	}
 };
+
+}

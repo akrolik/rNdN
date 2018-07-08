@@ -16,6 +16,8 @@
 #include "PTX/Program.h"
 #include "PTX/Type.h"
 
+namespace Codegen {
+
 template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ForwardTraversal
 {
@@ -152,6 +154,9 @@ private:
 	{
 		switch (type->GetKind())
 		{
+			case HorseIR::PrimitiveType::Kind::Bool:
+				G::template Generate<PTX::PredicateType>(node, m_builder);
+				break;
 			case HorseIR::PrimitiveType::Kind::Int8:
 				G::template Generate<PTX::Int8Type>(node, m_builder);
 				break;
@@ -186,3 +191,5 @@ private:
 	std::string m_target;
 	Builder *m_builder = new Builder();
 };
+
+}

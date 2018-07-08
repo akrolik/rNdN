@@ -9,6 +9,8 @@
 #include "PTX/Type.h"
 #include "PTX/Functions/DataFunction.h"
 
+namespace Codegen {
+
 class Builder
 {
 public:
@@ -127,3 +129,5 @@ private:
 	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;
 	std::vector<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
 };
+
+}
