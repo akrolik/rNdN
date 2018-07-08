@@ -18,7 +18,7 @@ public:
 	void SetDeviceTarget(const std::string& target) { m_target = target; }
 	void SetAddressSize(Bits addressSize) { m_addressSize = addressSize; }
 
-	void AddDeclaration(Declaration *declaration)
+	void AddDeclaration(const Declaration *declaration)
 	{
 		m_declarations.push_back(declaration);
 	}
@@ -29,7 +29,7 @@ public:
 
 		code << ".version " << m_versionMajor << "." << m_versionMinor << std::endl;
 		code << ".target " << m_target << std::endl;
-		code << ".address_size " << std::to_string(static_cast<int>(m_addressSize)) << std::endl;
+		code << ".address_size " << std::to_string(static_cast<std::underlying_type<Bits>::type>(m_addressSize)) << std::endl;
 
 		for (const auto& declaration : m_declarations)
 		{
@@ -58,7 +58,7 @@ private:
 	std::string m_target;
 	Bits m_addressSize = Bits::Bits32;
 
-	std::vector<Declaration *> m_declarations;
+	std::vector<const Declaration *> m_declarations;
 };
 
 }

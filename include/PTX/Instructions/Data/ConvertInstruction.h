@@ -13,7 +13,7 @@ template<class D, class S, bool Assert = true>
 class ConvertInstruction : public InstructionBase_1<D, S>, public ConvertRoundingModifier<D, S>, public ConvertFlushSubnormalModifier<D, S>, public ConvertSaturateModifier<D, S>
 {
 public:
-	REQUIRE_TYPE_PARAMS(SetInstruction,
+	REQUIRE_TYPE_PARAMS(ConvertInstruction,
 		REQUIRE_EXACT(D,
 			Int8Type, Int16Type, Int32Type, Int64Type,
 			UInt8Type, UInt16Type, UInt32Type, UInt64Type,

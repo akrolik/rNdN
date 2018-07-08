@@ -8,7 +8,7 @@ template<class T1, class T2>
 class MADWideInstruction : public InstructionBase_3<T1, T2>
 {
 public:
-	//TODO: Fix this up!
+	//TODO: Fix this up! Maybe 1 parameter?
 	static_assert(
 		(std::is_same<Int32Type, T1>::value && std::is_same<Int16Type, T2>::value) ||
 		(std::is_same<Int64Type, T1>::value && std::is_same<Int32Type, T2>::value) ||
