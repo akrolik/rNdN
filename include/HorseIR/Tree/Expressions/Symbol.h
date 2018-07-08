@@ -13,6 +13,8 @@ class Symbol : public Expression
 public:
 	Symbol(std::string name) : m_name(name) {}
 
+	const Type *GetType() const { return new PrimitiveType(PrimitiveType::Kind::Symbol); }
+
 	std::string ToString() const override
 	{
 		return m_name;

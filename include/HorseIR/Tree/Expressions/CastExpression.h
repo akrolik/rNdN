@@ -14,6 +14,8 @@ class CastExpression : public Expression
 public:
 	CastExpression(Expression *expression, Type *type) : m_expression(expression), m_type(type) {}
 
+	const Type *GetType() const { return m_type; }
+
 	std::string ToString() const override
 	{
 		return "check_cast(" + m_expression->ToString() + ", " + m_type->ToString() + ")";

@@ -38,7 +38,6 @@ LETTER [A-Za-z_]
 ","          return ',';
 
 bool         return tBOOL;
-char         return tCHAR;
 i8           return tI8;
 i16          return tI16;
 i32          return tI32;
@@ -50,6 +49,7 @@ sym          return tSYMBOL;
 str          return tSTRING;
 list         return tLIST;
 table        return tTABLE;
+d            return tDATE;
 
 module       return tMODULE;
 import       return tIMPORT;
@@ -75,6 +75,13 @@ return       return tRETURN;
 (0\.{DIGIT}*)|({NONZERODIGIT}{DIGIT}*\.{DIGIT}*) {
 	yylval.float_val = atof(yytext);
 	return tFLOATVAL;
+}
+
+{DIGIT}{DIGIT}{DIGIT}{DIGIT}\.{DIGIT}{DIGIT}\.{DIGIT}{DIGIT} {
+	int yy, mm, dd;
+	sscanf(yytext, "%d.%d.%d", &yy, &mm, &dd);
+	yylval.int_val = yy*10000 + mm*100 + dd;
+	return tDATEVAL;
 }
 
 \"[^"]*\" {

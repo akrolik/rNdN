@@ -13,6 +13,8 @@ class ListType : public Type
 public:
 	ListType(Type *elementType) : Type(Type::Kind::List), m_elementType(elementType) {}
 
+	Type *GetElementType() const { return m_elementType; }
+
 	std::string ToString() const override
 	{
 		return "list<" + m_elementType->ToString() + ">";

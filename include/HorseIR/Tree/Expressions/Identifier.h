@@ -13,11 +13,8 @@ class Identifier : public Expression
 public:
 	Identifier(std::string string) : m_string(string) {}
 
-	Type *GetType() const { return m_type; }
-	void SetType(Type *type)
-	{
-		m_type = type;
-	}
+	const Type *GetType() const { return m_type; }
+	void SetType(Type *type) { m_type = type; }
 
 	std::string GetString() const { return m_string; }
 

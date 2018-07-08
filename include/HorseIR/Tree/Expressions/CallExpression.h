@@ -14,6 +14,8 @@ class CallExpression : public Expression
 public:
 	CallExpression(std::string name, std::vector<Expression *> arguments) : m_name(name), m_arguments(arguments) {}
 
+	const Type *GetType() const { return nullptr; }
+
 	std::string GetName() const { return m_name; }
 	const std::vector<Expression *>& GetArguments() const { return m_arguments; }
 	Expression *GetArgument(unsigned int index) const { return m_arguments.at(index); }

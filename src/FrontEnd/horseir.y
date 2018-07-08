@@ -63,9 +63,9 @@ void yyerror(const char *s)
 }
 
 %token '(' ')' '{' '}' '<' '>'
-%token tBOOL tCHAR tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tLIST tTABLE
+%token tBOOL tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tLIST tTABLE tDATE
 %token tMODULE tIMPORT tDEF tCHECKCAST tRETURN
-%token <int_val> tINTVAL
+%token <int_val> tINTVAL tDATEVAL
 %token <float_val> tFLOATVAL
 %token <string_val> tSTRINGVAL
 %token <string_val> tFUNCTIONVAL
@@ -81,7 +81,7 @@ void yyerror(const char *s)
 %type <statement> statement
 %type <expressions> literals literalsne
 %type <expression> expression call literal
-%type <ints> int_list
+%type <ints> int_list date_list
 %type <floats> float_list
 %type <strings> string_list
 
@@ -113,12 +113,12 @@ parameter : tIDENTIFIER ':' type                                                
 
 type : '?'                                                                      { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Wildcard); }
      | tBOOL                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Bool); }
-     | tCHAR                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Char); }
      | int_type                                                                 { $$ = $1; }
      | float_type                                                               { $$ = $1; }
      | tSTRING                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String); }
      | tSYMBOL                                                                  { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Symbol); }
      | tTABLE                                                                   { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Table); }
+     | tDATE                                                                    { $$ = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int64); } /* TODO date type */
      | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
      ;
 
@@ -157,13 +157,17 @@ literalsne : literalsne ',' literal                                             
            ;
 
 literal : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }
-	| tSYMBOLVAL                                                            { $$ = new HorseIR::Symbol(*$1); }
+	| tSYMBOLVAL ':' tSYMBOL                                                { $$ = new HorseIR::Symbol(*$1); }
 	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
         | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
+	| int_list ':' float_type                                               { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
+        | '(' int_list ')' ':' float_type                                       { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
 	| float_list ':' float_type                                             { $$ = new HorseIR::Literal<double>(*$1, $3); }
         | '(' float_list ')' ':' float_type                                     { $$ = new HorseIR::Literal<double>(*$2, $5); }
         | string_list ':' tSTRING                                               { $$ = new HorseIR::Literal<std::string>(*$1, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String)); }
         | '(' string_list ')' ':' tSTRING                                       { $$ = new HorseIR::Literal<std::string>(*$2, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::String)); }
+        | date_list ':' tDATE                                                   { $$ = new HorseIR::Literal<int64_t>(*$1, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int64)); }
+        | '(' date_list ')' ':' tDATE                                           { $$ = new HorseIR::Literal<int64_t>(*$2, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int64)); }
         ;
 
 int_list : int_list ',' tINTVAL                                                 { $1->push_back($3); $$ = $1; } 
@@ -178,5 +182,8 @@ string_list : string_list ',' tSTRINGVAL                                        
 	    | tSTRINGVAL                                                        { $$ = new std::vector<std::string>({*$1}); }
             ;
 
+date_list : date_list ',' tDATEVAL                                              { $1->push_back($3); $$ = $1; } 
+	  | tDATEVAL                                                            { $$ = new std::vector<long>({$1}); }
+          ;
 
 %%

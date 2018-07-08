@@ -17,6 +17,8 @@ public:
 	Literal(T value, Type *type) : m_values({value}), m_type(type) {}
 	Literal(std::vector<T> values, Type *type) : m_values(values), m_type(type) {}
 
+	const Type *GetType() const override { return m_type; }
+
 	const std::vector<T>& GetValues() const { return m_values; }
 	const T& GetValue(unsigned int index) const { return m_values.at(index); }
 

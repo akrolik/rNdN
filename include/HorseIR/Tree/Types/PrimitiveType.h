@@ -14,7 +14,6 @@ public:
 	enum Kind {
 		Wildcard,
 		Bool,
-		Char,
 		Int8,
 		Int16,
 		Int32,
@@ -37,8 +36,6 @@ public:
 				return "?";
 			case Bool:
 				return "bool";
-			case Char:
-				return "char";
 			case Int8:
 				return "i8";
 			case Int16:
@@ -57,6 +54,8 @@ public:
 				return "sym";
 			case String:
 				return "string";
+			case Table:
+				return "table";
 			default:
 				return "<unknown>";
 		}
