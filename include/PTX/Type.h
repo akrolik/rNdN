@@ -11,6 +11,16 @@
 
 namespace PTX {
 
+// @struct is_comparable_type
+//
+// Type trait for determining if a PTX::Type can be compared
+
+template<class T, typename E = void>
+struct is_comparable_type : std::false_type {};
+
+template<class T>
+struct is_comparable_type<T, std::enable_if_t<std::is_enum<typename T::ComparisonOperator>::value>> : std::true_type {};
+
 // @struct is_rounding_type
 //
 // Type trait for determining if a PTX::Type has a rounding mode
@@ -100,12 +110,25 @@ struct BitTypeBase : ScalarType
 template<>
 struct BitTypeBase<Bits::Bits1, 1> : Type
 {
+	constexpr static std::underlying_type<Bits>::type BitSize = static_cast<std::underlying_type<Bits>::type>(Bits::Bits1);
+
 	static std::string Name() { return ".pred"; }
 };
 
-enum class VectorSize : int;
+template<>
+struct BitTypeBase<Bits::Bits8, 1> : ScalarType
+{
+	constexpr static std::underlying_type<Bits>::type BitSize = static_cast<std::underlying_type<Bits>::type>(Bits::Bits8);
+
+	static std::string Name() { return ".b" + std::to_string(BitSize); }
+};
 
 template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
+template<> struct BitType<Bits::Bits1, 1> : BitTypeBase<Bits::Bits1>
+{
+	using SystemType = int64_t;
+	constexpr static std::string_view RegisterPrefix = "p";
+};
 template<> struct BitType<Bits::Bits8, 1> : BitTypeBase<Bits::Bits8>
 {
 	using SystemType = int8_t;
@@ -170,6 +193,12 @@ struct IntTypeBase : BitType<B, N>
 	}
 };
 
+template<>
+struct IntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
+{
+	static std::string Name() { return ".s" + std::to_string(BitType<Bits::Bits8>::BitSize); }
+};
+
 template<Bits B, unsigned int N = 1> struct IntType : IntTypeBase<B, N> {};
 template<> struct IntType<Bits::Bits8, 1> : IntTypeBase<Bits::Bits8>
 {
@@ -232,6 +261,12 @@ struct UIntTypeBase : BitType<B, N>
 		}
 		return ".<unknown>";
 	}
+};
+
+template<>
+struct UIntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
+{
+	static std::string Name() { return ".u" + std::to_string(BitType<Bits::Bits8>::BitSize); }
 };
 
 template<Bits B, unsigned int N = 1> struct UIntType : UIntTypeBase<B, N> {};
