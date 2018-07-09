@@ -4,24 +4,19 @@
 
 namespace PTX {
 
-template<class T1, class T2>
-class MultiplyWideInstruction : public InstructionBase_2<T1, T2>
+template<class T>
+class MultiplyWideInstruction : public InstructionBase_2<typename T::WideType, T>
 {
 public:
-	//TODO: Fix this up!
-	static_assert(
-		(std::is_same<Int32Type, T1>::value && std::is_same<Int16Type, T2>::value) ||
-		(std::is_same<Int64Type, T1>::value && std::is_same<Int32Type, T2>::value) ||
-		(std::is_same<UInt32Type, T1>::value && std::is_same<UInt16Type, T2>::value) ||
-		(std::is_same<UInt64Type, T1>::value && std::is_same<UInt32Type, T2>::value),
-		"PTX::MultipyWideInstruction requires 16-, 32-, or 64-bit integers (signed or unsigned) with destination = 2x source"
+	REQUIRE_TYPE_PARAM(MultiplyWideInstruction,
+		REQUIRE_EXACT(T, Int16Type, Int32Type, UInt16Type, UInt32Type)
 	);
 
-	using InstructionBase_2<T1, T2>::InstructionBase_2;
+	using InstructionBase_2<typename T::WideType, T>::InstructionBase_2;
 
 	std::string OpCode() const override
 	{
-		return "mul.wide" + T2::Name();
+		return "mul.wide" + T::Name();
 	}
 };
 

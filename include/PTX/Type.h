@@ -208,11 +208,13 @@ template<> struct IntType<Bits::Bits8, 1> : IntTypeBase<Bits::Bits8>
 template<> struct IntType<Bits::Bits16, 1> : IntTypeBase<Bits::Bits16>
 {
 	using SystemType = int16_t;
+	using WideType = IntType<Bits::Bits32>;
 	constexpr static std::string_view RegisterPrefix = "rs";
 };
 template<> struct IntType<Bits::Bits32, 1> : IntTypeBase<Bits::Bits32>
 {
 	using SystemType = int32_t;
+	using WideType = IntType<Bits::Bits64>;
 	constexpr static std::string_view RegisterPrefix = "r";
 };
 template<> struct IntType<Bits::Bits64, 1> : IntTypeBase<Bits::Bits64>
@@ -278,11 +280,13 @@ template<> struct UIntType<Bits::Bits8, 1> : UIntTypeBase<Bits::Bits8>
 template<> struct UIntType<Bits::Bits16, 1> : UIntTypeBase<Bits::Bits16>
 {
 	using SystemType = uint16_t;
+	using WideType = UIntType<Bits::Bits32>;
 	constexpr static std::string_view RegisterPrefix = "us";
 };
 template<> struct UIntType<Bits::Bits32, 1> : UIntTypeBase<Bits::Bits32>
 {
 	using SystemType = uint32_t;
+	using WideType = UIntType<Bits::Bits64>;
 	constexpr static std::string_view RegisterPrefix = "u";
 };
 template<> struct UIntType<Bits::Bits64, 1> : UIntTypeBase<Bits::Bits64>

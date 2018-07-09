@@ -65,7 +65,7 @@ public:
 		}
 		else
 		{
-			builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UIntType<B>, PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
+			builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(T::BitSize / 8)));
 		}
 		builder->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
 		return new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr);
