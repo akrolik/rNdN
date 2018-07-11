@@ -16,13 +16,6 @@ class FillGenerator : public BuiltinGenerator<B, T>
 {
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
-
-	void Generate(const HorseIR::CallExpression *call) override
-	{
-		//TODO:
-		std::cerr << "[ERROR] TODO " << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
 };
 
 template<PTX::Bits B, class T>

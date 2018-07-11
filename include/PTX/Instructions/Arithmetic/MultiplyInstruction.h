@@ -22,9 +22,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	static std::string Mnemonic() { return "mul"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "mul";
+		std::string code = Mnemonic();
 		if constexpr(HalfModifier<T>::Enabled)
 		{
 			code += HalfModifier<T>::OpCodeModifier();

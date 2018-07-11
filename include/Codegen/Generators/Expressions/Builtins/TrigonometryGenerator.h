@@ -28,13 +28,6 @@ class TrigonometryGenerator : public BuiltinGenerator<B, T>
 public:
 	TrigonometryGenerator(const PTX::Register<T> *target, Builder *builder, TrigonometryOperation trigOp) : BuiltinGenerator<B, T>(target, builder), m_trigOp(trigOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
-	{
-		//TODO: Work on error messages
-		std::cerr << "[ERROR] Unsupported type for builtin trigonometric function " + call->GetName() << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-
 private:
 	TrigonometryOperation m_trigOp;
 };

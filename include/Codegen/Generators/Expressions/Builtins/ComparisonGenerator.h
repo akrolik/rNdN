@@ -18,17 +18,31 @@ enum class ComparisonOperator {
 	GreaterEqual
 };
 
+static std::string ComparisonOperatorString(ComparisonOperator comparisonOp)
+{
+	switch (comparisonOp)
+	{
+		case ComparisonOperator::Equal:
+			return "=";
+		case ComparisonOperator::NotEqual:
+			return "!=";
+		case ComparisonOperator::Less:
+			return "<";
+		case ComparisonOperator::LessEqual:
+			return "<=";
+		case ComparisonOperator::Greater:
+			return ">";
+		case ComparisonOperator::GreaterEqual:
+			return ">=";
+	}
+	return "<unknown>";
+}
+
 template<PTX::Bits B, class T>
 class ComparisonGenerator : public BuiltinGenerator<B, T>
 {
 public:
 	ComparisonGenerator(const PTX::Register<T> *target, Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, T>(target, builder), m_comparisonOp(comparisonOp) {}
-
-	void Generate(const HorseIR::CallExpression *call) override
-	{
-		std::cerr << "[ERROR] Unsupported type for builtin comparison function " + call->GetName() << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
 
 private:
 	ComparisonOperator m_comparisonOp;
@@ -64,8 +78,7 @@ public:
 		}
 		else
 		{
-			std::cerr << "[ERROR] Unsupported type for comparison operation" << std::endl;
-			std::exit(EXIT_FAILURE);
+			BuiltinGenerator<B, PTX::PredicateType>::Unimplemented(call);
 		}
 	}
 
@@ -88,8 +101,7 @@ private:
 			case ComparisonOperator::NotEqual:
 				return T::ComparisonOperator::NotEqual;
 			default:
-				std::cerr << "[ERROR] Unsupported comparison operation" << std::endl;
-				std::exit(EXIT_FAILURE);
+				BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("comparison operator " + ComparisonOperatorString(comparisonOp));
 		}
 
 	}

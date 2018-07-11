@@ -26,8 +26,7 @@ public:
 		// switch (m_reductionOp)
 		// {
 		// 	default:
-		// 		std::cerr << "[ERROR] Unsupported builtin reduction function " + call->GetName() << std::endl;
-		// 		std::exit(EXIT_FAILURE);
+		// 		this->Unimplemented(call);
 		// }
 	}
 

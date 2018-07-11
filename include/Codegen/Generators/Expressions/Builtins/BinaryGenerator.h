@@ -64,8 +64,7 @@ public:
 				GenerateInstruction<PTX::XorInstruction>(src1, src2);
 				break;
 			default:
-				std::cerr << "[ERROR] Unsupported builtin binary function " + call->GetName() << std::endl;
-				std::exit(EXIT_FAILURE);
+				BuiltinGenerator<B, T>::Unimplemented(call);
 		}
 	}
 
@@ -78,9 +77,7 @@ public:
 		}
 		else
 		{
-			//TODO: Improve error message
-			std::cerr << "[ERROR] Unsupported type for builtin binary function" << std::endl;
-			std::exit(EXIT_FAILURE);
+			BuiltinGenerator<B, T>::Unimplemented(Op<T, false>::Mnemonic() + " instruction");
 		}
 	}
 

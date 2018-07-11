@@ -22,9 +22,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	static std::string Mnemonic() { return "sub"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "sub";
+		std::string code = Mnemonic();
 		if constexpr(CarryModifier<T>::Enabled)
 		{
 			code += CarryModifier<T>::OpCodeModifier();
