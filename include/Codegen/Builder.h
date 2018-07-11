@@ -7,7 +7,7 @@
 #include "PTX/Module.h"
 #include "PTX/Program.h"
 #include "PTX/Type.h"
-#include "PTX/Functions/DataFunction.h"
+#include "PTX/Functions/FunctionDeclaration.h"
 
 namespace Codegen {
 
@@ -36,11 +36,11 @@ public:
 	}
 	void SetCurrentModule(PTX::Module *module) { m_currentModule = module; }
 
-	void AddFunction(PTX::DataFunction<PTX::VoidType> *function)
+	void AddDeclaration(PTX::Declaration *declaration)
 	{
-		m_currentModule->AddDeclaration(function);
+		m_currentModule->AddDeclaration(declaration);
 	}
-	void SetCurrentFunction(PTX::DataFunction<PTX::VoidType> *function, HorseIR::Method *method)
+	void SetCurrentFunction(PTX::FunctionDeclaration<PTX::VoidType> *function, HorseIR::Method *method)
 	{
 		m_currentFunction = function;
 		m_currentMethod = method;
@@ -123,7 +123,7 @@ private:
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;
 
-	PTX::DataFunction<PTX::VoidType> *m_currentFunction = nullptr;
+	PTX::FunctionDeclaration<PTX::VoidType> *m_currentFunction = nullptr;
 	HorseIR::Method *m_currentMethod = nullptr;
 
 	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;

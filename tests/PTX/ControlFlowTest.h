@@ -6,7 +6,7 @@
 
 #include "PTX/Module.h"
 #include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Functions/DataFunction.h"
+#include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Operands/Variables/AddressableVariable.h"
 
 #include "PTX/Instructions/ControlFlow/BranchInstruction.h"
@@ -31,14 +31,14 @@ public:
 		PTX::RegisterDeclaration<PTX::Int32Type> *param_s32 = new PTX::RegisterDeclaration<PTX::Int32Type>("%s");
 		PTX::ParameterDeclaration<PTX::UInt64Type> *param_u64 = new PTX::ParameterDeclaration<PTX::UInt64Type>("%u");
 
-		auto deviceFunction = new PTX::DataFunction<PTX::Register<PTX::Bit32Type>(PTX::Register<PTX::Int32Type>, PTX::ParameterVariable<PTX::UInt64Type>)>();
+		auto deviceFunction = new PTX::FunctionDeclaration<PTX::Register<PTX::Bit32Type>(PTX::Register<PTX::Int32Type>, PTX::ParameterVariable<PTX::UInt64Type>)>();
 		deviceFunction->SetName("device_function");
 		deviceFunction->SetReturn(param_b32);
 		deviceFunction->SetParameters(param_s32, param_u64);
 
 		module.AddDeclaration(deviceFunction);
 
-		PTX::DataFunction<PTX::VoidType> *entryFunction = new PTX::DataFunction<PTX::VoidType>();
+		PTX::FunctionDeclaration<PTX::VoidType> *entryFunction = new PTX::FunctionDeclaration<PTX::VoidType>();
 		entryFunction->SetName("CallTest");
 		entryFunction->SetEntry(true);
 		entryFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);

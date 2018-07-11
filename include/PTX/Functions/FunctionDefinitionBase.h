@@ -8,10 +8,10 @@
 namespace PTX {
 
 template<class R>
-class DataFunctionBase : public Function
+class FunctionDefinitionBase : public Function
 {
 public:
-	REQUIRE_SPACE_PARAM(DataFunction,
+	REQUIRE_SPACE_PARAM(FunctionDefinitionBase,
 		REQUIRE_EXACT(typename R::VariableSpace, RegisterSpace) ||
 		REQUIRE_BASE(typename R::VariableSpace, ParameterSpace)
 	);
@@ -44,7 +44,7 @@ protected:
 };
 
 template<>
-class DataFunctionBase<VoidType> : public Function
+class FunctionDefinitionBase<VoidType> : public Function
 {
 public:
 	bool GetEntry() const { return m_entry; }

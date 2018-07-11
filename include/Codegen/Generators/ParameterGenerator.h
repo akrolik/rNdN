@@ -8,7 +8,6 @@
 
 #include "PTX/Type.h"
 #include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Functions/DataFunction.h"
 #include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
 #include "PTX/Instructions/Data/ConvertInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"

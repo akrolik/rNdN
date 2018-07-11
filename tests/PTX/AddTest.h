@@ -12,7 +12,7 @@
 #include "PTX/Type.h"
 #include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/Function.h"
-#include "PTX/Functions/DataFunction.h"
+#include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
@@ -47,7 +47,7 @@ public:
 		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
-		PTX::DataFunction<PTX::VoidType(PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>)> *function = new PTX::DataFunction<PTX::VoidType(PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>)>();
+		PTX::FunctionDeclaration<PTX::VoidType(PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>)> *function = new PTX::FunctionDeclaration<PTX::VoidType(PTX::Variable<PTX::Pointer64Type<PTX::Float64Type>, PTX::ParameterSpace>)>();
 		function->SetName("AddTest");
 		function->SetEntry(true);
 		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);

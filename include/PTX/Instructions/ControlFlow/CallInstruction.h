@@ -2,7 +2,7 @@
 
 #include "PTX/Instructions/ControlFlow/CallInstructionBase.h"
 
-#include "PTX/Functions/DataFunction.h"
+#include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Tuple.h"
 
@@ -12,7 +12,7 @@ template<class R>
 class CallInstruction : public CallInstructionBase<R>
 {
 public:
-	CallInstruction(const DataFunction<R> *function, const R *returnVariable, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform) {}
+	CallInstruction(const FunctionDeclaration<R> *function, const R *returnVariable, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform) {}
 
 	template<class T, class S>
 	std::enable_if_t<std::is_same<S, RegisterSpace>::value || std::is_base_of<S, ParameterSpace>::value, void>
@@ -31,7 +31,7 @@ template<class R, typename... Args>
 class CallInstruction<R(Args...)> : public CallInstructionBase<R>
 {
 public:
-	CallInstruction(const DataFunction<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform), m_arguments(std::make_tuple(args...)) {}
+	CallInstruction(const FunctionDeclaration<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform), m_arguments(std::make_tuple(args...)) {}
 
 protected:
 	std::vector<const Operand *> GetArguments() const override

@@ -9,7 +9,7 @@ class Declaration
 public:
 	enum class LinkDirective {
 		None,
-		Extern,
+		External,
 		Visible,
 		Common,
 		Weak
@@ -21,7 +21,7 @@ public:
 		{
 			case LinkDirective::None:
 				return "";
-			case LinkDirective::Extern:
+			case LinkDirective::External:
 				return ".extern";
 			case LinkDirective::Visible:
 				return ".visible";

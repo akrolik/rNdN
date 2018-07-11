@@ -8,12 +8,12 @@
 #include "PTX/Type.h"
 #include "PTX/Declarations/Declaration.h"
 #include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Functions/DataFunctionBase.h"
+#include "PTX/Functions/FunctionDefinitionBase.h"
 
 namespace PTX {
 
 template<class R>
-class DataFunction : public DataFunctionBase<R>
+class FunctionDefinition : public FunctionDefinitionBase<R>
 {
 public:
 	template<class T, class S>
@@ -22,7 +22,7 @@ public:
 
 	json ToJSON() const override
 	{
-		json j = DataFunctionBase<R>::ToJSON();
+		json j = FunctionDefinitionBase<R>::ToJSON();
 		for (const auto& parameter : m_parameters)
 		{
 			j["parameters"].push_back(parameter->ToJSON());
@@ -59,10 +59,10 @@ protected:
 };
 
 template<class R, typename... Args>
-class DataFunction<R(Args...)> : public DataFunctionBase<R>
+class FunctionDefinition<R(Args...)> : public FunctionDefinitionBase<R>
 {
 public:
-	REQUIRE_SPACE_PARAM(DataFunction,
+	REQUIRE_SPACE_PARAM(FunctionDefinition,
 		is_all<REQUIRE_EXACT(typename Args::VariableSpace, RegisterSpace) || REQUIRE_BASE(typename Args::VariableSpace, ParameterSpace)...>::value
 	);
 
@@ -70,7 +70,7 @@ public:
 
 	json ToJSON() const override
 	{
-		json j = DataFunctionBase<R>::ToJSON();
+		json j = FunctionDefinitionBase<R>::ToJSON();
 		std::vector<const Declaration *> parameters;
 		ExpandTuple(parameters, m_parameters, int_<sizeof...(Args)>());
 		for (const auto& parameter : parameters)
@@ -88,7 +88,6 @@ protected:
 		{
 			code << std::endl << "\t";
 			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>());
-			code << std::endl;
 		}
 		return code.str();
 	}

@@ -15,6 +15,8 @@
 
 #include "PTX/Program.h"
 #include "PTX/Type.h"
+#include "PTX/Functions/FunctionDeclaration.h"
+#include "PTX/Functions/FunctionDefinition.h"
 
 namespace Codegen {
 
@@ -77,14 +79,14 @@ public:
 		// PTX modules. Currently there is no use for the link directive, but it
 		// is provided for future proofing.
 
-		auto function = new PTX::DataFunction<PTX::VoidType>();
+		auto function = new PTX::FunctionDeclaration<PTX::VoidType>();
 		function->SetName(method->GetName());
 		function->SetEntry(true);
 		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		// Update the state for this function
 
-		m_builder->AddFunction(function);
+		m_builder->AddDeclaration(function);
 		m_builder->SetCurrentFunction(function, method);
 		m_builder->OpenScope(function);
 

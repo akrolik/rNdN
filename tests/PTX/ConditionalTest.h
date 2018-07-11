@@ -11,7 +11,7 @@
 #include "PTX/StateSpace.h"
 #include "PTX/Type.h"
 #include "PTX/Functions/Function.h"
-#include "PTX/Functions/DataFunction.h"
+#include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
 #include "PTX/Instructions/Arithmetic/RemainderInstruction.h"
@@ -48,7 +48,7 @@ public:
 		module.SetDeviceTarget("sm_61");
 		module.SetAddressSize(PTX::Bits::Bits64);
 
-		PTX::DataFunction<PTX::VoidType(PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>)> *function = new PTX::DataFunction<PTX::VoidType(PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>)>();
+		PTX::FunctionDeclaration<PTX::VoidType(PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>)> *function = new PTX::FunctionDeclaration<PTX::VoidType(PTX::ParameterVariable<PTX::Pointer64Type<PTX::UInt64Type>>)>();
 		function->SetName("ConditionalTest");
 		function->SetEntry(true);
 		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
