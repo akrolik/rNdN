@@ -1,25 +1,27 @@
 #pragma once
 
 #include "HorseIR/Traversal/ForwardTraversal.h"
+#include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/Literal.h"
 #include "HorseIR/Tree/Types/Type.h"
-#include "HorseIR/Tree/Types/ListType.h"
-#include "HorseIR/Tree/Types/PrimitiveType.h"
 
 #include "PTX/Instructions/Data/ConvertInstruction.h"
+#include "PTX/Instructions/Data/MoveInstruction.h"
 #include "PTX/Operands/Value.h"
+#include "PTX/Operands/Adapters/BitAdapter.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/TypeDispatch.h"
 
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class OperandGenerator : public HorseIR::ForwardTraversal
+class OperandGenerator : public HorseIR::ForwardTraversal, public Generator
 {
 public:
-	OperandGenerator(Builder *builder) : m_builder(builder) {}
+	using Generator::Generator;
 
 	const PTX::TypedOperand<T> *GenerateOperand(HorseIR::Expression *expression)
 	{
@@ -34,96 +36,78 @@ public:
 		std::exit(EXIT_FAILURE);
 	}
 
+	const PTX::Register<T> *GenerateRegister(HorseIR::Expression *expression)
+	{
+		const PTX::TypedOperand<T> *operand = GenerateOperand(expression);
+		if (m_register)
+		{
+			return static_cast<const PTX::Register<T> *>(operand);
+		}
+
+		auto reg = this->m_builder->template AllocateRegister<T, ResourceKind::Internal>("temp");
+		this->m_builder->AddStatement(new PTX::MoveInstruction<T>(reg, operand));
+
+		return reg;
+	}
+
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		const HorseIR::Type *type = identifier->GetType();
-		switch (type->GetKind())
-		{
-			case HorseIR::Type::Kind::Primitive:
-				Dispatch(static_cast<const HorseIR::PrimitiveType *>(type), identifier);
-				break;
-			case HorseIR::Type::Kind::List:
-				Dispatch(static_cast<const HorseIR::ListType *>(type), identifier);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
-				std::exit(EXIT_FAILURE);
-		}
-	}
-
-	void Dispatch(const HorseIR::PrimitiveType *type, HorseIR::Identifier *identifier)
-	{
-		switch (type->GetKind())
-		{
-			case HorseIR::PrimitiveType::Kind::Bool:
-				GenerateIdentifier<PTX::PredicateType>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int8:
-				GenerateIdentifier<PTX::Int8Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int16:
-				GenerateIdentifier<PTX::Int16Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int32:
-				GenerateIdentifier<PTX::Int32Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int64:
-				GenerateIdentifier<PTX::Int64Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Float32:
-				GenerateIdentifier<PTX::Float32Type>(identifier);
-				break;
-			case HorseIR::PrimitiveType::Kind::Float64:
-				GenerateIdentifier<PTX::Float64Type>(identifier);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
-				std::exit(EXIT_FAILURE);
-		}
-	}
-
-	void Dispatch(const HorseIR::ListType *type, HorseIR::Identifier *identifier)
-	{
-		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString("Identifier") << std::endl;
-		std::exit(EXIT_FAILURE);
+		Dispatch(*this, identifier->GetType(), identifier);
 	}
 
 	template<class S>
-	void GenerateIdentifier(HorseIR::Identifier *identifier)
+	void Generate(const HorseIR::Identifier *identifier)
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
-			m_operand = m_builder->GetRegister<T>(identifier->GetString());
+			m_operand = this->m_builder->GetRegister<T>(identifier->GetString());
 		}
 		else
 		{
-			if constexpr(PTX::ConvertInstruction<T, S, false>::TypeSupported)
+			//TODO: Implement conversion matrix, think about having destination and source generators
+			auto source = this->m_builder->GetRegister<S>(identifier->GetString());
+			if constexpr(std::is_same<PTX::BitType<S::TypeBits>, T>::value)
 			{
-				auto source = m_builder->GetRegister<S>(identifier->GetString());
-				auto converted = m_builder->AllocateRegister<T, ResourceKind::Internal>(identifier->GetString());
-				m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
+				if constexpr(PTX::is_type_specialization<S, PTX::FloatType>::value)
+				{
+					m_operand = new PTX::BitRegisterAdapter<PTX::FloatType, S::TypeBits>(source);
+				}
+				else if constexpr(PTX::is_type_specialization<S, PTX::IntType>::value)
+				{
+					m_operand = new PTX::BitRegisterAdapter<PTX::IntType, S::TypeBits>(source);
+				}
+				else if constexpr(PTX::is_type_specialization<S, PTX::UIntType>::value)
+				{
+					m_operand = new PTX::BitRegisterAdapter<PTX::UIntType, S::TypeBits>(source);
+				}
+			}
+			else if constexpr(PTX::ConvertInstruction<T, S, false>::TypeSupported)
+			{
+				auto converted = this->m_builder->AllocateRegister<T, ResourceKind::Internal>(identifier->GetString());
+				this->m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
 				m_operand = converted;
 			}
-			else
-			{
-				std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + T::Name() << std::endl;
-				std::exit(EXIT_FAILURE);
-			}
 		}
+		if (m_operand == nullptr)
+		{
+			std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + T::Name() << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		m_register = true;
 	}
 
 	void Visit(HorseIR::Literal<int64_t> *literal) override
 	{
-		GenerateLiteral<int64_t>(literal);
+		Generate<int64_t>(literal);
 	}
 
 	void Visit(HorseIR::Literal<double> *literal) override
 	{
-		GenerateLiteral<double>(literal);
+		Generate<double>(literal);
 	}
 
 	template<class L>
-	void GenerateLiteral(HorseIR::Literal<L> *literal)
+	void Generate(const HorseIR::Literal<L> *literal)
 	{
 		if (literal->GetCount() == 1)
 		{
@@ -144,9 +128,8 @@ public:
 	}
 
 private:
-	Builder *m_builder = nullptr;
-
 	const PTX::TypedOperand<T> *m_operand = nullptr;
+	bool m_register = false;
 };
 
 }
