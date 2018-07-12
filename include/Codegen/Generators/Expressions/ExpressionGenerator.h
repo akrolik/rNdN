@@ -13,7 +13,7 @@
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/FillGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/TrigonometryGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/TrigonometricGenerator.h"
 
 namespace Codegen {
 
@@ -77,51 +77,51 @@ public:
 		}
 		else if (name == "@cos")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::Cosine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Cosine);
 		}
 		else if (name == "@sin")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::Sine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Sine);
 		}
 		else if (name == "@tan")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::Tangent);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Tangent);
 		}
 		else if (name == "@acos")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::InverseCosine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::InverseCosine);
 		}
 		else if (name == "@asin")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::InverseSine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::InverseSine);
 		}
 		else if (name == "@atan")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::Tangent);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Tangent);
 		}
 		else if (name == "@cosh")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::HyperbolicCosine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicCosine);
 		}
 		else if (name == "@sinh")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::HyperbolicSine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicSine);
 		}
 		else if (name == "@tanh")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::HyperbolicTangent);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicTangent);
 		}
 		else if (name == "@acosh")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::HyperbolicInverseCosine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicInverseCosine);
 		}
 		else if (name == "@asinh")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::HyperbolicInverseSine);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicInverseSine);
 		}
 		else if (name == "@atanh")
 		{
-			return new TrigonometryGenerator<B, T>(m_target, m_builder, TrigonometryOperation::HyperbolicInverseTangent);
+			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicInverseTangent);
 		}
 		else if (name == "@lt")
 		{
