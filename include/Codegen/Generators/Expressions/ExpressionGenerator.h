@@ -1,12 +1,12 @@
 #pragma once
 
 #include "HorseIR/Traversal/ForwardTraversal.h"
+#include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 
 #include "PTX/Operands/Variables/Register.h"
 
-#include "Codegen/Builder.h"
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
@@ -18,10 +18,10 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class ExpressionGenerator : public HorseIR::ForwardTraversal
+class ExpressionGenerator : public HorseIR::ForwardTraversal, public Generator
 {
 public:
-	ExpressionGenerator(const PTX::Register<T> *target, Builder *builder) : m_target(target), m_builder(builder) {}
+	ExpressionGenerator(const PTX::Register<T> *target, Builder *builder) : Generator(builder), m_target(target) {}
 
 	void Visit(HorseIR::CallExpression *call) override
 	{
@@ -77,91 +77,91 @@ public:
 		}
 		else if (name == "@cos")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Cosine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Cosine);
 		}
 		else if (name == "@sin")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Sine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Sine);
 		}
 		else if (name == "@tan")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Tangent);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Tangent);
 		}
 		else if (name == "@acos")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::InverseCosine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::InverseCosine);
 		}
 		else if (name == "@asin")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::InverseSine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::InverseSine);
 		}
 		else if (name == "@atan")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::Tangent);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Tangent);
 		}
 		else if (name == "@cosh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicCosine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicCosine);
 		}
 		else if (name == "@sinh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicSine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicSine);
 		}
 		else if (name == "@tanh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicTangent);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicTangent);
 		}
 		else if (name == "@acosh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicInverseCosine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicInverseCosine);
 		}
 		else if (name == "@asinh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicInverseSine);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicInverseSine);
 		}
 		else if (name == "@atanh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, m_builder, TrigonometricOperation::HyperbolicInverseTangent);
+			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicInverseTangent);
 		}
 		else if (name == "@lt")
 		{
-			return new ComparisonGenerator<B, T>(m_target, m_builder, ComparisonOperator::Less);
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::Less);
 		}
 		else if (name == "@gt")
 		{
-			return new ComparisonGenerator<B, T>(m_target, m_builder, ComparisonOperator::Greater);
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::Greater);
 		}
 		else if (name == "@leq")
 		{
-			return new ComparisonGenerator<B, T>(m_target, m_builder, ComparisonOperator::LessEqual);
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::LessEqual);
 		}
 		else if (name == "@geq")
 		{
-			return new ComparisonGenerator<B, T>(m_target, m_builder, ComparisonOperator::GreaterEqual);
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::GreaterEqual);
 		}
 		else if (name == "@eq")
 		{
-			return new ComparisonGenerator<B, T>(m_target, m_builder, ComparisonOperator::Equal);
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::Equal);
 		}
 		else if (name == "@neq")
 		{
-			return new ComparisonGenerator<B, T>(m_target, m_builder, ComparisonOperator::NotEqual);
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::NotEqual);
 		}
 		else if (name == "@plus")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Plus);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Plus);
 		}
 		else if (name == "@minus")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Minus);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Minus);
 		}
 		else if (name == "@mul")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Multiply);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Multiply);
 		}
 		else if (name == "@div")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Divide);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Divide);
 		}
 		else if (name == "@power")
 		{
@@ -174,58 +174,57 @@ public:
 		}
 		else if (name == "@and")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::And);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::And);
 		}
 		else if (name == "@or")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Or);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Or);
 		}
 		else if (name == "@nand")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Nand);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Nand);
 		}
 		else if (name == "@nor")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Nor);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Nor);
 		}
 		else if (name == "@xor")
 		{
-			return new BinaryGenerator<B, T>(m_target, m_builder, BinaryOperation::Xor);
+			return new BinaryGenerator<B, T>(m_target, this->m_builder, BinaryOperation::Xor);
 		}
 		else if (name == "@compress")
 		{
-			return new CompressionGenerator<B, T>(m_target, m_builder);
+			return new CompressionGenerator<B, T>(m_target, this->m_builder);
 		}
 		else if (name == "@count")
 		{
-			return new ReductionGenerator<B, T>(m_target, m_builder, ReductionOperation::Count);
+			return new ReductionGenerator<B, T>(m_target, this->m_builder, ReductionOperation::Count);
 		}
 		else if (name == "@sum")
 		{
-			return new ReductionGenerator<B, T>(m_target, m_builder, ReductionOperation::Sum);
+			return new ReductionGenerator<B, T>(m_target, this->m_builder, ReductionOperation::Sum);
 		}
 		else if (name == "@avg")
 		{
-			return new ReductionGenerator<B, T>(m_target, m_builder, ReductionOperation::Average);
+			return new ReductionGenerator<B, T>(m_target, this->m_builder, ReductionOperation::Average);
 		}
 		else if (name == "@min")
 		{
-			return new ReductionGenerator<B, T>(m_target, m_builder, ReductionOperation::Minimum);
+			return new ReductionGenerator<B, T>(m_target, this->m_builder, ReductionOperation::Minimum);
 		}
 		else if (name == "@max")
 		{
-			return new ReductionGenerator<B, T>(m_target, m_builder, ReductionOperation::Maximum);
+			return new ReductionGenerator<B, T>(m_target, this->m_builder, ReductionOperation::Maximum);
 		}
 		else if (name == "@fill")
 		{
-			return new FillGenerator<B, T>(m_target, m_builder);
+			return new FillGenerator<B, T>(m_target, this->m_builder);
 		}
 		return nullptr;
 	}
 
 protected:
 	const PTX::Register<T> *m_target = nullptr;
-	Builder *m_builder = nullptr;
 };
 
 }

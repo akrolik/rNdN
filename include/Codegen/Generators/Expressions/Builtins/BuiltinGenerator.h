@@ -4,14 +4,15 @@
 #include "PTX/Operands/Variables/Register.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Generator.h"
 
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class BuiltinGenerator
+class BuiltinGenerator : public Generator
 {
 public:
-	BuiltinGenerator(const PTX::Register<T> *target, Builder *builder) : m_target(target), m_builder(builder) {}
+	BuiltinGenerator(const PTX::Register<T> *target, Builder *builder) : Generator(builder), m_target(target) {}
 
 	virtual void Generate(const HorseIR::CallExpression *call)
 	{
@@ -31,7 +32,6 @@ public:
 
 protected:
 	const PTX::Register<T> *m_target = nullptr;
-	Builder *m_builder = nullptr;
 };
 
 }

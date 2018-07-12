@@ -61,7 +61,7 @@ public:
 		auto arg1 = call->GetArgument(0);
 		auto arg2 = call->GetArgument(1);
 		auto type = WidestType(arg1->GetType(), arg2->GetType());
-		Dispatch<ComparisonGenerator<B, PTX::PredicateType>>(this, type, call);
+		Dispatch(*this, type, call);
 	}
 
 	using BuiltinGenerator<B, PTX::PredicateType>::Generate;

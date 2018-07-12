@@ -39,7 +39,6 @@ static HorseIR::PrimitiveType *WidestType(const HorseIR::PrimitiveType *type1, c
 	}
 	std::cerr << "[ERROR] Unknown widest type for " << type1->ToString() << " and " << type2->ToString() << std::endl;
 	std::exit(EXIT_FAILURE);
-	return nullptr;
 }
 
 static HorseIR::PrimitiveType *WidestType(const HorseIR::Type *type1, const HorseIR::Type *type2)
@@ -49,8 +48,7 @@ static HorseIR::PrimitiveType *WidestType(const HorseIR::Type *type1, const Hors
 	{
 		return WidestType(static_cast<const HorseIR::PrimitiveType *>(type1), static_cast<const HorseIR::PrimitiveType *>(type2));
 	}
-	//TODO:
-	// std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
+	std::cerr << "[ERROR] Unknown widest type for " << type1->ToString() << " and " << type2->ToString() << std::endl;
 	std::exit(EXIT_FAILURE);
 }
 

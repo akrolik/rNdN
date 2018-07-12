@@ -6,6 +6,7 @@
 #include "Codegen/Generators/AssignmentGenerator.h"
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
+#include "Codegen/Generators/TypeDispatch.h"
 
 #include "HorseIR/SymbolTable.h"
 #include "HorseIR/Tree/Program.h"
@@ -106,90 +107,23 @@ public:
 
 	void Visit(HorseIR::Parameter *parameter) override
 	{
-		Dispatch<ParameterGenerator<B>>(parameter->GetType(), parameter);
+		ParameterGenerator<B> generator(m_builder);
+		Dispatch(generator, parameter->GetType(), parameter);
 	}
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
-		Dispatch<AssignmentGenerator<B>>(assign->GetType(), assign);
+		AssignmentGenerator<B> generator(m_builder);
+		Dispatch(generator, assign->GetType(), assign);
 	}
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
-		Dispatch<ReturnGenerator<B>>(m_builder->GetReturnType(), ret);
+		ReturnGenerator<B> generator(m_builder);
+		Dispatch(generator, m_builder->GetReturnType(), ret);
 	}
 
 private:
-	// @method Dispatch<G> (G = Generator)
-	//
-	// @requires
-	// 	- G has a type field G::NodeType
-	// 	- G is a class containing a templated static method
-	// 		template<class G>
-	// 		static void Generate(NodeType*, Builder*)
-	//
-	// Convenience method for converting between HorseIR dynamic types and PTX static types, and
-	// instantiating the statically typed PTX generator.
-	//
-	// This allows the code generator to centralize the type mapping for various constructs
-	// (assignments, returns, parameters) in a single place.
-	
-	template<class G>
-	void Dispatch(HorseIR::Type *type, typename G::NodeType *node)
-	{
-		switch (type->GetKind())
-		{
-			case HorseIR::Type::Kind::Primitive:
-				Dispatch<G>(static_cast<HorseIR::PrimitiveType *>(type), node);
-				break;
-			case HorseIR::Type::Kind::List:
-				Dispatch<G>(static_cast<HorseIR::ListType *>(type), node);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
-				std::exit(EXIT_FAILURE);
-		}
-	}
-
-	template<class G>
-	void Dispatch(HorseIR::PrimitiveType *type, typename G::NodeType *node)
-	{
-		switch (type->GetKind())
-		{
-			case HorseIR::PrimitiveType::Kind::Bool:
-				G::template Generate<PTX::PredicateType>(node, m_builder);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int8:
-				G::template Generate<PTX::Int8Type>(node, m_builder);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int16:
-				G::template Generate<PTX::Int16Type>(node, m_builder);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int32:
-				G::template Generate<PTX::Int32Type>(node, m_builder);
-				break;
-			case HorseIR::PrimitiveType::Kind::Int64:
-				G::template Generate<PTX::Int64Type>(node, m_builder);
-				break;
-			case HorseIR::PrimitiveType::Kind::Float32:
-				G::template Generate<PTX::Float32Type>(node, m_builder);
-				break;
-			case HorseIR::PrimitiveType::Kind::Float64:
-				G::template Generate<PTX::Float64Type>(node, m_builder);
-				break;
-			default:
-				std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
-				std::exit(EXIT_FAILURE);
-		}
-	}
-
-	template<class G>
-	void Dispatch(HorseIR::ListType *type, typename G::NodeType *node)
-	{
-		std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in context " << m_builder->GetContextString(TO_STRING(G)) << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-
 	std::string m_target;
 	Builder *m_builder = new Builder();
 };

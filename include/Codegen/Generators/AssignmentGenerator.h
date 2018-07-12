@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Codegen/Generators/Generator.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/Expressions/ExpressionGenerator.h"
@@ -13,13 +15,13 @@
 namespace Codegen {
 
 template<PTX::Bits B>
-class AssignmentGenerator
+class AssignmentGenerator : public Generator
 {
 public:
-	using NodeType = HorseIR::AssignStatement;
+	using Generator::Generator;
 
 	template<class T>
-	static void Generate(HorseIR::AssignStatement *assign, Builder *builder)
+	void Generate(HorseIR::AssignStatement *assign)
 	{
 		// An assignment in HorseIR consists of: name, type, and expression (typically a function call).
 		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements
@@ -33,8 +35,8 @@ public:
 		//
 		// In this setup, the expression visitor is expected to produce the full assignment
 
-		const PTX::Register<T> *target = builder->template AllocateRegister<T>(assign->GetTargetName());
-		ExpressionGenerator<B, T> generator(target, builder);
+		const PTX::Register<T> *target = this->m_builder->template AllocateRegister<T>(assign->GetTargetName());
+		ExpressionGenerator<B, T> generator(target, this->m_builder);
 		assign->Accept(generator);
 	}
 };
