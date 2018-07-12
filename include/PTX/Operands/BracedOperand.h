@@ -14,7 +14,7 @@ public:
 		REQUIRE_BASE(T, ScalarType)
 	);
 
-	constexpr static int ElementCount = static_cast<int>(V);
+	constexpr static int ElementCount = VectorProperties<V>::ElementCount;
 
 	BracedOperand(const std::array<const TypedOperand<T> *, ElementCount>& operands) : m_operands(operands) {}
 

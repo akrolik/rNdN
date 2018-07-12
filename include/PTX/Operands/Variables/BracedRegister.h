@@ -14,7 +14,7 @@ public:
 		REQUIRE_BASE(T, ScalarType)
 	);
 
-	constexpr static int ElementCount = static_cast<int>(V);
+	constexpr static int ElementCount = VectorProperties<V>::ElementCount;
 
 	BracedRegister(const std::array<const Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(""), m_registers(registers) {}
 

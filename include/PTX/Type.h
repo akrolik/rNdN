@@ -82,12 +82,18 @@ enum class Bits : int {
 	Bits64 = (1 << 6)
 };
 
+template<Bits B>
+struct BitSize
+{
+	constexpr static std::underlying_type<Bits>::type Size = static_cast<std::underlying_type<Bits>::type>(B);
+};
+
 template<Bits B, unsigned int N = 1>
 struct BitTypeBase : ScalarType
 {
-	constexpr static std::underlying_type<Bits>::type BitSize = static_cast<std::underlying_type<Bits>::type>(B);
+	constexpr static Bits TypeBits = B;
 
-	static std::string Name() { return ".b" + std::to_string(BitSize); }
+	static std::string Name() { return ".b" + std::to_string(BitSize<B>::Size); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -110,7 +116,7 @@ struct BitTypeBase : ScalarType
 template<>
 struct BitTypeBase<Bits::Bits1, 1> : Type
 {
-	constexpr static std::underlying_type<Bits>::type BitSize = static_cast<std::underlying_type<Bits>::type>(Bits::Bits1);
+	constexpr static Bits TypeBits = Bits::Bits1;
 
 	static std::string Name() { return ".pred"; }
 };
@@ -118,9 +124,9 @@ struct BitTypeBase<Bits::Bits1, 1> : Type
 template<>
 struct BitTypeBase<Bits::Bits8, 1> : ScalarType
 {
-	constexpr static std::underlying_type<Bits>::type BitSize = static_cast<std::underlying_type<Bits>::type>(Bits::Bits8);
+	constexpr static Bits TypeBits = Bits::Bits8;
 
-	static std::string Name() { return ".b" + std::to_string(BitSize); }
+	static std::string Name() { return ".b" + std::to_string(BitSize<Bits::Bits8>::Size); }
 };
 
 template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
@@ -161,7 +167,7 @@ struct IntTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
-	static std::string Name() { return ".s" + std::to_string(BitType<B, N>::BitSize); }
+	static std::string Name() { return ".s" + std::to_string(BitSize<B>::Size); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -196,7 +202,7 @@ struct IntTypeBase : BitType<B, N>
 template<>
 struct IntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
 {
-	static std::string Name() { return ".s" + std::to_string(BitType<Bits::Bits8>::BitSize); }
+	static std::string Name() { return ".s" + std::to_string(BitSize<Bits::Bits8>::Size); }
 };
 
 template<Bits B, unsigned int N = 1> struct IntType : IntTypeBase<B, N> {};
@@ -233,7 +239,7 @@ struct UIntTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
 
-	static std::string Name() { return ".u" + std::to_string(BitType<B, N>::BitSize); }
+	static std::string Name() { return ".u" + std::to_string(BitSize<B>::Size); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -268,7 +274,7 @@ struct UIntTypeBase : BitType<B, N>
 template<>
 struct UIntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
 {
-	static std::string Name() { return ".u" + std::to_string(BitType<Bits::Bits8>::BitSize); }
+	static std::string Name() { return ".u" + std::to_string(BitSize<Bits::Bits8>::Size); }
 };
 
 template<Bits B, unsigned int N = 1> struct UIntType : UIntTypeBase<B, N> {};
@@ -305,7 +311,7 @@ struct FloatTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
-	static std::string Name() { return ".f" + std::to_string(BitType<B, N>::BitSize); }
+	static std::string Name() { return ".f" + std::to_string(BitSize<B>::Size); }
 
 	enum class RoundingMode {
 		None,
@@ -519,6 +525,12 @@ enum class VectorSize : int {
 	Vector4 = 4
 };
 
+template<VectorSize V>
+struct VectorProperties
+{
+	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
+};
+
 template<class T, VectorSize V>
 struct VectorType : DataType
 {
@@ -527,10 +539,8 @@ struct VectorType : DataType
 	);
 
 	using ElementType = T;
-	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
-	constexpr static std::underlying_type<Bits>::type BitSize = T::BitSize * ElementCount;
 
-	static std::string Name() { return ".v" + std::to_string(ElementCount) + " " + T::Name(); }
+	static std::string Name() { return ".v" + std::to_string(VectorProperties<V>::ElementCount) + " " + T::Name(); }
 };
 
 template<class T>

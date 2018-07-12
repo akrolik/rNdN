@@ -54,7 +54,7 @@ public:
 		j["version_major"] = m_versionMajor;
 		j["version_minor"] = m_versionMinor;
 		j["target"] = m_target;
-		j["address_size"] = static_cast<int>(m_addressSize);
+		j["address_size"] = static_cast<std::underlying_type<Bits>::type>(m_addressSize);
 		for (const auto& declaration : m_declarations)
 		{
 			j["declarations"].push_back(declaration->ToJSON());
