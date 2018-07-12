@@ -14,6 +14,9 @@ namespace PTX {
 class Function : public Declaration
 {
 public:
+	Function() {}
+	Function(const std::string& name, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Declaration(linkDirective), m_name(name) {};
+
 	void SetName(const std::string& name) { m_name = name; }
 	std::string GetName() const { return m_name; }
 

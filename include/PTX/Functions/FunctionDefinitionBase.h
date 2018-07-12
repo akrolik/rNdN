@@ -16,7 +16,12 @@ public:
 		REQUIRE_BASE(typename R::VariableSpace, ParameterSpace)
 	);
 
-	void SetReturn(const VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *ret) { m_return = ret; }
+	using ReturnDeclarationType = VariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
+
+	FunctionDefinitionBase() {}
+	FunctionDefinitionBase(const std::string& name, const ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
+
+	void SetReturn(const ReturnDeclarationType *ret) { m_return = ret; }
 
 	json ToJSON() const override
 	{
@@ -40,13 +45,16 @@ protected:
 		return "<unset>";
 	}
 
-	const VariableDeclaration<typename R::VariableType, typename R::VariableSpace> *m_return = nullptr;
+	const ReturnDeclarationType *m_return = nullptr;
 };
 
 template<>
 class FunctionDefinitionBase<VoidType> : public Function
 {
 public:
+	FunctionDefinitionBase() {}
+	FunctionDefinitionBase(const std::string& name, Declaration::LinkDirective linkDirective) : Function(name) {}
+
 	bool GetEntry() const { return m_entry; }
 	void SetEntry(bool entry) { m_entry = entry; }
 

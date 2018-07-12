@@ -16,6 +16,9 @@ template<class R>
 class FunctionDefinition : public FunctionDefinitionBase<R>
 {
 public:
+	using FunctionDefinitionBase<R>::FunctionDefinitionBase;
+	using Signature = R;
+
 	template<class T, class S>
 	std::enable_if_t<REQUIRE_EXACT(S, RegisterSpace) || REQUIRE_BASE(S, ParameterSpace), void>
 	AddParameter(const VariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
@@ -65,6 +68,11 @@ public:
 	REQUIRE_SPACE_PARAM(FunctionDefinition,
 		is_all<REQUIRE_EXACT(typename Args::VariableSpace, RegisterSpace) || REQUIRE_BASE(typename Args::VariableSpace, ParameterSpace)...>::value
 	);
+
+	using Signature = R(Args...);
+
+	FunctionDefinition() {}
+	FunctionDefinition(const std::string& name, const typename FunctionDefinitionBase<R>::ReturnDeclarationType *ret, const VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : FunctionDefinitionBase<R>(name, ret, linkDirective), m_parameters(std::make_tuple(parameters...)) {}
 
 	void SetParameters(const VariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
 
