@@ -11,9 +11,10 @@
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/ExternalBinaryGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/FillGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/TrigonometricGenerator.h"
 
 namespace Codegen {
 
@@ -37,7 +38,6 @@ public:
 
 	BuiltinGenerator<B, T> *GetBuiltinGenerator(const HorseIR::CallExpression *call)
 	{
-		//TODO: Complete adding generator instantiations
 		std::string name = call->GetName();
 		if (name == "@abs")
 		{
@@ -71,57 +71,59 @@ public:
 		}
 		else if (name == "@log")
 		{
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::Logarithm);
 		}
 		else if (name == "@exp")
 		{
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::Exponential);
 		}
 		else if (name == "@cos")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Cosine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::Cosine);
 		}
 		else if (name == "@sin")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Sine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::Sine);
 		}
 		else if (name == "@tan")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Tangent);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::Tangent);
 		}
 		else if (name == "@acos")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::InverseCosine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::InverseCosine);
 		}
 		else if (name == "@asin")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::InverseSine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::InverseSine);
 		}
 		else if (name == "@atan")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::Tangent);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::Tangent);
 		}
 		else if (name == "@cosh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicCosine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::HyperbolicCosine);
 		}
 		else if (name == "@sinh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicSine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::HyperbolicSine);
 		}
 		else if (name == "@tanh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicTangent);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::HyperbolicTangent);
 		}
 		else if (name == "@acosh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicInverseCosine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::HyperbolicInverseCosine);
 		}
 		else if (name == "@asinh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicInverseSine);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::HyperbolicInverseSine);
 		}
 		else if (name == "@atanh")
 		{
-			return new TrigonometricGenerator<B, T>(m_target, this->m_builder, TrigonometricOperation::HyperbolicInverseTangent);
+			return new ExternalUnaryGenerator<B, T>(m_target, this->m_builder, ExternalUnaryOperation::HyperbolicInverseTangent);
 		}
 		else if (name == "@lt")
 		{
@@ -165,12 +167,15 @@ public:
 		}
 		else if (name == "@power")
 		{
+			return new ExternalBinaryGenerator<B, T>(m_target, this->m_builder, ExternalBinaryOperation::Power);
 		}
 		else if (name == "@log2")
 		{
+			//TODO: nv_ and divide
 		}
 		else if (name == "@mod")
 		{
+			return new ExternalBinaryGenerator<B, T>(m_target, this->m_builder, ExternalBinaryOperation::Modulo);
 		}
 		else if (name == "@and")
 		{
