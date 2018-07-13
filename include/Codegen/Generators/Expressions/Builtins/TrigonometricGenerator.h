@@ -32,29 +32,29 @@ static std::string TrigonometricOperationString(TrigonometricOperation trigOp)
 	switch (trigOp)
 	{
 		case TrigonometricOperation::Sine:
-			return "sinf";
+			return "sin";
 		case TrigonometricOperation::Cosine:
-			return "cosf";
+			return "cos";
 		case TrigonometricOperation::Tangent:
-			return "tanf";
+			return "tan";
 		case TrigonometricOperation::HyperbolicSine:
-			return "sinhf";
+			return "sinh";
 		case TrigonometricOperation::HyperbolicCosine:
-			return "coshf";
+			return "cosh";
 		case TrigonometricOperation::HyperbolicTangent:
-			return "tanhf";
+			return "tanh";
 		case TrigonometricOperation::InverseSine:
-			return "asinf";
+			return "asin";
 		case TrigonometricOperation::InverseCosine:
-			return "acosf";
+			return "acos";
 		case TrigonometricOperation::InverseTangent:
-			return "atanf";
+			return "atan";
 		case TrigonometricOperation::HyperbolicInverseSine:
-			return "asinhf";
+			return "asinh";
 		case TrigonometricOperation::HyperbolicInverseCosine:
-			return "acoshf";
+			return "acosh";
 		case TrigonometricOperation::HyperbolicInverseTangent:
-			return "atanhf";
+			return "atanh";
 	}
 	return "<unknown>";
 }
@@ -133,7 +133,6 @@ private:
 				return PTX::ExternalMathFunction_atanh<S>;
 			default:
 				BuiltinGenerator<B, PTX::Float32Type>::Unimplemented("trigonometric function " + TrigonometricOperationString(trigOp));
-				break;
 		}
 	}
 
