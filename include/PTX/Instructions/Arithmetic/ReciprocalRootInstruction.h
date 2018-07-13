@@ -17,9 +17,11 @@ public:
 
 	using InstructionBase_1<T>::InstructionBase_1;
 
+	static std::string Mnemonic() { return "rsqrt"; }
+
 	std::string OpCode() const override
 	{
-		return "rsqrt.approx" + FlushSubnormalModifier<T, true>::OpCodeModifier() + T::Name();
+		return Mnemonic() + ".approx" + FlushSubnormalModifier<T, true>::OpCodeModifier() + T::Name();
 	}
 };
 

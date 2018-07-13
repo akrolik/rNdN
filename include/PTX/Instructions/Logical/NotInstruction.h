@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<class T, bool Assert = true>
-class NotInstruction : public InstructionBase_2<T>
+class NotInstruction : public InstructionBase_1<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(NotInstruction,
@@ -14,11 +14,13 @@ public:
 		)
 	);
 
-	using InstructionBase_2<T>::InstructionBase_2;
+	using InstructionBase_1<T>::InstructionBase_1;
+
+	static std::string Mnemonic() { return "not"; }
 
 	std::string OpCode() const override
 	{
-		return "not" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

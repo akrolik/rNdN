@@ -16,9 +16,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase;
 
+	static std::string Mnemonic() { return "brev"; }
+
 	std::string OpCode() const override
 	{
-		return "brev" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

@@ -19,9 +19,11 @@ public:
 
 	FunnelShiftInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<UInt32Type> *shift, Direction direction, Mode mode) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
 
+	static std::string Mnemonic() { return "shf"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "shf";
+		std::string code = Mnemonic();
 		if (m_direction == Direction::Left)
 		{
 			code += ".l";

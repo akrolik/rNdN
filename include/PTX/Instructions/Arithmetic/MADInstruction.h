@@ -23,9 +23,11 @@ public:
 
 	using InstructionBase_3<T>::InstructionBase_3;
 
+	static std::string Mnemonic() { return "mad"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "mad";
+		std::string code = Mnemonic();
 		if constexpr(CarryModifier<T>::Enabled)
 		{
 			code += CarryModifier<T>::OpCodeModifier();

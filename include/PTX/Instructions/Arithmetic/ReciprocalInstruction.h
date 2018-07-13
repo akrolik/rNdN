@@ -15,6 +15,8 @@ public:
 			Float32Type, Float64Type
 		)
 	);
+
+	static std::string Mnemonic() { return "rcp"; }
 };
 
 template<>
@@ -23,9 +25,11 @@ class ReciprocalInstruction<Float32Type> : public InstructionBase_1<Float32Type>
 public:
 	ReciprocalInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
+	static std::string Mnemonic() { return "rcp"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "rcp";
+		std::string code = Mnemonic();
 		if (m_roundingMode == Float32Type::RoundingMode::None)
 		{
 			code += ".approx";
@@ -44,9 +48,11 @@ class ReciprocalInstruction<Float64Type> : public InstructionBase_1<Float64Type>
 public:
 	ReciprocalInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *source, Float64Type::RoundingMode roundingMode = Float64Type::RoundingMode::None) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type>(roundingMode) {}
 
+	static std::string Mnemonic() { return "rcp"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "rcp";
+		std::string code = Mnemonic();
 		if (m_roundingMode == Float64Type::RoundingMode::None)
 		{
 			code += ".approx.ftz";

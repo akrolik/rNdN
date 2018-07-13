@@ -23,9 +23,11 @@ public:
 
 	using InstructionBase_3<D, D, D, T>::InstructionBase_3;
 
+	static std::string Mnemonic() { return "slct"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "slct";
+		std::string code = Mnemonic();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();

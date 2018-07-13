@@ -17,16 +17,18 @@ public:
 	);
 
 	using InstructionBase_1<T>::InstructionBase_1;
+
+	static std::string Mnemonic() { return "abs"; }
   	
 	std::string OpCode() const override
 	{
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			return "abs" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
+			return Mnemonic() + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
 		}
 		else
 		{
-			return "abs" + T::Name();
+			return Mnemonic() + T::Name();
 		}
 	}
 };

@@ -28,9 +28,11 @@ public:
 
 	using InstructionBase_1<D, S>::InstructionBase_1;
 
+	static std::string Mnemonic() { return "cvt"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "cvt";
+		std::string code = Mnemonic();
 		if constexpr(ConvertRoundingModifier<D, S>::Enabled)
 		{
 			code += ConvertRoundingModifier<D, S>::OpCodeModifier();

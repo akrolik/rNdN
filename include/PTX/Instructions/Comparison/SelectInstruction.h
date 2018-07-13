@@ -21,9 +21,11 @@ public:
 
 	using InstructionBase_3<T, T, T, PredicateType>::InstructionBase_3;
 
+	static std::string Mnemonic() { return "selp"; }
+
 	std::string OpCode() const override
 	{
-		return "selp" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

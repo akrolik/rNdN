@@ -69,9 +69,11 @@ public:
 
 	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All) : LoadInstructionBase<B, T, S>(reg, address), m_cacheOperator(cacheOperator) {}
 
+	static std::string Mnemonic() { return "ld"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "ld" + S::Name();
+		std::string code = Mnemonic() + S::Name();
 		if (m_cacheOperator != CacheOperator::All)
 		{
 			code += CacheOperatorString(m_cacheOperator);
@@ -89,9 +91,11 @@ class LoadInstruction<B, T, S, LoadSynchronization::Volatile> : public LoadInstr
 public:
 	using LoadInstructionBase<B, T, S>::LoadInstructionBase;
 
+	static std::string Mnemonic() { return "ld"; }
+
 	std::string OpCode() const override
 	{
-		return "ld.volatile" + S::Name() + T::Name();
+		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
 };
 
@@ -101,9 +105,11 @@ class LoadInstruction<B, T, S, LoadSynchronization::Relaxed> : public LoadInstru
 public:
 	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), m_scope(scope) {}
 
+	static std::string Mnemonic() { return "ld"; }
+
 	std::string OpCode() const override
 	{
-		return "ld.relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
 	}
 
 private:
@@ -116,9 +122,11 @@ class LoadInstruction<B, T, S, LoadSynchronization::Acquire> : public LoadInstru
 public:
 	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), m_scope(scope) {}
 
+	static std::string Mnemonic() { return "ld"; }
+
 	std::string OpCode() const override
 	{
-		return "ld.acquire" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".acquire" + ScopeString(m_scope) + S::Name() + T::Name();
 	}
 
 private:

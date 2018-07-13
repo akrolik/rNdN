@@ -31,16 +31,16 @@ public:
 
 	SetInstruction(const Register<D> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	static std::string Mnemonic() { return "set"; }
+
 	std::string OpCode() const override
 	{
-		std::ostringstream code;
-		code << "set" << T::ComparisonOperatorString(m_comparator) << PredicateModifier::OpCodeModifier();
+		std::string code = Mnemonic() + T::ComparisonOperatorString(m_comparator) + PredicateModifier::OpCodeModifier();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code << FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
-		code << D::Name() << T::Name();
-		return code.str();
+		return code + D::Name() + T::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

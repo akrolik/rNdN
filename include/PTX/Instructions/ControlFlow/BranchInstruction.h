@@ -12,9 +12,11 @@ class BranchInstruction : public PredicatedInstruction, public UniformModifier
 public:
 	BranchInstruction(const Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
 
+	static std::string Mnemonic() { return "bra"; }
+
 	std::string OpCode() const override
 	{
-		return "bra" + UniformModifier::OpCodeModifier();
+		return Mnemonic() + UniformModifier::OpCodeModifier();
 	}
 
 	std::vector<const Operand *> Operands() const override

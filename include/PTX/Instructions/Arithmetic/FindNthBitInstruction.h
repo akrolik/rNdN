@@ -16,9 +16,11 @@ public:
 
 	using InstructionBase_3<Bit32Type, Bit32Type, T, Int32Type>::InstructionBase_3;
 
+	static std::string Mnemonic() { return "fns"; }
+
 	std::string OpCode() const override
 	{
-		return "fns" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

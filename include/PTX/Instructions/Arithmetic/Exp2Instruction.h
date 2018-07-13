@@ -10,9 +10,11 @@ class Exp2Instruction : public InstructionBase_1<Float32Type>, public FlushSubno
 public:
 	using InstructionBase_1<Float32Type>::InstructionBase_1;
 
+	static std::string Mnemonic() { return "ex2"; }
+
 	std::string OpCode() const override
 	{
-		return "ex2.approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
+		return Mnemonic() + ".approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 };
 

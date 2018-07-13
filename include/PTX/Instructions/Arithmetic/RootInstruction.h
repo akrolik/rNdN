@@ -15,6 +15,8 @@ public:
 			Float32Type, Float64Type
 		)
 	);
+
+	static std::string Mnemonic() { return "sqrt"; }
 };
 
 template<>
@@ -23,16 +25,20 @@ class RootInstruction<Float32Type> : public InstructionBase_1<Float32Type>, publ
 public:
 	RootInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
 
+	static std::string Mnemonic() { return "sqrt"; }
 	std::string OpCode() const override
 	{
+		std::string code = Mnemonic();
 		if (RoundingModifier<Float32Type>::IsActive())
 		{
-			return "sqrt" + RoundingModifier<Float32Type>::OpCodeModifier() + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
+			code += RoundingModifier<Float32Type>::OpCodeModifier();
 		}
 		else
 		{
-			return "sqrt.approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier()+ Float32Type::Name();
+			code += ".approx";
 		}
+
+		return code + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 };
 
@@ -42,9 +48,11 @@ class RootInstruction<Float64Type> : public InstructionBase_1<Float64Type>, Roun
 public:
 	RootInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type, true>(roundingMode) {}
 
+	static std::string Mnemonic() { return "sqrt"; }
+
 	std::string OpCode() const override
 	{
-		return "sqrt" + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
+		return Mnemonic() + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
 	}
 };
 

@@ -16,9 +16,11 @@ public:
 
 	using InstructionBase_1<UInt32Type, T>::InstructionBase_1;
 
+	static std::string Mnemonic() { return "popc"; }
+
 	std::string OpCode() const override
 	{
-		return "popc" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

@@ -13,9 +13,11 @@ class ConvertAddressInstruction : public PredicatedInstruction
 public:
 	ConvertAddressInstruction(const Register<PointerType<B, T, D>> *destination, const Address<B, T, S> *source) : m_destination(destination), m_source(source) {}
 
+	static std::string Mnemonic() { return "cvta"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "cvta";
+		std::string code = Mnemonic();
 		if constexpr(std::is_same<S, AddressableSpace>::value)
 		{
 			code += ".to" + D::Name();

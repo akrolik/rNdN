@@ -12,9 +12,11 @@ class BranchIndexInstruction : public PredicatedInstruction, public UniformModif
 public:
 	BranchIndexInstruction(const Register<UInt32Type> *index, const std::vector<Label *>& labels, bool uniform = false) : UniformModifier(uniform), m_index(index), m_labels(labels) {}
 
+	static std::string Mnemonic() { return "brx.idx"; }
+
 	std::string OpCode() const override
 	{
-		return "brx.idx" + UniformModifier::OpCodeModifier();
+		return Mnemonic() + UniformModifier::OpCodeModifier();
 	}
 
 	std::vector<const Operand *> Operands() const override

@@ -19,9 +19,11 @@ public:
 
 	PrefetchUniformInstruction(const Address<B, T, AddressableSpace> *address) : m_address(address) {}
 
+	static std::string Mnemonic() { return "prefetch"; }
+
 	std::string OpCode() const override
 	{
-		return "prefetchu.L1";
+		return Mnemonic() + ".L1";
 	}
 
 	std::vector<const Operand *> Operands() const override

@@ -16,9 +16,11 @@ public:
 
 	FMAInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 
+	static std::string Mnemonic() { return "fma"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "fma" + RoundingModifier<T, true>::OpCodeModifier();
+		std::string code = Mnemonic() + RoundingModifier<T, true>::OpCodeModifier();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();

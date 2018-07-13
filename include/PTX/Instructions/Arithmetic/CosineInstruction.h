@@ -10,9 +10,11 @@ class CosineInstruction : public InstructionBase_1<Float32Type>, public FlushSub
 public:
 	using InstructionBase_1<Float32Type>::InstructionBase_1;
 
+	static std::string Mnemonic() { return "cos"; }
+
 	std::string OpCode() const override
 	{
-		return "cos.approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
+		return Mnemonic() + ".approx" + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 };
 

@@ -11,9 +11,11 @@ class Logical3OpInstruction : public InstructionBase_3<Bit32Type>
 public:
 	Logical3OpInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
+	static std::string Mnemonic() { return "lop3"; }
+
 	std::string OpCode() const override
 	{
-		return "lop3" + Bit32Type::Name();
+		return Mnemonic() + Bit32Type::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

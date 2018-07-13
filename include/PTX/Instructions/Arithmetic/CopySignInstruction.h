@@ -15,10 +15,12 @@ public:
 	);
 
 	using InstructionBase_2<T>::InstructionBase;
+
+	static std::string Mnemonic() { return "copysign"; }
 	
 	std::string OpCode() const override
 	{
-		return "copysign" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

@@ -20,9 +20,11 @@ public:
 
 	MoveAddressInstruction(const Register<PointerType<B, T, S>> *destination, const MemoryAddress<B, T, S> *source) : m_destination(destination), m_source(source) {}
 
+	static std::string Mnemonic() { return "mov"; }
+
 	std::string OpCode() const override
 	{
-		return "mov" + PointerType<B, T, S>::Name();
+		return Mnemonic() + PointerType<B, T, S>::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

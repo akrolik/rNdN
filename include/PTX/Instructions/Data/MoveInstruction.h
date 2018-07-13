@@ -22,9 +22,11 @@ public:
 
 	MoveInstruction(const Register<T> *destination, const TypedOperand<T> *source) : m_destination(destination), m_source(source) {}
 
+	static std::string Mnemonic() { return "mov"; }
+
 	std::string OpCode() const override
 	{
-		return "mov" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

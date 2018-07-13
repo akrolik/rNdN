@@ -14,9 +14,11 @@ public:
 
 	using InstructionBase_2<typename T::WideType, T>::InstructionBase_2;
 
+	static std::string Mnemonic() { return "mad"; }
+
 	std::string OpCode() const override
 	{
-		return "mad.wide" + T2::Name();
+		return Mnemonic() + ".wide" + T::Name();
 	}
 };
 

@@ -19,16 +19,16 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	static std::string Mnemonic() { return "min"; }
+
 	std::string OpCode() const override
 	{
+		std::string code = Mnemonic();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			return "min" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
+			code += FlushSubnormalModifier<T>::OpCodeModifier();
 		}
-		else
-		{
-			return "min" + T::Name();
-		}
+		return code + T::Name();
 	}
 };
 

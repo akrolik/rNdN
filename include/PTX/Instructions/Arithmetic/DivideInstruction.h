@@ -18,9 +18,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase;
 
+	static std::string Mnemonic() { return "div"; }
+
 	std::string OpCode() const override
 	{
-		return "div" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 
@@ -49,16 +51,18 @@ public:
 		m_full = full;
 	}
 
+	static std::string Mnemonic() { return "div"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "div";
+		std::string code = Mnemonic();
 		if (RoundingModifier<Float32Type>::IsActive())
 		{
 			code += RoundingModifier<Float32Type>::OpCodeModifier();
 		}
 		else if (m_full)
 		{
-			code += "full";
+			code += ".full";
 		}
 		else
 		{
@@ -77,9 +81,11 @@ class DivideInstruction<Float64Type> : public InstructionBase_2<Float64Type>, pu
 public:
 	DivideInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *sourceA, const TypedOperand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
 
+	static std::string Mnemonic() { return "div"; }
+
 	std::string OpCode() const override
 	{
-		return "div" + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
+		return Mnemonic() + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
 	}
 };
 

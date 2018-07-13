@@ -16,9 +16,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	static std::string Mnemonic() { return "cnot"; }
+
 	std::string OpCode() const override
 	{
-		return "cnot" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

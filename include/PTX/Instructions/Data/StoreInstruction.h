@@ -66,9 +66,11 @@ public:
 
 	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, CacheOperator cacheOperator = CacheOperator::WriteBack) : StoreInstructionBase<B, T, S>(address, reg), m_cacheOperator(cacheOperator) {}
 
+	static std::string Mnemonic() { return "st"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "st" + S::Name();
+		std::string code = Mnemonic() + S::Name();
 		if (m_cacheOperator != CacheOperator::WriteBack)
 		{
 			code += CacheOperatorString(m_cacheOperator);
@@ -86,9 +88,11 @@ class StoreInstruction<B, T, S, StoreSynchronization::Volatile> : public StoreIn
 public:
 	using StoreInstructionBase<B, T, S>::StoreInstructionBase;
 
+	static std::string Mnemonic() { return "st"; }
+
 	std::string OpCode() const override
 	{
-		return "st.volatile" + S::Name() + T::Name();
+		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
 };
 
@@ -98,9 +102,11 @@ class StoreInstruction<B, T, S, StoreSynchronization::Relaxed> : public StoreIns
 public:
 	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), m_scope(scope) {}
 
+	static std::string Mnemonic() { return "st"; }
+
 	std::string OpCode() const override
 	{
-		return "st.relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
 	}
 
 private:
@@ -113,9 +119,11 @@ class StoreInstruction<B, T, S, StoreSynchronization::Release> : public StoreIns
 public:
 	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), m_scope(scope) {}
 
+	static std::string Mnemonic() { return "st"; }
+
 	std::string OpCode() const override
 	{
-		return "st.release" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".release" + ScopeString(m_scope) + S::Name() + T::Name();
 	}
 
 private:

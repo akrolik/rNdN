@@ -16,9 +16,11 @@ public:
 
 	using InstructionBase_1<UInt32Type, T>::InstructionBase;
 
+	static std::string Mnemonic() { return "clz"; }
+
 	std::string OpCode() const override
 	{
-		return "clz" + T::Name();
+		return Mnemonic() + T::Name();
 	}
 };
 

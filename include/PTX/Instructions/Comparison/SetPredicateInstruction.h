@@ -28,9 +28,11 @@ public:
 
 	SetPredicateInstruction(const Register<PredicateType> *destinationP, const Register<PredicateType> *destinationQ, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : ComparisonModifier<T>(comparator), m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	static std::string Mnemonic() { return "setp"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "setp" + ComparisonModifier<T>::OpCodeModifier() + PredicateModifier::OpCodeModifier();
+		std::string code = Mnemonic() + ComparisonModifier<T>::OpCodeModifier() + PredicateModifier::OpCodeModifier();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::OpCodeModifier();
@@ -74,9 +76,11 @@ public:
 
 	SetPredicateInstruction(const Register<PredicateType> *destination, const TypedOperand<Float16Type> *sourceA, const TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	static std::string Mnemonic() { return "setp"; }
+
 	std::string OpCode() const override
 	{
-		return "setp" + ComparisonModifier<Float16Type>::OpCodeModifier() + PredicateModifier::OpCodeModifier() + FlushSubnormalModifier<Float16Type>::OpCodeModifier() + Float16Type::Name();
+		return Mnemonic() + ComparisonModifier<Float16Type>::OpCodeModifier() + PredicateModifier::OpCodeModifier() + FlushSubnormalModifier<Float16Type>::OpCodeModifier() + Float16Type::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

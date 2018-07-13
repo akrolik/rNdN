@@ -48,9 +48,11 @@ public:
 		return { m_register, new DereferencedAddress<B, T, GlobalSpace>(m_address) };
 	}
 
+	static std::string Mnemonic() { return "ld"; }
+
 	std::string OpCode() const override
 	{
-		std::string code = "ld" + GlobalSpace::Name();
+		std::string code = Mnemonic() + GlobalSpace::Name();
 		if (m_cacheOperator != CacheOperator::All)
 		{
 			code += CacheOperatorString(m_cacheOperator);

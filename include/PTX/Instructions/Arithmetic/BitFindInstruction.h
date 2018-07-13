@@ -20,13 +20,16 @@ public:
 	bool GetShiftAmount() const { return m_shiftAmount; }
 	void SetShiftAmount(bool shiftAmount) { m_shiftAmount; }
 
+	static std::string Mnemonic() { return "bfind"; }
+
 	std::string OpCode() const override
 	{
+		std::string code = Mnemonic();
 		if (m_shiftAmount)
 		{
-			return "bfind.shiftamt" + T::Name();
+			code += ".shiftamt";
 		}
-		return "bfind" + T::Name();
+		return code + T::Name();
 	}
 
 private:

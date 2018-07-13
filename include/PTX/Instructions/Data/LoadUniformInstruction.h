@@ -26,9 +26,11 @@ public:
 
 	LoadUniformInstruction(const Register<T> *reg, const Address<B, T, S> *address) : m_register(reg), m_address(address) {}
 
+	static std::string Mnemonic() { return "ldu"; }
+
 	std::string OpCode() const override
 	{
-		return "ldu" + S::Name() + T::Name();
+		return Mnemonic() + S::Name() + T::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

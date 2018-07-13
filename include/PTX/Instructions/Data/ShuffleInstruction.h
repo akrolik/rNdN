@@ -38,9 +38,11 @@ public:
 
 	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, unsigned int sourceB, unsigned int sourceC, unsigned int memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
 
+	static std::string Mnemonic() { return "shfl"; }
+
 	std::string OpCode() const override
 	{
-		return "shfl.sync" + ModeString(m_mode) + ".b32";
+		return Mnemonic() + ".sync" + ModeString(m_mode) + Bit32Type::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override

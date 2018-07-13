@@ -53,9 +53,11 @@ class MultiplyInstruction<Int32Type> : public InstructionBase_2<Int32Type>, publ
 public:
 	using InstructionBase_2<Int32Type>::InstructionBase_2;
 
+	static std::string Mnemonic() { return "mul"; }
+
 	std::string OpCode() const override
 	{
-		return "mul" + HalfModifier<Int32Type>::OpCodeModifier() + Int32Type::Name();
+		return Mnemonic() + HalfModifier<Int32Type>::OpCodeModifier() + Int32Type::Name();
 	}
 };
 
