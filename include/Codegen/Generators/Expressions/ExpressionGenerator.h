@@ -15,6 +15,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/FillGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
 namespace Codegen {
 
@@ -41,33 +42,44 @@ public:
 		std::string name = call->GetName();
 		if (name == "@abs")
 		{
+			return new UnaryGenerator<B, T>(m_target, this->m_builder, UnaryOperation::Absolute);
 		}
 		else if (name == "@neg")
 		{
+			return new UnaryGenerator<B, T>(m_target, this->m_builder, UnaryOperation::Negate);
 		}
 		else if (name == "@ceil")
 		{
+			//TODO: Unary PTX cvt.rpi
 		}
 		else if (name == "@floor")
 		{
+			//TODO: Unary PTX cvt.rmi
 		}
 		else if (name == "@round")
 		{
+			//TODO: Unary PTX cvt.rni
 		}
 		else if (name == "@conj")
 		{
+			//TODO: Complex conjugate (@conj) unsupported
 		}
 		else if (name == "@recip")
 		{
+			//TODO: Unary PTX recip
 		}
 		else if (name == "@signum")
 		{
+			//TODO: Unary PTX selp, setp
 		}
 		else if (name == "@pi")
 		{
+			//TODO: x * CUDART_PI_F
+			//#define CUDART_PI_F 3.141592654f
 		}
 		else if (name == "@not")
 		{
+			return new UnaryGenerator<B, T>(m_target, this->m_builder, UnaryOperation::Not);
 		}
 		else if (name == "@log")
 		{
