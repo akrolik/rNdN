@@ -49,7 +49,7 @@ public:
 		// properties are dynamically detected by the enclosing package.
 
 		PTX::Module *ptxModule = new PTX::Module();
-		ptxModule->SetVersion(6, 1);
+		ptxModule->SetVersion(6, 2);
 		ptxModule->SetDeviceTarget(m_target);
 		ptxModule->SetAddressSize(B);
 
