@@ -78,7 +78,7 @@ public:
 		}
 		else
 		{
-			BuiltinGenerator<B, PTX::PredicateType>::Unimplemented(call);
+			BuiltinGenerator<B, T>::Unimplemented(call);
 		}
 	}
 
@@ -101,7 +101,7 @@ private:
 			case ComparisonOperator::NotEqual:
 				return T::ComparisonOperator::NotEqual;
 			default:
-				BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("comparison operator " + ComparisonOperatorString(comparisonOp));
+				BuiltinGenerator<B, T>::Unimplemented("comparison operator " + ComparisonOperatorString(comparisonOp));
 		}
 
 	}
