@@ -50,9 +50,9 @@ int main(int argc, char *argv[])
 	p.CreateContext(device);
 	auto cuda_end = std::chrono::steady_clock::now();
 
-	auto sp_begin = std::chrono::steady_clock::now();
+	auto frontend_begin = std::chrono::steady_clock::now();
 	yyparse();
-	auto sp_end = std::chrono::steady_clock::now();
+	auto frontend_end = std::chrono::steady_clock::now();
 
 	std::cout << program->ToString() << std::endl;
 
@@ -113,13 +113,20 @@ int main(int argc, char *argv[])
 		std::exit(EXIT_FAILURE);
 	}
 
+	auto cudaTime = std::chrono::duration_cast<std::chrono::microseconds>(cuda_end - cuda_begin).count();
+	auto frontendTime = std::chrono::duration_cast<std::chrono::microseconds>(frontend_end - frontend_begin).count();
+	auto codegenTime = std::chrono::duration_cast<std::chrono::microseconds>(code_end - code_begin).count();
+	auto jitTime = std::chrono::duration_cast<std::chrono::microseconds>(jit_end - jit_begin).count();
+	auto compileTime = std::chrono::duration_cast<std::chrono::microseconds>(jit_end - frontend_begin).count();
 
-	std::cout << "[INFO] Kernel execution successful" << std::endl;
-	std::cout << "[Timings]" << std::endl;
-	std::cout << "  CUDA Init: " << std::chrono::duration_cast<std::chrono::microseconds>(cuda_end - cuda_begin).count() << " mus\n";
-	std::cout << "  Scan+Parse: " << std::chrono::duration_cast<std::chrono::microseconds>(sp_end - sp_begin).count() << " mus\n";
-	std::cout << "  Codegen: " << std::chrono::duration_cast<std::chrono::microseconds>(code_end - code_begin).count() << " mus\n";
-	std::cout << "  PTX JIT: " << std::chrono::duration_cast<std::chrono::microseconds>(jit_end - jit_begin).count() << " mus\n";
-	std::cout << "    Total Compile Time: " << std::chrono::duration_cast<std::chrono::microseconds>(jit_end - sp_begin).count() << " mus\n";
-	std::cout << "  Execution: " << std::chrono::duration_cast<std::chrono::microseconds>(exec_end - exec_begin).count() << " mus\n";
+	auto executionTime = std::chrono::duration_cast<std::chrono::microseconds>(exec_end - exec_begin).count();
+
+	std::cout << "[INFO] Kernel Execution Successful" << std::endl;
+	std::cout << "[INFO] Pipeline Timings" << std::endl;
+	std::cout << "         - CUDA Init: " << cudaTime << " mus" << std::endl;
+	std::cout << "         - Frontend: " << frontendTime << " mus" << std::endl;
+	std::cout << "         - Codegen: " << codegenTime << " mus" << std::endl;
+	std::cout << "         - PTX JIT: " << jitTime << " mus" << std::endl;
+	std::cout << "[INFO] Total Compile Time: " << compileTime << " mus\n";
+	std::cout << "[INFO] Execution Time: " << executionTime << " mus" << std::endl;
 }
