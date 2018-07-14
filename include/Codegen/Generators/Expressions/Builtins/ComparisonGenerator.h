@@ -5,7 +5,9 @@
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/TypeUtils.h"
 
+#include "PTX/Instructions/Comparison/SelectInstruction.h"
 #include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
+#include "PTX/Instructions/Data/MoveInstruction.h"
 
 namespace Codegen {
 
@@ -15,7 +17,8 @@ enum class ComparisonOperator {
 	Less,
 	LessEqual,
 	Greater,
-	GreaterEqual
+	GreaterEqual,
+	Sign
 };
 
 static std::string ComparisonOperatorString(ComparisonOperator comparisonOp)
@@ -34,11 +37,13 @@ static std::string ComparisonOperatorString(ComparisonOperator comparisonOp)
 			return ">";
 		case ComparisonOperator::GreaterEqual:
 			return ">=";
+		case ComparisonOperator::Sign:
+			return "signum";
 	}
 	return "<unknown>";
 }
 
-template<PTX::Bits B, class T>
+template<PTX::Bits B, class T, typename Enable = void>
 class ComparisonGenerator : public BuiltinGenerator<B, T>
 {
 public:
@@ -69,16 +74,23 @@ public:
 	template<class T>
 	void Generate(const HorseIR::CallExpression *call)
 	{
+		OperandGenerator<B, T> opGen(this->m_builder);
+		auto src1 = opGen.GenerateOperand(call->GetArgument(0));
+		auto src2 = opGen.GenerateOperand(call->GetArgument(1));
+		Generate(this->m_target, src1, src2);
+	}
+
+	template<class T>
+	void Generate(const PTX::Register<PTX::PredicateType> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+	{
 		if constexpr(PTX::is_comparable_type<T>::value)
 		{
-			OperandGenerator<B, T> opGen(this->m_builder);
-			auto src1 = opGen.GenerateOperand(call->GetArgument(0));
-			auto src2 = opGen.GenerateOperand(call->GetArgument(1));
-			this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(this->m_target, src1, src2, PTXOp<T>(m_comparisonOp)));
+			this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(target, src1, src2, PTXOp<T>(m_comparisonOp)));
 		}
 		else
 		{
-			BuiltinGenerator<B, T>::Unimplemented(call);
+			//TODO: Error
+			BuiltinGenerator<B, T>::Unimplemented("string");
 		}
 	}
 
@@ -101,11 +113,70 @@ private:
 			case ComparisonOperator::NotEqual:
 				return T::ComparisonOperator::NotEqual;
 			default:
+				//TODO: Error
 				BuiltinGenerator<B, T>::Unimplemented("comparison operator " + ComparisonOperatorString(comparisonOp));
 		}
 
 	}
 
+	ComparisonOperator m_comparisonOp;
+};
+
+template<PTX::Bits B, PTX::Bits S>
+class ComparisonGenerator<B, PTX::IntType<S>, std::enable_if_t<S == PTX::Bits::Bits32 || S == PTX::Bits::Bits64>> : public BuiltinGenerator<B, PTX::IntType<S>>
+{
+public:
+	using NodeType = HorseIR::CallExpression;
+
+	ComparisonGenerator(const PTX::Register<PTX::IntType<S>> *target, Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(target, builder), m_comparisonOp(comparisonOp) {}
+
+	void Generate(const HorseIR::CallExpression *call) override
+	{
+		if (m_comparisonOp == ComparisonOperator::Sign)
+		{
+			auto arg = call->GetArgument(0);
+			Dispatch(*this, arg->GetType(), call);
+		}
+		else
+		{
+			//TODO: Error
+			BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("comparison operator " + ComparisonOperatorString(m_comparisonOp));
+		}
+	}
+
+	using BuiltinGenerator<B, PTX::IntType<S>>::Generate;
+
+	template<class T>
+	void Generate(const HorseIR::CallExpression *call)
+	{
+		auto block = new PTX::BlockStatement();
+		this->m_builder->AddStatement(block);
+		auto resources = this->m_builder->OpenScope(block);
+
+		OperandGenerator<B, T> opGen(this->m_builder);
+		auto src = opGen.GenerateOperand(call->GetArgument(0));
+
+		auto tempP = resources->template AllocateRegister<PTX::PredicateType, ResourceKind::Internal>("p");
+		auto tempQ = resources->template AllocateRegister<PTX::PredicateType, ResourceKind::Internal>("q");
+
+		ComparisonGenerator<B, PTX::PredicateType> gen1(nullptr, this->m_builder, ComparisonOperator::Equal);
+		gen1.template Generate<T>(tempP, src, new PTX::Value<T>(0));
+
+		auto move = new PTX::MoveInstruction<PTX::IntType<S>>(this->m_target, new PTX::Value<PTX::IntType<S>>(0));
+		move->SetPredicate(tempP);
+		this->m_builder->AddStatement(move);
+
+		ComparisonGenerator<B, PTX::PredicateType> gen2(nullptr, this->m_builder, ComparisonOperator::Greater);
+		gen2.template Generate<T>(tempQ, src, new PTX::Value<T>(0));
+
+		auto select = new PTX::SelectInstruction<PTX::IntType<S>>(this->m_target, new PTX::Value<PTX::IntType<S>>(1), new PTX::Value<PTX::IntType<S>>(-1), tempQ);
+		select->SetPredicate(tempP, true);
+		this->m_builder->AddStatement(select);
+
+		this->m_builder->CloseScope();
+	}
+
+private:
 	ComparisonOperator m_comparisonOp;
 };
 

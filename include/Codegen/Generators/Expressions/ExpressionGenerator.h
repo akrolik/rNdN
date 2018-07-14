@@ -71,7 +71,7 @@ public:
 		}
 		else if (name == "@signum")
 		{
-			//TODO: Unary PTX selp, setp
+			return new ComparisonGenerator<B, T>(m_target, this->m_builder, ComparisonOperator::Sign);
 		}
 		else if (name == "@pi")
 		{
