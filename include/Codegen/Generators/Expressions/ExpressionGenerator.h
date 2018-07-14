@@ -63,7 +63,9 @@ public:
 		}
 		else if (name == "@conj")
 		{
-			//TODO: Complex conjugate (@conj) unsupported
+			//TODO: Add support for complex numbers
+			std::cerr << "[ERROR] Complex number functions are not supported" << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 		else if (name == "@recip")
 		{

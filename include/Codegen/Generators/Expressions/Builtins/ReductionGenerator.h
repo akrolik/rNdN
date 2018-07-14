@@ -22,6 +22,7 @@ public:
 
 	void Generate(const HorseIR::CallExpression *call) override
 	{
+		//TODO: Implement @reduction builtin functions
 		this->m_builder->AddStatement(new PTX::CommentStatement("<" + call->GetName() + ">"));
 		// switch (m_reductionOp)
 		// {
