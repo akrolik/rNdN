@@ -15,6 +15,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/FillGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
 namespace Codegen {
@@ -50,15 +51,15 @@ public:
 		}
 		else if (name == "@ceil")
 		{
-			//TODO: Unary PTX cvt.rpi
+			return new RoundingGenerator<B, T>(m_target, this->m_builder, RoundingOperation::Ceiling);
 		}
 		else if (name == "@floor")
 		{
-			//TODO: Unary PTX cvt.rmi
+			return new RoundingGenerator<B, T>(m_target, this->m_builder, RoundingOperation::Floor);
 		}
 		else if (name == "@round")
 		{
-			//TODO: Unary PTX cvt.rni
+			return new RoundingGenerator<B, T>(m_target, this->m_builder, RoundingOperation::Nearest);
 		}
 		else if (name == "@conj")
 		{
