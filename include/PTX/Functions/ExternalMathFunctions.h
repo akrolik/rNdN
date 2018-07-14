@@ -10,13 +10,13 @@ namespace ExternalMathFunctions {
 	template<Bits B>
 	static std::string Name(const std::string& name)
 	{
-		return "nv_" + name;
+		return "__nv_" + name;
 	}
 
 	template<>
 	std::string Name<Bits::Bits32>(const std::string& name)
 	{
-		return "nv_" + name + "f";
+		return "__nv_" + name + "f";
 	}
 
 	template<Bits B>

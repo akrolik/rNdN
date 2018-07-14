@@ -27,7 +27,7 @@ private:
 		{
 			code << "\t" << statement->ToString() << statement->Terminator() << std::endl;
 		}
-		code << "}" << std::endl;
+		code << "}";
 		return code.str();
 	}
 };

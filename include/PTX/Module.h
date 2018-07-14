@@ -40,9 +40,15 @@ public:
 		code << ".address_size " << std::to_string(static_cast<std::underlying_type<Bits>::type>(m_addressSize)) << std::endl;
 		code << std::endl;
 
+		bool first = true;
 		for (const auto& declaration : m_declarations)
 		{
-			code << declaration->ToString() << std::endl;
+			if (!first)
+			{
+				code << std::endl << std::endl;
+			}
+			first = false;
+			code << declaration->ToString();
 		}
 
 		return code.str();

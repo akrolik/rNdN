@@ -35,7 +35,7 @@ public:
 		{
 			code << "(" << ret << ") ";
 		}
-		code << m_name << "(" << GetParametersString() << ")" << Body() << std::endl;
+		code << m_name << "(" << GetParametersString() << ")" << Body();
 		return code.str();
 	}
 
