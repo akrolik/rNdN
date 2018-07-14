@@ -67,7 +67,7 @@ public:
 		}
 		else if (name == "@recip")
 		{
-			//TODO: Unary PTX recip
+			return new UnaryGenerator<B, T>(m_target, this->m_builder, UnaryOperation::Reciprocal);
 		}
 		else if (name == "@signum")
 		{
@@ -184,7 +184,7 @@ public:
 		}
 		else if (name == "@log2")
 		{
-			//TODO: nv_ and divide
+			return new ExternalBinaryGenerator<B, T>(m_target, this->m_builder, ExternalBinaryOperation::Logarithm);
 		}
 		else if (name == "@mod")
 		{

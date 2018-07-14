@@ -6,6 +6,7 @@
 
 #include "PTX/Instructions/Arithmetic/AbsoluteInstruction.h"
 #include "PTX/Instructions/Arithmetic/NegateInstruction.h"
+#include "PTX/Instructions/Arithmetic/ReciprocalInstruction.h"
 #include "PTX/Instructions/Logical/NotInstruction.h"
 #include "PTX/Operands/Operand.h"
 #include "PTX/Statements/BlockStatement.h"
@@ -16,6 +17,7 @@ enum class UnaryOperation {
 	// Arithmetic
 	Absolute,
 	Negate,
+	Reciprocal,
 
 	// Logical
 	Not
@@ -39,6 +41,9 @@ public:
 				break;
 			case UnaryOperation::Negate:
 				GenerateInstruction<PTX::NegateInstruction>(src);
+				break;
+			case UnaryOperation::Reciprocal:
+				GenerateInstruction<PTX::ReciprocalInstruction>(src);
 				break;
 			case UnaryOperation::Not:
 				GenerateInstruction<PTX::NotInstruction>(src);

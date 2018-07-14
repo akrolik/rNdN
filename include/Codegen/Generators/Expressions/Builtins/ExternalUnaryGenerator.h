@@ -86,14 +86,18 @@ public:
 
 	void Generate(const HorseIR::CallExpression *call) override
 	{
+		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
+		auto src = opGen.GenerateRegister(call->GetArgument(0));
+		Generate(this->m_target, src);
+	}
+	
+	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src)
+	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder->AddStatement(block);
 		this->m_builder->OpenScope(block);
 
 		PTX::ExternalMathFunctions::UnaryFunction<S> *function = GetFunction(m_unaryOp);
-
-		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
-		auto src = opGen.GenerateRegister(call->GetArgument(0));
 
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 2);
 		this->m_builder->AddStatement(paramDeclaration);
@@ -106,7 +110,7 @@ public:
 
 		this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn, src));
 		this->m_builder->AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::UnaryFunction<S>::Signature>(function, paramOut, paramIn));
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(this->m_target), addressOut));
+		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
 
 		this->m_builder->CloseScope();
 	}

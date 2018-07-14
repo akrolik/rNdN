@@ -2,6 +2,9 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
+
 #include "PTX/Functions/ExternalMathFunctions.h"
 #include "PTX/Instructions/ControlFlow/CallInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"
@@ -14,7 +17,8 @@ namespace Codegen {
 
 enum class ExternalBinaryOperation {
 	Power,
-	Modulo
+	Modulo,
+	Logarithm
 };
 
 static std::string ExternalBinaryOperationString(ExternalBinaryOperation binaryOp)
@@ -25,6 +29,8 @@ static std::string ExternalBinaryOperationString(ExternalBinaryOperation binaryO
 			return "pow";
 		case ExternalBinaryOperation::Modulo:
 			return "mod";
+		case ExternalBinaryOperation::Logarithm:
+			return "log2";
 	}
 	return "<unknown>";
 }
@@ -47,15 +53,44 @@ public:
 
 	void Generate(const HorseIR::CallExpression *call) override
 	{
+		if (m_binaryOp == ExternalBinaryOperation::Logarithm)
+		{
+			auto block = new PTX::BlockStatement();
+			this->m_builder->AddStatement(block);
+			auto resources = this->m_builder->OpenScope(block);
+
+			OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
+			auto base = opGen.GenerateRegister(call->GetArgument(0));
+			auto value = opGen.GenerateRegister(call->GetArgument(1));
+
+			auto temp1 = resources->template AllocateRegister<PTX::FloatType<S>, ResourceKind::Internal>("temp1");
+			auto temp2 = resources->template AllocateRegister<PTX::FloatType<S>, ResourceKind::Internal>("temp2");
+
+			ExternalUnaryGenerator<B, PTX::FloatType<S>> gen(nullptr, this->m_builder, ExternalUnaryOperation::Logarithm);
+			gen.Generate(temp1, base);
+			gen.Generate(temp2, value);
+
+			BinaryGenerator<B, PTX::FloatType<S>> gendiv(nullptr, this->m_builder, BinaryOperation::Divide);
+			gendiv.Generate(this->m_target, temp1, temp2);
+
+			this->m_builder->CloseScope();
+		}
+		else
+		{
+			OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
+			auto src1 = opGen.GenerateRegister(call->GetArgument(0));
+			auto src2 = opGen.GenerateRegister(call->GetArgument(1));
+			Generate(this->m_target, src1, src2);
+		}
+	}
+
+	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src1, const PTX::Register<PTX::BitType<S>> *src2)
+	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder->AddStatement(block);
 		this->m_builder->OpenScope(block);
 
 		PTX::ExternalMathFunctions::BinaryFunction<S> *function = GetFunction(m_binaryOp);
-
-		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
-		auto src1 = opGen.GenerateRegister(call->GetArgument(0));
-		auto src2 = opGen.GenerateRegister(call->GetArgument(1));
 
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 3);
 		this->m_builder->AddStatement(paramDeclaration);
@@ -71,7 +106,7 @@ public:
 		this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn1, src1));
 		this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn2, src2));
 		this->m_builder->AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::BinaryFunction<S>::Signature>(function, paramOut, paramIn1, paramIn2));
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(this->m_target), addressOut));
+		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
 
 		this->m_builder->CloseScope();
 	}

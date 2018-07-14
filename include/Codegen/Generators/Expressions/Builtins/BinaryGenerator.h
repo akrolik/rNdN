@@ -5,6 +5,7 @@
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
+#include "PTX/Instructions/Arithmetic/DivideInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyInstruction.h"
 #include "PTX/Instructions/Arithmetic/SubtractInstruction.h"
 #include "PTX/Instructions/Logical/AndInstruction.h"
@@ -41,39 +42,53 @@ public:
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src1 = opGen.GenerateOperand(call->GetArgument(0));
 		auto src2 = opGen.GenerateOperand(call->GetArgument(1));
+	}
 
+	//TODO: Should we refactor the entire interface to remove the target from the class?
+	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+	{	
 		switch (m_binaryOp)
 		{
-			//TODO: Complete binary operations
 			case BinaryOperation::Plus:
-				GenerateInstruction<PTX::AddInstruction>(src1, src2);
+				GenerateInstruction<PTX::AddInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::Minus:
-				GenerateInstruction<PTX::SubtractInstruction>(src1, src2);
+				GenerateInstruction<PTX::SubtractInstruction>(target ,src1, src2);
 				break;
 			case BinaryOperation::Multiply:
-				GenerateInstruction<PTX::MultiplyInstruction>(src1, src2);
+				GenerateInstruction<PTX::MultiplyInstruction>(target, src1, src2);
+				break;
+			case BinaryOperation::Divide:
+				GenerateInstruction<PTX::DivideInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::And:
-				GenerateInstruction<PTX::AndInstruction>(src1, src2);
+				GenerateInstruction<PTX::AndInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::Or:
-				GenerateInstruction<PTX::OrInstruction>(src1, src2);
+				GenerateInstruction<PTX::OrInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::Xor:
-				GenerateInstruction<PTX::XorInstruction>(src1, src2);
+				GenerateInstruction<PTX::XorInstruction>(target, src1, src2);
 				break;
 			default:
-				BuiltinGenerator<B, T>::Unimplemented(call);
+				//TODO: Error message needs improving
+				BuiltinGenerator<B, T>::Unimplemented(" instruction");
 		}
 	}
 
 	template<template<class, bool = true> class Op>
-	void GenerateInstruction(const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+	void GenerateInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 	{
 		if constexpr(Op<T, false>::TypeSupported)
 		{
-			this->m_builder->AddStatement(new Op<T>(this->m_target, src1, src2));
+			if constexpr(std::is_same<Op<T>, PTX::DivideInstruction<PTX::Float64Type>>::value)
+			{
+				this->m_builder->AddStatement(new Op<T>(target, src1, src2, PTX::Float64Type::RoundingMode::Nearest));
+			}
+			else
+			{
+				this->m_builder->AddStatement(new Op<T>(target, src1, src2));
+			}
 		}
 		else
 		{
@@ -95,6 +110,7 @@ public:
 	{
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
+		this->m_builder->AddStatement(block);
 
 		auto temp = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("temp");
 
@@ -104,7 +120,6 @@ public:
 		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(this->m_target, temp));
 
 		this->m_builder->CloseScope();
-		this->m_builder->AddStatement(block);
 	}
 
 private:
