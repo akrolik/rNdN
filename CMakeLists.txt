@@ -5,9 +5,21 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_FLAGS "-O3 -g")
  
-find_package(CUDA REQUIRED)
+find_package(CUDA 9.2 REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+
+include_directories(${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include)
+link_directories(${CUDA_TOOLKIT_ROOT_DIR}/nvvm/lib64)
+
+find_package(LLVM 6.0 REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+add_definitions(${LLVM_DEFINITIONS})
 
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
@@ -29,4 +41,4 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_executable(r3d3 ${SOURCES} ${BISON_HorseIRParser_OUTPUTS} ${FLEX_HorseIRScanner_OUTPUTS})
-target_link_libraries(r3d3 cuda ${CUDA_LIBRARIES})
+target_link_libraries(r3d3 cuda ${CUDA_LIBRARIES} libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses)
