@@ -75,8 +75,7 @@ public:
 		}
 		else if (name == "@pi")
 		{
-			//TODO: x * CUDART_PI_F
-			//#define CUDART_PI_F 3.141592654f
+			return new UnaryGenerator<B, T>(m_target, this->m_builder, UnaryOperation::Pi);
 		}
 		else if (name == "@not")
 		{

@@ -20,7 +20,10 @@ enum class UnaryOperation {
 	Reciprocal,
 
 	// Logical
-	Not
+	Not,
+
+	// Numeric
+	Pi
 };
 
 template<PTX::Bits B, class T>
@@ -47,6 +50,19 @@ public:
 				break;
 			case UnaryOperation::Not:
 				GenerateInstruction<PTX::NotInstruction>(src);
+				break;
+			case UnaryOperation::Pi:
+				if constexpr(std::is_same<T, PTX::Float32Type>::value || std::is_same<T, PTX::Float64Type>::value)
+				{
+					#define CUDART_PI_F 3.141592654f
+
+					BinaryGenerator<B, T> gen(nullptr, this->m_builder, BinaryOperation::Multiply);
+					gen.Generate(this->m_target, src, new PTX::Value<T>(CUDART_PI_F));
+				}
+				else
+				{
+					BuiltinGenerator<B, T>::Unimplemented(call);
+				}
 				break;
 			default:
 				BuiltinGenerator<B, T>::Unimplemented(call);
