@@ -16,7 +16,7 @@ public:
 		)
 	);
 
-	using InstructionBase_2<T>::InstructionBase;
+	using InstructionBase_2<T>::InstructionBase_2;
 
 	static std::string Mnemonic() { return "div"; }
 
@@ -30,7 +30,7 @@ template<>
 class DivideInstruction<Float32Type> : public InstructionBase_2<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	DivideInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *sourceA, TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
+	DivideInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *sourceA, const TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
 
 	void SetRoundingMode(Float32Type::RoundingMode roundingMode)
 	{
