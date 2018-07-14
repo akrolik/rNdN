@@ -2,8 +2,11 @@
 
 #include <iostream>
 
+#include <nvvm.h>
+
 #define checkDriverResult(result) CUDA::_checkDriverResult(result, __FILE__, __LINE__)
 #define checkRuntimeError(error) CUDA::_checkRuntimeError(error, __FILE__, __LINE__)
+#define checkNVVMResult(result) CUDA::_checkNVVMResult(result, __FILE__, __LINE__)
 
 namespace CUDA {
 
@@ -39,6 +42,17 @@ static void _checkRuntimeError(cudaError_t error, const char *file, int line)
 
 	std::cerr << "[Runtime Error] " << cudaGetErrorString(error) << " <" << file << ":" << line << ">" << std::endl;
 	std::exit(EXIT_FAILURE);
-
 }
+
+static void _checkNVVMResult(nvvmResult result, const char *file, int line)
+{
+	if (result == NVVM_SUCCESS)
+	{
+		return;
+	}
+
+	std::cerr << "[NVVM Error] " << nvvmGetErrorString(result) << " <" << file << ":" << line << ">" << std::endl;
+	std::exit(EXIT_FAILURE);
+}
+
 }
