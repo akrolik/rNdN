@@ -74,20 +74,10 @@ public:
 				GenerateInstruction<PTX::NotInstruction>(target, src);
 				break;
 			case UnaryOperation::Pi:
-				if constexpr(std::is_same<T, PTX::Float32Type>::value || std::is_same<T, PTX::Float64Type>::value)
-				{
-					#define CUDART_PI_F 3.141592654f
-
-					BinaryGenerator<B, T> gen(this->m_builder, BinaryOperation::Multiply);
-					gen.Generate(target, src, new PTX::Value<T>(CUDART_PI_F));
-				}
-				else
-				{
-					BinaryGenerator<B, T>::Unimplemented("unary operation " + UnaryOperationString(m_unaryOp));
-				}
+				GeneratePi(target, src);
 				break;
 			default:
-				BinaryGenerator<B, T>::Unimplemented("unary operation " + UnaryOperationString(m_unaryOp));
+				BuiltinGenerator<B, T>::Unimplemented("unary operation " + UnaryOperationString(m_unaryOp));
 		}
 	}
 
@@ -105,6 +95,8 @@ public:
 	}
 
 private:
+	void GeneratePi(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src);
+
 	UnaryOperation m_unaryOp;
 };
 
@@ -133,5 +125,27 @@ public:
 private:
 	UnaryOperation m_unaryOp;
 };
+
+}
+
+#include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
+
+namespace Codegen {
+
+template<PTX::Bits B, class T>
+void UnaryGenerator<B, T>::GeneratePi(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
+{
+	if constexpr(std::is_same<T, PTX::Float32Type>::value || std::is_same<T, PTX::Float64Type>::value)
+	{
+		#define CUDART_PI_F 3.141592654f
+
+		BinaryGenerator<B, T> gen(this->m_builder, BinaryOperation::Multiply);
+		gen.Generate(target, src, new PTX::Value<T>(CUDART_PI_F));
+	}
+	else
+	{
+		BuiltinGenerator<B, T>::Unimplemented("unary operation " + UnaryOperationString(m_unaryOp));
+	}
+}
 
 }

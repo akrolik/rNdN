@@ -94,10 +94,10 @@ public:
 				GenerateInstruction<PTX::OrInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::Nand:
-				//TODO: Implement @nand
+				GenerateInverseInstruction<PTX::AndInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::Nor:
-				//TODO: Implement @nor
+				GenerateInverseInstruction<PTX::OrInstruction>(target, src1, src2);
 				break;
 			case BinaryOperation::Xor:
 				GenerateInstruction<PTX::XorInstruction>(target, src1, src2);
@@ -128,6 +128,9 @@ public:
 	}
 
 private:
+	template<template<class, bool = true> class Op>
+	void GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2);
+
 	BinaryOperation m_binaryOp;
 };
 
@@ -155,6 +158,29 @@ public:
 
 private:
 	BinaryOperation m_binaryOp;
+};
+
+}
+
+#include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
+
+namespace Codegen {
+
+template<PTX::Bits B, class T>
+template<template<class, bool = true> class Op>
+void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+{
+	auto block = new PTX::BlockStatement();
+	auto resources = this->m_builder->OpenScope(block);
+	this->m_builder->AddStatement(block);
+
+	auto temp = resources->template AllocateRegister<T, ResourceKind::Internal>("temp");
+	GenerateInstruction<Op>(temp, src1, src2);
+
+	UnaryGenerator<B, T> gen(this->m_builder, UnaryOperation::Not);
+	gen.Generate(target, temp);
+
+	this->m_builder->CloseScope();
 };
 
 }
