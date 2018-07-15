@@ -39,7 +39,7 @@ template<PTX::Bits B, class T, typename Enabled = void>
 class ExternalBinaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	ExternalBinaryGenerator(const PTX::Register<T> *target, Builder *builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, T>(target, builder), m_binaryOp(binaryOp) {}
+	ExternalBinaryGenerator(Builder *builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
 private:
 	ExternalBinaryOperation m_binaryOp;
@@ -49,9 +49,9 @@ template<PTX::Bits B, PTX::Bits S>
 class ExternalBinaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::Bits::Bits32 || S == PTX::Bits::Bits64>> : public BuiltinGenerator<B, PTX::FloatType<S>>
 {
 public:
-	ExternalBinaryGenerator(const PTX::Register<PTX::FloatType<S>> *target, Builder *builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(target, builder), m_binaryOp(binaryOp) {}
+	ExternalBinaryGenerator(Builder *builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_binaryOp(binaryOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override
 	{
 		if (m_binaryOp == ExternalBinaryOperation::Logarithm)
 		{
@@ -66,12 +66,12 @@ public:
 			auto temp1 = resources->template AllocateRegister<PTX::FloatType<S>, ResourceKind::Internal>("temp1");
 			auto temp2 = resources->template AllocateRegister<PTX::FloatType<S>, ResourceKind::Internal>("temp2");
 
-			ExternalUnaryGenerator<B, PTX::FloatType<S>> gen(nullptr, this->m_builder, ExternalUnaryOperation::Logarithm);
+			ExternalUnaryGenerator<B, PTX::FloatType<S>> gen(this->m_builder, ExternalUnaryOperation::Logarithm);
 			gen.Generate(temp1, base);
 			gen.Generate(temp2, value);
 
-			BinaryGenerator<B, PTX::FloatType<S>> gendiv(nullptr, this->m_builder, BinaryOperation::Divide);
-			gendiv.Generate(this->m_target, temp1, temp2);
+			BinaryGenerator<B, PTX::FloatType<S>> gendiv(this->m_builder, BinaryOperation::Divide);
+			gendiv.Generate(target, temp1, temp2);
 
 			this->m_builder->CloseScope();
 		}
@@ -80,7 +80,7 @@ public:
 			OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
 			auto src1 = opGen.GenerateRegister(call->GetArgument(0));
 			auto src2 = opGen.GenerateRegister(call->GetArgument(1));
-			Generate(this->m_target, src1, src2);
+			Generate(target, src1, src2);
 		}
 	}
 

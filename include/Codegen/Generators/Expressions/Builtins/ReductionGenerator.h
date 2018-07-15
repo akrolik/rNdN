@@ -18,9 +18,9 @@ template<PTX::Bits B, class T>
 class ReductionGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	ReductionGenerator(const PTX::Register<T> *target, Builder *builder, ReductionOperation reductionOp) : BuiltinGenerator<B, T>(target, builder), m_reductionOp(reductionOp) {}
+	ReductionGenerator(Builder *builder, ReductionOperation reductionOp) : BuiltinGenerator<B, T>(builder), m_reductionOp(reductionOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
 		//TODO: Implement @reduction builtin functions
 		this->m_builder->AddStatement(new PTX::CommentStatement("<" + call->GetName() + ">"));

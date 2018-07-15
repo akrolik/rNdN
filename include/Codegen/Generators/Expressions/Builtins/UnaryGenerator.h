@@ -26,55 +26,77 @@ enum class UnaryOperation {
 	Pi
 };
 
+static std::string UnaryOperationString(UnaryOperation unaryOp)
+{
+	switch (unaryOp)
+	{
+		case UnaryOperation::Absolute:
+			return "abs";
+		case UnaryOperation::Negate:
+			return "neg";
+		case UnaryOperation::Reciprocal:
+			return "recip";
+		case UnaryOperation::Not:
+			return "not";
+		case UnaryOperation::Pi:
+			return "pi";
+	}
+	return "<unknown>";
+}
+
 template<PTX::Bits B, class T>
 class UnaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	UnaryGenerator(const PTX::Register<T> *target, Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(target, builder), m_unaryOp(unaryOp) {}
+	UnaryGenerator(Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src = opGen.GenerateOperand(call->GetArgument(0));
+		Generate(target, src);
+	}
 
+	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
+	{
 		switch (m_unaryOp)
 		{
 			case UnaryOperation::Absolute:
-				GenerateInstruction<PTX::AbsoluteInstruction>(src);
+				GenerateInstruction<PTX::AbsoluteInstruction>(target, src);
 				break;
 			case UnaryOperation::Negate:
-				GenerateInstruction<PTX::NegateInstruction>(src);
+				GenerateInstruction<PTX::NegateInstruction>(target, src);
 				break;
 			case UnaryOperation::Reciprocal:
-				GenerateInstruction<PTX::ReciprocalInstruction>(src);
+				GenerateInstruction<PTX::ReciprocalInstruction>(target, src);
 				break;
 			case UnaryOperation::Not:
-				GenerateInstruction<PTX::NotInstruction>(src);
+				GenerateInstruction<PTX::NotInstruction>(target, src);
 				break;
 			case UnaryOperation::Pi:
 				if constexpr(std::is_same<T, PTX::Float32Type>::value || std::is_same<T, PTX::Float64Type>::value)
 				{
 					#define CUDART_PI_F 3.141592654f
 
-					BinaryGenerator<B, T> gen(nullptr, this->m_builder, BinaryOperation::Multiply);
-					gen.Generate(this->m_target, src, new PTX::Value<T>(CUDART_PI_F));
+					BinaryGenerator<B, T> gen(this->m_builder, BinaryOperation::Multiply);
+					gen.Generate(target, src, new PTX::Value<T>(CUDART_PI_F));
 				}
 				else
 				{
-					BuiltinGenerator<B, T>::Unimplemented(call);
+					BinaryGenerator<B, T>::Unimplemented("unary operation " + UnaryOperationString(m_unaryOp));
 				}
 				break;
 			default:
-				BuiltinGenerator<B, T>::Unimplemented(call);
+				BinaryGenerator<B, T>::Unimplemented("unary operation " + UnaryOperationString(m_unaryOp));
 		}
 	}
 
 	template<template<class, bool = true> class Op>
-	void GenerateInstruction(const PTX::TypedOperand<T> *src)
+	void GenerateInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
 	{
 		if constexpr(Op<T, false>::TypeSupported)
 		{
-			this->m_builder->AddStatement(new Op<T>(this->m_target, src));
+			this->m_builder->AddStatement(new Op<T>(target, src));
 		}
 		else
 		{
@@ -90,19 +112,19 @@ template<PTX::Bits B>
 class UnaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Type>
 {
 public:
-	UnaryGenerator(const PTX::Register<PTX::Int8Type> *target, Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(target, builder), m_unaryOp(unaryOp) {}
+	UnaryGenerator(Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_unaryOp(unaryOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
 
 		auto temp = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("temp");
 
-		UnaryGenerator<B, PTX::Int16Type> gen(temp, this->m_builder, m_unaryOp);
-		gen.Generate(call);
+		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
+		gen.Generate(temp, call);
 
-		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(this->m_target, temp));
+		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
 
 		this->m_builder->CloseScope();
 		this->m_builder->AddStatement(block);

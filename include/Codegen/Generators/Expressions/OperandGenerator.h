@@ -52,7 +52,7 @@ public:
 
 	void Visit(HorseIR::Identifier *identifier) override
 	{
-		Dispatch(*this, identifier->GetType(), identifier);
+		Codegen::DispatchType(*this, identifier->GetType(), identifier);
 	}
 
 	template<class S>

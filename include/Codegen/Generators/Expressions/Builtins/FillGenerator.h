@@ -24,11 +24,11 @@ class FillGenerator<B, T, std::enable_if_t<PTX::MoveInstruction<T, false>::TypeS
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src = opGen.GenerateOperand(call->GetArgument(1));
-		this->m_builder->AddStatement(new PTX::MoveInstruction<T>(this->m_target, src));
+		this->m_builder->AddStatement(new PTX::MoveInstruction<T>(target, src));
 	}
 };
 
@@ -38,7 +38,7 @@ class FillGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Type
 public:
 	using BuiltinGenerator<B, PTX::Int8Type>::BuiltinGenerator;
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		OperandGenerator<B, PTX::Int8Type> opGen(this->m_builder);
 		auto src = opGen.GenerateOperand(call->GetArgument(1));
@@ -50,7 +50,7 @@ public:
 		auto value = new PTX::Value<PTX::Bit8Type>(0);
 
 		auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({new PTX::Bit8Adapter<PTX::IntType>(src), value});
-		auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({new PTX::Bit8RegisterAdapter<PTX::IntType>(this->m_target), new PTX::SinkRegister<PTX::Bit8Type>});
+		auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({new PTX::Bit8RegisterAdapter<PTX::IntType>(target), new PTX::SinkRegister<PTX::Bit8Type>});
 
 		block->AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
 		block->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));

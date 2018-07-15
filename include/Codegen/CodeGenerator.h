@@ -108,19 +108,19 @@ public:
 	void Visit(HorseIR::Parameter *parameter) override
 	{
 		ParameterGenerator<B> generator(m_builder);
-		Dispatch(generator, parameter->GetType(), parameter);
+		Codegen::DispatchType(generator, parameter->GetType(), parameter);
 	}
 
 	void Visit(HorseIR::AssignStatement *assign) override
 	{
 		AssignmentGenerator<B> generator(m_builder);
-		Dispatch(generator, assign->GetType(), assign);
+		Codegen::DispatchType(generator, assign->GetType(), assign);
 	}
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
 		ReturnGenerator<B> generator(m_builder);
-		Dispatch(generator, m_builder->GetReturnType(), ret);
+		Codegen::DispatchType(generator, m_builder->GetReturnType(), ret);
 	}
 
 private:

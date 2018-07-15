@@ -33,7 +33,7 @@ template<PTX::Bits B, class T>
 class RoundingGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	RoundingGenerator(const PTX::Register<T> *target, Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, T>(target, builder), m_roundOp(roundOp) {}
+	RoundingGenerator(Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, T>(builder), m_roundOp(roundOp) {}
 
 private:
 	RoundingOperation m_roundOp;
@@ -45,24 +45,22 @@ class RoundingGenerator<B, PTX::IntType<S>> : public BuiltinGenerator<B, PTX::In
 public:
 	using NodeType = HorseIR::CallExpression;
 
-	RoundingGenerator(const PTX::Register<PTX::IntType<S>> *target, Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, PTX::IntType<S>>(target, builder), m_roundOp(roundOp) {}
+	RoundingGenerator(Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_roundOp(roundOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call) override
 	{
 		auto arg = call->GetArgument(0);
-		Dispatch(*this, arg->GetType(), call);
+		Codegen::DispatchType(*this, arg->GetType(), target, call);
 	}
 
-	using BuiltinGenerator<B, PTX::IntType<S>>::Generate;
-
 	template<class T>
-	void Generate(const HorseIR::CallExpression *call)
+	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call)
 	{
 		if constexpr(PTX::is_float_type<T>::value)
 		{
 			OperandGenerator<B, T> opGen(this->m_builder);
 			auto src = opGen.GenerateOperand(call->GetArgument(0));
-			auto conversion = new PTX::ConvertInstruction<PTX::IntType<S>, T>(this->m_target, src);
+			auto conversion = new PTX::ConvertInstruction<PTX::IntType<S>, T>(target, src);
 			conversion->SetRoundingMode(PTXOp<T>(m_roundOp));
 			this->m_builder->AddStatement(conversion);
 		}

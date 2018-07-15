@@ -12,7 +12,7 @@ class CompressionGenerator : public BuiltinGenerator<B, T>
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
 		//TODO: Implement @compress builtin
 		this->m_builder->AddStatement(new PTX::CommentStatement("<compress>"));

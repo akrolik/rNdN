@@ -31,20 +31,46 @@ enum class BinaryOperation {
 	Xor
 };
 
+static std::string BinaryOperationString(BinaryOperation binaryOp)
+{
+	switch (binaryOp)
+	{
+		case BinaryOperation::Plus:
+			return "plus";
+		case BinaryOperation::Minus:
+			return "minus";
+		case BinaryOperation::Multiply:
+			return "mul";
+		case BinaryOperation::Divide:
+			return "div";
+		case BinaryOperation::And:
+			return "and";
+		case BinaryOperation::Or:
+			return "or";
+		case BinaryOperation::Nand:
+			return "nand";
+		case BinaryOperation::Nor:
+			return "nor";
+		case BinaryOperation::Xor:
+			return "xor";
+	}
+	return "<unknown>";
+}
+
 template<PTX::Bits B, class T>
 class BinaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	BinaryGenerator(const PTX::Register<T> *target, Builder *builder, BinaryOperation binaryOp) : BuiltinGenerator<B, T>(target, builder), m_binaryOp(binaryOp) {}
+	BinaryGenerator(Builder *builder, BinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src1 = opGen.GenerateOperand(call->GetArgument(0));
 		auto src2 = opGen.GenerateOperand(call->GetArgument(1));
+		Generate(target, src1, src2);
 	}
 
-	//TODO: Should we refactor the entire interface to remove the target from the class?
 	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 	{	
 		switch (m_binaryOp)
@@ -67,12 +93,17 @@ public:
 			case BinaryOperation::Or:
 				GenerateInstruction<PTX::OrInstruction>(target, src1, src2);
 				break;
+			case BinaryOperation::Nand:
+				//TODO: Implement @nand
+				break;
+			case BinaryOperation::Nor:
+				//TODO: Implement @nor
+				break;
 			case BinaryOperation::Xor:
 				GenerateInstruction<PTX::XorInstruction>(target, src1, src2);
 				break;
 			default:
-				//TODO: Error message needs improving
-				BuiltinGenerator<B, T>::Unimplemented(" instruction");
+				BuiltinGenerator<B, T>::Unimplemented("binary operation " + BinaryOperationString(m_binaryOp));
 		}
 	}
 
@@ -104,9 +135,9 @@ template<PTX::Bits B>
 class BinaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Type>
 {
 public:
-	BinaryGenerator(const PTX::Register<PTX::Int8Type> *target, Builder *builder, BinaryOperation binaryOp) : BuiltinGenerator<B, PTX::Int8Type>(target, builder), m_binaryOp(binaryOp) {}
+	BinaryGenerator(Builder *builder, BinaryOperation binaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_binaryOp(binaryOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
@@ -114,10 +145,10 @@ public:
 
 		auto temp = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("temp");
 
-		BinaryGenerator<B, PTX::Int16Type> gen(temp, this->m_builder, m_binaryOp);
-		gen.Generate(call);
+		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
+		gen.Generate(temp, call);
 
-		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(this->m_target, temp));
+		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
 
 		this->m_builder->CloseScope();
 	}

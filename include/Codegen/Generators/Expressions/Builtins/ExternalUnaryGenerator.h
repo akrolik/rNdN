@@ -72,7 +72,7 @@ template<PTX::Bits B, class T, typename Enabled = void>
 class ExternalUnaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	ExternalUnaryGenerator(const PTX::Register<T> *target, Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, T>(target, builder), m_unaryOp(unaryOp) {}
+	ExternalUnaryGenerator(Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
 private:
 	ExternalUnaryOperation m_unaryOp;
@@ -82,13 +82,13 @@ template<PTX::Bits B, PTX::Bits S>
 class ExternalUnaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::Bits::Bits32 || S == PTX::Bits::Bits64>> : public BuiltinGenerator<B, PTX::FloatType<S>>
 {
 public:
-	ExternalUnaryGenerator(const PTX::Register<PTX::FloatType<S>> *target, Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(target, builder), m_unaryOp(unaryOp) {}
+	ExternalUnaryGenerator(Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_unaryOp(unaryOp) {}
 
-	void Generate(const HorseIR::CallExpression *call) override
+	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override
 	{
 		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
 		auto src = opGen.GenerateRegister(call->GetArgument(0));
-		Generate(this->m_target, src);
+		Generate(target, src);
 	}
 	
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src)

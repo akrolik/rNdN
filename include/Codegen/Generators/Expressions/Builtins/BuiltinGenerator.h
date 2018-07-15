@@ -12,9 +12,9 @@ template<PTX::Bits B, class T>
 class BuiltinGenerator : public Generator
 {
 public:
-	BuiltinGenerator(const PTX::Register<T> *target, Builder *builder) : Generator(builder), m_target(target) {}
+	using Generator::Generator;
 
-	virtual void Generate(const HorseIR::CallExpression *call)
+	virtual void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call)
 	{
 		Unimplemented(call);
 	}
@@ -29,9 +29,6 @@ public:
 		std::cerr << "[ERROR] Generator does not support type " << T::Name() << " for " << context << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-
-protected:
-	const PTX::Register<T> *m_target = nullptr;
 };
 
 }
