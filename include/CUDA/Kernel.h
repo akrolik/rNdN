@@ -8,13 +8,15 @@
 namespace CUDA {
 
 class Module;
+
 class Kernel
 {
 public:
-	Kernel(std::string name, unsigned int paramsCount, Module& module);
+	Kernel(const std::string& name, unsigned int paramsCount, const Module& module);
 
-	std::string GetName() { return m_name; }
-	unsigned int GetParamsCount() { return m_paramsCount; }
+	std::string GetName() const { return m_name; }
+	unsigned int GetParamsCount() const { return m_paramsCount; }
+
 	CUfunction& GetKernel() { return m_kernel; }
 
 private:
@@ -22,7 +24,7 @@ private:
 	unsigned int m_paramsCount;
 	CUfunction m_kernel;
 
-	Module& m_module;
+	const Module& m_module;
 };
 
 }

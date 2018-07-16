@@ -36,7 +36,7 @@ void Platform::LoadDevices()
 	}
 }
 
-int Platform::GetDeviceCount()
+int Platform::GetDeviceCount() const
 {
 	return m_devices.size();
 }

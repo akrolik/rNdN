@@ -15,7 +15,7 @@ class Platform {
 public:
 	void Initialize();
 
-	int GetDeviceCount();
+	int GetDeviceCount() const;
 	std::unique_ptr<Device>& GetDevice(int index);
 
 	void CreateContext(std::unique_ptr<Device>& device);

@@ -14,9 +14,9 @@ public:
 	void TransferToGPU();
 	void TransferToCPU();
 
-	void *GetCPUBuffer() { return m_CPUBuffer; }
+	void *GetCPUBuffer() const { return m_CPUBuffer; }
 	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
-	size_t GetSize() { return m_size; }
+	size_t GetSize() const { return m_size; }
 
 private:
 	void *m_CPUBuffer = nullptr;

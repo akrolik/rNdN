@@ -7,7 +7,13 @@
 #include "PTX/Program.h"
 #include "PTX/Type.h"
 
+#include "CUDA/Buffer.h"
+#include "CUDA/Kernel.h"
+#include "CUDA/KernelInvocation.h"
+#include "CUDA/libdevice.h"
+#include "CUDA/Module.h"
 #include "CUDA/Platform.h"
+#include "CUDA/Utils.h"
 
 #include "PTX/ArithmeticTest.h"
 #include "PTX/ComparisonTest.h"
@@ -16,9 +22,9 @@
 #include "PTX/LogicalTest.h"
 #include "PTX/ShiftTest.h"
 
-#include "PTX/AddTest.h"
-#include "PTX/BasicTest.h"
-#include "PTX/ConditionalTest.h"
+// #include "PTX/AddTest.h"
+// #include "PTX/BasicTest.h"
+// #include "PTX/ConditionalTest.h"
 
 int yyparse();
 
@@ -26,17 +32,25 @@ HorseIR::Program *program;
 
 int main(int argc, char *argv[])
 {
+	// Disable cache for CUDA so compile times are accurate. In a production compiler
+	// this would be turned off for efficiency
+
 	setenv("CUDA_CACHE_DISABLE", "1", 1);
 
-	auto cuda_begin = std::chrono::steady_clock::now();
 	if (sizeof(void *) == 4)
 	{
 		std::cerr << "[ERROR] 64-bit platform required" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
+	// Initialize the CUDA platform and the device driver
+
+	auto timeCUDA_start = std::chrono::steady_clock::now();
+
 	CUDA::Platform p;
 	p.Initialize();
+
+	// Check to make sure there is at least one detected GPU
 
 	if (p.GetDeviceCount() == 0)
 	{
@@ -44,46 +58,90 @@ int main(int argc, char *argv[])
 		std::exit(EXIT_FAILURE);
 	}
 
+	// By default we use the first CUDA capable GPU for computations
+
 	std::unique_ptr<CUDA::Device>& device = p.GetDevice(0);
 	device->SetActive();
 
+	// Complete the CUDA initialization by creating a CUDA context for the device
+
 	p.CreateContext(device);
-	auto cuda_end = std::chrono::steady_clock::now();
 
-	auto frontend_begin = std::chrono::steady_clock::now();
+	auto timeCUDA_end = std::chrono::steady_clock::now();
+
+	// Load the libdevice library from file, compile it to PTX, and generate a cubin
+	// binary file. Doing so at runtime means we can support new versions of
+	// libdevice and future compute versions
+	//
+	// The library will be linked later (if needed). We consider this cost a "setup"
+	// cost that is not included in the compile time since the library must only be
+	// compiled once
+
+	auto timeLibrary_start = std::chrono::steady_clock::now();
+
+	CUDA::ExternalModule libdevice = CUDA::libdevice::CreateModule(*device);
+
+	auto timeLibrary_end = std::chrono::steady_clock::now();
+
+	// Parse the input HorseIR program from stdin and generate an AST
+
+	auto timeFrontend_start = std::chrono::steady_clock::now();
+
 	yyparse();
-	auto frontend_end = std::chrono::steady_clock::now();
 
+	auto timeFrontend_end = std::chrono::steady_clock::now();
+
+	std::cout << "[INFO] Input HorseIR program" << std::endl;
 	std::cout << program->ToString() << std::endl;
 
-	auto code_begin = std::chrono::steady_clock::now();
+	// Generate 64-bit PTX code from the input HorseIR for the current device
+
+	auto timeCode_start = std::chrono::steady_clock::now();
+
 	auto codegen = new Codegen::CodeGenerator<PTX::Bits::Bits64>(device->GetComputeCapability());
 	PTX::Program *ptxProgram = codegen->Generate(program);
-	auto code_end = std::chrono::steady_clock::now();
 
+	auto timeCode_end = std::chrono::steady_clock::now();
+
+	std::cout << "[INFO] Generated PTX program" << std::endl;
 	for (auto module : ptxProgram->GetModules())
 	{
 		std::cout << module->ToString() << std::endl;
-		std::cout << module->ToJSON().dump(4) << std::endl;
+		// std::cout << module->ToJSON().dump(4) << std::endl;
 	}
+	std::cout << std::endl;
 
-	auto jit_begin = std::chrono::steady_clock::now();
-	CUDA::Module cModule(ptxProgram->GetModules()[0]->ToString());
-	CUDA::Kernel kernel("main", 0, cModule);
-	auto jit_end = std::chrono::steady_clock::now();
+	// Generate the CUDA module for the program
 
-	size_t size = sizeof(int64_t) * 100;
-	double *dataA = (double *)malloc(size);
-	// double *dataB = (double *)malloc(size);
-	double *dataC = (double *)malloc(size);
+	auto timeJIT_start = std::chrono::steady_clock::now();
+
+	//TODO: Generate the CUDA module from all HorseIR modules instead of just the first
+	CUDA::Module cModule;
+	cModule.SetCode(ptxProgram->GetModules()[0]->ToString());
+	cModule.AddLinkedModule(libdevice);
+	cModule.Compile();
+
+	auto timeJIT_end = std::chrono::steady_clock::now();
+
+	size_t size = sizeof(long) * 100;
+	long *dataA = (long *)malloc(size);
+	// float *dataB = (float *)malloc(size);
+	long *dataC = (long *)malloc(size);
 	for (int i = 0; i < 100; ++i)
 	{
-		dataA[i] = 1;
-		// dataB[i] = 2;
+		dataA[i] = -50 + i;//1 - float(i)/100;
+		// dataB[i] = true;
 		dataC[i] = 0;
 	}
 
-	auto exec_begin = std::chrono::steady_clock::now();
+	// Fetch the handle to the entry function (always called main)
+
+	auto timeExec_start = std::chrono::steady_clock::now();
+
+	CUDA::Kernel kernel("main", 0, cModule);
+
+	// Initialize buffers and kernel invocation
+
 	CUDA::Buffer bufferA(dataA, size);
 	// CUDA::Buffer bufferB(dataB, size);
 	CUDA::Buffer bufferC(dataC, size);
@@ -100,26 +158,31 @@ int main(int argc, char *argv[])
 	invocation.Launch();
 
 	bufferC.TransferToCPU();
-	auto exec_end = std::chrono::steady_clock::now();
+
+	auto timeExec_end = std::chrono::steady_clock::now();
+
+	// Verify results
 
 	for (int i = 0; i < 100; ++i)
 	{
-		if (dataC[i] == 3)
-		{
-			continue;
-		}
+		// if (dataC[i] == 0.4794255386)
+		// {
+			// continue;
+		// }
 
-		std::cerr << "[ERROR] Result incorrect at index " << i << " [" << dataC[i] << " != " << 3 << "]" << std::endl;
-		std::exit(EXIT_FAILURE);
+		std::cout << "[RESULT] signum(" << -50 + i << ") = " << dataC[i] << std::endl;
+		// std::cout << "[RESULT] sin(" << 1 - float(i)/100 << ") = " << dataC[i] << std::endl;
+		// std::cerr << "[ERROR] Result incorrect at index " << i << " [" << dataC[i] << " != " << 0.479426 << "]" << std::endl;
+		// std::exit(EXIT_FAILURE);
 	}
 
-	auto cudaTime = std::chrono::duration_cast<std::chrono::microseconds>(cuda_end - cuda_begin).count();
-	auto frontendTime = std::chrono::duration_cast<std::chrono::microseconds>(frontend_end - frontend_begin).count();
-	auto codegenTime = std::chrono::duration_cast<std::chrono::microseconds>(code_end - code_begin).count();
-	auto jitTime = std::chrono::duration_cast<std::chrono::microseconds>(jit_end - jit_begin).count();
-	auto compileTime = std::chrono::duration_cast<std::chrono::microseconds>(jit_end - frontend_begin).count();
+	auto cudaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeCUDA_end - timeCUDA_start).count();
+	auto frontendTime = std::chrono::duration_cast<std::chrono::microseconds>(timeFrontend_end - timeFrontend_start).count();
+	auto codegenTime = std::chrono::duration_cast<std::chrono::microseconds>(timeCode_end - timeCode_start).count();
+	auto jitTime = std::chrono::duration_cast<std::chrono::microseconds>(timeJIT_end - timeJIT_start).count();
+	auto compileTime = std::chrono::duration_cast<std::chrono::microseconds>(timeJIT_end - timeFrontend_start).count();
 
-	auto executionTime = std::chrono::duration_cast<std::chrono::microseconds>(exec_end - exec_begin).count();
+	auto executionTime = std::chrono::duration_cast<std::chrono::microseconds>(timeExec_end - timeExec_start).count();
 
 	std::cout << "[INFO] Kernel Execution Successful" << std::endl;
 	std::cout << "[INFO] Pipeline Timings" << std::endl;

@@ -3,29 +3,34 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#include <string>
 #include <vector>
 
-#include "CUDA/Kernel.h"
+#include "CUDA/ExternalModule.h"
 
 namespace CUDA {
 
 class Module
 {
 public:
-	Module(std::string ptx);
+	void AddLinkedModule(const ExternalModule& module);
 
-	void *GetBinary() { return m_binary; }
-	CUmodule& GetModule() { return m_module; }
+	void SetCode(const std::string& code) { m_code = code; }
+
+	bool IsCompiled() const { return m_binary != nullptr; }
+	void Compile();
+
+	const CUmodule& GetModule() const { return m_module; }
 
 private:
-	std::string m_ptx;
+	std::vector<std::reference_wrapper<const ExternalModule>> m_linkedModules;
+
+	std::string m_code;
 
 	void *m_binary = nullptr;
 	size_t m_binarySize = 0;
 
 	CUmodule m_module;
-
-	void Compile();
 };
 
 }

@@ -13,11 +13,11 @@ class Device
 public:
 	Device(int index);
 
-	int GetIndex() { return m_index; }
-	CUdevice& GetDevice() { return m_device; }
+	int GetIndex() const { return m_index; }
 
-	std::string GetName() { return std::string(m_properties.name); }
-	size_t GetMemorySize() { return m_properties.totalGlobalMem; }
+	std::string GetName() const { return std::string(m_properties.name); }
+	size_t GetMemorySize() const { return m_properties.totalGlobalMem; }
+	CUdevice& GetDevice() { return m_device; }
 
 	std::string GetComputeCapability() const
 	{

@@ -2,8 +2,6 @@
 
 #include "Test.h"
 
-#include "CUDA/Module.h"
-
 #include "PTX/Module.h"
 #include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Functions/FunctionDeclaration.h"
@@ -59,9 +57,7 @@ public:
 
 		module.AddDeclaration(entryFunction);
 
-		std::string ptx = module.ToString();
-		std::cout << ptx;
-		CUDA::Module cModule(ptx);
+		std::cout << module.ToString();
 	}
 };
 
