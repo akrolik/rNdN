@@ -24,7 +24,7 @@ public:
 	{
 		std::string code = m_name + "(";
 		bool first = true;
-		for (auto argument : m_arguments)
+		for (const auto& argument : m_arguments)
 		{
 			if (!first)
 			{

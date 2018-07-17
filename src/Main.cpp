@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	auto timeCode_end = std::chrono::steady_clock::now();
 
 	std::cout << "[INFO] Generated PTX program" << std::endl;
-	for (auto module : ptxProgram->GetModules())
+	for (const auto& module : ptxProgram->GetModules())
 	{
 		std::cout << module->ToString() << std::endl;
 		// std::cout << module->ToJSON().dump(4) << std::endl;

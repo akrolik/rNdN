@@ -20,7 +20,7 @@ public:
 	std::string ToString() const override
 	{
 		std::string code;
-		for (auto module : m_modules)
+		for (const auto& module : m_modules)
 		{
 			code += module->ToString() + "\n";
 		}

@@ -45,7 +45,7 @@ void ForwardTraversal::Visit(AssignStatement *assign)
 
 void ForwardTraversal::Visit(CallExpression *call)
 {
-	for (auto argument : call->GetArguments())
+	for (auto& argument : call->GetArguments())
 	{
 		argument->Accept(*this);
 	}

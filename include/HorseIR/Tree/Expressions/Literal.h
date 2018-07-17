@@ -28,7 +28,7 @@ public:
 	{
 		std::string code = "(";
 		bool first = true;
-		for (auto value : m_values)
+		for (const auto& value : m_values)
 		{
 			if (!first)
 			{
@@ -51,13 +51,13 @@ inline std::string Literal<std::string>::ToString() const
 {
 	std::string code = "(";
 	bool first = true;
-	for (auto it = m_values.cbegin(); it != m_values.cend(); ++it)
+	for (const auto& value : m_values)
 	{
 		if (!first)
 		{
 			code += ", ";
 		}
-		code += *it;
+		code += value;
 	}
 	return code + "):" + m_type->ToString();
 }

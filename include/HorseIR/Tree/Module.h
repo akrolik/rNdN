@@ -24,7 +24,7 @@ public:
 	{
 		std::string code = "module " + m_name + " {\n";
 
-		for (auto contents : m_contents)
+		for (const auto& contents : m_contents)
 		{
 			code += "\t" + contents->ToString() + "\n";
 		}

@@ -90,9 +90,9 @@ public:
 	template<class T, ResourceKind R = ResourceKind::User>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
+		for (const auto& scope : m_scopes)
 		{
-			const PTX::Register<T> *reg = std::get<1>(*it)->GetRegister<T, R>(identifier);
+			const PTX::Register<T> *reg = std::get<1>(scope)->GetRegister<T, R>(identifier);
 			if (reg != nullptr)
 			{
 				return reg;
