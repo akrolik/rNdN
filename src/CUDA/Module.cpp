@@ -14,6 +14,11 @@ void Module::AddLinkedModule(const ExternalModule& module)
 	m_linkedModules.push_back(std::cref(module));
 }
 
+void Module::AddPTXModule(const std::string& code)
+{
+	m_code.push_back(code);
+}
+
 void Module::Compile()
 {
 	// Initialize the JIT options for the compile
@@ -55,11 +60,14 @@ void Module::Compile()
 
 	auto timeCompile_start = std::chrono::steady_clock::now();
 
-	CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)m_code.c_str(), m_code.length() + 1, "PTX Module", 0, nullptr, nullptr);
-	if (result != CUDA_SUCCESS)
+	for (const auto& code : m_code)
 	{
-		std::cerr << "[ERROR] PTX failed to compile" << std::endl << l_errorLog << std::endl;
-		checkDriverResult(result);
+		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)code.c_str(), code.length() + 1, "PTX Module", 0, nullptr, nullptr);
+		if (result != CUDA_SUCCESS)
+		{
+			std::cerr << "[ERROR] PTX failed to compile" << std::endl << l_errorLog << std::endl;
+			checkDriverResult(result);
+		}
 	}
 
 	auto timeCompile_end = std::chrono::steady_clock::now();
@@ -70,7 +78,7 @@ void Module::Compile()
 
 	for (const auto& module : m_linkedModules)
 	{
-		result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, module.get().GetBinary(), module.get().GetBinarySize(), "Library Module", 0, nullptr, nullptr);
+		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, module.get().GetBinary(), module.get().GetBinarySize(), "Library Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
 			std::cerr << "[ERROR] Library cubin image failed to load" << std::endl << l_errorLog << std::endl;

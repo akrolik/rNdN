@@ -14,8 +14,7 @@ class Module
 {
 public:
 	void AddLinkedModule(const ExternalModule& module);
-
-	void SetCode(const std::string& code) { m_code = code; }
+	void AddPTXModule(const std::string& code);
 
 	bool IsCompiled() const { return m_binary != nullptr; }
 	void Compile();
@@ -24,8 +23,7 @@ public:
 
 private:
 	std::vector<std::reference_wrapper<const ExternalModule>> m_linkedModules;
-
-	std::string m_code;
+	std::vector<std::string> m_code;
 
 	void *m_binary = nullptr;
 	size_t m_binarySize = 0;

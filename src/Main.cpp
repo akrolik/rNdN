@@ -115,9 +115,11 @@ int main(int argc, char *argv[])
 
 	auto timeJIT_start = std::chrono::steady_clock::now();
 
-	//TODO: Generate the CUDA module from all HorseIR modules instead of just the first
 	CUDA::Module cModule;
-	cModule.SetCode(ptxProgram->GetModules()[0]->ToString());
+	for (const auto& module : ptxProgram->GetModules())
+	{
+		cModule.AddPTXModule(module->ToString());
+	}
 	cModule.AddLinkedModule(libdevice);
 	cModule.Compile();
 
