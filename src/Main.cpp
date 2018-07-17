@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
 	}
 
 	auto cudaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeCUDA_end - timeCUDA_start).count();
+	auto libraryTime = std::chrono::duration_cast<std::chrono::microseconds>(timeLibrary_end - timeLibrary_start).count();
 	auto frontendTime = std::chrono::duration_cast<std::chrono::microseconds>(timeFrontend_end - timeFrontend_start).count();
 	auto codegenTime = std::chrono::duration_cast<std::chrono::microseconds>(timeCode_end - timeCode_start).count();
 	auto jitTime = std::chrono::duration_cast<std::chrono::microseconds>(timeJIT_end - timeJIT_start).count();
@@ -189,6 +190,7 @@ int main(int argc, char *argv[])
 	std::cout << "[INFO] Kernel Execution Successful" << std::endl;
 	std::cout << "[INFO] Pipeline Timings" << std::endl;
 	std::cout << "         - CUDA Init: " << cudaTime << " mus" << std::endl;
+	std::cout << "         - Libraries: " << libraryTime << " mus" << std::endl;
 	std::cout << "         - Frontend: " << frontendTime << " mus" << std::endl;
 	std::cout << "         - Codegen: " << codegenTime << " mus" << std::endl;
 	std::cout << "         - PTX JIT: " << jitTime << " mus" << std::endl;
