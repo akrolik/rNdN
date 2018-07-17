@@ -92,6 +92,8 @@ public:
 
 		PTX::ExternalMathFunctions::BinaryFunction<S> *function = GetFunction(m_binaryOp);
 
+		this->m_builder->AddFunctionDefinition(function);
+
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 3);
 		this->m_builder->AddStatement(paramDeclaration);
 

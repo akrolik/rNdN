@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <stack>
 
 #include "Codegen/ResourceAllocator.h"
@@ -7,7 +8,9 @@
 #include "PTX/Module.h"
 #include "PTX/Program.h"
 #include "PTX/Type.h"
+#include "PTX/Functions/Function.h"
 #include "PTX/Functions/FunctionDeclaration.h"
+#include "PTX/Functions/FunctionDefinition.h"
 
 namespace Codegen {
 
@@ -35,6 +38,22 @@ public:
 		m_currentProgram->AddModule(module);
 	}
 	void SetCurrentModule(PTX::Module *module) { m_currentModule = module; }
+
+	template<class T>
+	void AddFunctionDefinition(PTX::FunctionDefinition<T> *function)
+	{
+		if (m_externalFunctions.find(m_currentModule) == m_externalFunctions.end())
+		{
+			m_externalFunctions.insert({m_currentModule, new std::set<PTX::Function *>()});
+		}
+
+		std::set<PTX::Function *> *set = m_externalFunctions.at(m_currentModule);
+		if (set->find(function) == set->end())
+		{
+			m_externalFunctions.at(m_currentModule)->insert(function);
+			m_currentModule->InsertDeclaration(function, 0);
+		}
+	}
 
 	void AddDeclaration(PTX::Declaration *declaration)
 	{
@@ -126,6 +145,7 @@ private:
 	PTX::FunctionDeclaration<PTX::VoidType> *m_currentFunction = nullptr;
 	HorseIR::Method *m_currentMethod = nullptr;
 
+	std::unordered_map<PTX::Module *, std::set<PTX::Function *> *> m_externalFunctions;
 	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;
 	std::vector<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
 };

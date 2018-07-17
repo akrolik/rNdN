@@ -99,6 +99,8 @@ public:
 
 		PTX::ExternalMathFunctions::UnaryFunction<S> *function = GetFunction(m_unaryOp);
 
+		this->m_builder->AddFunctionDefinition(function);
+
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 2);
 		this->m_builder->AddStatement(paramDeclaration);
 
