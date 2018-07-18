@@ -39,19 +39,18 @@ public:
 	}
 	void SetCurrentModule(PTX::Module *module) { m_currentModule = module; }
 
-	template<class T>
-	void AddFunctionDefinition(PTX::FunctionDefinition<T> *function)
+	void AddExternalDeclaration(PTX::Declaration *declaration)
 	{
-		if (m_externalFunctions.find(m_currentModule) == m_externalFunctions.end())
+		if (m_externalDeclarations.find(m_currentModule) == m_externalDeclarations.end())
 		{
-			m_externalFunctions.insert({m_currentModule, new std::set<PTX::Function *>()});
+			m_externalDeclarations.insert({m_currentModule, new std::set<PTX::Declaration *>()});
 		}
 
-		std::set<PTX::Function *> *set = m_externalFunctions.at(m_currentModule);
-		if (set->find(function) == set->end())
+		std::set<PTX::Declaration *> *set = m_externalDeclarations.at(m_currentModule);
+		if (set->find(declaration) == set->end())
 		{
-			m_externalFunctions.at(m_currentModule)->insert(function);
-			m_currentModule->InsertDeclaration(function, 0);
+			m_externalDeclarations.at(m_currentModule)->insert(declaration);
+			m_currentModule->InsertDeclaration(declaration, 0);
 		}
 	}
 
@@ -59,7 +58,7 @@ public:
 	{
 		m_currentModule->AddDeclaration(declaration);
 	}
-	void SetCurrentFunction(PTX::FunctionDeclaration<PTX::VoidType> *function, HorseIR::Method *method)
+	void SetCurrentFunction(PTX::FunctionDefinition<PTX::VoidType> *function, HorseIR::Method *method)
 	{
 		m_currentFunction = function;
 		m_currentMethod = method;
@@ -72,7 +71,7 @@ public:
 
 	template<class T, class S>
 	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
-	AddParameter(const PTX::VariableDeclaration<T, S> *parameter)
+	AddParameter(const PTX::TypedVariableDeclaration<T, S> *parameter)
 	{
 		m_currentFunction->AddParameter(parameter);
 	}
@@ -142,10 +141,10 @@ private:
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;
 
-	PTX::FunctionDeclaration<PTX::VoidType> *m_currentFunction = nullptr;
+	PTX::FunctionDefinition<PTX::VoidType> *m_currentFunction = nullptr;
 	HorseIR::Method *m_currentMethod = nullptr;
 
-	std::unordered_map<PTX::Module *, std::set<PTX::Function *> *> m_externalFunctions;
+	std::unordered_map<PTX::Module *, std::set<PTX::Declaration *> *> m_externalDeclarations;
 	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;
 	std::vector<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
 };

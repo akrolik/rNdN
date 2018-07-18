@@ -12,7 +12,7 @@ class RegisterAddress : public Address<B, T, S>
 {
 public:
 	REQUIRE_TYPE_PARAM(RegisterAddress,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(RegisterAddress,
 		REQUIRE_BASE(S, AddressableSpace)
@@ -50,6 +50,11 @@ public:
 
 	const Register<PointerType<B, T, S>> *GetRegister() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
+
+	virtual RegisterAddress<B, T, S> *CreateOffsetAddress(unsigned int offset)
+	{
+		return new RegisterAddress(m_variable, offset);
+	}
 
 private:
 	const Register<PointerType<B, T, S>> *m_variable;

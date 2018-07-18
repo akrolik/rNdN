@@ -14,7 +14,7 @@ class PrefetchInstruction : public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(PrefetchInstruction,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(PrefetchInstruction,
 		REQUIRE_EXACT(S, GlobalSpace, LocalSpace)

@@ -10,7 +10,7 @@ class PointerRegisterAdapter : public RegisterAdapter<PointerType<B, T, S>, UInt
 { 
 public:
 	REQUIRE_TYPE_PARAM(PointerRegisterAdapter,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(PointerRegisterAdapter,
 		REQUIRE_BASE(S, AddressableSpace)

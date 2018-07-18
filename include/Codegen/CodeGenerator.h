@@ -80,7 +80,7 @@ public:
 		// PTX modules. Currently there is no use for the link directive, but it
 		// is provided for future proofing.
 
-		auto function = new PTX::FunctionDeclaration<PTX::VoidType>();
+		auto function = new PTX::FunctionDefinition<PTX::VoidType>();
 		function->SetName(method->GetName());
 		function->SetEntry(true);
 		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);

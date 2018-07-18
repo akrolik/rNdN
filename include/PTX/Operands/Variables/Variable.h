@@ -8,12 +8,12 @@
 namespace PTX {
 
 template<class T, class S>
-class VariableDeclaration;
+class TypedVariableDeclaration;
 
 template<class T, class S>
 class Variable : public TypedOperand<T>
 {
-	friend class VariableDeclaration<T, S>;
+	friend class TypedVariableDeclaration<T, S>;
 
 	REQUIRE_TYPE_PARAM(Variable,
 		REQUIRE_BASE(T, Type)

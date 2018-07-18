@@ -54,18 +54,9 @@ protected:
 };
 
 template<class S>
-class UntypedVariableDeclaration : public DirectiveStatement, public Declaration
-{
-
-};
-
-template<class T, class S>
-class VariableDeclaration : public UntypedVariableDeclaration<S>
+class VariableDeclaration : public DirectiveStatement, public Declaration
 {
 public:
-	REQUIRE_TYPE_PARAM(VariableDeclaration,
-		REQUIRE_BASE(T, Type)
-	);
 	REQUIRE_SPACE_PARAM(VariableDeclaration,
 		REQUIRE_BASE(S, StateSpace)
 	);
@@ -84,7 +75,8 @@ public:
 
 	VariableDeclaration(const std::vector<NameSet>& variables) : m_names(variables) {}
 
-	virtual std::string Directives() const { return ""; }
+	virtual std::string PreDirectives() const { return ""; }
+	virtual std::string PostDirectives() const { return ""; }
 
 	void AddNames(const std::string& prefix, unsigned int count = 1)
 	{
@@ -99,36 +91,23 @@ public:
 		}
 	}
 
-	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
-	{
-		for (const auto &set : m_names)
-		{
-			if (set.GetPrefix() == name)
-			{
-				return new typename S::template VariableType<T>(set.GetName(index));
-			}
-		}
-		std::cerr << "[ERROR] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-
 	const std::vector<NameSet>& GetNames() const { return m_names; }
-
-	std::string ToString() const override
-	{
-		return S::Name() + " " + T::Name() + " " + Directives() + VariableNames();
-	}
 
 	json ToJSON() const override
 	{
 		json j;
 		j["kind"] = "PTX::VariableDeclaration";
-		j["type"] = T::Name();
+		j["type"] = "<untyped>";
 		j["space"] = S::Name();
-		std::string directives = Directives();
-		if (directives.length() > 0)
+		std::string preDirectives = PreDirectives();
+		if (preDirectives.length() > 0)
 		{
-			j["directives"] = directives;
+			j["pre_directives"] = preDirectives;
+		}
+		std::string postDirectives = PostDirectives();
+		if (postDirectives.length() > 0)
+		{
+			j["post_directives"] = postDirectives;
 		}
 		if (m_names.size() == 1)
 		{
@@ -145,64 +124,139 @@ public:
 	}
 
 protected:
-	virtual std::string VariableNames() const
-	{
-		std::ostringstream code;
-		bool first = true;
-		for (const auto& set : m_names)
-		{
-			if (!first)
-			{
-				code << ", ";
-			}
-			first = false;
-			code << set.ToString();
-		}
-		return code.str();
-	}
-
 	std::vector<NameSet> m_names;
 };
 
-template<class T>
-using RegisterDeclaration = VariableDeclaration<T, RegisterSpace>;
+template<class T, class S, typename Enabled = void>
+class TypedVariableDeclarationBase : public VariableDeclaration<S>
+{
+public:
+	using VariableDeclaration<S>::VariableDeclaration;
+};
+
+template<class T, class S>
+class TypedVariableDeclarationBase<T, S, std::enable_if_t<REQUIRE_BASE(S, AddressableSpace)>> : public VariableDeclaration<S>
+{
+public:
+	using VariableDeclaration<S>::VariableDeclaration;
+
+	const unsigned int DefaultAlignment = BitSize<T::TypeBits>::Size;
+
+	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
+	unsigned int GetAlignment() const { return m_alignment; }
+
+	std::string PreDirectives() const override
+	{
+		if (m_alignment != DefaultAlignment)
+		{
+			return ".align " + std::to_string(m_alignment) + " ";
+		}
+		return "";
+	}
+
+protected:
+	unsigned int m_alignment = DefaultAlignment;
+};
+
+template<class T, class S>
+class TypedVariableDeclaration : public TypedVariableDeclarationBase<T, S>
+{
+public:
+	REQUIRE_TYPE_PARAM(VariableDeclaration,
+		REQUIRE_BASE(T, Type)
+	);
+
+	using TypedVariableDeclarationBase<T, S>::TypedVariableDeclarationBase;
+
+	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
+	{
+		for (const auto &set : this->m_names)
+		{
+			if (set.GetPrefix() == name)
+			{
+				return new typename S::template VariableType<T>(set.GetName(index));
+			}
+		}
+		std::cerr << "[ERROR] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
+	std::string ToString() const override
+	{
+		std::string code;
+		if (this->m_linkDirective != Declaration::LinkDirective::None)
+		{
+			code += this->LinkDirectiveString(this->m_linkDirective) + " ";
+		}
+		code += S::Name() + " " + this->PreDirectives();
+		if constexpr(is_array_type<T>::value)
+		{
+			code += T::BaseName();
+		}
+		else
+		{
+			code += T::Name();
+		}
+		//TODO: semicolon
+		code += " " + this->PostDirectives() + VariableNames() + ((this->m_linkDirective != Declaration::LinkDirective::None) ? ";" : "");
+		return code;
+	}
+
+	json ToJSON() const override
+	{
+		json j = VariableDeclaration<S>::ToJSON();
+		j["type"] = T::Name();
+		return j;
+	}
+
+protected:
+	virtual std::string VariableNames() const
+	{
+		std::string code;
+		bool first = true;
+		for (const auto& set : this->m_names)
+		{
+			if (!first)
+			{
+				code += ", ";
+			}
+			first = false;
+			code += set.ToString();
+			if constexpr(is_array_type<T>::value)
+			{
+				code += T::Dimensions();
+			}
+		}
+		return code;
+	}
+};
 
 template<class T>
-using SpecialRegisterDeclaration = VariableDeclaration<T, SpecialRegisterSpace>;
+using RegisterDeclaration = TypedVariableDeclaration<T, RegisterSpace>;
 
 template<class T>
-using ParameterDeclaration = VariableDeclaration<T, ParameterSpace>;
+using SpecialRegisterDeclaration = TypedVariableDeclaration<T, SpecialRegisterSpace>;
+
+template<class T>
+using ParameterDeclaration = TypedVariableDeclaration<T, ParameterSpace>;
 
 template<Bits B, class T, class S = AddressableSpace>
 class PointerDeclaration : public ParameterDeclaration<PointerType<B, T, S>>
 {
 public:
-	using VariableDeclaration<PointerType<B, T, S>, ParameterSpace>::VariableDeclaration;
+	using ParameterDeclaration<PointerType<B, T, S>>::ParameterDeclaration;
 
-	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
-	unsigned int GetAlignment() const { return m_alignment; }
+	std::string PreDirectives() const override { return ""; } 
 
-	std::string Directives() const override
+	std::string PostDirectives() const override
 	{
-		std::ostringstream code;
-		if (!std::is_same<S, AddressableSpace>::value || m_alignment != 4)
+		std::string code;
+		if constexpr(!std::is_same<S, AddressableSpace>::value)
 		{
-			code << ".ptr";
-			if constexpr (!std::is_same<S, AddressableSpace>::value)
-			{
-				code << S::Name();
-			}
-			if (m_alignment != 4)
-			{
-				code << ".align " << m_alignment;
-			}
-			code << " ";
+			code += ".ptr" + S::Name() + ParameterDeclaration<PointerType<B, T, S>>::PreDirectives();
 		}
-		return code.str();
+		return code;
 	}
-
-protected:
-	unsigned int m_alignment = 4;
 };
 
 template<class T, class S = AddressableSpace>

@@ -91,8 +91,7 @@ public:
 		this->m_builder->OpenScope(block);
 
 		PTX::ExternalMathFunctions::BinaryFunction<S> *function = GetFunction(m_binaryOp);
-
-		this->m_builder->AddFunctionDefinition(function);
+		this->m_builder->AddExternalDeclaration(function);
 
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 3);
 		this->m_builder->AddStatement(paramDeclaration);

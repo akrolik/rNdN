@@ -11,6 +11,18 @@
 
 namespace PTX {
 
+// @struct is_type_specialization
+//
+// Type trait for determining if a type is a specialization of some template
+
+enum class Bits : int;
+
+template <class T, template <Bits, unsigned int> class Template>
+struct is_type_specialization : std::false_type {};
+
+template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
+struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
+ 
 // @struct is_comparable_type
 //
 // Type trait for determining if a PTX::Type can be compared
@@ -31,17 +43,45 @@ struct is_rounding_type : std::false_type {};
 template <class T>
 struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
 
-// @struct is_type_specialization
+// @struct is_int_type
 //
-// Type trait for determining if a type is a specialization of some template
+// Type trait for determining if a PTX::Type is an integer (signed or unsigned) type
 
-enum class Bits : int;
+template<Bits, unsigned int> struct IntType;
+template<Bits, unsigned int> struct UIntType;
 
-template <class T, template <Bits, unsigned int> class Template>
-struct is_type_specialization : std::false_type {};
+template <class T, typename E = void>
+struct is_int_type : std::false_type {};
 
-template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
-struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
+template <class T>
+struct is_int_type<T, std::enable_if_t<
+	is_type_specialization<T, IntType>::value ||
+	is_type_specialization<T, UIntType>::value
+>> : std::true_type {};
+
+// @struct is_float_type
+//
+// Type trait for determining if a PTX::Type is a floating point type
+
+template<Bits, unsigned int> struct FloatType;
+
+template <class T, typename E = void>
+struct is_float_type : std::false_type {};
+
+template <class T>
+struct is_float_type<T, std::enable_if_t<is_type_specialization<T, FloatType>::value>> : std::true_type {};
+
+// @struct is_array_type
+//
+// Type trait for determining if a PTX::Type is an array type
+
+template<class, unsigned int> struct ArrayType;
+
+template <class T>
+struct is_array_type : std::false_type {};
+
+template <class T, unsigned int N>
+struct is_array_type<ArrayType<T, N>> : std::true_type {};
 
 #define REQUIRE_TYPE_PARAM(CONTEXT, ENABLED) \
 	constexpr static bool TypeSupported = ENABLED; \
@@ -55,16 +95,16 @@ struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
 //
 // Type
 //   VoidType
-//   PredicateType
 //   DataType
-//     ScalarType
-//       BitType<Bits>
-//         IntType
-//         UIntType
-//           PointerType<AddressSpace>
-//         FloatType
-//         PackedType<T, N>
-//     VectorType<ScalarType, VectorSize>
+//     ArrayType<DataType, N>
+//     ValueType
+//       ScalarType
+//         BitType<Bits, N>
+//           IntType
+//           UIntType
+//             PointerType<AddressSpace>
+//           FloatType
+//       VectorType<ScalarType, VectorSize>
 
 struct Type { static std::string Name() { return ".<unknown>"; } }; 
 
@@ -72,7 +112,9 @@ struct VoidType : Type { static std::string Name() { return ""; } };
 
 struct DataType : Type {};
 
-struct ScalarType : DataType {};
+struct ValueType : DataType {};
+
+struct ScalarType : ValueType {};
 
 enum class Bits : int {
 	Bits1  = (1 << 0),
@@ -505,21 +547,6 @@ using Float16x2Type = FloatType<Bits::Bits16, 2>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
 
-template <class T, typename E = void>
-struct is_int_type : std::false_type {};
-
-template <class T>
-struct is_int_type<T, std::enable_if_t<
-	is_type_specialization<T, IntType>::value ||
-	is_type_specialization<T, UIntType>::value
->> : std::true_type {};
-
-template <class T, typename E = void>
-struct is_float_type : std::false_type {};
-
-template <class T>
-struct is_float_type<T, std::enable_if_t<is_type_specialization<T, FloatType>::value>> : std::true_type {};
-
 enum class VectorSize : int {
 	Vector2 = 2,
 	Vector4 = 4
@@ -532,7 +559,7 @@ struct VectorProperties
 };
 
 template<class T, VectorSize V>
-struct VectorType : DataType
+struct VectorType : ValueType
 {
 	REQUIRE_TYPE_PARAM(VectorType, 
 		REQUIRE_BASE(T, ScalarType)
@@ -571,11 +598,53 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 	return ".<unknown>";
 }
 
+const unsigned int DynamicSize = 0;
+
+template<class T, unsigned int N>
+struct ArrayType : DataType
+{
+	REQUIRE_TYPE_PARAM(ArrayType,
+		REQUIRE_BASE(T, DataType)
+	);
+
+	using ElementType = T;
+	constexpr static Bits TypeBits = T::TypeBits;
+
+	static std::string BaseName()
+	{
+		if constexpr(is_array_type<T>::value)
+		{
+			return T::BaseName();
+		}
+		else
+		{
+			return T::Name();
+		}
+	}
+
+	static std::string Dimensions()
+	{
+		std::string code = "[";
+		if constexpr(N != DynamicSize)
+		{
+			code += std::to_string(N);
+		}
+		code += "]";
+		if constexpr(is_array_type<T>::value)
+		{
+			code += T::Dimensions();
+		}
+		return code;
+	}
+
+	static std::string Name() { return BaseName() + Dimensions(); }
+};
+
 template<Bits B, class T, class S = AddressableSpace>
 struct PointerType : UIntType<B>
 {
 	REQUIRE_TYPE_PARAM(PointerType, 
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(PointerType,
 		REQUIRE_BASE(S, AddressableSpace)

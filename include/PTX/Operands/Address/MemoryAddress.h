@@ -9,7 +9,7 @@ class MemoryAddress : public Address<B, T, S>
 {
 public:
 	REQUIRE_TYPE_PARAM(MemoryAddress,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(MemoryAddress,
 		REQUIRE_BASE(S, AddressableSpace)
@@ -47,6 +47,11 @@ public:
 
 	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
+
+	virtual MemoryAddress<B, T, S> *CreateOffsetAddress(unsigned int offset)
+	{
+		return new MemoryAddress(m_variable, offset);
+	}
 
 private:
 	const typename S::template VariableType<T> *m_variable = nullptr;

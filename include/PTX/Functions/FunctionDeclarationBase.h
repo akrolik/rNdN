@@ -8,18 +8,18 @@
 namespace PTX {
 
 template<class R>
-class FunctionDefinitionBase : public Function
+class FunctionDeclarationBase : public Function
 {
 public:
-	REQUIRE_SPACE_PARAM(FunctionDefinitionBase,
+	REQUIRE_SPACE_PARAM(FunctionDeclarationBase,
 		REQUIRE_EXACT(typename R::VariableSpace, RegisterSpace) ||
 		REQUIRE_BASE(typename R::VariableSpace, ParameterSpace)
 	);
 
-	using ReturnDeclarationType = VariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
+	using ReturnDeclarationType = TypedVariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
 
-	FunctionDefinitionBase() {}
-	FunctionDefinitionBase(const std::string& name, const ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
+	FunctionDeclarationBase() {}
+	FunctionDeclarationBase(const std::string& name, const ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
 
 	void SetReturn(const ReturnDeclarationType *ret) { m_return = ret; }
 
@@ -49,11 +49,11 @@ protected:
 };
 
 template<>
-class FunctionDefinitionBase<VoidType> : public Function
+class FunctionDeclarationBase<VoidType> : public Function
 {
 public:
-	FunctionDefinitionBase() {}
-	FunctionDefinitionBase(const std::string& name, Declaration::LinkDirective linkDirective) : Function(name) {}
+	FunctionDeclarationBase() {}
+	FunctionDeclarationBase(const std::string& name, Declaration::LinkDirective linkDirective) : Function(name) {}
 
 	bool GetEntry() const { return m_entry; }
 	void SetEntry(bool entry) { m_entry = entry; }

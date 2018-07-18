@@ -12,7 +12,7 @@ class MoveAddressInstruction : public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(MoveAddressInstruction,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(MoveAddressInstruction,
 		REQUIRE_BASE(S, AddressableSpace)

@@ -8,11 +8,13 @@ template<Bits B, class T, class S = AddressableSpace>
 class Address : public TypedOperand<T>
 {
 	REQUIRE_TYPE_PARAM(Address,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(Address,
 		REQUIRE_BASE(S, AddressableSpace)
 	);
+
+	virtual Address<B, T, S> *CreateOffsetAddress(unsigned int offset) = 0;
 };
 
 template<class T, class S>

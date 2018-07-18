@@ -16,7 +16,7 @@ namespace Codegen {
 class Resources
 {
 public:
-	virtual const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
+	virtual const PTX::VariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
 };
 
 enum class ResourceKind : char
@@ -63,9 +63,9 @@ class ResourceAllocator
 public:
 	ResourceAllocator() {}
 
-	std::vector<const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> GetRegisterDeclarations() const
+	std::vector<const PTX::VariableDeclaration<PTX::RegisterSpace> *> GetRegisterDeclarations() const
 	{
-		std::vector<const PTX::UntypedVariableDeclaration<PTX::RegisterSpace> *> declarations;
+		std::vector<const PTX::VariableDeclaration<PTX::RegisterSpace> *> declarations;
 		for (const auto& resource : m_resourcesMap)
 		{
 			declarations.push_back(resource.second->GetDeclaration());

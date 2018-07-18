@@ -14,7 +14,7 @@ class LoadNCInstruction : public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(LoadNCInstruction,
-		REQUIRE_BASE(T, DataType) && !REQUIRE_EXACT(T,
+		REQUIRE_BASE(T, ValueType) && !REQUIRE_EXACT(T,
 			Float16Type, Float16x2Type,
 			Vector2Type<Float16Type>, Vector2Type<Float16x2Type>,
 			Vector4Type<Float16Type>, Vector4Type<Float16x2Type>

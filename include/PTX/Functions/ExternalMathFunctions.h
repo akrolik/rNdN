@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Type.h"
-#include "PTX/Functions/FunctionDefinition.h"
+#include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Operands/Variables/AddressableVariable.h"
 
 namespace PTX {
@@ -20,10 +20,10 @@ namespace ExternalMathFunctions {
 	}
 
 	template<Bits B>
-	using UnaryFunction = FunctionDefinition<ParameterVariable<BitType<B>>(ParameterVariable<BitType<B>>)>;
+	using UnaryFunction = FunctionDeclaration<ParameterVariable<BitType<B>>(ParameterVariable<BitType<B>>)>;
 
 	template<Bits B>
-	using BinaryFunction = FunctionDefinition<ParameterVariable<BitType<B>>(ParameterVariable<BitType<B>>, ParameterVariable<BitType<B>>)>;
+	using BinaryFunction = FunctionDeclaration<ParameterVariable<BitType<B>>(ParameterVariable<BitType<B>>, ParameterVariable<BitType<B>>)>;
 
 	template<Bits B, unsigned int N = 0> const auto ParamDeclaration = new ParameterDeclaration<BitType<B>>(Name<B>(std::string("param") + std::to_string(N)));
 	template<Bits B> const auto ReturnDeclaration = new ParameterDeclaration<BitType<B>>(Name<B>("return"));

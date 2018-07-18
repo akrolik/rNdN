@@ -4,7 +4,7 @@
 
 #include "PTX/Module.h"
 #include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Functions/FunctionDeclaration.h"
+#include "PTX/Functions/FunctionDefinition.h"
 #include "PTX/Operands/Variables/AddressableVariable.h"
 
 #include "PTX/Instructions/ControlFlow/BranchInstruction.h"
@@ -36,7 +36,7 @@ public:
 
 		module.AddDeclaration(deviceFunction);
 
-		PTX::FunctionDeclaration<PTX::VoidType> *entryFunction = new PTX::FunctionDeclaration<PTX::VoidType>();
+		PTX::FunctionDefinition<PTX::VoidType> *entryFunction = new PTX::FunctionDefinition<PTX::VoidType>();
 		entryFunction->SetName("CallTest");
 		entryFunction->SetEntry(true);
 		entryFunction->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);

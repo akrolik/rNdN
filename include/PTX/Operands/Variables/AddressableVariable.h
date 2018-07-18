@@ -8,7 +8,7 @@ namespace PTX {
 template<class T, class S>
 class AddressableVariable : public Variable<T, S>
 {
-	friend class VariableDeclaration<T, S>;
+	friend class TypedVariableDeclaration<T, S>;
 public:
 	REQUIRE_TYPE_PARAM(AddressableVariable,
 		REQUIRE_BASE(T, DataType)

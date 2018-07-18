@@ -14,7 +14,7 @@ class PrefetchUniformInstruction : public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(PrefetchUniformInstruction,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 
 	PrefetchUniformInstruction(const Address<B, T, AddressableSpace> *address) : m_address(address) {}
