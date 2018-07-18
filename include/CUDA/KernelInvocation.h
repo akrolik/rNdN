@@ -29,6 +29,8 @@ public:
 	}
 
 	void SetParam(unsigned int index, Buffer &buffer);
+	void SetSharedMemorySize(unsigned int bytes) { m_sharedMemorySize = bytes; }
+
 	void Launch();
 
 private:
@@ -41,6 +43,8 @@ private:
 	unsigned int m_blocksX = 0;
 	unsigned int m_blocksY = 0;
 	unsigned int m_blocksZ = 0;
+
+	unsigned int m_sharedMemorySize = 0;
 
 	void *m_parameters = nullptr;
 };

@@ -25,7 +25,7 @@ void KernelInvocation::Launch()
 				m_kernel.GetKernel(),
 				m_blocksX, m_blocksY, m_blocksZ,
 				m_shapeX, m_shapeY, m_shapeZ,
-				0, 0, (void **)m_parameters, 0
+				m_sharedMemorySize, 0, (void **)m_parameters, 0
 	));
 
 	std::cout << "Kernel '" << m_kernel.GetName() << "' launched" << std::endl;
