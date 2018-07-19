@@ -20,22 +20,34 @@ public:
 	virtual const PTX::VariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
 };
 
-enum class ResourceKind : char
-{
-	Internal = '$',
-	User = '%'
-};
-
-template<class T, ResourceKind R>
+template<class T>
 class TypedResources : public Resources
 {
 public:
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
-		std::string name = std::string(1, static_cast<std::underlying_type<ResourceKind>::type>(R)) + std::string(T::RegisterPrefix) + "_" + identifier;
+		std::string name = "%" + std::string(T::RegisterPrefix) + "_" + identifier;
 		m_declaration->AddNames(name);
 		const PTX::Register<T> *resource = m_declaration->GetVariable(name);
 		m_registersMap.insert({identifier, resource});
+		return resource;
+	}
+
+	const PTX::Register<T> *AllocateTemporary()
+	{
+		unsigned int temp = m_temporaries++;
+		std::string name = "$" + std::string(T::RegisterPrefix);
+		m_declaration->UpdateName(name, temp + 1);
+		const PTX::Register<T> *resource = m_declaration->GetVariable(name, temp);
+		return resource;
+	}
+
+	const PTX::Register<T> *AllocateTemporary(const std::string& identifier)
+	{
+		std::string name = "$" + std::string(T::RegisterPrefix) + "_" + identifier;
+		m_declaration->AddNames(name);
+		const PTX::Register<T> *resource = m_declaration->GetVariable(name);
+		m_temporariesMap.insert({identifier, resource});
 		return resource;
 	}
 
@@ -49,6 +61,16 @@ public:
 		return m_registersMap.at(identifier);
 	}
 
+	bool ContainsTemporary(const std::string& identifier) const
+	{
+		return m_temporariesMap.find(identifier) != m_temporariesMap.end();
+	}
+
+	const PTX::Register<T> *GetTemporary(const std::string& identifier) const
+	{
+		return m_temporariesMap.at(identifier);
+	}
+
 	const PTX::RegisterDeclaration<T> *GetDeclaration() const
 	{
 		return m_declaration;
@@ -56,7 +78,11 @@ public:
 
 private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
+
 	std::unordered_map<std::string, const PTX::Register<T> *> m_registersMap;
+
+	std::unordered_map<std::string, const PTX::Register<T> *> m_temporariesMap;
+	unsigned int m_temporaries = 0;
 };
 
 class ResourceAllocator
@@ -74,10 +100,10 @@ public:
 		return declarations;
 	}
 
-	template<class T, ResourceKind R = ResourceKind::User>
+	template<class T>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		TypedResources<T, R> *resources = GetResources<T, R>(false);
+		TypedResources<T> *resources = GetResources<T>(false);
 		if (resources != nullptr && resources->ContainsKey(identifier))
 		{
 			return resources->GetRegister(identifier);
@@ -85,54 +111,51 @@ public:
 		return nullptr;
 	}
 
-	template<class T, ResourceKind R = ResourceKind::User>
+	template<class T>
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
 	{
-		auto resources = GetResources<T, R>();
+		auto resources = GetResources<T>();
 		if (resources->ContainsKey(identifier))
 		{
 			return resources->GetRegister(identifier);
 		}
-		return GetResources<T, R>()->AllocateRegister(identifier);
+		return GetResources<T>()->AllocateRegister(identifier);
+	}
+
+	template<class T>
+	const PTX::Register<T> *AllocateTemporary() const
+	{
+		return GetResources<T>()->AllocateTemporary();
+	}
+
+	template<class T>
+	const PTX::Register<T> *AllocateTemporary(const std::string& identifier) const
+	{
+		auto resources = GetResources<T>();
+		if (resources->ContainsTemporary(identifier))
+		{
+			return resources->GetTemporary(identifier);
+		}
+		return GetResources<T>()->AllocateTemporary(identifier);
 	}
 
 private:
-	using KeyType = std::tuple<std::type_index, ResourceKind>;
-	struct KeyHash : public std::unary_function<KeyType, std::size_t>
+	template<class T>
+	TypedResources<T> *GetResources(bool alloc = true) const
 	{
-		std::size_t operator()(const KeyType& k) const
-		{
-			return std::get<0>(k).hash_code() ^ static_cast<std::size_t>(std::get<1>(k));
-		}
-	};
-	 
-	struct KeyEqual : public std::binary_function<KeyType, KeyType, bool>
-	{
-		bool operator()(const KeyType& v0, const KeyType& v1) const
-		{
-			return (
-				std::get<0>(v0) == std::get<0>(v1) &&
-				std::get<1>(v0) == std::get<1>(v1)
-			);
-		}
-	};
-
-	template<class T, ResourceKind R = ResourceKind::User>
-	TypedResources<T, R> *GetResources(bool alloc = true) const
-	{
-		auto key = std::make_tuple<std::type_index, ResourceKind>(typeid(T), R);
+		std::type_index key = typeid(T);
 		if (m_resourcesMap.find(key) == m_resourcesMap.end())
 		{
 			if (!alloc)
 			{
 				return nullptr;
 			}
-			m_resourcesMap.insert({key, new TypedResources<T, R>()});
+			m_resourcesMap.insert({key, new TypedResources<T>()});
 		}
-		return static_cast<TypedResources<T, R> *>(m_resourcesMap.at(key));
+		return static_cast<TypedResources<T> *>(m_resourcesMap.at(key));
 	}
 
-	mutable std::unordered_map<KeyType, Resources *, KeyHash, KeyEqual> m_resourcesMap;
+	mutable std::unordered_map<std::type_index, Resources *> m_resourcesMap;
 };
 
 }

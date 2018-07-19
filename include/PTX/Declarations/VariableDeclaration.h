@@ -38,6 +38,8 @@ public:
 		}
 		return m_name;
 	}
+
+	void SetCount(unsigned int count) { m_count = count; }
 	
 	virtual std::string ToString() const
 	{
@@ -73,25 +75,39 @@ public:
 		AddNames(names);
 	}
 
-	VariableDeclaration(const std::vector<NameSet>& variables) : m_names(variables) {}
+	VariableDeclaration(const std::vector<NameSet *>& variables) : m_names(variables) {}
 
 	virtual std::string PreDirectives() const { return ""; }
 	virtual std::string PostDirectives() const { return ""; }
 
 	void AddNames(const std::string& prefix, unsigned int count = 1)
 	{
-		m_names.emplace_back(prefix, count);
+		m_names.push_back(new NameSet(prefix, count));
 	}
 
 	void AddNames(const std::vector<std::string>& names)
 	{
 		for (const auto& name : names)
 		{
-			m_names.emplace_back(name);
+			m_names.push_back(new NameSet(name));
 		}
 	}
 
-	const std::vector<NameSet>& GetNames() const { return m_names; }
+	void UpdateName(const std::string& prefix, unsigned int count)
+	{
+		for (auto& set : m_names)
+		{
+			if (set->GetPrefix() == prefix)
+			{
+				set->SetCount(count);
+				return;
+			}
+		}
+
+		AddNames(prefix, count);
+	}
+
+	const std::vector<NameSet *>& GetNames() const { return m_names; }
 
 	json ToJSON() const override
 	{
@@ -111,20 +127,20 @@ public:
 		}
 		if (m_names.size() == 1)
 		{
-			j["names"] = m_names.at(0).ToString();
+			j["names"] = m_names.at(0)->ToString();
 		}
 		else
 		{
 			for (const auto& set : m_names)
 			{
-				j["names"].push_back(set.ToString());
+				j["names"].push_back(set->ToString());
 			}
 		}
 		return j;
 	}
 
 protected:
-	std::vector<NameSet> m_names;
+	std::vector<NameSet *> m_names;
 };
 
 template<class T, class S, typename Enabled = void>
@@ -172,9 +188,9 @@ public:
 	{
 		for (const auto &set : this->m_names)
 		{
-			if (set.GetPrefix() == name)
+			if (set->GetPrefix() == name)
 			{
-				return new typename S::template VariableType<T>(set.GetName(index));
+				return new typename S::template VariableType<T>(set, index);
 			}
 		}
 		std::cerr << "[ERROR] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
@@ -210,7 +226,7 @@ public:
 	}
 
 protected:
-	virtual std::string VariableNames() const
+	std::string VariableNames() const
 	{
 		std::string code;
 		bool first = true;
@@ -221,7 +237,7 @@ protected:
 				code += ", ";
 			}
 			first = false;
-			code += set.ToString();
+			code += set->ToString();
 			if constexpr(is_array_type<T>::value)
 			{
 				code += T::Dimensions();

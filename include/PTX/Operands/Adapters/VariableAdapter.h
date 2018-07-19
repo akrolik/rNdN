@@ -15,7 +15,7 @@ public:
 		REQUIRE_BASE(S, StateSpace)
 	);
 
-	VariableAdapter(const Variable<TS, S> *variable) : Variable<TD, S>(variable->GetName()), m_variable(variable) {}
+	VariableAdapter(const Variable<TS, S> *variable) : Variable<TD, S>(variable->m_nameSet, variable->m_nameIndex), m_variable(variable) {}
 
 	json ToJSON() const override
 	{

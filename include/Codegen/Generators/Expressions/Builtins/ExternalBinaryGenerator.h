@@ -63,8 +63,8 @@ public:
 			auto base = opGen.GenerateRegister(call->GetArgument(0));
 			auto value = opGen.GenerateRegister(call->GetArgument(1));
 
-			auto temp1 = resources->template AllocateRegister<PTX::FloatType<S>, ResourceKind::Internal>("temp1");
-			auto temp2 = resources->template AllocateRegister<PTX::FloatType<S>, ResourceKind::Internal>("temp2");
+			auto temp1 = resources->template AllocateTemporary<PTX::FloatType<S>>();
+			auto temp2 = resources->template AllocateTemporary<PTX::FloatType<S>>();
 
 			ExternalUnaryGenerator<B, PTX::FloatType<S>> gen(this->m_builder, ExternalUnaryOperation::Logarithm);
 			gen.Generate(temp1, base);

@@ -8,7 +8,7 @@ template<class T>
 class SinkRegister : public Register<T>
 {
 public:
-	SinkRegister() : Register<T>("_") {}
+	SinkRegister() : Register<T>(new NameSet("_"), 0) {}
 };
 
 }

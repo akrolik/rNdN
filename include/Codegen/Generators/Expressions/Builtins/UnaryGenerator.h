@@ -111,7 +111,7 @@ public:
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
 
-		auto temp = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("temp");
+		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
 
 		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
 		gen.Generate(temp, call);

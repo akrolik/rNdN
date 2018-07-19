@@ -44,7 +44,7 @@ public:
 			return static_cast<const PTX::Register<T> *>(operand);
 		}
 
-		auto reg = this->m_builder->template AllocateRegister<T, ResourceKind::Internal>("temp");
+		auto reg = this->m_builder->template AllocateTemporary<T>();
 		this->m_builder->AddStatement(new PTX::MoveInstruction<T>(reg, operand));
 
 		return reg;
@@ -83,7 +83,7 @@ public:
 			}
 			else if constexpr(PTX::ConvertInstruction<T, S, false>::TypeSupported)
 			{
-				auto converted = this->m_builder->AllocateRegister<T, ResourceKind::Internal>(identifier->GetString());
+				auto converted = this->m_builder->AllocateTemporary<T>();
 				this->m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
 				m_operand = converted;
 			}

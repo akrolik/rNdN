@@ -41,8 +41,8 @@ public:
 			auto address = addressGenerator.template Generate<PTX::Int8Type>(variable);
 			auto value = this->m_builder->GetRegister<PTX::PredicateType>(ret->GetVariableName());
 
-			auto temp32 = this->m_builder->AllocateRegister<PTX::Int32Type, ResourceKind::Internal>(ret->GetVariableName());
-			auto temp8 = this->m_builder->AllocateRegister<PTX::Int8Type, ResourceKind::Internal>(ret->GetVariableName());
+			auto temp32 = this->m_builder->AllocateTemporary<PTX::Int32Type>();
+			auto temp8 = this->m_builder->AllocateTemporary<PTX::Int8Type>();
 
 			this->m_builder->AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(temp32, new PTX::Value<PTX::Int32Type>(1), new PTX::Value<PTX::Int32Type>(0), value));
 			this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int32Type>(temp8, temp32));

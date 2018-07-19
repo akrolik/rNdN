@@ -16,7 +16,8 @@ public:
 
 	constexpr static int ElementCount = VectorProperties<V>::ElementCount;
 
-	BracedRegister(const std::array<const Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(""), m_registers(registers) {}
+
+	BracedRegister(const std::array<const Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(new NameSet(""), 0), m_registers(registers) {}
 
 	std::string GetName() const override
 	{

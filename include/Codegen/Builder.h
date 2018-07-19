@@ -105,12 +105,12 @@ public:
 		m_scopes.pop_back();
 	}
 
-	template<class T, ResourceKind R = ResourceKind::User>
+	template<class T>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
 		for (const auto& scope : m_scopes)
 		{
-			const PTX::Register<T> *reg = std::get<1>(scope)->GetRegister<T, R>(identifier);
+			const PTX::Register<T> *reg = std::get<1>(scope)->GetRegister<T>(identifier);
 			if (reg != nullptr)
 			{
 				return reg;
@@ -121,10 +121,22 @@ public:
 		std::exit(EXIT_FAILURE);
 	}
 
-	template<class T, ResourceKind R = ResourceKind::User>
+	template<class T>
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
 	{
-		return GetCurrentResources()->AllocateRegister<T, R>(identifier);
+		return GetCurrentResources()->AllocateRegister<T>(identifier);
+	}
+
+	template<class T>
+	const PTX::Register<T> *AllocateTemporary() const
+	{
+		return GetCurrentResources()->AllocateTemporary<T>();
+	}
+
+	template<class T>
+	const PTX::Register<T> *AllocateTemporary(const std::string& identifier) const
+	{
+		return GetCurrentResources()->AllocateTemporary<T>(identifier);
 	}
 
 private:

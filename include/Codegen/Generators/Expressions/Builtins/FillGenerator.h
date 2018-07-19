@@ -46,7 +46,7 @@ public:
 		auto block = new PTX::BlockStatement();
 		auto resources = this->m_builder->OpenScope(block);
 
-		auto temp = resources->template AllocateRegister<PTX::Bit16Type, ResourceKind::Internal>("0");
+		auto temp = resources->template AllocateTemporary<PTX::Bit16Type>();
 		auto value = new PTX::Value<PTX::Bit8Type>(0);
 
 		auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({new PTX::Bit8Adapter<PTX::IntType>(src), value});

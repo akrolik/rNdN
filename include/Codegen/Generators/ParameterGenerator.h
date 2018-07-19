@@ -37,8 +37,8 @@ public:
 			this->m_builder->AddStatement(block);
 			this->m_builder->OpenScope(block);
 
-			auto temp8 = this->m_builder->AllocateRegister<PTX::Int8Type, ResourceKind::Internal>(parameter->GetName());
-			auto temp16 = this->m_builder->AllocateRegister<PTX::Int16Type, ResourceKind::Internal>(parameter->GetName());
+			auto temp8 = this->m_builder->AllocateTemporary<PTX::Int8Type>();
+			auto temp16 = this->m_builder->AllocateTemporary<PTX::Int16Type>();
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
 			auto address = addressGenerator.template Generate<PTX::Int8Type>(variable);

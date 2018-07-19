@@ -146,7 +146,7 @@ public:
 		auto resources = this->m_builder->OpenScope(block);
 		this->m_builder->AddStatement(block);
 
-		auto temp = resources->template AllocateRegister<PTX::Int16Type, ResourceKind::Internal>("temp");
+		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
 
 		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
 		gen.Generate(temp, call);
@@ -174,7 +174,7 @@ void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *t
 	auto resources = this->m_builder->OpenScope(block);
 	this->m_builder->AddStatement(block);
 
-	auto temp = resources->template AllocateRegister<T, ResourceKind::Internal>("temp");
+	auto temp = resources->template AllocateTemporary<T>();
 	GenerateInstruction<Op>(temp, src1, src2);
 
 	UnaryGenerator<B, T> gen(this->m_builder, UnaryOperation::Not);

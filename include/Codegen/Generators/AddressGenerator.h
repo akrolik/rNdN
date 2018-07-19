@@ -27,7 +27,6 @@
 #include "PTX/Operands/Variables/IndexedRegister.h"
 #include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Operands/Value.h"
-#include "PTX/Statements/BlockStatement.h"
 
 namespace Codegen {
 
@@ -41,12 +40,12 @@ public:
 	PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable)
 	{
 		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto temp_tidx = this->m_builder->AllocateRegister<PTX::UInt32Type, ResourceKind::Internal>("tidx");
+		auto temp_tidx = this->m_builder->AllocateTemporary<PTX::UInt32Type>("tidx");
 
-		auto temp0 = this->m_builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("0");
-		auto temp1 = this->m_builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("1");
-		auto temp2 = this->m_builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("2");
-		auto temp3 = this->m_builder->AllocateRegister<PTX::UIntType<B>, ResourceKind::Internal>("3");
+		auto temp0 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
+		auto temp1 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
+		auto temp2 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
+		auto temp3 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
 
 		auto temp0_ptr = new PTX::PointerRegisterAdapter<B, T>(temp0);
 		auto temp1_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp1);
