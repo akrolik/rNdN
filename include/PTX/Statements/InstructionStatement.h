@@ -12,25 +12,24 @@ namespace PTX {
 class InstructionStatement : public Statement
 {
 public:
-	std::string ToString() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
-		std::ostringstream code;
-		code << OpCode();
+		std::string code = std::string(indentation, '\t') + OpCode();
 		bool first = true;
 		for (const auto& operand : Operands())
 		{
 			if (first)
 			{
-				code << " ";
+				code += " ";
 				first = false;
 			}
 			else
 			{
-				code << ", ";
+				code += ", ";
 			}
-			code << operand->ToString();
+			code += operand->ToString();
 		}
-		return code.str();
+		return code;
 	}
 
 	std::string Terminator() const override { return ";"; }

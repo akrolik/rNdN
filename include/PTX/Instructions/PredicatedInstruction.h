@@ -12,32 +12,29 @@ class PredicatedInstruction : public InstructionStatement
 public:
 	void SetPredicate(const Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
-	std::string ToString() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
-		std::ostringstream code;
+		std::string code = std::string(indentation, '\t');
 		if (m_predicate != nullptr)
 		{
-			code << "@";
+			code += "@";
 			if (m_negatePredicate)
 			{
-				code << "!";
+				code += "!";
 			}
-			code << m_predicate->GetName() << " ";
+			code += m_predicate->GetName() + " ";
 		}
-		code << InstructionStatement::ToString();
-		return code.str();
+		return code + InstructionStatement::ToString(0);
 	}
 
 	json ToJSON() const override
 	{
 		json j = InstructionStatement::ToJSON();
-
 		if (m_predicate != nullptr)
 		{
 			j["predicate"] = m_predicate->ToJSON();
 			j["negate_predicate"] = m_negatePredicate;
 		}
-
 		return j;
 	}
 

@@ -36,26 +36,26 @@ public:
 protected:
 	std::string GetParametersString() const override
 	{
-		std::ostringstream code;
+		std::string code;
 		bool first = true;
 		for (const auto& parameter : m_parameters)
 		{
 			if (first)
 			{
-				code << std::endl;
+				code += "\n";
 			}
 			else
 			{
-				code << "," << std::endl;
+				code += ",\n";
 			}
 			first = false;
-			code << "\t" << parameter->ToString();
+			code += parameter->ToString(1);
 		}
 		if (!first)
 		{
-			code << std::endl;
+			code += "\n";
 		}
-		return code.str();
+		return code;
 	}
 
 	std::vector<const Declaration *> m_parameters;

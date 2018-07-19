@@ -21,14 +21,7 @@ public:
 private:
 	std::string Body() const override
 	{
-		std::ostringstream code;
-		code << std::endl << "{" << std::endl;
-		for (const auto& statement : m_statements)
-		{
-			code << "\t" << statement->ToString() << statement->Terminator() << std::endl;
-		}
-		code << "}";
-		return code.str();
+		return StatementList::ToString(0);
 	}
 };
 

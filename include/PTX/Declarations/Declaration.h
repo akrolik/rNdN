@@ -38,7 +38,7 @@ public:
 	LinkDirective GetLinkDirective() const { return m_linkDirective; }
 	void SetLinkDirective(LinkDirective linkDirective) { m_linkDirective = linkDirective; }
 
-	virtual std::string ToString() const = 0;
+	virtual std::string ToString(unsigned int indentation = 0) const = 0;
 	virtual json ToJSON() const = 0;
 
 protected:

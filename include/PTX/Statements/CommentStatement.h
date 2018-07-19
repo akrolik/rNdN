@@ -9,13 +9,14 @@ class CommentStatement : public Statement
 public:
 	CommentStatement(std::string comment, bool multiline = false) : m_comment(comment), m_multiline(multiline) {}
 
-	std::string ToString() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
 		if (m_multiline)
 		{
+			//TODO: Indentation
 			return "/*\n" + m_comment + "\n*/";
 		}
-		return "// " + m_comment;
+		return std::string(indentation, '\t') + "// " + m_comment;
 	}
 
 	std::string Terminator() const override

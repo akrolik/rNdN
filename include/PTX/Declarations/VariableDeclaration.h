@@ -181,9 +181,9 @@ public:
 		std::exit(EXIT_FAILURE);
 	}
 
-	std::string ToString() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
-		std::string code;
+		std::string code = std::string(indentation, '\t');
 		if (this->m_linkDirective != Declaration::LinkDirective::None)
 		{
 			code += this->LinkDirectiveString(this->m_linkDirective) + " ";

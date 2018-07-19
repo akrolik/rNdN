@@ -54,24 +54,24 @@ public:
 		const PTX::Register<PTX::Float64Type> *reg_f64 = f64->GetVariable("%fd", 0);
 
 		PTX::AddInstruction<PTX::Int32Type> *test1 = new PTX::AddInstruction<PTX::Int32Type>(reg_s32, reg_s32, reg_s32);
-		std::cout << test1->ToString() << std::endl;
+		std::cout << test1->ToString(0) << std::endl;
 
 		PTX::AbsoluteInstruction<PTX::Float32Type> *test2 = new PTX::AbsoluteInstruction<PTX::Float32Type>(reg_f32, reg_f32);
 		test2->SetFlushSubnormal(true);
-		std::cout << test2->ToString() << std::endl;
+		std::cout << test2->ToString(0) << std::endl;
 
 		PTX::AbsoluteInstruction<PTX::Float64Type> *test3 = new PTX::AbsoluteInstruction<PTX::Float64Type>(reg_f64, reg_f64);
-		std::cout << test3->ToString() << std::endl;
+		std::cout << test3->ToString(0) << std::endl;
 
 		PTX::AddInstruction<PTX::Float32Type> *test4 = new PTX::AddInstruction<PTX::Float32Type>(reg_f32, reg_f32, reg_f32);
 		test4->SetRoundingMode(PTX::Float32Type::RoundingMode::Nearest);
 		test4->SetFlushSubnormal(true);
 		test4->SetSaturate(true);
-		std::cout << test4->ToString() << std::endl;
+		std::cout << test4->ToString(0) << std::endl;
 
 		PTX::ReciprocalRootInstruction<PTX::Float64Type> *test5 = new PTX::ReciprocalRootInstruction<PTX::Float64Type>(reg_f64, reg_f64);
 		test5->SetFlushSubnormal(true);
-		std::cout << test5->ToString() << std::endl;
+		std::cout << test5->ToString(0) << std::endl;
 	}
 };
 

@@ -30,6 +30,17 @@ public:
 		m_statements.insert(std::begin(m_statements) + index, std::begin(statements), std::end(statements));
 	}
 
+	std::string ToString(unsigned int indentation = 0) const
+	{
+		std::string code;
+		code += std::string(indentation, '\t') + "{\n";
+		for (const auto& statement : m_statements)
+		{
+			code += statement->ToString(indentation + 1) + statement->Terminator() + "\n";
+		}
+		return code + std::string(indentation, '\t') + "}";
+	}
+
 	json ToJSON() const
 	{
 		json j;

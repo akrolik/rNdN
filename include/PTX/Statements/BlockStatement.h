@@ -11,16 +11,9 @@ namespace PTX {
 class BlockStatement : public Statement, public StatementList
 {
 public:
-	std::string ToString() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
-		std::ostringstream code;
-		code << "{" << std::endl;
-		for (const auto& statement : m_statements)
-		{
-			code << "\t\t" << statement->ToString() << statement->Terminator() << std::endl;
-		}
-		code << "\t}";
-		return code.str();
+		return StatementList::ToString(indentation);
 	}
 
 	std::string Terminator() const override { return ""; }

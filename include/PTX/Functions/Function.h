@@ -20,23 +20,22 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 	std::string GetName() const { return m_name; }
 
-	std::string ToString() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
-		std::ostringstream code;
-
+		std::string code;
 		if (m_linkDirective != LinkDirective::None)
 		{
-			code << LinkDirectiveString(m_linkDirective) << " ";
+			code += LinkDirectiveString(m_linkDirective) + " ";
 		}
-		code << GetDirectives() << " ";
+		code += GetDirectives() + " ";
 
 		std::string ret = GetReturnString();
 		if (ret.length() > 0)
 		{
-			code << "(" << ret << ") ";
+			code += "(" + ret + ") ";
 		}
-		code << m_name << "(" << GetParametersString() << ")" << Body();
-		return code.str();
+		code += m_name + "(" + GetParametersString() + ")\n" + Body();
+		return code;
 	}
 
 	json ToJSON() const override

@@ -22,10 +22,10 @@ public:
 		const PTX::Register<PTX::Bit32Type> *reg_b32 = b32->GetVariable("%b", 0);
 
 		PTX::AndInstruction<PTX::Bit32Type> *test1 = new PTX::AndInstruction<PTX::Bit32Type>(reg_b32, reg_b32, reg_b32);
-		std::cout << test1->ToString() << std::endl;
+		std::cout << test1->ToString(0) << std::endl;
 
 		PTX::Logical3OpInstruction *test2 = new PTX::Logical3OpInstruction(reg_b32, reg_b32, reg_b32, reg_b32, 0x80);
-		std::cout << test2->ToString() << std::endl;
+		std::cout << test2->ToString(0) << std::endl;
 	}
 };
 
