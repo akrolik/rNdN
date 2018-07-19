@@ -51,7 +51,7 @@ public:
 	const Register<PointerType<B, T, S>> *GetRegister() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
-	virtual RegisterAddress<B, T, S> *CreateOffsetAddress(unsigned int offset)
+	virtual RegisterAddress<B, T, S> *CreateOffsetAddress(unsigned int offset) const override
 	{
 		return new RegisterAddress(m_variable, offset);
 	}

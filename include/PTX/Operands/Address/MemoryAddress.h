@@ -48,7 +48,7 @@ public:
 	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
-	virtual MemoryAddress<B, T, S> *CreateOffsetAddress(unsigned int offset)
+	virtual MemoryAddress<B, T, S> *CreateOffsetAddress(unsigned int offset) const override
 	{
 		return new MemoryAddress(m_variable, offset);
 	}

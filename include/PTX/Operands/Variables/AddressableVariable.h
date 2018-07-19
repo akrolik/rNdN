@@ -6,7 +6,7 @@
 namespace PTX {
 
 template<class T, class S>
-class AddressableVariable : public Variable<T, S>
+class Variable<T, S, std::enable_if_t<std::is_base_of<AddressableSpace, S>::value>> : public VariableBase<T, S>
 {
 	friend class TypedVariableDeclaration<T, S>;
 public:
@@ -17,7 +17,7 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	using Variable<T, S>::Variable;
+	using VariableBase<T, S>::VariableBase;
 
 	json ToJSON() const override
 	{
@@ -28,6 +28,6 @@ public:
 };
 
 template<class T>
-using ParameterVariable = AddressableVariable<T, ParameterSpace>;
+using ParameterVariable = Variable<T, ParameterSpace>;
 
 }

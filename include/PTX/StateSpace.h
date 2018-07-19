@@ -1,7 +1,5 @@
 #pragma once
 
-#include "PTX/Concepts.h"
-
 namespace PTX {
 
 #define REQUIRE_SPACE_PARAM(CONTEXT, ENABLED) \
@@ -14,28 +12,25 @@ namespace PTX {
  
 struct StateSpace { static std::string Name() { return ".<unknown>"; } }; 
 
-template<class T>
-class Register;
+template<class T, class S, typename Enabled>//typename Enabled = void>
+class Variable;
 
 struct RegisterSpace : StateSpace
 {
 	template<class T>
-	using VariableType = Register<T>;
+	using VariableType = Variable<T, RegisterSpace, void>;
 
 	static std::string Name() { return ".reg"; }
 }; 
 
 struct SpecialRegisterSpace : RegisterSpace { static std::string Name() { return ".sreg"; } }; 
 
-template<class T, class S>
-class AddressableVariable;
-
 struct AddressableSpace : StateSpace {};
 
 struct LocalSpace : AddressableSpace
 {
 	template<class T>
-	using VariableType = AddressableVariable<T, LocalSpace>;
+	using VariableType = Variable<T, LocalSpace, void>;
 
 	static std::string Name() { return ".local"; }
 };
@@ -43,7 +38,7 @@ struct LocalSpace : AddressableSpace
 struct GlobalSpace : AddressableSpace
 {
 	template<class T>
-	using VariableType = AddressableVariable<T, GlobalSpace>;
+	using VariableType = Variable<T, GlobalSpace, void>;
 
 	static std::string Name() { return ".global"; }
 };
@@ -51,7 +46,7 @@ struct GlobalSpace : AddressableSpace
 struct SharedSpace : AddressableSpace
 {
 	template<class T>
-	using VariableType = AddressableVariable<T, SharedSpace>;
+	using VariableType = Variable<T, SharedSpace, void>;
 
 	static std::string Name() { return ".shared"; }
 };
@@ -59,7 +54,7 @@ struct SharedSpace : AddressableSpace
 struct ConstSpace : AddressableSpace
 {
 	template<class T>
-	using VariableType = AddressableVariable<T, ConstSpace>;
+	using VariableType = Variable<T, ConstSpace, void>;
 
 	static std::string Name() { return ".const"; }
 };
@@ -67,7 +62,7 @@ struct ConstSpace : AddressableSpace
 struct ParameterSpace : AddressableSpace
 {
 	template<class T>
-	using VariableType = AddressableVariable<T, ParameterSpace>;
+	using VariableType = Variable<T, ParameterSpace, void>;
 
 	static std::string Name() { return ".param"; }
 };

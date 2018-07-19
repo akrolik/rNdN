@@ -6,11 +6,11 @@
 namespace PTX {
 
 template<class T>
-class Register : public Variable<T, RegisterSpace>
+class Variable<T, RegisterSpace> : public VariableBase<T, RegisterSpace>
 {
 	friend class TypedVariableDeclaration<T, SpecialRegisterSpace>;
 public:
-	using Variable<T, RegisterSpace>::Variable;
+	using VariableBase<T, RegisterSpace>::VariableBase;
 
 	json ToJSON() const override
 	{
@@ -20,5 +20,8 @@ public:
 		return j;
 	}
 };
+
+template<class T>
+using Register = Variable<T, RegisterSpace>;
 
 }

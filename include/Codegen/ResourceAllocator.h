@@ -6,6 +6,7 @@
 
 #include "PTX/Type.h"
 #include "PTX/Declarations/VariableDeclaration.h"
+#include "PTX/Operands/Variables/Register.h"
 #include "PTX/Operands/Variables/Variable.h"
 
 #include "HorseIR/Traversal/ForwardTraversal.h"

@@ -7,6 +7,7 @@ namespace PTX {
 template<Bits B, class T, class S = AddressableSpace>
 class Address : public TypedOperand<T>
 {
+public:
 	REQUIRE_TYPE_PARAM(Address,
 		REQUIRE_BASE(T, ValueType)
 	);
@@ -14,7 +15,7 @@ class Address : public TypedOperand<T>
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	virtual Address<B, T, S> *CreateOffsetAddress(unsigned int offset) = 0;
+	virtual Address<B, T, S> *CreateOffsetAddress(unsigned int offset) const = 0;
 };
 
 template<class T, class S>

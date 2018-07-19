@@ -11,7 +11,7 @@ template<class T, class S>
 class TypedVariableDeclaration;
 
 template<class T, class S>
-class Variable : public TypedOperand<T>
+class VariableBase : public TypedOperand<T>
 {
 	friend class TypedVariableDeclaration<T, S>;
 
@@ -46,9 +46,16 @@ public:
 	}
 
 protected:
-	Variable(const std::string& name) : m_name(name) {}
+	VariableBase(const std::string& name) : m_name(name) {}
 
 	std::string m_name;
+};
+
+template<class T, class S, typename Enabled = void>
+class Variable : public VariableBase<T, S>
+{
+public:
+	using VariableBase<T, S>::VariableBase;
 };
 
 }
