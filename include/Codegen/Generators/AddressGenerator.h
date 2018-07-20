@@ -16,6 +16,7 @@
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
 #include "PTX/Instructions/Data/ConvertAddressInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"
+#include "PTX/Instructions/Data/MoveAddressInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
 #include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
 #include "PTX/Instructions/Shift/ShiftLeftInstruction.h"
@@ -36,36 +37,85 @@ class AddressGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	template<class T>
-	PTX::Address<B, T, PTX::GlobalSpace>* Generate(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable)
+	template<class T, class S>
+	PTX::Address<B, T, S> *Generate(const PTX::Variable<T, S> *variable)
 	{
-		auto tidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto temp_tidx = this->m_builder->AllocateTemporary<PTX::UInt32Type>("tidx");
+		// Get the base address from the variable
 
-		auto temp0 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
-		auto temp1 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
-		auto temp2 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
-		auto temp3 = this->m_builder->AllocateTemporary<PTX::UIntType<B>>();
+		auto base = new PTX::PointerRegisterAdapter<B, T, S>(this->m_builder->template AllocateTemporary<PTX::UIntType<B>>());
+		auto baseAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(variable);
 
-		auto temp0_ptr = new PTX::PointerRegisterAdapter<B, T>(temp0);
-		auto temp1_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp1);
-		auto temp3_ptr = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(temp3);
+		// Take the address of the variable using the move instruction
 
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(temp0_ptr, new PTX::MemoryAddress<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(variable)));
-		this->m_builder->AddStatement(new PTX::ConvertToAddressInstruction<B, T, PTX::GlobalSpace>(temp1_ptr, new PTX::RegisterAddress<B, T>(temp0_ptr)));
-		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp_tidx, tidx));
+		this->m_builder->AddStatement(new PTX::MoveAddressInstruction<B, T, S>(base, baseAddress));
+
+		return GenerateBase(base);
+	}
+
+	template<class T, class S>
+	PTX::Address<B, T, S> *GenerateParameter(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable)
+	{
+		// Get the base address of the variable in generic space
+
+		auto genericBase = new PTX::PointerRegisterAdapter<B, T>(this->m_builder->template AllocateTemporary<PTX::UIntType<B>>());
+		auto spaceBase = new PTX::PointerRegisterAdapter<B, T, S>(this->m_builder->template AllocateTemporary<PTX::UIntType<B>>());
+
+		auto baseAddress = new PTX::MemoryAddress<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(variable);
+
+		// Load the generic address of the underlying variable from the parameter space,
+		// and convert it to the underlying space
+
+		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(genericBase, baseAddress));
+		this->m_builder->AddStatement(new PTX::ConvertToAddressInstruction<B, T, S>(spaceBase, new PTX::RegisterAddress<B, T>(genericBase)));
+
+		return GenerateBase(spaceBase);
+	}
+
+private:
+	template<class T, class S>
+	PTX::Address<B, T, S> *GenerateBase(const PTX::PointerRegisterAdapter<B, T, S> *base)
+	{
+		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto tidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("tidx");
+
+		auto offset = this->m_builder->template AllocateTemporary<PTX::UIntType<B>>();
+		auto address = this->m_builder->template AllocateTemporary<PTX::UIntType<B>>();
+
+		// We cannot operate directly on special registers, so they must first be copied
+		// to a use defined register
+		
+		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
+
+		// Compute offset from the base address using the thread id and the data size
+
 		if constexpr(B == PTX::Bits::Bits32)
 		{
-			auto temp2_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp2);
-			auto tidx_bc = new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_tidx);
-			this->m_builder->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(temp2_bc, tidx_bc, new PTX::UInt32Value(std::log2(PTX::BitSize<T::TypeBits>::Size / 8))));
+			// In a 32-bit system, the offset is computed by using a left shift of the thread id by
+			// the data size. The registers are both adapted to bit types since it is required
+			// for the instruction
+
+			this->m_builder->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
+				new PTX::Bit32RegisterAdapter<PTX::UIntType>(offset),
+				new PTX::Bit32RegisterAdapter<PTX::UIntType>(tidx),
+				new PTX::UInt32Value(std::log2(PTX::BitSize<T::TypeBits>::NumBytes))
+			));
 		}
 		else
 		{
-			this->m_builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(temp2, temp_tidx, new PTX::UInt32Value(PTX::BitSize<T::TypeBits>::Size / 8)));
+			// In a 64-bit system, the offset is computed using a wide multiplication of the thread
+			// id and the data size. A wide multiplication extends the result past the 32-bit
+			// size of both operands
+
+			this->m_builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(offset, tidx, new PTX::UInt32Value(PTX::BitSize<T::TypeBits>::NumBytes)));
 		}
-		this->m_builder->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(temp3, temp1, temp2));
-		return new PTX::RegisterAddress<B, T, PTX::GlobalSpace>(temp3_ptr);
+
+		// Sum the base and the offset to create the full address for the thread and store the value in a register
+
+		this->m_builder->AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(address, base->GetVariable(), offset));
+
+		// Create an address from the resulting sum
+
+		return new PTX::RegisterAddress<B, T, S>(new PTX::PointerRegisterAdapter<B, T, S>(address));
 	}
 };
 

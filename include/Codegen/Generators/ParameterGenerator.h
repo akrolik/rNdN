@@ -41,7 +41,7 @@ public:
 			auto temp16 = this->m_builder->AllocateTemporary<PTX::Int16Type>();
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template Generate<PTX::Int8Type>(variable);
+			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable);
 
 			this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::Int8Type, PTX::GlobalSpace>(temp8, address));
 			this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, temp8));
@@ -61,7 +61,7 @@ public:
 			this->m_builder->OpenScope(block);
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template Generate<T>(variable);
+			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable);
 
 			this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
 

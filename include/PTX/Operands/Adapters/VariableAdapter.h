@@ -28,6 +28,8 @@ public:
 		return j;
 	}
 
+	const Variable<TS, S> *GetVariable() const { return m_variable; }
+
 private:
 	const Variable<TS, S> *m_variable;
 };

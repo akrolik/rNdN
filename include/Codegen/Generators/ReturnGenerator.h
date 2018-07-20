@@ -38,7 +38,7 @@ public:
 			this->m_builder->OpenScope(block);
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template Generate<PTX::Int8Type>(variable);
+			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable);
 			auto value = this->m_builder->GetRegister<PTX::PredicateType>(ret->GetVariableName());
 
 			auto temp32 = this->m_builder->AllocateTemporary<PTX::Int32Type>();
@@ -63,7 +63,7 @@ public:
 			this->m_builder->OpenScope(block);
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template Generate<T>(variable);
+			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable);
 			auto value = this->m_builder->GetRegister<T>(ret->GetVariableName());
 
 			this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
