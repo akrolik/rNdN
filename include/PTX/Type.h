@@ -127,7 +127,8 @@ enum class Bits : int {
 template<Bits B>
 struct BitSize
 {
-	constexpr static std::underlying_type<Bits>::type Size = static_cast<std::underlying_type<Bits>::type>(B);
+	constexpr static std::underlying_type<Bits>::type NumBits = static_cast<std::underlying_type<Bits>::type>(B);
+	constexpr static std::underlying_type<Bits>::type NumBytes = NumBits / 8;
 };
 
 template<Bits B, unsigned int N = 1>
@@ -135,7 +136,7 @@ struct BitTypeBase : ScalarType
 {
 	constexpr static Bits TypeBits = B;
 
-	static std::string Name() { return ".b" + std::to_string(BitSize<B>::Size); }
+	static std::string Name() { return ".b" + std::to_string(BitSize<B>::NumBits); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -168,7 +169,7 @@ struct BitTypeBase<Bits::Bits8, 1> : ScalarType
 {
 	constexpr static Bits TypeBits = Bits::Bits8;
 
-	static std::string Name() { return ".b" + std::to_string(BitSize<Bits::Bits8>::Size); }
+	static std::string Name() { return ".b" + std::to_string(BitSize<Bits::Bits8>::NumBits); }
 };
 
 template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
@@ -209,7 +210,7 @@ struct IntTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
-	static std::string Name() { return ".s" + std::to_string(BitSize<B>::Size); }
+	static std::string Name() { return ".s" + std::to_string(BitSize<B>::NumBits); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -244,7 +245,7 @@ struct IntTypeBase : BitType<B, N>
 template<>
 struct IntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
 {
-	static std::string Name() { return ".s" + std::to_string(BitSize<Bits::Bits8>::Size); }
+	static std::string Name() { return ".s" + std::to_string(BitSize<Bits::Bits8>::NumBits); }
 };
 
 template<Bits B, unsigned int N = 1> struct IntType : IntTypeBase<B, N> {};
@@ -281,7 +282,7 @@ struct UIntTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
 
-	static std::string Name() { return ".u" + std::to_string(BitSize<B>::Size); }
+	static std::string Name() { return ".u" + std::to_string(BitSize<B>::NumBits); }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -316,7 +317,7 @@ struct UIntTypeBase : BitType<B, N>
 template<>
 struct UIntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
 {
-	static std::string Name() { return ".u" + std::to_string(BitSize<Bits::Bits8>::Size); }
+	static std::string Name() { return ".u" + std::to_string(BitSize<Bits::Bits8>::NumBits); }
 };
 
 template<Bits B, unsigned int N = 1> struct UIntType : UIntTypeBase<B, N> {};
@@ -353,7 +354,7 @@ struct FloatTypeBase : BitType<B, N>
 {
 	static_assert(N == 1, "PTX::FloatType expects data packing of 1");
 
-	static std::string Name() { return ".f" + std::to_string(BitSize<B>::Size); }
+	static std::string Name() { return ".f" + std::to_string(BitSize<B>::NumBits); }
 
 	enum class RoundingMode {
 		None,

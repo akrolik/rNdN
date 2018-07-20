@@ -156,7 +156,7 @@ class TypedVariableDeclarationBase<T, S, std::enable_if_t<REQUIRE_BASE(S, Addres
 public:
 	using VariableDeclaration<S>::VariableDeclaration;
 
-	const unsigned int DefaultAlignment = BitSize<T::TypeBits>::Size / 8;
+	const unsigned int DefaultAlignment = BitSize<T::TypeBits>::NumBytes;
 
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 	unsigned int GetAlignment() const { return m_alignment; }

@@ -16,7 +16,7 @@ public:
 		)
 	);
 
-	using PackType = BitType<static_cast<Bits>(BitSize<T::TypeBits>::Size / VectorProperties<V>::ElementCount)>;
+	using PackType = BitType<static_cast<Bits>(BitSize<T::TypeBits>::NumBits / VectorProperties<V>::ElementCount)>;
 
 	PackInstruction(const Register<T> *destination, const BracedOperand<PackType, V> *source) : m_destination(destination), m_source(source) {}
 
