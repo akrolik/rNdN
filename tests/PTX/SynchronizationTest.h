@@ -8,6 +8,7 @@
 
 #include "PTX/Instructions/Synchronization/BarrierInstruction.h"
 #include "PTX/Instructions/Synchronization/BarrierReductionInstruction.h"
+#include "PTX/Instructions/Synchronization/ReductionInstruction.h"
 
 namespace Test
 {
