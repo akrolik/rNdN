@@ -21,6 +21,7 @@
 #include "PTX/DataTest.h"
 #include "PTX/LogicalTest.h"
 #include "PTX/ShiftTest.h"
+#include "PTX/SynchronizationTest.h"
 
 // #include "PTX/AddTest.h"
 // #include "PTX/BasicTest.h"
