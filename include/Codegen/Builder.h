@@ -11,6 +11,7 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Functions/FunctionDefinition.h"
+#include "PTX/Statements/BlankStatement.h"
 
 namespace Codegen {
 
@@ -80,9 +81,20 @@ public:
 	{
 		GetCurrentBlock()->AddStatement(statement);
 	}
-	void AddStatements(const std::vector<const PTX::Statement *>& statement)
+	template<class T>
+	void AddStatements(const std::vector<T>& statements)
 	{
-		GetCurrentBlock()->AddStatements(statement);
+		GetCurrentBlock()->AddStatements(statements);
+	}
+
+	void InsertStatements(const PTX::Statement *statement, unsigned int index)
+	{
+		GetCurrentBlock()->InsertStatement(statement, index);
+	}
+	template<class T>
+	void InsertStatements(const std::vector<T>& statements, unsigned int index)
+	{
+		GetCurrentBlock()->InsertStatements(statements, index);
 	}
 
 	ResourceAllocator *OpenScope(PTX::StatementList *block)
@@ -101,7 +113,9 @@ public:
 		// Attach the resource declarations to the function. In PTX code, the declarations
 		// must come before use, and are typically grouped at the top of the function.
 
-		GetCurrentBlock()->InsertStatements(GetCurrentResources()->GetRegisterDeclarations(), 0);
+		InsertStatements(new PTX::BlankStatement(), 0);
+		InsertStatements(GetCurrentResources()->GetRegisterDeclarations(), 0);
+
 		m_scopes.pop_back();
 	}
 
