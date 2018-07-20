@@ -9,7 +9,7 @@
 
 namespace PTX {
 
-template<Bits B, class T>
+template<Bits B, class T, bool Assert = true>
 class PrefetchUniformInstruction : public PredicatedInstruction
 {
 public:

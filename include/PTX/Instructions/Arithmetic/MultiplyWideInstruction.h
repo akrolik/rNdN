@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-template<class T>
+template<class T, bool Assert = true>
 class MultiplyWideInstruction : public InstructionBase_2<typename T::WideType, T>
 {
 public:

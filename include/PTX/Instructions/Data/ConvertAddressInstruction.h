@@ -7,10 +7,18 @@
 
 namespace PTX {
 
-template<Bits B, class T, class D, class S>
+template<Bits B, class T, class D, class S, bool Assert = true>
 class ConvertAddressInstruction : public PredicatedInstruction
 {
 public:
+	REQUIRE_TYPE_PARAM(ConvertAddressInstruction,
+		REQUIRE_BASE(T, Type)
+	);
+	REQUIRE_SPACE_PARAMS(ConvertAddressInstruction,
+		REQUIRE_BASE(D, AddressableSpace),
+		REQUIRE_BASE(S, AddressableSpace)
+	);
+	
 	ConvertAddressInstruction(const Register<PointerType<B, T, D>> *destination, const Address<B, T, S> *source) : m_destination(destination), m_source(source) {}
 
 	static std::string Mnemonic() { return "cvta"; }

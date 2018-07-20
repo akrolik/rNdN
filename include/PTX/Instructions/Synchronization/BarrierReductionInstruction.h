@@ -47,7 +47,7 @@ protected:
 	bool m_aligned = false;
 };
 
-template<class T>
+template<class T, bool Assert = true>
 class BarrierReductionInstruction : public PredicatedInstruction
 {
 public:

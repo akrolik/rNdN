@@ -6,6 +6,10 @@ namespace PTX {
 	constexpr static bool SpaceSupported = ENABLED; \
 	static_assert(Assert == false || SpaceSupported == true, "PTX::" TO_STRING(CONTEXT) " does not support PTX state space");
 
+#define REQUIRE_SPACE_PARAMS(context, D_ENABLED, T_ENABLED) \
+	constexpr static bool SpaceSupported = D_ENABLED && T_ENABLED; \
+	static_assert(Assert == false || SpaceSupported == true, "PTX::" TO_STRING(context) " does not support PTX state spaces");
+
 // @struct StateSpace
 //
 // Storage space used for addressable variables

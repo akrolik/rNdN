@@ -10,7 +10,7 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S>
+template<Bits B, class T, class S, bool Assert = true>
 class LoadInstructionBase : public PredicatedInstruction
 {
 public:

@@ -7,7 +7,7 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S>
+template<Bits B, class T, class S, bool Assert = true>
 class IsSpaceInstruction : public PredicatedInstruction
 {
 public:
