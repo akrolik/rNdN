@@ -15,17 +15,12 @@ public:
 
 	std::string ToString(unsigned int indentation = 0) const override
 	{
-		return std::string(indentation-1, '\t') + m_name;
+		return std::string(indentation-1, '\t') + m_name + ":";
 	}
 
 	std::string ToString() const override
 	{
 		return m_name;
-	}
-
-	std::string Terminator() const override
-	{
-		return ":";
 	}
 
 	json ToJSON() const override

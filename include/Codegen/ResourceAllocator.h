@@ -17,7 +17,7 @@ namespace Codegen {
 class Resources
 {
 public:
-	virtual const PTX::VariableDeclaration<PTX::RegisterSpace> *GetDeclaration() const = 0;
+	virtual const PTX::VariableDeclaration *GetDeclaration() const = 0;
 };
 
 template<class T>
@@ -90,9 +90,9 @@ class ResourceAllocator
 public:
 	ResourceAllocator() {}
 
-	std::vector<const PTX::VariableDeclaration<PTX::RegisterSpace> *> GetRegisterDeclarations() const
+	std::vector<const PTX::VariableDeclaration *> GetRegisterDeclarations() const
 	{
-		std::vector<const PTX::VariableDeclaration<PTX::RegisterSpace> *> declarations;
+		std::vector<const PTX::VariableDeclaration *> declarations;
 		for (const auto& resource : m_resourcesMap)
 		{
 			declarations.push_back(resource.second->GetDeclaration());

@@ -19,11 +19,6 @@ public:
 		return indentString + "// " + ReplaceString(m_comment, "\n", "\n" + indentString + "// ");
 	}
 
-	std::string Terminator() const override
-	{
-		return "";
-	}
-
 	json ToJSON() const override
 	{
 		json j;

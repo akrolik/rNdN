@@ -55,14 +55,9 @@ protected:
 	unsigned int m_count;
 };
 
-template<class S>
 class VariableDeclaration : public DirectiveStatement, public Declaration
 {
 public:
-	REQUIRE_SPACE_PARAM(VariableDeclaration,
-		REQUIRE_BASE(S, StateSpace)
-	);
-
 	VariableDeclaration() {}
 
 	VariableDeclaration(const std::string& prefix, unsigned int count = 1)
@@ -109,12 +104,15 @@ public:
 
 	const std::vector<NameSet *>& GetNames() const { return m_names; }
 
+	virtual std::string ToString(unsigned int indentation = 0) const = 0;
+	virtual std::string ToString(unsigned int indentation, bool terminate) const = 0;
+
 	json ToJSON() const override
 	{
 		json j;
 		j["kind"] = "PTX::VariableDeclaration";
 		j["type"] = "<untyped>";
-		j["space"] = S::Name();
+		j["space"] = "<unspaced>";
 		std::string preDirectives = PreDirectives();
 		if (preDirectives.length() > 0)
 		{
@@ -144,17 +142,17 @@ protected:
 };
 
 template<class T, class S, typename Enabled = void>
-class TypedVariableDeclarationBase : public VariableDeclaration<S>
+class TypedVariableDeclarationBase : public VariableDeclaration
 {
 public:
-	using VariableDeclaration<S>::VariableDeclaration;
+	using VariableDeclaration::VariableDeclaration;
 };
 
 template<class T, class S>
-class TypedVariableDeclarationBase<T, S, std::enable_if_t<REQUIRE_BASE(S, AddressableSpace)>> : public VariableDeclaration<S>
+class TypedVariableDeclarationBase<T, S, std::enable_if_t<REQUIRE_BASE(S, AddressableSpace)>> : public VariableDeclaration
 {
 public:
-	using VariableDeclaration<S>::VariableDeclaration;
+	using VariableDeclaration::VariableDeclaration;
 
 	const unsigned int DefaultAlignment = BitSize<T::TypeBits>::NumBytes;
 
@@ -182,6 +180,10 @@ public:
 		REQUIRE_BASE(T, Type)
 	);
 
+	REQUIRE_SPACE_PARAM(VariableDeclaration,
+		REQUIRE_BASE(S, StateSpace)
+	);
+
 	using TypedVariableDeclarationBase<T, S>::TypedVariableDeclarationBase;
 
 	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
@@ -199,6 +201,11 @@ public:
 
 	std::string ToString(unsigned int indentation = 0) const override
 	{
+		return ToString(indentation, true);
+	}
+
+	std::string ToString(unsigned int indentation, bool terminate) const override
+	{
 		std::string code = std::string(indentation, '\t');
 		if (this->m_linkDirective != Declaration::LinkDirective::None)
 		{
@@ -213,15 +220,19 @@ public:
 		{
 			code += T::Name();
 		}
-		//TODO: semicolon
-		code += " " + this->PostDirectives() + VariableNames() + ((this->m_linkDirective != Declaration::LinkDirective::None) ? ";" : "");
+		code += " " + this->PostDirectives() + VariableNames();
+		if (terminate)
+		{
+			code += ";";
+		}
 		return code;
 	}
 
 	json ToJSON() const override
 	{
-		json j = VariableDeclaration<S>::ToJSON();
+		json j = VariableDeclaration::ToJSON();
 		j["type"] = T::Name();
+		j["space"] = S::Name();
 		return j;
 	}
 

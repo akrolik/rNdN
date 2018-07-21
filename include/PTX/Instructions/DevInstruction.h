@@ -14,11 +14,6 @@ public:
 		return m_instruction;
 	}
 
-	std::string Terminator() const override
-	{
-		return "";
-	}
-
 	std::vector<const Operand *> Operands() const override
 	{
 		return {};

@@ -14,11 +14,6 @@ public:
 		return "";
 	}
 
-	std::string Terminator() const override
-	{
-		return "";
-	}
-
 	json ToJSON() const override
 	{
 		json j;

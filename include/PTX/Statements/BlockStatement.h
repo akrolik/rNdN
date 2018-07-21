@@ -16,8 +16,6 @@ public:
 		return StatementList::ToString(indentation);
 	}
 
-	std::string Terminator() const override { return ""; }
-
 	json ToJSON() const override
 	{
 		json j;

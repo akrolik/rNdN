@@ -113,8 +113,12 @@ public:
 		// Attach the resource declarations to the function. In PTX code, the declarations
 		// must come before use, and are typically grouped at the top of the function.
 
-		InsertStatements(new PTX::BlankStatement(), 0);
-		InsertStatements(GetCurrentResources()->GetRegisterDeclarations(), 0);
+		auto declarations = GetCurrentResources()->GetRegisterDeclarations();
+		if (declarations.size() > 0)
+		{
+			InsertStatements(new PTX::BlankStatement(), 0);
+		}
+		InsertStatements(declarations, 0);
 
 		m_scopes.pop_back();
 	}

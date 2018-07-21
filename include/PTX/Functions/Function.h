@@ -34,7 +34,7 @@ public:
 		{
 			code += "(" + ret + ") ";
 		}
-		code += m_name + "(" + GetParametersString() + ")\n" + Body();
+		code += m_name + "(" + GetParametersString() + ")";
 		return code;
 	}
 
@@ -53,8 +53,6 @@ private:
 	virtual std::string GetDirectives() const = 0;
 	virtual std::string GetReturnString() const = 0;
 	virtual std::string GetParametersString() const = 0;
-
-	virtual std::string Body() const { return ";"; }
 
 	std::string m_name;
 };

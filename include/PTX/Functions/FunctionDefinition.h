@@ -18,10 +18,9 @@ public:
 		return j;
 	}
 
-private:
-	std::string Body() const override
+	std::string ToString(unsigned int indentation = 0) const override
 	{
-		return StatementList::ToString(0);
+		return Function::ToString(indentation) + "\n" + StatementList::ToString(0);
 	}
 };
 

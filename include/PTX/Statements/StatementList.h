@@ -36,7 +36,7 @@ public:
 		code += std::string(indentation, '\t') + "{\n";
 		for (const auto& statement : m_statements)
 		{
-			code += statement->ToString(indentation + 1) + statement->Terminator() + "\n";
+			code += statement->ToString(indentation + 1) + "\n";
 		}
 		return code + std::string(indentation, '\t') + "}";
 	}

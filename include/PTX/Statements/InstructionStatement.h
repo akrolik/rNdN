@@ -29,10 +29,8 @@ public:
 			}
 			code += operand->ToString();
 		}
-		return code;
+		return code + ";";
 	}
-
-	std::string Terminator() const override { return ";"; }
 
 	json ToJSON() const override
 	{

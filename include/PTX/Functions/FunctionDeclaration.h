@@ -49,7 +49,7 @@ protected:
 				code += ",\n";
 			}
 			first = false;
-			code += parameter->ToString(1);
+			code += parameter->ToString(1, false);
 		}
 		if (!first)
 		{
@@ -58,7 +58,7 @@ protected:
 		return code;
 	}
 
-	std::vector<const Declaration *> m_parameters;
+	std::vector<const VariableDeclaration *> m_parameters;
 };
 
 template<class R, typename... Args>
@@ -95,7 +95,7 @@ protected:
 		if constexpr(sizeof...(Args) > 0)
 		{
 			code << std::endl << "\t";
-			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>());
+			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>(), 0, false);
 		}
 		return code.str();
 	}
