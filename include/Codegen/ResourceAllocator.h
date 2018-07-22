@@ -3,9 +3,11 @@
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#include <utility>
 
 #include "PTX/Type.h"
 #include "PTX/Declarations/VariableDeclaration.h"
+#include "PTX/Operands/Operand.h"
 #include "PTX/Operands/Variables/Register.h"
 #include "PTX/Operands/Variables/Variable.h"
 
@@ -24,13 +26,35 @@ template<class T>
 class TypedResources : public Resources
 {
 public:
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
+	using ResourceType = std::pair<const PTX::Register<T> *, const PTX::Register<PTX::PredicateType> *>;
+
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr)
 	{
 		std::string name = "%" + std::string(T::RegisterPrefix) + "_" + identifier;
 		m_declaration->AddNames(name);
 		const PTX::Register<T> *resource = m_declaration->GetVariable(name);
-		m_registersMap.insert({identifier, resource});
+		m_registersMap.insert({identifier, std::make_pair(resource, predicate)});
 		return resource;
+	}
+
+	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
+	{
+		m_registersMap.insert({identifier, std::make_pair(value, predicate)});
+	}
+
+	bool ContainsKey(const std::string& identifier) const
+	{
+		return m_registersMap.find(identifier) != m_registersMap.end();
+	}
+
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
+	{
+		return std::get<0>(m_registersMap.at(identifier));
+	}
+
+	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const std::string& identifier) const
+	{
+		return std::get<1>(m_registersMap.at(identifier));
 	}
 
 	const PTX::Register<T> *AllocateTemporary()
@@ -51,16 +75,6 @@ public:
 		return resource;
 	}
 
-	bool ContainsKey(const std::string& identifier) const
-	{
-		return m_registersMap.find(identifier) != m_registersMap.end();
-	}
-
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
-	{
-		return m_registersMap.at(identifier);
-	}
-
 	bool ContainsTemporary(const std::string& identifier) const
 	{
 		return m_temporariesMap.find(identifier) != m_temporariesMap.end();
@@ -79,8 +93,7 @@ public:
 private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
 
-	std::unordered_map<std::string, const PTX::Register<T> *> m_registersMap;
-
+	std::unordered_map<std::string, ResourceType> m_registersMap;
 	std::unordered_map<std::string, const PTX::Register<T> *> m_temporariesMap;
 	unsigned int m_temporaries = 0;
 };
@@ -101,25 +114,32 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr) const
 	{
-		TypedResources<T> *resources = GetResources<T>(false);
-		if (resources != nullptr && resources->ContainsKey(identifier))
-		{
-			return resources->GetRegister(identifier);
-		}
-		return nullptr;
+		return GetResources<T>()->AllocateRegister(identifier, predicate);
 	}
 
 	template<class T>
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
+	bool ContainsKey(const std::string& identifier) const
 	{
-		auto resources = GetResources<T>();
-		if (resources->ContainsKey(identifier))
+		TypedResources<T> *resources = GetResources<T>(false);
+		if (resources != nullptr)
 		{
-			return resources->GetRegister(identifier);
+			return resources->ContainsKey(identifier);
 		}
-		return GetResources<T>()->AllocateRegister(identifier);
+		return false;
+	}
+
+	template<class T>
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
+	{
+		return GetResources<T>(false)->GetRegister(identifier);
+	}
+
+	template<class T>
+	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const std::string& identifier) const
+	{
+		return GetResources<T>(false)->GetCompressionRegister(identifier);
 	}
 
 	template<class T>
@@ -137,6 +157,12 @@ public:
 			return resources->GetTemporary(identifier);
 		}
 		return GetResources<T>()->AllocateTemporary(identifier);
+	}
+
+	template<class T>
+	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
+	{
+		GetResources<T>()->AddCompressedRegister(identifier, value, predicate);
 	}
 
 private:

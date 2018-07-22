@@ -9,8 +9,10 @@
 
 #include "PTX/Instructions/Data/ConvertInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
+#include "PTX/Instructions/Data/UnpackInstruction.h"
 #include "PTX/Operands/Value.h"
 #include "PTX/Operands/Adapters/BitAdapter.h"
+#include "PTX/Operands/Variables/SinkRegister.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
@@ -45,8 +47,20 @@ public:
 		}
 
 		auto reg = this->m_builder->template AllocateTemporary<T>();
-		this->m_builder->AddStatement(new PTX::MoveInstruction<T>(reg, operand));
+		if constexpr(std::is_same<T, PTX::Int8Type>::value)
+		{
+			auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({
+				new PTX::Bit8RegisterAdapter<PTX::IntType>(reg),
+				new PTX::SinkRegister<PTX::Bit8Type>
+			});
 
+			//TODO: Implement 8 bit moves, see if fill could use some help
+			// this->m_builder->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, operand));
+		}
+		else
+		{
+			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(reg, operand));
+		}
 		return reg;
 	}
 
@@ -65,6 +79,7 @@ public:
 		else
 		{
 			//TODO: Implement conversion matrix, think about having destination and source generators
+
 			auto source = this->m_builder->GetRegister<S>(identifier->GetString());
 			if constexpr(std::is_same<PTX::BitType<S::TypeBits>, T>::value)
 			{
@@ -84,10 +99,21 @@ public:
 			else if constexpr(PTX::ConvertInstruction<T, S, false>::TypeSupported)
 			{
 				auto converted = this->m_builder->AllocateTemporary<T>();
-				this->m_builder->AddStatement(new PTX::ConvertInstruction<T, S>(converted, source));
+				auto convertInstruction = new PTX::ConvertInstruction<T, S>(converted, source);
+
+				// If a rounding mode is supported by the convert instruction, then it
+				// is actually required!
+
+				if constexpr(PTX::ConvertRoundingModifier<T, S>::Enabled)
+				{
+					convertInstruction->SetRoundingMode(PTX::ConvertRoundingModifier<T, S>::RoundingMode::Nearest);
+				}
+
+				this->m_builder->AddStatement(convertInstruction);
 				m_operand = converted;
 			}
 		}
+		
 		if (m_operand == nullptr)
 		{
 			std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + T::Name() << std::endl;

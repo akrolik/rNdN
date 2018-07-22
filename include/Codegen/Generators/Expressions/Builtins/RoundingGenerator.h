@@ -2,6 +2,9 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
+#include "Codegen/Generators/Expressions/OperandGenerator.h"
+
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/TypeUtils.h"
 
@@ -46,6 +49,11 @@ public:
 	using NodeType = HorseIR::CallExpression;
 
 	RoundingGenerator(Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_roundOp(roundOp) {}
+
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	{
+		return OperandCompressionGenerator<B, PTX::IntType<S>>::UnaryCompressionRegister(this->m_builder, call);
+	}
 
 	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call) override
 	{

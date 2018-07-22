@@ -2,6 +2,7 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "PTX/Instructions/Arithmetic/AbsoluteInstruction.h"
@@ -49,6 +50,11 @@ class UnaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
 	UnaryGenerator(Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
+
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	{
+		return OperandCompressionGenerator<B, T>::UnaryCompressionRegister(this->m_builder, call);
+	}
 
 	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{

@@ -128,10 +128,10 @@ public:
 	{
 		for (const auto& scope : m_scopes)
 		{
-			const PTX::Register<T> *reg = std::get<1>(scope)->GetRegister<T>(identifier);
-			if (reg != nullptr)
+			auto resources = GetCurrentResources();
+			if (resources->ContainsKey<T>(identifier))
 			{
-				return reg;
+				return resources->GetRegister<T>(identifier);
 			}
 		}
 
@@ -140,9 +140,25 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier) const
+	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const std::string& identifier) const
 	{
-		return GetCurrentResources()->AllocateRegister<T>(identifier);
+		for (const auto& scope : m_scopes)
+		{
+			auto resources = GetCurrentResources();
+			if (resources->ContainsKey<T>(identifier))
+			{
+				return resources->GetCompressionRegister<T>(identifier);
+			}
+		}
+
+		std::cerr << "[ERROR] PTX::Register(" << identifier << ") not found" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
+	template<class T>
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr) const
+	{
+		return GetCurrentResources()->AllocateRegister<T>(identifier, predicate);
 	}
 
 	template<class T>
@@ -155,6 +171,12 @@ public:
 	const PTX::Register<T> *AllocateTemporary(const std::string& identifier) const
 	{
 		return GetCurrentResources()->AllocateTemporary<T>(identifier);
+	}
+
+	template<class T>
+	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
+	{
+		GetCurrentResources()->AddCompressedRegister<T>(identifier, value, predicate);
 	}
 
 private:

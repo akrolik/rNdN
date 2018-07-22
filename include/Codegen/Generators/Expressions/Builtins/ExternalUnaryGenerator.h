@@ -2,6 +2,9 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
+#include "Codegen/Generators/Expressions/OperandGenerator.h"
+
 #include "PTX/Functions/ExternalMathFunctions.h"
 #include "PTX/Instructions/ControlFlow/CallInstruction.h"
 #include "PTX/Instructions/Data/LoadInstruction.h"
@@ -83,6 +86,11 @@ class ExternalUnaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::Bi
 {
 public:
 	ExternalUnaryGenerator(Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_unaryOp(unaryOp) {}
+
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	{
+		return OperandCompressionGenerator<B, PTX::FloatType<S>>::UnaryCompressionRegister(this->m_builder, call);
+	}
 
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override
 	{

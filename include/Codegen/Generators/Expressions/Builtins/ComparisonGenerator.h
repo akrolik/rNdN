@@ -2,6 +2,9 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
+#include "Codegen/Generators/Expressions/OperandGenerator.h"
+
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/TypeUtils.h"
 
@@ -60,6 +63,8 @@ public:
 	using NodeType = HorseIR::CallExpression;
 
 	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::PredicateType>(builder), m_comparisonOp(comparisonOp) {}
+
+	//TODO: Predicate
 
 	void Generate(const PTX::Register<PTX::PredicateType> *target, const HorseIR::CallExpression *call) override
 	{
@@ -125,6 +130,8 @@ public:
 	using NodeType = HorseIR::CallExpression;
 
 	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_comparisonOp(comparisonOp) {}
+
+	//TODO: Predicate
 
 	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call) override
 	{

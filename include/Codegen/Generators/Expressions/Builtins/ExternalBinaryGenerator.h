@@ -2,6 +2,8 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
+#include "Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 
@@ -50,6 +52,11 @@ class ExternalBinaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::B
 {
 public:
 	ExternalBinaryGenerator(Builder *builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_binaryOp(binaryOp) {}
+
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	{
+		return OperandCompressionGenerator<B, PTX::FloatType<S>>::BinaryCompressionRegister(this->m_builder, call);
+	}
 
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override
 	{

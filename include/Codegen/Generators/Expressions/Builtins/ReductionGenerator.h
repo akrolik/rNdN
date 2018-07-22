@@ -63,6 +63,9 @@ class ReductionGenerator : public BuiltinGenerator<B, T>
 public:
 	ReductionGenerator(Builder *builder, ReductionOperation reductionOp) : BuiltinGenerator<B, T>(builder), m_reductionOp(reductionOp) {}
 
+	// The output of a reduction function has no compression predicate.
+	// We therefore do not implement GenerateCompressionPredicate in this subclass
+
 	//TODO: Support 8 bit types in reductions
 	//TODO: Investigate using a shuffle reduction instead of the typical shared memory
 
@@ -105,9 +108,31 @@ public:
 			// Other reductions combine the values together using some operation
 
 			OperandGenerator<B, T> opGen(this->m_builder);
-			auto src = opGen.GenerateRegister(call->GetArgument(0));
 
-			this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedThreadAddress, src));
+			// Check if there is a compression on the input value. If so, mask out the initial load
+			// according to the predicate
+
+			OperandCompressionGenerator<B, T> compGen(this->m_builder);
+			auto compress = compGen.GetCompressionRegister(call->GetArgument(0));
+
+			const PTX::Register<T> *value = nullptr;
+			if (compress == nullptr)
+			{
+				value = opGen.GenerateRegister(call->GetArgument(0));
+			}
+			else
+			{
+				auto src = opGen.GenerateOperand(call->GetArgument(0));
+				auto temp = this->m_builder->template AllocateTemporary<T>();
+
+				//TODO: Initial value depends on the type of reduction
+				this->m_builder->AddStatement(new PTX::SelectInstruction<T>(temp, src, new PTX::Value<T>(0), compress));
+				value = temp;
+			}
+
+			// Load the initial value into shared memory
+
+			this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedThreadAddress, value));
 		}
 
 		// Synchronize the thread group for a consistent view of shared memory
@@ -208,28 +233,14 @@ private:
 				// will write it back in place of the initial value
 
 				predicate = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
-				if constexpr(PTX::is_type_specialization<T, PTX::UIntType>::value)
-				{
-					this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Lower));
-				}
-				else
-				{
-					this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Less));
-				}
+				this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Less));
 				break;
 			case ReductionOperation::Maximum:
 				// Maximum reduction checks if the offset value is greater than the initial value. If so, we
 				// will write it back in place of the initial value
 
 				predicate = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
-				if constexpr(PTX::is_type_specialization<T, PTX::UIntType>::value)
-				{
-					this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Higher));
-				}
-				else
-				{
-					this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Greater));
-				}
+				this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Greater));
 				break;
 			default:
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(m_reductionOp));
