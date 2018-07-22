@@ -137,7 +137,7 @@ statements : statements statement                                               
            ;
 
 statement : tIDENTIFIER ':' type '=' expression ';'                             { $$ = new HorseIR::AssignStatement(*$1, $3, $5); }
-          | tRETURN tIDENTIFIER ';'                                             { $$ = new HorseIR::ReturnStatement(*$2); }
+          | tRETURN tIDENTIFIER ';'                                             { $$ = new HorseIR::ReturnStatement(new HorseIR::Identifier(*$2)); }
           ;
 
 expression : tCHECKCAST '(' expression ',' type ')'                             { $$ = new HorseIR::CastExpression($3, $5); }

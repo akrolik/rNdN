@@ -4,6 +4,7 @@
 
 #include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 
@@ -34,7 +35,9 @@ public:
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
 			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable);
-			auto value = this->m_builder->GetRegister<PTX::PredicateType>(ret->GetVariableName());
+
+			OperandGenerator<B, PTX::PredicateType> opGen(this->m_builder);
+			auto value = opGen.GenerateRegister(ret->GetIdentifier());
 
 			auto temp32 = this->m_builder->AllocateTemporary<PTX::Int32Type>();
 			auto temp8 = this->m_builder->AllocateTemporary<PTX::Int8Type>();
@@ -53,7 +56,9 @@ public:
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
 			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable);
-			auto value = this->m_builder->GetRegister<T>(ret->GetVariableName());
+
+			OperandGenerator<B, T> opGen(this->m_builder);
+			auto value = opGen.GenerateRegister(ret->GetIdentifier());
 
 			this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
 			this->m_builder->AddStatement(new PTX::ReturnInstruction());

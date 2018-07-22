@@ -4,6 +4,7 @@
 #include "HorseIR/Tree/Module.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
+#include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 
 namespace HorseIR {
@@ -49,6 +50,11 @@ void ForwardTraversal::Visit(CallExpression *call)
 	{
 		argument->Accept(*this);
 	}
+}
+
+void ForwardTraversal::Visit(ReturnStatement *ret)
+{
+	ret->GetIdentifier()->Accept(*this);
 }
 
 }

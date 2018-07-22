@@ -4,6 +4,8 @@
 
 #include "HorseIR/Tree/Statements/Statement.h"
 
+#include "HorseIR/Tree/Expressions/Identifier.h"
+
 #include "HorseIR/Traversal/Visitor.h"
 
 namespace HorseIR {
@@ -11,19 +13,19 @@ namespace HorseIR {
 class ReturnStatement : public Statement
 {
 public:
-	ReturnStatement(std::string variableName) : m_variableName(variableName) {}
+	ReturnStatement(Identifier *identifier) : m_identifier(identifier) {}
 
-	std::string GetVariableName() const { return m_variableName; }
+	Identifier *GetIdentifier() const { return m_identifier; }
 
 	std::string ToString() const override
 	{
-		return "return " + m_variableName;
+		return "return " + m_identifier->ToString();
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
-	std::string m_variableName;
+	Identifier *m_identifier;
 };
 
 }
