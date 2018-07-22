@@ -24,7 +24,7 @@ template<PTX::Bits B, class T>
 class ExpressionGenerator : public HorseIR::ForwardTraversal, public Generator
 {
 public:
-	ExpressionGenerator(const PTX::Register<T> *target, Builder *builder) : Generator(builder), m_target(target) {}
+	ExpressionGenerator(const std::string& target, Builder *builder) : Generator(builder), m_target(target) {}
 
 	void Visit(HorseIR::CallExpression *call) override
 	{
@@ -243,7 +243,7 @@ public:
 	}
 
 protected:
-	const PTX::Register<T> *m_target = nullptr;
+	const std::string& m_target = nullptr;
 };
 
 }

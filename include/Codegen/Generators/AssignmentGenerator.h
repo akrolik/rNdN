@@ -28,15 +28,14 @@ public:
 		// into a single instruction. We therefore can't completely separate the expression generation
 		// from the assignment as is typically done in McLab compilers.
 		//
-		// (1) First generate the target register for the assignment destination type T
-		// (2) Create a typed expression visitor (using the destination type) to evaluate the RHS of
-		//     the assignment. We assume that the RHS and target have the same types
+		// (1) Create a typed expression visitor (using the destination type) to evaluate the RHS of
+		//     the assignment using the assignment target name. We assume that the RHS and target
+		//     have the same types
 		// (3) Visit the expression
 		//
 		// In this setup, the expression visitor is expected to produce the full assignment
 
-		const PTX::Register<T> *target = this->m_builder->template AllocateRegister<T>(assign->GetTargetName());
-		ExpressionGenerator<B, T> generator(target, this->m_builder);
+		ExpressionGenerator<B, T> generator(assign->GetTargetName(), this->m_builder);
 		assign->Accept(generator);
 	}
 };
