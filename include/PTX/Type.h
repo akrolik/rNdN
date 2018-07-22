@@ -287,6 +287,10 @@ struct UIntTypeBase : BitType<B, N>
 	enum class ComparisonOperator {
 		Equal,
 		NotEqual,
+		Less,
+		LessEqual,
+		Greater,
+		GreaterEqual,
 		Lower,
 		LowerSame,
 		Higher,
@@ -301,6 +305,14 @@ struct UIntTypeBase : BitType<B, N>
 				return ".eq";
 			case ComparisonOperator::NotEqual:
 				return ".ne";
+			case ComparisonOperator::Less:
+				return ".lt";
+			case ComparisonOperator::LessEqual:
+				return ".le";
+			case ComparisonOperator::Greater:
+				return ".gt";
+			case ComparisonOperator::GreaterEqual:
+				return ".ge";
 			case ComparisonOperator::Lower:
 				return ".lo";
 			case ComparisonOperator::LowerSame:
