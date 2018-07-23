@@ -8,6 +8,21 @@
 
 namespace PTX {
 
+template<class D>
+class InstructionBase_0 : public PredicatedInstruction
+{
+public:
+	InstructionBase_0(const Register<D> *destination) : m_destination(destination) {}
+
+	std::vector<const Operand *> Operands() const override
+	{
+		return { m_destination };
+	}
+
+private:
+	const Register<D> *m_destination = nullptr;
+};
+
 template<class D, class S = D>
 class InstructionBase_1 : public PredicatedInstruction
 {
