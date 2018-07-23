@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Instructions/PredicatedInstruction.h"
+#include "PTX/Instructions/Modifiers/ScopeModifier.h"
 
 #include "PTX/StateSpace.h"
 #include "PTX/Operands/Operand.h"
@@ -10,7 +11,7 @@
 namespace PTX {
 
 template<Bits B, class T, class S = AddressableSpace>
-class ReductionInstructionBase : public PredicatedInstruction
+class ReductionInstructionBase : public PredicatedInstruction, public ScopeModifier<false>
 {
 public:
 	enum class Synchronization {
@@ -38,9 +39,6 @@ public:
 	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
 	Synchronization GetSynchronization() const { return m_synchronization; }
 
-	void SetScope(Scope scope) { m_scope = scope; }
-	Scope GetScope() const { return m_scope; }
-
 	std::vector<const Operand *> Operands() const override
 	{
 		return { new DereferencedAddress<B, T, S>(m_address), m_value };
@@ -51,7 +49,6 @@ protected:
 	const TypedOperand<T> *m_value = nullptr;
 
 	Synchronization m_synchronization = Synchronization::None;
-	Scope m_scope = Scope::None;
 };
 
 template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
@@ -108,7 +105,9 @@ public:
 
 	using ReductionInstructionBase<B, T, S>::SynchronizationString;
 
-	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, Operation operation) : ReductionInstructionBase<B, T, S>(address, value), m_operation(operation) {}
+	using Scope = ScopeModifier<false>::Scope;
+
+	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, Operation operation, Scope = Scope::None) : ReductionInstructionBase<B, T, S>(address, value), m_operation(operation) {}
 
 	static std::string Mnemonic() { return "red"; }
 
@@ -119,11 +118,7 @@ public:
 		{
 			code += SynchronizationString(this->m_synchronization);
 		}
-		if (this->m_scope != Scope::None)
-		{
-			code += ScopeString(this->m_scope);
-		}
-		return code + S::Name() + OperationString(m_operation) + T::Name();
+		return code + ScopeModifier<false>::OpCodeModifier() + S::Name() + OperationString(m_operation) + T::Name();
 	}
 
 private:
@@ -145,11 +140,7 @@ public:
 		{
 			code += SynchronizationString(this->m_synchronization);
 		}
-		if (this->m_scope != Scope::None)
-		{
-			code += ScopeString(this->m_scope);
-		}
-		return code + S::Name() + ".add.noftz" + Float16x2Type::Name();
+		return code + ScopeModifier<false>::OpCodeModifier() + S::Name() + ".add.noftz" + Float16x2Type::Name();
 	}
 };
 

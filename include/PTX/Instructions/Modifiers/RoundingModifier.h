@@ -2,8 +2,9 @@
 
 #include <iostream>
 
-namespace PTX
-{
+#include "PTX/Type.h"
+
+namespace PTX {
 
 template<class T, bool R = false, typename Enable = void>
 class RoundingModifier

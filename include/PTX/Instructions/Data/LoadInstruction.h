@@ -1,9 +1,9 @@
 #pragma once
 
 #include "PTX/Instructions/PredicatedInstruction.h"
+#include "PTX/Instructions/Modifiers/ScopeModifier.h"
 
 #include "PTX/StateSpace.h"
-#include "PTX/Synchronization.h"
 #include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Address/DereferencedAddress.h"
 #include "PTX/Operands/Variables/Register.h"
@@ -35,6 +35,13 @@ public:
 private:
 	const Register<T> *m_register = nullptr;
 	const Address<B, T, S> *m_address = nullptr;
+};
+
+enum class LoadSynchronization {
+	Weak,
+	Volatile,
+	Relaxed,
+	Acquire
 };
 
 template<Bits B, class T, class S, LoadSynchronization M = LoadSynchronization::Weak>
@@ -100,37 +107,35 @@ public:
 };
 
 template<Bits B, class T, class S>
-class LoadInstruction<B, T, S, LoadSynchronization::Relaxed> : public LoadInstructionBase<B, T, S>
+class LoadInstruction<B, T, S, LoadSynchronization::Relaxed> : public LoadInstructionBase<B, T, S>, public ScopeModifier<>
 {
 public:
-	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), m_scope(scope) {}
+	using Scope = ScopeModifier<>::Scope;
+
+	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "ld"; }
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + ".relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".relaxed" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
-
-private:
-	Scope m_scope;
 };
 
 template<Bits B, class T, class S>
-class LoadInstruction<B, T, S, LoadSynchronization::Acquire> : public LoadInstructionBase<B, T, S>
+class LoadInstruction<B, T, S, LoadSynchronization::Acquire> : public LoadInstructionBase<B, T, S>, public ScopeModifier<>
 {
 public:
-	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), m_scope(scope) {}
+	using Scope = ScopeModifier<>::Scope;
+
+	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "ld"; }
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + ".acquire" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".acquire" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
-
-private:
-	Scope m_scope;
 };
 
 template<class T, class S>

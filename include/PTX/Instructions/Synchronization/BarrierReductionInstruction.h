@@ -51,7 +51,7 @@ template<class T, bool Assert = true>
 class BarrierReductionInstruction : public PredicatedInstruction
 {
 public:
-	REQUIRE_TYPE_PARAM(AbsoluteInstruction,
+	REQUIRE_TYPE_PARAM(BarrierReductionInstruction,
 		REQUIRE_EXACT(T, PredicateType, UInt32Type)
 	);
 

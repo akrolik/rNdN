@@ -1,9 +1,9 @@
 #pragma once
 
 #include "PTX/Instructions/PredicatedInstruction.h"
+#include "PTX/Instructions/Modifiers/ScopeModifier.h"
 
 #include "PTX/StateSpace.h"
-#include "PTX/Synchronization.h"
 #include "PTX/Operands/Address/Address.h"
 #include "PTX/Operands/Address/DereferencedAddress.h"
 #include "PTX/Operands/Variables/Register.h"
@@ -35,6 +35,13 @@ public:
 private:
 	const Address<B, T, S> *m_address = nullptr;
 	const Register<T> *m_register = nullptr;
+};
+
+enum class StoreSynchronization {
+	Weak,
+	Volatile,
+	Relaxed,
+	Release
 };
 
 template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak>
@@ -97,37 +104,35 @@ public:
 };
 
 template<Bits B, class T, class S>
-class StoreInstruction<B, T, S, StoreSynchronization::Relaxed> : public StoreInstructionBase<B, T, S>
+class StoreInstruction<B, T, S, StoreSynchronization::Relaxed> : public StoreInstructionBase<B, T, S>, public ScopeModifier<>
 {
 public:
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), m_scope(scope) {}
+	using Scope = ScopeModifier<>::Scope;
+
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "st"; }
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + ".relaxed" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".relaxed" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
-
-private:
-	Scope m_scope;
 };
 
 template<Bits B, class T, class S>
-class StoreInstruction<B, T, S, StoreSynchronization::Release> : public StoreInstructionBase<B, T, S>
+class StoreInstruction<B, T, S, StoreSynchronization::Release> : public StoreInstructionBase<B, T, S>, public ScopeModifier<>
 {
 public:
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), m_scope(scope) {}
+	using Scope = ScopeModifier<>::Scope;
+
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "st"; }
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + ".release" + ScopeString(m_scope) + S::Name() + T::Name();
+		return Mnemonic() + ".release" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
-
-private:
-	Scope m_scope;
 };
 
 template<class T, class S>
