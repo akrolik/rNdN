@@ -36,7 +36,7 @@ public:
 		return ".<unknown>";
 	}
 
-	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, unsigned int sourceB, unsigned int sourceC, unsigned int memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
+	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, uint32_t sourceB, uint32_t sourceC, uint32_t memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
 
 	static std::string Mnemonic() { return "shfl"; }
 
@@ -69,9 +69,9 @@ private:
 	const TypedOperand<T> *m_sourceA = nullptr;
 
 	Mode m_mode;
-	unsigned int m_sourceB = 0;
-	unsigned int m_sourceC = 0;
-	unsigned int m_memberMask = 0;
+	uint32_t m_sourceB = 0;
+	uint32_t m_sourceC = 0;
+	uint32_t m_memberMask = 0;
 };
 
 }

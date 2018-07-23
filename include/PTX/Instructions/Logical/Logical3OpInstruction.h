@@ -9,7 +9,7 @@ namespace PTX {
 class Logical3OpInstruction : public InstructionBase_3<Bit32Type>
 {
 public:
-	Logical3OpInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit32Type> *sourceC, unsigned char immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+	Logical3OpInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit32Type> *sourceC, uint8_t immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
 	static std::string Mnemonic() { return "lop3"; }
 
@@ -26,7 +26,7 @@ public:
 	}
 
 private:
-	// @unsigned char m_immLut
+	// @uint8_t m_immLut
 	//
 	// Computed look-up-table value for the 3 part boolean operation
 	//
@@ -40,7 +40,7 @@ private:
 	// compute the value of
 	//        0xF0 & 0xCC & 0xAA = 0x80
 
-	unsigned char m_immLut;
+	uint8_t m_immLut;
 };
 
 }
