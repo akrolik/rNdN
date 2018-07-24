@@ -103,7 +103,7 @@ class ResourceAllocator
 public:
 	ResourceAllocator() {}
 
-	std::vector<const PTX::VariableDeclaration *> GetRegisterDeclarations() const
+	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const
 	{
 		std::vector<const PTX::VariableDeclaration *> declarations;
 		for (const auto& resource : m_resourcesMap)
@@ -114,7 +114,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr) const
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr)
 	{
 		return GetResources<T>()->AllocateRegister(identifier, predicate);
 	}
@@ -143,13 +143,13 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<T> *AllocateTemporary() const
+	const PTX::Register<T> *AllocateTemporary()
 	{
 		return GetResources<T>()->AllocateTemporary();
 	}
 
 	template<class T>
-	const PTX::Register<T> *AllocateTemporary(const std::string& identifier) const
+	const PTX::Register<T> *AllocateTemporary(const std::string& identifier)
 	{
 		auto resources = GetResources<T>();
 		if (resources->ContainsTemporary(identifier))

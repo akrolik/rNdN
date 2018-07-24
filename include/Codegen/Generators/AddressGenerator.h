@@ -38,12 +38,12 @@ public:
 	using Generator::Generator;
 
 	template<class T, class S>
-	PTX::Address<B, T, S> *Generate(const PTX::Variable<T, S> *variable)
+	PTX::Address<B, T, S> *Generate(const PTX::Variable<T, S> *variable, unsigned int offset = 0)
 	{
 		// Get the base address from the variable
 
 		auto base = new PTX::PointerRegisterAdapter<B, T, S>(this->m_builder->template AllocateTemporary<PTX::UIntType<B>>());
-		auto baseAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(variable);
+		auto baseAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(variable, offset);
 
 		// Take the address of the variable using the move instruction
 

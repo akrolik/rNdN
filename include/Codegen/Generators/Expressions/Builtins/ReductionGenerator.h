@@ -75,7 +75,7 @@ public:
 	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8, void>
 	Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
-		// Create a shared memory declaration for the module
+		// Load the underlying data size from the kernel parameters
 
 		const std::string sizeName = "$size";
 		auto sizeDeclaration = new PTX::TypedVariableDeclaration<PTX::UInt64Type, PTX::ParameterSpace>(sizeName);
@@ -86,20 +86,12 @@ public:
 		auto size = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("size");
 		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::UInt64Type, PTX::ParameterSpace>(size, sizeAddress));
 
-		//TODO: Handle multiple shared declarations for a single module (they should use offsets)
-
-		auto sharedDeclaration = new PTX::TypedVariableDeclaration<PTX::ArrayType<T, PTX::DynamicSize>, PTX::SharedSpace>("sdata");
-		sharedDeclaration->SetAlignment(PTX::BitSize<T::TypeBits>::NumBytes);
-		sharedDeclaration->SetLinkDirective(PTX::Declaration::LinkDirective::External);
-		this->m_builder->AddExternalDeclaration(sharedDeclaration);
-
-		auto sharedMemory = new PTX::ArrayVariableAdapter<T, PTX::DynamicSize, PTX::SharedSpace>(sharedDeclaration->GetVariable("sdata"));
-		auto sharedMemoryAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(sharedMemory);
-
 		// Generate the address in shared memory for the thread
 
+		auto sharedMemoryAddress = this->m_builder->template AllocateSharedMemory<B, T>(512);
+
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory);
+		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), sharedMemoryAddress->GetOffset());
 
 		// Load the special registers used for checking bounds
 

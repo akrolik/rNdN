@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PTX/Operands/Variables/AddressableVariable.h"
 #include "PTX/Operands/Variables/Variable.h"
 
 namespace PTX {

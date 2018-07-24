@@ -11,6 +11,10 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Functions/FunctionDefinition.h"
+#include "PTX/Operands/Adapters/ArrayAdapter.h"
+#include "PTX/Operands/Adapters/VariableAdapter.h"
+#include "PTX/Operands/Address/Address.h"
+#include "PTX/Operands/Address/MemoryAddress.h"
 #include "PTX/Statements/BlankStatement.h"
 
 namespace Codegen {
@@ -113,7 +117,7 @@ public:
 		// Attach the resource declarations to the function. In PTX code, the declarations
 		// must come before use, and are typically grouped at the top of the function.
 
-		auto declarations = GetCurrentResources()->GetRegisterDeclarations();
+		auto declarations = GetCurrentResources()->GetDeclarations();
 		if (declarations.size() > 0)
 		{
 			InsertStatements(new PTX::BlankStatement(), 0);
@@ -179,6 +183,32 @@ public:
 		GetCurrentResources()->AddCompressedRegister<T>(identifier, value, predicate);
 	}
 
+	template<PTX::Bits B, class T>
+	const PTX::MemoryAddress<B, T, PTX::SharedSpace> *AllocateSharedMemory(unsigned int size)
+	{
+		if (m_sharedMemoryDeclaration == nullptr)
+		{
+			m_sharedMemoryDeclaration = new PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace>("sdata");
+			m_sharedMemoryDeclaration->SetLinkDirective(PTX::Declaration::LinkDirective::External);
+			AddExternalDeclaration(m_sharedMemoryDeclaration);
+		}
+
+		auto oldAlignment = m_sharedMemoryDeclaration->GetAlignment();
+		auto TAlignment = PTX::BitSize<T::TypeBits>::NumBytes;
+		if (TAlignment > oldAlignment)
+		{
+			m_sharedMemoryDeclaration->SetAlignment(TAlignment);
+		}
+
+		auto sharedMemoryBits = new PTX::ArrayVariableAdapter<PTX::Bit8Type, PTX::DynamicSize, PTX::SharedSpace>(m_sharedMemoryDeclaration->GetVariable("sdata"));
+		auto sharedMemory = new PTX::VariableAdapter<T, PTX::Bit8Type, PTX::SharedSpace>(sharedMemoryBits);
+		auto sharedMemoryAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(sharedMemory, m_sharedMemorySize);
+
+		m_sharedMemorySize += sizeof(typename T::SystemType) * size;
+
+		return sharedMemoryAddress;
+	}
+
 private:
 	PTX::StatementList *GetCurrentBlock() const
 	{
@@ -199,6 +229,9 @@ private:
 	std::unordered_map<PTX::Module *, std::set<PTX::Declaration *> *> m_externalDeclarations;
 	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;
 	std::vector<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
+
+	PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace> *m_sharedMemoryDeclaration = nullptr;
+	unsigned int m_sharedMemorySize = 0;
 };
 
 }
