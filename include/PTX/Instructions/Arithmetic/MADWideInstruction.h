@@ -5,14 +5,14 @@
 namespace PTX {
 
 template<class T, bool Assert = true>
-class MADWideInstruction : public InstructionBase_3<typename T::WideType, T>
+class MADWideInstruction : public InstructionBase_3<typename T::WideType, T, T, typename T::WideType>
 {
 public:
 	REQUIRE_TYPE_PARAM(MADWideInstruction,
 		REQUIRE_EXACT(T, Int16Type, Int32Type, UInt16Type, UInt32Type)
 	);
 
-	using InstructionBase_2<typename T::WideType, T>::InstructionBase_2;
+	using InstructionBase_3<typename T::WideType, T, T, typename T::WideType>::InstructionBase_3;
 
 	static std::string Mnemonic() { return "mad"; }
 
