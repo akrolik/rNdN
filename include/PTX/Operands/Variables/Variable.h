@@ -14,7 +14,7 @@ template<class TD, class TS, class S>
 class VariableAdapter;
 
 template<class T, class S>
-class VariableBase : public TypedOperand<T>
+class VariableBase : public virtual Operand
 {
 	friend class TypedVariableDeclaration<T, S>;
 

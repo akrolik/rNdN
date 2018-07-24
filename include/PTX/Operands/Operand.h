@@ -14,7 +14,7 @@ public:
 };
 
 template<class T>
-class TypedOperand : public Operand
+class TypedOperand : public virtual Operand
 {
 	REQUIRE_TYPE_PARAM(Operand,
 		REQUIRE_BASE(T, Type)

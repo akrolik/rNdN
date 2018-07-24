@@ -6,11 +6,16 @@
 namespace PTX {
 
 template<class T>
-class Variable<T, RegisterSpace> : public VariableBase<T, RegisterSpace>
+class Variable<T, RegisterSpace> : public VariableBase<T, RegisterSpace>, public TypedOperand<T>
 {
 	friend class TypedVariableDeclaration<T, SpecialRegisterSpace>;
 public:
 	using VariableBase<T, RegisterSpace>::VariableBase;
+
+	std::string ToString() const override
+	{
+		return VariableBase<T, RegisterSpace>::ToString();
+	}
 
 	json ToJSON() const override
 	{
