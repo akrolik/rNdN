@@ -52,7 +52,7 @@ public:
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
 	{
-		return OperandCompressionGenerator<B, PTX::IntType<S>>::UnaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, call);
 	}
 
 	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call) override

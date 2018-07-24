@@ -10,7 +10,6 @@
 
 namespace Codegen {
 
-template<PTX::Bits B, class T>
 class OperandCompressionGenerator : public HorseIR::ForwardTraversal, public Generator
 {
 public:
@@ -18,13 +17,13 @@ public:
 
 	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder *builder, const HorseIR::CallExpression *call) 
 	{
-		OperandCompressionGenerator<B, T> compGen(builder);
+		OperandCompressionGenerator compGen(builder);
 		return compGen.GetCompressionRegister(call->GetArgument(0));
 	}
 
 	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder *builder, const HorseIR::CallExpression *call)
 	{
-		OperandCompressionGenerator<B, T> compGen(builder);
+		OperandCompressionGenerator compGen(builder);
 		auto compression1 = compGen.GetCompressionRegister(call->GetArgument(0));
 		auto compression2 = compGen.GetCompressionRegister(call->GetArgument(1));
 
@@ -40,7 +39,8 @@ public:
 		{
 			return compression1;
 		}
-		BuiltinGenerator<B, T>::Unimplemented("compression registers differ and are non-null");
+		std::cerr << "[ERROR] Compression registers differ and are non-null" << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 
 	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(HorseIR::Expression *expression)

@@ -55,7 +55,7 @@ public:
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
 	{
-		return OperandCompressionGenerator<B, PTX::FloatType<S>>::BinaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
 	}
 
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override

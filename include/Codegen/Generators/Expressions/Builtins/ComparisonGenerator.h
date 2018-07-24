@@ -64,7 +64,10 @@ public:
 
 	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::PredicateType>(builder), m_comparisonOp(comparisonOp) {}
 
-	//TODO: Predicate
+	virtual const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call)
+	{
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
+	}
 
 	void Generate(const PTX::Register<PTX::PredicateType> *target, const HorseIR::CallExpression *call) override
 	{
@@ -131,7 +134,10 @@ public:
 
 	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_comparisonOp(comparisonOp) {}
 
-	//TODO: Predicate
+	virtual const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call)
+	{
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
+	}
 
 	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call) override
 	{

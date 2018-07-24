@@ -133,7 +133,7 @@ public:
 		// Check if there is a compression predicate on the input value. If so, mask out the
 		// initial load according to the predicate
 
-		OperandCompressionGenerator<B, T> compGen(this->m_builder);
+		OperandCompressionGenerator compGen(this->m_builder);
 		auto compress = compGen.GetCompressionRegister(call->GetArgument(0));
 
 		const PTX::TypedOperand<T> *src = nullptr;
