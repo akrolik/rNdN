@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
@@ -13,6 +15,7 @@
 #include "PTX/Instructions/DevInstruction.h"
 #include "PTX/Instructions/Arithmetic/AddInstruction.h"
 #include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
+#include "PTX/Instructions/Arithmetic/MADWideInstruction.h"
 #include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
 #include "PTX/Instructions/ControlFlow/BranchInstruction.h"
 #include "PTX/Instructions/Data/MoveAddressInstruction.h"
@@ -74,6 +77,15 @@ public:
 	{
 		// Create a shared memory declaration for the module
 
+		const std::string sizeName = "$size";
+		auto sizeDeclaration = new PTX::TypedVariableDeclaration<PTX::UInt64Type, PTX::ParameterSpace>(sizeName);
+		this->m_builder->AddParameter(sizeDeclaration);
+		auto sizeVariable = sizeDeclaration->GetVariable(sizeName);
+
+		auto sizeAddress = new PTX::MemoryAddress<B, PTX::UInt64Type, PTX::ParameterSpace>(sizeVariable);
+		auto size = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("size");
+		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::UInt64Type, PTX::ParameterSpace>(size, sizeAddress));
+
 		//TODO: Handle multiple shared declarations for a single module (they should use offsets)
 
 		auto sharedDeclaration = new PTX::TypedVariableDeclaration<PTX::ArrayType<T, PTX::DynamicSize>, PTX::SharedSpace>("sdata");
@@ -89,51 +101,83 @@ public:
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory);
 
+		// Load the special registers used for checking bounds
+
 		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
+
 		auto tidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("tidx");
+		auto tidxwide = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("tidx");
+		auto ctaidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("ctaidx");
+		auto ntidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("ntidx");
+
 		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
+		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
+		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
+
+		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::UInt64Type, PTX::UInt32Type>(tidxwide, tidx));
+
+		// Check if the thread is in bounds for the input data
+
+		auto position = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("pos");
+		this->m_builder->AddStatement(new PTX::MADWideInstruction<PTX::UInt32Type>(position, ctaidx, ntidx, tidxwide));
+
+		auto inputPredicate = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt64Type>(inputPredicate, position, size, PTX::UInt64Type::ComparisonOperator::Less));
 
 		// Get the initial value for reduction and store it in the shared memory
 
+		OperandGenerator<B, T> opGen(this->m_builder);
+
+		// Check if there is a compression predicate on the input value. If so, mask out the
+		// initial load according to the predicate
+
+		OperandCompressionGenerator<B, T> compGen(this->m_builder);
+		auto compress = compGen.GetCompressionRegister(call->GetArgument(0));
+
+		const PTX::TypedOperand<T> *src = nullptr;
 		if (m_reductionOp == ReductionOperation::Count)
 		{
 			// A count reduction is value agnostic performs a sum over 1's, one value for each active thread
 
-			auto temp = this->m_builder->template AllocateTemporary<T>();
-			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(temp, new PTX::Value<T>(1)));
-			this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedThreadAddress, temp));
+			src = new PTX::Value<T>(1);
 		}
 		else
 		{
-			// Other reductions combine the values together using some operation
+			// All other reductions use the value for the thread
 
-			OperandGenerator<B, T> opGen(this->m_builder);
-
-			// Check if there is a compression on the input value. If so, mask out the initial load
-			// according to the predicate
-
-			OperandCompressionGenerator<B, T> compGen(this->m_builder);
-			auto compress = compGen.GetCompressionRegister(call->GetArgument(0));
-
-			const PTX::Register<T> *value = nullptr;
-			if (compress == nullptr)
-			{
-				value = opGen.GenerateRegister(call->GetArgument(0));
-			}
-			else
-			{
-				auto src = opGen.GenerateOperand(call->GetArgument(0));
-				auto temp = this->m_builder->template AllocateTemporary<T>();
-
-				//TODO: Initial value depends on the type of reduction
-				this->m_builder->AddStatement(new PTX::SelectInstruction<T>(temp, src, new PTX::Value<T>(0), compress));
-				value = temp;
-			}
-
-			// Load the initial value into shared memory
-
-			this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedThreadAddress, value));
+			src = opGen.GenerateOperand(call->GetArgument(0));
 		}
+
+		// Select the initial value for the reduction depending on the data size and compression mask
+
+		auto value = this->m_builder->template AllocateTemporary<T>();
+
+		if (compress == nullptr)
+		{
+			// If no compression is active, select between the source and the null value depending on the compression
+
+			this->m_builder->AddStatement(new PTX::SelectInstruction<T>(value, src, GenerateNullValue(m_reductionOp), inputPredicate));
+		}
+		else
+		{
+			// If the input is within range, select between the source and null values depending on the compression
+
+			auto s1 = new PTX::SelectInstruction<T>(value, src, GenerateNullValue(m_reductionOp), compress);
+			s1->SetPredicate(inputPredicate);
+			this->m_builder->AddStatement(s1);
+
+			// If the input is out of range, set the index to the null value
+
+			auto s2 = new PTX::MoveInstruction<T>(value, GenerateNullValue(m_reductionOp));
+			s2->SetPredicate(inputPredicate, true);
+			this->m_builder->AddStatement(s2);
+		}
+
+		// Load the initial value into shared memory
+
+		this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedThreadAddress, value));
 
 		// Synchronize the thread group for a consistent view of shared memory
 
@@ -141,10 +185,10 @@ public:
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
 
-		//TODO: Reduce according to the number of elements, not all 512
-
+		const unsigned int NumThreads = 512;
 		const unsigned int WARP_SIZE = 32;
-		for (unsigned int i = 256; i >= WARP_SIZE; i >>= 1)
+
+		for (unsigned int i = (NumThreads >> 1); i >= WARP_SIZE; i >>= 1)
 		{
 			// At each level, half the threads become inactive
 
@@ -160,14 +204,14 @@ public:
 			this->m_builder->AddStatement(branch);
 			this->m_builder->AddStatement(new PTX::BlankStatement());
 
-			if (i == WARP_SIZE)
+			if (i <= WARP_SIZE)
 			{
 				// Once the active thread count fits within a warp, reduce without synchronization
 
 				label->SetName("RED_STORE");
-				for (unsigned int i = WARP_SIZE; i >= 1; i >>= 1)
+				for (unsigned int j = i; j >= 1; j >>= 1)
 				{
-					GenerateReduction(sharedThreadAddress, i);
+					GenerateReduction(sharedThreadAddress, j);
 				}
 			}
 			else
@@ -202,6 +246,23 @@ public:
 	}
 
 private:
+	static const PTX::Value<T> *GenerateNullValue(ReductionOperation reductionOp)
+	{
+		switch (reductionOp)
+		{
+			case ReductionOperation::Count:
+			case ReductionOperation::Average:
+			case ReductionOperation::Sum:
+				return new PTX::Value<T>(0);
+			case ReductionOperation::Minimum:
+				return new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
+			case ReductionOperation::Maximum:
+				return new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::min());
+			default:
+				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(reductionOp));
+		}
+	}
+
 	void GenerateReduction(const PTX::Address<B, T, PTX::SharedSpace> *address, unsigned int offset)
 	{
 		// Load the 2 values for this stage of the reduction into registers using the provided offset. Volatile
