@@ -14,6 +14,11 @@ KernelInvocation::~KernelInvocation()
 	::operator delete(m_parameters);
 }
 
+void KernelInvocation::SetParam(unsigned int index, Constant &value)
+{
+	((void **)m_parameters)[index] = value.GetAddress();
+}
+
 void KernelInvocation::SetParam(unsigned int index, Buffer &buffer)
 {
 	((void **)m_parameters)[index] = &buffer.GetGPUBuffer();

@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 
 #include "CUDA/Buffer.h"
+#include "CUDA/Constant.h"
 #include "CUDA/Kernel.h"
 
 namespace CUDA {
@@ -28,6 +29,7 @@ public:
 		m_blocksZ = z;
 	}
 
+	void SetParam(unsigned int index, Constant &value);
 	void SetParam(unsigned int index, Buffer &buffer);
 	void SetSharedMemorySize(unsigned int bytes) { m_sharedMemorySize = bytes; }
 
