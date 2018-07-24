@@ -154,6 +154,49 @@ struct BitTypeBase : ScalarType
 		}
 		return ".<unknown>";
 	}
+
+	enum class AtomicOperation {
+		And,
+		Or,
+		Xor,
+		Exchange
+	};
+
+	static std::string AtomicOperationString(AtomicOperation atomicOperation)
+	{
+		switch (atomicOperation)
+		{
+			case AtomicOperation::And:
+				return ".and";
+			case AtomicOperation::Or:
+				return ".or";
+			case AtomicOperation::Xor:
+				return ".xor";
+			case AtomicOperation::Exchange:
+				return ".exch";
+		}
+		return ".<unknown>";
+	}
+
+	enum class ReductionOperation {
+		And,
+		Or,
+		Xor
+	};
+
+	static std::string ReductionOperationString(ReductionOperation reductionOperation)
+	{
+		switch (reductionOperation)
+		{
+			case ReductionOperation::And:
+				return ".and";
+			case ReductionOperation::Or:
+				return ".or";
+			case ReductionOperation::Xor:
+				return ".xor";
+		}
+		return ".<unknown>";
+	}
 };
 
 template<>
@@ -240,6 +283,39 @@ struct IntTypeBase : BitType<B, N>
 		}
 		return ".<unknown>";
 	}
+
+	enum class AtomicOperation {
+		Add,
+		Increment,
+		Decrement,
+		Minimum,
+		Maximum
+	};
+
+	static std::string AtomicOperationString(AtomicOperation atomicOperation)
+	{
+		switch (atomicOperation)
+		{
+			case AtomicOperation::Add:
+				return ".add";
+			case AtomicOperation::Increment:
+				return ".inc";
+			case AtomicOperation::Decrement:
+				return ".dec";
+			case AtomicOperation::Minimum:
+				return ".min";
+			case AtomicOperation::Maximum:
+				return ".max";
+		}
+		return ".<unknown>";
+	}
+
+	using ReductionOperation = AtomicOperation;
+
+	static std::string ReductionOperationString(ReductionOperation reductionOperation)
+	{
+		return AtomicOperationString(reductionOperation);
+	}
 };
 
 template<>
@@ -323,6 +399,39 @@ struct UIntTypeBase : BitType<B, N>
 				return ".hs";
 		}
 		return ".<unknown>";
+	}
+
+	enum class AtomicOperation {
+		Add,
+		Increment,
+		Decrement,
+		Minimum,
+		Maximum
+	};
+
+	static std::string AtomicOperationString(AtomicOperation atomicOperation)
+	{
+		switch (atomicOperation)
+		{
+			case AtomicOperation::Add:
+				return ".add";
+			case AtomicOperation::Increment:
+				return ".inc";
+			case AtomicOperation::Decrement:
+				return ".dec";
+			case AtomicOperation::Minimum:
+				return ".min";
+			case AtomicOperation::Maximum:
+				return ".max";
+		}
+		return ".<unknown>";
+	}
+
+	using ReductionOperation = AtomicOperation;
+
+	static std::string ReductionOperationString(ReductionOperation reductionOperation)
+	{
+		return AtomicOperationString(reductionOperation);
 	}
 };
 
@@ -448,6 +557,39 @@ struct FloatTypeBase : BitType<B, N>
 		}
 		return ".<unknown>";
 	}
+
+	enum class AtomicOperation {
+		Add,
+		Increment,
+		Decrement,
+		Minimum,
+		Maximum
+	};
+
+	static std::string AtomicOperationString(AtomicOperation atomicOperation)
+	{
+		switch (atomicOperation)
+		{
+			case AtomicOperation::Add:
+				return ".add";
+			case AtomicOperation::Increment:
+				return ".inc";
+			case AtomicOperation::Decrement:
+				return ".dec";
+			case AtomicOperation::Minimum:
+				return ".min";
+			case AtomicOperation::Maximum:
+				return ".max";
+		}
+		return ".<unknown>";
+	}
+
+	using ReductionOperation = AtomicOperation;
+
+	static std::string ReductionOperationString(ReductionOperation reductionOperation)
+	{
+		return AtomicOperationString(reductionOperation);
+	}
 };
 
 template<unsigned int N>
@@ -531,6 +673,27 @@ struct FloatTypeBase<Bits::Bits16, N> : BitType<Bits::Bits16, N>
 				return ".nan";
 		}
 		return ".<unknown>";
+	}
+
+	enum class AtomicOperation {
+		Add
+	};
+
+	static std::string AtomicOperationString(AtomicOperation atomicOperation)
+	{
+		switch (atomicOperation)
+		{
+			case AtomicOperation::Add:
+				return ".add.noftz";
+		}
+		return ".<unknown>";
+	}
+
+	using ReductionOperation = AtomicOperation;
+
+	static std::string ReductionOperationString(ReductionOperation reductionOperation)
+	{
+		return AtomicOperationString(reductionOperation);
 	}
 };
 

@@ -14,7 +14,7 @@ template<class T>
 class VoteInstructionBase : public PredicatedInstruction
 {
 public:
-	VoteInstructionBase(const Register<T> *destination, const TypedOperand<PTX::PredicateType> *sourcePredicate, uint32_t memberMask, bool negateSourcePredicate = false) : m_destination(destination), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_memberMask(memberMask) {}
+	VoteInstructionBase(const Register<T> *destination, const TypedOperand<PredicateType> *sourcePredicate, uint32_t memberMask, bool negateSourcePredicate = false) : m_destination(destination), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_memberMask(memberMask) {}
 
 	std::vector<const Operand *> Operands() const override
 	{
@@ -34,7 +34,7 @@ public:
 
 protected:                
 	const Register<T> *m_destination = nullptr;
-	const TypedOperand<PTX::PredicateType> *m_sourcePredicate = nullptr;
+	const TypedOperand<PredicateType> *m_sourcePredicate = nullptr;
 	bool m_negateSourcePredicate = false;
 	uint32_t m_memberMask = 0;
 };
@@ -88,7 +88,7 @@ public:
 		return ".<unknown>";
 	}
 
-	VoteInstruction(const Register<PredicateType> *destination, const TypedOperand<PTX::PredicateType> *sourcePredicate, uint32_t memberMask, Mode mode, bool negateSourcePredicate = false) : VoteInstructionBase<PredicateType>(destination, sourcePredicate, negateSourcePredicate, memberMask), m_mode(mode) {}
+	VoteInstruction(const Register<PredicateType> *destination, const TypedOperand<PredicateType> *sourcePredicate, uint32_t memberMask, Mode mode, bool negateSourcePredicate = false) : VoteInstructionBase<PredicateType>(destination, sourcePredicate, negateSourcePredicate, memberMask), m_mode(mode) {}
 
 	static std::string Mnemonic() { return "vote.sync"; }
 
