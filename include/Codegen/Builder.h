@@ -130,16 +130,16 @@ public:
 	template<class T>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		for (const auto& scope : m_scopes)
+		for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
 		{
-			auto resources = GetCurrentResources();
+			auto resources = std::get<1>(*it);
 			if (resources->ContainsKey<T>(identifier))
 			{
 				return resources->GetRegister<T>(identifier);
 			}
 		}
 
-		std::cerr << "[ERROR] PTX::Register(" << identifier << ") not found" << std::endl;
+		std::cerr << "[ERROR] PTX::Register(" << identifier << ", " << T::Name() << ") not found" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
