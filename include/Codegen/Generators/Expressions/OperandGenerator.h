@@ -7,15 +7,18 @@
 #include "HorseIR/Tree/Expressions/Literal.h"
 #include "HorseIR/Tree/Types/Type.h"
 
-#include "PTX/Instructions/Data/ConvertInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
+#include "PTX/Instructions/Data/PackInstruction.h"
 #include "PTX/Instructions/Data/UnpackInstruction.h"
+#include "PTX/Operands/BracedOperand.h"
 #include "PTX/Operands/Value.h"
 #include "PTX/Operands/Adapters/BitAdapter.h"
+#include "PTX/Operands/Variables/BracedRegister.h"
 #include "PTX/Operands/Variables/SinkRegister.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 
 namespace Codegen {
 
@@ -49,13 +52,18 @@ public:
 		auto reg = this->m_builder->template AllocateTemporary<T>();
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
 		{
+			auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({
+				new PTX::Bit8Adapter<PTX::IntType>(operand),
+				new PTX::Value<PTX::Bit8Type>(0)
+			});
 			auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({
 				new PTX::Bit8RegisterAdapter<PTX::IntType>(reg),
 				new PTX::SinkRegister<PTX::Bit8Type>
 			});
+			auto temp = this->m_builder->template AllocateTemporary<PTX::Bit16Type>();
 
-			//TODO: Implement 8 bit moves, see if fill could use some help
-			// this->m_builder->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, operand));
+			this->m_builder->AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
+			this->m_builder->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
 		}
 		else
 		{
@@ -78,46 +86,8 @@ public:
 		}
 		else
 		{
-			//TODO: Implement conversion matrix, think about having destination and source generators
-
 			auto source = this->m_builder->GetRegister<S>(identifier->GetString());
-			if constexpr(std::is_same<PTX::BitType<S::TypeBits>, T>::value)
-			{
-				if constexpr(PTX::is_type_specialization<S, PTX::FloatType>::value)
-				{
-					m_operand = new PTX::BitRegisterAdapter<PTX::FloatType, S::TypeBits>(source);
-				}
-				else if constexpr(PTX::is_type_specialization<S, PTX::IntType>::value)
-				{
-					m_operand = new PTX::BitRegisterAdapter<PTX::IntType, S::TypeBits>(source);
-				}
-				else if constexpr(PTX::is_type_specialization<S, PTX::UIntType>::value)
-				{
-					m_operand = new PTX::BitRegisterAdapter<PTX::UIntType, S::TypeBits>(source);
-				}
-			}
-			else if constexpr(PTX::ConvertInstruction<T, S, false>::TypeSupported)
-			{
-				auto converted = this->m_builder->AllocateTemporary<T>();
-				auto convertInstruction = new PTX::ConvertInstruction<T, S>(converted, source);
-
-				// If a rounding mode is supported by the convert instruction, then it
-				// is actually required!
-
-				if constexpr(PTX::ConvertRoundingModifier<T, S>::Enabled)
-				{
-					convertInstruction->SetRoundingMode(PTX::ConvertRoundingModifier<T, S>::RoundingMode::Nearest);
-				}
-
-				this->m_builder->AddStatement(convertInstruction);
-				m_operand = converted;
-			}
-		}
-		
-		if (m_operand == nullptr)
-		{
-			std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + T::Name() << std::endl;
-			std::exit(EXIT_FAILURE);
+			m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, source);
 		}
 		m_register = true;
 	}
