@@ -159,7 +159,8 @@ struct BitTypeBase : ScalarType
 		And,
 		Or,
 		Xor,
-		Exchange
+		Exchange,
+		CompareAndSwap
 	};
 
 	static std::string AtomicOperationString(AtomicOperation atomicOperation)
@@ -174,6 +175,8 @@ struct BitTypeBase : ScalarType
 				return ".xor";
 			case AtomicOperation::Exchange:
 				return ".exch";
+			case AtomicOperation::CompareAndSwap:
+				return ".cas";
 		}
 		return ".<unknown>";
 	}

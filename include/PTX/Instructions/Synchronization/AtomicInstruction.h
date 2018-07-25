@@ -74,7 +74,7 @@ protected:
 	Synchronization m_synchronization = Synchronization::None;
 };
 
-template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
+template<Bits B, class T, class S, typename T::AtomicOperation Op, bool Assert = true>
 class AtomicInstruction : public AtomicInstructionBase<B, T, S>
 {
 public:
@@ -91,28 +91,18 @@ public:
 		REQUIRE_EXACT(S, AddressableSpace, GlobalSpace, SharedSpace)
 	);
 
-	using Scope = ScopeModifier<false>::Scope;
-	using Synchronization = typename AtomicInstructionBase<B, T, S>::Synchronization;
-	using AtomicOperation = typename T::AtomicOperation;
-
-	AtomicInstruction(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *value, typename T::AtomicOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : AtomicInstructionBase<B, T, S>(destination, address, value, synchronization, scope), m_operation(operation) {}
-
-	AtomicOperation GetAtomicOperation() const { return m_operation; }
-	void SetAtomicOperation(AtomicOperation operation) { m_operation = operation; }
+	using AtomicInstructionBase<B, T, S>::AtomicInstructionBase;
 
 	static std::string Mnemonic() { return "atom"; }
 
 	std::string OpCode() const override
 	{
-		return AtomicInstructionBase<B, T, S>::OpCode() + T::AtomicOperationString(m_operation) + T::Name();
+		return AtomicInstructionBase<B, T, S>::OpCode() + T::AtomicOperationString(Op) + T::Name();
 	}
-
-private:
-	AtomicOperation m_operation;
 };
 
-template<Bits B, class T, class S, bool Assert = true>
-class AtomicCASInstruction : public AtomicInstructionBase<B, T, S>
+template<Bits B, class T, class S, bool Assert>
+class AtomicInstruction<B, T, S, T::AtomicOperation::CompareAndSwap, Assert> : public AtomicInstructionBase<B, T, S>
 {
 public:
 	REQUIRE_TYPE_PARAM(AtomicInstruction,
@@ -128,7 +118,7 @@ public:
 	using Scope = ScopeModifier<false>::Scope;
 	using Synchronization = typename AtomicInstructionBase<B, T, S>::Synchronization;
 
-	AtomicCASInstruction(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : AtomicInstructionBase<B, T, S>(destination, address, sourceB, synchronization, scope), m_sourceC(sourceC) {}
+	AtomicInstruction(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : AtomicInstructionBase<B, T, S>(destination, address, sourceB, synchronization, scope), m_sourceC(sourceC) {}
 
 	const TypedOperand<T> *GetSourceC() const { return m_sourceC; }
 	void SetSourceC(const TypedOperand<T> *source) { m_sourceC = source; }
@@ -137,16 +127,23 @@ public:
 
 	std::string OpCode() const override
 	{
-		return AtomicInstructionBase<B, T, S>::OpCode() + ".cas" + T::Name();
+		return AtomicInstructionBase<B, T, S>::OpCode() + T::AtomicOperationString(T::AtomicOperation::CompareAndSwap) + T::Name();
+	}
+
+	std::vector<const Operand *> Operands() const override
+	{
+		auto operands = AtomicInstructionBase<B, T, S>::Operands();
+		operands.push_back(m_sourceC);
+		return operands;
 	}
 
 private:
 	const TypedOperand<T> *m_sourceC = nullptr;
 };
 
-template<class T, class S>
-using Atomic32Instruction = AtomicInstruction<Bits::Bits32, T, S>;
-template<class T, class S>
-using Atomic64Instruction = AtomicInstruction<Bits::Bits64, T, S>;
+template<class T, class S, typename T::AtomicOperation Op>
+using Atomic32Instruction = AtomicInstruction<Bits::Bits32, T, S, Op>;
+template<class T, class S, typename T::AtomicOperation Op>
+using Atomic64Instruction = AtomicInstruction<Bits::Bits64, T, S, Op>;
 
 }
