@@ -6,6 +6,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "PTX/StateSpace.h"
@@ -93,30 +94,21 @@ public:
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), sharedMemoryAddress->GetOffset());
 
-		// Load the special registers used for checking bounds
+		// Load the thread indexes
 
-		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
-		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
+		IndexGenerator indexGen(this->m_builder);
+		auto localIndex = indexGen.GenerateLocalIndex();
+		auto globalIndex = indexGen.GenerateGlobalIndex();
 
-		auto tidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("tidx");
-		auto tidxwide = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("tidx");
-		auto ctaidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("ctaidx");
-		auto ntidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("ntidx");
+		// Some operations require a 64-bit value for comparison
 
-		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
-		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
-		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
-
-		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::UInt64Type, PTX::UInt32Type>(tidxwide, tidx));
+		auto globalIndex64 = this->m_builder->template AllocateTemporary<PTX::UInt64Type>();
+		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::UInt64Type, PTX::UInt32Type>(globalIndex64, globalIndex));
 
 		// Check if the thread is in bounds for the input data
 
-		auto position = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("pos");
-		this->m_builder->AddStatement(new PTX::MADWideInstruction<PTX::UInt32Type>(position, ctaidx, ntidx, tidxwide));
-
 		auto inputPredicate = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt64Type>(inputPredicate, position, size, PTX::UInt64Type::ComparisonOperator::Less));
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt64Type>(inputPredicate, globalIndex64, size, PTX::UInt64Type::ComparisonOperator::Less));
 
 		// Get the initial value for reduction and store it in the shared memory
 
@@ -192,7 +184,7 @@ public:
 
 			// Check to see if we are an active thread
 
-			this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, tidx, guard, PTX::UInt32Type::ComparisonOperator::Higher));
+			this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, localIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher));
 			this->m_builder->AddStatement(branch);
 			this->m_builder->AddStatement(new PTX::BlankStatement());
 
@@ -228,7 +220,7 @@ public:
 		auto branchEnd = new PTX::BranchInstruction(labelEnd);
 		branchEnd->SetPredicate(predEnd);
 
-		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predEnd, tidx, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predEnd, localIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 		this->m_builder->AddStatement(branchEnd);
 		this->m_builder->AddStatement(new PTX::BlankStatement());
 

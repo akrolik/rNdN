@@ -4,6 +4,8 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Codegen/Generators/IndexGenerator.h"
+
 #include "Codegen/Builder.h"
 
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
@@ -75,16 +77,11 @@ private:
 	template<class T, class S>
 	PTX::Address<B, T, S> *GenerateBase(const PTX::PointerRegisterAdapter<B, T, S> *base)
 	{
-		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto tidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>("tidx");
-
 		auto offset = this->m_builder->template AllocateTemporary<PTX::UIntType<B>>();
 		auto address = this->m_builder->template AllocateTemporary<PTX::UIntType<B>>();
 
-		// We cannot operate directly on special registers, so they must first be copied
-		// to a use defined register
-		
-		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
+		IndexGenerator indexGen(this->m_builder);
+		auto index = indexGen.GenerateGlobalIndex();
 
 		// Compute offset from the base address using the thread id and the data size
 
@@ -96,7 +93,7 @@ private:
 
 			this->m_builder->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
 				new PTX::Bit32RegisterAdapter<PTX::UIntType>(offset),
-				new PTX::Bit32RegisterAdapter<PTX::UIntType>(tidx),
+				new PTX::Bit32RegisterAdapter<PTX::UIntType>(index),
 				new PTX::UInt32Value(std::log2(PTX::BitSize<T::TypeBits>::NumBytes))
 			));
 		}
@@ -106,7 +103,7 @@ private:
 			// id and the data size. A wide multiplication extends the result past the 32-bit
 			// size of both operands
 
-			this->m_builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(offset, tidx, new PTX::UInt32Value(PTX::BitSize<T::TypeBits>::NumBytes)));
+			this->m_builder->AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(offset, index, new PTX::UInt32Value(PTX::BitSize<T::TypeBits>::NumBytes)));
 		}
 
 		// Sum the base and the offset to create the full address for the thread and store the value in a register
