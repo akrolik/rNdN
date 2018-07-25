@@ -149,10 +149,10 @@ public:
 	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		auto block = new PTX::BlockStatement();
-		auto resources = this->m_builder->OpenScope(block);
 		this->m_builder->AddStatement(block);
+		this->m_builder->OpenScope(block);
 
-		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
+		auto temp = this->m_builder->template AllocateTemporary<PTX::Int16Type>();
 
 		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
 		gen.Generate(temp, call);
@@ -177,10 +177,10 @@ template<template<class, bool = true> class Op>
 void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 {
 	auto block = new PTX::BlockStatement();
-	auto resources = this->m_builder->OpenScope(block);
 	this->m_builder->AddStatement(block);
+	this->m_builder->OpenScope(block);
 
-	auto temp = resources->template AllocateTemporary<T>();
+	auto temp = this->m_builder->template AllocateTemporary<T>();
 	GenerateInstruction<Op>(temp, src1, src2);
 
 	UnaryGenerator<B, T> gen(this->m_builder, UnaryOperation::Not);

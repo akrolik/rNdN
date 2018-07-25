@@ -11,6 +11,7 @@
 #include "PTX/Instructions/Comparison/SelectInstruction.h"
 #include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
+#include "PTX/Statements/BlockStatement.h"
 
 namespace Codegen {
 
@@ -157,13 +158,13 @@ public:
 	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder->AddStatement(block);
-		auto resources = this->m_builder->OpenScope(block);
+		this->m_builder->OpenScope(block);
 
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src = opGen.GenerateOperand(call->GetArgument(0));
 
-		auto tempP = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto tempQ = resources->template AllocateTemporary<PTX::PredicateType>();
+		auto tempP = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		auto tempQ = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
 
 		ComparisonGenerator<B, PTX::PredicateType> gen1(this->m_builder, ComparisonOperator::Equal);
 		gen1.template Generate<T>(tempP, src, new PTX::Value<T>(0));

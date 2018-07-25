@@ -60,35 +60,10 @@ public:
 
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override
 	{
-		if (m_binaryOp == ExternalBinaryOperation::Logarithm)
-		{
-			auto block = new PTX::BlockStatement();
-			this->m_builder->AddStatement(block);
-			auto resources = this->m_builder->OpenScope(block);
-
-			OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
-			auto base = opGen.GenerateRegister(call->GetArgument(0));
-			auto value = opGen.GenerateRegister(call->GetArgument(1));
-
-			auto temp1 = resources->template AllocateTemporary<PTX::FloatType<S>>();
-			auto temp2 = resources->template AllocateTemporary<PTX::FloatType<S>>();
-
-			ExternalUnaryGenerator<B, PTX::FloatType<S>> gen(this->m_builder, ExternalUnaryOperation::Logarithm);
-			gen.Generate(temp1, base);
-			gen.Generate(temp2, value);
-
-			BinaryGenerator<B, PTX::FloatType<S>> gendiv(this->m_builder, BinaryOperation::Divide);
-			gendiv.Generate(target, temp1, temp2);
-
-			this->m_builder->CloseScope();
-		}
-		else
-		{
-			OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
-			auto src1 = opGen.GenerateRegister(call->GetArgument(0));
-			auto src2 = opGen.GenerateRegister(call->GetArgument(1));
-			Generate(target, src1, src2);
-		}
+		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
+		auto src1 = opGen.GenerateRegister(call->GetArgument(0));
+		auto src2 = opGen.GenerateRegister(call->GetArgument(1));
+		Generate(target, src1, src2);
 	}
 
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src1, const PTX::Register<PTX::BitType<S>> *src2)
@@ -97,25 +72,40 @@ public:
 		this->m_builder->AddStatement(block);
 		this->m_builder->OpenScope(block);
 
-		PTX::ExternalMathFunctions::BinaryFunction<S> *function = GetFunction(m_binaryOp);
-		this->m_builder->AddExternalDeclaration(function);
+		if (m_binaryOp == ExternalBinaryOperation::Logarithm)
+		{
+			auto temp1 = this->m_builder->template AllocateTemporary<PTX::FloatType<S>>();
+			auto temp2 = this->m_builder->template AllocateTemporary<PTX::FloatType<S>>();
 
-		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 3);
-		this->m_builder->AddStatement(paramDeclaration);
-		this->m_builder->AddStatement(new PTX::BlankStatement());
+			ExternalUnaryGenerator<B, PTX::FloatType<S>> gen(this->m_builder, ExternalUnaryOperation::Logarithm);
+			gen.Generate(temp1, src1);
+			gen.Generate(temp2, src2);
 
-		auto paramIn1 = paramDeclaration->GetVariable("$temp", 0);
-		auto paramIn2 = paramDeclaration->GetVariable("$temp", 1);
-		auto paramOut = paramDeclaration->GetVariable("$temp", 2);
+			BinaryGenerator<B, PTX::FloatType<S>> gendiv(this->m_builder, BinaryOperation::Divide);
+			gendiv.Generate(target, temp1, temp2);
+		}
+		else
+		{
+			PTX::ExternalMathFunctions::BinaryFunction<S> *function = GetFunction(m_binaryOp);
+			this->m_builder->AddExternalDeclaration(function);
 
-		auto addressIn1 = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramIn1);
-		auto addressIn2 = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramIn2);
-		auto addressOut = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramOut);
+			auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 3);
+			this->m_builder->AddStatement(paramDeclaration);
+			this->m_builder->AddStatement(new PTX::BlankStatement());
 
-		this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn1, src1));
-		this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn2, src2));
-		this->m_builder->AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::BinaryFunction<S>::Signature>(function, paramOut, paramIn1, paramIn2));
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
+			auto paramIn1 = paramDeclaration->GetVariable("$temp", 0);
+			auto paramIn2 = paramDeclaration->GetVariable("$temp", 1);
+			auto paramOut = paramDeclaration->GetVariable("$temp", 2);
+
+			auto addressIn1 = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramIn1);
+			auto addressIn2 = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramIn2);
+			auto addressOut = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramOut);
+
+			this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn1, src1));
+			this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn2, src2));
+			this->m_builder->AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::BinaryFunction<S>::Signature>(function, paramOut, paramIn1, paramIn2));
+			this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
+		}
 
 		this->m_builder->CloseScope();
 	}

@@ -115,9 +115,10 @@ public:
 	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		auto block = new PTX::BlockStatement();
-		auto resources = this->m_builder->OpenScope(block);
+		this->m_builder->AddStatement(block);
+		this->m_builder->OpenScope(block);
 
-		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
+		auto temp = this->m_builder->template AllocateTemporary<PTX::Int16Type>();
 
 		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
 		gen.Generate(temp, call);
@@ -125,7 +126,6 @@ public:
 		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
 
 		this->m_builder->CloseScope();
-		this->m_builder->AddStatement(block);
 	}
 
 private:
