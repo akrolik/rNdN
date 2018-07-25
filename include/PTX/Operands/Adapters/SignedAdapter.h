@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<Bits B, class S>
-class SignedVariableAdapter : public VariableAdapter<IntType<B>, UIntType<B>, class S>
+class SignedVariableAdapter : public VariableAdapter<IntType<B>, UIntType<B>, S>
 {
 public:
 	using VariableAdapter<IntType<B>, UIntType<B>, S>::VariableAdapter;

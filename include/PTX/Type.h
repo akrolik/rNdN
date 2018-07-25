@@ -43,6 +43,20 @@ struct is_rounding_type : std::false_type {};
 template <class T>
 struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
 
+// @struct is_bit_type
+//
+// Type trait for determining if a PTX::Type is a bit type
+
+template<Bits, unsigned int> struct BitType;
+
+template <class T, typename E = void>
+struct is_bit_type : std::false_type {};
+
+template <class T>
+struct is_bit_type<T, std::enable_if_t<
+	is_type_specialization<T, BitType>::value
+>> : std::true_type {};
+
 // @struct is_int_type
 //
 // Type trait for determining if a PTX::Type is an integer (signed or unsigned) type
@@ -57,6 +71,22 @@ template <class T>
 struct is_int_type<T, std::enable_if_t<
 	is_type_specialization<T, IntType>::value ||
 	is_type_specialization<T, UIntType>::value
+>> : std::true_type {};
+
+template <class T, typename E = void>
+struct is_unsigned_int_type : std::false_type {};
+
+template <class T>
+struct is_unsigned_int_type<T, std::enable_if_t<
+	is_type_specialization<T, UIntType>::value
+>> : std::true_type {};
+
+template <class T, typename E = void>
+struct is_signed_int_type : std::false_type {};
+
+template <class T>
+struct is_signed_int_type<T, std::enable_if_t<
+	is_type_specialization<T, IntType>::value
 >> : std::true_type {};
 
 // @struct is_float_type
