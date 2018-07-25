@@ -25,15 +25,21 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	LoadInstructionBase(const Register<T> *reg, const Address<B, T, S> *address) : m_register(reg), m_address(address) {}
+	LoadInstructionBase(const Register<T> *destination, const Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
+
+	const Register<T> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
 
 	std::vector<const Operand *> Operands() const override
 	{
-		return { m_register, new DereferencedAddress<B, T, S>(m_address) };
+		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
 
 private:
-	const Register<T> *m_register = nullptr;
+	const Register<T> *m_destination = nullptr;
 	const Address<B, T, S> *m_address = nullptr;
 };
 
@@ -75,6 +81,9 @@ public:
 	}
 
 	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All) : LoadInstructionBase<B, T, S>(reg, address), m_cacheOperator(cacheOperator) {}
+
+	CacheOperator GetCacheOperator() const { return m_cacheOperator; }
+	void SetCacheOperator(CacheOperator cacheOperator) { m_cacheOperator = cacheOperator; }
 
 	static std::string Mnemonic() { return "ld"; }
 

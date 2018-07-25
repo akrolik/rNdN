@@ -22,6 +22,12 @@ public:
 
 	MoveInstruction(const Register<T> *destination, const TypedOperand<T> *source) : m_destination(destination), m_source(source) {}
 
+	const Register<T> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+
+	const TypedOperand<T> *GetSource() const { return m_source; }
+	void SetSource(const TypedOperand<T> *source) { m_source = source; }
+
 	static std::string Mnemonic() { return "mov"; }
 
 	std::string OpCode() const override

@@ -10,9 +10,15 @@ namespace PTX {
 class BranchIndexInstruction : public PredicatedInstruction, public UniformModifier
 {
 public:
-	BranchIndexInstruction(const Register<UInt32Type> *index, const std::vector<Label *>& labels, bool uniform = false) : UniformModifier(uniform), m_index(index), m_labels(labels) {}
+	BranchIndexInstruction(const Register<UInt32Type> *index, const std::vector<const Label *>& labels, bool uniform = false) : UniformModifier(uniform), m_index(index), m_labels(labels) {}
 
 	static std::string Mnemonic() { return "brx.idx"; }
+
+	const Register<UInt32Type> *GetIndex() const { return m_index; }
+	void SetIndex(const Register<UInt32Type> *index) { m_index = index; }
+
+	const std::vector<const Label *>& GetLabels() const { return m_labels; }
+	void SetLabels(const std::vector<const Label *>& labels) { m_labels = labels; }
 
 	std::string OpCode() const override
 	{
@@ -31,7 +37,7 @@ public:
 
 private:
 	const Register<UInt32Type> *m_index = nullptr;
-	const std::vector<Label *> m_labels;
+	std::vector<const Label *> m_labels;
 };
 
 }

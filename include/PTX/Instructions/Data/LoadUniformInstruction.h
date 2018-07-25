@@ -24,7 +24,13 @@ public:
 		REQUIRE_EXACT(S, AddressableSpace, GlobalSpace)
 	);
 
-	LoadUniformInstruction(const Register<T> *reg, const Address<B, T, S> *address) : m_register(reg), m_address(address) {}
+	LoadUniformInstruction(const Register<T> *destination, const Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
+
+	const Register<T> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
 
 	static std::string Mnemonic() { return "ldu"; }
 
@@ -35,11 +41,11 @@ public:
 
 	std::vector<const Operand *> Operands() const override
 	{
-		return { m_register, new DereferencedAddress<B, T, S>(m_address) };
+		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
 
 private:
-	const Register<T> *m_register = nullptr;
+	const Register<T> *m_destination = nullptr;
 	const Address<B, T, S> *m_address = nullptr;
 };
 

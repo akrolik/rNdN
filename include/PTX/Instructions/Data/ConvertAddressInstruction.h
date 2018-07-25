@@ -21,6 +21,12 @@ public:
 	
 	ConvertAddressInstruction(const Register<PointerType<B, T, D>> *destination, const Address<B, T, S> *source) : m_destination(destination), m_source(source) {}
 
+	const Register<PointerType<B, T, D>> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<PointerType<B, T, D>> *destination) { m_destination = destination; }
+
+	const Address<B, T, S> *GetAddress() const { return m_source; }
+	void SetAddress(const Address<B, T, S> *address) { m_source = address; } 
+
 	static std::string Mnemonic() { return "cvta"; }
 
 	std::string OpCode() const override

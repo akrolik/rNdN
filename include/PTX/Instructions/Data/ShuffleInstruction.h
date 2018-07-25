@@ -38,6 +38,27 @@ public:
 
 	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, uint32_t sourceB, uint32_t sourceC, uint32_t memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
 
+	const Register<T> *GetDestination() const { return m_destinationD; }
+	void SetDestination(const Register<T> *destination) { m_destinationD = destination; }
+
+	const Register<PredicateType> *GetDestinationP() const { return m_destinationP; }
+	void SetDestinationP(const Register<PredicateType> *destination) { m_destinationP = destination; }
+
+	const TypedOperand<T> *GetSourceA() const { return m_sourceA; }
+	void SetSourceA(const TypedOperand<T> *source) { m_sourceA = source; }
+
+	Mode GetMode() const { return m_mode; }
+	void SetMode(Mode mode) { m_mode = mode; }
+
+	uint32_t GetSourceB() const { return m_sourceB; }
+	void SetSourceB(uint32_t source) { m_sourceB = source; }
+
+	uint32_t GetSourceC() const { return m_sourceC; }
+	void SetSourceC(uint32_t source) { m_sourceC = source; }
+
+	uint32_t GetMemberMask() const { return m_memberMask; }
+	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+
 	static std::string Mnemonic() { return "shfl"; }
 
 	std::string OpCode() const override

@@ -20,6 +20,12 @@ public:
 
 	IsSpaceInstruction(const Register<PredicateType> *destination, const Address<B, T> *address) : m_destination(destination), m_address(address) {}
 
+	const Register<PredicateType> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<PredicateType> *destination) { m_destination = destination; }
+
+	const Address<B, T> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T> *address) { m_address = address; }
+
 	static std::string Mnemonic() { return "isspacep"; }
 
 	std::string OpCode() const override

@@ -28,6 +28,18 @@ public:
 
 	SetPredicateInstruction(const Register<PredicateType> *destinationP, const Register<PredicateType> *destinationQ, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : ComparisonModifier<T>(comparator), m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	const Register<PredicateType> *GetDestination() const { return m_destinationP; }
+	void SetDestination(const Register<PredicateType> *destination) { m_destinationP = destination; }
+
+	const Register<PredicateType> *GetDestinationQ() const { return m_destinationQ; }
+	void SetDestinationQ(const Register<PredicateType> *destination) { m_destinationQ = destination; }
+
+	const TypedOperand<T> *GetSourceA() const { return m_sourceA; }
+	void SetSourceA(const TypedOperand<T> *source) { m_sourceA = source; }
+
+	const TypedOperand<T> *GetSourceB() const { return m_sourceB; }
+	void SetSourceB(const TypedOperand<T> *source) { m_sourceB = source; }
+
 	static std::string Mnemonic() { return "setp"; }
 
 	std::string OpCode() const override

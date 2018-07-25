@@ -15,6 +15,12 @@ class CallInstructionBase : public PredicatedInstruction, public UniformModifier
 public:
 	CallInstructionBase(const Function *function, const R *returnVariable, bool uniform) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable) {}
 
+	const Function *GetFunction() const { return m_function; }
+	void SetFunction(const Function *function) { m_function = function; }
+
+	const R *GetReturnVariable() const { return m_returnVariable; }
+	void SetReturnVariable(const R *returnVariable) { m_returnVariable = returnVariable; }
+
 	static std::string Mnemonic() { return "call"; }
 
 	std::string OpCode() const override
@@ -49,6 +55,9 @@ class CallInstructionBase<VoidType> : public PredicatedInstruction, public Unifo
 {
 public:
 	CallInstructionBase(const Function *function, bool uniform) : UniformModifier(uniform), m_function(function) {}
+
+	const Function *GetFunction() const { return m_function; }
+	void SetFunction(const Function *function) { m_function = function; }
 
 	static std::string Mnemonic() { return "call"; }
 

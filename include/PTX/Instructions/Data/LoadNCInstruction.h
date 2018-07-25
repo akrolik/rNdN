@@ -41,12 +41,16 @@ public:
 		return ".<unknown>";
 	}
 
-	LoadNCInstruction(const Register<T> *reg, const Address<B, T, GlobalSpace> *address, CacheOperator cacheOperator = CacheOperator::All) : m_register(reg), m_address(address), m_cacheOperator(cacheOperator) {}
+	LoadNCInstruction(const Register<T> *destination, const Address<B, T, GlobalSpace> *address, CacheOperator cacheOperator = CacheOperator::All) : m_destination(destination), m_address(address), m_cacheOperator(cacheOperator) {}
 
-	std::vector<const Operand *> Operands() const override
-	{
-		return { m_register, new DereferencedAddress<B, T, GlobalSpace>(m_address) };
-	}
+	const Register<T> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+
+	const Address<B, T, GlobalSpace> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, GlobalSpace> *address) { m_address = address; }
+
+	CacheOperator GetCacheOperator() const { return m_cacheOperator; }
+	void SetCacheOperator(CacheOperator cacheOperator) { m_cacheOperator = cacheOperator; }
 
 	static std::string Mnemonic() { return "ld"; }
 
@@ -59,8 +63,14 @@ public:
 		}
 		return code + ".nc" + T::Name();
 	}
+
+	std::vector<const Operand *> Operands() const override
+	{
+		return { m_destination, new DereferencedAddress<B, T, GlobalSpace>(m_address) };
+	}
+
 private:
-	const Register<T> *m_register = nullptr;
+	const Register<T> *m_destination = nullptr;
 	const Address<B, T, GlobalSpace> *m_address = nullptr;
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };

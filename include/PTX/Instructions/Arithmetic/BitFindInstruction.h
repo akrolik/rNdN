@@ -15,7 +15,7 @@ public:
 		)
 	);
 
-	using InstructionBase_1<UInt32Type, T>::InstructionBase;
+	BitFindInstruction(const Register<UInt32Type> *destination, const TypedOperand<T> *source, bool shiftAmount = false) : InstructionBase_1<UInt32Type, T>(destination, source), m_shiftAmount(shiftAmount) {}
 
 	bool GetShiftAmount() const { return m_shiftAmount; }
 	void SetShiftAmount(bool shiftAmount) { m_shiftAmount; }

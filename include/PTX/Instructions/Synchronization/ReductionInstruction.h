@@ -48,11 +48,21 @@ public:
 	}
 
 	using Scope = ScopeModifier<false>::Scope;
+	using ReductionOperation = typename T::ReductionOperation;
 
-	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, typename T::ReductionOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : ScopeModifier<false>(scope), m_address(address), m_value(value), m_synchronization(synchronization), m_operation(operation) {}
+	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, ReductionOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : ScopeModifier<false>(scope), m_address(address), m_value(value), m_synchronization(synchronization), m_operation(operation) {}
 
-	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, S> *address) { m_address; }
+
+	const TypedOperand<T> *GetValue() const { return m_value; }
+	void SetValue(const TypedOperand<T> *value) { m_value = value ;}
+
 	Synchronization GetSynchronization() const { return m_synchronization; }
+	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
+
+	ReductionOperation GetReductionOperation() const { return m_operation; }
+	void SetReductionOperation(ReductionOperation operation) { m_operation = operation; }
 
 	std::vector<const Operand *> Operands() const override
 	{
@@ -71,7 +81,7 @@ protected:
 	const TypedOperand<T> *m_value = nullptr;
 
 	Synchronization m_synchronization = Synchronization::None;
-	typename T::ReductionOperation m_operation;
+	ReductionOperation m_operation;
 };
 
 template<class T, class S>

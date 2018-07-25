@@ -9,6 +9,9 @@ class DevInstruction : public PredicatedInstruction
 public:
 	DevInstruction(const std::string& instruction) : m_instruction(instruction) {}
 
+	const std::string& GetInstruction() const { return m_instruction; }
+	void SetInstruction(const std::string& instruction) { m_instruction = instruction; }
+
 	std::string OpCode() const override
 	{
 		return m_instruction;

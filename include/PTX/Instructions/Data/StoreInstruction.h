@@ -25,16 +25,22 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	StoreInstructionBase(const Address<B, T, S> *address, const Register<T> *reg) : m_address(address), m_register(reg) {}
+	StoreInstructionBase(const Address<B, T, S> *address, const Register<T> *source) : m_address(address), m_source(source) {}
+
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+
+	const Register<T> *GetSource() const { return m_source; }
+	void SetSource(const Register<T> *source) { m_source = source; }
 
 	std::vector<const Operand *> Operands() const override
 	{
-		return { new DereferencedAddress<B, T, S>(m_address), m_register };
+		return { new DereferencedAddress<B, T, S>(m_address), m_source };
 	}
 
 private:
 	const Address<B, T, S> *m_address = nullptr;
-	const Register<T> *m_register = nullptr;
+	const Register<T> *m_source = nullptr;
 };
 
 enum class StoreSynchronization {
@@ -71,7 +77,10 @@ public:
 		return ".<unknown>";
 	}
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, CacheOperator cacheOperator = CacheOperator::WriteBack) : StoreInstructionBase<B, T, S>(address, reg), m_cacheOperator(cacheOperator) {}
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, CacheOperator cacheOperator = CacheOperator::WriteBack) : StoreInstructionBase<B, T, S>(address, source), m_cacheOperator(cacheOperator) {}
+
+	CacheOperator GetCacheOperator() const { return m_cacheOperator; }
+	void SetCacheOperator(CacheOperator cacheOperator) { m_cacheOperator = cacheOperator; }
 
 	static std::string Mnemonic() { return "st"; }
 
@@ -109,7 +118,7 @@ class StoreInstruction<B, T, S, StoreSynchronization::Relaxed> : public StoreIns
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), ScopeModifier<>(scope) {}
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S>(address, source), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "st"; }
 
@@ -125,7 +134,7 @@ class StoreInstruction<B, T, S, StoreSynchronization::Release> : public StoreIns
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *reg, Scope scope) : StoreInstructionBase<B, T, S>(address, reg), ScopeModifier<>(scope) {}
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S>(address, source), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "st"; }
 

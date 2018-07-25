@@ -29,6 +29,9 @@ public:
 
 	MemoryBarrierInstruction(Level level) : m_level(level) {}
 
+	Level GetLevel() const { return m_level; }
+	void SetLevel(Level level) { m_level = level; }
+
 	static std::string Mnemonic() { return "membar"; }
 
 	std::string OpCode() const override

@@ -20,6 +20,12 @@ public:
 
 	UnpackInstruction(const BracedRegister<PackType, V> *destination, const TypedOperand<T> *source) : m_destination(destination), m_source(source) {}
 
+	const BracedRegister<PackType, V> *GetDestination() const { return m_destination; }
+	void SetDestination(const BracedRegister<PackType, V> *destination) { m_destination = destination; }
+
+	const TypedOperand<T> *GetSource() const { return m_source; }
+	void SetSource(const TypedOperand<T> *source) { m_source = source; }
+
 	static std::string Mnemonic() { return "mov"; }
 
 	std::string OpCode() const override

@@ -42,6 +42,15 @@ public:
 
 	AtomicInstructionBase(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *value, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : ScopeModifier<false>(scope), m_destination(destination), m_address(address), m_value(value), m_synchronization(synchronization) {}
 
+	const Register<T> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, S> *address) { m_address; }
+
+	const TypedOperand<T> *GetValue() const { return m_value; }
+	void SetValue(const TypedOperand<T> *value) { m_value = value ;}
+
 	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
 	Synchronization GetSynchronization() const { return m_synchronization; }
 
@@ -84,18 +93,22 @@ public:
 
 	using Scope = ScopeModifier<false>::Scope;
 	using Synchronization = typename AtomicInstructionBase<B, T, S>::Synchronization;
+	using AtomicOperation = typename T::AtomicOperation;
 
-	AtomicInstruction(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *value, typename T::AtomicOperator operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : AtomicInstructionBase<B, T, S>(destination, address, value, synchronization, scope), m_operation(operation) {}
+	AtomicInstruction(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *value, typename T::AtomicOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : AtomicInstructionBase<B, T, S>(destination, address, value, synchronization, scope), m_operation(operation) {}
+
+	AtomicOperation GetAtomicOperation() const { return m_operation; }
+	void SetAtomicOperation(AtomicOperation operation) { m_operation = operation; }
 
 	static std::string Mnemonic() { return "atom"; }
 
 	std::string OpCode() const override
 	{
-		return AtomicInstructionBase<B, T, S>::OpCode() + T::AtomicOperatorString(m_operation) + T::Name();
+		return AtomicInstructionBase<B, T, S>::OpCode() + T::AtomicOperationString(m_operation) + T::Name();
 	}
 
 private:
-	typename T::AtomicOperator m_operation;
+	AtomicOperation m_operation;
 };
 
 template<Bits B, class T, class S, bool Assert = true>
@@ -116,6 +129,9 @@ public:
 	using Synchronization = typename AtomicInstructionBase<B, T, S>::Synchronization;
 
 	AtomicCASInstruction(const Register<T> *destination, const Address<B, T, S> *address, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : AtomicInstructionBase<B, T, S>(destination, address, sourceB, synchronization, scope), m_sourceC(sourceC) {}
+
+	const TypedOperand<T> *GetSourceC() const { return m_sourceC; }
+	void SetSourceC(const TypedOperand<T> *source) { m_sourceC = source; }
 
 	static std::string Mnemonic() { return "atom"; }
 

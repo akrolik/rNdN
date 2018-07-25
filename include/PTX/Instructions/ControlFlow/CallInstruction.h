@@ -14,6 +14,8 @@ class CallInstruction : public CallInstructionBase<R>
 public:
 	CallInstruction(const FunctionDeclaration<R> *function, const R *returnVariable, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform) {}
 
+	const std::vector<const Operand *>& GetArgumentsList() const { return m_arguments; }
+
 	template<class T, class S>
 	std::enable_if_t<std::is_same<S, RegisterSpace>::value || std::is_base_of<S, ParameterSpace>::value, void>
 	AddArgument(const Variable<T, S> *argument) { m_arguments.push_back(argument); }
@@ -32,6 +34,8 @@ class CallInstruction<R(Args...)> : public CallInstructionBase<R>
 {
 public:
 	CallInstruction(const FunctionDeclaration<R(Args...)> *function, const R *returnVariable, const Args* ...args, bool uniform = false) : CallInstructionBase<R>(function, returnVariable, uniform), m_arguments(std::make_tuple(args...)) {}
+
+	const std::tuple<const Args* ...>& GetArgumentsTuple() const { return m_arguments; }
 
 protected:
 	std::vector<const Operand *> GetArguments() const override

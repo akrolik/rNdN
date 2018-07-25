@@ -21,6 +21,18 @@ public:
 	MatchAllInstruction(const Register<Bit32Type> *destination, const TypedOperand<T> *source, uint32_t memberMask) : MatchAllInstruction(destination, nullptr, source, memberMask) {}
 	MatchAllInstruction(const Register<Bit32Type> *destinationD, const Register<PTX::PredicateType> *destinationP, const TypedOperand<T> *source, uint32_t memberMask) : m_destinationD(destinationD), m_destinationP(destinationP), m_source(source), m_memberMask(memberMask) {}
 
+	const Register<Bit32Type> *GetDestinationD() const { return m_destinationD; }
+	void SetDestinationD(const Register<Bit32Type> *destination) { m_destinationD = destination; }
+
+	const Register<PredicateType> *GetDestinationP() const { return m_destinationP; }
+	void SetDestinationP(const Register<PredicateType> *destination) { m_destinationP = destination; }
+
+	const TypedOperand<T> *GetSource() const { return m_source; }
+	void SetSource(const TypedOperand<T> *source) { m_source = source; }
+
+	uint32_t GetMemberMask() const { return m_memberMask; }
+	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+
 	static std::string Mnemonic() { return "match.all.sync"; }
 
 	std::string OpCode() const override
@@ -61,6 +73,15 @@ public:
 
 	MatchAnyInstruction(const Register<Bit32Type> *destination, const TypedOperand<T> *source, uint32_t memberMask) : m_destination(destination), m_source(source), m_memberMask(memberMask) {}
 
+	const Register<Bit32Type> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<Bit32Type> *destination) { m_destination = destination; }
+
+	const TypedOperand<T> *GetSource() const { return m_source; }
+	void SetSource(const TypedOperand<T> *source) { m_source = source; }
+
+	uint32_t GetMemberMask() const { return m_memberMask; }
+	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+
 	static std::string Mnemonic() { return "match.any.sync"; }
 
 	std::string OpCode() const override
@@ -82,4 +103,5 @@ protected:
 	const TypedOperand<T> *m_source = nullptr;
 	uint32_t m_memberMask = 0;
 };
+
 }

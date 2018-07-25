@@ -14,6 +14,9 @@ public:
 
 	static std::string Mnemonic() { return "bra"; }
 
+	const Label *GetLabel() const { return m_label; }
+	void SetLabel(const Label *label) { m_label = label; }
+
 	std::string OpCode() const override
 	{
 		return Mnemonic() + UniformModifier::OpCodeModifier();

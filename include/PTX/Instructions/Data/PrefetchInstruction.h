@@ -39,12 +39,18 @@ public:
 
 	PrefetchInstruction(const Address<B, T, S> *address, Level level) : m_address(address), m_level(level) {}
 
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+
+	Level GetLevel() const { return m_level; }
+	void SetLevel(Level level) { m_level = level; }
+
 	static std::string Mnemonic() { return "prefetch"; }
 
 	std::string OpCode() const override
 	{
 		std::string code = Mnemonic();
-		if constexpr (!std::is_same<S, AddressableSpace>::value)
+		if constexpr(!std::is_same<S, AddressableSpace>::value)
 		{
 			code += S::Name();
 		}

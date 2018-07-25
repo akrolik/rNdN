@@ -31,6 +31,9 @@ public:
 
 	SetInstruction(const Register<D> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	typename T::ComparisonOperator GetComparisonOperator() const { return m_comparator; }
+	void SetComparisonOperator(typename T::ComparionOperator comparisonOperator) { m_comparator = comparisonOperator; }
+
 	static std::string Mnemonic() { return "set"; }
 
 	std::string OpCode() const override

@@ -44,6 +44,9 @@ public:
 
 	PermuteInstruction(const Register<Bit32Type> *destinationD, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit16Type> *sourceC, Mode mode = Mode::Generic) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, Bit16Type>(destinationD, sourceA, sourceB, sourceC), m_mode(mode) {}
 
+	Mode GetMode() const { return m_mode; }
+	void SetMode(Mode mode) { m_mode = mode; }
+
 	static std::string Mnemonic() { return "prmt"; }
 
 	std::string OpCode() const override

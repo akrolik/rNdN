@@ -15,11 +15,20 @@ public:
 	};
 
 	PredicateModifier() {}
-	PredicateModifier(const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicte = false) : m_boolOperator(boolOperator) {}
+	PredicateModifier(const Register<PredicateType> *sourcePredicate, BoolOperator boolOperator, bool negateSourcePredicte = false) : m_boolOperator(boolOperator) {}
+
+	const Register<PredicateType> *GetSourcePredicate() const { return m_sourcePredicate; }
+	void SetSourcePredicate(const Register<PredicateType> *source) { m_sourcePredicate; }
+
+	BoolOperator GetBoolOperator() const { return m_boolOperator; }
+	void SetBoolOperator(BoolOperator boolOperator) { m_boolOperator = boolOperator; }
+
+	bool GetNegateSourcePredicate() const { return m_negateSourcePredicate; }
+	void SetNegateSourcePredicate(bool negateSourcePredicate) { m_negateSourcePredicate = negateSourcePredicate; }
 
 	std::string OpCodeModifier() const
 	{
-		if (m_sourceC != nullptr)
+		if (m_sourcePredicate != nullptr)
 		{
 			switch (m_boolOperator)
 			{
@@ -37,19 +46,19 @@ public:
 
 	const Operand *OperandsModifier() const
 	{
-		if (m_sourceC != nullptr)
+		if (m_sourcePredicate != nullptr)
 		{
 			if (m_negateSourcePredicate)
 			{
-				return new InvertedOperand(m_sourceC);
+				return new InvertedOperand(m_sourcePredicate);
 			}
-			return m_sourceC;
+			return m_sourcePredicate;
 		}
 		return nullptr;
 	}
 
 protected:
-	const Register<PredicateType> *m_sourceC = nullptr;
+	const Register<PredicateType> *m_sourcePredicate = nullptr;
 	BoolOperator m_boolOperator = BoolOperator::And;
 	bool m_negateSourcePredicate = false;
 };

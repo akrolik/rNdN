@@ -12,8 +12,23 @@ template<class T>
 class BarrierReductionInstructionBase : public PredicatedInstruction
 {
 public:
-	BarrierReductionInstructionBase(const Register<T> *destination, const TypedOperand<UInt32Type> *barrier, const Register<PredicateType> *predicate, bool negatePredicate = false, bool aligned = false) : BarrierReductionInstructionBase(destination, barrier, nullptr, predicate, negatePredicate, aligned) {}
-	BarrierReductionInstructionBase(const Register<T> *destination, const TypedOperand<UInt32Type> *barrier, const TypedOperand<UInt32Type> *threads, const Register<PredicateType> *predicate, bool negatePredicate = false, bool aligned = false) : m_destination(destination), m_barrier(barrier), m_threads(threads), m_predicate(predicate), m_negatePredicate(negatePredicate), m_aligned(aligned) {}
+	BarrierReductionInstructionBase(const Register<T> *destination, const TypedOperand<UInt32Type> *barrier, const Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : BarrierReductionInstructionBase(destination, barrier, nullptr, sourcePredicate, negateSourcePredicate, aligned) {}
+	BarrierReductionInstructionBase(const Register<T> *destination, const TypedOperand<UInt32Type> *barrier, const TypedOperand<UInt32Type> *threads, const Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : m_destination(destination), m_barrier(barrier), m_threads(threads), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_aligned(aligned) {}
+
+	const Register<T> *GetDestination() const { return m_destination; }
+	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+
+	const TypedOperand<UInt32Type> *GetBarrier() const { return m_barrier; }
+	void SetBarrier(const TypedOperand<UInt32Type> *barrier) { m_barrier = barrier; }
+
+	const TypedOperand<UInt32Type> *GetThreads() const { return m_threads; }
+	void SetThreads(const TypedOperand<UInt32Type> *threads) { m_threads = threads; }
+
+	const Register<PredicateType> *GetSourcePredicate() const { return m_sourcePredicate; }
+	void SetSourcePredicate(const Register<PredicateType> *source) { m_sourcePredicate = source; }
+
+	bool GetNegateSourcePredicate() const { return m_negateSourcePredicate; }
+	void SetNegateSourcePredicate(bool negateSourcePredicate) { m_negateSourcePredicate = negateSourcePredicate; }
 
 	bool GetAligned() { return m_aligned; }
 	void SetAligned(bool aligned) { m_aligned = aligned; }
@@ -27,13 +42,13 @@ public:
 		{
 			operands.push_back(m_threads);
 		}
-		if (m_negatePredicate)
+		if (m_negateSourcePredicate)
 		{
-			operands.push_back(new InvertedOperand(m_predicate));
+			operands.push_back(new InvertedOperand(m_sourcePredicate));
 		}
 		else
 		{
-			operands.push_back(m_predicate);
+			operands.push_back(m_sourcePredicate);
 		}
 		return operands;
 	}
@@ -42,8 +57,8 @@ protected:
 	const Register<T> *m_destination = nullptr;
 	const TypedOperand<UInt32Type> *m_barrier = nullptr;
 	const TypedOperand<UInt32Type> *m_threads = nullptr;
-	const Register<PredicateType> *m_predicate;
-	bool m_negatePredicate = false;
+	const Register<PredicateType> *m_sourcePredicate;
+	bool m_negateSourcePredicate = false;
 	bool m_aligned = false;
 };
 
@@ -98,8 +113,11 @@ public:
 		return ".<unknown>";
 	}
 
-	BarrierReductionInstruction(const Register<PredicateType> *destination, const TypedOperand<UInt32Type> *barrier, Operation operation, const Register<PredicateType> *predicate, bool negatePredicate = false, bool aligned = false) : BarrierReductionInstruction<PredicateType>(destination, barrier, nullptr, operation, predicate, negatePredicate, aligned) {}
-	BarrierReductionInstruction(const Register<PredicateType> *destination, const TypedOperand<UInt32Type> *barrier, const TypedOperand<UInt32Type> *threads, Operation operation, const Register<PredicateType> *predicate, bool negatePredicate = false, bool aligned = false) : BarrierReductionInstructionBase<PredicateType>(destination, barrier, threads, predicate, negatePredicate, aligned), m_operation(operation) {}
+	BarrierReductionInstruction(const Register<PredicateType> *destination, const TypedOperand<UInt32Type> *barrier, Operation operation, const Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : BarrierReductionInstruction<PredicateType>(destination, barrier, nullptr, operation, sourcePredicate, negateSourcePredicate, aligned) {}
+	BarrierReductionInstruction(const Register<PredicateType> *destination, const TypedOperand<UInt32Type> *barrier, const TypedOperand<UInt32Type> *threads, Operation operation, const Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : BarrierReductionInstructionBase<PredicateType>(destination, barrier, threads, sourcePredicate, negateSourcePredicate, aligned), m_operation(operation) {}
+
+	Operation GetOperation() const { return m_operation; }
+	void SetOperation(Operation operation) { m_operation = operation; }
 
 	static std::string Mnemonic() { return "barrier.red"; }
 
