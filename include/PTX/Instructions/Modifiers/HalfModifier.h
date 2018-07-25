@@ -11,7 +11,7 @@ public:
 
 template<class T, bool force>
 class HalfModifier<T, force,
-      std::enable_if_t<REQUIRE_EXACT(T, Int8Type, Int16Type, Int32Type, Int64Type, UInt8Type, UInt16Type, UInt64Type) || force>>
+      std::enable_if_t<REQUIRE_EXACT(T, Int8Type, Int16Type, Int32Type, Int64Type, UInt8Type, UInt16Type, UInt32Type, UInt64Type) || force>>
 {
 public:
 	constexpr static bool Enabled = true;
