@@ -17,15 +17,15 @@ class SymbolTable : public ForwardTraversal
 public:
 	using ForwardTraversal::ForwardTraversal;
 
-	void Build(HorseIR::Method *method);
-	HorseIR::Type *GetType(const std::string& identifier);
+	void Build(Method *method);
+	Type *GetType(const std::string& identifier);
 
 	void Visit(Parameter *parameter) override;
 	void Visit(AssignStatement *assign) override;
 	void Visit(Identifier *identifier) override;
 
 private:
-	std::unordered_map<std::string, HorseIR::Type *> m_table;
+	std::unordered_map<std::string, Type *> m_table;
 };
 
 }
