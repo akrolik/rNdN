@@ -50,7 +50,7 @@ public:
 
 	virtual MemoryAddress<B, T, S> *CreateOffsetAddress(unsigned int offset) const override
 	{
-		return new MemoryAddress(m_variable, offset);
+		return new MemoryAddress(m_variable, m_offset + offset);
 	}
 
 private:

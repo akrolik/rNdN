@@ -53,7 +53,7 @@ public:
 
 	virtual RegisterAddress<B, T, S> *CreateOffsetAddress(unsigned int offset) const override
 	{
-		return new RegisterAddress(m_variable, offset);
+		return new RegisterAddress(m_variable, m_offset + offset);
 	}
 
 private:
