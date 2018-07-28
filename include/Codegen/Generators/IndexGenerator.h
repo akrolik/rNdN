@@ -19,19 +19,30 @@ class IndexGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	const PTX::Register<PTX::UInt32Type> *GenerateBlockIndex()
+	enum class Kind {
+		Null,
+		Local,
+		Block,
+		Global
+	};
+
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(Kind kind)
 	{
-		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
-
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
-
-		auto ctaidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
-
-		return ctaidx;
+		switch (kind)
+		{
+			case Kind::Null:
+				return new PTX::UInt32Value(0);
+			case Kind::Local:
+				return GenerateLocalIndex();
+			case Kind::Block:
+				return GenerateBlockIndex();
+			case Kind::Global:
+				return GenerateGlobalIndex();
+		}
+		return nullptr;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateLocalIndex()
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateLocalIndex()
 	{
 		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
 
@@ -43,7 +54,19 @@ public:
 		return tidx;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateBlockIndex()
+	{
+		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+
+		// We cannot operate directly on special registers, so they must first be copied to a user defined register
+
+		auto ctaidx = this->m_builder->template AllocateTemporary<PTX::UInt32Type>();
+		this->m_builder->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
+
+		return ctaidx;
+	}
+
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateGlobalIndex()
 	{
 		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
 		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);

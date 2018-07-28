@@ -108,7 +108,7 @@ public:
 	void Visit(HorseIR::Parameter *parameter) override
 	{
 		ParameterGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, parameter->GetType(), parameter);
+		Codegen::DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
 	}
 
 	void Visit(HorseIR::AssignStatement *assign) override
@@ -119,8 +119,10 @@ public:
 
 	void Visit(HorseIR::ReturnStatement *ret) override
 	{
+		//TODO: Use shape analysis for loading the correct index
+
 		ReturnGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, m_builder->GetReturnType(), ret);
+		Codegen::DispatchType(generator, m_builder->GetReturnType(), ret, ReturnGenerator<B>::IndexKind::Global);
 	}
 
 private:

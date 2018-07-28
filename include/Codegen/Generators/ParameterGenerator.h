@@ -22,8 +22,10 @@ class ParameterGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	using IndexKind = typename AddressGenerator<B>::IndexKind;
+
 	template<class T>
-	void Generate(const HorseIR::Parameter *parameter)
+	void Generate(const HorseIR::Parameter *parameter, IndexKind indexKind)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -36,7 +38,7 @@ public:
 			auto temp16 = this->m_builder->AllocateTemporary<PTX::Int16Type>();
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable);
+			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable, indexKind);
 
 			this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::Int8Type, PTX::GlobalSpace>(temp8, address));
 			this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, temp8));
@@ -50,7 +52,7 @@ public:
 			auto value = this->m_builder->AllocateRegister<T>(parameter->GetName());
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable);
+			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
 
 			this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
 		}

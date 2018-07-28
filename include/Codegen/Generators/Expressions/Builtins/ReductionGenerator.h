@@ -92,7 +92,7 @@ public:
 		auto sharedMemoryAddress = this->m_builder->template AllocateSharedMemory<B, T>(512);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), sharedMemoryAddress->GetOffset());
+		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), AddressGenerator<B>::IndexKind::Local, sharedMemoryAddress->GetOffset());
 
 		// Load the thread indexes
 

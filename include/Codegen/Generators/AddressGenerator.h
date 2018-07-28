@@ -39,8 +39,10 @@ class AddressGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	using IndexKind = IndexGenerator::Kind;
+
 	template<class T, class S>
-	PTX::Address<B, T, S> *Generate(const PTX::Variable<T, S> *variable, unsigned int offset = 0)
+	PTX::Address<B, T, S> *Generate(const PTX::Variable<T, S> *variable, IndexKind indexKind, unsigned int offset = 0)
 	{
 		// Get the base address from the variable
 
@@ -51,11 +53,11 @@ public:
 
 		this->m_builder->AddStatement(new PTX::MoveAddressInstruction<B, T, S>(base, baseAddress));
 
-		return GenerateBase(base);
+		return GenerateBase(base, indexKind);
 	}
 
 	template<class T, class S>
-	PTX::Address<B, T, S> *GenerateParameter(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable)
+	PTX::Address<B, T, S> *GenerateParameter(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable, IndexKind indexKind)
 	{
 		// Get the base address of the variable in generic space
 
@@ -70,18 +72,18 @@ public:
 		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(genericBase, baseAddress));
 		this->m_builder->AddStatement(new PTX::ConvertToAddressInstruction<B, T, S>(spaceBase, new PTX::RegisterAddress<B, T>(genericBase)));
 
-		return GenerateBase(spaceBase);
+		return GenerateBase(spaceBase, indexKind);
 	}
 
 private:
 	template<class T, class S>
-	PTX::Address<B, T, S> *GenerateBase(const PTX::PointerRegisterAdapter<B, T, S> *base)
+	PTX::Address<B, T, S> *GenerateBase(const PTX::PointerRegisterAdapter<B, T, S> *base, IndexKind indexKind)
 	{
 		auto offset = this->m_builder->template AllocateTemporary<PTX::UIntType<B>>();
 		auto address = this->m_builder->template AllocateTemporary<PTX::UIntType<B>>();
 
 		IndexGenerator indexGen(this->m_builder);
-		auto index = indexGen.GenerateGlobalIndex();
+		auto index = indexGen.GenerateIndex(indexKind);
 
 		// Compute offset from the base address using the thread id and the data size
 
@@ -93,7 +95,7 @@ private:
 
 			this->m_builder->AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
 				new PTX::Bit32RegisterAdapter<PTX::UIntType>(offset),
-				new PTX::Bit32RegisterAdapter<PTX::UIntType>(index),
+				new PTX::Bit32Adapter<PTX::UIntType>(index),
 				new PTX::UInt32Value(std::log2(PTX::BitSize<T::TypeBits>::NumBytes))
 			));
 		}

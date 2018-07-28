@@ -19,14 +19,14 @@
 
 namespace Codegen {
 
-template<class G, class... N>
-static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, N* ...nodes);
+template<class G, typename... N>
+static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, N ...nodes);
 
-template<class G, class... N>
-static void DispatchList(G &generator, const HorseIR::ListType *type, N* ...nodes);
+template<class G, typename... N>
+static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes);
 
-template<class G, class... N>
-static void DispatchType(G &generator, const HorseIR::Type *type, N* ...nodes)
+template<class G, typename... N>
+static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 {
 	switch (type->GetKind())
 	{
@@ -42,8 +42,8 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N* ...nodes)
 	}
 }
 
-template<class G, class... N>
-static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, N* ...nodes)
+template<class G, typename... N>
+static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, N ...nodes)
 {
 	switch (type->GetKind())
 	{
@@ -74,8 +74,8 @@ static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, 
 	}
 }
 
-template<class G, class... N>
-static void DispatchList(G &generator, const HorseIR::ListType *type, N* ...nodes)
+template<class G, typename... N>
+static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes)
 {
 	DispatchPrimitive<G, N...>(generator, static_cast<const HorseIR::PrimitiveType *>(type->GetElementType()), nodes...);
 }

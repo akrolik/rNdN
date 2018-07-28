@@ -23,8 +23,10 @@ class ReturnGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	using IndexKind = typename AddressGenerator<B>::IndexKind;
+
 	template<class T>
-	void Generate(const HorseIR::ReturnStatement *ret)
+	void Generate(const HorseIR::ReturnStatement *ret, IndexKind indexKind)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -34,7 +36,7 @@ public:
 			auto variable = declaration->GetVariable(returnName);
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable);
+			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable, indexKind);
 
 			OperandGenerator<B, PTX::PredicateType> opGen(this->m_builder);
 			auto value = opGen.GenerateRegister(ret->GetIdentifier());
@@ -55,7 +57,7 @@ public:
 			auto variable = declaration->GetVariable(returnName);
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable);
+			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
 
 			OperandGenerator<B, T> opGen(this->m_builder);
 			auto value = opGen.GenerateRegister(ret->GetIdentifier());
