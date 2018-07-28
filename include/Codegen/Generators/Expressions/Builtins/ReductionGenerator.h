@@ -73,21 +73,13 @@ public:
 	// The output of a reduction function has no compression predicate. We therefore do not implement
 	// GenerateCompressionPredicate in this subclass
 
-	//TODO: Support 8 bit and predicate types in reductions
+	//TODO: Support correct type matrix for reductions
 
 	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8, void>
 	Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
 	{
-		GenerateShared(target, call);
-	}
+ 		//TODO: The size variable should be present in every kernel function
 
-	void GenerateShufle(const PTX::Register<T> *target, const HorseIR::CallExpression *call)
-	{
-		//TODO: Implement shuffle reduction
-	}
-	
-	void GenerateShared(const PTX::Register<T> *target, const HorseIR::CallExpression* call)
-	{
 		// Load the underlying data size from the kernel parameters
 
 		const std::string sizeName = "$size";
@@ -99,17 +91,9 @@ public:
 		auto size = this->m_builder->template AllocateTemporary<PTX::UInt64Type>("size");
 		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::UInt64Type, PTX::ParameterSpace>(size, sizeAddress));
 
-		// Generate the address in shared memory for the thread
-
-		auto sharedMemoryAddress = this->m_builder->template AllocateSharedMemory<B, T>(512);
-
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), AddressGenerator<B>::IndexKind::Local, sharedMemoryAddress->GetOffset());
-
-		// Load the thread indexes
+		// Load the the global thread index for checking the data bounds
 
 		IndexGenerator indexGen(this->m_builder);
-		auto localIndex = indexGen.GenerateLocalIndex();
 		auto globalIndex = indexGen.GenerateGlobalIndex();
 
 		// Some operations require a 64-bit value for comparison
@@ -146,6 +130,8 @@ public:
 			src = opGen.GenerateOperand(call->GetArgument(0));
 		}
 
+
+
 		// Select the initial value for the reduction depending on the data size and compression mask
 
 		auto value = this->m_builder->template AllocateTemporary<T>();
@@ -170,6 +156,29 @@ public:
 			s2->SetPredicate(inputPredicate, true);
 			this->m_builder->AddStatement(s2);
 		}
+
+		// Generate a shared memory reduction strategy
+
+		GenerateShared(target, value);
+	}
+
+	void GenerateShuffle(const PTX::Register<T> *target, const PTX::Register<T> *value)
+	{
+		//TODO: Implement shuffle reduction
+	}
+	
+	void GenerateShared(const PTX::Register<T> *target, const PTX::Register<T> *value)
+	{
+		//TODO: Determine the amount of shared memory needed
+		auto sharedMemoryAddress = this->m_builder->template AllocateSharedMemory<B, T>(512);
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), AddressGenerator<B>::IndexKind::Local, sharedMemoryAddress->GetOffset());
+
+		// Load the the local thread index for accessing the shared memory
+
+		IndexGenerator indexGen(this->m_builder);
+		auto localIndex = indexGen.GenerateLocalIndex();
 
 		// Load the initial value into shared memory
 
