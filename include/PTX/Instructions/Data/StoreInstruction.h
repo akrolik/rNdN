@@ -50,8 +50,8 @@ enum class StoreSynchronization {
 	Release
 };
 
-template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak>
-class StoreInstruction : public StoreInstructionBase<B, T, S>
+template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak, bool Assert = true>
+class StoreInstruction : public StoreInstructionBase<B, T, S, Assert>
 {
 public:
 	enum class CacheOperator {
@@ -98,11 +98,11 @@ private:
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 
-template<Bits B, class T, class S>
-class StoreInstruction<B, T, S, StoreSynchronization::Volatile> : public StoreInstructionBase<B, T, S>
+template<Bits B, class T, class S, bool Assert>
+class StoreInstruction<B, T, S, StoreSynchronization::Volatile, Assert> : public StoreInstructionBase<B, T, S, Assert>
 {
 public:
-	using StoreInstructionBase<B, T, S>::StoreInstructionBase;
+	using StoreInstructionBase<B, T, S, Assert>::StoreInstructionBase;
 
 	static std::string Mnemonic() { return "st"; }
 
@@ -112,13 +112,13 @@ public:
 	}
 };
 
-template<Bits B, class T, class S>
-class StoreInstruction<B, T, S, StoreSynchronization::Relaxed> : public StoreInstructionBase<B, T, S>, public ScopeModifier<>
+template<Bits B, class T, class S, bool Assert>
+class StoreInstruction<B, T, S, StoreSynchronization::Relaxed, Assert> : public StoreInstructionBase<B, T, S, Assert>, public ScopeModifier<>
 {
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S>(address, source), ScopeModifier<>(scope) {}
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S, Assert>(address, source), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "st"; }
 
@@ -128,13 +128,13 @@ public:
 	}
 };
 
-template<Bits B, class T, class S>
-class StoreInstruction<B, T, S, StoreSynchronization::Release> : public StoreInstructionBase<B, T, S>, public ScopeModifier<>
+template<Bits B, class T, class S, bool Assert>
+class StoreInstruction<B, T, S, StoreSynchronization::Release, Assert> : public StoreInstructionBase<B, T, S, Assert>, public ScopeModifier<>
 {
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S>(address, source), ScopeModifier<>(scope) {}
+	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S, Assert>(address, source), ScopeModifier<>(scope) {}
 
 	static std::string Mnemonic() { return "st"; }
 

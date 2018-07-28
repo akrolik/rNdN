@@ -11,108 +11,6 @@
 
 namespace PTX {
 
-// @struct is_type_specialization
-//
-// Type trait for determining if a type is a specialization of some template
-
-enum class Bits : int;
-
-template <class T, template <Bits, unsigned int> class Template>
-struct is_type_specialization : std::false_type {};
-
-template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
-struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
- 
-// @struct is_comparable_type
-//
-// Type trait for determining if a PTX::Type can be compared
-
-template<class T, typename E = void>
-struct is_comparable_type : std::false_type {};
-
-template<class T>
-struct is_comparable_type<T, std::enable_if_t<std::is_enum<typename T::ComparisonOperator>::value>> : std::true_type {};
-
-// @struct is_rounding_type
-//
-// Type trait for determining if a PTX::Type has a rounding mode
-
-template <class T, typename E = void>
-struct is_rounding_type : std::false_type {};
-
-template <class T>
-struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
-
-// @struct is_bit_type
-//
-// Type trait for determining if a PTX::Type is a bit type
-
-template<Bits, unsigned int> struct BitType;
-
-template <class T, typename E = void>
-struct is_bit_type : std::false_type {};
-
-template <class T>
-struct is_bit_type<T, std::enable_if_t<
-	is_type_specialization<T, BitType>::value
->> : std::true_type {};
-
-// @struct is_int_type
-//
-// Type trait for determining if a PTX::Type is an integer (signed or unsigned) type
-
-template<Bits, unsigned int> struct IntType;
-template<Bits, unsigned int> struct UIntType;
-
-template <class T, typename E = void>
-struct is_int_type : std::false_type {};
-
-template <class T>
-struct is_int_type<T, std::enable_if_t<
-	is_type_specialization<T, IntType>::value ||
-	is_type_specialization<T, UIntType>::value
->> : std::true_type {};
-
-template <class T, typename E = void>
-struct is_unsigned_int_type : std::false_type {};
-
-template <class T>
-struct is_unsigned_int_type<T, std::enable_if_t<
-	is_type_specialization<T, UIntType>::value
->> : std::true_type {};
-
-template <class T, typename E = void>
-struct is_signed_int_type : std::false_type {};
-
-template <class T>
-struct is_signed_int_type<T, std::enable_if_t<
-	is_type_specialization<T, IntType>::value
->> : std::true_type {};
-
-// @struct is_float_type
-//
-// Type trait for determining if a PTX::Type is a floating point type
-
-template<Bits, unsigned int> struct FloatType;
-
-template <class T, typename E = void>
-struct is_float_type : std::false_type {};
-
-template <class T>
-struct is_float_type<T, std::enable_if_t<is_type_specialization<T, FloatType>::value>> : std::true_type {};
-
-// @struct is_array_type
-//
-// Type trait for determining if a PTX::Type is an array type
-
-template<class, unsigned int> struct ArrayType;
-
-template <class T>
-struct is_array_type : std::false_type {};
-
-template <class T, unsigned int N>
-struct is_array_type<ArrayType<T, N>> : std::true_type {};
-
 #define REQUIRE_TYPE_PARAM(CONTEXT, ENABLED) \
 	constexpr static bool TypeSupported = ENABLED; \
 	static_assert(Assert == false || TypeSupported == true, "PTX::" TO_STRING(CONTEXT) " does not support PTX type");
@@ -120,6 +18,19 @@ struct is_array_type<ArrayType<T, N>> : std::true_type {};
 #define REQUIRE_TYPE_PARAMS(context, D_ENABLED, T_ENABLED) \
 	constexpr static bool TypeSupported = D_ENABLED && T_ENABLED; \
 	static_assert(Assert == false || TypeSupported == true, "PTX::" TO_STRING(context) " does not support PTX types");
+
+// @enum Bits
+//
+// Enumeration of the number of bits in a single data element (does not include
+// packing or vector information)
+
+enum class Bits : int {
+	Bits1  = (1 << 0),
+	Bits8  = (1 << 3),
+	Bits16 = (1 << 4),
+	Bits32 = (1 << 5),
+	Bits64 = (1 << 6)
+};
 
 // @struct Type
 //
@@ -146,13 +57,19 @@ struct ValueType : DataType {};
 
 struct ScalarType : ValueType {};
 
-enum class Bits : int {
-	Bits1  = (1 << 0),
-	Bits8  = (1 << 3),
-	Bits16 = (1 << 4),
-	Bits32 = (1 << 5),
-	Bits64 = (1 << 6)
-};
+// @struct is_type_specialization
+//
+// Type trait for determining if a type is a specialization of some template
+
+template <class T, template <Bits, unsigned int> class Template>
+struct is_type_specialization : std::false_type {};
+
+template <template <Bits, unsigned int> class Template, Bits B, unsigned int N>
+struct is_type_specialization<Template<B, N>, Template> : std::true_type {};
+ 
+// @struct BitSize
+//
+// Convenience class for computing the number of bits or bytes in a type
 
 template<Bits B>
 struct BitSize
@@ -160,6 +77,10 @@ struct BitSize
 	constexpr static std::underlying_type<Bits>::type NumBits = static_cast<std::underlying_type<Bits>::type>(B);
 	constexpr static std::underlying_type<Bits>::type NumBytes = NumBits / 8;
 };
+
+// @struct BitType
+//
+// Untyped data representation
 
 template<Bits B, unsigned int N = 1>
 struct BitTypeBase : ScalarType
@@ -281,6 +202,30 @@ using Bit16Type = BitType<Bits::Bits16>;
 using Bit32Type = BitType<Bits::Bits32>;
 using Bit64Type = BitType<Bits::Bits64>;
 
+// @struct is_bit_type
+//
+// Type trait for determining if a PTX::Type is a bit type
+
+template <class T, typename E = void>
+struct is_predicate_type : std::false_type {};
+
+template <class T>
+struct is_predicate_type<T, std::enable_if_t<
+	std::is_same<T, PredicateType>::value
+>> : std::true_type {};
+
+template <class T, typename E = void>
+struct is_bit_type : std::false_type {};
+
+template <class T>
+struct is_bit_type<T, std::enable_if_t<
+	is_type_specialization<T, BitType>::value
+>> : std::true_type {};
+
+// @struct IntType
+//
+// Signed integer representation
+
 template<Bits B, unsigned int N = 1>
 struct IntTypeBase : BitType<B, N>
 {
@@ -385,6 +330,22 @@ using Int8Type = IntType<Bits::Bits8>;
 using Int16Type = IntType<Bits::Bits16>;
 using Int32Type = IntType<Bits::Bits32>;
 using Int64Type = IntType<Bits::Bits64>;
+
+// @struct is_signed_int_type
+//
+// Type trait for determining if a PTX::Type is a signed integer type
+
+template <class T, typename E = void>
+struct is_signed_int_type : std::false_type {};
+
+template <class T>
+struct is_signed_int_type<T, std::enable_if_t<
+	is_type_specialization<T, IntType>::value
+>> : std::true_type {};
+
+// @struct UIntType
+//
+// Unsigned integer representation
 
 template<Bits B, unsigned int N = 1>
 struct UIntTypeBase : BitType<B, N>
@@ -502,6 +463,35 @@ using UInt8Type = UIntType<Bits::Bits8>;
 using UInt16Type = UIntType<Bits::Bits16>;
 using UInt32Type = UIntType<Bits::Bits32>;
 using UInt64Type = UIntType<Bits::Bits64>;
+
+// @struct is_unsigned_int_type
+//
+// Type trait for determining if a PTX::Type is an unsigned integer type
+
+template <class T, typename E = void>
+struct is_unsigned_int_type : std::false_type {};
+
+template <class T>
+struct is_unsigned_int_type<T, std::enable_if_t<
+	is_type_specialization<T, UIntType>::value
+>> : std::true_type {};
+
+// @struct is_int_type
+//
+// Type trait for determining if a PTX::Type is an integer (signed or unsigned) type
+
+template <class T, typename E = void>
+struct is_int_type : std::false_type {};
+
+template <class T>
+struct is_int_type<T, std::enable_if_t<
+	is_type_specialization<T, IntType>::value ||
+	is_type_specialization<T, UIntType>::value
+>> : std::true_type {};
+
+// @struct FloatType
+//
+// Floating point representation
 
 template<Bits B, unsigned int N = 1>
 struct FloatTypeBase : BitType<B, N>
@@ -756,6 +746,16 @@ using Float16x2Type = FloatType<Bits::Bits16, 2>;
 using Float32Type = FloatType<Bits::Bits32>;
 using Float64Type = FloatType<Bits::Bits64>;
 
+// @struct is_float_type
+//
+// Type trait for determining if a PTX::Type is a floating point type
+
+template <class T, typename E = void>
+struct is_float_type : std::false_type {};
+
+template <class T>
+struct is_float_type<T, std::enable_if_t<is_type_specialization<T, FloatType>::value>> : std::true_type {};
+
 enum class VectorSize : int {
 	Vector2 = 2,
 	Vector4 = 4
@@ -807,7 +807,23 @@ static std::string GetVectorElementName(VectorElement vectorElement)
 	return ".<unknown>";
 }
 
+// @struct is_array_type
+//
+// Type trait for determining if a PTX::Type is an array type
+
+template<class, unsigned int> struct ArrayType;
+
+template <class T>
+struct is_array_type : std::false_type {};
+
+template <class T, unsigned int N>
+struct is_array_type<ArrayType<T, N>> : std::true_type {};
+
 const unsigned int DynamicSize = 0;
+
+// @struct ArrayType
+//
+// Representation of array types
 
 template<class T, unsigned int N>
 struct ArrayType : DataType
@@ -849,6 +865,10 @@ struct ArrayType : DataType
 	static std::string Name() { return BaseName() + Dimensions(); }
 };
 
+// @struct PointerType
+//
+// Representation of pointer (unsigned integer) types
+
 template<Bits B, class T, class S = AddressableSpace>
 struct PointerType : UIntType<B>
 {
@@ -866,5 +886,25 @@ template<class T, class S = AddressableSpace>
 using Pointer32Type = PointerType<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>
 using Pointer64Type = PointerType<Bits::Bits64, T, S>;
+
+// @struct is_comparable_type
+//
+// Type trait for determining if a PTX::Type can be compared
+
+template<class T, typename E = void>
+struct is_comparable_type : std::false_type {};
+
+template<class T>
+struct is_comparable_type<T, std::enable_if_t<std::is_enum<typename T::ComparisonOperator>::value>> : std::true_type {};
+
+// @struct is_rounding_type
+//
+// Type trait for determining if a PTX::Type has a rounding mode
+
+template <class T, typename E = void>
+struct is_rounding_type : std::false_type {};
+
+template <class T>
+struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
 
 }

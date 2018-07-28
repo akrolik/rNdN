@@ -1,10 +1,12 @@
 #pragma once
 
+#include "PTX/Instructions/InstructionBase.h"
 #include "PTX/Instructions/PredicatedInstruction.h"
 #include "PTX/Instructions/Modifiers/ComparisonModifier.h"
 #include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 #include "PTX/Instructions/Modifiers/PredicateModifier.h"
 
+#include "PTX/Type.h"
 #include "PTX/Operands/Operand.h"
 #include "PTX/Operands/Extended/DualOperand.h"
 #include "PTX/Operands/Variables/Register.h"
