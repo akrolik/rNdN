@@ -10,7 +10,7 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S = AddressableSpace>
+template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
 class ReductionInstruction : public PredicatedInstruction, public ScopeModifier<false>
 {
 public:
