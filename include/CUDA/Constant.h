@@ -12,7 +12,7 @@ template<class T>
 class TypedConstant : public Constant
 {
 public:
-	TypedConstant(T& value) : m_value(value) {}
+	TypedConstant(const T& value) : m_value(value) {}
 
 	void *GetAddress() override { return &m_value; }
 
