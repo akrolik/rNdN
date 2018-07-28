@@ -5,6 +5,7 @@
 #include "Codegen/Builder.h"
 #include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 
 #include "HorseIR/Tree/Parameter.h"
 
@@ -29,33 +30,30 @@ public:
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			auto declaration = new PTX::PointerDeclaration<B, PTX::Int8Type>(parameter->GetName());
-			this->m_builder->AddParameter(declaration);
-			auto variable = declaration->GetVariable(parameter->GetName());
-			auto value = this->m_builder->AllocateRegister<T>(parameter->GetName());
+			auto value = this->m_builder->AllocateTemporary<PTX::Int8Type>();
+			auto converted = this->m_builder->AllocateRegister<PTX::PredicateType>(parameter->GetName());
 
-			auto temp8 = this->m_builder->AllocateTemporary<PTX::Int8Type>();
-			auto temp16 = this->m_builder->AllocateTemporary<PTX::Int16Type>();
-
-			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template GenerateParameter<PTX::Int8Type, PTX::GlobalSpace>(variable, indexKind);
-
-			this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::Int8Type, PTX::GlobalSpace>(temp8, address));
-			this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, temp8));
-			this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(value, temp16, new PTX::Value<PTX::Int16Type>(0), PTX::Int16Type::ComparisonOperator::NotEqual));
+			Generate(parameter->GetName(), value, indexKind);
+			ConversionGenerator::ConvertSource(this->m_builder, converted, value);
 		}
 		else
 		{
-			auto declaration = new PTX::PointerDeclaration<B, T>(parameter->GetName());
-			this->m_builder->AddParameter(declaration);
-			auto variable = declaration->GetVariable(parameter->GetName());
-			auto value = this->m_builder->AllocateRegister<T>(parameter->GetName());
-
-			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
-
-			this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(value, address));
+			auto destination = this->m_builder->AllocateRegister<T>(parameter->GetName());
+			Generate(parameter->GetName(), destination, indexKind);
 		}
+	}
+
+	template<class T>
+	void Generate(const std::string& name, const PTX::Register<T> *destination, IndexKind indexKind)
+	{
+		auto declaration = new PTX::PointerDeclaration<B, T>(name);
+		this->m_builder->AddParameter(declaration);
+		auto variable = declaration->GetVariable(name);
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
+
+		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
 	}
 };
 

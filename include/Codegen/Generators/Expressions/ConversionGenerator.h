@@ -7,6 +7,8 @@
 #include "PTX/Operands/Adapters/TruncateAdapter.h"
 #include "PTX/Operands/Adapters/TypeAdapter.h"
 #include "PTX/Operands/Adapters/UnsignedAdapter.h"
+#include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
+#include "PTX/Instructions/Comparison/SelectInstruction.h"
 #include "PTX/Instructions/Data/ConvertInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
 
@@ -27,6 +29,13 @@ public:
 	}
 
 	template<class T, class S>
+	static void ConvertSource(Builder *builder, const PTX::Register<T> *destination, const PTX::Register<S> *source)
+	{
+		ConversionGenerator gen(builder);
+		gen.ConvertSource(destination, source);
+	}
+
+	template<class T, class S>
 	const PTX::Register<T> *ConvertSource(const PTX::Register<S> *source)
 	{
 		if constexpr(std::is_same<T, S>::value)
@@ -39,7 +48,27 @@ public:
 		{
 			return relaxedSource;
 		}
-		return GenerateConversion<T>(source);
+		auto converted = this->m_builder->AllocateTemporary<T>();
+		GenerateConversion(converted, source);
+		return converted;
+	}
+
+	template<class T, class S>
+	void ConvertSource(const PTX::Register<T> *destination, const PTX::Register<S> *source)
+	{
+		if constexpr(std::is_same<T, S>::value)
+		{
+			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(destination, source));
+			return;
+		}
+
+		auto relaxedSource = RelaxSource<T>(source);
+		if (relaxedSource != nullptr)
+		{
+			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(destination, relaxedSource));
+			return;
+		}
+		GenerateConversion(destination, source);
 	}
 
 private:
@@ -139,7 +168,7 @@ private:
 	}
 
 	template<class D, class S>
-	const PTX::Register<D> *GenerateConversion(const PTX::Register<S> *source)
+	void GenerateConversion(const PTX::Register<D> *converted, const PTX::Register<S> *source)
 	{
 		// Check if the conversion instruction is supported by these types
 
@@ -147,7 +176,6 @@ private:
 		{
 			// Generate a cvt instruction for the types
 
-			auto converted = this->m_builder->AllocateTemporary<D>();
 			auto convertInstruction = new PTX::ConvertInstruction<D, S>(converted, source);
 
 			// If a rounding mode is supported by the convert instruction, then it is actually required!
@@ -158,12 +186,46 @@ private:
 			}
 
 			this->m_builder->AddStatement(convertInstruction);
-			return converted;
+			return;
 		}
 
 		std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + D::Name() << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 };
+
+template<>
+void ConversionGenerator::ConvertSource<PTX::PredicateType, PTX::Int8Type>(const PTX::Register<PTX::PredicateType> *destination, const PTX::Register<PTX::Int8Type> *source)
+{
+	auto temp16 = this->m_builder->AllocateTemporary<PTX::Int16Type>();
+
+	this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, source));
+	this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(destination, temp16, new PTX::Value<PTX::Int16Type>(0), PTX::Int16Type::ComparisonOperator::NotEqual));
+}
+
+template<>
+const PTX::Register<PTX::PredicateType> *ConversionGenerator::ConvertSource<PTX::PredicateType, PTX::Int8Type>(const PTX::Register<PTX::Int8Type> *source)
+{
+	auto converted = this->m_builder->AllocateTemporary<PTX::PredicateType>();
+	ConvertSource(converted, source);
+	return converted;
+}
+
+template<>
+void ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::PredicateType>(const PTX::Register<PTX::Int8Type> *destination, const PTX::Register<PTX::PredicateType> *source)
+{
+	auto temp32 = this->m_builder->AllocateTemporary<PTX::Int32Type>();
+
+	this->m_builder->AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(temp32, new PTX::Value<PTX::Int32Type>(1), new PTX::Value<PTX::Int32Type>(0), source));
+	this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int32Type>(destination, temp32));
+}
+
+template<>
+const PTX::Register<PTX::Int8Type> *ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::PredicateType>(const PTX::Register<PTX::PredicateType> *source)
+{
+	auto converted = this->m_builder->AllocateTemporary<PTX::Int8Type>();
+	ConvertSource(converted, source);
+	return converted;
+}
 
 }
