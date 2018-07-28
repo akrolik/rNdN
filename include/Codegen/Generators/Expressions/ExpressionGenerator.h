@@ -3,6 +3,7 @@
 #include "HorseIR/Traversal/ForwardTraversal.h"
 #include "Codegen/Generators/Generator.h"
 
+#include "HorseIR/BuiltinFunctions.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 
 #include "PTX/Operands/Variables/Register.h"
@@ -40,112 +41,111 @@ public:
 
 	BuiltinGenerator<B, T> *GetBuiltinGenerator(const HorseIR::CallExpression *call)
 	{
-		BuiltinFunction function = GetBuiltinFunction(call->GetName());
+		HorseIR::BuiltinFunction function = HorseIR::GetBuiltinFunction(call->GetName());
 		switch (function)
 		{
-			case BuiltinFunction::Absolute:
+			case HorseIR::BuiltinFunction::Absolute:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Absolute);
-			case BuiltinFunction::Negate:
+			case HorseIR::BuiltinFunction::Negate:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Negate);
-			case BuiltinFunction::Ceiling:
+			case HorseIR::BuiltinFunction::Ceiling:
 				return new RoundingGenerator<B, T>(this->m_builder, RoundingOperation::Ceiling);
-			case BuiltinFunction::Floor:
+			case HorseIR::BuiltinFunction::Floor:
 				return new RoundingGenerator<B, T>(this->m_builder, RoundingOperation::Floor);
-			case BuiltinFunction::Round:
+			case HorseIR::BuiltinFunction::Round:
 				return new RoundingGenerator<B, T>(this->m_builder, RoundingOperation::Nearest);
-			case BuiltinFunction::Conjugate:
+			case HorseIR::BuiltinFunction::Conjugate:
 				//TODO: Add support for complex numbers
 				std::cerr << "[ERROR] Complex number functions are not supported" << std::endl;
 				std::exit(EXIT_FAILURE);
-			case BuiltinFunction::Reciprocal:
+			case HorseIR::BuiltinFunction::Reciprocal:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Reciprocal);
-			case BuiltinFunction::Sign:
+			case HorseIR::BuiltinFunction::Sign:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Sign);
-			case BuiltinFunction::Pi:
+			case HorseIR::BuiltinFunction::Pi:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Pi);
-			case BuiltinFunction::Not:
+			case HorseIR::BuiltinFunction::Not:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Not);
-			case BuiltinFunction::Logarithm:
+			case HorseIR::BuiltinFunction::Logarithm:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::Logarithm);
-			case BuiltinFunction::Exponential:
+			case HorseIR::BuiltinFunction::Exponential:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::Exponential);
-			case BuiltinFunction::Cosine:
+			case HorseIR::BuiltinFunction::Cosine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::Cosine);
-			case BuiltinFunction::Sine:
+			case HorseIR::BuiltinFunction::Sine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::Sine);
-			case BuiltinFunction::Tangent:
+			case HorseIR::BuiltinFunction::Tangent:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::Tangent);
-			case BuiltinFunction::InverseCosine:
+			case HorseIR::BuiltinFunction::InverseCosine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::InverseCosine);
-			case BuiltinFunction::InverseSine:
+			case HorseIR::BuiltinFunction::InverseSine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::InverseSine);
-			case BuiltinFunction::InverseTangent:
+			case HorseIR::BuiltinFunction::InverseTangent:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::InverseTangent);
-			case BuiltinFunction::HyperbolicCosine:
+			case HorseIR::BuiltinFunction::HyperbolicCosine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::HyperbolicCosine);
-			case BuiltinFunction::HyperbolicSine:
+			case HorseIR::BuiltinFunction::HyperbolicSine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::HyperbolicSine);
-			case BuiltinFunction::HyperbolicTangent:
+			case HorseIR::BuiltinFunction::HyperbolicTangent:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::HyperbolicTangent);
-			case BuiltinFunction::HyperbolicInverseCosine:
+			case HorseIR::BuiltinFunction::HyperbolicInverseCosine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::HyperbolicInverseCosine);
-			case BuiltinFunction::HyperbolicInverseSine:
+			case HorseIR::BuiltinFunction::HyperbolicInverseSine:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::HyperbolicInverseSine);
-			case BuiltinFunction::HyperbolicInverseTangent:
+			case HorseIR::BuiltinFunction::HyperbolicInverseTangent:
 				return new ExternalUnaryGenerator<B, T>(this->m_builder, ExternalUnaryOperation::HyperbolicInverseTangent);
-			case BuiltinFunction::Less:
+			case HorseIR::BuiltinFunction::Less:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Less);
-			case BuiltinFunction::Greater:
+			case HorseIR::BuiltinFunction::Greater:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Greater);
-			case BuiltinFunction::LessEqual:
+			case HorseIR::BuiltinFunction::LessEqual:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::LessEqual);
-			case BuiltinFunction::GreaterEqual:
+			case HorseIR::BuiltinFunction::GreaterEqual:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::GreaterEqual);
-			case BuiltinFunction::Equal:
+			case HorseIR::BuiltinFunction::Equal:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Equal);
-			case BuiltinFunction::NotEqual:
+			case HorseIR::BuiltinFunction::NotEqual:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::NotEqual);
-			case BuiltinFunction::Plus:
+			case HorseIR::BuiltinFunction::Plus:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Plus);
-			case BuiltinFunction::Minus:
+			case HorseIR::BuiltinFunction::Minus:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Minus);
-			case BuiltinFunction::Multiply:
+			case HorseIR::BuiltinFunction::Multiply:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Multiply);
-			case BuiltinFunction::Divide:
+			case HorseIR::BuiltinFunction::Divide:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Divide);
-			case BuiltinFunction::Power:
+			case HorseIR::BuiltinFunction::Power:
 				return new ExternalBinaryGenerator<B, T>(this->m_builder, ExternalBinaryOperation::Power);
-			case BuiltinFunction::Logarithm2:
+			case HorseIR::BuiltinFunction::Logarithm2:
 				return new ExternalBinaryGenerator<B, T>(this->m_builder, ExternalBinaryOperation::Logarithm);
-			case BuiltinFunction::Modulo:
+			case HorseIR::BuiltinFunction::Modulo:
 				return new ExternalBinaryGenerator<B, T>(this->m_builder, ExternalBinaryOperation::Modulo);
-			case BuiltinFunction::And:
+			case HorseIR::BuiltinFunction::And:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::And);
-			case BuiltinFunction::Or:
+			case HorseIR::BuiltinFunction::Or:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Or);
-			case BuiltinFunction::Nand:
+			case HorseIR::BuiltinFunction::Nand:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Nand);
-			case BuiltinFunction::Nor:
+			case HorseIR::BuiltinFunction::Nor:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Nor);
-			case BuiltinFunction::Xor:
+			case HorseIR::BuiltinFunction::Xor:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Xor);
-			case BuiltinFunction::Compress:
+			case HorseIR::BuiltinFunction::Compress:
 				return new CompressionGenerator<B, T>(this->m_builder);
-			case BuiltinFunction::Count:
+			case HorseIR::BuiltinFunction::Count:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Count);
-			case BuiltinFunction::Sum:
+			case HorseIR::BuiltinFunction::Sum:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Sum);
-			case BuiltinFunction::Average:
+			case HorseIR::BuiltinFunction::Average:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Average);
-			case BuiltinFunction::Minimum:
+			case HorseIR::BuiltinFunction::Minimum:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Minimum);
-			case BuiltinFunction::Maximum:
+			case HorseIR::BuiltinFunction::Maximum:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Maximum);
-			case BuiltinFunction::Fill:
+			case HorseIR::BuiltinFunction::Fill:
 				return new FillGenerator<B, T>(this->m_builder);
-			case BuiltinFunction::Unsupported:
-				return nullptr;
 		}
+		return nullptr;
 	}
 
 protected:
