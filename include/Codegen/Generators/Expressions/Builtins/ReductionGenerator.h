@@ -7,6 +7,8 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
+#include "Codegen/Generators/ParameterGenerator.h"
+#include "Codegen/Generators/ReturnGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "PTX/StateSpace.h"
@@ -23,6 +25,7 @@
 #include "PTX/Instructions/Data/MoveInstruction.h"
 #include "PTX/Instructions/Data/StoreInstruction.h"
 #include "PTX/Instructions/Synchronization/BarrierInstruction.h"
+#include "PTX/Instructions/Synchronization/ReductionInstruction.h"
 #include "PTX/Operands/Adapters/ArrayAdapter.h"
 #include "PTX/Operands/Adapters/PointerAdapter.h"
 #include "PTX/Operands/Address/RegisterAddress.h"
@@ -67,14 +70,23 @@ class ReductionGenerator : public BuiltinGenerator<B, T>
 public:
 	ReductionGenerator(Builder *builder, ReductionOperation reductionOp) : BuiltinGenerator<B, T>(builder), m_reductionOp(reductionOp) {}
 
-	// The output of a reduction function has no compression predicate.
-	// We therefore do not implement GenerateCompressionPredicate in this subclass
+	// The output of a reduction function has no compression predicate. We therefore do not implement
+	// GenerateCompressionPredicate in this subclass
 
-	//TODO: Support 8 bit types in reductions
-	//TODO: Investigate using a shuffle reduction instead of the typical shared memory
+	//TODO: Support 8 bit and predicate types in reductions
 
 	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8, void>
 	Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
+	{
+		GenerateShared(target, call);
+	}
+
+	void GenerateShufle(const PTX::Register<T> *target, const HorseIR::CallExpression *call)
+	{
+		//TODO: Implement shuffle reduction
+	}
+	
+	void GenerateShared(const PTX::Register<T> *target, const HorseIR::CallExpression* call)
 	{
 		// Load the underlying data size from the kernel parameters
 
@@ -195,12 +207,12 @@ public:
 				label->SetName("RED_STORE");
 				for (unsigned int j = i; j >= 1; j >>= 1)
 				{
-					GenerateReduction(sharedThreadAddress, j);
+					GenerateSharedReduction(sharedThreadAddress, j);
 				}
 			}
 			else
 			{
-				GenerateReduction(sharedThreadAddress, i);
+				GenerateSharedReduction(sharedThreadAddress, i);
 			}
 
 			this->m_builder->AddStatement(new PTX::BlankStatement());
@@ -225,8 +237,40 @@ public:
 		this->m_builder->AddStatement(new PTX::BlankStatement());
 
 		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedMemoryAddress));
+
+		GenerateAtomicSynchronization(target, labelEnd);
+
 		this->m_builder->AddStatement(new PTX::BlankStatement());
 		this->m_builder->AddStatement(labelEnd);
+		this->m_builder->AddStatement(new PTX::ReturnInstruction());
+	}
+
+	void GenerateKernelSynchronization(const PTX::Register<T> *value, const PTX::Label *labelEnd)
+	{
+		// Return 1 value per block
+
+		ReturnGenerator<B> retGenerator(this->m_builder);
+		retGenerator.Generate(value, ReturnGenerator<B>::IndexKind::Block);
+
+		//TODO: Implement wave kernel synchronization
+	}
+
+	void GenerateAtomicSynchronization(const PTX::Register<T> *value, const PTX::Label *labelEnd)
+	{
+		// Create a return variable for holding the atomic value
+
+		const std::string returnName = "$return";
+		auto returnDeclaration = new PTX::PointerDeclaration<B, T>(returnName);
+		this->m_builder->AddParameter(returnDeclaration);
+
+		// Since atomics only output a single value, we use null addressing
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(returnDeclaration->GetVariable(returnName), AddressGenerator<B>::IndexKind::Null);
+
+		// Generate the reduction operation
+
+		this->m_builder->AddStatement(GenerateAtomicInstruction(m_reductionOp, address, value));
 	}
 
 private:
@@ -247,7 +291,7 @@ private:
 		}
 	}
 
-	void GenerateReduction(const PTX::Address<B, T, PTX::SharedSpace> *address, unsigned int offset)
+	void GenerateSharedReduction(const PTX::Address<B, T, PTX::SharedSpace> *address, unsigned int offset)
 	{
 		// Load the 2 values for this stage of the reduction into registers using the provided offset. Volatile
 		// reads/writes are used to ensure synchronization
@@ -296,6 +340,37 @@ private:
 		auto store = new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(address, result); 
 		store->SetPredicate(predicate);
 		this->m_builder->AddStatement(store);
+	}
+
+	static PTX::InstructionStatement *GenerateAtomicInstruction(ReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value)
+	{
+		switch (reductionOp)
+		{
+			case ReductionOperation::Count:
+			case ReductionOperation::Average:
+			case ReductionOperation::Sum:
+				if constexpr(PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add, false>::TypeSupported)
+				{
+					return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value);
+				}
+				break;
+			case ReductionOperation::Minimum:
+				if constexpr(PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum, false>::TypeSupported)
+				{
+					return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value);
+				}
+				break;
+			case ReductionOperation::Maximum:
+				if constexpr(PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum, false>::TypeSupported)
+				{
+					return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value);
+				}
+				break;
+			default:
+				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(reductionOp));
+		}
+
+		BuiltinGenerator<B, T>::Unimplemented("atomic synchronization for reduction operation " + ReductionOperationString(reductionOp));
 	}
 
 	ReductionOperation m_reductionOp;
