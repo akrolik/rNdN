@@ -26,7 +26,11 @@ public:
 
 	std::string ToString() const override
 	{
-		std::string code = "(";
+		std::string code;
+		if (m_values.size() > 1)
+		{
+			code += "(";
+		}
 		bool first = true;
 		for (const auto& value : m_values)
 		{
@@ -36,7 +40,11 @@ public:
 			}
 			code += std::to_string(value);
 		}
-		return code + "):" + m_type->ToString();
+		if (m_values.size() > 1)
+		{
+			code += ")";
+		}
+		return code + ":" + m_type->ToString();
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
