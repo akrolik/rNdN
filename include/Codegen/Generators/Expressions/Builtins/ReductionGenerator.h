@@ -9,6 +9,7 @@
 #include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
+#include "Codegen/Generators/SizeGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "PTX/StateSpace.h"
@@ -23,6 +24,7 @@
 #include "PTX/Instructions/ControlFlow/BranchInstruction.h"
 #include "PTX/Instructions/Data/MoveAddressInstruction.h"
 #include "PTX/Instructions/Data/MoveInstruction.h"
+#include "PTX/Instructions/Data/ShuffleInstruction.h"
 #include "PTX/Instructions/Data/StoreInstruction.h"
 #include "PTX/Instructions/Synchronization/BarrierInstruction.h"
 #include "PTX/Instructions/Synchronization/ReductionInstruction.h"
@@ -130,8 +132,6 @@ public:
 			src = opGen.GenerateOperand(call->GetArgument(0));
 		}
 
-
-
 		// Select the initial value for the reduction depending on the data size and compression mask
 
 		auto value = this->m_builder->template AllocateTemporary<T>();
@@ -157,19 +157,137 @@ public:
 			this->m_builder->AddStatement(s2);
 		}
 
-		// Generate a shared memory reduction strategy
-
-		GenerateShared(target, value);
+		//TODO: Select which type of reduction we want to implement
+		GenerateShuffleBlock(value);
+		// GenerateShuffleWarp(value);
+		// GenerateShared(value);
 	}
 
-	void GenerateShuffle(const PTX::Register<T> *target, const PTX::Register<T> *value)
+	void GenerateShuffleReduction(const PTX::Register<T> *value)
 	{
-		//TODO: Implement shuffle reduction
+		// Warp shuffle the values down, reducing at each level until a single value is computed, log_2(WARP_SZ)
+
+		//TODO: 32 is a runtime constant from the GPU
+		for (unsigned int offset = 32 >> 1; offset > 0; offset >>= 1)
+		{
+			auto temp = this->m_builder->template AllocateTemporary<T>();
+			this->m_builder->AddStatement(new PTX::ShuffleInstruction<T>(temp, value, new PTX::UInt32Value(offset), new PTX::UInt32Value(31), -1, PTX::ShuffleInstruction<T>::Mode::Down));
+
+			// Generate the operation for the reduction
+
+			auto [result, predicate] = GenerateReductionInstruction(temp, value);
+
+			// (Optionally) move the value into the register used for shuffling
+
+			auto move = new PTX::MoveInstruction<T>(value, result); 
+			move->SetPredicate(predicate);
+			this->m_builder->AddStatement(move);
+		}
+	}
+
+	void GenerateShuffleBlock(const PTX::Register<T> *value)
+	{
+		//TODO: 32 is a runtime amount...
+		auto sharedMemoryDeclaration = new PTX::TypedVariableDeclaration<PTX::ArrayType<T, 32>, PTX::SharedSpace>("sdata2");
+		sharedMemoryDeclaration->SetLinkDirective(PTX::Declaration::LinkDirective::Weak);
+		this->m_builder->AddExternalDeclaration(sharedMemoryDeclaration);
+
+		auto sharedMemory = new PTX::ArrayVariableAdapter<T, 32, PTX::SharedSpace>(sharedMemoryDeclaration->GetVariable("sdata2"));
+
+		// Generate the shuffle for each warp
+
+		GenerateShuffleReduction(value);
+
+		// Write a single reduced value to shared memory for each warp
+
+		IndexGenerator indexGen(this->m_builder);
+		auto laneid = indexGen.GenerateLaneIndex();
+
+		// Check if we are the first lane in the warp
+
+		auto predWarp = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		auto labelWarp = new PTX::Label("RED_WARP");
+		auto branchWarp = new PTX::BranchInstruction(labelWarp);
+		branchWarp->SetPredicate(predWarp);
+
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, laneid, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		this->m_builder->AddStatement(branchWarp);
+		this->m_builder->AddStatement(new PTX::BlankStatement());
+
+		// Store the value in shared memory
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		auto sharedWarpAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Warp);
+
+		this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedWarpAddress, value));
+
+		// End the if statement
+
+		this->m_builder->AddStatement(new PTX::BlankStatement());
+		this->m_builder->AddStatement(labelWarp);
+
+		// Synchronize all values in shared memory from across warps
+
+		this->m_builder->AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
+
+		// Load the values back from the shared memory into the individual threads
+
+		auto sharedLaneAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Lane);
+		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(value, sharedLaneAddress));
+
+		SizeGenerator sizeGen(this->m_builder);
+		auto warpCount = sizeGen.GenerateWarpCount();
+
+		auto predActive = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predActive, laneid, warpCount, PTX::UInt32Type::ComparisonOperator::Less));
+		this->m_builder->AddStatement(new PTX::SelectInstruction<T>(value, value, GenerateNullValue(m_reductionOp), predActive));
+
+		// Check if we are the first warp in the block for the final part of the reduction
+
+		auto predBlock = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		auto labelBlock = new PTX::Label("RED_BLOCK");
+		auto branchBlock = new PTX::BranchInstruction(labelBlock);
+		branchBlock->SetPredicate(predBlock);
+
+		auto warpid = indexGen.GenerateWarpIndex();
+
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, warpid, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		this->m_builder->AddStatement(branchBlock);
+		this->m_builder->AddStatement(new PTX::BlankStatement());
+
+		// Reduce the individual values from all warps into 1 final value for the block
+
+		GenerateShuffleReduction(value);
+
+		// End the if statement
+
+		this->m_builder->AddStatement(new PTX::BlankStatement());
+		this->m_builder->AddStatement(labelBlock);
+
+		// Write a single value per thread to the global atomic value
+
+		auto localIndex = indexGen.GenerateLocalIndex();
+		GenerateAtomicWrite(localIndex, value);
+	}
+
+
+	void GenerateShuffleWarp(const PTX::Register<T> *value)
+	{
+		// Generate the shuffle for each warp
+
+		GenerateShuffleReduction(value);
+
+		// Write a single value per thread to the global atomic value
+
+		IndexGenerator indexGen(this->m_builder);
+		auto laneid = indexGen.GenerateLaneIndex();
+
+		GenerateAtomicWrite(laneid, value);
 	}
 	
-	void GenerateShared(const PTX::Register<T> *target, const PTX::Register<T> *value)
+	void GenerateShared(const PTX::Register<T> *value)
 	{
-		//TODO: Determine the amount of shared memory needed
+		//TODO: Determine the amount of shared memory needed based on the number of threads in the cta
 		auto sharedMemoryAddress = this->m_builder->template AllocateSharedMemory<B, T>(512);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
@@ -234,24 +352,9 @@ public:
 			}
 		}
 
-		// At the end of the partial reduction we only have a single active thread. Use it to load the final value
-
-		auto predEnd = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
-		auto labelEnd = new PTX::Label("RED_END");
-		auto branchEnd = new PTX::BranchInstruction(labelEnd);
-		branchEnd->SetPredicate(predEnd);
-
-		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predEnd, localIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder->AddStatement(branchEnd);
-		this->m_builder->AddStatement(new PTX::BlankStatement());
-
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedMemoryAddress));
-
-		GenerateAtomicSynchronization(target, labelEnd);
-
-		this->m_builder->AddStatement(new PTX::BlankStatement());
-		this->m_builder->AddStatement(labelEnd);
-		this->m_builder->AddStatement(new PTX::ReturnInstruction());
+		auto result = this->m_builder->template AllocateTemporary<T>();
+		auto loadResult = new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(result, sharedMemoryAddress);
+		GenerateAtomicWrite(localIndex, result, loadResult);
 	}
 
 	void GenerateKernelSynchronization(const PTX::Register<T> *value, const PTX::Label *labelEnd)
@@ -264,8 +367,24 @@ public:
 		//TODO: Implement wave kernel synchronization
 	}
 
-	void GenerateAtomicSynchronization(const PTX::Register<T> *value, const PTX::Label *labelEnd)
+	void GenerateAtomicWrite(const PTX::TypedOperand<PTX::UInt32Type> *index, const PTX::Register<T> *value, const PTX::Statement *loadValue = nullptr)
 	{
+		// At the end of the partial reduction we only have a single active thread. Use it to load the final value
+
+		auto predEnd = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		auto labelEnd = new PTX::Label("RED_END");
+		auto branchEnd = new PTX::BranchInstruction(labelEnd);
+		branchEnd->SetPredicate(predEnd);
+
+		this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predEnd, index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		this->m_builder->AddStatement(branchEnd);
+		this->m_builder->AddStatement(new PTX::BlankStatement());
+
+		if (loadValue != nullptr)
+		{
+			this->m_builder->AddStatement(loadValue);
+		}
+
 		// Create a return variable for holding the atomic value
 
 		const std::string returnName = "$return";
@@ -280,6 +399,12 @@ public:
 		// Generate the reduction operation
 
 		this->m_builder->AddStatement(GenerateAtomicInstruction(m_reductionOp, address, value));
+
+		// End the funfction and return
+
+		this->m_builder->AddStatement(new PTX::BlankStatement());
+		this->m_builder->AddStatement(labelEnd);
+		this->m_builder->AddStatement(new PTX::ReturnInstruction());
 	}
 
 private:
@@ -305,7 +430,6 @@ private:
 		// Load the 2 values for this stage of the reduction into registers using the provided offset. Volatile
 		// reads/writes are used to ensure synchronization
 
-		auto result = this->m_builder->template AllocateTemporary<T>();
 		auto val = this->m_builder->template AllocateTemporary<T>();
 		auto offsetVal = this->m_builder->template AllocateTemporary<T>();
 		auto offsetAddress = address->CreateOffsetAddress(offset * PTX::BitSize<T::TypeBits>::NumBytes);
@@ -313,8 +437,22 @@ private:
 		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(val, address));
 		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(offsetVal, offsetAddress));
 
-		// The predicate can (optionally) disable the subsequent store. This is used for comparison
-		// type reductions (min/max)
+		// Generate the reduction instruction
+
+		auto [result, predicate] = GenerateReductionInstruction(val, offsetVal);
+
+		// (Optionally) store the new value back to the shared memory
+
+		auto store = new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(address, result); 
+		store->SetPredicate(predicate);
+		this->m_builder->AddStatement(store);
+	}
+
+	const std::pair<const PTX::Register<T>*, const PTX::Register<PTX::PredicateType> *> GenerateReductionInstruction(const PTX::TypedOperand<T> *val, const PTX::TypedOperand<T> *offsetVal)
+	{
+		auto result = this->m_builder->template AllocateTemporary<T>();
+
+		// The predicate can (optionally) disable the subsequent store. This is used for comparison type reductions (min/max)
 
 		const PTX::Register<PTX::PredicateType> *predicate = nullptr;
 		switch (m_reductionOp)
@@ -344,11 +482,7 @@ private:
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(m_reductionOp));
 		}
 
-		// (Optionally) store the new value back to the shared memory
-
-		auto store = new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(address, result); 
-		store->SetPredicate(predicate);
-		this->m_builder->AddStatement(store);
+		return std::make_pair(result, predicate);
 	}
 
 	static PTX::InstructionStatement *GenerateAtomicInstruction(ReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value)
