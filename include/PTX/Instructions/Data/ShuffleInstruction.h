@@ -36,7 +36,7 @@ public:
 		return ".<unknown>";
 	}
 
-	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, Mode mode, uint32_t sourceB, uint32_t sourceC, uint32_t memberMask) : m_destinationD(destinationD), m_sourceA(sourceA), m_mode(mode), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask) {}
+	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, const TypedOperand<UInt32Type> *sourceB, const TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode) : m_destinationD(destinationD), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
 
 	const Register<T> *GetDestination() const { return m_destinationD; }
 	void SetDestination(const Register<T> *destination) { m_destinationD = destination; }
@@ -50,11 +50,11 @@ public:
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
 
-	uint32_t GetSourceB() const { return m_sourceB; }
-	void SetSourceB(uint32_t source) { m_sourceB = source; }
+	const TypedOperand<UInt32Type> *GetSourceB() const { return m_sourceB; }
+	void SetSourceB(const TypedOperand<UInt32Type> *source) { m_sourceB = source; }
 
-	uint32_t GetSourceC() const { return m_sourceC; }
-	void SetSourceC(uint32_t source) { m_sourceC = source; }
+	const TypedOperand<UInt32Type> *GetSourceC() const { return m_sourceC; }
+	void SetSourceC(const TypedOperand<UInt32Type> *source) { m_sourceC = source; }
 
 	uint32_t GetMemberMask() const { return m_memberMask; }
 	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
@@ -78,8 +78,8 @@ public:
 			operands.push_back(new DualOperand(m_destinationD, m_destinationP));
 		}
 		operands.push_back(m_sourceA);
-		operands.push_back(new HexOperand(m_sourceB));
-		operands.push_back(new HexOperand(m_sourceC));
+		operands.push_back(m_sourceB);
+		operands.push_back(m_sourceC);
 		operands.push_back(new HexOperand(m_memberMask));
 		return operands;
 	}
@@ -88,11 +88,11 @@ private:
 	const Register<T> *m_destinationD = nullptr;
 	const Register<PredicateType> *m_destinationP = nullptr;
 	const TypedOperand<T> *m_sourceA = nullptr;
+	const TypedOperand<UInt32Type> *m_sourceB = nullptr;
+	const TypedOperand<UInt32Type> *m_sourceC = nullptr;
+	uint32_t m_memberMask = 0;
 
 	Mode m_mode;
-	uint32_t m_sourceB = 0;
-	uint32_t m_sourceC = 0;
-	uint32_t m_memberMask = 0;
 };
 
 }
