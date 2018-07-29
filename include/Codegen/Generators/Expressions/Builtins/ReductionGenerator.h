@@ -78,7 +78,7 @@ public:
 	//TODO: Support correct type matrix for reductions
 
 	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8, void>
-	Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
+	Generate(const std::string& target, const HorseIR::CallExpression *call) override
 	{
  		//TODO: The size variable should be present in every kernel function
 
