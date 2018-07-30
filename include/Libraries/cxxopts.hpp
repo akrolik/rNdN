@@ -1091,7 +1091,7 @@ namespace cxxopts
   class ParseResult
   {
     public:
-
+    ParseResult() {}
     ParseResult(
       const std::unordered_map<std::string, std::shared_ptr<OptionDetails>>&,
       std::vector<std::string>,
@@ -1167,8 +1167,8 @@ namespace cxxopts
       const std::string& name
     );
 
-    const std::unordered_map<std::string, std::shared_ptr<OptionDetails>>
-      &m_options;
+    std::unordered_map<std::string, std::shared_ptr<OptionDetails>>
+      m_options;
     std::vector<std::string> m_positional;
     std::vector<std::string>::iterator m_next_positional;
     std::unordered_set<std::string> m_positional_set;
