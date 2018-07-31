@@ -62,7 +62,7 @@ void yyerror(const char *s)
 
 %token '(' ')' '{' '}' '<' '>'
 %token tBOOL tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tLIST tTABLE tDATE
-%token tMODULE tIMPORT tDEF tCHECKCAST tRETURN
+%token tMODULE tIMPORT tDEF tKERNEL tCHECKCAST tRETURN
 %token <int_val> tINTVAL tDATEVAL
 %token <float_val> tFLOATVAL
 %token <string_val> tSTRINGVAL
@@ -95,6 +95,8 @@ module_contents : module_contents module_content                                
                 ;
 
 module_content : tDEF tIDENTIFIER '(' parameters ')' ':' type '{' statements '}'{ $$ = new HorseIR::Method(*$2, *$4, $7, *$9); }
+               | tKERNEL tIDENTIFIER '(' parameters ')' ':' type
+                     '{' statements '}'                                         { $$ = new HorseIR::Method(*$2, *$4, $7, *$9, true); }
 	       | tIMPORT tIDENTIFIER ';'                                        { $$ = new HorseIR::Import(*$2); }
                ;
 

@@ -55,6 +55,7 @@ d            return tDATE;
 module       return tMODULE;
 import       return tIMPORT;
 def          return tDEF;
+kernel       return tKERNEL;
 check_cast   return tCHECKCAST;
 return       return tRETURN;
 

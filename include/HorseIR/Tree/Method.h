@@ -18,18 +18,21 @@ class SymbolTable;
 class Method : public ModuleContent
 {
 public:
-	Method(std::string name, std::vector<Parameter *> parameters, Type *returnType, std::vector<Statement *> statements) : m_name(name), m_parameters(parameters), m_returnType(returnType), m_statements(statements) {}
+	Method(std::string name, std::vector<Parameter *> parameters, Type *returnType, std::vector<Statement *> statements, bool kernel = false) : m_name(name), m_parameters(parameters), m_returnType(returnType), m_statements(statements), m_kernel(kernel) {}
 
 	std::string GetName() const { return m_name; }
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
 	Type* GetReturnType() const { return m_returnType; }
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
 
+	bool IsKernel() const { return m_kernel; }
+	void SetKernel(bool kernel) { m_kernel = kernel; }
+
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
 
 	std::string ToString() const override
 	{
-		std::string code = "def " + m_name + " (";
+		std::string code = std::string((m_kernel) ? "kernel" : "def") + " " + m_name + " (";
 		bool first = true;
 		for (const auto& parameter : m_parameters)
 		{
@@ -55,6 +58,7 @@ private:
 	std::vector<Parameter *> m_parameters;
 	Type *m_returnType;
 	std::vector<Statement *> m_statements;
+	bool m_kernel = false;
 
 	SymbolTable *m_symbolTable = nullptr;
 };
