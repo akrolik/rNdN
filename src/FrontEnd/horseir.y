@@ -1,17 +1,15 @@
 %{
-#include <iostream>
-
 extern int yylineno;
 
 #include "HorseIR/Tree/Program.h"
+#include "Utils/Logger.h"
 
 extern HorseIR::Program *program;
 
 int yylex();
 void yyerror(const char *s)
 {
-	std::cerr << "[ERROR] (line " << yylineno << ") " << s << std::endl;
-	std::exit(EXIT_FAILURE);
+	Utils::Logger::LogError("(line " + std::to_string(yylineno) + ") " + s);
 }
 %}
 

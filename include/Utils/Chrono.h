@@ -15,7 +15,7 @@ public:
 		return std::chrono::steady_clock::now();
 	}
 
-	static long Finish(TimeTy start)
+	static long End(TimeTy start)
 	{
 		auto end = std::chrono::steady_clock::now();
 		return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();

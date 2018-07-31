@@ -1,9 +1,11 @@
 #include "CUDA/Platform.h"
 
-#include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include "CUDA/Utils.h"
+
+#include "Utils/Logger.h"
 
 namespace CUDA {
 
@@ -12,7 +14,7 @@ void Platform::Initialize()
 	if (!m_initialized)
 	{
 		checkDriverResult(cuInit(0));
-		std::cout << "CUDA driver initialized" << std::endl;
+		Utils::Logger::LogInfo("CUDA driver initialized");
 
 		LoadDevices();
 		m_initialized = true;
@@ -24,13 +26,17 @@ void Platform::LoadDevices()
 	int count = 0;
 	checkRuntimeError(cudaGetDeviceCount(&count));
 
-	std::cout << "Connected devices (" << count << ")" << std::endl;
-	for (int i = 0; i < count; ++i)
+	Utils::Logger::LogInfo("Found " + std::to_string(count) + " connected devices");
+	for (unsigned int i = 0; i < count; ++i)
 	{
 		std::unique_ptr<Device> device = std::make_unique<Device>(i);
 
 		float mem_f = float(device->GetMemorySize()) / 1024 / 1024 / 1024;
-		std::cout << "[" << i << "] " << device->GetName() << " (" << std::setprecision(3) << mem_f << " GB)" << std::endl;
+		std::stringstream stream;
+		stream << std::setprecision(3) << mem_f;
+		std::string mem = stream.str();
+
+		Utils::Logger::LogInfo("[" + std::to_string(i) + "] " + device->GetName() + " (" + mem + " GB)");
 
 		m_devices.push_back(std::move(device));
 	}
@@ -50,6 +56,8 @@ void Platform::CreateContext(std::unique_ptr<Device>& device)
 {
 	checkDriverResult(cuCtxCreate(&m_context, 0, device->GetDevice()));
 	checkDriverResult(cuCtxSetCurrent(m_context));
+
+	Utils::Logger::LogInfo("Created CUDA context for device " + std::to_string(device->GetIndex()));
 }
 
 Platform::~Platform()

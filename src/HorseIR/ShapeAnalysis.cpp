@@ -10,7 +10,7 @@
 #include "HorseIR/Tree/Expressions/Literal.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 
-#include <iostream>
+#include "Utils/Logger.h"
 
 namespace HorseIR {
 
@@ -35,8 +35,7 @@ void ShapeAnalysis::Visit(Parameter *parameter)
 
 	if (m_identifierMap.find(parameter->GetName()) == m_identifierMap.end())
 	{
-		std::cerr << "[ERROR] Shape analysis missing input shape for parameter " << parameter->GetName() << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Shape analysis missing input shape for parameter " + parameter->GetName());
 	}
 }
 
@@ -129,8 +128,7 @@ void ShapeAnalysis::Visit(CallExpression *call)
 			}
 			else
 			{
-				std::cerr << "[ERROR] Dyadic elementwise functions cannot be vectors of different sizes [" << arg1->size << " != " << arg2->size << "]" << std::endl;
-				std::exit(EXIT_FAILURE);
+				Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(arg1->size) + " != " + std::to_string(arg2->size) + "]");
 			}
 
 			SetShape(call, new Shape(kind, size));
@@ -159,8 +157,7 @@ void ShapeAnalysis::Visit(CallExpression *call)
 		}
 		case BuiltinFunction::Conjugate:
 		case BuiltinFunction::Unsupported:
-			std::cerr << "[ERROR] Shape analysis does not support function " << call->GetName() << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("Shape analysis does not support function " + call->GetName());
 	}
 }
 
@@ -198,8 +195,7 @@ const Shape *ShapeAnalysis::GetShape(const Expression *expression) const
 {
 	if (m_expressionMap.find(expression) == m_expressionMap.end())
 	{
-		std::cerr << "[ERROR] Shape not found for expression " << expression->ToString() << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Shape not found for expression " + expression->ToString());
 	}
 	return m_expressionMap.at(expression);
 }
@@ -216,11 +212,11 @@ void ShapeAnalysis::SetShape(const std::string& identifier, const Shape *shape)
 
 void ShapeAnalysis::Dump() const
 {
-	std::cout << "[DEBUG] Shape Analysis Dump" << std::endl;
-	std::cout << "------------------------------" << std::endl;
+	Utils::Logger::LogInfo("Shape Analysis Dump", Utils::Logger::DebugPrefix);
+	Utils::Logger::LogInfo("------------------------------", Utils::Logger::NoPrefix);
 	for (auto it = m_identifierMap.cbegin(); it != m_identifierMap.cend(); ++it)
 	{
-		std::cout << "  " << it->first << ": " << it->second->ToString() << std::endl;
+		Utils::Logger::LogInfo("  " + it->first + ": " + it->second->ToString());
 	}
 }
 

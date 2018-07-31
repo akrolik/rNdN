@@ -2,10 +2,11 @@
 
 #include "CUDA/Utils.h"
 
-#include <chrono>
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+
 #include <cstring>
 #include <functional>
-#include <iostream>
 
 namespace CUDA {
 
@@ -58,40 +59,42 @@ void Module::Compile()
 	// Add the PTX source code to the linker for compilation. Note that this will invoke the compile
 	// despite the name only pertaining to the linker
 
-	auto timeCompile_start = std::chrono::steady_clock::now();
+	auto timeCompile_start = Utils::Chrono::Start();
 
 	for (const auto& code : m_code)
 	{
 		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)code.c_str(), code.length() + 1, "PTX Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
-			std::cerr << "[ERROR] PTX failed to compile" << std::endl << l_errorLog << std::endl;
+			Utils::Logger::LogError("PTX failed to compile", Utils::Logger::ErrorPrefix, false);
+			Utils::Logger::LogError(l_errorLog, Utils::Logger::NoPrefix, false);
 			checkDriverResult(result);
 		}
 	}
 
-	auto timeCompile_end = std::chrono::steady_clock::now();
+	auto timeCompile = Utils::Chrono::End(timeCompile_start);
 
 	// Add the external libraries to the linker (if any)
 
-	auto timeLibraries_start = std::chrono::steady_clock::now();
+	auto timeLibraries_start = Utils::Chrono::Start();
 
 	for (const auto& module : m_linkedModules)
 	{
 		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, module.get().GetBinary(), module.get().GetBinarySize(), "Library Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
-			std::cerr << "[ERROR] Library cubin image failed to load" << std::endl << l_errorLog << std::endl;
+			Utils::Logger::LogError("Library cubin image failed to load", Utils::Logger::ErrorPrefix, false);
+			Utils::Logger::LogError(l_errorLog, Utils::Logger::NoPrefix, false);
 			checkDriverResult(result);
 		}
 	}
 
-	auto timeLibraries_end = std::chrono::steady_clock::now();
+	auto timeLibraries = Utils::Chrono::End(timeLibraries_start);
 
 	// Create the binary for the module, containing all code from the kernels as well as the
 	// exrenral libraries
 
-	auto timeLink_start = std::chrono::steady_clock::now();
+	auto timeLink_start = Utils::Chrono::Start();
 
 	void *binary = nullptr;
 	size_t binarySize = 0;
@@ -101,17 +104,16 @@ void Module::Compile()
 	m_binarySize = binarySize;
 	std::memcpy(m_binary, binary, binarySize);
 
-	auto timeLink_end = std::chrono::steady_clock::now();
+	auto timeLink = Utils::Chrono::End(timeLink_start);
 
-	auto compileTime = std::chrono::duration_cast<std::chrono::microseconds>(timeCompile_end - timeCompile_start).count();
-	auto librariesTime = std::chrono::duration_cast<std::chrono::microseconds>(timeLibraries_end - timeLibraries_start).count();
-	auto linkTime = std::chrono::duration_cast<std::chrono::microseconds>(timeLink_end - timeLink_start).count();
+	// Log compilation info to stdout
 
-	std::cout << "[INFO] PTX compiled in " << compileTime + librariesTime + linkTime << " mus" << std::endl;
-	std::cout << "         - Compilation: " << compileTime << " mus" << std::endl;
-	std::cout << "         - Libraries: " << librariesTime << " mus" << std::endl;
-	std::cout << "         - Link: " << linkTime << " mus" << std::endl;
-	std::cout << l_infoLog << std::endl;
+	Utils::Logger::LogTiming("PTX compiled", timeCompile + timeLibraries + timeLink);
+	Utils::Logger::LogTimingComponent("Assemble", timeCompile);
+	Utils::Logger::LogTimingComponent("Libraries", timeLibraries);
+	Utils::Logger::LogTimingComponent("Link", timeLink);
+
+	Utils::Logger::LogInfo(l_infoLog);
 
 	// Load the binary into the module and cleanup the linker session
 

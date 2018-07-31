@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
-#include <iostream>
 #include <vector>
+
+#include "Utils/Logger.h"
 
 namespace CUDA {
 
@@ -47,8 +48,7 @@ void ExternalModule::GenerateBinary(const Device& device)
 	std::vector<char> buffer(size);
 	if (!infile.read(buffer.data(), size))
 	{
-		std::cerr << "[ERROR] Unable to load binary for external module " << m_name << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Unable to load binary for external module " + m_name);
 	}
 
 	m_binary = ::operator new(size);

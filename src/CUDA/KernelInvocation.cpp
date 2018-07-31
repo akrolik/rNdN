@@ -2,6 +2,8 @@
 
 #include "CUDA/Utils.h"
 
+#include "Utils/Logger.h"
+
 namespace CUDA {
 
 KernelInvocation::KernelInvocation(Kernel& kernel) : m_kernel(kernel)
@@ -33,7 +35,7 @@ void KernelInvocation::Launch()
 				m_sharedMemorySize, 0, (void **)m_parameters, 0
 	));
 
-	std::cout << "Kernel '" << m_kernel.GetName() << "' launched" << std::endl;
+	Utils::Logger::LogInfo("Kernel '" + m_kernel.GetName() + "' launched");
 }
 
 }

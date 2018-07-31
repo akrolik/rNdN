@@ -1,8 +1,8 @@
 #include "CUDA/Device.h"
 
-#include <iostream>
-
 #include "CUDA/Utils.h"
+
+#include "Utils/Logger.h"
 
 namespace CUDA {
 
@@ -16,7 +16,7 @@ void Device::SetActive()
 {
 	checkRuntimeError(cudaSetDevice(m_index));
 
-	std::cout << "Device " << m_index << " active" << std::endl;
+	Utils::Logger::LogInfo("Device " + std::to_string(m_index) + " selected");
 }
 
 }

@@ -1,8 +1,5 @@
 #include "CUDA/libdevice.h"
 
-#include <iostream>
-#include <chrono>
-
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/CodeGen/CommandFlags.def"
@@ -16,11 +13,14 @@
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+
 namespace CUDA {
 
 std::string Generate(const std::string& compute)
 {
-	auto timeDummy_start = std::chrono::steady_clock::now();
+	auto timeDummy_start = Utils::Chrono::Start();
 
 	// Initialize dummy LLVM program with definitions of all required math functions.
 	// This will allow us to extract only the needed functions without writing a
@@ -51,8 +51,7 @@ std::string Generate(const std::string& compute)
 	auto module = llvm::parseIR(*dummyBuffer, diagnostic, context);
 	if (module == nullptr)
 	{
-		std::cerr << "[LLVM Error] Cannot parse dummy definitions : " << diagnostic.getMessage().str() << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Cannot parse dummy definitions : " + diagnostic.getMessage().str(), "LLVM Error");
 	}
 
 	// Initialize the module target and data layout. These are required for the
@@ -64,44 +63,42 @@ std::string Generate(const std::string& compute)
 	module->setTargetTriple(targetString);
 	module->setDataLayout(dataLayout);
 
-	auto timeDummy_end = std::chrono::steady_clock::now();
+	auto timeDummy = Utils::Chrono::End(timeDummy_start);
 
 	// Load the libdevice math library from the default CUDA path and parse
 	// into an LLVM module
 
-	auto timeLib_start = std::chrono::steady_clock::now();
+	auto timeLib_start = Utils::Chrono::Start();
 
 	std::string libdevicePath = "/usr/local/cuda/nvvm/libdevice/libdevice.10.bc";
 
 	auto libModule = llvm::parseIRFile(libdevicePath, diagnostic, context);
 	if (libModule == nullptr)
 	{
-		std::cerr << "[LLVM Error] Cannot parse libdevice file " << diagnostic.getFilename().str() << " : " << diagnostic.getMessage().str() << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Cannot parse libdevice file " + diagnostic.getFilename().str() + " : " + diagnostic.getMessage().str(), "LLVM Error");
 	}
 
 	libModule->setTargetTriple(targetString);
 	libModule->setDataLayout(dataLayout);
 
-	auto timeLib_end = std::chrono::steady_clock::now();
+	auto timeLib = Utils::Chrono::End(timeLib_start);
 
 	// Link the libdevice module into the dummy module, keeping only methods that
 	// are referenced in the dummy
 
-	auto timeLink_start = std::chrono::steady_clock::now();
+	auto timeLink_start = Utils::Chrono::Start();
 
 	llvm::Linker linker(*module);
 	if (linker.linkInModule(std::move(libModule), llvm::Linker::Flags::LinkOnlyNeeded))
 	{
-		std::cerr << "[LLVM Error] Error linking dummy and libdevice" << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Error linking dummy and libdevice", "LLVM Error");
 	}
 
-	auto timeLink_end = std::chrono::steady_clock::now();
+	auto timeLink = Utils::Chrono::End(timeLink_start);
 
 	// Initialize the LLVM NVPTX target for code generation
 
-	auto timeOptimize_start = std::chrono::steady_clock::now();
+	auto timeOptimize_start = Utils::Chrono::Start();
 
 	LLVMInitializeNVPTXTarget();
 	LLVMInitializeNVPTXTargetInfo();
@@ -128,8 +125,7 @@ std::string Generate(const std::string& compute)
 	const llvm::Target *target = llvm::TargetRegistry::lookupTarget(targetString, error);
 	if (target == nullptr)
 	{
-		std::cerr << "[LLVM Error] Cannot lookup target '" << targetString << "' : " << error << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Cannot lookup target '" + targetString + "' : " + error, "LLVM ERROR");
 	}
 
 	llvm::TargetOptions targetOptions = InitTargetOptionsFromCodeGenFlags();
@@ -166,12 +162,12 @@ std::string Generate(const std::string& compute)
 	functionPasses.doFinalization();
 	modulePasses.run(*module);
 
-	auto timeOptimize_end = std::chrono::steady_clock::now();
+	auto timeOptimize = Utils::Chrono::End(timeOptimize_start);
 
 	// Generate PTX code from the optimized LLVM module. We generate to a string
 	// instead of a file so it links with the next phase of the pipeline
 
-	auto timeCode_start = std::chrono::steady_clock::now();
+	auto timeCodegen_start = Utils::Chrono::Start();
 
 	llvm::legacy::PassManager codegenPasses;
 	std::string ptxCode;
@@ -180,20 +176,16 @@ std::string Generate(const std::string& compute)
 	machine->addPassesToEmitFile(codegenPasses, pstream, llvm::TargetMachine::CGFT_AssemblyFile, true);
 	codegenPasses.run(*module);
 
-	auto timeCode_end = std::chrono::steady_clock::now();
+	auto timeCodegen = Utils::Chrono::End(timeCodegen_start);
 
 	// Output timing info for diagnostics
 
-	auto dummyTime = std::chrono::duration_cast<std::chrono::microseconds>(timeDummy_end - timeDummy_start).count();
-	auto libdeviceTime = std::chrono::duration_cast<std::chrono::microseconds>(timeLib_end - timeLib_start).count();
-	auto optimizeTime = std::chrono::duration_cast<std::chrono::microseconds>(timeOptimize_end - timeOptimize_start).count();
-	auto codegenTime = std::chrono::duration_cast<std::chrono::microseconds>(timeCode_end - timeCode_start).count();
-
-	std::cout << "[INFO] libdevice PTX generated in " << dummyTime + libdeviceTime + optimizeTime + codegenTime << " mus" << std::endl;
-	std::cout << "         - dummy load: " << dummyTime << " mus" << std::endl;
-	std::cout << "         - libdevice load: " << libdeviceTime << " mus" << std::endl;
-	std::cout << "         - optimize: " << optimizeTime << " mus" << std::endl;
-	std::cout << "         - codegen: " << codegenTime << " mus" << std::endl;
+	Utils::Logger::LogTiming("libdevice PTX generated", timeDummy + timeLib + timeLink + timeOptimize + timeCodegen);
+	Utils::Logger::LogTimingComponent("Dummy load", timeDummy);
+	Utils::Logger::LogTimingComponent("libdevice load", timeLib);
+	Utils::Logger::LogTimingComponent("Link", timeLink);
+	Utils::Logger::LogTimingComponent("Optimize", timeOptimize);
+	Utils::Logger::LogTimingComponent("Codegen", timeCodegen);
 
 	return ptxCode;
 }

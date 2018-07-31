@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "HorseIR_Parser.hpp"
+#include "Utils/Logger.h"
 
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
 %}
@@ -97,8 +98,7 @@ return       return tRETURN;
 }
 
 . {
-	std::cerr << "[ERROR] (line " << yylineno << ") Unexpected character " << yytext << std::endl;
-	std::exit(EXIT_FAILURE);
+	Utils::Logger::LogError("(line " + std::to_string(yylineno) + ") Unexpected character " + yytext);
 }
 
 %%

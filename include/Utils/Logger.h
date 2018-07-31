@@ -5,22 +5,20 @@ namespace Utils {
 class Logger
 {
 public:
+	constexpr static char const *NoPrefix = "";
+	constexpr static char const *InfoPrefix = "INFO";
+	constexpr static char const *DebugPrefix = "DEBUG";
+	constexpr static char const *ErrorPrefix = "ERROR";
+
 	Logger(Logger const&) = delete;
 	void operator=(Logger const&) = delete;
 
-	static void LogInfo(const std::string& info, const std::string& prefix = "[INFO] ")
-	{
-		std::cout << prefix << info << std::endl;
-	}
+	static void LogSection(const std::string& name, bool separate = true);
 
-	static void LogError(const std::string& error, const std::string& prefix = "[ERROR] ", bool exit = true)
-	{
-		std::cerr << prefix << error << std::endl;
-		if (exit)
-		{
-			std::exit(EXIT_FAILURE);
-		}
-	}
+	static void LogInfo(const std::string& info, const std::string& prefix = InfoPrefix);
+	static void LogError(const std::string& error, const std::string& prefix = ErrorPrefix, bool exit = true);
+	static void LogTiming(const std::string& name, long timing);
+	static void LogTimingComponent(const std::string& name, long time);
 
 private:
 	Logger() {}
