@@ -115,20 +115,20 @@ void Interpreter::Visit(HorseIR::CastExpression *cast)
 void Interpreter::Visit(HorseIR::CallExpression *call)
 {
 	//TODO: Implement a global symbol table for the compilation unit
-	for (auto& module : m_program->GetModules())
-	{
-		for (auto& c : module->GetContents())
-		{
-			HorseIR::Method *m = nullptr;
-			if (m = dynamic_cast<HorseIR::Method *>(c))
-			{
-				if ("@" + m->GetName() == call->GetName())
-				{
-					Execute(m);
-				}
-			}
-		}
-	}
+	// for (auto& module : m_program->GetModules())
+	// {
+	// 	for (auto& c : module->GetContents())
+	// 	{
+	// 		HorseIR::Method *m = nullptr;
+	// 		if (m = dynamic_cast<HorseIR::Method *>(c))
+	// 		{
+	// 			if (m->GetName() == call->GetName())
+	// 			{
+	// 				Execute(m);
+	// 			}
+	// 		}
+	// 	}
+	// }
 	m_expressionMap.insert({call, nullptr});
 }
 

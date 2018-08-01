@@ -4,6 +4,7 @@
 
 #include "HorseIR/Tree/ModuleContent.h"
 
+#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
 #include "HorseIR/Traversal/Visitor.h"
 
 namespace HorseIR {
@@ -11,20 +12,20 @@ namespace HorseIR {
 class Import : public ModuleContent
 {
 public:
-	Import(std::string name) : m_name(name) {}
+	Import(ModuleIdentifier *identifier) : m_identifier(identifier) {}
 
-	std::string GetName() const { return m_name; }
-	void SetName(std::string name) { m_name = name; }
+	const ModuleIdentifier *GetIdentifier() const { return m_identifier; }
+	void SetIdentifier(ModuleIdentifier *identifier) { m_identifier = identifier; }
 
 	std::string ToString() const override
 	{
-		return "import " + m_name + ";";
+		return "import " + m_identifier->ToString() + ";";
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
-	std::string m_name;
+	ModuleIdentifier *m_identifier = nullptr;
 };
 
 }

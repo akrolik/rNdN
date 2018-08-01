@@ -8,7 +8,6 @@
 #include "Codegen/Generators/ReturnGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
-#include "HorseIR/SymbolTable.h"
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
@@ -90,10 +89,6 @@ public:
 		m_builder->AddDeclaration(function);
 		m_builder->SetCurrentFunction(function, method);
 		m_builder->OpenScope(function);
-
-		HorseIR::SymbolTable *symbols = new HorseIR::SymbolTable();
-		symbols->Build(method);
-		method->SetSymbolTable(symbols);
 
 		// Visit the method contents (i.e. parameters + statements!)
 

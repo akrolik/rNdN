@@ -6,6 +6,7 @@
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
+#include "HorseIR/Tree/Expressions/CastExpression.h"
 
 namespace HorseIR {
 
@@ -31,7 +32,11 @@ void ForwardTraversal::Visit(Method *method)
 	{
 		parameter->Accept(*this);
 	}
-	method->GetReturnType()->Accept(*this);
+	auto returnType = method->GetReturnType();
+	if (returnType != nullptr)
+	{
+		returnType->Accept(*this);
+	}
 	for (auto& statement : method->GetStatements())
 	{
 		statement->Accept(*this);
@@ -50,6 +55,12 @@ void ForwardTraversal::Visit(CallExpression *call)
 	{
 		argument->Accept(*this);
 	}
+}
+
+void ForwardTraversal::Visit(CastExpression *cast)
+{
+	cast->GetExpression()->Accept(*this);
+	cast->GetType()->Accept(*this);
 }
 
 void ForwardTraversal::Visit(ReturnStatement *ret)

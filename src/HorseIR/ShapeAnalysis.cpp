@@ -58,7 +58,7 @@ void ShapeAnalysis::Visit(CallExpression *call)
 
 	// Analyze the function according to the shape rules
 
-	BuiltinFunction function = GetBuiltinFunction(call->GetName());
+	BuiltinFunction function = GetBuiltinFunction(call->GetIdentifier()->GetName());
 	switch (function)
 	{
 		case BuiltinFunction::Absolute:
@@ -157,7 +157,7 @@ void ShapeAnalysis::Visit(CallExpression *call)
 		}
 		case BuiltinFunction::Conjugate:
 		case BuiltinFunction::Unsupported:
-			Utils::Logger::LogError("Shape analysis does not support function " + call->GetName());
+			Utils::Logger::LogError("Shape analysis does not support function " + call->GetIdentifier()->GetName());
 	}
 }
 

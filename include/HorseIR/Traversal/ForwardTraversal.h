@@ -14,6 +14,7 @@ public:
 	void Visit(Method *method) override;
 	void Visit(AssignStatement *assign) override;
 	void Visit(CallExpression *call) override;
+	void Visit(CastExpression *cast) override;
 	void Visit(ReturnStatement *ret) override;
 };
 

@@ -5,6 +5,8 @@
 #include "Utils/Logger.h"
 
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
+
+bool _functionIdent = false;
 %}
 
 NONZERODIGIT [1-9]
@@ -20,7 +22,7 @@ LETTER [A-Za-z_]
 
 [ \t\r\n]+   /* ignore */
 
-"("          return '(';
+"("          { _functionIdent = false; return '('; }
 ")"          return ')';
 "{"          return '{';
 "}"          return '}';
@@ -34,6 +36,7 @@ LETTER [A-Za-z_]
 "-"          return '-';
 "*"          return '*';
 "?"          return '?';
+"@"          { _functionIdent = true; return '@'; }
 ";"          return ';';
 "."          return '.';
 ","          return ',';
@@ -49,7 +52,7 @@ complex      return tCOMPLEX;
 sym          return tSYMBOL;
 str          return tSTRING;
 list         return tLIST;
-table        return tTABLE;
+table        { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tTABLE; }
 d            return tDATE;
 
 module       return tMODULE;
@@ -62,11 +65,6 @@ return       return tRETURN;
 `{LETTER}({LETTER}|{DIGIT})* {
 	yylval.string_val = new std::string(yytext);
 	return tSYMBOLVAL;
-}
-
-@{LETTER}({LETTER}|{DIGIT})* {
-	yylval.string_val = new std::string(yytext);
-	return tFUNCTIONVAL;
 }
 
 0|({NONZERODIGIT}{DIGIT}*) {

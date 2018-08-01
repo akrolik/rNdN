@@ -41,7 +41,7 @@ public:
 
 	[[noreturn]] static void Unimplemented(const HorseIR::CallExpression *call)
 	{
-		Unimplemented("builtin function " + call->GetName());
+		Unimplemented("builtin function " + call->GetIdentifier()->ToString());
 	}
 
 	[[noreturn]] static void Unimplemented(const std::string& context)

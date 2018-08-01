@@ -10,7 +10,6 @@
 #include "HorseIR/Tree/Statements/Statement.h"
 #include "HorseIR/Tree/Types/Type.h"
 
-
 namespace HorseIR {
 
 class SymbolTable;
@@ -18,9 +17,11 @@ class SymbolTable;
 class Method : public ModuleContent
 {
 public:
-	Method(std::string name, std::vector<Parameter *> parameters, Type *returnType, std::vector<Statement *> statements, bool kernel = false) : m_name(name), m_parameters(parameters), m_returnType(returnType), m_statements(statements), m_kernel(kernel) {}
+	Method(const std::string& name, const std::vector<Parameter *>& parameters, Type *returnType, const std::vector<Statement *>& statements, bool kernel = false) : m_name(name), m_parameters(parameters), m_returnType(returnType), m_statements(statements), m_kernel(kernel) {}
 
-	std::string GetName() const { return m_name; }
+	const std::string& GetName() const { return m_name; }
+	void SetName(const std::string& name) { m_name = name; }
+
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
 	Type* GetReturnType() const { return m_returnType; }
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
@@ -28,6 +29,7 @@ public:
 	bool IsKernel() const { return m_kernel; }
 	void SetKernel(bool kernel) { m_kernel = kernel; }
 
+	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
 
 	std::string ToString() const override

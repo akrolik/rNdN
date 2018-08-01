@@ -32,7 +32,7 @@ public:
 		BuiltinGenerator<B, T> *generator = GetBuiltinGenerator(call);
 		if (generator == nullptr)
 		{
-			std::cerr << "[ERROR] Generator for builtin function " + call->GetName() + " not implemented" << std::endl;
+			std::cerr << "[ERROR] Generator for builtin function " + call->GetIdentifier()->ToString() + " not implemented" << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
 		generator->Generate(m_target, call);
@@ -41,7 +41,7 @@ public:
 
 	BuiltinGenerator<B, T> *GetBuiltinGenerator(const HorseIR::CallExpression *call)
 	{
-		HorseIR::BuiltinFunction function = HorseIR::GetBuiltinFunction(call->GetName());
+		HorseIR::BuiltinFunction function = HorseIR::GetBuiltinFunction(call->GetIdentifier()->ToString());
 		switch (function)
 		{
 			case HorseIR::BuiltinFunction::Absolute:

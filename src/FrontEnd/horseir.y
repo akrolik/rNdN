@@ -28,6 +28,7 @@ void yyerror(const char *s)
 	#include "HorseIR/Tree/Expressions/Expression.h"
 	#include "HorseIR/Tree/Expressions/Identifier.h"
 	#include "HorseIR/Tree/Expressions/Literal.h"
+	#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
 	#include "HorseIR/Tree/Expressions/Symbol.h"
 	#include "HorseIR/Tree/Statements/AssignStatement.h"
 	#include "HorseIR/Tree/Statements/ReturnStatement.h"
@@ -57,6 +58,7 @@ void yyerror(const char *s)
 	HorseIR::Parameter *parameter;
 	HorseIR::Type *type;
 	HorseIR::Statement *statement;
+	HorseIR::ModuleIdentifier *module_identifier;
 	HorseIR::Expression *expression;
 }
 
@@ -66,7 +68,6 @@ void yyerror(const char *s)
 %token <int_val> tINTVAL tDATEVAL
 %token <float_val> tFLOATVAL
 %token <string_val> tSTRINGVAL
-%token <string_val> tFUNCTIONVAL
 %token <string_val> tSYMBOLVAL
 %token <string_val> tIDENTIFIER
 
@@ -77,6 +78,7 @@ void yyerror(const char *s)
 %type <type> type int_type float_type
 %type <statements> statements
 %type <statement> statement
+%type <module_identifier> module_identifier
 %type <expressions> literals literalsne
 %type <expression> expression call literal
 %type <ints> int_list date_list
@@ -97,7 +99,7 @@ module_contents : module_contents module_content                                
 module_content : tDEF tIDENTIFIER '(' parameters ')' ':' type '{' statements '}'{ $$ = new HorseIR::Method(*$2, *$4, $7, *$9); }
                | tKERNEL tIDENTIFIER '(' parameters ')' ':' type
                      '{' statements '}'                                         { $$ = new HorseIR::Method(*$2, *$4, $7, *$9, true); }
-	       | tIMPORT tIDENTIFIER ';'                                        { $$ = new HorseIR::Import(*$2); }
+	       | tIMPORT module_identifier ';'                                  { $$ = new HorseIR::Import($2); }
                ;
 
 parameters : parametersne                                                       { $$ = $1; }
@@ -145,8 +147,13 @@ expression : tCHECKCAST '(' expression ',' type ')'                             
            | literal                                                            { $$ = $1; }
            ; 
 
-call : tFUNCTIONVAL '(' literals ')'                                            { $$ = new HorseIR::CallExpression(*$1, *$3); }
+call : '@' module_identifier '(' literals ')'                                   { $$ = new HorseIR::CallExpression($2, *$4); }
+     | '@' tIDENTIFIER '(' literals ')'                                         { $$ = new HorseIR::CallExpression(new HorseIR::ModuleIdentifier(*$2), *$4); }
      ;
+
+module_identifier : tIDENTIFIER '.' tIDENTIFIER                                 { $$ = new HorseIR::ModuleIdentifier(*$1, *$3); }
+                  | tIDENTIFIER '.' '*'                                         { $$ = new HorseIR::ModuleIdentifier(*$1, "*"); }
+                  ;
 
 literals : literalsne                                                           { $$ = $1; }
          | %empty                                                               { $$ = new std::vector<HorseIR::Expression *>(); }

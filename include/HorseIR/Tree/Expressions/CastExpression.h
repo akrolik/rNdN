@@ -15,7 +15,7 @@ public:
 	CastExpression(Expression *expression, Type *type) : m_expression(expression), m_type(type) {}
 
 	Expression *GetExpression() const { return m_expression; }
-	const Type *GetType() const { return m_type; }
+	Type *GetType() const { return m_type; }
 
 	std::string ToString() const override
 	{

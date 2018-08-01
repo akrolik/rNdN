@@ -14,8 +14,8 @@ template<class T>
 class Literal : public Expression
 {
 public:
-	Literal(T value, Type *type) : m_values({value}), m_type(type) {}
-	Literal(std::vector<T> values, Type *type) : m_values(values), m_type(type) {}
+	Literal(const T& value, Type *type) : m_values({value}), m_type(type) {}
+	Literal(const std::vector<T>& values, Type *type) : m_values(values), m_type(type) {}
 
 	const Type *GetType() const override { return m_type; }
 
