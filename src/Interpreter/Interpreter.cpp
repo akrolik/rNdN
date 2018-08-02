@@ -4,6 +4,8 @@
 #include "CUDA/Module.h"
 
 #include "HorseIR/EntryAnalysis.h"
+#include "HorseIR/Tree/BuiltinMethod.h"
+#include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
@@ -100,6 +102,12 @@ void Interpreter::Execute(HorseIR::Method *method)
 	}
 }
 
+void Interpreter::Execute(HorseIR::BuiltinMethod *method)
+{
+	Utils::Logger::LogInfo("Executing builtin method '" + method->GetName() + "'");
+	//TODO: Implement builtin methods
+}
+
 void Interpreter::Visit(HorseIR::AssignStatement *assign)
 {
 	assign->GetExpression()->Accept(*this);
@@ -114,21 +122,16 @@ void Interpreter::Visit(HorseIR::CastExpression *cast)
 
 void Interpreter::Visit(HorseIR::CallExpression *call)
 {
-	//TODO: Implement a global symbol table for the compilation unit
-	// for (auto& module : m_program->GetModules())
-	// {
-	// 	for (auto& c : module->GetContents())
-	// 	{
-	// 		HorseIR::Method *m = nullptr;
-	// 		if (m = dynamic_cast<HorseIR::Method *>(c))
-	// 		{
-	// 			if (m->GetName() == call->GetName())
-	// 			{
-	// 				Execute(m);
-	// 			}
-	// 		}
-	// 	}
-	// }
+	auto method = call->GetMethod();
+	switch (method->GetKind())
+	{
+		case HorseIR::MethodDeclaration::Kind::Definition:
+			Execute(static_cast<HorseIR::Method *>(method));
+			break;
+		case HorseIR::MethodDeclaration::Kind::Builtin:
+			Execute(static_cast<HorseIR::BuiltinMethod *>(method));
+			break;
+	}
 	m_expressionMap.insert({call, nullptr});
 }
 

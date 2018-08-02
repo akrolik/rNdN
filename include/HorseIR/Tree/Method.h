@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "HorseIR/Tree/ModuleContent.h"
+#include "HorseIR/Tree/MethodDeclaration.h"
 
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/Parameter.h"
@@ -14,13 +14,10 @@ namespace HorseIR {
 
 class SymbolTable;
 
-class Method : public ModuleContent
+class Method : public MethodDeclaration
 {
 public:
-	Method(const std::string& name, const std::vector<Parameter *>& parameters, Type *returnType, const std::vector<Statement *>& statements, bool kernel = false) : m_name(name), m_parameters(parameters), m_returnType(returnType), m_statements(statements), m_kernel(kernel) {}
-
-	const std::string& GetName() const { return m_name; }
-	void SetName(const std::string& name) { m_name = name; }
+	Method(const std::string& name, const std::vector<Parameter *>& parameters, Type *returnType, const std::vector<Statement *>& statements, bool kernel = false) : MethodDeclaration(MethodDeclaration::Kind::Definition, name), m_parameters(parameters), m_returnType(returnType), m_statements(statements), m_kernel(kernel) {}
 
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
 	Type* GetReturnType() const { return m_returnType; }
@@ -32,9 +29,9 @@ public:
 	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
 
-	std::string ToString() const override
+	std::string SignatureString() const override
 	{
-		std::string code = std::string((m_kernel) ? "kernel" : "def") + " " + m_name + " (";
+		std::string code = std::string((m_kernel) ? "kernel" : "def") + " " + m_name + "(";
 		bool first = true;
 		for (const auto& parameter : m_parameters)
 		{
@@ -45,7 +42,18 @@ public:
 			first = false;
 			code += parameter->ToString();
 		}
-		code += ") : " + m_returnType->ToString() + " {\n";
+		code += ")";
+		if (m_returnType != nullptr)
+		{
+			code += " : " + m_returnType->ToString();
+		}
+		return code;
+	}
+
+	std::string ToString() const override
+	{
+		std::string code = SignatureString();
+		code += " {\n";
 		for (const auto& statement : m_statements)
 		{
 			code += "\t\t" + statement->ToString() + ";\n";
@@ -56,7 +64,6 @@ public:
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 
 private:
-	std::string m_name;
 	std::vector<Parameter *> m_parameters;
 	Type *m_returnType;
 	std::vector<Statement *> m_statements;

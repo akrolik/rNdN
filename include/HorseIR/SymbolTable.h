@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stack>
-#include <unordered_map>
+#include <map>
 
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
@@ -35,6 +35,10 @@ public:
 	void Insert(const std::string& name, Entry *symbol);
 	Entry *Get(const std::string& name);
 
+	Module *GetModule(const std::string& name);
+	MethodDeclaration *GetMethod(const std::string& name);
+	Type *GetVariable(const std::string& name);
+
 	void AddImport(const std::string& name, Entry *symbol);
 
 	SymbolTable *GetParent() const { return m_parent; }
@@ -43,9 +47,9 @@ public:
 
 private:
 	SymbolTable *m_parent = nullptr;
-	std::unordered_map<std::string, Entry *> m_table;
+	std::map<std::string, Entry *> m_table;
 
-	std::unordered_map<std::string, Entry *> m_imports;
+	std::map<std::string, Entry *> m_imports;
 };
 
 class SymbolPass_Modules : public ForwardTraversal
@@ -56,7 +60,9 @@ public:
 	void Build(Program *program);
 
 	void Visit(Module *module) override;
+	void Visit(BuiltinMethod *method) override;
 	void Visit(Method *method) override;
+
 private:
 	std::stack<SymbolTable *> m_scopes;
 };
@@ -70,7 +76,7 @@ public:
 	
 	void Visit(Module *module) override;
 	void Visit(Import *import) override;
-	void Visit(Method *method) override;
+	void Visit(Method *method) override; // Stops the traversal
 
 private:
 	Module *m_module = nullptr;

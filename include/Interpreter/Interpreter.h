@@ -14,6 +14,7 @@ public:
 
 	void Execute(HorseIR::Program *program);
 	void Execute(HorseIR::Method *method);
+	void Execute(HorseIR::BuiltinMethod *method);
 
 	void Visit(HorseIR::AssignStatement *assign) override;
 	void Visit(HorseIR::CastExpression *cast) override;

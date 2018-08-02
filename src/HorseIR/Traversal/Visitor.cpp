@@ -4,6 +4,8 @@
 #include "HorseIR/Tree/Module.h"
 #include "HorseIR/Tree/ModuleContent.h"
 #include "HorseIR/Tree/Import.h"
+#include "HorseIR/Tree/MethodDeclaration.h"
+#include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 
 #include "HorseIR/Tree/Statements/Statement.h"
@@ -49,9 +51,19 @@ void Visitor::Visit(Import *import)
 	Visit(static_cast<ModuleContent*>(import));
 }
 
-void Visitor::Visit(Method *method)
+void Visitor::Visit(MethodDeclaration *method)
 {
 	Visit(static_cast<ModuleContent*>(method));
+}
+
+void Visitor::Visit(BuiltinMethod *method)
+{
+	Visit(static_cast<MethodDeclaration*>(method));
+}
+
+void Visitor::Visit(Method *method)
+{
+	Visit(static_cast<MethodDeclaration*>(method));
 }
 
 void Visitor::Visit(Parameter *parameter)

@@ -11,6 +11,8 @@ class Program;
 class Module;
 class ModuleContent;
 class Import;
+class MethodDeclaration;
+class BuiltinMethod;
 class Method;
 class Parameter;
 
@@ -40,6 +42,8 @@ public:
 	virtual void Visit(Module *module);
 	virtual void Visit(ModuleContent *moduleContent);
 	virtual void Visit(Import *import);
+	virtual void Visit(MethodDeclaration *method);
+	virtual void Visit(BuiltinMethod *method);
 	virtual void Visit(Method *method);
 	virtual void Visit(Parameter *parameter);
 

@@ -5,7 +5,7 @@
 
 #include "HorseIR/Tree/Expressions/Expression.h"
 
-#include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
 #include "HorseIR/Traversal/Visitor.h"
 
@@ -24,8 +24,8 @@ public:
 	const std::vector<Expression *>& GetArguments() const { return m_arguments; }
 	Expression *GetArgument(unsigned int index) const { return m_arguments.at(index); }
 
-	Method *GetMethod() const { return m_method; }
-	void SetMethod(Method *method) { m_method = method; }
+	MethodDeclaration *GetMethod() const { return m_method; }
+	void SetMethod(MethodDeclaration *method) { m_method = method; }
 
 	std::string ToString() const override
 	{
@@ -49,7 +49,7 @@ private:
 	ModuleIdentifier *m_identifier = nullptr;
 	std::vector<Expression *> m_arguments;
 
-	Method *m_method = nullptr;
+	MethodDeclaration *m_method = nullptr;
 };
 
 }

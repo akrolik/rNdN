@@ -1,7 +1,9 @@
 #include "HorseIR/SymbolTable.h"
 
+#include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Import.h"
 #include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Module.h"
 #include "HorseIR/Tree/Parameter.h"
 #include "HorseIR/Tree/Program.h"
@@ -23,10 +25,10 @@ std::string SymbolTable::Entry::ToString() const
 			output += "[module]";
 			break;
 		case Kind::Method:
-			output += "[method] = <TODO>";
+			output += "[method] = " + static_cast<Method *>(node)->SignatureString();
 			break;
 		case Kind::Variable:
-			output += "[variable] = <TODO>";
+			output += "[variable] = " + node->ToString();
 			break;
 	}
 	return output;
@@ -67,6 +69,48 @@ SymbolTable::Entry *SymbolTable::Get(const std::string& name)
 	return nullptr;
 }
 
+Module *SymbolTable::GetModule(const std::string& name)
+{
+	auto symbol = Get(name);
+	if (symbol == nullptr)
+	{
+		Utils::Logger::LogError("Module " + name + " is not defined in program");
+	}
+	else if (symbol->kind != SymbolTable::Entry::Kind::Module)
+	{
+		Utils::Logger::LogError(name + " is not a module");
+	}
+	return static_cast<Module *>(symbol->node);
+}
+
+MethodDeclaration *SymbolTable::GetMethod(const std::string& name)
+{
+	auto symbol = Get(name);
+	if (symbol == nullptr)
+	{
+		Utils::Logger::LogError("Method " + name + " is not defined in module");
+	}
+	else if (symbol->kind != SymbolTable::Entry::Kind::Method)
+	{
+		Utils::Logger::LogError(name + " is not a method");
+	}
+	return static_cast<MethodDeclaration *>(symbol->node);
+}
+
+Type *SymbolTable::GetVariable(const std::string& name)
+{
+	auto symbol = Get(name);
+	if (symbol == nullptr)
+	{
+		Utils::Logger::LogError("Variable " + name + " is not defined in method");
+	}
+	else if (symbol->kind != SymbolTable::Entry::Kind::Variable)
+	{
+		Utils::Logger::LogError(name + " is not a variable");
+	}
+	return static_cast<Type *>(symbol->node);
+}
+
 void SymbolTable::AddImport(const std::string& name, Entry *symbol)
 {
 	// Check if symbol is already defined at this scope
@@ -84,12 +128,12 @@ std::string SymbolTable::ToString() const
 	std::string output;
 	for (const auto& entry : m_table)
 	{
-		output += "  " + entry.first + " " + entry.second->ToString() + "\n";
+		output += " - " + entry.first + " " + entry.second->ToString() + "\n";
 	}
 
 	for (const auto& entry : m_imports)
 	{
-		output += "* " + entry.first + " " + entry.second->ToString() + "\n";
+		output += " * " + entry.first + " " + entry.second->ToString() + "\n";
 	}
 	return output;
 }
@@ -117,6 +161,13 @@ void SymbolPass_Modules::Visit(Module *module)
 	m_scopes.pop();
 }
 
+void SymbolPass_Modules::Visit(BuiltinMethod *method)
+{
+	auto symbolTable = m_scopes.top();
+	symbolTable->Insert(method->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Method, method));
+}
+
+
 void SymbolPass_Modules::Visit(Method *method)
 {
 	auto symbolTable = m_scopes.top();
@@ -141,22 +192,12 @@ void SymbolPass_Imports::Visit(Import *import)
 	auto globalSymbolTable = symbolTable->GetParent();
 
 	auto identifier = import->GetIdentifier();
-	auto module = identifier->GetModule();
+	auto moduleName = identifier->GetModule();
+	auto name = identifier->GetName();
 
-	auto symbol = globalSymbolTable->Get(module);
-	if (symbol == nullptr)
-	{
-		Utils::Logger::LogError("Module " + module + " is not defined in program");
-	}
-	else if (symbol->kind != SymbolTable::Entry::Kind::Module)
-	{
-		Utils::Logger::LogError(module + " is not a module");
-	}
-
-	auto importedModule = static_cast<Module *>(symbol->node);
+	auto importedModule = globalSymbolTable->GetModule(moduleName);
 	auto importedSymbolTable = importedModule->GetSymbolTable();
 
-	auto name = identifier->GetName();
 	if (name == "*")
 	{
 		for (auto& entry : importedSymbolTable->m_table)
@@ -220,70 +261,34 @@ void SymbolPass_Methods::Visit(AssignStatement *assign)
 
 void SymbolPass_Methods::Visit(CallExpression *call)
 {
-	auto identifier = call->GetIdentifier();
 	auto symbolTable = m_scopes.top();
 
-	auto module = identifier->GetModule();
+	auto identifier = call->GetIdentifier();
+	auto moduleName = identifier->GetModule();
 	auto name = identifier->GetName();
 
-	if (module == "")
+	if (moduleName == "")
 	{
-		//TODO: provide central code for this and module
-		auto symbol = symbolTable->Get(name);
-		if (symbol == nullptr)
-		{
-			Utils::Logger::LogError("Method " + name + " is not defined in module");
-		}
-		else if (symbol->kind != SymbolTable::Entry::Kind::Method)
-		{
-			Utils::Logger::LogError(name + " is not a method");
-		}
-		auto method = static_cast<Method *>(symbol->node);
+		auto method = symbolTable->GetMethod(name);
 		call->SetMethod(method);
 	}
 	else
 	{
-		auto moduleSymbol = symbolTable->Get(module);
-		if (moduleSymbol == nullptr)
-		{
-			Utils::Logger::LogError("Module " + name + " is not defined in program");
-		}
-		else if (moduleSymbol->kind != SymbolTable::Entry::Kind::Module)
-		{
-			Utils::Logger::LogError(name + " is not a module");
-		}
-		auto module = static_cast<Module *>(moduleSymbol->node);
+		auto module = symbolTable->GetModule(moduleName);
 		auto moduleSymbolTable = module->GetSymbolTable();
 
-		auto symbol = moduleSymbolTable->Get(name);
-		if (symbol == nullptr)
-		{
-			Utils::Logger::LogError("Method " + name + " is not defined in module");
-		}
-		else if (symbol->kind != SymbolTable::Entry::Kind::Method)
-		{
-			Utils::Logger::LogError(name + " is not a method");
-		}
-		auto method = static_cast<Method *>(symbol->node);
+		auto method = moduleSymbolTable->GetMethod(name);
 		call->SetMethod(method);
 	}
+	ForwardTraversal::Visit(call);
 }
 
 void SymbolPass_Methods::Visit(Identifier *identifier)
 {
 	auto symbolTable = m_scopes.top();
-	auto name = identifier->GetString();
-	auto symbol = symbolTable->Get(name);
-	if (symbol == nullptr)
-	{
-		Utils::Logger::LogError("Variable " + name + " is not defined in method");
-	}
-	else if (symbol->kind != SymbolTable::Entry::Kind::Variable)
-	{
-		Utils::Logger::LogError(name + " is not a variable");
-	}
 
-	auto type = static_cast<Type *>(symbol->node);
+	auto name = identifier->GetString();
+	auto type = symbolTable->GetVariable(name);
 	identifier->SetType(type);
 	ForwardTraversal::Visit(identifier);
 }
@@ -328,8 +333,7 @@ void SymbolTableDumper::Visit(Module *module)
 void SymbolTableDumper::Visit(Method *method)
 {
 	Utils::Logger::LogInfo("Method symbol table: " + method->GetName());
-	//TODO:
-	// Utils::Logger::LogInfo(method->GetSymbolTable()->ToString(), "");
+	Utils::Logger::LogInfo(method->GetSymbolTable()->ToString(), "");
 	ForwardTraversal::Visit(method);
 }
 
