@@ -50,11 +50,15 @@ void DataRegistry::AddTable(const std::string& name, Table *table)
 {
 	m_registry.insert({name, table});
 
-	Utils::Logger::LogInfo("Loaded table " + name);
+	Utils::Logger::LogInfo("Loaded table '" + name + "'");
 }
 
 Table *DataRegistry::GetTable(const std::string& name) const
 {
+	if (m_registry.find(name) == m_registry.end())
+	{
+		Utils::Logger::LogError("Table '" + name + "' not found");
+	}
 	return m_registry.at(name);
 }
 
