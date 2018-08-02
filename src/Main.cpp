@@ -1,3 +1,4 @@
+#include "HorseIR/BuiltinFunctions.h"
 #include "HorseIR/ShapeAnalysis.h"
 #include "HorseIR/SymbolTable.h"
 #include "HorseIR/Tree/Program.h"
@@ -61,20 +62,7 @@ int main(int argc, const char *argv[])
 	Utils::Logger::LogSection("Builtin symbol table");
 	auto timeTypes_start = Utils::Chrono::Start();
 
-	//TODO: Add builtin module
-	auto m1 = new HorseIR::BuiltinMethod("load_table");
-	auto m2 = new HorseIR::BuiltinMethod("column_value");
-	auto m3 = new HorseIR::BuiltinMethod("enlist");
-	auto m4 = new HorseIR::BuiltinMethod("table");
-
-	auto m5 = new HorseIR::BuiltinMethod("geq");
-	auto m6 = new HorseIR::BuiltinMethod("compress");
-	auto m7 = new HorseIR::BuiltinMethod("not");
-	auto m8 = new HorseIR::BuiltinMethod("mul");
-	auto m9 = new HorseIR::BuiltinMethod("sum");
-
-	auto builtinModule = new HorseIR::Module("Builtin", {m1, m2, m3, m4, m5, m6, m7, m8, m9});
-	program->AddModule(builtinModule);
+	program->AddModule(HorseIR::BuiltinModule);
 
 	HorseIR::SymbolTableBuilder symbolTable;
 	symbolTable.Build(program);

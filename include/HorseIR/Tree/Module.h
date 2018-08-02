@@ -21,6 +21,7 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 
 	const std::vector<ModuleContent *>& GetContents() { return m_contents; }
+	void AddContent(ModuleContent *content) { m_contents.push_back(content); }
 
 	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }

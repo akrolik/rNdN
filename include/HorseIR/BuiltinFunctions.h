@@ -3,7 +3,79 @@
 #include <string>
 #include <iostream>
 
+#include "HorseIR/Tree/Module.h"
+#include "HorseIR/Tree/BuiltinMethod.h"
+
 namespace HorseIR {
+
+static HorseIR::Module *BuiltinModule = new HorseIR::Module("Builtin", {
+	// Unary
+	new HorseIR::BuiltinMethod("abs"),
+	new HorseIR::BuiltinMethod("neg"),
+	new HorseIR::BuiltinMethod("ceil"),
+	new HorseIR::BuiltinMethod("floor"),
+	new HorseIR::BuiltinMethod("round"),
+	new HorseIR::BuiltinMethod("conj"),
+	new HorseIR::BuiltinMethod("recip"),
+	new HorseIR::BuiltinMethod("signum"),
+	new HorseIR::BuiltinMethod("pi"),
+	new HorseIR::BuiltinMethod("not"),
+	new HorseIR::BuiltinMethod("log"),
+	new HorseIR::BuiltinMethod("exp"),
+	new HorseIR::BuiltinMethod("cos"),
+	new HorseIR::BuiltinMethod("sin"),
+	new HorseIR::BuiltinMethod("tan"),
+	new HorseIR::BuiltinMethod("acos"),
+	new HorseIR::BuiltinMethod("asin"),
+	new HorseIR::BuiltinMethod("atan"),
+	new HorseIR::BuiltinMethod("cosh"),
+	new HorseIR::BuiltinMethod("sinh"),
+	new HorseIR::BuiltinMethod("tanh"),
+	new HorseIR::BuiltinMethod("acosh"),
+	new HorseIR::BuiltinMethod("asinh"),
+	new HorseIR::BuiltinMethod("atanh"),
+
+	// Binary
+	new HorseIR::BuiltinMethod("lt"),
+	new HorseIR::BuiltinMethod("gt"),
+	new HorseIR::BuiltinMethod("leq"),
+	new HorseIR::BuiltinMethod("geq"),
+	new HorseIR::BuiltinMethod("eq"),
+	new HorseIR::BuiltinMethod("neq"),
+	new HorseIR::BuiltinMethod("plus"),
+	new HorseIR::BuiltinMethod("minus"),
+	new HorseIR::BuiltinMethod("mul"),
+	new HorseIR::BuiltinMethod("div"),
+	new HorseIR::BuiltinMethod("power"),
+	new HorseIR::BuiltinMethod("log2"),
+	new HorseIR::BuiltinMethod("mod"),
+	new HorseIR::BuiltinMethod("and"),
+	new HorseIR::BuiltinMethod("or"),
+	new HorseIR::BuiltinMethod("nand"),
+	new HorseIR::BuiltinMethod("nor"),
+	new HorseIR::BuiltinMethod("xor"),
+
+	// Binary Algebraic
+	new HorseIR::BuiltinMethod("compress"),
+
+	// Reduction
+	new HorseIR::BuiltinMethod("count"),
+	new HorseIR::BuiltinMethod("sum"),
+	new HorseIR::BuiltinMethod("avg"),
+	new HorseIR::BuiltinMethod("min"),
+	new HorseIR::BuiltinMethod("max"),
+
+	// List
+	new HorseIR::BuiltinMethod("enlist"),
+
+	// Database
+	new HorseIR::BuiltinMethod("table"),
+	new HorseIR::BuiltinMethod("column_value"),
+	new HorseIR::BuiltinMethod("load_table"),
+
+	// Other
+	new HorseIR::BuiltinMethod("fill")
+});
 
 enum class BuiltinFunction
 {
