@@ -14,10 +14,11 @@ public:
 	Symbol(const std::string& name) : m_name(name) {}
 
 	const Type *GetType() const { return new PrimitiveType(PrimitiveType::Kind::Symbol); }
+	const std::string& GetName() const { return m_name; }
 
 	std::string ToString() const override
 	{
-		return m_name;
+		return "`" + m_name;
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }

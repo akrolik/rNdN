@@ -63,7 +63,7 @@ check_cast   return tCHECKCAST;
 return       return tRETURN;
 
 `{LETTER}({LETTER}|{DIGIT})* {
-	yylval.string_val = new std::string(yytext);
+	yylval.string_val = new std::string(yytext + 1);
 	return tSYMBOLVAL;
 }
 
