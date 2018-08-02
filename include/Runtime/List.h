@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Runtime/DataObject.h"
+
 #include <string>
 #include <vector>
 
@@ -7,7 +9,7 @@
 
 namespace Runtime {
 
-class List
+class List : public DataObject
 {
 public:
 	List(Vector *element) : m_elements({element}) {}

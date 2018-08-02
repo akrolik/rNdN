@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Runtime/DataObject.h"
+
 #include <string>
 #include <vector>
 
@@ -7,7 +9,7 @@
 
 namespace Runtime {
 
-class Vector
+class Vector : public DataObject
 {
 public:
 	virtual const HorseIR::Type *GetType() const = 0;
