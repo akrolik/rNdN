@@ -18,7 +18,10 @@ public:
 	static void LogSection(const std::string& name, bool separate = true);
 
 	static void LogInfo(const std::string& info, const std::string& prefix = InfoPrefix);
-	static void LogError(const std::string& error, const std::string& prefix = ErrorPrefix, bool exit = true);
+
+	[[noreturn]] static void LogError(const std::string& error, const std::string& prefix = ErrorPrefix);
+	static void LogErrorPart(const std::string& error, const std::string& prefix = ErrorPrefix);
+
 	static void LogTiming(const std::string& name, long timing);
 	static void LogTimingComponent(const std::string& name, long time);
 

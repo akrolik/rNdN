@@ -22,17 +22,23 @@ void Logger::LogInfo(const std::string& info, const std::string& prefix)
 	std::cout << info << std::endl;
 }
 
-void Logger::LogError(const std::string& error, const std::string& prefix, bool exit)
+void Logger::LogError(const std::string& error, const std::string& prefix)
 {
 	if (prefix != NoPrefix)
 	{
 		std::cerr << "[" << prefix << "] ";
 	}
 	std::cerr << error << std::endl;
-	if (exit)
+	std::exit(EXIT_FAILURE);
+}
+
+void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
+{
+	if (prefix != NoPrefix)
 	{
-		std::exit(EXIT_FAILURE);
+		std::cerr << "[" << prefix << "] ";
 	}
+	std::cerr << error << std::endl;
 }
 
 void Logger::LogTiming(const std::string& name, long timing)

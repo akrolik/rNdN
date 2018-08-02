@@ -66,8 +66,8 @@ void Module::Compile()
 		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)code.c_str(), code.length() + 1, "PTX Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
-			Utils::Logger::LogError("PTX failed to compile", Utils::Logger::ErrorPrefix, false);
-			Utils::Logger::LogError(l_errorLog, Utils::Logger::NoPrefix, false);
+			Utils::Logger::LogErrorPart("PTX failed to compile", Utils::Logger::ErrorPrefix);
+			Utils::Logger::LogErrorPart(l_errorLog, Utils::Logger::NoPrefix);
 			checkDriverResult(result);
 		}
 	}
@@ -83,8 +83,8 @@ void Module::Compile()
 		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, module.get().GetBinary(), module.get().GetBinarySize(), "Library Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
-			Utils::Logger::LogError("Library cubin image failed to load", Utils::Logger::ErrorPrefix, false);
-			Utils::Logger::LogError(l_errorLog, Utils::Logger::NoPrefix, false);
+			Utils::Logger::LogErrorPart("Library cubin image failed to load", Utils::Logger::ErrorPrefix);
+			Utils::Logger::LogErrorPart(l_errorLog, Utils::Logger::NoPrefix);
 			checkDriverResult(result);
 		}
 	}
