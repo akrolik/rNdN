@@ -32,7 +32,7 @@ static std::string ExternalBinaryOperationString(ExternalBinaryOperation binaryO
 		case ExternalBinaryOperation::Modulo:
 			return "mod";
 		case ExternalBinaryOperation::Logarithm:
-			return "log2";
+			return "logb";
 	}
 	return "<unknown>";
 }

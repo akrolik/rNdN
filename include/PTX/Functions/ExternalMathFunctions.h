@@ -43,6 +43,9 @@ namespace ExternalMathFunctions {
 
 	template<Bits B> const auto exp = new UnaryFunction<B>(Name<B>("exp"), ReturnDeclaration<B>, ParamDeclaration<B>, Declaration::LinkDirective::External);
 	template<Bits B> const auto log = new UnaryFunction<B>(Name<B>("log"), ReturnDeclaration<B>, ParamDeclaration<B>, Declaration::LinkDirective::External);
+	template<Bits B> const auto log2 = new UnaryFunction<B>(Name<B>("log2"), ReturnDeclaration<B>, ParamDeclaration<B>, Declaration::LinkDirective::External);
+	template<Bits B> const auto log10 = new UnaryFunction<B>(Name<B>("log10"), ReturnDeclaration<B>, ParamDeclaration<B>, Declaration::LinkDirective::External);
+	template<Bits B> const auto sqrt = new UnaryFunction<B>(Name<B>("sqrt"), ReturnDeclaration<B>, ParamDeclaration<B>, Declaration::LinkDirective::External);
 
 	template<Bits B> const auto mod = new BinaryFunction<B>(Name<B>("modf"), ReturnDeclaration<B>, ParamDeclaration<B>, ParamDeclaration<B, 1>, Declaration::LinkDirective::External);
 	template<Bits B> const auto pow = new BinaryFunction<B>(Name<B>("pow"), ReturnDeclaration<B>, ParamDeclaration<B>, ParamDeclaration<B, 1>, Declaration::LinkDirective::External);

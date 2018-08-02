@@ -28,7 +28,7 @@ std::string Generate(const std::string& compute)
 
 	std::string dummy = "";
 
-	std::vector<std::string> unaryFunctions({"cos", "sin", "tan", "acos", "asin", "atan", "cosh", "sinh", "tanh", "acosh", "asinh", "atanh", "log", "exp"});
+	std::vector<std::string> unaryFunctions({"cos", "sin", "tan", "acos", "asin", "atan", "cosh", "sinh", "tanh", "acosh", "asinh", "atanh", "log", "log2", "log10", "sqrt", "exp"});
 	for (const auto& function : unaryFunctions)
 	{
 		dummy += "declare float @__nv_" + function + "f(float)\n";

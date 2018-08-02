@@ -1,4 +1,4 @@
-#include "HorseIR/BuiltinFunctions.h"
+#include "HorseIR/BuiltinModule.h"
 #include "HorseIR/ShapeAnalysis.h"
 #include "HorseIR/SymbolTable.h"
 #include "HorseIR/Tree/Program.h"

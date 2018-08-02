@@ -33,6 +33,9 @@ enum class ExternalUnaryOperation {
 	// Exponential
 	Exponential,
 	Logarithm,
+	Logarithm2,
+	Logarithm10,
+	SquareRoot
 };
 
 static std::string ExternalUnaryOperationString(ExternalUnaryOperation unaryOp)
@@ -67,6 +70,12 @@ static std::string ExternalUnaryOperationString(ExternalUnaryOperation unaryOp)
 			return "exp";
 		case ExternalUnaryOperation::Logarithm:
 			return "log";
+		case ExternalUnaryOperation::Logarithm2:
+			return "log2";
+		case ExternalUnaryOperation::Logarithm10:
+			return "log10";
+		case ExternalUnaryOperation::SquareRoot:
+			return "sqrt";
 	}
 	return "<unknown>";
 }
@@ -158,6 +167,12 @@ private:
 				return PTX::ExternalMathFunctions::exp<S>;
 			case ExternalUnaryOperation::Logarithm:
 				return PTX::ExternalMathFunctions::log<S>;
+			case ExternalUnaryOperation::Logarithm2:
+				return PTX::ExternalMathFunctions::log2<S>;
+			case ExternalUnaryOperation::Logarithm10:
+				return PTX::ExternalMathFunctions::log10<S>;
+			case ExternalUnaryOperation::SquareRoot:
+				return PTX::ExternalMathFunctions::sqrt<S>;
 			default:
 				BuiltinGenerator<B, PTX::Float32Type>::Unimplemented("external function " + ExternalUnaryOperationString(unaryOp));
 		}

@@ -1,6 +1,5 @@
 #include "HorseIR/ShapeAnalysis.h"
 
-#include "HorseIR/BuiltinFunctions.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Parameter.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
@@ -58,107 +57,107 @@ void ShapeAnalysis::Visit(CallExpression *call)
 
 	// Analyze the function according to the shape rules
 
-	BuiltinFunction function = GetBuiltinFunction(call->GetIdentifier()->GetName());
-	switch (function)
-	{
-		case BuiltinFunction::Absolute:
-		case BuiltinFunction::Negate:
-		case BuiltinFunction::Ceiling:
-		case BuiltinFunction::Floor:
-		case BuiltinFunction::Round:
-		case BuiltinFunction::Reciprocal:
-		case BuiltinFunction::Sign:
-		case BuiltinFunction::Pi:
-		case BuiltinFunction::Not:
-		case BuiltinFunction::Logarithm:
-		case BuiltinFunction::Exponential:
-		case BuiltinFunction::Cosine:
-		case BuiltinFunction::Sine:
-		case BuiltinFunction::Tangent:
-		case BuiltinFunction::InverseCosine:
-		case BuiltinFunction::InverseSine:
-		case BuiltinFunction::InverseTangent:
-		case BuiltinFunction::HyperbolicCosine:
-		case BuiltinFunction::HyperbolicSine:
-		case BuiltinFunction::HyperbolicTangent:
-		case BuiltinFunction::HyperbolicInverseCosine:
-		case BuiltinFunction::HyperbolicInverseSine:
-		case BuiltinFunction::HyperbolicInverseTangent:
-		{
-			const Shape *arg = GetShape(call->GetArgument(0));
-			SetShape(call,  new Shape(arg->kind, arg->size));
-			break;
-		}
-		case BuiltinFunction::Less:
-		case BuiltinFunction::Greater:
-		case BuiltinFunction::LessEqual:
-		case BuiltinFunction::GreaterEqual:
-		case BuiltinFunction::Equal:
-		case BuiltinFunction::NotEqual:
-		case BuiltinFunction::Plus:
-		case BuiltinFunction::Minus:
-		case BuiltinFunction::Multiply:
-		case BuiltinFunction::Divide:
-		case BuiltinFunction::Power:
-		case BuiltinFunction::Logarithm2:
-		case BuiltinFunction::Modulo:
-		case BuiltinFunction::And:
-		case BuiltinFunction::Or:
-		case BuiltinFunction::Nand:
-		case BuiltinFunction::Nor:
-		case BuiltinFunction::Xor:
-		{
-			const Shape *arg1 = GetShape(call->GetArgument(0));
-			const Shape *arg2 = GetShape(call->GetArgument(1));
+	// BuiltinFunction function = GetBuiltinFunction(call->GetIdentifier()->GetName());
+	// switch (function)
+	// {
+	// 	case BuiltinFunction::Absolute:
+	// 	case BuiltinFunction::Negate:
+	// 	case BuiltinFunction::Ceiling:
+	// 	case BuiltinFunction::Floor:
+	// 	case BuiltinFunction::Round:
+	// 	case BuiltinFunction::Reciprocal:
+	// 	case BuiltinFunction::Sign:
+	// 	case BuiltinFunction::Pi:
+	// 	case BuiltinFunction::Not:
+	// 	case BuiltinFunction::Logarithm:
+	// 	case BuiltinFunction::Exponential:
+	// 	case BuiltinFunction::Cosine:
+	// 	case BuiltinFunction::Sine:
+	// 	case BuiltinFunction::Tangent:
+	// 	case BuiltinFunction::InverseCosine:
+	// 	case BuiltinFunction::InverseSine:
+	// 	case BuiltinFunction::InverseTangent:
+	// 	case BuiltinFunction::HyperbolicCosine:
+	// 	case BuiltinFunction::HyperbolicSine:
+	// 	case BuiltinFunction::HyperbolicTangent:
+	// 	case BuiltinFunction::HyperbolicInverseCosine:
+	// 	case BuiltinFunction::HyperbolicInverseSine:
+	// 	case BuiltinFunction::HyperbolicInverseTangent:
+	// 	{
+	// 		const Shape *arg = GetShape(call->GetArgument(0));
+	// 		SetShape(call,  new Shape(arg->kind, arg->size));
+	// 		break;
+	// 	}
+	// 	case BuiltinFunction::Less:
+	// 	case BuiltinFunction::Greater:
+	// 	case BuiltinFunction::LessEqual:
+	// 	case BuiltinFunction::GreaterEqual:
+	// 	case BuiltinFunction::Equal:
+	// 	case BuiltinFunction::NotEqual:
+	// 	case BuiltinFunction::Plus:
+	// 	case BuiltinFunction::Minus:
+	// 	case BuiltinFunction::Multiply:
+	// 	case BuiltinFunction::Divide:
+	// 	case BuiltinFunction::Power:
+	// 	case BuiltinFunction::Logarithm2:
+	// 	case BuiltinFunction::Modulo:
+	// 	case BuiltinFunction::And:
+	// 	case BuiltinFunction::Or:
+	// 	case BuiltinFunction::Nand:
+	// 	case BuiltinFunction::Nor:
+	// 	case BuiltinFunction::Xor:
+	// 	{
+	// 		const Shape *arg1 = GetShape(call->GetArgument(0));
+	// 		const Shape *arg2 = GetShape(call->GetArgument(1));
 
-			Shape::Kind kind = Shape::Kind::Vector;
-			long size = 0;
+	// 		Shape::Kind kind = Shape::Kind::Vector;
+	// 		long size = 0;
 
-			if (arg1->size == arg2->size)
-			{
-				size = arg1->size;
-			}
-			else if (arg1->size == 1)
-			{
-				size = arg2->size;
-			}
-			else if (arg2->size == 1)
-			{
-				size = arg1->size;
-			}
-			else
-			{
-				Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(arg1->size) + " != " + std::to_string(arg2->size) + "]");
-			}
+	// 		if (arg1->size == arg2->size)
+	// 		{
+	// 			size = arg1->size;
+	// 		}
+	// 		else if (arg1->size == 1)
+	// 		{
+	// 			size = arg2->size;
+	// 		}
+	// 		else if (arg2->size == 1)
+	// 		{
+	// 			size = arg1->size;
+	// 		}
+	// 		else
+	// 		{
+	// 			Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(arg1->size) + " != " + std::to_string(arg2->size) + "]");
+	// 		}
 
-			SetShape(call, new Shape(kind, size));
-			break;
-		}
-		case BuiltinFunction::Compress:
-		{
-			//TODO: Should set some type of a reference variable to the input shape
-			SetShape(call, new Shape(Shape::Kind::Vector, Shape::DynamicSize));
-			break;
-		}
-		case BuiltinFunction::Count:
-		case BuiltinFunction::Sum:
-		case BuiltinFunction::Average:
-		case BuiltinFunction::Minimum:
-		case BuiltinFunction::Maximum:
-		{
-			SetShape(call, new Shape(Shape::Kind::Vector, 1));
-			break;
-		}
-		case BuiltinFunction::Fill:
-		{
-			//TODO: Fill shape analysis
-			// SetShape(call, new Shape(Shape::Kind::Vector, call->GetArgument(0)));
-			break;
-		}
-		case BuiltinFunction::Conjugate:
-		case BuiltinFunction::Unsupported:
-			Utils::Logger::LogError("Shape analysis does not support function " + call->GetIdentifier()->GetName());
-	}
+	// 		SetShape(call, new Shape(kind, size));
+	// 		break;
+	// 	}
+	// 	case BuiltinFunction::Compress:
+	// 	{
+	// 		//TODO: Should set some type of a reference variable to the input shape
+	// 		SetShape(call, new Shape(Shape::Kind::Vector, Shape::DynamicSize));
+	// 		break;
+	// 	}
+	// 	case BuiltinFunction::Count:
+	// 	case BuiltinFunction::Sum:
+	// 	case BuiltinFunction::Average:
+	// 	case BuiltinFunction::Minimum:
+	// 	case BuiltinFunction::Maximum:
+	// 	{
+	// 		SetShape(call, new Shape(Shape::Kind::Vector, 1));
+	// 		break;
+	// 	}
+	// 	case BuiltinFunction::Fill:
+	// 	{
+	// 		//TODO: Fill shape analysis
+	// 		// SetShape(call, new Shape(Shape::Kind::Vector, call->GetArgument(0)));
+	// 		break;
+	// 	}
+	// 	case BuiltinFunction::Conjugate:
+	// 	case BuiltinFunction::Unsupported:
+	// 		Utils::Logger::LogError("Shape analysis does not support function " + call->GetIdentifier()->GetName());
+	// }
 }
 
 void ShapeAnalysis::Visit(CastExpression *cast)
