@@ -15,14 +15,14 @@ void DataRegistry::LoadDebugData(Table *table, const HorseIR::Type *type, unsign
 	
 	for (unsigned long i = 0; i < size; ++i)
 	{
-		zeros.push_back(0);
-		ones.push_back(1);
-		inc.push_back(i);
+		zeros.at(i) = 0;
+		ones.at(i) = 1;
+		inc.at(i) = i;
 	}
 
-	table->AddColumn("zeros_" + type->ToString(), new List(new TypedVector<T>(type, zeros)));
-	table->AddColumn("ones_" + type->ToString(), new List(new TypedVector<T>(type, ones)));
-	table->AddColumn("inc_" + type->ToString(), new List(new TypedVector<T>(type, inc)));
+	table->AddColumn("zeros_" + type->ToString(), new TypedVector<T>(type, zeros));
+	table->AddColumn("ones_" + type->ToString(), new TypedVector<T>(type, ones));
+	table->AddColumn("inc_" + type->ToString(), new TypedVector<T>(type, inc));
 }
 
 void DataRegistry::LoadDebugData()
