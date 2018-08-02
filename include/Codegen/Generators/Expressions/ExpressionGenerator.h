@@ -4,6 +4,7 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/BuiltinFunctions.h"
+#include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 
 #include "PTX/Operands/Variables/Register.h"
@@ -19,6 +20,8 @@
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 template<PTX::Bits B, class T>
@@ -29,19 +32,30 @@ public:
 
 	void Visit(HorseIR::CallExpression *call) override
 	{
-		BuiltinGenerator<B, T> *generator = GetBuiltinGenerator(call);
-		if (generator == nullptr)
+		auto method = call->GetMethod();
+		switch (method->GetKind())
 		{
-			std::cerr << "[ERROR] Generator for builtin function " + call->GetIdentifier()->ToString() + " not implemented" << std::endl;
-			std::exit(EXIT_FAILURE);
+			case HorseIR::MethodDeclaration::Kind::Builtin:
+			{
+				BuiltinGenerator<B, T> *generator = GetBuiltinGenerator(static_cast<HorseIR::BuiltinMethod *>(method));
+				if (generator == nullptr)
+				{
+					Utils::Logger::LogError("Generator for builtin function " + method->GetName() + " not implemented");
+				}
+				generator->Generate(m_target, call);
+				delete generator;
+				break;
+			}
+			case HorseIR::MethodDeclaration::Kind::Definition:
+				Utils::Logger::LogError("Generator for user defined functions not implemented");
+				break;
 		}
-		generator->Generate(m_target, call);
-		delete generator;
+
 	}
 
-	BuiltinGenerator<B, T> *GetBuiltinGenerator(const HorseIR::CallExpression *call)
+	BuiltinGenerator<B, T> *GetBuiltinGenerator(HorseIR::BuiltinMethod *method)
 	{
-		HorseIR::BuiltinFunction function = HorseIR::GetBuiltinFunction(call->GetIdentifier()->ToString());
+		HorseIR::BuiltinFunction function = HorseIR::GetBuiltinFunction(method->GetName());
 		switch (function)
 		{
 			case HorseIR::BuiltinFunction::Absolute:
