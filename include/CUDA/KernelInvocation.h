@@ -17,20 +17,20 @@ public:
 
 	void SetBlockShape(unsigned int x, unsigned int y, unsigned int z)
 	{
-		m_shapeX = x;
-		m_shapeY = y;
-		m_shapeZ = z;
+		m_blockX = x;
+		m_blockY = y;
+		m_blockZ = z;
 	}
 
 	void SetGridShape(unsigned int x, unsigned int y, unsigned int z)
 	{
-		m_blocksX = x;
-		m_blocksY = y;
-		m_blocksZ = z;
+		m_gridX = x;
+		m_gridY = y;
+		m_gridZ = z;
 	}
 
-	void SetParam(unsigned int index, Constant &value);
-	void SetParam(unsigned int index, Buffer &buffer);
+	void SetParameter(unsigned int index, Constant &value);
+	void SetParameter(unsigned int index, Buffer &buffer);
 	void SetSharedMemorySize(unsigned int bytes) { m_sharedMemorySize = bytes; }
 
 	void Launch();
@@ -38,13 +38,13 @@ public:
 private:
 	Kernel& m_kernel;
 
-	unsigned int m_shapeX = 0;
-	unsigned int m_shapeY = 0;
-	unsigned int m_shapeZ = 0;
+	unsigned int m_blockX = 0;
+	unsigned int m_blockY = 0;
+	unsigned int m_blockZ = 0;
 
-	unsigned int m_blocksX = 0;
-	unsigned int m_blocksY = 0;
-	unsigned int m_blocksZ = 0;
+	unsigned int m_gridX = 0;
+	unsigned int m_gridY = 0;
+	unsigned int m_gridZ = 0;
 
 	unsigned int m_sharedMemorySize = 0;
 

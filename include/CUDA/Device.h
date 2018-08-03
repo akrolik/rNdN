@@ -17,6 +17,9 @@ public:
 
 	std::string GetName() const { return std::string(m_properties.name); }
 	size_t GetMemorySize() const { return m_properties.totalGlobalMem; }
+	int GetMaxThreadsDimension(unsigned int dim) const { return m_properties.maxThreadsDim[dim]; }
+
+
 	CUdevice& GetDevice() { return m_device; }
 
 	std::string GetComputeCapability() const
