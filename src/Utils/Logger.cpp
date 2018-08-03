@@ -41,7 +41,7 @@ void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 	std::cerr << error << std::endl;
 }
 
-void Logger::LogTiming(const std::string& name, long timing)
+void Logger::LogTiming(const std::string& name, long time)
 {
 	std::cout << "[TIME] " << name << ": " << time << " mus" << std::endl;
 }

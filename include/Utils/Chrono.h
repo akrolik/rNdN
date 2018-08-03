@@ -10,16 +10,8 @@ public:
 
 	using TimeTy = std::chrono::time_point<std::chrono::steady_clock>;
 
-	static TimeTy Start()
-	{
-		return std::chrono::steady_clock::now();
-	}
-
-	static long End(TimeTy start)
-	{
-		auto end = std::chrono::steady_clock::now();
-		return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-	}
+	static TimeTy Start();
+	static long End(TimeTy start);
 
 private:
 	Chrono() {}
