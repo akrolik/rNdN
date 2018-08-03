@@ -14,10 +14,13 @@
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/Symbol.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
+#include "HorseIR/Tree/Statements/ReturnStatement.h"
 
 #include "PTX/Program.h"
 
 #include "Runtime/JITCompiler.h"
+#include "Runtime/List.h"
+#include "Runtime/Vector.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -33,7 +36,8 @@ void Interpreter::Execute(HorseIR::Program *program)
 
 	HorseIR::EntryAnalysis entryAnalysis;
 	entryAnalysis.Analyze(program);
-	Execute(entryAnalysis.GetEntry(), {});
+	auto result = Execute(entryAnalysis.GetEntry(), {});
+	result->Dump();
 }
 
 Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments)
@@ -45,10 +49,18 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		// Compile the HorseIR to PTX code using the current device
 
 		auto& gpu = m_runtime.GetGPUManager();
+		auto& device =  gpu.GetCurrentDevice();
+
+		Runtime::JITCompiler::Options options;
+		options.ComputeCapability = device->GetComputeCapability();
+		//TODO: Fix reductions to support differing thread counts
+		options.MaxBlockSize = 512;//device->GetMaxThreadsDimension(0);
+		//TODO: Get the input geometry size from the table
+		options.InputSize = 2048;
 
 		//TODO: Determine which part of the program should be sent to our compiler
 		//TODO: This compiles the Builtins module too
-		Runtime::JITCompiler compiler(gpu.GetCurrentDevice()->GetComputeCapability());
+		Runtime::JITCompiler compiler(options);
 		PTX::Program *ptxProgram = compiler.Compile(m_program);
 
 		// Optimize the generated PTX program
@@ -66,48 +78,56 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 
 		CUDA::Kernel kernel(method->GetName(), arguments.size() + 2, cModule);
 
+		Utils::Logger::LogSection("Continuing program execution");
+
 		auto timeExec_start = Utils::Chrono::Start();
 
 		// Initialize buffers and kernel invocation
 
-		//TODO: Logging of all steps and chrono
-		//TODO: Get all data sizes from the table
-		unsigned long geometrySize = 2048;
-
 		CUDA::KernelInvocation invocation(kernel);
 
-		//TODO: 512 should be chosen based on the device
-		invocation.SetBlockShape(512, 1, 1);
-		invocation.SetGridShape(geometrySize / 512, 1, 1);
+		invocation.SetBlockShape(options.MaxBlockSize, 1, 1);
+		invocation.SetGridShape((options.InputSize - 1) / options.MaxBlockSize + 1, 1, 1);
 
 		unsigned int index = 0;
 		for (const auto& argument : arguments)
 		{
 			auto column = static_cast<Runtime::Vector *>(m_expressionMap.at(argument));
 
-			Utils::Logger::LogInfo("test " + std::to_string(static_cast<int *>(column->GetData())[10]));
+			Utils::Logger::LogInfo("Transferring input argument '" + argument->ToString() + "' [" + column->GetType()->ToString() + "(" + std::to_string(column->GetElementSize()) + " bytes) x " + std::to_string(column->GetCount()) + "]");
 
 			//TODO: All buffers should be padded to a multiple of the thread count
 			//TODO: Build a GPU buffer manager
-			CUDA::Buffer buffer(column->GetData(), geometrySize * column->GetDataSize());
-			buffer.AllocateOnGPU();
-			buffer.TransferToGPU();
+			auto buffer = new CUDA::Buffer(column->GetData(), column->GetSize());
 
-			invocation.SetParam(index++, buffer);
+			buffer->AllocateOnGPU();
+			buffer->TransferToGPU();
+
+			invocation.SetParameter(index++, *buffer);
 		}
 
-		CUDA::TypedConstant<unsigned long> size(geometrySize);
-		invocation.SetParam(index++, size);
+		CUDA::TypedConstant<uint64_t> sizeConstant(options.InputSize);
+		invocation.SetParameter(index++, sizeConstant);
 
-		//TODO: Use dynamic information from the function to configure this
-		//TODO: Use shape information to allocate the correct size
-		auto type = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Float32);
-		std::vector<float> ret;
-		ret.resize(1);
-		auto retVec = new Runtime::TypedVector<float>(type, ret);
-		CUDA::Buffer returnBuffer(retVec->GetData(), retVec->GetDataSize() * 1);
+		auto returnType = method->GetReturnType();
+		Runtime::Vector *returnData = nullptr;
 
-		invocation.SetParam(index++, returnBuffer);
+		switch (returnType->GetKind())
+		{
+			case HorseIR::Type::Kind::Primitive:
+				//TODO: Use shape information to allocate the correct size
+				returnData = Runtime::Vector::CreateVector(static_cast<const HorseIR::PrimitiveType *>(returnType), 1);
+				break;
+			defualt:
+				Utils::Logger::LogError("Unsupported return type " + returnType->ToString());
+		}
+
+		Utils::Logger::LogInfo("Initializing return argument [" + returnType->ToString() + "(" + std::to_string(returnData->GetElementSize()) + " bytes) x " + std::to_string(returnData->GetCount()) + "]");
+
+		CUDA::Buffer returnBuffer(returnData->GetData(), returnData->GetSize());
+		returnBuffer.AllocateOnGPU();
+		returnBuffer.TransferToGPU();
+		invocation.SetParameter(index++, returnBuffer);
 
 		//TODO: Allocate the correct amount of dynamic shared memory based on the kernel
 		// invocation.SetSharedMemorySize(sizeof(float) * 512);
@@ -117,9 +137,10 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 
 		auto timeExec = Utils::Chrono::End(timeExec_start);
 
-		Utils::Logger::LogInfo("Kernel result = " + std::to_string(static_cast<float *>(retVec->GetData())[0]));
+		Utils::Logger::LogTiming("Kernel execution", timeExec);
+		Utils::Logger::LogInfo("Kernel result = " + std::to_string(static_cast<float *>(returnData->GetData())[0]));
 
-		return retVec;
+		return returnData;
 	}
 	else
 	{
@@ -132,7 +153,7 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		{
 			statement->Accept(*this);
 		}
-		return nullptr;
+		return m_result;
 	}
 }
 
@@ -145,9 +166,27 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, 
 	switch (method->GetKind())
 	{
 		case HorseIR::BuiltinMethod::Kind::Enlist:
-			return nullptr;
+		{
+			auto vector = static_cast<Runtime::Vector *>(m_expressionMap.at(arguments.at(0)));
+			auto list = new Runtime::List(vector);
+
+			return list;
+		}
 		case HorseIR::BuiltinMethod::Kind::Table:
-			return nullptr;
+		{
+			auto columnNames = static_cast<Runtime::TypedVector<std::string> *>(m_expressionMap.at(arguments.at(0)));
+			auto columnValues = static_cast<Runtime::List *>(m_expressionMap.at(arguments.at(1)));
+
+			auto table = new Runtime::Table("test", 1);
+
+			unsigned int i = 0;
+			for (const auto& columnName : columnNames->GetValues())
+			{
+				table->AddColumn(columnName, columnValues->GetElement(i++));
+			}
+
+			return table;
+		}
 		case HorseIR::BuiltinMethod::Kind::ColumnValue:
 		{
 			auto table = static_cast<Runtime::Table *>(m_expressionMap.at(arguments.at(0)));
@@ -172,6 +211,11 @@ void Interpreter::Visit(HorseIR::AssignStatement *assign)
 	auto expression = assign->GetExpression();
 	expression->Accept(*this);
 	m_variableMap.insert({assign->GetTargetName(), m_expressionMap.at(expression)});
+}
+
+void Interpreter::Visit(HorseIR::ReturnStatement *ret)
+{
+	m_result = m_variableMap.at(ret->GetIdentifier()->GetString());
 }
 
 void Interpreter::Visit(HorseIR::CastExpression *cast)
@@ -206,6 +250,11 @@ void Interpreter::Visit(HorseIR::CallExpression *call)
 void Interpreter::Visit(HorseIR::Identifier *identifier)
 {
 	m_expressionMap.insert({identifier, m_variableMap.at(identifier->GetString())});
+}
+
+void Interpreter::Visit(HorseIR::Symbol *symbol)
+{
+	m_expressionMap.insert({symbol, new Runtime::TypedVector<std::string>(symbol->GetType(), {symbol->GetName()})});
 }
 
 }

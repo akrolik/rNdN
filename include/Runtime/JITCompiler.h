@@ -9,13 +9,29 @@ namespace Runtime {
 class JITCompiler
 {
 public:
-	JITCompiler(const std::string& computeCapability) : m_computeCapability(computeCapability) {}
+	struct Options
+	{
+		std::string ComputeCapability = "sm_61";
+		unsigned int MaxBlockSize;
+		unsigned long InputSize;
+
+		std::string ToString() const
+		{
+			std::string output;
+			output += "Compute capability: " + ComputeCapability + "\n";
+			output += "Max block size: " + std::to_string(MaxBlockSize) + "\n";
+			output += "Input size: " + std::to_string(InputSize);
+			return output;
+		}
+	};
+
+	JITCompiler(const Options& options) : m_options(options) {}
 
 	PTX::Program *Compile(HorseIR::Program *program);
 	void Optimize(PTX::Program *program);
 
 private:
-	std::string m_computeCapability;
+	Options m_options;
 };
 
 }

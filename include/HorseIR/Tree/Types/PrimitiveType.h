@@ -11,7 +11,7 @@ namespace HorseIR {
 class PrimitiveType : public Type
 {
 public:
-	enum Kind {
+	enum class Kind {
 		Wildcard,
 		Bool,
 		Int8,
@@ -32,29 +32,29 @@ public:
 	{
 		switch (m_kind)
 		{
-			case Wildcard:
+			case Kind::Wildcard:
 				return "?";
-			case Bool:
+			case Kind::Bool:
 				return "bool";
-			case Int8:
+			case Kind::Int8:
 				return "i8";
-			case Int16:
+			case Kind::Int16:
 				return "i16";
-			case Int32:
+			case Kind::Int32:
 				return "i32";
-			case Int64:
+			case Kind::Int64:
 				return "i64";
-			case Float32:
+			case Kind::Float32:
 				return "f32";
-			case Float64:
+			case Kind::Float64:
 				return "f64";
-			case Complex:
+			case Kind::Complex:
 				return "complex";
-			case Symbol:
+			case Kind::Symbol:
 				return "sym";
-			case String:
+			case Kind::String:
 				return "string";
-			case Table:
+			case Kind::Table:
 				return "table";
 			default:
 				return "<unknown>";

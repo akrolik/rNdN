@@ -18,4 +18,25 @@ Vector *Table::GetColumn(const std::string& name) const
 	return m_columns.at(name);
 }
 
+void Table::Dump() const
+{
+	std::string columnNames = " ";
+	for (const auto& column : m_columns)
+	{
+		columnNames += column.first + "\t";
+	}
+	Utils::Logger::LogInfo(columnNames, "RESULT");
+	Utils::Logger::LogInfo("", "RESULT");
+
+	for (unsigned long i = 0; i < m_size; ++i)
+	{
+		std::string row;
+		for (const auto& column : m_columns)
+		{
+			row += column.second->Dump(i) + "\t";
+		}
+		Utils::Logger::LogInfo(row, "RESULT");
+	}
+}
+
 }

@@ -20,6 +20,8 @@ public:
 	const std::string& GetName() { return m_name; }
 	unsigned long GetSize() const { return m_size; }
 
+	void Dump() const override;
+
 private:
 	std::string m_name;
 
