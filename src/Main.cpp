@@ -59,7 +59,7 @@ int main(int argc, const char *argv[])
 	}
 	Utils::Logger::LogTiming("HorseIR frontend", timeFrontend);
 
-	Utils::Logger::LogSection("Builtin symbol table");
+	Utils::Logger::LogSection("Building symbol table");
 	auto timeTypes_start = Utils::Chrono::Start();
 
 	program->AddModule(HorseIR::BuiltinModule);

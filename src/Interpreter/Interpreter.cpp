@@ -161,8 +161,6 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, 
 {
 	Utils::Logger::LogInfo("Executing builtin method '" + method->GetName() + "'");
 
-	//TODO: Implement 2 last builtin methods
-	//TODO: Update the table class to implement the spec of vector(names), list(columns)
 	switch (method->GetKind())
 	{
 		case HorseIR::BuiltinMethod::Kind::Enlist:
