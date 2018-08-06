@@ -6,6 +6,8 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Generator.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 template<PTX::Bits B, class T>
@@ -23,7 +25,8 @@ public:
 		// Depending on the input arguments, the output value may be compressed. If so,
 		// the generator must provide a single compression predicate
 
-		const PTX::Register<T> *targetRegister = this->m_builder->template AllocateRegister<T>(target, GenerateCompressionPredicate(call));
+		auto resources = this->m_builder.GetLocalResources();
+		const PTX::Register<T> *targetRegister = resources->template AllocateRegister<T>(target, GenerateCompressionPredicate(call));
 		Generate(targetRegister, call);
 	}
 
@@ -46,8 +49,7 @@ public:
 
 	[[noreturn]] static void Unimplemented(const std::string& context)
 	{
-		std::cerr << "[ERROR] Generator does not support type " << T::Name() << " for " << context << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Generator does not support type " + T::Name() + " for " + context);
 	}
 
 };

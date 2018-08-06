@@ -3,7 +3,13 @@
 #include <set>
 #include <stack>
 
-#include "Codegen/ResourceAllocator.h"
+#include "Codegen/InputOptions.h"
+#include "Codegen/TargetOptions.h"
+#include "Codegen/Resources/FunctionAllocator.h"
+#include "Codegen/Resources/ModuleAllocator.h"
+#include "Codegen/Resources/RegisterAllocator.h"
+
+#include "HorseIR/Tree/Method.h"
 
 #include "PTX/Module.h"
 #include "PTX/Program.h"
@@ -11,10 +17,7 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Functions/FunctionDeclaration.h"
 #include "PTX/Functions/FunctionDefinition.h"
-#include "PTX/Operands/Adapters/ArrayAdapter.h"
-#include "PTX/Operands/Adapters/VariableAdapter.h"
-#include "PTX/Operands/Address/Address.h"
-#include "PTX/Operands/Address/MemoryAddress.h"
+#include "PTX/Operands/Variables/Variable.h"
 #include "PTX/Statements/BlankStatement.h"
 
 namespace Codegen {
@@ -22,6 +25,8 @@ namespace Codegen {
 class Builder
 {
 public:
+	Builder(const TargetOptions& targetOptions, const InputOptions& inputOptions) : m_targetOptions(targetOptions), m_inputOptions(inputOptions) {}
+
 	std::string GetContextString(std::string string = "") const
 	{
 		std::string context;
@@ -42,43 +47,47 @@ public:
 	{
 		m_currentProgram->AddModule(module);
 	}
-	void SetCurrentModule(PTX::Module *module) { m_currentModule = module; }
-
-	void AddExternalDeclaration(PTX::Declaration *declaration)
+	void SetCurrentModule(PTX::Module *module)
 	{
-		if (m_externalDeclarations.find(m_currentModule) == m_externalDeclarations.end())
+		m_currentModule = module;
+		if (m_globalResources.find(module) == m_globalResources.end())
 		{
-			m_externalDeclarations.insert({m_currentModule, new std::set<PTX::Declaration *>()});
-		}
-
-		std::set<PTX::Declaration *> *set = m_externalDeclarations.at(m_currentModule);
-		if (set->find(declaration) == set->end())
-		{
-			m_externalDeclarations.at(m_currentModule)->insert(declaration);
-			m_currentModule->InsertDeclaration(declaration, 0);
+			m_globalResources.insert({module, new ModuleAllocator()});
 		}
 	}
 
-	void AddDeclaration(PTX::Declaration *declaration)
+	void CloseModule()
 	{
-		m_currentModule->AddDeclaration(declaration);
+		auto declarations = GetGlobalResources()->GetDeclarations();
+		m_currentModule->InsertDeclarations(declarations, 0);
 	}
+
+	void AddFunction(PTX::FunctionDefinition<PTX::VoidType> *function)
+	{
+		m_currentModule->AddDeclaration(function);
+	}
+
 	void SetCurrentFunction(PTX::FunctionDefinition<PTX::VoidType> *function, HorseIR::Method *method)
 	{
 		m_currentFunction = function;
 		m_currentMethod = method;
+		if (function != nullptr && m_functionResources.find(function) == m_functionResources.end())
+		{
+			m_functionResources.insert({function, new FunctionAllocator()});
+		}
+	}
+
+	template<class T, class S>
+	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
+	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *parameter)
+	{
+		m_currentFunction->AddParameter(parameter);
+		GetFunctionResources()->AddParameter(identifier, parameter);
 	}
 
 	HorseIR::Type *GetReturnType() const
 	{
 		return m_currentMethod->GetReturnType();
-	}
-
-	template<class T, class S>
-	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
-	AddParameter(const PTX::TypedVariableDeclaration<T, S> *parameter)
-	{
-		m_currentFunction->AddParameter(parameter);
 	}
 
 	void AddStatement(const PTX::Statement *statement)
@@ -101,15 +110,14 @@ public:
 		GetCurrentBlock()->InsertStatements(statements, index);
 	}
 
-	ResourceAllocator *OpenScope(PTX::StatementList *block)
+	RegisterAllocator *OpenScope(PTX::StatementList *block)
 	{
-		if (m_resources.find(block) == m_resources.end())
+		if (m_localResources.find(block) == m_localResources.end())
 		{
-			m_resources.insert({block, new ResourceAllocator()});
+			m_localResources.insert({block, new RegisterAllocator()});
 		}
-		ResourceAllocator *resources = m_resources.at(block);
-		m_scopes.push_back({block, resources});
-		return resources;
+		m_scopes.push(block);
+		return m_localResources.at(block);
 	}
 
 	void CloseScope()
@@ -117,108 +125,30 @@ public:
 		// Attach the resource declarations to the function. In PTX code, the declarations
 		// must come before use, and are typically grouped at the top of the function.
 
-		auto declarations = GetCurrentResources()->GetDeclarations();
+		auto declarations = GetLocalResources()->GetDeclarations();
 		if (declarations.size() > 0)
 		{
 			InsertStatements(new PTX::BlankStatement(), 0);
 		}
 		InsertStatements(declarations, 0);
-
-		m_scopes.pop_back();
+		m_scopes.pop();
 	}
 
-	template<class T>
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
-	{
-		for (auto it = m_scopes.rbegin(); it != m_scopes.rend(); ++it)
-		{
-			auto resources = std::get<1>(*it);
-			if (resources->ContainsKey<T>(identifier))
-			{
-				return resources->GetRegister<T>(identifier);
-			}
-		}
+	RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
+	FunctionAllocator *GetFunctionResources() const { return m_functionResources.at(m_currentFunction); }
+	ModuleAllocator *GetGlobalResources() const { return m_globalResources.at(m_currentModule); }
 
-		std::cerr << "[ERROR] PTX::Register(" << identifier << ", " << T::Name() << ") not found" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-
-	template<class T>
-	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const std::string& identifier) const
-	{
-		for (const auto& scope : m_scopes)
-		{
-			auto resources = GetCurrentResources();
-			if (resources->ContainsKey<T>(identifier))
-			{
-				return resources->GetCompressionRegister<T>(identifier);
-			}
-		}
-
-		std::cerr << "[ERROR] PTX::Register(" << identifier << ") not found" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-
-	template<class T>
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr) const
-	{
-		return GetCurrentResources()->AllocateRegister<T>(identifier, predicate);
-	}
-
-	template<class T>
-	const PTX::Register<T> *AllocateTemporary() const
-	{
-		return GetCurrentResources()->AllocateTemporary<T>();
-	}
-
-	template<class T>
-	const PTX::Register<T> *AllocateTemporary(const std::string& identifier) const
-	{
-		return GetCurrentResources()->AllocateTemporary<T>(identifier);
-	}
-
-	template<class T>
-	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
-	{
-		GetCurrentResources()->AddCompressedRegister<T>(identifier, value, predicate);
-	}
-
-	template<PTX::Bits B, class T>
-	const PTX::MemoryAddress<B, T, PTX::SharedSpace> *AllocateSharedMemory(unsigned int size)
-	{
-		if (m_sharedMemoryDeclaration == nullptr)
-		{
-			m_sharedMemoryDeclaration = new PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace>("sdata");
-			m_sharedMemoryDeclaration->SetLinkDirective(PTX::Declaration::LinkDirective::External);
-			AddExternalDeclaration(m_sharedMemoryDeclaration);
-		}
-
-		auto oldAlignment = m_sharedMemoryDeclaration->GetAlignment();
-		auto TAlignment = PTX::BitSize<T::TypeBits>::NumBytes;
-		if (TAlignment > oldAlignment)
-		{
-			m_sharedMemoryDeclaration->SetAlignment(TAlignment);
-		}
-
-		auto sharedMemoryBits = new PTX::ArrayVariableAdapter<PTX::Bit8Type, PTX::DynamicSize, PTX::SharedSpace>(m_sharedMemoryDeclaration->GetVariable("sdata"));
-		auto sharedMemory = new PTX::VariableAdapter<T, PTX::Bit8Type, PTX::SharedSpace>(sharedMemoryBits);
-		auto sharedMemoryAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(sharedMemory, m_sharedMemorySize);
-
-		m_sharedMemorySize += sizeof(typename T::SystemType) * size;
-
-		return sharedMemoryAddress;
-	}
+	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
+	const InputOptions& GetInputOptions() const { return m_inputOptions; }
 
 private:
 	PTX::StatementList *GetCurrentBlock() const
 	{
-		return std::get<0>(m_scopes.back());
+		return m_scopes.top();
 	}
 
-	ResourceAllocator *GetCurrentResources() const
-	{
-		return std::get<1>(m_scopes.back());
-	}
+	const TargetOptions& m_targetOptions;
+	const InputOptions& m_inputOptions;
 
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;
@@ -226,12 +156,10 @@ private:
 	PTX::FunctionDefinition<PTX::VoidType> *m_currentFunction = nullptr;
 	HorseIR::Method *m_currentMethod = nullptr;
 
-	std::unordered_map<PTX::Module *, std::set<PTX::Declaration *> *> m_externalDeclarations;
-	std::unordered_map<PTX::StatementList *, ResourceAllocator *> m_resources;
-	std::vector<std::tuple<PTX::StatementList *, ResourceAllocator *>> m_scopes;
-
-	PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace> *m_sharedMemoryDeclaration = nullptr;
-	unsigned int m_sharedMemorySize = 0;
+	std::stack<PTX::StatementList *> m_scopes;
+	std::unordered_map<PTX::StatementList *, RegisterAllocator *> m_localResources;
+	std::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, FunctionAllocator *> m_functionResources;
+	std::unordered_map<PTX::Module *, ModuleAllocator *> m_globalResources;
 };
 
 }

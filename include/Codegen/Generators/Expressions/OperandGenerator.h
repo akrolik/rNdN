@@ -20,6 +20,8 @@
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 template<PTX::Bits B, class T>
@@ -36,9 +38,7 @@ public:
 		{
 			return m_operand;
 		}
-
-		std::cerr << "[ERROR] Unable to generate operand " << expression->ToString() << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Unable to generate operand " + expression->ToString());
 	}
 
 	const PTX::Register<T> *GenerateRegister(HorseIR::Expression *expression)
@@ -49,7 +49,9 @@ public:
 			return static_cast<const PTX::Register<T> *>(operand);
 		}
 
-		auto reg = this->m_builder->template AllocateTemporary<T>();
+		auto resources = this->m_builder.GetLocalResources();
+
+		auto reg = resources->template AllocateTemporary<T>();
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
 		{
 			auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({
@@ -60,14 +62,14 @@ public:
 				new PTX::Bit8RegisterAdapter<PTX::IntType>(reg),
 				new PTX::SinkRegister<PTX::Bit8Type>
 			});
-			auto temp = this->m_builder->template AllocateTemporary<PTX::Bit16Type>();
+			auto temp = resources->template AllocateTemporary<PTX::Bit16Type>();
 
-			this->m_builder->AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
-			this->m_builder->AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
+			this->m_builder.AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
+			this->m_builder.AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
 		}
 		else
 		{
-			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(reg, operand));
+			this->m_builder.AddStatement(new PTX::MoveInstruction<T>(reg, operand));
 		}
 		return reg;
 	}
@@ -80,13 +82,14 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
+		auto resources = this->m_builder.GetLocalResources();
 		if constexpr(std::is_same<T, S>::value)
 		{
-			m_operand = this->m_builder->GetRegister<T>(identifier->GetString());
+			m_operand = resources->GetRegister<T>(identifier->GetString());
 		}
 		else
 		{
-			auto source = this->m_builder->GetRegister<S>(identifier->GetString());
+			auto source = resources->GetRegister<S>(identifier->GetString());
 			m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, source);
 		}
 		m_register = true;
@@ -118,8 +121,7 @@ public:
 		}
 		else
 		{
-			std::cerr << "[ERROR] Unsupported literal count (>1)" << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("[ERROR] Unsupported literal count: " + std::to_string(literal->GetCount()));
 		}
 	}
 

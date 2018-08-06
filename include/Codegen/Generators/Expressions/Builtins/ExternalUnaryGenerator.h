@@ -84,7 +84,7 @@ template<PTX::Bits B, class T, typename Enabled = void>
 class ExternalUnaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	ExternalUnaryGenerator(Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
+	ExternalUnaryGenerator(Builder& builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
 private:
 	ExternalUnaryOperation m_unaryOp;
@@ -94,7 +94,7 @@ template<PTX::Bits B, PTX::Bits S>
 class ExternalUnaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::Bits::Bits32 || S == PTX::Bits::Bits64>> : public BuiltinGenerator<B, PTX::FloatType<S>>
 {
 public:
-	ExternalUnaryGenerator(Builder *builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_unaryOp(unaryOp) {}
+	ExternalUnaryGenerator(Builder& builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_unaryOp(unaryOp) {}
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
 	{
@@ -111,15 +111,17 @@ public:
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src)
 	{
 		auto block = new PTX::BlockStatement();
-		this->m_builder->AddStatement(block);
-		this->m_builder->OpenScope(block);
+		this->m_builder.AddStatement(block);
+		this->m_builder.OpenScope(block);
 
 		PTX::ExternalMathFunctions::UnaryFunction<S> *function = GetFunction(m_unaryOp);
-		this->m_builder->AddExternalDeclaration(function);
+
+		auto globalResources = this->m_builder.GetGlobalResources();
+		globalResources->AddExternalFunction(function);
 
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 2);
-		this->m_builder->AddStatement(paramDeclaration);
-		this->m_builder->AddStatement(new PTX::BlankStatement());
+		this->m_builder.AddStatement(paramDeclaration);
+		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		auto paramIn = paramDeclaration->GetVariable("$temp", 0);
 		auto paramOut = paramDeclaration->GetVariable("$temp", 1);
@@ -127,11 +129,11 @@ public:
 		auto addressIn = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramIn);
 		auto addressOut = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramOut);
 
-		this->m_builder->AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn, src));
-		this->m_builder->AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::UnaryFunction<S>::Signature>(function, paramOut, paramIn));
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
+		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn, src));
+		this->m_builder.AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::UnaryFunction<S>::Signature>(function, paramOut, paramIn));
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
 
-		this->m_builder->CloseScope();
+		this->m_builder.CloseScope();
 	}
 
 private:

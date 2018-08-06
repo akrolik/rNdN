@@ -13,12 +13,14 @@ PTX::Program *JITCompiler::Compile(HorseIR::Program *program)
 	// Generate 64-bit PTX code from the input HorseIR for the current device
 
 	Utils::Logger::LogSection("Generating PTX program");
-	Utils::Logger::LogInfo("JIT Options");
-	Utils::Logger::LogInfo(m_options.ToString(), "");
+	Utils::Logger::LogInfo("Target Options");
+	Utils::Logger::LogInfo(m_targetOptions.ToString(), "");
+	Utils::Logger::LogInfo("Input Options");
+	Utils::Logger::LogInfo(m_inputOptions.ToString(), "");
 
 	auto timeCode_start = Utils::Chrono::Start();
 
-	auto codegen = new Codegen::CodeGenerator<PTX::Bits::Bits64>(m_options.ComputeCapability);
+	auto codegen = new Codegen::CodeGenerator<PTX::Bits::Bits64>(m_targetOptions, m_inputOptions);
 	auto ptxProgram = codegen->Generate(program);
 
 	auto timeCode = Utils::Chrono::End(timeCode_start);

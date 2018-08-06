@@ -8,6 +8,8 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 class OperandCompressionGenerator : public HorseIR::ForwardTraversal, public Generator
@@ -15,13 +17,13 @@ class OperandCompressionGenerator : public HorseIR::ForwardTraversal, public Gen
 public:
 	using Generator::Generator;
 
-	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder *builder, const HorseIR::CallExpression *call) 
+	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder& builder, const HorseIR::CallExpression *call) 
 	{
 		OperandCompressionGenerator compGen(builder);
 		return compGen.GetCompressionRegister(call->GetArgument(0));
 	}
 
-	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder *builder, const HorseIR::CallExpression *call)
+	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder& builder, const HorseIR::CallExpression *call)
 	{
 		OperandCompressionGenerator compGen(builder);
 		auto compression1 = compGen.GetCompressionRegister(call->GetArgument(0));
@@ -39,8 +41,7 @@ public:
 		{
 			return compression1;
 		}
-		std::cerr << "[ERROR] Compression registers differ and are non-null" << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Compression registers differ and are non-null");
 	}
 
 	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(HorseIR::Expression *expression)
@@ -58,7 +59,8 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		m_compression = this->m_builder->GetCompressionRegister<S>(identifier->GetString());
+		auto resources = this->m_builder.GetLocalResources();
+		m_compression = resources->GetCompressionRegister<S>(identifier->GetString());
 	}
 
 private:

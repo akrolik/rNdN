@@ -3,9 +3,9 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
+#include "Codegen/Resources/RegisterAllocator.h"
 
 #include "HorseIR/Tree/Parameter.h"
 
@@ -28,17 +28,18 @@ public:
 	template<class T>
 	void Generate(const HorseIR::Parameter *parameter, IndexKind indexKind)
 	{
+		auto resources = this->m_builder.GetLocalResources();
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			auto value = this->m_builder->AllocateTemporary<PTX::Int8Type>();
-			auto converted = this->m_builder->AllocateRegister<PTX::PredicateType>(parameter->GetName());
+			auto value = resources->AllocateTemporary<PTX::Int8Type>();
+			auto converted = resources->AllocateRegister<PTX::PredicateType>(parameter->GetName());
 
 			Generate(parameter->GetName(), value, indexKind);
 			ConversionGenerator::ConvertSource(this->m_builder, converted, value);
 		}
 		else
 		{
-			auto destination = this->m_builder->AllocateRegister<T>(parameter->GetName());
+			auto destination = resources->AllocateRegister<T>(parameter->GetName());
 			Generate(parameter->GetName(), destination, indexKind);
 		}
 	}
@@ -47,13 +48,13 @@ public:
 	void Generate(const std::string& name, const PTX::Register<T> *destination, IndexKind indexKind)
 	{
 		auto declaration = new PTX::PointerDeclaration<B, T>(name);
-		this->m_builder->AddParameter(declaration);
+		this->m_builder.AddParameter(name, declaration);
 		auto variable = declaration->GetVariable(name);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
 
-		this->m_builder->AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
 	}
 };
 

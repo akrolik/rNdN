@@ -51,7 +51,7 @@ template<PTX::Bits B, class T, typename Enable = void>
 class ComparisonGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, T>(builder), m_comparisonOp(comparisonOp) {}
+	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, T>(builder), m_comparisonOp(comparisonOp) {}
 
 private:
 	ComparisonOperator m_comparisonOp;
@@ -63,7 +63,7 @@ class ComparisonGenerator<B, PTX::PredicateType> : public BuiltinGenerator<B, PT
 public:
 	using NodeType = HorseIR::CallExpression;
 
-	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::PredicateType>(builder), m_comparisonOp(comparisonOp) {}
+	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::PredicateType>(builder), m_comparisonOp(comparisonOp) {}
 
 	virtual const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call)
 	{
@@ -92,7 +92,7 @@ public:
 	{
 		if constexpr(PTX::is_comparable_type<T>::value)
 		{
-			this->m_builder->AddStatement(new PTX::SetPredicateInstruction<T>(target, src1, src2, PTXOp<T>(m_comparisonOp)));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(target, src1, src2, PTXOp<T>(m_comparisonOp)));
 		}
 		else
 		{
@@ -133,7 +133,7 @@ class ComparisonGenerator<B, PTX::IntType<S>, std::enable_if_t<S == PTX::Bits::B
 public:
 	using NodeType = HorseIR::CallExpression;
 
-	ComparisonGenerator(Builder *builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_comparisonOp(comparisonOp) {}
+	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_comparisonOp(comparisonOp) {}
 
 	virtual const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call)
 	{
@@ -157,30 +157,30 @@ public:
 	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call)
 	{
 		auto block = new PTX::BlockStatement();
-		this->m_builder->AddStatement(block);
-		this->m_builder->OpenScope(block);
+		this->m_builder.AddStatement(block);
+		auto resources = this->m_builder.OpenScope(block);
 
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src = opGen.GenerateOperand(call->GetArgument(0));
 
-		auto tempP = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
-		auto tempQ = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+		auto tempP = resources->template AllocateTemporary<PTX::PredicateType>();
+		auto tempQ = resources->template AllocateTemporary<PTX::PredicateType>();
 
 		ComparisonGenerator<B, PTX::PredicateType> gen1(this->m_builder, ComparisonOperator::Equal);
 		gen1.template Generate<T>(tempP, src, new PTX::Value<T>(0));
 
 		auto move = new PTX::MoveInstruction<PTX::IntType<S>>(target, new PTX::Value<PTX::IntType<S>>(0));
 		move->SetPredicate(tempP);
-		this->m_builder->AddStatement(move);
+		this->m_builder.AddStatement(move);
 
 		ComparisonGenerator<B, PTX::PredicateType> gen2(this->m_builder, ComparisonOperator::Greater);
 		gen2.template Generate<T>(tempQ, src, new PTX::Value<T>(0));
 
 		auto select = new PTX::SelectInstruction<PTX::IntType<S>>(target, new PTX::Value<PTX::IntType<S>>(1), new PTX::Value<PTX::IntType<S>>(-1), tempQ);
 		select->SetPredicate(tempP, true);
-		this->m_builder->AddStatement(select);
+		this->m_builder.AddStatement(select);
 
-		this->m_builder->CloseScope();
+		this->m_builder.CloseScope();
 	}
 
 private:

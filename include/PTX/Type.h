@@ -173,27 +173,27 @@ template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
 template<> struct BitType<Bits::Bits1, 1> : BitTypeBase<Bits::Bits1>
 {
 	using SystemType = int64_t;
-	constexpr static std::string_view RegisterPrefix = "p";
+	 static std::string TypePrefix() { return "p"; }
 };
 template<> struct BitType<Bits::Bits8, 1> : BitTypeBase<Bits::Bits8>
 {
 	using SystemType = int8_t;
-	constexpr static std::string_view RegisterPrefix = "bc";
+	static std::string TypePrefix() { return "bc"; }
 };
 template<> struct BitType<Bits::Bits16, 1> : BitTypeBase<Bits::Bits16>
 {
 	using SystemType = int16_t;
-	constexpr static std::string_view RegisterPrefix = "bs";
+	static std::string TypePrefix() { return "bs"; }
 };
 template<> struct BitType<Bits::Bits32, 1> : BitTypeBase<Bits::Bits32>
 {
 	using SystemType = int32_t;
-	constexpr static std::string_view RegisterPrefix = "b";
+	static std::string TypePrefix() { return "b"; }
 };
 template<> struct BitType<Bits::Bits64, 1> : BitTypeBase<Bits::Bits64>
 {
 	using SystemType = int64_t;
-	constexpr static std::string_view RegisterPrefix = "bd";
+	static std::string TypePrefix() { return "bd"; }
 };
 
 using PredicateType = BitType<Bits::Bits1>;
@@ -306,24 +306,24 @@ template<Bits B, unsigned int N = 1> struct IntType : IntTypeBase<B, N> {};
 template<> struct IntType<Bits::Bits8, 1> : IntTypeBase<Bits::Bits8>
 {
 	using SystemType = int8_t;
-	constexpr static std::string_view RegisterPrefix = "rc";
+	static std::string TypePrefix() { return "rc"; }
 };
 template<> struct IntType<Bits::Bits16, 1> : IntTypeBase<Bits::Bits16>
 {
 	using SystemType = int16_t;
 	using WideType = IntType<Bits::Bits32>;
-	constexpr static std::string_view RegisterPrefix = "rs";
+	static std::string TypePrefix() { return "rs"; }
 };
 template<> struct IntType<Bits::Bits32, 1> : IntTypeBase<Bits::Bits32>
 {
 	using SystemType = int32_t;
 	using WideType = IntType<Bits::Bits64>;
-	constexpr static std::string_view RegisterPrefix = "r";
+	static std::string TypePrefix() { return "r"; }
 };
 template<> struct IntType<Bits::Bits64, 1> : IntTypeBase<Bits::Bits64>
 {
 	using SystemType = int64_t;
-	constexpr static std::string_view RegisterPrefix = "rd";
+	static std::string TypePrefix() { return "rd"; }
 };
 
 using Int8Type = IntType<Bits::Bits8>;
@@ -439,24 +439,24 @@ template<Bits B, unsigned int N = 1> struct UIntType : UIntTypeBase<B, N> {};
 template<> struct UIntType<Bits::Bits8, 1> : UIntTypeBase<Bits::Bits8>
 {
 	using SystemType = uint8_t;
-	constexpr static std::string_view RegisterPrefix = "uc";
+	static std::string TypePrefix() { return "uc"; }
 };
 template<> struct UIntType<Bits::Bits16, 1> : UIntTypeBase<Bits::Bits16>
 {
 	using SystemType = uint16_t;
 	using WideType = UIntType<Bits::Bits32>;
-	constexpr static std::string_view RegisterPrefix = "us";
+	static std::string TypePrefix() { return "us"; }
 };
 template<> struct UIntType<Bits::Bits32, 1> : UIntTypeBase<Bits::Bits32>
 {
 	using SystemType = uint32_t;
 	using WideType = UIntType<Bits::Bits64>;
-	constexpr static std::string_view RegisterPrefix = "u";
+	static std::string TypePrefix() { return "u"; }
 };
 template<> struct UIntType<Bits::Bits64, 1> : UIntTypeBase<Bits::Bits64>
 {
 	using SystemType = uint64_t;
-	constexpr static std::string_view RegisterPrefix = "ud";
+	static std::string TypePrefix() { return "ud"; }
 };
 
 using UInt8Type = UIntType<Bits::Bits8>;
@@ -724,21 +724,21 @@ template<Bits B, unsigned int N = 1> struct FloatType : FloatTypeBase<B, N> {};
 template<> struct FloatType<Bits::Bits16, 1> : FloatTypeBase<Bits::Bits16>
 {
 	using SystemType = float;
-	constexpr static std::string_view RegisterPrefix = "h";
+	static std::string TypePrefix() { return "h"; }
 };
 template<> struct FloatType<Bits::Bits16, 2> : FloatTypeBase<Bits::Bits16>
 {
-	constexpr static std::string_view RegisterPrefix = "hh";
+	static std::string TypePrefix() { return "hh"; }
 };
 template<> struct FloatType<Bits::Bits32, 1> : FloatTypeBase<Bits::Bits32>
 {
 	using SystemType = float;
-	constexpr static std::string_view RegisterPrefix = "f";
+	static std::string TypePrefix() { return "f"; }
 };
 template<> struct FloatType<Bits::Bits64, 1> : FloatTypeBase<Bits::Bits64>
 {
 	using SystemType = double;
-	constexpr static std::string_view RegisterPrefix = "fd";
+	static std::string TypePrefix() { return "fd"; }
 };
 
 using Float16Type = FloatType<Bits::Bits16>;
@@ -834,6 +834,8 @@ struct ArrayType : DataType
 
 	using ElementType = T;
 	constexpr static Bits TypeBits = T::TypeBits;
+
+	static std::string TypePrefix() { return std::string("a$") + T::TypePrefix(); }
 
 	static std::string BaseName()
 	{

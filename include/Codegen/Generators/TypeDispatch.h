@@ -4,6 +4,8 @@
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
 
+#include "Utils/Logger.h"
+
 // @method Dispatch<G, N> (G = Generator, N = NodeType)
 //
 // @requires
@@ -37,8 +39,7 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 			DispatchList<G, N...>(generator, static_cast<const HorseIR::ListType *>(type), nodes...);
 			break;
 		default:
-			std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << generator.m_builder->GetContextString("Dispatch") << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("Unsupported type " + type->ToString() + " in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
 }
 
@@ -69,8 +70,7 @@ static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, 
 			generator.template Generate<PTX::Float64Type>(nodes...);
 			break;
 		default:
-			std::cerr << "[ERROR] Unsupported type " << type->ToString() << " in function " << generator.m_builder->GetContextString("Dispatch") << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("Unsupported type " + type->ToString() + " in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
 }
 

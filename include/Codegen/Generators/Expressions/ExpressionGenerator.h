@@ -8,6 +8,7 @@
 
 #include "PTX/Operands/Variables/Register.h"
 
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
@@ -27,7 +28,7 @@ template<PTX::Bits B, class T>
 class ExpressionGenerator : public HorseIR::ForwardTraversal, public Generator
 {
 public:
-	ExpressionGenerator(const std::string& target, Builder *builder) : Generator(builder), m_target(target) {}
+	ExpressionGenerator(const std::string& target, Builder& builder) : Generator(builder), m_target(target) {}
 
 	void Visit(HorseIR::CallExpression *call) override
 	{

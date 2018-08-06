@@ -62,7 +62,7 @@ template<PTX::Bits B, class T>
 class BinaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	BinaryGenerator(Builder *builder, BinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
+	BinaryGenerator(Builder& builder, BinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
 	{
@@ -120,11 +120,11 @@ public:
 		{
 			if constexpr(std::is_same<Op<T>, PTX::DivideInstruction<PTX::Float64Type>>::value)
 			{
-				this->m_builder->AddStatement(new Op<T>(target, src1, src2, PTX::Float64Type::RoundingMode::Nearest));
+				this->m_builder.AddStatement(new Op<T>(target, src1, src2, PTX::Float64Type::RoundingMode::Nearest));
 			}
 			else
 			{
-				this->m_builder->AddStatement(new Op<T>(target, src1, src2));
+				this->m_builder.AddStatement(new Op<T>(target, src1, src2));
 			}
 		}
 		else
@@ -144,22 +144,22 @@ template<PTX::Bits B>
 class BinaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Type>
 {
 public:
-	BinaryGenerator(Builder *builder, BinaryOperation binaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_binaryOp(binaryOp) {}
+	BinaryGenerator(Builder& builder, BinaryOperation binaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_binaryOp(binaryOp) {}
 
 	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		auto block = new PTX::BlockStatement();
-		this->m_builder->AddStatement(block);
-		this->m_builder->OpenScope(block);
+		this->m_builder.AddStatement(block);
+		auto resources = this->m_builder.OpenScope(block);
 
-		auto temp = this->m_builder->template AllocateTemporary<PTX::Int16Type>();
+		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
 
 		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
 		gen.Generate(temp, call);
 
-		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
+		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
 
-		this->m_builder->CloseScope();
+		this->m_builder.CloseScope();
 	}
 
 private:
@@ -177,16 +177,16 @@ template<template<class, bool = true> class Op>
 void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 {
 	auto block = new PTX::BlockStatement();
-	this->m_builder->AddStatement(block);
-	this->m_builder->OpenScope(block);
+	this->m_builder.AddStatement(block);
+	auto resources = this->m_builder.OpenScope(block);
 
-	auto temp = this->m_builder->template AllocateTemporary<T>();
+	auto temp = resources->template AllocateTemporary<T>();
 	GenerateInstruction<Op>(temp, src1, src2);
 
 	UnaryGenerator<B, T> gen(this->m_builder, UnaryOperation::Not);
 	gen.Generate(target, temp);
 
-	this->m_builder->CloseScope();
+	this->m_builder.CloseScope();
 };
 
 }

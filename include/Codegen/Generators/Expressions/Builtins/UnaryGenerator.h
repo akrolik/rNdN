@@ -49,7 +49,7 @@ template<PTX::Bits B, class T>
 class UnaryGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	UnaryGenerator(Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
+	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
 	{
@@ -92,7 +92,7 @@ public:
 	{
 		if constexpr(Op<T, false>::TypeSupported)
 		{
-			this->m_builder->AddStatement(new Op<T>(target, src));
+			this->m_builder.AddStatement(new Op<T>(target, src));
 		}
 		else
 		{
@@ -110,22 +110,22 @@ template<PTX::Bits B>
 class UnaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Type>
 {
 public:
-	UnaryGenerator(Builder *builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_unaryOp(unaryOp) {}
+	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_unaryOp(unaryOp) {}
 
 	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
 	{
 		auto block = new PTX::BlockStatement();
-		this->m_builder->AddStatement(block);
-		this->m_builder->OpenScope(block);
+		this->m_builder.AddStatement(block);
+		auto resources = this->m_builder.OpenScope(block);
 
-		auto temp = this->m_builder->template AllocateTemporary<PTX::Int16Type>();
+		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
 
 		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
 		gen.Generate(temp, call);
 
-		this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
+		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
 
-		this->m_builder->CloseScope();
+		this->m_builder.CloseScope();
 	}
 
 private:

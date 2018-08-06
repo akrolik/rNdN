@@ -36,7 +36,7 @@ template<PTX::Bits B, class T>
 class RoundingGenerator : public BuiltinGenerator<B, T>
 {
 public:
-	RoundingGenerator(Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, T>(builder), m_roundOp(roundOp) {}
+	RoundingGenerator(Builder& builder, RoundingOperation roundOp) : BuiltinGenerator<B, T>(builder), m_roundOp(roundOp) {}
 
 private:
 	RoundingOperation m_roundOp;
@@ -48,7 +48,7 @@ class RoundingGenerator<B, PTX::IntType<S>> : public BuiltinGenerator<B, PTX::In
 public:
 	using NodeType = HorseIR::CallExpression;
 
-	RoundingGenerator(Builder *builder, RoundingOperation roundOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_roundOp(roundOp) {}
+	RoundingGenerator(Builder& builder, RoundingOperation roundOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_roundOp(roundOp) {}
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
 	{
@@ -70,7 +70,7 @@ public:
 			auto src = opGen.GenerateOperand(call->GetArgument(0));
 			auto conversion = new PTX::ConvertInstruction<PTX::IntType<S>, T>(target, src);
 			conversion->SetRoundingMode(PTXOp<T>(m_roundOp));
-			this->m_builder->AddStatement(conversion);
+			this->m_builder.AddStatement(conversion);
 		}
 		else
 		{

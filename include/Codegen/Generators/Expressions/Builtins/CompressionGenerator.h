@@ -47,23 +47,25 @@ public:
 
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto value = opGen.GenerateRegister(identifier);
-		auto compression = this->m_builder->template GetCompressionRegister<T>(identifier->GetString());
+
+		auto resources = this->m_builder.GetLocalResources();
+		auto compression = resources->template GetCompressionRegister<T>(identifier->GetString());
 
 		if (compression != nullptr)
 		{
 			// If a predicate has already been set on the value register, combine
 			// it with the new compress predicate
 
-			auto predicate = this->m_builder->template AllocateTemporary<PTX::PredicateType>();
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-			this->m_builder->AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
-			this->m_builder->AddCompressedRegister(m_target, value, predicate);
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
+			resources->AddCompressedRegister(m_target, value, predicate);
 		}
 		else
 		{
 			// Otherwise this is the first compression and it is simply stored
 
-			this->m_builder->AddCompressedRegister(m_target, value, m_predicate);
+			resources->AddCompressedRegister(m_target, value, m_predicate);
 		}
 	}
 

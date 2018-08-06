@@ -51,16 +51,16 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		auto& gpu = m_runtime.GetGPUManager();
 		auto& device =  gpu.GetCurrentDevice();
 
-		Runtime::JITCompiler::Options options;
-		options.ComputeCapability = device->GetComputeCapability();
-		//TODO: Fix reductions to support differing thread counts
-		options.MaxBlockSize = 512;//device->GetMaxThreadsDimension(0);
+		Codegen::TargetOptions targetOptions;
+		targetOptions.ComputeCapability = device->GetComputeCapability();
+		targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
 		//TODO: Get the input geometry size from the table
-		options.InputSize = 2048;
+		Codegen::InputOptions inputOptions;
+		inputOptions.InputSize = 2048;
 
 		//TODO: Determine which part of the program should be sent to our compiler
 		//TODO: This compiles the Builtins module too
-		Runtime::JITCompiler compiler(options);
+		Runtime::JITCompiler compiler(targetOptions, inputOptions);
 		PTX::Program *ptxProgram = compiler.Compile(m_program);
 
 		// Optimize the generated PTX program
@@ -86,8 +86,8 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 
 		CUDA::KernelInvocation invocation(kernel);
 
-		invocation.SetBlockShape(options.MaxBlockSize, 1, 1);
-		invocation.SetGridShape((options.InputSize - 1) / options.MaxBlockSize + 1, 1, 1);
+		invocation.SetBlockShape(targetOptions.MaxBlockSize, 1, 1);
+		invocation.SetGridShape((inputOptions.InputSize - 1) / targetOptions.MaxBlockSize + 1, 1, 1);
 
 		unsigned int index = 0;
 		for (const auto& argument : arguments)
@@ -106,8 +106,11 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 			invocation.SetParameter(index++, *buffer);
 		}
 
-		CUDA::TypedConstant<uint64_t> sizeConstant(options.InputSize);
-		invocation.SetParameter(index++, sizeConstant);
+		if (inputOptions.InputSize == Codegen::InputOptions::DynamicSize)
+		{
+			CUDA::TypedConstant<uint64_t> sizeConstant(inputOptions.InputSize);
+			invocation.SetParameter(index++, sizeConstant);
+		}
 
 		auto returnType = method->GetReturnType();
 		Runtime::Vector *returnData = nullptr;

@@ -3,9 +3,12 @@
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/InputOptions.h"
+#include "Codegen/TargetOptions.h"
 #include "Codegen/Generators/AssignmentGenerator.h"
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
+#include "Codegen/Generators/ReturnParameterGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
 #include "HorseIR/Tree/Program.h"
@@ -24,7 +27,7 @@ template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ForwardTraversal
 {
 public:
-	CodeGenerator(std::string target) : m_target(target) {}
+	CodeGenerator(const TargetOptions& targetOptions, const InputOptions& inputOptions) : m_builder(targetOptions, inputOptions) {}
 
 	PTX::Program *Generate(HorseIR::Program *program)
 	{
@@ -34,7 +37,7 @@ public:
 		// the calling code is responsible for linking.
 
 		PTX::Program *ptxProgram = new PTX::Program();
-		m_builder->SetCurrentProgram(ptxProgram);
+		m_builder.SetCurrentProgram(ptxProgram);
 		program->Accept(*this);
 		return ptxProgram;
 	}
@@ -49,13 +52,13 @@ public:
 
 		PTX::Module *ptxModule = new PTX::Module();
 		ptxModule->SetVersion(6, 2);
-		ptxModule->SetDeviceTarget(m_target);
+		ptxModule->SetDeviceTarget(m_builder.GetTargetOptions().ComputeCapability);
 		ptxModule->SetAddressSize(B);
 
 		// Update the state for this module
 
-		m_builder->AddModule(ptxModule);
-		m_builder->SetCurrentModule(ptxModule);
+		m_builder.AddModule(ptxModule);
+		m_builder.SetCurrentModule(ptxModule);
 
 		// Visit the module contents
 		//
@@ -86,22 +89,46 @@ public:
 
 		// Update the state for this function
 
-		m_builder->AddDeclaration(function);
-		m_builder->SetCurrentFunction(function, method);
-		m_builder->OpenScope(function);
+		m_builder.AddFunction(function);
+		m_builder.SetCurrentFunction(function, method);
+		m_builder.OpenScope(function);
 
 		// Visit the method contents (i.e. parameters + statements!)
 
-		HorseIR::ForwardTraversal::Visit(method);
+		for (auto& parameter : method->GetParameters())
+		{
+			parameter->Accept(*this);
+		}
+
+		// If the input is dynamically sized, then we pass by parameter
+
+		if (m_builder.GetInputOptions().InputSize == InputOptions::DynamicSize)
+		{
+			auto sizeName = "$size";
+			auto sizeDeclaration = new PTX::TypedVariableDeclaration<PTX::UInt64Type, PTX::ParameterSpace>(sizeName);
+			m_builder.AddParameter(sizeName, sizeDeclaration);
+		}
+
+		// Lastly, add the return parameter to the function
+
+		ReturnParameterGenerator<B> generator(m_builder);
+		Codegen::DispatchType(generator, method->GetReturnType());
+
+		for (auto& statement : method->GetStatements())
+		{
+			statement->Accept(*this);
+		}
 
 		// Complete the codegen for the method
 
-		m_builder->CloseScope();
-		m_builder->SetCurrentFunction(nullptr, nullptr);
+		m_builder.CloseScope();
+		m_builder.SetCurrentFunction(nullptr, nullptr);
 	}
 
 	void Visit(HorseIR::Parameter *parameter) override
 	{
+		//TODO: Use shape analysis for loading the correct index
+
 		ParameterGenerator<B> generator(m_builder);
 		Codegen::DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
 	}
@@ -117,12 +144,11 @@ public:
 		//TODO: Use shape analysis for loading the correct index
 
 		ReturnGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, m_builder->GetReturnType(), ret, ReturnGenerator<B>::IndexKind::Global);
+		Codegen::DispatchType(generator, m_builder.GetReturnType(), ret, ReturnGenerator<B>::IndexKind::Global);
 	}
 
 private:
-	std::string m_target;
-	Builder *m_builder = new Builder();
+	Builder m_builder;
 };
 
 }

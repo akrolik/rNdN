@@ -28,7 +28,7 @@ public:
 		m_declarations.insert(std::begin(m_declarations) + index, declaration);
 	}
 	template<class T>
-	void InsertDeclaration(const std::vector<T>& declarations, unsigned int index)
+	void InsertDeclarations(const std::vector<T>& declarations, unsigned int index)
 	{
 		m_declarations.insert(std::begin(m_declarations) + index, std::begin(declarations), std::end(declarations));
 	}

@@ -23,6 +23,8 @@ public:
 	std::enable_if_t<REQUIRE_EXACT(S, RegisterSpace) || REQUIRE_BASE(S, ParameterSpace), void>
 	AddParameter(const TypedVariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
 
+	const std::vector<const VariableDeclaration*> GetParameters() { return m_parameters; }
+
 	json ToJSON() const override
 	{
 		json j = FunctionDeclarationBase<R>::ToJSON();

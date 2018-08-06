@@ -2,7 +2,6 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
@@ -47,16 +46,14 @@ public:
 	template<class T, typename Enable = std::enable_if_t<PTX::StoreInstruction<B, T, PTX::GlobalSpace, PTX::StoreSynchronization::Weak, false>::TypeSupported>>
 	void Generate(const PTX::Register<T> *value, IndexKind indexKind)
 	{
-		const std::string returnName = "$return";
-		auto declaration = new PTX::PointerDeclaration<B, T>(returnName);
-		this->m_builder->AddParameter(declaration);
-		auto variable = declaration->GetVariable(returnName);
+		auto functionResources = this->m_builder.GetFunctionResources();
+		auto variable = functionResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>("$return");
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
 
-		this->m_builder->AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		this->m_builder->AddStatement(new PTX::ReturnInstruction());
+		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+		this->m_builder.AddStatement(new PTX::ReturnInstruction());
 	}
 };
 

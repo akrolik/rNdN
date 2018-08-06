@@ -11,6 +11,8 @@
 #include "PTX/Type.h"
 #include "PTX/StateSpace.h"
 
+#include "Utils/Logger.h"
+
 namespace PTX {
 
 class NameSet
@@ -58,6 +60,8 @@ protected:
 class VariableDeclaration : public DirectiveStatement, public Declaration
 {
 public:
+	using Declaration::Declaration;
+
 	VariableDeclaration() {}
 
 	VariableDeclaration(const std::string& prefix, unsigned int count = 1)
@@ -186,7 +190,7 @@ public:
 
 	using TypedVariableDeclarationBase<T, S>::TypedVariableDeclarationBase;
 
-	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0)
+	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0) const
 	{
 		for (const auto &set : this->m_names)
 		{
@@ -195,8 +199,7 @@ public:
 				return new typename S::template VariableType<T>(set, index);
 			}
 		}
-		std::cerr << "[ERROR] PTX::Variable(" << name << ") not found in PTX::VariableDeclaration" << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("PTX::Variable(" + name + ") not found in PTX::VariableDeclaration");
 	}
 
 	std::string ToString(unsigned int indentation = 0) const override
@@ -263,6 +266,18 @@ using RegisterDeclaration = TypedVariableDeclaration<T, RegisterSpace>;
 
 template<class T>
 using SpecialRegisterDeclaration = TypedVariableDeclaration<T, SpecialRegisterSpace>;
+
+template<class T>
+using LocalDeclaration = TypedVariableDeclaration<T, LocalSpace>;
+
+template<class T>
+using GlobalDeclaration = TypedVariableDeclaration<T, GlobalSpace>;
+
+template<class T>
+using SharedDeclaration = TypedVariableDeclaration<T, SharedSpace>;
+
+template<class T>
+using ConstDeclaration = TypedVariableDeclaration<T, ConstSpace>;
 
 template<class T>
 using ParameterDeclaration = TypedVariableDeclaration<T, ParameterSpace>;

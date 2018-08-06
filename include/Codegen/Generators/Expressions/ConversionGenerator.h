@@ -22,14 +22,14 @@ public:
 	using Generator::Generator;
 
 	template<class T, class S>
-	static const PTX::Register<T> *ConvertSource(Builder *builder, const PTX::Register<S> *source)
+	static const PTX::Register<T> *ConvertSource(Builder& builder, const PTX::Register<S> *source)
 	{
 		ConversionGenerator gen(builder);
 		return gen.ConvertSource<T, S>(source);
 	}
 
 	template<class T, class S>
-	static void ConvertSource(Builder *builder, const PTX::Register<T> *destination, const PTX::Register<S> *source)
+	static void ConvertSource(Builder& builder, const PTX::Register<T> *destination, const PTX::Register<S> *source)
 	{
 		ConversionGenerator gen(builder);
 		gen.ConvertSource(destination, source);
@@ -48,7 +48,9 @@ public:
 		{
 			return relaxedSource;
 		}
-		auto converted = this->m_builder->AllocateTemporary<T>();
+		
+		auto resources = this->m_builder.GetLocalResources();
+		auto converted = resources->AllocateTemporary<T>();
 		GenerateConversion(converted, source);
 		return converted;
 	}
@@ -58,14 +60,14 @@ public:
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
-			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(destination, source));
+			this->m_builder.AddStatement(new PTX::MoveInstruction<T>(destination, source));
 			return;
 		}
 
 		auto relaxedSource = RelaxSource<T>(source);
 		if (relaxedSource != nullptr)
 		{
-			this->m_builder->AddStatement(new PTX::MoveInstruction<T>(destination, relaxedSource));
+			this->m_builder.AddStatement(new PTX::MoveInstruction<T>(destination, relaxedSource));
 			return;
 		}
 		GenerateConversion(destination, source);
@@ -185,7 +187,7 @@ private:
 				convertInstruction->SetRoundingMode(PTX::ConvertRoundingModifier<D, S>::RoundingMode::Nearest);
 			}
 
-			this->m_builder->AddStatement(convertInstruction);
+			this->m_builder.AddStatement(convertInstruction);
 			return;
 		}
 
@@ -197,16 +199,18 @@ private:
 template<>
 void ConversionGenerator::ConvertSource<PTX::PredicateType, PTX::Int8Type>(const PTX::Register<PTX::PredicateType> *destination, const PTX::Register<PTX::Int8Type> *source)
 {
-	auto temp16 = this->m_builder->AllocateTemporary<PTX::Int16Type>();
+	auto resources = this->m_builder.GetLocalResources();
+	auto temp16 = resources->AllocateTemporary<PTX::Int16Type>();
 
-	this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, source));
-	this->m_builder->AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(destination, temp16, new PTX::Value<PTX::Int16Type>(0), PTX::Int16Type::ComparisonOperator::NotEqual));
+	this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, source));
+	this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(destination, temp16, new PTX::Value<PTX::Int16Type>(0), PTX::Int16Type::ComparisonOperator::NotEqual));
 }
 
 template<>
 const PTX::Register<PTX::PredicateType> *ConversionGenerator::ConvertSource<PTX::PredicateType, PTX::Int8Type>(const PTX::Register<PTX::Int8Type> *source)
 {
-	auto converted = this->m_builder->AllocateTemporary<PTX::PredicateType>();
+	auto resources = this->m_builder.GetLocalResources();
+	auto converted = resources->AllocateTemporary<PTX::PredicateType>();
 	ConvertSource(converted, source);
 	return converted;
 }
@@ -214,16 +218,18 @@ const PTX::Register<PTX::PredicateType> *ConversionGenerator::ConvertSource<PTX:
 template<>
 void ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::PredicateType>(const PTX::Register<PTX::Int8Type> *destination, const PTX::Register<PTX::PredicateType> *source)
 {
-	auto temp32 = this->m_builder->AllocateTemporary<PTX::Int32Type>();
+	auto resources = this->m_builder.GetLocalResources();
+	auto temp32 = resources->AllocateTemporary<PTX::Int32Type>();
 
-	this->m_builder->AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(temp32, new PTX::Value<PTX::Int32Type>(1), new PTX::Value<PTX::Int32Type>(0), source));
-	this->m_builder->AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int32Type>(destination, temp32));
+	this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(temp32, new PTX::Value<PTX::Int32Type>(1), new PTX::Value<PTX::Int32Type>(0), source));
+	this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int32Type>(destination, temp32));
 }
 
 template<>
 const PTX::Register<PTX::Int8Type> *ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::PredicateType>(const PTX::Register<PTX::PredicateType> *source)
 {
-	auto converted = this->m_builder->AllocateTemporary<PTX::Int8Type>();
+	auto resources = this->m_builder.GetLocalResources();
+	auto converted = resources->AllocateTemporary<PTX::Int8Type>();
 	ConvertSource(converted, source);
 	return converted;
 }

@@ -3,14 +3,9 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/ResourceAllocator.h"
 #include "Codegen/Generators/Expressions/ExpressionGenerator.h"
 
 #include "HorseIR/Tree/Statements/AssignStatement.h"
-
-#include "PTX/Type.h"
-#include "PTX/Functions/Function.h"
-#include "PTX/Operands/Variables/Register.h"
 
 namespace Codegen {
 

@@ -28,6 +28,18 @@ public:
 };
 
 template<class T>
+using LocalVariable = Variable<T, LocalSpace>;
+
+template<class T>
+using GlobalVariable = Variable<T, GlobalSpace>;
+
+template<class T>
+using SharedVariable = Variable<T, SharedSpace>;
+
+template<class T>
+using ConstVariable = Variable<T, ConstSpace>;
+
+template<class T>
 using ParameterVariable = Variable<T, ParameterSpace>;
 
 }
