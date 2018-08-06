@@ -1,6 +1,8 @@
 #pragma once
 
-#include "HorseIR/Tree/Program.h"
+#include <vector>
+
+#include "HorseIR/Tree/Method.h"
 
 #include "PTX/Program.h"
 
@@ -14,7 +16,7 @@ class JITCompiler
 public:
 	JITCompiler(const Codegen::TargetOptions& targetOptions, const Codegen::InputOptions& inputOptions) : m_targetOptions(targetOptions), m_inputOptions(inputOptions) {}
 
-	PTX::Program *Compile(HorseIR::Program *program);
+	PTX::Program *Compile(const std::vector<const HorseIR::Method *>& methods);
 	void Optimize(PTX::Program *program);
 
 private:

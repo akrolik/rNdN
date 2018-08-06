@@ -6,6 +6,7 @@
 
 #include "HorseIR/Tree/Expressions/Identifier.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 
 namespace HorseIR {
@@ -23,6 +24,7 @@ public:
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
 	Identifier *m_identifier;

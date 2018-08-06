@@ -4,6 +4,7 @@
 
 #include "HorseIR/Tree/Expressions/Expression.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/Types/Type.h"
 
@@ -23,6 +24,7 @@ public:
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
 	Expression *m_expression = nullptr;

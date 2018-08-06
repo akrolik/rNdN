@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Traversal/ForwardTraversal.h"
+#include "HorseIR/Traversal/ConstForwardTraversal.h"
 #include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/Expressions/Identifier.h"
@@ -12,7 +12,7 @@
 
 namespace Codegen {
 
-class OperandCompressionGenerator : public HorseIR::ForwardTraversal, public Generator
+class OperandCompressionGenerator : public HorseIR::ConstForwardTraversal, public Generator
 {
 public:
 	using Generator::Generator;
@@ -44,14 +44,14 @@ public:
 		Utils::Logger::LogError("Compression registers differ and are non-null");
 	}
 
-	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(HorseIR::Expression *expression)
+	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const HorseIR::Expression *expression)
 	{
 		m_compression = nullptr;
 		expression->Accept(*this);
 		return m_compression;
 	}
 
-	void Visit(HorseIR::Identifier *identifier) override
+	void Visit(const HorseIR::Identifier *identifier) override
 	{
 		Codegen::DispatchType(*this, identifier->GetType(), identifier);
 	}

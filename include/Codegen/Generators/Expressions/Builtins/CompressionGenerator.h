@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HorseIR/Traversal/ConstForwardTraversal.h"
+
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
@@ -10,7 +12,7 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class CompressionGenerator : public BuiltinGenerator<B, T>, public HorseIR::ForwardTraversal
+class CompressionGenerator : public BuiltinGenerator<B, T>, public HorseIR::ConstForwardTraversal
 {
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
@@ -28,12 +30,12 @@ public:
 		call->GetArgument(1)->Accept(*this);
 	}
 
-	void Visit(HorseIR::Expression *expression) override
+	void Visit(const HorseIR::Expression *expression) override
 	{
 		BuiltinGenerator<B, T>::Unimplemented("compression of non-identifier kind");
 	}
 
-	void Visit(HorseIR::Identifier *identifier) override
+	void Visit(const HorseIR::Identifier *identifier) override
 	{
 		// Compression does not create a new register, instead it creates a mapping
 		// from an identifier to a register-predicate pair

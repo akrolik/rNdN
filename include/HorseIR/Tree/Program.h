@@ -5,6 +5,7 @@
 
 #include "HorseIR/Tree/Node.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/Module.h"
 
@@ -34,6 +35,7 @@ public:
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
 	std::vector<Module *> m_modules;

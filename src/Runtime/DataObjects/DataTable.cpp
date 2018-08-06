@@ -1,15 +1,19 @@
-#include "Runtime/Table.h"
+#include "Runtime/DataObjects/DataTable.h"
 
 #include "Utils/Logger.h"
 
 namespace Runtime {
 
-void Table::AddColumn(const std::string& name, Vector *column)
+void DataTable::AddColumn(const std::string& name, DataVector *column)
 {
+	if (column->GetElementCount() != m_size)
+	{
+		Utils::Logger::LogError("Column length does not match table size [" + std::to_string(column->GetElementCount()) + " != " + std::to_string(m_size) + "]");
+	}
 	m_columns.insert({name, column});
 }
 
-Vector *Table::GetColumn(const std::string& name) const
+DataVector *DataTable::GetColumn(const std::string& name) const
 {
 	if (m_columns.find(name) == m_columns.end())
 	{
@@ -18,7 +22,7 @@ Vector *Table::GetColumn(const std::string& name) const
 	return m_columns.at(name);
 }
 
-void Table::Dump() const
+void DataTable::Dump() const
 {
 	std::string columnNames = " ";
 	for (const auto& column : m_columns)

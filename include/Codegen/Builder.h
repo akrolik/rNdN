@@ -67,7 +67,7 @@ public:
 		m_currentModule->AddDeclaration(function);
 	}
 
-	void SetCurrentFunction(PTX::FunctionDefinition<PTX::VoidType> *function, HorseIR::Method *method)
+	void SetCurrentFunction(PTX::FunctionDefinition<PTX::VoidType> *function, const HorseIR::Method *method)
 	{
 		m_currentFunction = function;
 		m_currentMethod = method;
@@ -154,7 +154,7 @@ private:
 	PTX::Module *m_currentModule = nullptr;
 
 	PTX::FunctionDefinition<PTX::VoidType> *m_currentFunction = nullptr;
-	HorseIR::Method *m_currentMethod = nullptr;
+	const HorseIR::Method *m_currentMethod = nullptr;
 
 	std::stack<PTX::StatementList *> m_scopes;
 	std::unordered_map<PTX::StatementList *, RegisterAllocator *> m_localResources;

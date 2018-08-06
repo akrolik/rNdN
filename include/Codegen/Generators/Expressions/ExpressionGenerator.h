@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Traversal/ForwardTraversal.h"
+#include "HorseIR/Traversal/ConstForwardTraversal.h"
 #include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/BuiltinMethod.h"
@@ -25,19 +25,19 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class ExpressionGenerator : public HorseIR::ForwardTraversal, public Generator
+class ExpressionGenerator : public HorseIR::ConstForwardTraversal, public Generator
 {
 public:
 	ExpressionGenerator(const std::string& target, Builder& builder) : Generator(builder), m_target(target) {}
 
-	void Visit(HorseIR::CallExpression *call) override
+	void Visit(const HorseIR::CallExpression *call) override
 	{
 		auto method = call->GetMethod();
 		switch (method->GetKind())
 		{
 			case HorseIR::MethodDeclaration::Kind::Builtin:
 			{
-				BuiltinGenerator<B, T> *generator = GetBuiltinGenerator(static_cast<HorseIR::BuiltinMethod *>(method));
+				BuiltinGenerator<B, T> *generator = GetBuiltinGenerator(static_cast<const HorseIR::BuiltinMethod *>(method));
 				if (generator == nullptr)
 				{
 					Utils::Logger::LogError("Generator for builtin function " + method->GetName() + " not implemented");
@@ -53,7 +53,7 @@ public:
 
 	}
 
-	BuiltinGenerator<B, T> *GetBuiltinGenerator(HorseIR::BuiltinMethod *method)
+	BuiltinGenerator<B, T> *GetBuiltinGenerator(const HorseIR::BuiltinMethod *method)
 	{
 		switch (method->GetKind())
 		{

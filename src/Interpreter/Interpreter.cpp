@@ -19,8 +19,8 @@
 #include "PTX/Program.h"
 
 #include "Runtime/JITCompiler.h"
-#include "Runtime/List.h"
-#include "Runtime/Vector.h"
+#include "Runtime/DataObjects/DataList.h"
+#include "Runtime/DataObjects/DataVector.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -32,12 +32,23 @@ void Interpreter::Execute(HorseIR::Program *program)
 {
 	Utils::Logger::LogSection("Starting program execution");
 
-	m_program = program;
-
 	HorseIR::EntryAnalysis entryAnalysis;
 	entryAnalysis.Analyze(program);
 	auto result = Execute(entryAnalysis.GetEntry(), {});
 	result->Dump();
+}
+
+Runtime::DataObject *Interpreter::Execute(const HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments)
+{
+	switch (method->GetKind())
+	{
+		case HorseIR::MethodDeclaration::Kind::Definition:
+			return Execute(static_cast<const HorseIR::Method *>(method), arguments);
+		case HorseIR::MethodDeclaration::Kind::Builtin:
+			return Execute(static_cast<const HorseIR::BuiltinMethod *>(method), arguments);
+	}
+
+	Utils::Logger::LogError("Cannot execute method '" + method->GetName() + "'");
 }
 
 Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments)
@@ -58,10 +69,8 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		Codegen::InputOptions inputOptions;
 		inputOptions.InputSize = 2048;
 
-		//TODO: Determine which part of the program should be sent to our compiler
-		//TODO: This compiles the Builtins module too
 		Runtime::JITCompiler compiler(targetOptions, inputOptions);
-		PTX::Program *ptxProgram = compiler.Compile(m_program);
+		PTX::Program *ptxProgram = compiler.Compile({method});
 
 		// Optimize the generated PTX program
 
@@ -92,13 +101,13 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		unsigned int index = 0;
 		for (const auto& argument : arguments)
 		{
-			auto column = static_cast<Runtime::Vector *>(m_expressionMap.at(argument));
+			auto column = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
 
-			Utils::Logger::LogInfo("Transferring input argument '" + argument->ToString() + "' [" + column->GetType()->ToString() + "(" + std::to_string(column->GetElementSize()) + " bytes) x " + std::to_string(column->GetCount()) + "]");
+			Utils::Logger::LogInfo("Transferring input argument '" + argument->ToString() + "' [" + column->GetType()->ToString() + "(" + std::to_string(column->GetElementSize()) + " bytes) x " + std::to_string(column->GetElementCount()) + "]");
 
 			//TODO: All buffers should be padded to a multiple of the thread count
 			//TODO: Build a GPU buffer manager
-			auto buffer = new CUDA::Buffer(column->GetData(), column->GetSize());
+			auto buffer = new CUDA::Buffer(column->GetData(), column->GetDataSize());
 
 			buffer->AllocateOnGPU();
 			buffer->TransferToGPU();
@@ -113,21 +122,21 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		}
 
 		auto returnType = method->GetReturnType();
-		Runtime::Vector *returnData = nullptr;
+		Runtime::DataVector *returnData = nullptr;
 
 		switch (returnType->GetKind())
 		{
 			case HorseIR::Type::Kind::Primitive:
 				//TODO: Use shape information to allocate the correct size
-				returnData = Runtime::Vector::CreateVector(static_cast<const HorseIR::PrimitiveType *>(returnType), 1);
+				returnData = Runtime::DataVector::CreateVector(static_cast<const HorseIR::PrimitiveType *>(returnType), 1);
 				break;
 			defualt:
 				Utils::Logger::LogError("Unsupported return type " + returnType->ToString());
 		}
 
-		Utils::Logger::LogInfo("Initializing return argument [" + returnType->ToString() + "(" + std::to_string(returnData->GetElementSize()) + " bytes) x " + std::to_string(returnData->GetCount()) + "]");
+		Utils::Logger::LogInfo("Initializing return argument [" + returnType->ToString() + "(" + std::to_string(returnData->GetElementSize()) + " bytes) x " + std::to_string(returnData->GetElementCount()) + "]");
 
-		CUDA::Buffer returnBuffer(returnData->GetData(), returnData->GetSize());
+		CUDA::Buffer returnBuffer(returnData->GetData(), returnData->GetDataSize());
 		returnBuffer.AllocateOnGPU();
 		returnBuffer.TransferToGPU();
 		invocation.SetParameter(index++, returnBuffer);
@@ -168,17 +177,17 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, 
 	{
 		case HorseIR::BuiltinMethod::Kind::Enlist:
 		{
-			auto vector = static_cast<Runtime::Vector *>(m_expressionMap.at(arguments.at(0)));
-			auto list = new Runtime::List(vector);
+			auto vector = static_cast<Runtime::DataVector *>(m_expressionMap.at(arguments.at(0)));
+			auto list = new Runtime::DataList(vector->GetType(), vector);
 
 			return list;
 		}
 		case HorseIR::BuiltinMethod::Kind::Table:
 		{
-			auto columnNames = static_cast<Runtime::TypedVector<std::string> *>(m_expressionMap.at(arguments.at(0)));
-			auto columnValues = static_cast<Runtime::List *>(m_expressionMap.at(arguments.at(1)));
+			auto columnNames = static_cast<Runtime::TypedDataVector<std::string> *>(m_expressionMap.at(arguments.at(0)));
+			auto columnValues = static_cast<Runtime::DataList *>(m_expressionMap.at(arguments.at(1)));
 
-			auto table = new Runtime::Table("test", 1);
+			auto table = new Runtime::DataTable(1);
 
 			unsigned int i = 0;
 			for (const auto& columnName : columnNames->GetValues())
@@ -190,7 +199,7 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, 
 		}
 		case HorseIR::BuiltinMethod::Kind::ColumnValue:
 		{
-			auto table = static_cast<Runtime::Table *>(m_expressionMap.at(arguments.at(0)));
+			auto table = static_cast<Runtime::DataTable *>(m_expressionMap.at(arguments.at(0)));
 			auto columnName = static_cast<const HorseIR::Symbol *>(arguments.at(1))->GetName();
 
 			return table->GetColumn(columnName);
@@ -221,41 +230,58 @@ void Interpreter::Visit(HorseIR::ReturnStatement *ret)
 
 void Interpreter::Visit(HorseIR::CastExpression *cast)
 {
+	// Evaluate the cast expression
+
 	auto expression = cast->GetExpression();
 	expression->Accept(*this);
-	//TODO: Check cast is valid
-	m_expressionMap.insert({cast, m_expressionMap.at(expression)});
+
+	// Check the cast is valid
+
+	auto result = m_expressionMap.at(expression);
+
+	auto expressionType = expression->GetType();
+	auto resultType = result->GetType();
+
+	//TODO: Remove this hack
+	if (expressionType == nullptr)
+	{
+		expressionType = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int32);
+	}
+
+	if (*expressionType != *resultType)
+	{
+		Utils::Logger::LogError("Invalid cast, " + expressionType->ToString() + " cannot be cast to " + resultType->ToString());
+	}
+
+	m_expressionMap.insert({cast, result});
 }
 
 void Interpreter::Visit(HorseIR::CallExpression *call)
 {
+	// Evaluate arguments
 	for (auto& argument : call->GetArguments())
 	{
 		argument->Accept(*this);
 	}
 
-	auto method = call->GetMethod();
-	Runtime::DataObject *result = nullptr;
-	switch (method->GetKind())
-	{
-		case HorseIR::MethodDeclaration::Kind::Definition:
-			result = Execute(static_cast<HorseIR::Method *>(method), call->GetArguments());
-			break;
-		case HorseIR::MethodDeclaration::Kind::Builtin:
-			result = Execute(static_cast<HorseIR::BuiltinMethod *>(method), call->GetArguments());
-			break;
-	}
+	// Execute method and store result for the invocation
+
+	auto result = Execute(call->GetMethod(), call->GetArguments());
 	m_expressionMap.insert({call, result});
 }
 
 void Interpreter::Visit(HorseIR::Identifier *identifier)
 {
+	// Get the evaluated expression for the identifier
+
 	m_expressionMap.insert({identifier, m_variableMap.at(identifier->GetString())});
 }
 
 void Interpreter::Visit(HorseIR::Symbol *symbol)
 {
-	m_expressionMap.insert({symbol, new Runtime::TypedVector<std::string>(symbol->GetType(), {symbol->GetName()})});
+	// Create a vector of symbols from the literal
+
+	m_expressionMap.insert({symbol, new Runtime::TypedDataVector<std::string>(static_cast<const HorseIR::PrimitiveType *>(symbol->GetType()), {symbol->GetName()})});
 }
 
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Traversal/ForwardTraversal.h"
+#include "HorseIR/Traversal/ConstForwardTraversal.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/InputOptions.h"
@@ -24,12 +24,12 @@
 namespace Codegen {
 
 template<PTX::Bits B>
-class CodeGenerator : public HorseIR::ForwardTraversal
+class CodeGenerator : public HorseIR::ConstForwardTraversal
 {
 public:
 	CodeGenerator(const TargetOptions& targetOptions, const InputOptions& inputOptions) : m_builder(targetOptions, inputOptions) {}
 
-	PTX::Program *Generate(HorseIR::Program *program)
+	PTX::Program *Generate(const HorseIR::Program *program)
 	{
 		// A HorseIR program consists of a list of named modules. PTX on the other hand
 		// only has the concept of modules. We therefore create a simple container
@@ -42,18 +42,54 @@ public:
 		return ptxProgram;
 	}
 
-	void Visit(HorseIR::Module *module) override
+	PTX::Program *Generate(const HorseIR::Module *module)
 	{
-		// Each HorseIR module corresponds to a PTX module. A PTX module consists of the
-		// PTX version, the device version and the address size.
-		//
-		// This compiler currently supports PTX version 6.2 from May 2018. The device
-		// properties are dynamically detected by the enclosing package.
+		// In a mixed execution HorseIR program, only some modules will be suitable
+		// for sending to the GPU. We provide this entry point to allow compilation
+		// of individual modules
 
-		PTX::Module *ptxModule = new PTX::Module();
-		ptxModule->SetVersion(6, 2);
-		ptxModule->SetDeviceTarget(m_builder.GetTargetOptions().ComputeCapability);
-		ptxModule->SetAddressSize(B);
+		PTX::Program *ptxProgram = new PTX::Program();
+		m_builder.SetCurrentProgram(ptxProgram);
+		module->Accept(*this);
+		return ptxProgram;
+	}
+
+	PTX::Program *Generate(const std::vector<const HorseIR::Method *>& methods)
+	{
+		// At the finest granularity, our codegen may compile a single method for the GPU.
+		// All child-methods are expected to be in the vector
+
+		PTX::Program *ptxProgram = new PTX::Program();
+		m_builder.SetCurrentProgram(ptxProgram);
+
+		// When compiling a list of methods we create a single container
+		// module for all
+
+		auto ptxModule = CreateModule();
+		m_builder.AddModule(ptxModule);
+		m_builder.SetCurrentModule(ptxModule);
+
+		// Generate the code for each method in the list. We assume this will produce
+		// a full working PTX program
+
+		for (auto& methods : methods)
+		{
+			methods->Accept(*this);
+		}
+
+		// Finish generating the full module
+
+		m_builder.CloseModule();
+		m_builder.SetCurrentModule(nullptr);
+
+		return ptxProgram;
+	}
+
+	void Visit(const HorseIR::Module *module) override
+	{
+		// Each HorseIR module corresponds to a PTX module
+		
+		auto ptxModule = CreateModule();
 
 		// Update the state for this module
 
@@ -65,14 +101,30 @@ public:
 		// At the moment we only consider methods, but in the future we could support
 		// cross module calling using PTX extern declarations.
 
-		HorseIR::ForwardTraversal::Visit(module);
+		HorseIR::ConstForwardTraversal::Visit(module);
 
 		// Complete the codegen for the module
 
-		m_builder->SetCurrentModule(nullptr);
+		m_builder.CloseModule();
+		m_builder.SetCurrentModule(nullptr);
 	}
 
-	void Visit(HorseIR::Method *method) override
+	PTX::Module *CreateModule()
+	{
+		// A PTX module consists of the PTX version, the device version and the address size.
+		//
+		// This compiler currently supports PTX version 6.2 from May 2018. The device
+		// properties are dynamically detected by the enclosing package.
+
+		PTX::Module *ptxModule = new PTX::Module();
+		ptxModule->SetVersion(6, 2);
+		ptxModule->SetDeviceTarget(m_builder.GetTargetOptions().ComputeCapability);
+		ptxModule->SetAddressSize(B);
+
+		return ptxModule;
+	}
+
+	void Visit(const HorseIR::Method *method) override
 	{
 		// Create a dynamiclly typed kernel function for the HorseIR method.
 		// Dynamic typing is used since we don't (at the compiler compile time)
@@ -125,7 +177,7 @@ public:
 		m_builder.SetCurrentFunction(nullptr, nullptr);
 	}
 
-	void Visit(HorseIR::Parameter *parameter) override
+	void Visit(const HorseIR::Parameter *parameter) override
 	{
 		//TODO: Use shape analysis for loading the correct index
 
@@ -133,13 +185,13 @@ public:
 		Codegen::DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
 	}
 
-	void Visit(HorseIR::AssignStatement *assign) override
+	void Visit(const HorseIR::AssignStatement *assign) override
 	{
 		AssignmentGenerator<B> generator(m_builder);
 		Codegen::DispatchType(generator, assign->GetType(), assign);
 	}
 
-	void Visit(HorseIR::ReturnStatement *ret) override
+	void Visit(const HorseIR::ReturnStatement *ret) override
 	{
 		//TODO: Use shape analysis for loading the correct index
 

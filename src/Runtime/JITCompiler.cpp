@@ -8,7 +8,7 @@
 
 namespace Runtime {
 
-PTX::Program *JITCompiler::Compile(HorseIR::Program *program)
+PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& methods)
 {
 	// Generate 64-bit PTX code from the input HorseIR for the current device
 
@@ -21,7 +21,7 @@ PTX::Program *JITCompiler::Compile(HorseIR::Program *program)
 	auto timeCode_start = Utils::Chrono::Start();
 
 	auto codegen = new Codegen::CodeGenerator<PTX::Bits::Bits64>(m_targetOptions, m_inputOptions);
-	auto ptxProgram = codegen->Generate(program);
+	auto ptxProgram = codegen->Generate(methods);
 
 	auto timeCode = Utils::Chrono::End(timeCode_start);
 

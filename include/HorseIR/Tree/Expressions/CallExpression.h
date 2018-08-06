@@ -5,9 +5,10 @@
 
 #include "HorseIR/Tree/Expressions/Expression.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
-#include "HorseIR/Traversal/Visitor.h"
 
 namespace HorseIR {
 
@@ -44,6 +45,7 @@ public:
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
 	ModuleIdentifier *m_identifier = nullptr;

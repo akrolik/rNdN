@@ -5,6 +5,7 @@
 
 #include "HorseIR/Tree/MethodDeclaration.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/Parameter.h"
 #include "HorseIR/Tree/Statements/Statement.h"
@@ -62,6 +63,7 @@ public:
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
 	std::vector<Parameter *> m_parameters;

@@ -4,6 +4,7 @@
 
 #include "HorseIR/Tree/Types/Type.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 
 namespace HorseIR {
@@ -64,6 +65,17 @@ public:
 	Kind GetKind() const { return m_kind; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+
+	bool operator==(const PrimitiveType& other) const
+	{
+		return m_kind == other.m_kind;
+	}
+
+	bool operator!=(const PrimitiveType& other) const
+	{
+		return m_kind != other.m_kind;
+	}
 
 private:
 	const Kind m_kind;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Traversal/ForwardTraversal.h"
+#include "HorseIR/Traversal/ConstForwardTraversal.h"
 #include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/Expressions/Identifier.h"
@@ -25,12 +25,12 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class OperandGenerator : public HorseIR::ForwardTraversal, public Generator
+class OperandGenerator : public HorseIR::ConstForwardTraversal, public Generator
 {
 public:
 	using Generator::Generator;
 
-	const PTX::TypedOperand<T> *GenerateOperand(HorseIR::Expression *expression)
+	const PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Expression *expression)
 	{
 		m_operand = nullptr;
 		expression->Accept(*this);
@@ -41,7 +41,7 @@ public:
 		Utils::Logger::LogError("Unable to generate operand " + expression->ToString());
 	}
 
-	const PTX::Register<T> *GenerateRegister(HorseIR::Expression *expression)
+	const PTX::Register<T> *GenerateRegister(const HorseIR::Expression *expression)
 	{
 		const PTX::TypedOperand<T> *operand = GenerateOperand(expression);
 		if (m_register)
@@ -74,7 +74,7 @@ public:
 		return reg;
 	}
 
-	void Visit(HorseIR::Identifier *identifier) override
+	void Visit(const HorseIR::Identifier *identifier) override
 	{
 		Codegen::DispatchType(*this, identifier->GetType(), identifier);
 	}
@@ -95,12 +95,12 @@ public:
 		m_register = true;
 	}
 
-	void Visit(HorseIR::Literal<int64_t> *literal) override
+	void Visit(const HorseIR::Literal<int64_t> *literal) override
 	{
 		Generate<int64_t>(literal);
 	}
 
-	void Visit(HorseIR::Literal<double> *literal) override
+	void Visit(const HorseIR::Literal<double> *literal) override
 	{
 		Generate<double>(literal);
 	}

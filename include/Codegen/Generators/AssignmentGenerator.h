@@ -16,7 +16,7 @@ public:
 	using Generator::Generator;
 
 	template<class T>
-	void Generate(HorseIR::AssignStatement *assign)
+	void Generate(const HorseIR::AssignStatement *assign)
 	{
 		// An assignment in HorseIR consists of: name, type, and expression (typically a function call).
 		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements

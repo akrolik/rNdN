@@ -37,7 +37,6 @@ void Visitor::Visit(Program *program)
 
 void Visitor::Visit(Module *module)
 {
-
 	Visit(static_cast<Node*>(module));
 }
 

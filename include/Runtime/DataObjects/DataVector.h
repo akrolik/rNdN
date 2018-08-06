@@ -1,25 +1,22 @@
 #pragma once
 
-#include "Runtime/DataObject.h"
+#include "Runtime/DataObjects/DataObject.h"
 
 #include <string>
 #include <vector>
 
-#include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/PrimitiveType.h"
 
 namespace Runtime {
 
-class Vector : public DataObject
+class DataVector : public DataObject
 {
 public:
-	static Vector *CreateVector(const HorseIR::PrimitiveType *type, unsigned long size);
-
-	virtual const HorseIR::Type *GetType() const = 0;
+	static DataVector *CreateVector(const HorseIR::PrimitiveType *type, unsigned long size);
 
 	virtual void *GetData() = 0;
-	virtual size_t GetCount() const = 0;
-	virtual size_t GetSize() const = 0;
+	virtual size_t GetDataSize() const = 0;
+	virtual size_t GetElementCount() const = 0;
 	virtual size_t GetElementSize() const = 0;
 
 	//TODO:
@@ -29,24 +26,24 @@ public:
 };
 
 template<typename T>
-class TypedVector : public Vector
+class TypedDataVector : public DataVector
 {
 public:
-	TypedVector(const HorseIR::Type *type, const std::vector<T>& data) : m_type(type), m_data(data) {}
+	TypedDataVector(const HorseIR::PrimitiveType *elementType, const std::vector<T>& data) : m_type(elementType), m_data(data) {}
 
-	TypedVector(const HorseIR::Type *type, unsigned long size) : m_type(type)
+	TypedDataVector(const HorseIR::PrimitiveType *elementType, unsigned long size) : m_type(elementType)
 	{
 		m_data.resize(size);
 	}
 
-	const HorseIR::Type *GetType() const override { return m_type; }
+	const HorseIR::PrimitiveType *GetType() const { return m_type; }
 
 	const T& GetValue(unsigned int i) const { return m_data.at(i); }
 	const std::vector<T>& GetValues() const { return m_data; }
 
 	void *GetData() override { return m_data.data(); }
-	size_t GetCount() const override { return m_data.size(); }
-	size_t GetSize() const override { return m_data.size() * sizeof(T); }
+	size_t GetDataSize() const override { return m_data.size() * sizeof(T); }
+	size_t GetElementCount() const override { return m_data.size(); }
 	size_t GetElementSize() const override { return sizeof(T); }
 
 	std::string Dump(unsigned int index) const override
@@ -62,7 +59,8 @@ public:
 	}
 
 private:
-	const HorseIR::Type *m_type = nullptr;
+	const HorseIR::PrimitiveType *m_type = nullptr;
+
 	std::vector<T> m_data;
 };
 

@@ -2,8 +2,8 @@
 
 #include "HorseIR/Traversal/Visitor.h"
 
-#include "Runtime/DataObject.h"
 #include "Runtime/Runtime.h"
+#include "Runtime/DataObjects/DataObject.h"
 
 namespace Interpreter {
 
@@ -13,6 +13,7 @@ public:
 	Interpreter(Runtime::Runtime& runtime) : m_runtime(runtime) {}
 
 	void Execute(HorseIR::Program *program);
+	Runtime::DataObject *Execute(const HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments);
 	Runtime::DataObject *Execute(const HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments);
 	Runtime::DataObject *Execute(const HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Expression *>& arguments);
 
@@ -27,7 +28,6 @@ private:
 	Runtime::Runtime& m_runtime;
 
 	//TODO:
-	HorseIR::Program *m_program = nullptr;
 	Runtime::DataObject *m_result = nullptr;
 
 	std::unordered_map<std::string, Runtime::DataObject *> m_variableMap;

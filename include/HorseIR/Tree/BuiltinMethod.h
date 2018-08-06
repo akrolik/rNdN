@@ -2,6 +2,9 @@
 
 #include "HorseIR/Tree/MethodDeclaration.h"
 
+#include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/Visitor.h"
+
 namespace HorseIR {
 
 class BuiltinMethod : public MethodDeclaration
@@ -374,6 +377,7 @@ public:
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
 	Kind m_kind;

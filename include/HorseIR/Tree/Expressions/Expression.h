@@ -2,7 +2,7 @@
 
 #include "HorseIR/Tree/Node.h"
 
-#include "HorseIR/Tree/Types/PrimitiveType.h"
+#include "HorseIR/Tree/Types/Type.h"
 
 namespace HorseIR {
 
