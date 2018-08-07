@@ -128,6 +128,14 @@ public:
 
 	void Visit(const HorseIR::Method *method) override
 	{
+		// Some modules may share both GPU and non-GPU code. We require the method
+		// be flagged for GPU compilation.
+
+		if (!method->IsKernel())
+		{
+			return;
+		}
+
 		// Create a dynamiclly typed kernel function for the HorseIR method.
 		// Dynamic typing is used since we don't (at the compiler compile time)
 		// know the types of the parameters.
