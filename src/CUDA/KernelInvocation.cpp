@@ -8,22 +8,17 @@ namespace CUDA {
 
 KernelInvocation::KernelInvocation(Kernel& kernel) : m_kernel(kernel)
 {
-	m_parameters = ::operator new(m_kernel.GetParametersCount());
-}
-
-KernelInvocation::~KernelInvocation()
-{
-	::operator delete(m_parameters);
+	m_parameters.resize(m_kernel.GetParametersCount());
 }
 
 void KernelInvocation::SetParameter(unsigned int index, Constant &value)
 {
-	((void **)m_parameters)[index] = value.GetAddress();
+	m_parameters.at(index) = value.GetAddress();
 }
 
 void KernelInvocation::SetParameter(unsigned int index, Buffer &buffer)
 {
-	((void **)m_parameters)[index] = &buffer.GetGPUBuffer();
+	m_parameters.at(index) = &buffer.GetGPUBuffer();
 }
 
 void KernelInvocation::Launch()
@@ -32,7 +27,7 @@ void KernelInvocation::Launch()
 				m_kernel.GetKernel(),
 				m_gridX, m_gridY, m_gridZ,
 				m_blockX, m_blockY, m_blockZ,
-				m_sharedMemorySize, 0, (void **)m_parameters, 0
+				m_sharedMemorySize, 0, (void **)m_parameters.data(), 0
 	));
 
 	Utils::Logger::LogInfo("Kernel '" + m_kernel.GetName() + "' launched");

@@ -2,6 +2,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <vector>
 
 #include "CUDA/Buffer.h"
 #include "CUDA/Constant.h"
@@ -13,7 +14,6 @@ class KernelInvocation
 {
 public:
 	KernelInvocation(Kernel& kernel);
-	~KernelInvocation();
 
 	void SetBlockShape(unsigned int x, unsigned int y, unsigned int z)
 	{
@@ -48,7 +48,7 @@ private:
 
 	unsigned int m_sharedMemorySize = 0;
 
-	void *m_parameters = nullptr;
+	std::vector<void *> m_parameters;
 };
 
 }
