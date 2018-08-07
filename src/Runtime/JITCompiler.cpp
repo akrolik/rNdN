@@ -14,9 +14,9 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& m
 
 	Utils::Logger::LogSection("Generating PTX program");
 	Utils::Logger::LogInfo("Target Options");
-	Utils::Logger::LogInfo(m_targetOptions.ToString(), "");
+	Utils::Logger::LogInfo(m_targetOptions.ToString(), 1);
 	Utils::Logger::LogInfo("Input Options");
-	Utils::Logger::LogInfo(m_inputOptions.ToString(), "");
+	Utils::Logger::LogInfo(m_inputOptions.ToString(), 1);
 
 	auto timeCode_start = Utils::Chrono::Start();
 
@@ -34,7 +34,7 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& m
 		Utils::Logger::LogInfo("Generated PTX program");
 		for (const auto& module : ptxProgram->GetModules())
 		{
-			Utils::Logger::LogInfo(module->ToString(), Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(module->ToString(), 0, Utils::Logger::NoPrefix);
 		}
 	}
 
@@ -43,7 +43,7 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& m
 		Utils::Logger::LogInfo("Generated PTX program (JSON)");
 		for (const auto& module : ptxProgram->GetModules())
 		{
-			Utils::Logger::LogInfo(module->ToJSON().dump(4), Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(module->ToJSON().dump(4), 0, Utils::Logger::NoPrefix);
 		}
 	}
 

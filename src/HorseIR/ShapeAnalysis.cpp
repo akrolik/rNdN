@@ -211,11 +211,11 @@ void ShapeAnalysis::SetShape(const std::string& identifier, const Shape *shape)
 
 void ShapeAnalysis::Dump() const
 {
-	Utils::Logger::LogInfo("Shape Analysis Dump", Utils::Logger::DebugPrefix);
-	Utils::Logger::LogInfo("------------------------------", Utils::Logger::NoPrefix);
+	Utils::Logger::LogInfo("Shape Analysis Dump", 0, Utils::Logger::DebugPrefix);
+	Utils::Logger::LogInfo("------------------------------", 0, Utils::Logger::DebugPrefix);
 	for (auto it = m_identifierMap.cbegin(); it != m_identifierMap.cend(); ++it)
 	{
-		Utils::Logger::LogInfo("  " + it->first + ": " + it->second->ToString());
+		Utils::Logger::LogInfo(it->first + ": " + it->second->ToString(), 1, Utils::Logger::DebugPrefix);
 	}
 }
 

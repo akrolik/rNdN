@@ -319,21 +319,21 @@ void SymbolTableDumper::Dump(Program *program)
 
 void SymbolTableDumper::Visit(Program *program)
 {
-	Utils::Logger::LogInfo(program->GetSymbolTable()->ToString(), "");
+	Utils::Logger::LogInfo(program->GetSymbolTable()->ToString(), 1);
 	ForwardTraversal::Visit(program);
 }
 
 void SymbolTableDumper::Visit(Module *module)
 {
 	Utils::Logger::LogInfo("Module symbol table: " + module->GetName());
-	Utils::Logger::LogInfo(module->GetSymbolTable()->ToString(), "");
+	Utils::Logger::LogInfo(module->GetSymbolTable()->ToString(), 1);
 	ForwardTraversal::Visit(module);
 }
 
 void SymbolTableDumper::Visit(Method *method)
 {
 	Utils::Logger::LogInfo("Method symbol table: " + method->GetName());
-	Utils::Logger::LogInfo(method->GetSymbolTable()->ToString(), "");
+	Utils::Logger::LogInfo(method->GetSymbolTable()->ToString(), 1);
 	ForwardTraversal::Visit(method);
 }
 

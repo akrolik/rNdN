@@ -29,8 +29,8 @@ void DataTable::Dump() const
 	{
 		columnNames += column.first + "\t";
 	}
-	Utils::Logger::LogInfo(columnNames, "RESULT");
-	Utils::Logger::LogInfo("", "RESULT");
+	Utils::Logger::LogInfo(columnNames, 0, "RESULT");
+	Utils::Logger::LogInfo("", 0, "RESULT");
 
 	for (unsigned long i = 0; i < m_size; ++i)
 	{
@@ -39,7 +39,7 @@ void DataTable::Dump() const
 		{
 			row += column.second->Dump(i) + "\t";
 		}
-		Utils::Logger::LogInfo(row, "RESULT");
+		Utils::Logger::LogInfo(row, 0, "RESULT");
 	}
 }
 

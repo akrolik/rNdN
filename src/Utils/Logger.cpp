@@ -13,32 +13,45 @@ void Logger::LogSection(const std::string& name, bool separate)
 	std::cout << name << std::endl;
 }
 
-void Logger::LogInfo(const std::string& info, const std::string& prefix)
+static std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace)
 {
+	size_t pos = 0;
+	while ((pos = subject.find(search, pos)) != std::string::npos)
+	{
+		subject.replace(pos, search.length(), replace);
+		pos += replace.length();
+	}
+	return subject;
+}
+
+void Logger::LogInfo(const std::string& info, unsigned int indentation, const std::string& prefix)
+{
+	std::string _prefix = "";
 	if (prefix != NoPrefix)
 	{
-		std::cout << "[" << prefix << "] ";
+		_prefix = "[" + prefix + "] ";
 	}
-	std::cout << info << std::endl;
+	if (indentation)
+	{
+		_prefix += std::string(indentation, ' ') + "- ";
+	}
+	std::cout << _prefix << ReplaceString(info, "\n", "\n" + _prefix) << std::endl;
 }
 
 void Logger::LogError(const std::string& error, const std::string& prefix)
 {
-	if (prefix != NoPrefix)
-	{
-		std::cerr << "[" << prefix << "] ";
-	}
-	std::cerr << error << std::endl;
+	LogErrorPart(error, prefix);
 	std::exit(EXIT_FAILURE);
 }
 
 void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 {
+	std::string _prefix = "";
 	if (prefix != NoPrefix)
 	{
-		std::cerr << "[" << prefix << "] ";
+		_prefix = "[" + prefix + "] ";
 	}
-	std::cerr << error << std::endl;
+	std::cerr << _prefix << ReplaceString(error, "\n", "\n" + _prefix) << std::endl;
 }
 
 void Logger::LogTiming(const std::string& name, long time)
