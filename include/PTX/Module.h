@@ -3,8 +3,10 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
 
 #include "PTX/Declarations/Declaration.h"
+#include "PTX/Functions/Function.h"
 #include "PTX/Type.h"
 
 #include "Libraries/json.hpp"
@@ -18,9 +20,27 @@ public:
 	void SetDeviceTarget(const std::string& target) { m_target = target; }
 	void SetAddressSize(Bits addressSize) { m_addressSize = addressSize; }
 
+	void AddEntryFunction(const Function *function)
+	{
+		m_entryFunctions.insert({function->GetName(), function});
+	}
+	bool ContainsEntryFunction(const std::string& name) const
+	{
+		return m_entryFunctions.find(name) != m_entryFunctions.end();
+	}
+	const Function *GetEntryFunction(const std::string& name) const
+	{
+		return m_entryFunctions.at(name);
+	}
+
 	void AddDeclaration(const Declaration *declaration)
 	{
 		m_declarations.push_back(declaration);
+	}
+	template<class T>
+	void AddDeclarations(const std::vector<T>& declarations)
+	{
+		m_declarations.insert(std::end(m_declarations), std::begin(declarations), std::end(declarations));
 	}
 
 	void InsertDeclaration(const Declaration *declaration, unsigned int index)
@@ -81,6 +101,8 @@ private:
 	Bits m_addressSize = Bits::Bits32;
 
 	std::vector<const Declaration *> m_declarations;
+
+	std::unordered_map<std::string, const Function *> m_entryFunctions;
 };
 
 }

@@ -65,6 +65,7 @@ public:
 	void AddFunction(PTX::FunctionDefinition<PTX::VoidType> *function)
 	{
 		m_currentModule->AddDeclaration(function);
+		m_currentModule->AddEntryFunction(function);
 	}
 
 	void SetCurrentFunction(PTX::FunctionDefinition<PTX::VoidType> *function, const HorseIR::Method *method)
