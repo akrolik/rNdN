@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <limits>
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
@@ -162,11 +163,15 @@ public:
 		// Warp shuffle the values down, reducing at each level until a single value is computed, log_2(WARP_SZ)
 
 		auto resources = this->m_builder.GetLocalResources();
-		//TODO: 32 is a runtime constant from the GPU
-		for (unsigned int offset = 32 >> 1; offset > 0; offset >>= 1)
+		auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
+
+		auto& functionOptions = this->m_builder.GetFunctionOptions();
+		functionOptions.SetThreadMultiple(warpSize);
+
+		for (unsigned int offset = warpSize >> 1; offset > 0; offset >>= 1)
 		{
 			auto temp = resources->template AllocateTemporary<T>();
-			this->m_builder.AddStatement(new PTX::ShuffleInstruction<T>(temp, value, new PTX::UInt32Value(offset), new PTX::UInt32Value(31), -1, PTX::ShuffleInstruction<T>::Mode::Down));
+			this->m_builder.AddStatement(new PTX::ShuffleInstruction<T>(temp, value, new PTX::UInt32Value(offset), new PTX::UInt32Value(warpSize - 1), -1, PTX::ShuffleInstruction<T>::Mode::Down));
 
 			// Generate the operation for the reduction
 
@@ -283,10 +288,25 @@ public:
 	
 	void GenerateShared(const PTX::Register<T> *value)
 	{
+		// Fetch generation state and options
+
 		auto resources = this->m_builder.GetLocalResources();
 
-		//TODO: Determine the amount of shared memory needed based on the number of threads in the cta
-		auto sharedMemoryAddress = resources->template AllocateSharedMemory<B, T>(512);
+		auto& targetOptions = this->m_builder.GetTargetOptions();
+		auto& inputOptions = this->m_builder.GetInputOptions();
+
+		// Compute the number of threads used in this reduction
+
+		auto& functionOptions = this->m_builder.GetFunctionOptions();
+
+		unsigned int threadCount = targetOptions.MaxBlockSize;
+		if (inputOptions.InputSize < threadCount)
+		{
+			threadCount = std::ceil(std::log2(inputOptions.InputSize));
+		}
+		functionOptions.SetThreadCount(threadCount);
+
+		auto sharedMemoryAddress = resources->template AllocateSharedMemory<B, T>(threadCount);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), AddressGenerator<B>::IndexKind::Local, sharedMemoryAddress->GetOffset());
@@ -306,10 +326,11 @@ public:
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
 
-		const unsigned int NumThreads = 512;
-		const unsigned int WARP_SIZE = 32;
 
-		for (unsigned int i = (NumThreads >> 1); i >= WARP_SIZE; i >>= 1)
+		const unsigned int NumThreads = 512;
+		int warpSize = targetOptions.WarpSize;
+
+		for (unsigned int i = (NumThreads >> 1); i >= warpSize; i >>= 1)
 		{
 			// At each level, half the threads become inactive
 
@@ -325,7 +346,7 @@ public:
 			this->m_builder.AddStatement(branch);
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
-			if (i <= WARP_SIZE)
+			if (i <= warpSize)
 			{
 				// Once the active thread count fits within a warp, reduce without synchronization
 
@@ -342,7 +363,7 @@ public:
 
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 			this->m_builder.AddStatement(label);
-			if (i > WARP_SIZE)
+			if (i > warpSize)
 			{
 				// If we still have >1 warps running, synchronize the group since they may not be in lock-step
 
@@ -371,6 +392,9 @@ public:
 
 		auto resources = this->m_builder.GetLocalResources();
 		auto functionResources = this->m_builder.GetFunctionResources();
+
+		auto& functionOptions = this->m_builder.GetFunctionOptions();
+		functionOptions.SetAtomicReturn(true);
 
 		auto predEnd = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto labelEnd = new PTX::Label("RED_END");

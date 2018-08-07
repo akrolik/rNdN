@@ -142,6 +142,8 @@ public:
 	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
 	const InputOptions& GetInputOptions() const { return m_inputOptions; }
 
+	PTX::Function::Options& GetFunctionOptions() { return m_currentFunction->GetOptions(); }
+
 private:
 	PTX::StatementList *GetCurrentBlock() const
 	{

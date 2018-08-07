@@ -27,8 +27,21 @@ public:
 	template<class T>
 	void Generate(const HorseIR::ReturnStatement *ret, IndexKind indexKind)
 	{
+		// Check if the function is returned by one of the generators using an atomic action
+
+		auto& functionOptions = this->m_builder.GetFunctionOptions();
+		if (functionOptions.IsAtomicReturn())
+		{
+			return;
+		}
+
+		// Otherwise we use a typical store return
+
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
+			// Predicate (1-bit) values are stored as 8 bit integers on the CPU side
+			// so a conversion must first be run
+
 			OperandGenerator<B, PTX::PredicateType> opGen(this->m_builder);
 			auto value = opGen.GenerateRegister(ret->GetIdentifier());
 			auto converted = ConversionGenerator::ConvertSource<PTX::Int8Type>(this->m_builder, value);
@@ -46,8 +59,12 @@ public:
 	template<class T, typename Enable = std::enable_if_t<PTX::StoreInstruction<B, T, PTX::GlobalSpace, PTX::StoreSynchronization::Weak, false>::TypeSupported>>
 	void Generate(const PTX::Register<T> *value, IndexKind indexKind)
 	{
+		// Fetch the return variable
+
 		auto functionResources = this->m_builder.GetFunctionResources();
 		auto variable = functionResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>("$return");
+
+		// Store the value at the appropriate index
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);

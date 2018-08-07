@@ -65,6 +65,8 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		Codegen::TargetOptions targetOptions;
 		targetOptions.ComputeCapability = device->GetComputeCapability();
 		targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
+		targetOptions.WarpSize = device->GetWarpSize();
+
 		//TODO: Get the input geometry size from the table
 		Codegen::InputOptions inputOptions;
 		inputOptions.InputSize = 2048;
@@ -83,20 +85,55 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 
 		CUDA::Module cModule = gpu.AssembleProgram(ptxProgram);
 
+		// Compute the number of input arguments: method arguments + return + (dynamic size)
+
+		unsigned int kernelArgumentCount = arguments.size() + 1;
+		if (inputOptions.InputSize == Codegen::InputOptions::DynamicSize)
+		{
+			kernelArgumentCount++;
+		}
+
                 // Fetch the handle to the GPU entry function
 
-		CUDA::Kernel kernel(method->GetName(), arguments.size() + 2, cModule);
+		CUDA::Kernel kernel(method->GetName(), kernelArgumentCount, cModule);
+		auto& kernelOptions = ptxProgram->GetEntryFunction(method->GetName())->GetOptions();
+
+		Utils::Logger::LogInfo("Generated program for method '" + method->GetName() + "' with options");
+		Utils::Logger::LogInfo(kernelOptions.ToString(), 1);
 
 		Utils::Logger::LogSection("Continuing program execution");
 
 		auto timeExec_start = Utils::Chrono::Start();
 
-		// Initialize buffers and kernel invocation
+		// Initialize kernel invocation
 
 		CUDA::KernelInvocation invocation(kernel);
+                                
+		// Compute the number of threads based on the kernel configuration. The default is to
+		// use all threads available in a compute unit
 
-		invocation.SetBlockShape(targetOptions.MaxBlockSize, 1, 1);
-		invocation.SetGridShape((inputOptions.InputSize - 1) / targetOptions.MaxBlockSize + 1, 1, 1);
+		auto threadCount = targetOptions.MaxBlockSize;
+		auto kernelThreadCount = kernelOptions.GetThreadCount();
+		if (kernelThreadCount == PTX::Function::Options::DynamicThreadCount && kernelOptions.GetThreadMultiple() != 0)
+		{
+			// Maximize the thread count based on the GPU and thread multiple
+
+			auto multiple = kernelOptions.GetThreadMultiple();
+			threadCount = multiple * (threadCount / multiple);
+		}
+		else
+		{
+			// Fixed number of threads
+
+			if (kernelThreadCount > targetOptions.MaxBlockSize)
+			{
+				Utils::Logger::LogError("Thread count " + std::to_string(kernelThreadCount) + " set by kernel " + kernel.GetName() + " is not supported by target (MaxBlockSize= " + std::to_string(targetOptions.MaxBlockSize));
+			}
+			threadCount = kernelThreadCount;
+		}
+
+		invocation.SetBlockShape(threadCount, 1, 1);
+		invocation.SetGridShape((inputOptions.InputSize - 1) / threadCount + 1, 1, 1);
 
 		unsigned int index = 0;
 		for (const auto& argument : arguments)
@@ -150,10 +187,16 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		returnBuffer.AllocateOnGPU();
 		returnBuffer.TransferToGPU();
 		invocation.SetParameter(index++, returnBuffer);
+		
+		// Configure the dynamic shared memory according to the kernel
 
-		//TODO: Allocate the correct amount of dynamic shared memory based on the kernel
-		// invocation.SetSharedMemorySize(sizeof(float) * 512);
+		invocation.SetSharedMemorySize(kernelOptions.GetSharedMemorySize());
+
+		// Launch the kernel!
+
 		invocation.Launch();
+
+		// Complete the execution by transferring the results back to the host
 
 		returnBuffer.TransferToCPU();
 

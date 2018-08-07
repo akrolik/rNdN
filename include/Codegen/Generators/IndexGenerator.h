@@ -53,6 +53,7 @@ public:
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateLaneIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
+
 		// We cannot operate directly on special registers, so they must first be copied to a user defined register
 
 		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);

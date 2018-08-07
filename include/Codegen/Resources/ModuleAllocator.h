@@ -57,6 +57,8 @@ public:
 		return this->GetResources<T>()->AllocateSharedMemory();
 	}
 
+	unsigned int GetSharedMemorySize() const { return m_sharedMemorySize; }
+
 	template<class R>
 	void AddExternalFunction(PTX::FunctionDeclaration<R> *declaration)
 	{

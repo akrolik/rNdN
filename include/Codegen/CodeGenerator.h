@@ -181,7 +181,9 @@ public:
 			statement->Accept(*this);
 		}
 
-		// Complete the codegen for the method
+		// Complete the codegen for the method by setting up the options and closing the scope
+
+		m_builder.GetFunctionOptions().SetSharedMemorySize(m_builder.GetGlobalResources()->GetSharedMemorySize());
 
 		m_builder.CloseScope();
 		m_builder.SetCurrentFunction(nullptr, nullptr);
