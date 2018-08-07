@@ -7,7 +7,7 @@ namespace Runtime {
 void DataList::AddElement(DataVector *element)
 {
 	auto type = m_type->GetElementType();
-	if (type->GetKind() != HorseIR::Type::Kind::Primitive || static_cast<const HorseIR::PrimitiveType *>(type)->GetKind() != HorseIR::PrimitiveType::Kind::Wildcard)
+	if (type->GetKind() != HorseIR::Type::Kind::Basic || static_cast<const HorseIR::BasicType *>(type)->GetKind() != HorseIR::BasicType::Kind::Wildcard)
 	{
 		if (*type != *element->GetType())
 		{

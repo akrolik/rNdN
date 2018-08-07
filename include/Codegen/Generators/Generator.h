@@ -2,6 +2,9 @@
 
 #include "Codegen/Builder.h"
 
+#include "HorseIR/Tree/Types/Type.h"
+#include "HorseIR/Tree/Types/BasicType.h"
+
 namespace Codegen {
 
 class Generator
@@ -13,7 +16,7 @@ public:
 	friend void DispatchType(G&, const HorseIR::Type*, N ...);
 
 	template<class G, typename... N>
-	friend void DispatchPrimitive(G&, const HorseIR::PrimitiveType*, N ...);
+	friend void DispatchBasic(G&, const HorseIR::BasicType*, N ...);
 
 protected:
 	Builder &m_builder;

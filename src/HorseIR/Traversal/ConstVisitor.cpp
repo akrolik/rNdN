@@ -20,8 +20,9 @@
 #include "HorseIR/Tree/Expressions/Symbol.h"
 
 #include "HorseIR/Tree/Types/Type.h"
+#include "HorseIR/Tree/Types/BasicType.h"
 #include "HorseIR/Tree/Types/ListType.h"
-#include "HorseIR/Tree/Types/PrimitiveType.h"
+#include "HorseIR/Tree/Types/TableType.h"
 
 namespace HorseIR {
 
@@ -130,12 +131,17 @@ void ConstVisitor::Visit(const Type *type)
 	Visit(static_cast<const Node*>(type));
 }
 
+void ConstVisitor::Visit(const BasicType *type)
+{
+	Visit(static_cast<const Type*>(type));
+}
+
 void ConstVisitor::Visit(const ListType *type)
 {
 	Visit(static_cast<const Type*>(type));
 }
 
-void ConstVisitor::Visit(const PrimitiveType *type)
+void ConstVisitor::Visit(const TableType *type)
 {
 	Visit(static_cast<const Type*>(type));
 }

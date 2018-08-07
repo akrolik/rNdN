@@ -2,7 +2,7 @@
 
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/ListType.h"
-#include "HorseIR/Tree/Types/PrimitiveType.h"
+#include "HorseIR/Tree/Types/BasicType.h"
 
 #include "Utils/Logger.h"
 
@@ -22,7 +22,7 @@
 namespace Codegen {
 
 template<class G, typename... N>
-static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, N ...nodes);
+static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nodes);
 
 template<class G, typename... N>
 static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes);
@@ -32,8 +32,8 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 {
 	switch (type->GetKind())
 	{
-		case HorseIR::Type::Kind::Primitive:
-			DispatchPrimitive<G, N...>(generator, static_cast<const HorseIR::PrimitiveType *>(type), nodes...);
+		case HorseIR::Type::Kind::Basic:
+			DispatchBasic<G, N...>(generator, static_cast<const HorseIR::BasicType *>(type), nodes...);
 			break;
 		case HorseIR::Type::Kind::List:
 			DispatchList<G, N...>(generator, static_cast<const HorseIR::ListType *>(type), nodes...);
@@ -44,29 +44,29 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 }
 
 template<class G, typename... N>
-static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, N ...nodes)
+static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nodes)
 {
 	switch (type->GetKind())
 	{
-		case HorseIR::PrimitiveType::Kind::Bool:
+		case HorseIR::BasicType::Kind::Bool:
 			generator.template Generate<PTX::PredicateType>(nodes...);
 			break;
-		case HorseIR::PrimitiveType::Kind::Int8:
+		case HorseIR::BasicType::Kind::Int8:
 			generator.template Generate<PTX::Int8Type>(nodes...);
 			break;
-		case HorseIR::PrimitiveType::Kind::Int16:
+		case HorseIR::BasicType::Kind::Int16:
 			generator.template Generate<PTX::Int16Type>(nodes...);
 			break;
-		case HorseIR::PrimitiveType::Kind::Int32:
+		case HorseIR::BasicType::Kind::Int32:
 			generator.template Generate<PTX::Int32Type>(nodes...);
 			break;
-		case HorseIR::PrimitiveType::Kind::Int64:
+		case HorseIR::BasicType::Kind::Int64:
 			generator.template Generate<PTX::Int64Type>(nodes...);
 			break;
-		case HorseIR::PrimitiveType::Kind::Float32:
+		case HorseIR::BasicType::Kind::Float32:
 			generator.template Generate<PTX::Float32Type>(nodes...);
 			break;
-		case HorseIR::PrimitiveType::Kind::Float64:
+		case HorseIR::BasicType::Kind::Float64:
 			generator.template Generate<PTX::Float64Type>(nodes...);
 			break;
 		default:
@@ -77,7 +77,7 @@ static void DispatchPrimitive(G &generator, const HorseIR::PrimitiveType *type, 
 template<class G, typename... N>
 static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes)
 {
-	DispatchPrimitive<G, N...>(generator, static_cast<const HorseIR::PrimitiveType *>(type->GetElementType()), nodes...);
+	DispatchBasic<G, N...>(generator, static_cast<const HorseIR::BasicType *>(type->GetElementType()), nodes...);
 }
 
 }

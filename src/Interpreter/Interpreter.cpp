@@ -101,13 +101,23 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		unsigned int index = 0;
 		for (const auto& argument : arguments)
 		{
-			auto column = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
+			auto argumentType = argument->GetType();
+			Runtime::DataVector *argumentData = nullptr;
 
-			Utils::Logger::LogInfo("Transferring input argument '" + argument->ToString() + "' [" + column->GetType()->ToString() + "(" + std::to_string(column->GetElementSize()) + " bytes) x " + std::to_string(column->GetElementCount()) + "]");
+			switch (argumentType->GetKind())
+			{
+				case HorseIR::Type::Kind::Basic:
+					argumentData = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
+					break;
+				default:
+					Utils::Logger::LogError("Unsupported argument type " + argumentType->ToString());
+			}
+
+			Utils::Logger::LogInfo("Transferring input argument '" + argument->ToString() + "' [" + argumentType->ToString() + "(" + std::to_string(argumentData->GetElementSize()) + " bytes) x " + std::to_string(argumentData->GetElementCount()) + "]");
 
 			//TODO: All buffers should be padded to a multiple of the thread count
 			//TODO: Build a GPU buffer manager
-			auto buffer = new CUDA::Buffer(column->GetData(), column->GetDataSize());
+			auto buffer = new CUDA::Buffer(argumentData->GetData(), argumentData->GetDataSize());
 
 			buffer->AllocateOnGPU();
 			buffer->TransferToGPU();
@@ -126,9 +136,9 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 
 		switch (returnType->GetKind())
 		{
-			case HorseIR::Type::Kind::Primitive:
+			case HorseIR::Type::Kind::Basic:
 				//TODO: Use shape information to allocate the correct size
-				returnData = Runtime::DataVector::CreateVector(static_cast<const HorseIR::PrimitiveType *>(returnType), 1);
+				returnData = Runtime::DataVector::CreateVector(static_cast<const HorseIR::BasicType *>(returnType), 1);
 				break;
 			defualt:
 				Utils::Logger::LogError("Unsupported return type " + returnType->ToString());
@@ -200,16 +210,26 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, 
 		case HorseIR::BuiltinMethod::Kind::ColumnValue:
 		{
 			auto table = static_cast<Runtime::DataTable *>(m_expressionMap.at(arguments.at(0)));
-			auto columnName = static_cast<const HorseIR::Symbol *>(arguments.at(1))->GetName();
+			auto columnSymbol = static_cast<const HorseIR::Symbol *>(arguments.at(1));
 
-			return table->GetColumn(columnName);
+			if (columnSymbol->GetCount() != 1)
+			{
+				Utils::Logger::LogError("Builtin function '" + method->GetName() + "' expects a single column argument");
+			}
+
+			return table->GetColumn(columnSymbol->GetName(0));
 		}
 		case HorseIR::BuiltinMethod::Kind::LoadTable:
 		{
 			auto dataRegistry = m_runtime.GetDataRegistry();
-			auto tableName = static_cast<const HorseIR::Symbol *>(arguments.at(0))->GetName();
+			auto tableSymbol = static_cast<const HorseIR::Symbol *>(arguments.at(0));
 
-			return dataRegistry.GetTable(tableName);
+			if (tableSymbol->GetCount() != 1)
+			{
+				Utils::Logger::LogError("Builtin function '" + method->GetName() + "' expects a single table argument");
+			}
+
+			return dataRegistry.GetTable(tableSymbol->GetName(0));
 		}
 		default:
 			Utils::Logger::LogError("Builtin function '" + method->GetName() + "' not implemented");
@@ -245,7 +265,7 @@ void Interpreter::Visit(HorseIR::CastExpression *cast)
 	//TODO: Remove this hack
 	if (expressionType == nullptr)
 	{
-		expressionType = new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int32);
+		expressionType = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int32);
 	}
 
 	if (*expressionType != *resultType)
@@ -281,7 +301,7 @@ void Interpreter::Visit(HorseIR::Symbol *symbol)
 {
 	// Create a vector of symbols from the literal
 
-	m_expressionMap.insert({symbol, new Runtime::TypedDataVector<std::string>(static_cast<const HorseIR::PrimitiveType *>(symbol->GetType()), {symbol->GetName()})});
+	m_expressionMap.insert({symbol, new Runtime::TypedDataVector<std::string>(symbol->GetType(), symbol->GetNames())});
 }
 
 }

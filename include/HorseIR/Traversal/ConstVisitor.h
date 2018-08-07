@@ -30,8 +30,9 @@ class Literal;
 class Symbol;
 
 class Type;
+class BasicType;
 class ListType;
-class PrimitiveType;
+class TableType;
 
 class ConstVisitor
 {
@@ -61,8 +62,9 @@ public:
 	virtual void Visit(const Symbol *symbol);
 
 	virtual void Visit(const Type *type);
+	virtual void Visit(const BasicType *type);
 	virtual void Visit(const ListType *type);
-	virtual void Visit(const PrimitiveType *type);
+	virtual void Visit(const TableType *type);
 };
 
 }

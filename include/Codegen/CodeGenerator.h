@@ -11,10 +11,12 @@
 #include "Codegen/Generators/ReturnParameterGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
+#include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/Module.h"
+#include "HorseIR/Tree/Parameter.h"
 #include "HorseIR/Tree/Program.h"
-#include "HorseIR/Tree/Types/ListType.h"
-#include "HorseIR/Tree/Types/PrimitiveType.h"
-#include "HorseIR/Tree/Types/Type.h"
+#include "HorseIR/Tree/Statements/AssignStatement.h"
+#include "HorseIR/Tree/Statements/ReturnStatement.h"
 
 #include "PTX/Program.h"
 #include "PTX/Type.h"

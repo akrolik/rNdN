@@ -9,7 +9,7 @@
 
 namespace HorseIR {
 
-class PrimitiveType : public Type
+class BasicType : public Type
 {
 public:
 	enum class Kind {
@@ -23,11 +23,10 @@ public:
 		Float64,
 		Complex,
 		Symbol,
-		String,
-		Table
+		String
 	};
 
-	PrimitiveType(Kind kind) : Type(Type::Kind::Primitive), m_kind(kind) {}
+	BasicType(Kind kind) : Type(Type::Kind::Basic), m_kind(kind) {}
 
 	std::string ToString() const override
 	{
@@ -55,8 +54,6 @@ public:
 				return "sym";
 			case Kind::String:
 				return "string";
-			case Kind::Table:
-				return "table";
 			default:
 				return "<unknown>";
 		}
@@ -67,12 +64,12 @@ public:
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
-	bool operator==(const PrimitiveType& other) const
+	bool operator==(const BasicType& other) const
 	{
 		return m_kind == other.m_kind;
 	}
 
-	bool operator!=(const PrimitiveType& other) const
+	bool operator!=(const BasicType& other) const
 	{
 		return m_kind != other.m_kind;
 	}

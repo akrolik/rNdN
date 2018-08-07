@@ -5,14 +5,14 @@
 #include <string>
 #include <vector>
 
-#include "HorseIR/Tree/Types/PrimitiveType.h"
+#include "HorseIR/Tree/Types/BasicType.h"
 
 namespace Runtime {
 
 class DataVector : public DataObject
 {
 public:
-	static DataVector *CreateVector(const HorseIR::PrimitiveType *type, unsigned long size);
+	static DataVector *CreateVector(const HorseIR::BasicType *type, unsigned long size);
 
 	virtual void *GetData() = 0;
 	virtual size_t GetDataSize() const = 0;
@@ -29,14 +29,14 @@ template<typename T>
 class TypedDataVector : public DataVector
 {
 public:
-	TypedDataVector(const HorseIR::PrimitiveType *elementType, const std::vector<T>& data) : m_type(elementType), m_data(data) {}
+	TypedDataVector(const HorseIR::BasicType *elementType, const std::vector<T>& data) : m_type(elementType), m_data(data) {}
 
-	TypedDataVector(const HorseIR::PrimitiveType *elementType, unsigned long size) : m_type(elementType)
+	TypedDataVector(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType)
 	{
 		m_data.resize(size);
 	}
 
-	const HorseIR::PrimitiveType *GetType() const { return m_type; }
+	const HorseIR::BasicType *GetType() const { return m_type; }
 
 	const T& GetValue(unsigned int i) const { return m_data.at(i); }
 	const std::vector<T>& GetValues() const { return m_data; }
@@ -59,7 +59,7 @@ public:
 	}
 
 private:
-	const HorseIR::PrimitiveType *m_type = nullptr;
+	const HorseIR::BasicType *m_type = nullptr;
 
 	std::vector<T> m_data;
 };

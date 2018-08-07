@@ -39,6 +39,7 @@ public:
 			{
 				code += ", ";
 			}
+			first = false;
 			code += std::to_string(value);
 		}
 		if (m_values.size() > 1)

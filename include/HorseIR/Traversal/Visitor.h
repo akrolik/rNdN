@@ -30,8 +30,9 @@ class Literal;
 class Symbol;
 
 class Type;
+class BasicType;
 class ListType;
-class PrimitiveType;
+class TableType;
 
 class Visitor
 {
@@ -61,8 +62,9 @@ public:
 	virtual void Visit(Symbol *symbol);
 
 	virtual void Visit(Type *type);
+	virtual void Visit(BasicType *type);
 	virtual void Visit(ListType *type);
-	virtual void Visit(PrimitiveType *type);
+	virtual void Visit(TableType *type);
 };
 
 }

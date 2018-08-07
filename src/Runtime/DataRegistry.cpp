@@ -5,7 +5,7 @@
 namespace Runtime {
 
 template<typename T>
-void DataRegistry::LoadDebugData(DataTable *table, const HorseIR::PrimitiveType *type, unsigned long size)
+void DataRegistry::LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size)
 {
 	std::vector<T> zeros(size);
 	std::vector<T> ones(size);
@@ -31,13 +31,13 @@ void DataRegistry::LoadDebugData()
 	{
 		auto table = new DataTable(i);
 
-		LoadDebugData<int8_t>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Bool), i);
-		LoadDebugData<int8_t>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int8), i);
-		LoadDebugData<int16_t>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int16), i);
-		LoadDebugData<int32_t>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int32), i);
-		LoadDebugData<int64_t>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Int64), i);
-		LoadDebugData<float>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Float32), i);
-		LoadDebugData<double>(table, new HorseIR::PrimitiveType(HorseIR::PrimitiveType::Kind::Float64), i);
+		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Bool), i);
+		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int8), i);
+		LoadDebugData<int16_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int16), i);
+		LoadDebugData<int32_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int32), i);
+		LoadDebugData<int64_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64), i);
+		LoadDebugData<float>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Float32), i);
+		LoadDebugData<double>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Float64), i);
 
 		AddTable("debug_" + std::to_string(i), table);
 	}

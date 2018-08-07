@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "HorseIR/Tree/Types/Type.h"
-#include "HorseIR/Tree/Types/PrimitiveType.h"
+#include "HorseIR/Tree/Types/BasicType.h"
 
 #include "Runtime/DataObjects/DataTable.h"
 
@@ -14,7 +14,7 @@ class DataRegistry
 {
 public:
 	template<typename T>
-	static void LoadDebugData(DataTable *table, const HorseIR::PrimitiveType *type, unsigned long size);
+	static void LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size);
 
 	void LoadDebugData();
 

@@ -4,24 +4,28 @@
 
 namespace Runtime {
 
-DataVector *DataVector::CreateVector(const HorseIR::PrimitiveType *type, unsigned long size)
+DataVector *DataVector::CreateVector(const HorseIR::BasicType *type, unsigned long size)
 {
 	switch (type->GetKind())
 	{
-		case HorseIR::PrimitiveType::Kind::Bool:
+		case HorseIR::BasicType::Kind::Bool:
 			return new TypedDataVector<uint8_t>(type, size);
-		case HorseIR::PrimitiveType::Kind::Int8:
+		case HorseIR::BasicType::Kind::Int8:
 			return new TypedDataVector<int8_t>(type, size);
-		case HorseIR::PrimitiveType::Kind::Int16:
+		case HorseIR::BasicType::Kind::Int16:
 			return new TypedDataVector<int16_t>(type, size);
-		case HorseIR::PrimitiveType::Kind::Int32:
+		case HorseIR::BasicType::Kind::Int32:
 			return new TypedDataVector<int32_t>(type, size);
-		case HorseIR::PrimitiveType::Kind::Int64:
+		case HorseIR::BasicType::Kind::Int64:
 			return new TypedDataVector<int64_t>(type, size);
-		case HorseIR::PrimitiveType::Kind::Float32:
+		case HorseIR::BasicType::Kind::Float32:
 			return new TypedDataVector<float>(type, size);
-		case HorseIR::PrimitiveType::Kind::Float64:
+		case HorseIR::BasicType::Kind::Float64:
 			return new TypedDataVector<double>(type, size);
+		case HorseIR::BasicType::Kind::Symbol:
+			return new TypedDataVector<std::string>(type, size);
+		case HorseIR::BasicType::Kind::String:
+			return new TypedDataVector<std::string>(type, size);
 		default:   
 			Utils::Logger::LogError("Unable to create vector of type " + type->ToString());
 	}
