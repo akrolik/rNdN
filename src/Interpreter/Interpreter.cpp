@@ -331,23 +331,17 @@ void Interpreter::Visit(HorseIR::CastExpression *cast)
 
 	// Check the cast is valid
 
-	auto result = m_expressionMap.at(expression);
+	auto expressionData = m_expressionMap.at(expression);
 
-	auto expressionType = expression->GetType();
-	auto resultType = result->GetType();
-
-	//TODO: Remove this hack
-	if (expressionType == nullptr)
-	{
-		expressionType = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int32);
-	}
+	auto expressionType = expressionData->GetType();
+	auto resultType = cast->GetCastType();
 
 	if (*expressionType != *resultType)
 	{
 		Utils::Logger::LogError("Invalid cast, " + expressionType->ToString() + " cannot be cast to " + resultType->ToString());
 	}
 
-	m_expressionMap.insert({cast, result});
+	m_expressionMap.insert({cast, expressionData});
 }
 
 void Interpreter::Visit(HorseIR::CallExpression *call)
