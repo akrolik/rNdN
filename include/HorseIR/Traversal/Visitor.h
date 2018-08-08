@@ -15,6 +15,7 @@ class MethodDeclaration;
 class BuiltinMethod;
 class Method;
 class Parameter;
+class Declaration;
 
 class Statement;
 class AssignStatement;
@@ -47,6 +48,7 @@ public:
 	virtual void Visit(BuiltinMethod *method);
 	virtual void Visit(Method *method);
 	virtual void Visit(Parameter *parameter);
+	virtual void Visit(Declaration *declaration);
 
 	virtual void Visit(Statement *statement);
 	virtual void Visit(AssignStatement *assign);

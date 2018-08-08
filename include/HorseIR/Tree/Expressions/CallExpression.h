@@ -17,8 +17,6 @@ class CallExpression : public Expression
 public:
 	CallExpression(ModuleIdentifier *identifier, const std::vector<Expression *>& arguments) : m_identifier(identifier), m_arguments(arguments) {}
 
-	const Type *GetType() const { return nullptr; }
-
 	ModuleIdentifier *GetIdentifier() const { return m_identifier; }
 	void SetIdentifier(ModuleIdentifier *identifier) { m_identifier = identifier; }
 

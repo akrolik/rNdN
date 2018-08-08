@@ -6,6 +6,7 @@
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Tree/Declaration.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
 #include "HorseIR/Tree/Types/Type.h"
 
@@ -14,23 +15,21 @@ namespace HorseIR {
 class AssignStatement : public Statement
 {
 public:
-	AssignStatement(std::string targetName, Type *type, Expression *expression) : m_targetName(targetName), m_type(type), m_expression(expression) {}
+	AssignStatement(const std::string& name, Type *type, Expression *expression) : m_declaration(new Declaration(name, type)), m_expression(expression) {}
 
-	std::string GetTargetName() const { return m_targetName; }
-	Type *GetType() const { return m_type; }
+	Declaration *GetDeclaration() const { return m_declaration; }
 	Expression *GetExpression() const { return m_expression; }
 
 	std::string ToString() const override
 	{
-		return m_targetName + ":" + m_type->ToString() + " = " + m_expression->ToString();
+		return m_declaration->ToString() + " = " + m_expression->ToString();
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 private:
-	std::string m_targetName;
-	Type *m_type = nullptr;
+	Declaration *m_declaration = nullptr;
 	Expression *m_expression = nullptr;
 };
 

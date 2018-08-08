@@ -6,6 +6,7 @@
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Tree/Declaration.h"
 
 namespace HorseIR {
 
@@ -14,10 +15,10 @@ class Identifier : public Expression
 public:
 	Identifier(const std::string& string) : m_string(string) {}
 
-	const Type *GetType() const { return m_type; }
-	void SetType(Type *type) { m_type = type; }
-
 	const std::string& GetString() const { return m_string; }
+
+	Declaration *GetDeclaration() const { return m_declaration; }
+	void SetDeclaration(Declaration *declaration) { m_declaration = declaration; }
 
 	std::string ToString() const override
 	{
@@ -29,7 +30,8 @@ public:
 
 private:
 	std::string m_string;
-	Type *m_type = nullptr;
+
+	Declaration *m_declaration = nullptr;
 };
 
 }

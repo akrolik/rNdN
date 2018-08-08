@@ -7,7 +7,7 @@
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
-#include "HorseIR/Tree/Types/Type.h"
+#include "HorseIR/Tree/Types/BasicType.h"
 
 namespace HorseIR {
 
@@ -15,10 +15,10 @@ template<class T>
 class Literal : public Expression
 {
 public:
-	Literal(const T& value, Type *type) : m_values({value}), m_type(type) {}
-	Literal(const std::vector<T>& values, Type *type) : m_values(values), m_type(type) {}
+	Literal(const T& value, BasicType *literalType) : m_values({value}), m_literalType(literalType) {}
+	Literal(const std::vector<T>& values, BasicType *literalType) : m_values(values), m_literalType(literalType) {}
 
-	const Type *GetType() const override { return m_type; }
+	const BasicType *GetLiteralType() const { return m_literalType; }
 
 	const std::vector<T>& GetValues() const { return m_values; }
 	const T& GetValue(unsigned int index) const { return m_values.at(index); }
@@ -46,7 +46,7 @@ public:
 		{
 			code += ")";
 		}
-		return code + ":" + m_type->ToString();
+		return code + ":" + m_literalType->ToString();
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
@@ -54,13 +54,17 @@ public:
 
 private:
 	std::vector<T> m_values;
-	Type *m_type = nullptr;
+	BasicType *m_literalType = nullptr;
 };
 
 template<>
 inline std::string Literal<std::string>::ToString() const
 {
-	std::string code = "(";
+	std::string code;
+	if (m_values.size() > 1)
+	{
+		code += "(";
+	}
 	bool first = true;
 	for (const auto& value : m_values)
 	{
@@ -70,7 +74,11 @@ inline std::string Literal<std::string>::ToString() const
 		}
 		code += value;
 	}
-	return code + "):" + m_type->ToString();
+	if (m_values.size() > 1)
+	{
+		code += ")";
+	}
+	return code + ":" + m_literalType->ToString();
 }
 
 }

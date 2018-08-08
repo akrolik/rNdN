@@ -58,6 +58,7 @@ void yyerror(const char *s)
 	HorseIR::ModuleContent *module_content;
 	HorseIR::Parameter *parameter;
 	HorseIR::Type *type;
+	HorseIR::BasicType *basic_type;
 	HorseIR::Statement *statement;
 	HorseIR::ModuleIdentifier *module_identifier;
 	HorseIR::Expression *expression;
@@ -76,7 +77,8 @@ void yyerror(const char *s)
 %type <module_content> module_content
 %type <parameters> parametersne parameters
 %type <parameter> parameter
-%type <type> type int_type float_type
+%type <type> type
+%type <basic_type> int_type float_type symbol_type
 %type <statements> statements
 %type <statement> statement
 %type <module_identifier> module_identifier
@@ -118,8 +120,8 @@ type : '?'                                                                      
      | tBOOL                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Bool); }
      | int_type                                                                 { $$ = $1; }
      | float_type                                                               { $$ = $1; }
+     | symbol_type                                                              { $$ = $1; }
      | tSTRING                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::String); }
-     | tSYMBOL                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Symbol); }
      | tTABLE                                                                   { $$ = new HorseIR::TableType(); }
      | tDATE                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64); } /* TODO date type */
      | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
@@ -134,6 +136,9 @@ int_type : tI8                                                                  
 float_type : tF32                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Float32); }
            | tF64                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Float64); }
            ;
+
+symbol_type : tSYMBOL                                                           { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Symbol); }
+	    ;
 
 statements : statements statement                                               { $1->push_back($2); $$ = $1; }
 	   | %empty                                                             { $$ = new std::vector<HorseIR::Statement *>(); }
@@ -165,7 +170,7 @@ literalsne : literalsne ',' literal                                             
            ;
 
 literal : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }
-	| tSYMBOLVAL ':' tSYMBOL                                                { $$ = new HorseIR::Symbol(*$1); }
+	| tSYMBOLVAL ':' symbol_type                                            { $$ = new HorseIR::Symbol(*$1, $3); }
 	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
         | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
 	| int_list ':' float_type                                               { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }

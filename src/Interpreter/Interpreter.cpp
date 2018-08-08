@@ -281,9 +281,11 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, 
 
 void Interpreter::Visit(HorseIR::AssignStatement *assign)
 {
+	auto declaration = assign->GetDeclaration();
 	auto expression = assign->GetExpression();
 	expression->Accept(*this);
-	m_variableMap.insert({assign->GetTargetName(), m_expressionMap.at(expression)});
+
+	m_variableMap.insert({declaration->GetName(), m_expressionMap.at(expression)});
 }
 
 void Interpreter::Visit(HorseIR::ReturnStatement *ret)
@@ -344,7 +346,7 @@ void Interpreter::Visit(HorseIR::Symbol *symbol)
 {
 	// Create a vector of symbols from the literal
 
-	m_expressionMap.insert({symbol, new Runtime::TypedDataVector<std::string>(symbol->GetType(), symbol->GetNames())});
+	m_expressionMap.insert({symbol, new Runtime::TypedDataVector<std::string>(symbol->GetLiteralType(), symbol->GetNames())});
 }
 
 }

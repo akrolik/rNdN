@@ -30,7 +30,7 @@ public:
 		//
 		// In this setup, the expression visitor is expected to produce the full assignment
 
-		ExpressionGenerator<B, T> generator(assign->GetTargetName(), this->m_builder);
+		ExpressionGenerator<B, T> generator(assign->GetDeclaration()->GetName(), this->m_builder);
 		assign->Accept(generator);
 	}
 };

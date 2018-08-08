@@ -1,15 +1,14 @@
 #include "HorseIR/SymbolTable.h"
 
 #include "HorseIR/Tree/BuiltinMethod.h"
+#include "HorseIR/Tree/Declaration.h"
 #include "HorseIR/Tree/Import.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Module.h"
-#include "HorseIR/Tree/Parameter.h"
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
-#include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Types/Type.h"
 
 #include "Utils/Logger.h"
@@ -97,7 +96,7 @@ MethodDeclaration *SymbolTable::GetMethod(const std::string& name)
 	return static_cast<MethodDeclaration *>(symbol->node);
 }
 
-Type *SymbolTable::GetVariable(const std::string& name)
+Declaration *SymbolTable::GetVariable(const std::string& name)
 {
 	auto symbol = Get(name);
 	if (symbol == nullptr)
@@ -108,7 +107,7 @@ Type *SymbolTable::GetVariable(const std::string& name)
 	{
 		Utils::Logger::LogError(name + " is not a variable");
 	}
-	return static_cast<Type *>(symbol->node);
+	return static_cast<Declaration *>(symbol->node);
 }
 
 void SymbolTable::AddImport(const std::string& name, Entry *symbol)
@@ -245,18 +244,11 @@ void SymbolPass_Methods::Visit(Method *method)
 	m_scopes.pop();
 }
 
-void SymbolPass_Methods::Visit(Parameter *parameter)
+void SymbolPass_Methods::Visit(Declaration *declaration)
 {
 	auto symbolTable = m_scopes.top();
-	symbolTable->Insert(parameter->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Variable, parameter->GetType()));
-	ForwardTraversal::Visit(parameter);
-}
-
-void SymbolPass_Methods::Visit(AssignStatement *assign)
-{
-	auto symbolTable = m_scopes.top();
-	symbolTable->Insert(assign->GetTargetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Variable, assign->GetType()));
-	ForwardTraversal::Visit(assign);
+	symbolTable->Insert(declaration->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Variable, declaration));
+	ForwardTraversal::Visit(declaration);
 }
 
 void SymbolPass_Methods::Visit(CallExpression *call)
@@ -288,8 +280,8 @@ void SymbolPass_Methods::Visit(Identifier *identifier)
 	auto symbolTable = m_scopes.top();
 
 	auto name = identifier->GetString();
-	auto type = symbolTable->GetVariable(name);
-	identifier->SetType(type);
+	auto declaration = symbolTable->GetVariable(name);
+	identifier->SetDeclaration(declaration);
 	ForwardTraversal::Visit(identifier);
 }
 

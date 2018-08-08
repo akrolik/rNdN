@@ -66,9 +66,14 @@ void ConstVisitor::Visit(const Method *method)
 	Visit(static_cast<const MethodDeclaration*>(method));
 }
 
+void ConstVisitor::Visit(const Declaration *declaration)
+{
+	Visit(static_cast<const Node*>(declaration));
+}
+
 void ConstVisitor::Visit(const Parameter *parameter)
 {
-	Visit(static_cast<const Node*>(parameter));
+	Visit(static_cast<const Declaration*>(parameter));
 }
 
 void ConstVisitor::Visit(const Statement *statement)

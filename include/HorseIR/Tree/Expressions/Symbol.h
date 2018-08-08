@@ -14,10 +14,10 @@ namespace HorseIR {
 class Symbol : public Expression
 {
 public:
-	Symbol(const std::string& name) : m_names({name}) {}
-	Symbol(const std::vector<std::string>& names) : m_names(names) {}
+	Symbol(const std::string& name, BasicType *type) : m_names({name}), m_literalType(type) {}
+	Symbol(const std::vector<std::string>& names, BasicType *type) : m_names(names), m_literalType(type) {}
 
-	const BasicType *GetType() const { return m_type; }
+	const BasicType *GetLiteralType() const { return m_literalType; }
 
 	const std::vector<std::string>& GetNames() const { return m_names; }
 	const std::string& GetName(unsigned int index) const { return m_names.at(index); }
@@ -45,7 +45,7 @@ public:
 		{
 			code += ")";
 		}
-		return code + ":" + m_type->ToString();
+		return code + ":" + m_literalType->ToString();
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
@@ -53,7 +53,7 @@ public:
 
 private:
 	std::vector<std::string> m_names;
-	BasicType *m_type = new BasicType(BasicType::Kind::Symbol);
+	BasicType *m_literalType = nullptr;
 };
 
 }

@@ -3,6 +3,7 @@
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Module.h"
 #include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/Declaration.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
@@ -16,6 +17,7 @@ void ForwardTraversal::Visit(Program *program)
 	{
 		module->Accept(*this);
 	}
+	Visitor::Visit(program);
 }
 
 void ForwardTraversal::Visit(Module *module)
@@ -24,6 +26,7 @@ void ForwardTraversal::Visit(Module *module)
 	{
 		content->Accept(*this);
 	}
+	Visitor::Visit(module);
 }
 
 void ForwardTraversal::Visit(Method *method)
@@ -41,12 +44,20 @@ void ForwardTraversal::Visit(Method *method)
 	{
 		statement->Accept(*this);
 	}
+	Visitor::Visit(method);
 }
 
 void ForwardTraversal::Visit(AssignStatement *assign)
 {
-	assign->GetType()->Accept(*this);
+	assign->GetDeclaration()->Accept(*this);
 	assign->GetExpression()->Accept(*this);
+	Visitor::Visit(assign);
+}
+
+void ForwardTraversal::Visit(Declaration *declaration)
+{
+	declaration->GetType()->Accept(*this);
+	Visitor::Visit(declaration);
 }
 
 void ForwardTraversal::Visit(CallExpression *call)
@@ -55,17 +66,20 @@ void ForwardTraversal::Visit(CallExpression *call)
 	{
 		argument->Accept(*this);
 	}
+	Visitor::Visit(call);
 }
 
 void ForwardTraversal::Visit(CastExpression *cast)
 {
 	cast->GetExpression()->Accept(*this);
-	cast->GetType()->Accept(*this);
+	cast->GetCastType()->Accept(*this);
+	Visitor::Visit(cast);
 }
 
 void ForwardTraversal::Visit(ReturnStatement *ret)
 {
 	ret->GetIdentifier()->Accept(*this);
+	Visitor::Visit(ret);
 }
 
 }

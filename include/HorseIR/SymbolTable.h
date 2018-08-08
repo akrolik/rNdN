@@ -37,7 +37,7 @@ public:
 
 	Module *GetModule(const std::string& name);
 	MethodDeclaration *GetMethod(const std::string& name);
-	Type *GetVariable(const std::string& name);
+	Declaration *GetVariable(const std::string& name);
 
 	void AddImport(const std::string& name, Entry *symbol);
 
@@ -93,8 +93,7 @@ public:
 	void Visit(Module *module) override;
 	void Visit(Method *method) override;
 
-	void Visit(Parameter *parameter) override;
-	void Visit(AssignStatement *assign) override;
+	void Visit(Declaration *declaration) override;
 	void Visit(CallExpression *call) override;
 	void Visit(Identifier *identifier) override;
 

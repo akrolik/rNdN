@@ -200,7 +200,7 @@ public:
 	void Visit(const HorseIR::AssignStatement *assign) override
 	{
 		AssignmentGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, assign->GetType(), assign);
+		Codegen::DispatchType(generator, assign->GetDeclaration()->GetType(), assign);
 	}
 
 	void Visit(const HorseIR::ReturnStatement *ret) override
