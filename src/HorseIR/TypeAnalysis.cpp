@@ -2,6 +2,7 @@
 
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
@@ -16,9 +17,9 @@
 
 namespace HorseIR {
 
-void TypeAnalysis::Analyze(HorseIR::Method *method)
+void TypeAnalysis::Analyze(HorseIR::Program *program)
 {
-	method->Accept(*this);
+	program->Accept(*this);
 }
 
 void TypeAnalysis::Visit(AssignStatement *assign)

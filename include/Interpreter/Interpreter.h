@@ -13,6 +13,7 @@ public:
 	Interpreter(Runtime::Runtime& runtime) : m_runtime(runtime) {}
 
 	void Execute(HorseIR::Program *program);
+
 	Runtime::DataObject *Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments);
 	Runtime::DataObject *Execute(HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments);
 	Runtime::DataObject *Execute(HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Expression *>& arguments);

@@ -11,7 +11,7 @@ namespace HorseIR {
 class TypeAnalysis : public ForwardTraversal
 {
 public:
-	void Analyze(Method *method);
+	void Analyze(Program *program);
 
 	void Visit(AssignStatement *assign) override;
 

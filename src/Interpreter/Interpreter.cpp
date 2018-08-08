@@ -7,7 +7,6 @@
 
 #include "HorseIR/EntryAnalysis.h"
 #include "HorseIR/ShapeAnalysis.h"
-#include "HorseIR/TypeAnalysis.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Program.h"
@@ -56,11 +55,6 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::MethodDeclaration *method, co
 Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing method '" + method->GetName() + "'");
-
-	// Run the type analysis for the method regardless of its execution platform
-
-	HorseIR::TypeAnalysis typeAnalysis;
-	typeAnalysis.Analyze(method);
 
 	if (method->IsKernel())
 	{

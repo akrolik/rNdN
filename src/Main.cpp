@@ -1,9 +1,7 @@
 #include "HorseIR/BuiltinModule.h"
-#include "HorseIR/ShapeAnalysis.h"
 #include "HorseIR/SymbolTable.h"
+#include "HorseIR/TypeAnalysis.h"
 #include "HorseIR/Tree/Program.h"
-#include "HorseIR/Tree/BuiltinMethod.h"
-#include "HorseIR/Tree/Module.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -59,13 +57,18 @@ int main(int argc, const char *argv[])
 	}
 	Utils::Logger::LogTiming("HorseIR frontend", timeFrontend);
 
-	Utils::Logger::LogSection("Building symbol table");
+	Utils::Logger::LogSection("Building symbol table & analyzing types");
 	auto timeTypes_start = Utils::Chrono::Start();
 
 	program->AddModule(HorseIR::BuiltinModule);
 
+	// Construct the symbol table and analyze the types
+
 	HorseIR::SymbolTableBuilder symbolTable;
 	symbolTable.Build(program);
+
+	HorseIR::TypeAnalysis typeAnalysis;
+	typeAnalysis.Analyze(program);
 
 	auto timeTypes = Utils::Chrono::End(timeTypes_start);
 
