@@ -6,6 +6,8 @@
 #include "CUDA/Module.h"
 
 #include "HorseIR/EntryAnalysis.h"
+#include "HorseIR/ShapeAnalysis.h"
+#include "HorseIR/TypeAnalysis.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Program.h"
@@ -38,29 +40,57 @@ void Interpreter::Execute(HorseIR::Program *program)
 	result->Dump();
 }
 
-Runtime::DataObject *Interpreter::Execute(const HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments)
+Runtime::DataObject *Interpreter::Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments)
 {
 	switch (method->GetKind())
 	{
 		case HorseIR::MethodDeclaration::Kind::Definition:
-			return Execute(static_cast<const HorseIR::Method *>(method), arguments);
+			return Execute(static_cast<HorseIR::Method *>(method), arguments);
 		case HorseIR::MethodDeclaration::Kind::Builtin:
-			return Execute(static_cast<const HorseIR::BuiltinMethod *>(method), arguments);
+			return Execute(static_cast<HorseIR::BuiltinMethod *>(method), arguments);
 	}
 
 	Utils::Logger::LogError("Cannot execute method '" + method->GetName() + "'");
 }
 
-Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments)
+Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing method '" + method->GetName() + "'");
 
+	// Run the type analysis for the method regardless of its execution platform
+
+	HorseIR::TypeAnalysis typeAnalysis;
+	typeAnalysis.Analyze(method);
+
 	if (method->IsKernel())
 	{
+		// Run the shape and type analyses
+
+		HorseIR::ShapeAnalysis shapeAnalysis;
+		unsigned int i = 0;
+		for (auto& parameter : method->GetParameters())
+		{
+			auto type = parameter->GetType();
+			auto argument = arguments.at(i);
+			switch (type->GetKind())
+			{
+				case HorseIR::Type::Kind::Basic:
+				{
+					auto argumentData = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
+					parameter->SetShape(new HorseIR::Shape(HorseIR::Shape::Kind::Vector, argumentData->GetElementCount()));
+					break;
+				}
+				default:
+					Utils::Logger::LogError("Unsupported argument type " + type->ToString());
+			}
+			++i;
+		}
+		shapeAnalysis.Analyze(method);
+
 		// Compile the HorseIR to PTX code using the current device
 
 		auto& gpu = m_runtime.GetGPUManager();
-		auto& device =  gpu.GetCurrentDevice();
+		auto& device = gpu.GetCurrentDevice();
 
 		Codegen::TargetOptions targetOptions;
 		targetOptions.ComputeCapability = device->GetComputeCapability();
@@ -203,7 +233,6 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 		auto timeExec = Utils::Chrono::End(timeExec_start);
 
 		Utils::Logger::LogTiming("Kernel execution", timeExec);
-		Utils::Logger::LogInfo("Kernel result = " + std::to_string(static_cast<float *>(returnData->GetData())[0]));
 
 		return returnData;
 	}
@@ -222,7 +251,7 @@ Runtime::DataObject *Interpreter::Execute(const HorseIR::Method *method, const s
 	}
 }
 
-Runtime::DataObject *Interpreter::Execute(const HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Expression *>& arguments)
+Runtime::DataObject *Interpreter::Execute(HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Expression *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing builtin method '" + method->GetName() + "'");
 

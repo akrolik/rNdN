@@ -4,17 +4,15 @@
 
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
-#include "HorseIR/Shape.h"
 #include "HorseIR/Tree/Types/Type.h"
 
 namespace HorseIR {
 
-class ShapeAnalysis : public ForwardTraversal
+class TypeAnalysis : public ForwardTraversal
 {
 public:
 	void Analyze(Method *method);
 
-	void Visit(Parameter *parameter) override;
 	void Visit(AssignStatement *assign) override;
 
 	void Visit(CallExpression *call) override;
@@ -26,7 +24,7 @@ public:
 	void Visit(Symbol *symbol) override;
 
 private:
-	Shape *AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments);
+	const Type *AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments);
 };
 
 }

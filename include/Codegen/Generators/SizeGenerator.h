@@ -21,7 +21,7 @@ public:
 	
 	const PTX::TypedOperand<PTX::UInt64Type> *GenerateInputSize()
 	{
-		auto inputOptions = m_builder.GetInputOptions();
+		auto& inputOptions = m_builder.GetInputOptions();
 
 		if (inputOptions.InputSize == InputOptions::DynamicSize)
 		{
