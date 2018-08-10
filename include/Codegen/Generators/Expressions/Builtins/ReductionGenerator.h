@@ -78,7 +78,7 @@ public:
 
 	//TODO: Support correct type matrix for reductions
 
-	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8, void>
+	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8 && T::TypeBits != PTX::Bits::Bits16, void>
 	Generate(const std::string& target, const HorseIR::CallExpression *call) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
@@ -518,28 +518,14 @@ private:
 			case ReductionOperation::Count:
 			case ReductionOperation::Average:
 			case ReductionOperation::Sum:
-				if constexpr(PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add, false>::TypeSupported)
-				{
-					return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value);
-				}
-				break;
+				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value);
 			case ReductionOperation::Minimum:
-				if constexpr(PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum, false>::TypeSupported)
-				{
-					return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value);
-				}
-				break;
+				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value);
 			case ReductionOperation::Maximum:
-				if constexpr(PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum, false>::TypeSupported)
-				{
-					return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value);
-				}
-				break;
+				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value);
 			default:
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(reductionOp));
 		}
-
-		BuiltinGenerator<B, T>::Unimplemented("atomic synchronization for reduction operation " + ReductionOperationString(reductionOp));
 	}
 
 	ReductionOperation m_reductionOp;
