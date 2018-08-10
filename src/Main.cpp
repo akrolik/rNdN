@@ -1,6 +1,6 @@
 #include "HorseIR/BuiltinModule.h"
-#include "HorseIR/SymbolTable.h"
-#include "HorseIR/TypeAnalysis.h"
+#include "HorseIR/Analysis/SymbolTable.h"
+#include "HorseIR/Analysis/TypeAnalysis.h"
 #include "HorseIR/Tree/Program.h"
 
 #include "Utils/Chrono.h"
@@ -55,31 +55,46 @@ int main(int argc, const char *argv[])
 		Utils::Logger::LogInfo("Input HorseIR program");
 		Utils::Logger::LogInfo(program->ToString(), 0, Utils::Logger::NoPrefix);
 	}
+
 	Utils::Logger::LogTiming("HorseIR frontend", timeFrontend);
 
-	Utils::Logger::LogSection("Building symbol table & analyzing types");
-	auto timeTypes_start = Utils::Chrono::Start();
+	Utils::Logger::LogSection("Building symbol table");
+	auto timeSymbols_start = Utils::Chrono::Start();
+
+	// Connect the builtin module to the program
 
 	program->AddModule(HorseIR::BuiltinModule);
 
-	// Construct the symbol table and analyze the types
+	// Construct the symbol table
 
 	HorseIR::SymbolTableBuilder symbolTable;
 	symbolTable.Build(program);
 
-	HorseIR::TypeAnalysis typeAnalysis;
-	typeAnalysis.Analyze(program);
+	auto timeSymbols = Utils::Chrono::End(timeSymbols_start);
 
-	auto timeTypes = Utils::Chrono::End(timeTypes_start);
-
-	if (Utils::Options::Present(Utils::Options::Opt_Dump_symtab))
+	if (Utils::Options::Present(Utils::Options::Opt_Dump_symbol))
 	{
 		// Dump the symbol table to stdout
 
 		HorseIR::SymbolTableDumper dump;
 		dump.Dump(program);
 	}
-	Utils::Logger::LogTiming("Symbol table", timeTypes);
+	Utils::Logger::LogTiming("Symbol table", timeSymbols);
+
+	auto timeTypes_start = Utils::Chrono::Start();
+
+	HorseIR::TypeAnalysis typeAnalysis;
+	typeAnalysis.Analyze(program);
+
+	auto timeTypes = Utils::Chrono::End(timeTypes_start);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Dump_type))
+	{
+		// Dump the type checking results to stdout
+
+		//TODO: Type dumper
+	}
+	Utils::Logger::LogTiming("Type checker", timeTypes);
 
 	// Execute the HorseIR program in an interpeter, compiling GPU sections as needed
 
