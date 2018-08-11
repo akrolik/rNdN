@@ -304,9 +304,14 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::BuiltinMethod *method, const 
 
 void Interpreter::Visit(HorseIR::AssignStatement *assign)
 {
-	auto declaration = assign->GetDeclaration();
+	// Evaluate the RHS of the assignment
+
 	auto expression = assign->GetExpression();
 	expression->Accept(*this);
+
+	// Update the runtime data map
+
+	auto declaration = assign->GetDeclaration();
 
 	m_variableMap.insert({declaration->GetName(), m_expressionMap.at(expression)});
 }
@@ -323,24 +328,29 @@ void Interpreter::Visit(HorseIR::CastExpression *cast)
 	auto expression = cast->GetExpression();
 	expression->Accept(*this);
 
-	// Check the cast is valid
+	// Gather all the types necessary for casting
 
-	auto expressionData = m_expressionMap.at(expression);
+	auto expressionType = expression->GetType();
 
-	auto expressionType = expressionData->GetType();
-	auto resultType = cast->GetCastType();
+	auto data = m_expressionMap.at(expression);
+	auto dataType = data->GetType();
 
-	if (*expressionType != *resultType)
+	auto castType = cast->GetCastType();
+
+	// If the expression has no type, then this is a runtime cast check
+
+	if (expressionType == nullptr && *dataType != *castType)
 	{
-		Utils::Logger::LogError("Invalid cast, " + expressionType->ToString() + " cannot be cast to " + resultType->ToString());
+		Utils::Logger::LogError("Invalid cast, " + dataType->ToString() + " cannot be cast to " + castType->ToString());
 	}
 
-	m_expressionMap.insert({cast, expressionData});
+	m_expressionMap.insert({cast, data});
 }
 
 void Interpreter::Visit(HorseIR::CallExpression *call)
 {
 	// Evaluate arguments
+
 	for (auto& argument : call->GetArguments())
 	{
 		argument->Accept(*this);
