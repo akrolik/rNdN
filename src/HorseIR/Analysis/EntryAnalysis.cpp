@@ -1,4 +1,4 @@
-#include "HorseIR/EntryAnalysis.h"
+#include "HorseIR/Analysis/EntryAnalysis.h"
 
 #include "Utils/Logger.h"
 

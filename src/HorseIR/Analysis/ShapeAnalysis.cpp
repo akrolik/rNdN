@@ -1,4 +1,4 @@
-#include "HorseIR/ShapeAnalysis.h"
+#include "HorseIR/Analysis/ShapeAnalysis.h"
 
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
@@ -24,10 +24,10 @@ void ShapeAnalysis::Visit(Parameter *parameter)
 {
 	// Check to make sure the correct input shapes have been set
 
-	if (parameter->GetShape() == nullptr)
-	{
-		Utils::Logger::LogError("Shape analysis missing input shape for parameter '" + parameter->GetName() + "'");
-	}
+	// if (parameter->GetShape() == nullptr)
+	// {
+	// 	Utils::Logger::LogError("Shape analysis missing input shape for parameter '" + parameter->GetName() + "'");
+	// }
 }
 
 void ShapeAnalysis::Visit(AssignStatement *assign)
@@ -41,7 +41,7 @@ void ShapeAnalysis::Visit(AssignStatement *assign)
 	auto declaration = assign->GetDeclaration();
 	auto expression = assign->GetExpression();
 
-	declaration->SetShape(expression->GetShape());
+	// declaration->SetShape(expression->GetShape());
 }
 
 void ShapeAnalysis::Visit(CallExpression *call)
@@ -56,7 +56,7 @@ void ShapeAnalysis::Visit(CallExpression *call)
 	switch (method->GetKind())
 	{
 		case HorseIR::MethodDeclaration::Kind::Builtin:
-			call->SetShape(AnalyzeCall(static_cast<const HorseIR::BuiltinMethod *>(method), call->GetArguments()));
+			// call->SetShape(AnalyzeCall(static_cast<const HorseIR::BuiltinMethod *>(method), call->GetArguments()));
 			break;
 		case HorseIR::MethodDeclaration::Kind::Definition:
 			Utils::Logger::LogError("Shape analysis for user defined functions not implemented");
@@ -95,8 +95,8 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::HyperbolicInverseSine:
 		case BuiltinMethod::Kind::HyperbolicInverseTangent:
 		{
-			const auto argumentShape = arguments.at(0)->GetShape();
-			return new Shape(argumentShape->kind, argumentShape->size);
+			// const auto argumentShape = arguments.at(0)->GetShape();
+			// return new Shape(argumentShape->kind, argumentShape->size);
 		} 
 		case BuiltinMethod::Kind::Less:
 		case BuiltinMethod::Kind::Greater:
@@ -117,30 +117,30 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::Nor:
 		case BuiltinMethod::Kind::Xor:
 		{
-			const auto argumentShape1 = arguments.at(0)->GetShape();
-			const auto argumentShape2 = arguments.at(1)->GetShape();
+			// const auto argumentShape1 = arguments.at(0)->GetShape();
+			// const auto argumentShape2 = arguments.at(1)->GetShape();
 
-			Shape::Kind kind = Shape::Kind::Vector;
-			long size = 0;
+			// Shape::Kind kind = Shape::Kind::Vector;
+			// long size = 0;
 
-			if (argumentShape1->size == argumentShape2->size)
-			{
-				size = argumentShape1->size;
-			}
-			else if (argumentShape1->size == 1)
-			{
-				size = argumentShape2->size;
-			}
-			else if (argumentShape2->size == 1)
-			{
-				size = argumentShape1->size;
-			}
-			else
-			{
-				Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(argumentShape1->size) + " != " + std::to_string(argumentShape2->size) + "]");
-			}
+			// if (argumentShape1->size == argumentShape2->size)
+			// {
+			// 	size = argumentShape1->size;
+			// }
+			// else if (argumentShape1->size == 1)
+			// {
+			// 	size = argumentShape2->size;
+			// }
+			// else if (argumentShape2->size == 1)
+			// {
+			// 	size = argumentShape1->size;
+			// }
+			// else
+			// {
+			// 	Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(argumentShape1->size) + " != " + std::to_string(argumentShape2->size) + "]");
+			// }
 
-			return new Shape(kind, size);
+			// return new Shape(kind, size);
 		}
 		case BuiltinMethod::Kind::Compress:
 			//TODO: Should set some type of a reference variable to the input shape
@@ -160,32 +160,32 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 
 void ShapeAnalysis::Visit(CastExpression *cast)
 {
-	cast->SetShape(cast->GetExpression()->GetShape());
+	// cast->SetShape(cast->GetExpression()->GetShape());
 }
 
 void ShapeAnalysis::Visit(Identifier *identifier)
 {
-	identifier->SetShape(identifier->GetDeclaration()->GetShape());
+	// identifier->SetShape(identifier->GetDeclaration()->GetShape());
 }
 
 void ShapeAnalysis::Visit(Literal<int64_t> *literal)
 {
-	literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
+	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
 }
 
 void ShapeAnalysis::Visit(Literal<double> *literal)
 {
-	literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
+	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
 }
 
 void ShapeAnalysis::Visit(Literal<std::string> *literal)
 {
-	literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
+	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
 }
 
 void ShapeAnalysis::Visit(Symbol *symbol)
 {
-	symbol->SetShape(new Shape(Shape::Kind::Vector, symbol->GetCount()));
+	// symbol->SetShape(new Shape(Shape::Kind::Vector, symbol->GetCount()));
 }
 
 }

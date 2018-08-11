@@ -5,8 +5,8 @@
 #include "CUDA/KernelInvocation.h"
 #include "CUDA/Module.h"
 
-#include "HorseIR/EntryAnalysis.h"
-#include "HorseIR/ShapeAnalysis.h"
+#include "HorseIR/Analysis/EntryAnalysis.h"
+#include "HorseIR/Analysis/ShapeAnalysis.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Program.h"
@@ -71,7 +71,7 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::ve
 				case HorseIR::Type::Kind::Basic:
 				{
 					auto argumentData = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
-					parameter->SetShape(new HorseIR::Shape(HorseIR::Shape::Kind::Vector, argumentData->GetElementCount()));
+					// parameter->SetShape(new HorseIR::Shape(HorseIR::Shape::Kind::Vector, argumentData->GetElementCount()));
 					break;
 				}
 				default:

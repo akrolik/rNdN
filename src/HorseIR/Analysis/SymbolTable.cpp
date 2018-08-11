@@ -1,4 +1,4 @@
-#include "HorseIR/SymbolTable.h"
+#include "HorseIR/Analysis/SymbolTable.h"
 
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Declaration.h"

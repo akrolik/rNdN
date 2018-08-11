@@ -4,7 +4,7 @@
 
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
-#include "HorseIR/Shape.h"
+#include "HorseIR/Analysis/Shape.h"
 #include "HorseIR/Tree/Types/Type.h"
 
 namespace HorseIR {
