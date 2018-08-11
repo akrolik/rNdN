@@ -48,12 +48,21 @@ i32          return tI32;
 i64          return tI64;
 f32          return tF32;
 f64          return tF64;
-complex      return tCOMPLEX;
+clex         return tCOMPLEX;
 sym          return tSYMBOL;
 str          return tSTRING;
-list         return tLIST;
+month        return tMONTH;
+date         return tDATE;
+dt           return tDATETIME;
+minute       return tMINUTE;
+second       return tSECOND;
+time         return tTIME;
+func         return tFUNCTION;
+list         { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tLIST; }
+dict         { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tDICTIONARY; }
+enum         { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tENUM; }
 table        { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tTABLE; }
-d            return tDATE;
+ktable       { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tKTABLE; }
 
 module       return tMODULE;
 import       return tIMPORT;

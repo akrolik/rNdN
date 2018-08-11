@@ -14,7 +14,7 @@ class DataRegistry
 {
 public:
 	template<typename T>
-	static void LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size);
+	static void LoadDebugData(DataTable *table, HorseIR::BasicType *type, unsigned long size);
 
 	void LoadDebugData();
 

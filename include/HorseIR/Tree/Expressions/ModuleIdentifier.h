@@ -15,9 +15,6 @@ public:
 	ModuleIdentifier(const std::string& name) : m_module(""), m_name(name) {}
 	ModuleIdentifier(const std::string& module, const std::string& name) : m_module(module), m_name(name) {}
 
-	const Type *GetType() const { return m_type; }
-	void SetType(Type *type) { m_type = type; }
-
 	const std::string& GetModule() const { return m_module; }
 	const std::string& GetName() const { return m_name; }
 
@@ -36,7 +33,6 @@ public:
 private:
 	std::string m_module = "";
 	std::string m_name;
-	Type *m_type = nullptr;
 };
 
 }

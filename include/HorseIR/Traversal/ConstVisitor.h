@@ -25,13 +25,24 @@ class Expression;
 class CallExpression;
 class CastExpression;
 class Identifier;
+class ModuleIdentifier;
 
-template<class T>
-class Literal;
-class Symbol;
+class BoolLiteral;
+class Int8Literal;
+class Int16Literal;
+class Int32Literal;
+class Int64Literal;
+class Float32Literal;
+class Float64Literal;
+class StringLiteral;
+class SymbolLiteral;
+class DateLiteral;
+class FunctionLiteral;
 
 class Type;
 class BasicType;
+class FunctionType;
+class DictionaryType;
 class ListType;
 class TableType;
 
@@ -58,13 +69,24 @@ public:
 	virtual void Visit(const CallExpression *call);
 	virtual void Visit(const CastExpression *cast);
 	virtual void Visit(const Identifier *identifier);
-	virtual void Visit(const Literal<int64_t> *literal);
-	virtual void Visit(const Literal<double> *literal);
-	virtual void Visit(const Literal<std::string> *literal);
-	virtual void Visit(const Symbol *symbol);
+	virtual void Visit(const ModuleIdentifier *identifier);
+
+	virtual void Visit(const BoolLiteral *literal);
+	virtual void Visit(const Int8Literal *literal);
+	virtual void Visit(const Int16Literal *literal);
+	virtual void Visit(const Int32Literal *literal);
+	virtual void Visit(const Int64Literal *literal);
+	virtual void Visit(const Float32Literal *literal);
+	virtual void Visit(const Float64Literal *literal);
+	virtual void Visit(const StringLiteral *literal);
+	virtual void Visit(const SymbolLiteral *literal);
+	virtual void Visit(const DateLiteral *literal);
+	virtual void Visit(const FunctionLiteral *literal);
 
 	virtual void Visit(const Type *type);
 	virtual void Visit(const BasicType *type);
+	virtual void Visit(const FunctionType *type);
+	virtual void Visit(const DictionaryType *type);
 	virtual void Visit(const ListType *type);
 	virtual void Visit(const TableType *type);
 };

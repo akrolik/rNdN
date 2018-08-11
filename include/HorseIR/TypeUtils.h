@@ -130,6 +130,11 @@ static bool IsSymbolType(const Type *type)
 	return IsBasicType(type, BasicType::Kind::Symbol);
 }
 
+static bool IsFunctionType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Function);
+}
+
 static BasicType *WidestType(const BasicType *type1, const BasicType *type2)
 {
 	if (type1->GetKind() == BasicType::Kind::Float64 ||

@@ -2,12 +2,16 @@
 
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Module.h"
+#include "HorseIR/Tree/Import.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Declaration.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
+#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
+#include "HorseIR/Tree/Types/DictionaryType.h"
+#include "HorseIR/Tree/Types/ListType.h"
 
 namespace HorseIR {
 
@@ -29,6 +33,12 @@ void ForwardTraversal::Visit(Module *module)
 	Visitor::Visit(module);
 }
 
+void ForwardTraversal::Visit(Import *import)
+{
+	import->GetIdentifier()->Accept(*this);
+	Visitor::Visit(import);
+}
+
 void ForwardTraversal::Visit(Method *method)
 {
 	for (auto& parameter : method->GetParameters())
@@ -47,6 +57,12 @@ void ForwardTraversal::Visit(Method *method)
 	Visitor::Visit(method);
 }
 
+void ForwardTraversal::Visit(Declaration *declaration)
+{
+	declaration->GetType()->Accept(*this);
+	Visitor::Visit(declaration);
+}
+
 void ForwardTraversal::Visit(AssignStatement *assign)
 {
 	assign->GetDeclaration()->Accept(*this);
@@ -54,10 +70,10 @@ void ForwardTraversal::Visit(AssignStatement *assign)
 	Visitor::Visit(assign);
 }
 
-void ForwardTraversal::Visit(Declaration *declaration)
+void ForwardTraversal::Visit(ReturnStatement *ret)
 {
-	declaration->GetType()->Accept(*this);
-	Visitor::Visit(declaration);
+	ret->GetIdentifier()->Accept(*this);
+	Visitor::Visit(ret);
 }
 
 void ForwardTraversal::Visit(CallExpression *call)
@@ -76,10 +92,23 @@ void ForwardTraversal::Visit(CastExpression *cast)
 	Visitor::Visit(cast);
 }
 
-void ForwardTraversal::Visit(ReturnStatement *ret)
+void ForwardTraversal::Visit(FunctionLiteral *literal)
 {
-	ret->GetIdentifier()->Accept(*this);
-	Visitor::Visit(ret);
+	literal->GetIdentifier()->Accept(*this);
+	Visitor::Visit(literal);
+}
+
+void ForwardTraversal::Visit(DictionaryType *type)
+{
+	type->GetKeyType()->Accept(*this);
+	type->GetValueType()->Accept(*this);
+	Visitor::Visit(type);
+}
+
+void ForwardTraversal::Visit(ListType *type)
+{
+	type->GetElementType()->Accept(*this);
+	Visitor::Visit(type);
 }
 
 }

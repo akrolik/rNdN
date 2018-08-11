@@ -4,7 +4,13 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int8Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int16Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int32Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int64Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Float32Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Float64Literal.h"
 #include "HorseIR/Tree/Types/Type.h"
 
 #include "PTX/Instructions/Data/MoveInstruction.h"
@@ -95,12 +101,32 @@ public:
 		m_register = true;
 	}
 
-	void Visit(const HorseIR::Literal<int64_t> *literal) override
+	void Visit(const HorseIR::Int8Literal *literal) override
 	{
-		Generate<int64_t>(literal);
+		Generate<std::int8_t>(literal);
 	}
 
-	void Visit(const HorseIR::Literal<double> *literal) override
+	void Visit(const HorseIR::Int16Literal *literal) override
+	{
+		Generate<std::int16_t>(literal);
+	}
+
+	void Visit(const HorseIR::Int32Literal *literal) override
+	{
+		Generate<std::int32_t>(literal);
+	}
+
+	void Visit(const HorseIR::Int64Literal *literal) override
+	{
+		Generate<std::int64_t>(literal);
+	}
+
+	void Visit(const HorseIR::Float32Literal *literal) override
+	{
+		Generate<float>(literal);
+	}
+
+	void Visit(const HorseIR::Float64Literal *literal) override
 	{
 		Generate<double>(literal);
 	}
@@ -121,7 +147,7 @@ public:
 		}
 		else
 		{
-			Utils::Logger::LogError("[ERROR] Unsupported literal count: " + std::to_string(literal->GetCount()));
+			Utils::Logger::LogError("Unsupported literal count " + std::to_string(literal->GetCount()));
 		}
 	}
 

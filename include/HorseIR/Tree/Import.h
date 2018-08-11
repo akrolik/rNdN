@@ -15,7 +15,7 @@ class Import : public ModuleContent
 public:
 	Import(ModuleIdentifier *identifier) : m_identifier(identifier) {}
 
-	const ModuleIdentifier *GetIdentifier() const { return m_identifier; }
+	ModuleIdentifier *GetIdentifier() const { return m_identifier; }
 	void SetIdentifier(ModuleIdentifier *identifier) { m_identifier = identifier; }
 
 	std::string ToString() const override

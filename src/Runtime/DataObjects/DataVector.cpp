@@ -4,7 +4,7 @@
 
 namespace Runtime {
 
-DataVector *DataVector::CreateVector(const HorseIR::BasicType *type, unsigned long size)
+DataVector *DataVector::CreateVector(HorseIR::BasicType *type, unsigned long size)
 {
 	switch (type->GetKind())
 	{

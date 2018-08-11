@@ -2,12 +2,16 @@
 
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Module.h"
+#include "HorseIR/Tree/Import.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Declaration.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
+#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
+#include "HorseIR/Tree/Types/DictionaryType.h"
+#include "HorseIR/Tree/Types/ListType.h"
 
 namespace HorseIR {
 
@@ -29,6 +33,12 @@ void ConstForwardTraversal::Visit(const Module *module)
 	ConstVisitor::Visit(module);
 }
 
+void ConstForwardTraversal::Visit(const Import *import)
+{
+	import->GetIdentifier()->Accept(*this);
+	ConstVisitor::Visit(import);
+}
+
 void ConstForwardTraversal::Visit(const Method *method)
 {
 	for (const auto& parameter : method->GetParameters())
@@ -47,6 +57,12 @@ void ConstForwardTraversal::Visit(const Method *method)
 	ConstVisitor::Visit(method);
 }
 
+void ConstForwardTraversal::Visit(const Declaration *declaration)
+{
+	declaration->GetType()->Accept(*this);
+	ConstVisitor::Visit(declaration);
+}
+
 void ConstForwardTraversal::Visit(const AssignStatement *assign)
 {
 	assign->GetDeclaration()->Accept(*this);
@@ -54,10 +70,10 @@ void ConstForwardTraversal::Visit(const AssignStatement *assign)
 	ConstVisitor::Visit(assign);
 }
 
-void ConstForwardTraversal::Visit(const Declaration *declaration)
+void ConstForwardTraversal::Visit(const ReturnStatement *ret)
 {
-	declaration->GetType()->Accept(*this);
-	ConstVisitor::Visit(declaration);
+	ret->GetIdentifier()->Accept(*this);
+	ConstVisitor::Visit(ret);
 }
 
 void ConstForwardTraversal::Visit(const CallExpression *call)
@@ -76,10 +92,23 @@ void ConstForwardTraversal::Visit(const CastExpression *cast)
 	ConstVisitor::Visit(cast);
 }
 
-void ConstForwardTraversal::Visit(const ReturnStatement *ret)
+void ConstForwardTraversal::Visit(const FunctionLiteral *literal)
 {
-	ret->GetIdentifier()->Accept(*this);
-	ConstVisitor::Visit(ret);
+	literal->GetIdentifier()->Accept(*this);
+	ConstVisitor::Visit(literal);
+}
+
+void ConstForwardTraversal::Visit(const DictionaryType *type)
+{
+	type->GetKeyType()->Accept(*this);
+	type->GetValueType()->Accept(*this);
+	ConstVisitor::Visit(type);
+}
+
+void ConstForwardTraversal::Visit(const ListType *type)
+{
+	type->GetElementType()->Accept(*this);
+	ConstVisitor::Visit(type);
 }
 
 }

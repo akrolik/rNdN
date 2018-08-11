@@ -9,6 +9,7 @@
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
+#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 #include "HorseIR/Tree/Types/Type.h"
 
 #include "Utils/Logger.h"
@@ -251,27 +252,28 @@ void SymbolPass_Methods::Visit(Declaration *declaration)
 	ForwardTraversal::Visit(declaration);
 }
 
-void SymbolPass_Methods::Visit(CallExpression *call)
+MethodDeclaration *SymbolPass_Methods::LookupIdentifier(const ModuleIdentifier *identifier)
 {
 	auto symbolTable = m_scopes.top();
 
-	auto identifier = call->GetIdentifier();
 	auto moduleName = identifier->GetModule();
 	auto name = identifier->GetName();
 
 	if (moduleName == "")
 	{
-		auto method = symbolTable->GetMethod(name);
-		call->SetMethod(method);
+		return symbolTable->GetMethod(name);
 	}
 	else
 	{
 		auto module = symbolTable->GetModule(moduleName);
 		auto moduleSymbolTable = module->GetSymbolTable();
-
-		auto method = moduleSymbolTable->GetMethod(name);
-		call->SetMethod(method);
+		return moduleSymbolTable->GetMethod(name);
 	}
+}
+
+void SymbolPass_Methods::Visit(CallExpression *call)
+{
+	call->SetMethod(LookupIdentifier(call->GetIdentifier()));
 	ForwardTraversal::Visit(call);
 }
 
@@ -283,6 +285,13 @@ void SymbolPass_Methods::Visit(Identifier *identifier)
 	auto declaration = symbolTable->GetVariable(name);
 	identifier->SetDeclaration(declaration);
 	ForwardTraversal::Visit(identifier);
+}
+
+void SymbolPass_Methods::Visit(FunctionLiteral *literal)
+{
+	auto function = LookupIdentifier(literal->GetIdentifier());
+	literal->SetMethod(function);
+	ForwardTraversal::Visit(literal);
 }
 
 void SymbolTableBuilder::Build(Program *program)

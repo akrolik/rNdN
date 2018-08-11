@@ -12,10 +12,10 @@ namespace HorseIR {
 class DictionaryType : public Type
 {
 public:
-	DictionaryType(const Type *keyType, const Type *valueType) : Type(Type::Kind::Dictionary), m_keyType(keyType), m_valueType(valueType) {}
+	DictionaryType(Type *keyType, Type *valueType) : Type(Type::Kind::Dictionary), m_keyType(keyType), m_valueType(valueType) {}
 
-	const Type *GetKeyType() const { return m_keyType; }
-	const Type *GetValueType() const { return m_valueType; }
+	Type *GetKeyType() const { return m_keyType; }
+	Type *GetValueType() const { return m_valueType; }
 
 	std::string ToString() const override
 	{
@@ -36,8 +36,8 @@ public:
 	}
 
 private:
-	const Type *m_keyType = nullptr;
-	const Type *m_valueType = nullptr;
+	Type *m_keyType = nullptr;
+	Type *m_valueType = nullptr;
 };
 
 }

@@ -18,13 +18,11 @@ public:
 	void Visit(CallExpression *call) override;
 	void Visit(CastExpression *cast) override;
 	void Visit(Identifier *identifier) override;
-	void Visit(Literal<int64_t> *literal) override;
-	void Visit(Literal<double> *literal) override;
-	void Visit(Literal<std::string> *literal) override;
-	void Visit(Symbol *symbol) override;
+	void Visit(FunctionLiteral *literal) override;
 
 private:
-	const Type *AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments);
+	Type *AnalyzeCall(const MethodDeclaration *method, const std::vector<Type *>& arguments);
+	Type *AnalyzeCall(const BuiltinMethod *method, const std::vector<Type *>& arguments);
 };
 
 }

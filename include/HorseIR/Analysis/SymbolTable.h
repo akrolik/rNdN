@@ -97,7 +97,11 @@ public:
 	void Visit(CallExpression *call) override;
 	void Visit(Identifier *identifier) override;
 
+	void Visit(FunctionLiteral *literal) override;
+
 private:
+	MethodDeclaration *LookupIdentifier(const ModuleIdentifier *identifier);
+
 	std::stack<SymbolTable *> m_scopes;
 };
 

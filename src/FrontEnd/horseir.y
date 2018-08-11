@@ -27,14 +27,19 @@ void yyerror(const char *s)
 	#include "HorseIR/Tree/Expressions/CastExpression.h"
 	#include "HorseIR/Tree/Expressions/Expression.h"
 	#include "HorseIR/Tree/Expressions/Identifier.h"
-	#include "HorseIR/Tree/Expressions/Literal.h"
 	#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
-	#include "HorseIR/Tree/Expressions/Symbol.h"
+	#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/IntLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/FloatLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/StringLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
 	#include "HorseIR/Tree/Statements/AssignStatement.h"
 	#include "HorseIR/Tree/Statements/ReturnStatement.h"
 	#include "HorseIR/Tree/Statements/Statement.h"
 	#include "HorseIR/Tree/Types/Type.h"
 	#include "HorseIR/Tree/Types/BasicType.h"
+	#include "HorseIR/Tree/Types/DictionaryType.h"
 	#include "HorseIR/Tree/Types/ListType.h"
 	#include "HorseIR/Tree/Types/TableType.h"
 }
@@ -43,7 +48,7 @@ void yyerror(const char *s)
 %error-verbose
 
 %union {
-	long int_val;
+	std::int64_t int_val;
 	double float_val;
 	std::string *string_val;
 
@@ -51,9 +56,9 @@ void yyerror(const char *s)
 	std::vector<HorseIR::Parameter *> *parameters;
 	std::vector<HorseIR::Statement *> *statements;
 	std::vector<HorseIR::Expression *> *expressions;
-	std::vector<std::string> *strings;
-	std::vector<long> *ints;
-	std::vector<double> *floats;
+	std::vector<std::string> *string_list;
+	std::vector<std::int64_t> *int_list;
+	std::vector<double> *float_list;
 
 	HorseIR::ModuleContent *module_content;
 	HorseIR::Parameter *parameter;
@@ -65,28 +70,27 @@ void yyerror(const char *s)
 }
 
 %token '(' ')' '{' '}' '<' '>'
-%token tBOOL tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tLIST tTABLE tDATE
+%token tBOOL tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tMONTH tDATE tDATETIME tMINUTE tSECOND tTIME tFUNCTION
+%token tLIST tDICTIONARY tENUM tTABLE tKTABLE
 %token tMODULE tIMPORT tDEF tKERNEL tCHECKCAST tRETURN
 %token <int_val> tINTVAL tDATEVAL
 %token <float_val> tFLOATVAL
-%token <string_val> tSTRINGVAL
-%token <string_val> tSYMBOLVAL
-%token <string_val> tIDENTIFIER
+%token <string_val> tSTRINGVAL tSYMBOLVAL tIDENTIFIER
 
 %type <module_contents> module_contents
 %type <module_content> module_content
 %type <parameters> parametersne parameters
 %type <parameter> parameter
 %type <type> type
-%type <basic_type> int_type float_type symbol_type
+%type <basic_type> int_type float_type
 %type <statements> statements
 %type <statement> statement
 %type <module_identifier> module_identifier
 %type <expressions> literals literalsne
-%type <expression> expression call literal
-%type <ints> int_list date_list
-%type <floats> float_list
-%type <strings> string_list
+%type <expression> expression call literal int_literal float_literal string_literal symbol_literal date_literal function_literal
+%type <int_list> int_list date_list
+%type <float_list> float_list
+%type <string_list> string_list symbol_list
 
 %start program
 
@@ -120,11 +124,19 @@ type : '?'                                                                      
      | tBOOL                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Bool); }
      | int_type                                                                 { $$ = $1; }
      | float_type                                                               { $$ = $1; }
-     | symbol_type                                                              { $$ = $1; }
+     | tSYMBOL                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Symbol); }
      | tSTRING                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::String); }
-     | tTABLE                                                                   { $$ = new HorseIR::TableType(); }
-     | tDATE                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64); } /* TODO date type */
+     | tCOMPLEX                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Complex); }
+     | tMONTH                                                                   { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Month); }
+     | tDATE                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Date); }
+     | tDATETIME                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::DateTime); }
+     | tMINUTE                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Minute); }
+     | tSECOND                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Second); }
+     | tTIME                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Time); }
+     | tFUNCTION                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Function); }
      | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
+     | tTABLE                                                                   { $$ = new HorseIR::TableType(); }
+     | tDICTIONARY '<' type ',' type '>'                                        { $$ = new HorseIR::DictionaryType($3, $5); }
      ;
 
 int_type : tI8                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int8); }
@@ -136,9 +148,6 @@ int_type : tI8                                                                  
 float_type : tF32                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Float32); }
            | tF64                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Float64); }
            ;
-
-symbol_type : tSYMBOL                                                           { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Symbol); }
-	    ;
 
 statements : statements statement                                               { $1->push_back($2); $$ = $1; }
 	   | %empty                                                             { $$ = new std::vector<HorseIR::Statement *>(); }
@@ -170,33 +179,57 @@ literalsne : literalsne ',' literal                                             
            ;
 
 literal : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }
-	| tSYMBOLVAL ':' symbol_type                                            { $$ = new HorseIR::Symbol(*$1, $3); }
-	| int_list ':' int_type                                                 { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
-        | '(' int_list ')' ':' int_type                                         { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
-	| int_list ':' float_type                                               { $$ = new HorseIR::Literal<int64_t>(*$1, $3); }
-        | '(' int_list ')' ':' float_type                                       { $$ = new HorseIR::Literal<int64_t>(*$2, $5); }
-	| float_list ':' float_type                                             { $$ = new HorseIR::Literal<double>(*$1, $3); }
-        | '(' float_list ')' ':' float_type                                     { $$ = new HorseIR::Literal<double>(*$2, $5); }
-        | string_list ':' tSTRING                                               { $$ = new HorseIR::Literal<std::string>(*$1, new HorseIR::BasicType(HorseIR::BasicType::Kind::String)); }
-        | '(' string_list ')' ':' tSTRING                                       { $$ = new HorseIR::Literal<std::string>(*$2, new HorseIR::BasicType(HorseIR::BasicType::Kind::String)); }
-        | date_list ':' tDATE                                                   { $$ = new HorseIR::Literal<int64_t>(*$1, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64)); }
-        | '(' date_list ')' ':' tDATE                                           { $$ = new HorseIR::Literal<int64_t>(*$2, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64)); }
+        | int_literal                                                           { $$ = $1; }
+        | float_literal                                                         { $$ = $1; }
+	| string_literal                                                        { $$ = $1; }
+	| symbol_literal                                                        { $$ = $1; }
+        | date_literal                                                          { $$ = $1; }
+        | function_literal                                                      { $$ = $1; }
         ;
 
+int_literal : tINTVAL ':' int_type                                              { $$ = HorseIR::CreateIntLiteral($1, $3); }
+            | '(' int_list ')' ':' int_type                                     { $$ = HorseIR::CreateIntLiteral(*$2, $5); }
+
 int_list : int_list ',' tINTVAL                                                 { $1->push_back($3); $$ = $1; } 
-	 | tINTVAL                                                              { $$ = new std::vector<long>({$1}); }
+	 | tINTVAL                                                              { $$ = new std::vector<std::int64_t>({$1}); }
          ;
+
+float_literal : tINTVAL ':' float_type                                          { $$ = HorseIR::CreateFloatLiteral($1, $3); }
+              | '(' int_list ')' ':' float_type                                 { $$ = HorseIR::CreateFloatLiteral(*$2, $5); }
+              | tFLOATVAL ':' float_type                                        { $$ = HorseIR::CreateFloatLiteral($1, $3); }
+              | '(' float_list ')' ':' float_type                               { $$ = HorseIR::CreateFloatLiteral(*$2, $5); }
+              ;
 
 float_list : float_list ',' tFLOATVAL                                           { $1->push_back($3); $$ = $1; } 
            | tFLOATVAL                                                          { $$ = new std::vector<double>({$1}); }
            ;
 
+string_literal : tSTRINGVAL ':' tSTRING                                         { $$ = new HorseIR::StringLiteral(*$1); }
+               | '(' string_list ')' ':' tSTRING                                { $$ = new HorseIR::StringLiteral(*$2); }
+               ;
+
 string_list : string_list ',' tSTRINGVAL                                        { $1->push_back(*$3); $$ = $1; } 
 	    | tSTRINGVAL                                                        { $$ = new std::vector<std::string>({*$1}); }
             ;
 
+symbol_literal : tSYMBOLVAL ':' tSYMBOL                                         { $$ = new HorseIR::SymbolLiteral(*$1); }
+               | '(' symbol_list ')' ':' tSYMBOL                                { $$ = new HorseIR::SymbolLiteral(*$2); }
+               ;
+
+symbol_list : symbol_list ',' tSYMBOLVAL                                        { $1->push_back(*$3); $$ = $1; } 
+	    | tSYMBOLVAL                                                        { $$ = new std::vector<std::string>({*$1}); }
+            ;
+
+date_literal : tDATEVAL ':' tDATE                                               { $$ = new HorseIR::DateLiteral($1); }
+             | '(' date_list ')' ':' tDATE                                      { $$ = new HorseIR::DateLiteral(*$2); }
+             ;
+
 date_list : date_list ',' tDATEVAL                                              { $1->push_back($3); $$ = $1; } 
 	  | tDATEVAL                                                            { $$ = new std::vector<long>({$1}); }
           ;
+
+function_literal : '@' module_identifier                                        { $$ = new HorseIR::FunctionLiteral($2); }
+                 | '@' tIDENTIFIER                                              { $$ = new HorseIR::FunctionLiteral(new HorseIR::ModuleIdentifier(*$2)); }
+                 ;
 
 %%

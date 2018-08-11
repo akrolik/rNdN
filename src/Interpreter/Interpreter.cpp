@@ -13,7 +13,7 @@
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Symbol.h"
+#include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 
@@ -199,7 +199,7 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::ve
 		{
 			case HorseIR::Type::Kind::Basic:
 				//TODO: Use shape information to allocate the correct size
-				returnData = Runtime::DataVector::CreateVector(static_cast<const HorseIR::BasicType *>(returnType), 1);
+				returnData = Runtime::DataVector::CreateVector(static_cast<HorseIR::BasicType *>(returnType), 1);
 				break;
 			defualt:
 				Utils::Logger::LogError("Unsupported return type " + returnType->ToString());
@@ -276,26 +276,26 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::BuiltinMethod *method, const 
 		case HorseIR::BuiltinMethod::Kind::ColumnValue:
 		{
 			auto table = static_cast<Runtime::DataTable *>(m_expressionMap.at(arguments.at(0)));
-			auto columnSymbol = static_cast<const HorseIR::Symbol *>(arguments.at(1));
+			auto columnSymbol = static_cast<const HorseIR::SymbolLiteral *>(arguments.at(1));
 
 			if (columnSymbol->GetCount() != 1)
 			{
 				Utils::Logger::LogError("Builtin function '" + method->GetName() + "' expects a single column argument");
 			}
 
-			return table->GetColumn(columnSymbol->GetName(0));
+			return table->GetColumn(columnSymbol->GetValue(0));
 		}
 		case HorseIR::BuiltinMethod::Kind::LoadTable:
 		{
 			auto dataRegistry = m_runtime.GetDataRegistry();
-			auto tableSymbol = static_cast<const HorseIR::Symbol *>(arguments.at(0));
+			auto tableSymbol = static_cast<const HorseIR::SymbolLiteral *>(arguments.at(0));
 
 			if (tableSymbol->GetCount() != 1)
 			{
 				Utils::Logger::LogError("Builtin function '" + method->GetName() + "' expects a single table argument");
 			}
 
-			return dataRegistry.GetTable(tableSymbol->GetName(0));
+			return dataRegistry.GetTable(tableSymbol->GetValue(0));
 		}
 		default:
 			Utils::Logger::LogError("Builtin function '" + method->GetName() + "' not implemented");
@@ -369,11 +369,11 @@ void Interpreter::Visit(HorseIR::Identifier *identifier)
 	m_expressionMap.insert({identifier, m_variableMap.at(identifier->GetString())});
 }
 
-void Interpreter::Visit(HorseIR::Symbol *symbol)
+void Interpreter::Visit(HorseIR::SymbolLiteral *literal)
 {
 	// Create a vector of symbols from the literal
 
-	m_expressionMap.insert({symbol, new Runtime::TypedDataVector<std::string>(symbol->GetLiteralType(), symbol->GetNames())});
+	m_expressionMap.insert({literal, new Runtime::TypedDataVector<std::string>(static_cast<HorseIR::BasicType *>(literal->GetType()), literal->GetValues())});
 }
 
 }

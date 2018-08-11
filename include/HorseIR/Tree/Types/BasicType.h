@@ -29,7 +29,8 @@ public:
 		DateTime,
 		Minute,
 		Second,
-		Time
+		Time,
+		Function
 	};
 
 	BasicType(Kind kind) : Type(Type::Kind::Basic), m_kind(kind) {}
@@ -55,7 +56,7 @@ public:
 			case Kind::Float64:
 				return "f64";
 			case Kind::Complex:
-				return "complex";
+				return "clex";
 			case Kind::Symbol:
 				return "sym";
 			case Kind::String:
@@ -72,6 +73,8 @@ public:
 				return "ss";
 			case Kind::Time:
 				return "tt";
+			case Kind::Function:
+				return "func";
 			default:
 				return "<unknown>";
 		}
@@ -115,6 +118,8 @@ public:
 				return "second";
 			case Kind::Time:
 				return "time";
+			case Kind::Function:
+				return "function";
 			default:
 				return "<unknown>";
 		}

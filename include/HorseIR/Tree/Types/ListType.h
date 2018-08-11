@@ -12,9 +12,9 @@ namespace HorseIR {
 class ListType : public Type
 {
 public:
-	ListType(const Type *elementType) : Type(Type::Kind::List), m_elementType(elementType) {}
+	ListType(Type *elementType) : Type(Type::Kind::List), m_elementType(elementType) {}
 
-	const Type *GetElementType() const { return m_elementType; }
+	Type *GetElementType() const { return m_elementType; }
 
 	std::string ToString() const override
 	{
@@ -35,7 +35,7 @@ public:
 	}
 
 private:
-	const Type *m_elementType = nullptr;
+	Type *m_elementType = nullptr;
 };
 
 }

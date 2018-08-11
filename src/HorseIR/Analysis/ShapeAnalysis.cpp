@@ -7,8 +7,7 @@
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literal.h"
-#include "HorseIR/Tree/Expressions/Symbol.h"
+#include "HorseIR/Tree/Expressions/Literals/Literal.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 
 #include "Utils/Logger.h"
@@ -168,24 +167,24 @@ void ShapeAnalysis::Visit(Identifier *identifier)
 	// identifier->SetShape(identifier->GetDeclaration()->GetShape());
 }
 
-void ShapeAnalysis::Visit(Literal<int64_t> *literal)
-{
-	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
-}
+// void ShapeAnalysis::Visit(Literal<int64_t> *literal)
+// {
+// 	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
+// }
 
-void ShapeAnalysis::Visit(Literal<double> *literal)
-{
-	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
-}
+// void ShapeAnalysis::Visit(Literal<double> *literal)
+// {
+// 	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
+// }
 
-void ShapeAnalysis::Visit(Literal<std::string> *literal)
-{
-	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
-}
+// void ShapeAnalysis::Visit(Literal<std::string> *literal)
+// {
+// 	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
+// }
 
-void ShapeAnalysis::Visit(Symbol *symbol)
-{
-	// symbol->SetShape(new Shape(Shape::Kind::Vector, symbol->GetCount()));
-}
+// void ShapeAnalysis::Visit(Symbol *symbol)
+// {
+// 	// symbol->SetShape(new Shape(Shape::Kind::Vector, symbol->GetCount()));
+// }
 
 }

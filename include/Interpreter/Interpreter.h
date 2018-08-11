@@ -23,7 +23,7 @@ public:
 	void Visit(HorseIR::CastExpression *cast) override;
 	void Visit(HorseIR::CallExpression *call) override;
 	void Visit(HorseIR::Identifier *identifier) override;
-	void Visit(HorseIR::Symbol *symbol) override;
+	void Visit(HorseIR::SymbolLiteral *literal) override;
 
 private:
 	Runtime::Runtime& m_runtime;

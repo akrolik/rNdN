@@ -5,7 +5,7 @@
 namespace Runtime {
 
 template<typename T>
-void DataRegistry::LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size)
+void DataRegistry::LoadDebugData(DataTable *table, HorseIR::BasicType *type, unsigned long size)
 {
 	std::vector<T> zeros(size);
 	std::vector<T> ones(size);

@@ -8,11 +8,11 @@
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literal.h"
-#include "HorseIR/Tree/Expressions/Symbol.h"
+#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/ListType.h"
+#include "HorseIR/Tree/Types/FunctionType.h"
 #include "HorseIR/Tree/Types/TableType.h"
 
 #include "Utils/Logger.h"
@@ -50,43 +50,55 @@ void TypeAnalysis::Visit(CallExpression *call)
 	// Analyze the function according to the type rules
 
 	auto method = call->GetMethod();
+	auto arguments = call->GetArguments();
+	std::vector<Type *> argumentTypes;
+	for (auto argument : arguments)
+	{
+		argumentTypes.push_back(argument->GetType());
+	}
+	call->SetType(AnalyzeCall(method, argumentTypes));
+}
+
+Type *TypeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vector<Type *>& argumentTypes)
+{
 	switch (method->GetKind())
 	{
 		case MethodDeclaration::Kind::Builtin:
-			call->SetType(AnalyzeCall(static_cast<const BuiltinMethod *>(method), call->GetArguments()));
-			break;
+			return AnalyzeCall(static_cast<const BuiltinMethod *>(method), argumentTypes);
 		case MethodDeclaration::Kind::Definition:
-			call->SetType(static_cast<const Method *>(method)->GetReturnType());
-			break;
+			//TODO: Analyze arguments
+			return static_cast<const Method *>(method)->GetReturnType();
+		default:
+			Utils::Logger::LogError("Unsupported method kind");
 	}
 }
 
-[[noreturn]] void TypeError(const BuiltinMethod *method, const std::vector<Expression *>& arguments)
+[[noreturn]] void TypeError(const BuiltinMethod *method, const std::vector<Type *>& argumentTypes)
 {
 	std::string message = "Incompatible arguments [";
 	bool first = true;
-	for (const auto& argument : arguments)
+	for (const auto& argumentType : argumentTypes)
 	{
 		if (!first)
 		{
 			message += ", ";
 		}
 		first = false;
-		message += argument->GetType()->ToString();
+		message += argumentType->ToString();
 	}
 	message += "] to builtin function '" + method->GetName() + "'";
 	Utils::Logger::LogError(message);
 }
 
-const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments)
+Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Type *>& argumentTypes)
 {
 	// Check the argument count against method
 
-	auto argumentCount = arguments.size();
+	auto argumentCount = argumentTypes.size();
 	auto parameterCount = method->GetParameterCount();
 	if (argumentCount != parameterCount)
 	{
-		TypeError(method, arguments);
+		TypeError(method, argumentTypes);
 	}
 
 	switch (method->GetKind())
@@ -98,13 +110,13 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::Floor:
 		case BuiltinMethod::Kind::Round:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			return inputType;
 		}
 		case BuiltinMethod::Kind::Negate:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			if (IsBoolType(inputType))
 			{
@@ -114,13 +126,13 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Sign:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			return new BasicType(BasicType::Kind::Int16);
 		}
 		case BuiltinMethod::Kind::Not:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsBoolType(inputType));
 			return inputType;
 		}
@@ -144,7 +156,7 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::HyperbolicInverseSine:
 		case BuiltinMethod::Kind::HyperbolicInverseTangent:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			if (IsExtendedType(inputType))
 			{
@@ -159,24 +171,24 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::Equal:
 		case BuiltinMethod::Kind::NotEqual:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsComparableTypes(inputType0, inputType1));
 			return new BasicType(BasicType::Kind::Bool);
 		}
 		case BuiltinMethod::Kind::Plus:
 		case BuiltinMethod::Kind::Minus:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
 			return WidestType(inputType0, inputType1);
 		}
 		case BuiltinMethod::Kind::Multiply:
 		case BuiltinMethod::Kind::Divide:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
 			if (IsExtendedType(inputType0) || IsExtendedType(inputType1))
 			{
@@ -188,8 +200,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::LogarithmBase:
 		case BuiltinMethod::Kind::Modulo:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
 			return new BasicType(BasicType::Kind::Float64);
 		}
@@ -199,20 +211,20 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::Nor:
 		case BuiltinMethod::Kind::Xor:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsBoolType(inputType0) && IsBoolType(inputType1));
 			return inputType0;
 		}
 		case BuiltinMethod::Kind::Unique:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsBasicType(inputType));
 			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Where:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			if (IsListType(inputType) && IsBoolType(static_cast<const ListType *>(inputType)->GetElementType()))
 			{
 				return new ListType(new BasicType(BasicType::Kind::Int64));
@@ -225,7 +237,7 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Group:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			if (IsBasicType(inputType) || IsListType(inputType))
 			{
 				return new DictionaryType(
@@ -237,8 +249,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Append:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			if (IsRealType(inputType0) && IsRealType(inputType1))
 			{
 				return WidestType(inputType0, inputType1);
@@ -248,22 +260,22 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Like:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsStringType(inputType0) && IsStringType(inputType1));
 			return new BasicType(BasicType::Kind::Bool);
 		}
 		case BuiltinMethod::Kind::Compress:
 		{
-			auto predicateType = arguments.at(0)->GetType();
-			auto dataType = arguments.at(1)->GetType();
+			auto predicateType = argumentTypes.at(0);
+			auto dataType = argumentTypes.at(1);
 			RequireType(IsBoolType(predicateType) && IsBasicType(dataType));
 			return dataType;
 		}
 		case BuiltinMethod::Kind::IndexOf:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(
 				(IsRealType(inputType0) && IsRealType(inputType1)) ||
 				(IsStringType(inputType0) && IsStringType(inputType1)) ||
@@ -273,8 +285,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Order:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsBoolType(inputType1));
 			if (IsBasicType(inputType0) && !IsComplexType(inputType0))
 			{
@@ -288,8 +300,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Member:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(
 				(IsRealType(inputType0) && IsRealType(inputType1)) ||
 				(IsBasicType(inputType0) && IsBasicType(inputType1) && *inputType0 == *inputType1)
@@ -298,8 +310,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Vector:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsIntegerType(inputType0) && (IsBasicType(inputType1) || IsListType(inputType1)));
 			return inputType1;
 		}
@@ -307,13 +319,13 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::Length:
 		case BuiltinMethod::Kind::Count:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			//TODO: Are there restrictions on the input type?
 			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Sum:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			if (IsFloatType(inputType))
 			{
@@ -323,7 +335,7 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Average:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			if (IsExtendedType(inputType))
 			{
@@ -334,28 +346,71 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		case BuiltinMethod::Kind::Minimum:
 		case BuiltinMethod::Kind::Maximum:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsRealType(inputType));
 			return inputType;
 		}
 		case BuiltinMethod::Kind::Raze:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsListType(inputType));
 			return static_cast<const ListType *>(inputType)->GetElementType();
 		}
 		case BuiltinMethod::Kind::Enlist:
 		{
-			return new ListType(arguments.at(0)->GetType());
+			return new ListType(argumentTypes.at(0));
 		}
 		case BuiltinMethod::Kind::ToList:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsBasicType(inputType));
 			return new ListType(inputType);
 		}
 		case BuiltinMethod::Kind::Each:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			RequireType(IsFunctionType(inputType0) && IsListType(inputType1));
+
+			auto function = static_cast<FunctionType *>(inputType0)->GetMethod();
+			auto returnType = AnalyzeCall(function, {static_cast<ListType *>(inputType1)->GetElementType()});
+			return new ListType(returnType);
+		}
 		case BuiltinMethod::Kind::EachItem:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			auto inputType2 = argumentTypes.at(2);
+			RequireType(
+				IsFunctionType(inputType0) && (
+					(IsBasicType(inputType1) || IsListType(inputType1)) ||
+					(IsBasicType(inputType2) || IsListType(inputType2))
+				)
+			);
+
+			auto function = static_cast<FunctionType *>(inputType0)->GetMethod();
+
+			auto unboxed1 = inputType1;
+			auto unboxed2 = inputType2;
+			bool unboxed = false;
+			if (IsListType(unboxed1))
+			{
+				unboxed1 = static_cast<ListType *>(unboxed1)->GetElementType();
+				unboxed = true;
+			}
+			if (IsListType(unboxed2))
+			{
+				unboxed2 = static_cast<ListType *>(unboxed2)->GetElementType();
+				unboxed = true;
+			}
+		       	
+			auto returnType = AnalyzeCall(function, {unboxed1, unboxed2});
+			if (unboxed)
+			{
+				return new ListType(returnType);
+			}
+			return returnType;
+		}
 		case BuiltinMethod::Kind::EachLeft:
 		case BuiltinMethod::Kind::EachRight:
 		{
@@ -374,14 +429,14 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Dictionary:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			return new DictionaryType(inputType0, inputType1);
 		}
 		case BuiltinMethod::Kind::Table:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsSymbolType(inputType0) && IsListType(inputType1));
 			return new TableType();
 		}
@@ -393,8 +448,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::ColumnValue:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsTableType(inputType0) && IsSymbolType(inputType1));
 
 			// A column value call is intentionally untyped since it comes from the runtime system.
@@ -404,7 +459,7 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::LoadTable:
 		{
-			auto inputType = arguments.at(0)->GetType();
+			auto inputType = argumentTypes.at(0);
 			RequireType(IsSymbolType(inputType));
 			return new TableType();
 		}
@@ -415,8 +470,8 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::Index:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsBasicType(inputType0));
 			if (IsIntegerType(inputType1))
 			{
@@ -430,9 +485,9 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 		}
 		case BuiltinMethod::Kind::IndexAssignment:
 		{
-			auto inputType0 = arguments.at(0)->GetType();
-			auto inputType1 = arguments.at(1)->GetType();
-			auto inputType2 = arguments.at(2)->GetType();
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			auto inputType2 = argumentTypes.at(2);
 			RequireType(IsBasicType(inputType0) && IsIntegerType(inputType1) && *inputType0 == *inputType2);
 			return inputType0;
 		}
@@ -442,7 +497,7 @@ const Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::ve
 	
 	// If we cannot infer a return type, report a type error
 
-	TypeError(method, arguments);
+	TypeError(method, argumentTypes);
 }
 
 void TypeAnalysis::Visit(CastExpression *cast)
@@ -472,24 +527,10 @@ void TypeAnalysis::Visit(Identifier *identifier)
 	identifier->SetType(identifier->GetDeclaration()->GetType());
 }
 
-void TypeAnalysis::Visit(Literal<int64_t> *literal)
+void TypeAnalysis::Visit(FunctionLiteral *literal)
 {
-	literal->SetType(literal->GetLiteralType());
-}
-
-void TypeAnalysis::Visit(Literal<double> *literal)
-{
-	literal->SetType(literal->GetLiteralType());
-}
-
-void TypeAnalysis::Visit(Literal<std::string> *literal)
-{
-	literal->SetType(literal->GetLiteralType());
-}
-
-void TypeAnalysis::Visit(Symbol *symbol)
-{
-	symbol->SetType(symbol->GetLiteralType());
+	auto type = static_cast<FunctionType *>(literal->GetType());
+	type->SetMethod(literal->GetMethod());
 }
 
 }

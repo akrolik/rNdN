@@ -16,11 +16,24 @@
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literal.h"
-#include "HorseIR/Tree/Expressions/Symbol.h"
+#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
+
+#include "HorseIR/Tree/Expressions/Literals/BoolLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/Int8Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int16Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int32Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int64Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Float32Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Float64Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/StringLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Types/FunctionType.h"
+#include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/TableType.h"
 
@@ -111,24 +124,64 @@ void Visitor::Visit(Identifier *identifier)
 	Visit(static_cast<Expression*>(identifier));
 }
 
-void Visitor::Visit(Literal<int64_t> *literal)
+void Visitor::Visit(ModuleIdentifier *identifier)
+{
+	Visit(static_cast<Expression*>(identifier));
+}
+
+void Visitor::Visit(BoolLiteral *literal)
 {
 	Visit(static_cast<Expression*>(literal));
 }
 
-void Visitor::Visit(Literal<double> *literal)
+void Visitor::Visit(Int8Literal *literal)
 {
 	Visit(static_cast<Expression*>(literal));
 }
 
-void Visitor::Visit(Literal<std::string> *literal)
+void Visitor::Visit(Int16Literal *literal)
 {
 	Visit(static_cast<Expression*>(literal));
 }
 
-void Visitor::Visit(Symbol *symbol)
+void Visitor::Visit(Int32Literal *literal)
 {
-	Visit(static_cast<Expression*>(symbol));
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(Int64Literal *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(Float32Literal *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(Float64Literal *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(StringLiteral *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(SymbolLiteral *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(DateLiteral *literal)
+{
+	Visit(static_cast<Expression*>(literal));
+}
+
+void Visitor::Visit(FunctionLiteral *literal)
+{
+	Visit(static_cast<Expression*>(literal));
 }
 
 void Visitor::Visit(Type *type)
@@ -137,6 +190,16 @@ void Visitor::Visit(Type *type)
 }
 
 void Visitor::Visit(BasicType *type)
+{
+	Visit(static_cast<Type*>(type));
+}
+
+void Visitor::Visit(FunctionType *type)
+{
+	Visit(static_cast<BasicType*>(type));
+}
+
+void Visitor::Visit(DictionaryType *type)
 {
 	Visit(static_cast<Type*>(type));
 }
