@@ -2,11 +2,11 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
-#include "Codegen/Generators/TypeDispatch.h"
-#include "Codegen/Generators/TypeUtils.h"
+#include "HorseIR/TypeUtils.h"
 
 #include "PTX/Instructions/Comparison/SelectInstruction.h"
 #include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
@@ -74,7 +74,7 @@ public:
 	{
 		auto arg1 = call->GetArgument(0);
 		auto arg2 = call->GetArgument(1);
-		auto type = WidestType(arg1->GetType(), arg2->GetType());
+		auto type = HorseIR::WidestType(arg1->GetType(), arg2->GetType());
 		Codegen::DispatchType(*this, type, target, call);
 	}
 

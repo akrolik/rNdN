@@ -6,7 +6,6 @@
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "Codegen/Generators/TypeDispatch.h"
-#include "Codegen/Generators/TypeUtils.h"
 
 #include "PTX/Instructions/Data/ConvertInstruction.h"
 
