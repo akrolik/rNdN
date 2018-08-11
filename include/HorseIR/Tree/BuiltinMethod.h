@@ -5,6 +5,8 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 
+#include "Utils/Logger.h"
+
 namespace HorseIR {
 
 class BuiltinMethod : public MethodDeclaration
@@ -369,6 +371,160 @@ public:
 	std::string SignatureString() const override
 	{
 		return "def " + m_name + "() __BUILTIN__";
+	}
+
+	size_t GetParameterCount() const
+	{
+		switch (m_kind)
+		{
+			// Unary functions
+			case Kind::Absolute:
+			case Kind::Negate:
+			case Kind::Ceiling:
+			case Kind::Floor:
+			case Kind::Round:
+			case Kind::Conjugate:
+			case Kind::Reciprocal:
+			case Kind::Sign:
+			case Kind::Pi:
+			case Kind::Not:
+			case Kind::Logarithm:
+			case Kind::Logarithm2:
+			case Kind::Logarithm10:
+			case Kind::SquareRoot:
+			case Kind::Exponential:
+			case Kind::Date:
+			case Kind::DateYear:
+			case Kind::DateMonth:
+			case Kind::DateDay:
+			case Kind::Time:
+			case Kind::TimeHour:
+			case Kind::TimeMinute:
+			case Kind::TimeSecond:
+			case Kind::TimeMillisecond:
+			case Kind::Cosine:
+			case Kind::Sine:
+			case Kind::Tangent:
+			case Kind::InverseCosine:
+			case Kind::InverseSine:
+			case Kind::InverseTangent:
+			case Kind::HyperbolicCosine:
+			case Kind::HyperbolicSine:
+			case Kind::HyperbolicTangent:
+			case Kind::HyperbolicInverseCosine:
+			case Kind::HyperbolicInverseSine:
+			case Kind::HyperbolicInverseTangent:
+				return 1;
+
+			// Binary functions
+			case Kind::Less:
+			case Kind::Greater:
+			case Kind::LessEqual:
+			case Kind::GreaterEqual:
+			case Kind::Equal:
+			case Kind::NotEqual:
+			case Kind::Plus:
+			case Kind::Minus:
+			case Kind::Multiply:
+			case Kind::Divide:
+			case Kind::Power:
+			case Kind::LogarithmBase:
+			case Kind::Modulo:
+			case Kind::And:
+			case Kind::Or:
+			case Kind::Nand:
+			case Kind::Nor:
+			case Kind::Xor:
+			case Kind::DatetimeDifference:
+				return 2;
+			
+			// Algebraic unary functions
+			case Kind::Unique:
+			case Kind::String:
+			case Kind::Length:
+			case Kind::Range:
+			case Kind::Factorial:
+			case Kind::Random:
+			case Kind::Seed:
+			case Kind::Flip:
+			case Kind::Reverse:
+			case Kind::Where:
+			case Kind::Group:
+				return 1;
+
+			// Algebraic binary functions
+			case Kind::Append:
+			case Kind::Like:
+			case Kind::Compress:
+			case Kind::Random_k:
+			case Kind::IndexOf:
+			case Kind::Take:
+			case Kind::Drop:
+			case Kind::Order:
+			case Kind::Member:
+			case Kind::Vector:
+				return 2;
+
+			// Reduction functions
+			case Kind::Count:
+			case Kind::Sum:
+			case Kind::Average:
+			case Kind::Minimum:
+			case Kind::Maximum:
+				return 1;
+
+			// List functions
+			case Kind::Raze:
+			case Kind::Enlist:
+			case Kind::ToList:
+				return 1;
+			case Kind::Each:
+				return 2;
+			case Kind::EachItem:
+			case Kind::EachLeft:
+			case Kind::EachRight:
+				return 3;
+			case Kind::Match:
+				return 2;
+			case Kind::Outer:
+				return 3;
+
+			// Database functions
+			case Kind::Enum:
+			case Kind::Dictionary:
+			case Kind::Table:
+			case Kind::KeyedTable:
+				return 2;
+			case Kind::Keys:
+				return 1;
+			case Kind::Values:
+			case Kind::Meta:
+				return 1;
+			case Kind::ColumnValue:
+				return 2;
+			case Kind::LoadTable:
+				return 1;
+			case Kind::Fetch:
+				return 1;
+			case Kind::DatetimeAdd:
+			case Kind::DatetimeSubtract:
+				return 3;
+
+			// Indexing functions
+			case Kind::Index:
+				return 2;
+			case Kind::IndexAssignment:
+				return 3;
+
+			// Others
+			case Kind::LoadCSV:
+			case Kind::Print:
+			case Kind::Format:
+				return 1;
+			case Kind::Fill:
+				return 2;
+		}
+		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}
 
 	std::string ToString() const override
