@@ -10,7 +10,8 @@ public:
 	enum class Kind {
 		Basic,
 		List,
-		Table
+		Table,
+		Dictionary
 	};
 
 	Kind GetKind() const { return m_kind; };

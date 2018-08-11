@@ -23,14 +23,20 @@ public:
 		Float64,
 		Complex,
 		Symbol,
-		String
+		String,
+		Month,
+		Date,
+		DateTime,
+		Minute,
+		Second,
+		Time
 	};
 
 	BasicType(Kind kind) : Type(Type::Kind::Basic), m_kind(kind) {}
 
-	std::string ToString() const override
+	static std::string KindString(Kind kind)
 	{
-		switch (m_kind)
+		switch (kind)
 		{
 			case Kind::Wildcard:
 				return "?";
@@ -54,9 +60,69 @@ public:
 				return "sym";
 			case Kind::String:
 				return "string";
+			case Kind::Month:
+				return "mm";
+			case Kind::Date:
+				return "dd";
+			case Kind::DateTime:
+				return "dt";
+			case Kind::Minute:
+				return "mn";
+			case Kind::Second:
+				return "ss";
+			case Kind::Time:
+				return "tt";
 			default:
 				return "<unknown>";
 		}
+	}
+
+	static std::string KindName(Kind kind)
+	{
+		switch (kind)
+		{
+			case Kind::Wildcard:
+				return "wildcard";
+			case Kind::Bool:
+				return "bool";
+			case Kind::Int8:
+				return "char";
+			case Kind::Int16:
+				return "short";
+			case Kind::Int32:
+				return "int";
+			case Kind::Int64:
+				return "long";
+			case Kind::Float32:
+				return "float";
+			case Kind::Float64:
+				return "double";
+			case Kind::Complex:
+				return "complex";
+			case Kind::Symbol:
+				return "symbol";
+			case Kind::String:
+				return "string";
+			case Kind::Month:
+				return "month";
+			case Kind::Date:
+				return "datee";
+			case Kind::DateTime:
+				return "datetime";
+			case Kind::Minute:
+				return "minute";
+			case Kind::Second:
+				return "second";
+			case Kind::Time:
+				return "time";
+			default:
+				return "<unknown>";
+		}
+	}
+
+	std::string ToString() const override
+	{
+		return KindString(m_kind);
 	}
 
 	Kind GetKind() const { return m_kind; }

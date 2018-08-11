@@ -26,12 +26,12 @@ public:
 
 	bool operator==(const ListType& other) const
 	{
-		return (*m_elementType == other);
+		return (*m_elementType == *other.m_elementType);
 	}
 
 	bool operator!=(const ListType& other) const
 	{
-		return (*m_elementType != other);
+		return (*m_elementType != *other.m_elementType);
 	}
 
 private:
