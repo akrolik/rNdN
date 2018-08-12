@@ -62,17 +62,17 @@ public:
 			case Kind::String:
 				return "string";
 			case Kind::Month:
-				return "mm";
+				return "month";
 			case Kind::Date:
-				return "dd";
+				return "date";
 			case Kind::Datetime:
 				return "dt";
 			case Kind::Minute:
-				return "mn";
+				return "minute";
 			case Kind::Second:
-				return "ss";
+				return "second";
 			case Kind::Time:
-				return "tt";
+				return "time";
 			case Kind::Function:
 				return "func";
 			default:

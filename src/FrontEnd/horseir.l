@@ -6,7 +6,9 @@
 
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
 
+#define TYPE_ACTION(TOKEN) { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return TOKEN; }
 bool _functionIdent = false;
+
 %}
 
 NONZERODIGIT [1-9]
@@ -41,28 +43,28 @@ LETTER [A-Za-z_]
 "."          return '.';
 ","          return ',';
 
-bool         return tBOOL;
-i8           return tI8;
-i16          return tI16;
-i32          return tI32;
-i64          return tI64;
-f32          return tF32;
-f64          return tF64;
-clex         return tCOMPLEX;
-sym          return tSYMBOL;
-str          return tSTRING;
-month        return tMONTH;
-date         return tDATE;
-dt           return tDATETIME;
-minute       return tMINUTE;
-second       return tSECOND;
-time         return tTIME;
-func         return tFUNCTION;
-list         { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tLIST; }
-dict         { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tDICTIONARY; }
-enum         { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tENUM; }
-table        { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tTABLE; }
-ktable       { if (_functionIdent) { yylval.string_val = new std::string(yytext); return tIDENTIFIER; } return tKTABLE; }
+bool         TYPE_ACTION(tBOOL);
+i8           TYPE_ACTION(tI8);
+i16          TYPE_ACTION(tI16);
+i32          TYPE_ACTION(tI32);
+i64          TYPE_ACTION(tI64);
+f32          TYPE_ACTION(tF32);
+f64          TYPE_ACTION(tF64);
+clex         TYPE_ACTION(tCOMPLEX);
+sym          TYPE_ACTION(tSYMBOL);
+str          TYPE_ACTION(tSTRING);
+month        TYPE_ACTION(tMONTH);
+date         TYPE_ACTION(tDATE);
+dt           TYPE_ACTION(tDATETIME);
+minute       TYPE_ACTION(tMINUTE);
+second       TYPE_ACTION(tSECOND);
+time         TYPE_ACTION(tTIME);
+func         TYPE_ACTION(tFUNCTION);
+list         TYPE_ACTION(tLIST);
+dict         TYPE_ACTION(tDICTIONARY);
+enum         TYPE_ACTION(tENUM);
+table        TYPE_ACTION(tTABLE);
+ktable       TYPE_ACTION(tKTABLE);
 
 module       return tMODULE;
 import       return tIMPORT;
