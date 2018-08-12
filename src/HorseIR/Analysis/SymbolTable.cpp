@@ -40,7 +40,7 @@ void SymbolTable::Insert(const std::string& name, Entry *symbol)
 
 	if (m_table.find(name) != m_table.end())
 	{
-		Utils::Logger::LogError("Identifier " + name + " is already defined in scope");
+		Utils::Logger::LogError("Identifier " + name + " is already defined in current scope");
 	}
 
 	m_table.insert({name, symbol});
@@ -74,11 +74,11 @@ Module *SymbolTable::GetModule(const std::string& name)
 	auto symbol = Get(name);
 	if (symbol == nullptr)
 	{
-		Utils::Logger::LogError("Module " + name + " is not defined in program");
+		Utils::Logger::LogError("Module " + name + " is not defined in current program");
 	}
 	else if (symbol->kind != SymbolTable::Entry::Kind::Module)
 	{
-		Utils::Logger::LogError(name + " is not a module");
+		Utils::Logger::LogError("'" + name + "' is not a module");
 	}
 	return static_cast<Module *>(symbol->node);
 }
@@ -88,11 +88,11 @@ MethodDeclaration *SymbolTable::GetMethod(const std::string& name)
 	auto symbol = Get(name);
 	if (symbol == nullptr)
 	{
-		Utils::Logger::LogError("Method " + name + " is not defined in module");
+		Utils::Logger::LogError("Method '" + name + "' cannot be found in the current module scope");
 	}
 	else if (symbol->kind != SymbolTable::Entry::Kind::Method)
 	{
-		Utils::Logger::LogError(name + " is not a method");
+		Utils::Logger::LogError("'" + name + "' is not a method");
 	}
 	return static_cast<MethodDeclaration *>(symbol->node);
 }
@@ -102,11 +102,11 @@ Declaration *SymbolTable::GetVariable(const std::string& name)
 	auto symbol = Get(name);
 	if (symbol == nullptr)
 	{
-		Utils::Logger::LogError("Variable " + name + " is not defined in method");
+		Utils::Logger::LogError("Variable '" + name + "' cannot be found in the current method scope");
 	}
 	else if (symbol->kind != SymbolTable::Entry::Kind::Variable)
 	{
-		Utils::Logger::LogError(name + " is not a variable");
+		Utils::Logger::LogError("'" + name + "' is not a variable");
 	}
 	return static_cast<Declaration *>(symbol->node);
 }
@@ -117,7 +117,7 @@ void SymbolTable::AddImport(const std::string& name, Entry *symbol)
 
 	if (m_imports.find(name) != m_imports.end())
 	{
-		Utils::Logger::LogError("Identifier " + name + " is already imported in module");
+		Utils::Logger::LogError("Duplicate import for module '" + name + "'");
 	}
 
 	m_imports.insert({name, symbol});

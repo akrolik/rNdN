@@ -615,7 +615,7 @@ void TypeAnalysis::Visit(CastExpression *cast)
 	}
 	else
 	{
-		Utils::Logger::LogError("Invalid cast, " + expressionType->ToString() + " cannot be cast to " + castType->ToString());
+		Utils::Logger::LogError("Invalid cast, '" + expressionType->ToString() + "' cannot be cast to '" + castType->ToString() + "'");
 	}
 }
 
@@ -626,7 +626,11 @@ void TypeAnalysis::Visit(Identifier *identifier)
 
 void TypeAnalysis::Visit(FunctionLiteral *literal)
 {
-	auto type = static_cast<FunctionType *>(literal->GetType());
+	auto type = GetFunctionType(literal->GetType());
+	if (type == nullptr)
+	{
+		Utils::Logger::LogError("Invalid type '" + literal->GetType()->ToString() + "' for function literal '" + literal->ToString() + "'");
+	}
 	type->SetMethod(literal->GetMethod());
 }
 
