@@ -1,17 +1,21 @@
 #include "Runtime/DataObjects/DataList.h"
 
+#include "HorseIR/TypeUtils.h"
+
 #include "Utils/Logger.h"
 
 namespace Runtime {
 
 void DataList::AddElement(DataVector *element)
 {
-	auto type = m_type->GetElementType();
-	if (type->GetKind() != HorseIR::Type::Kind::Basic || static_cast<HorseIR::BasicType *>(type)->GetKind() != HorseIR::BasicType::Kind::Wildcard)
+	// Check that this is either the same type as the list contents or that the list is heterogenous
+
+	auto elementType = m_type->GetElementType();
+	if (auto basicType = HorseIR::GetBasicType(elementType); basicType == nullptr || basicType->GetKind() != HorseIR::BasicType::Kind::Wildcard)
 	{
-		if (*type != *element->GetType())
+		if (*elementType != *element->GetType())
 		{
-			Utils::Logger::LogError("Cannot add element of type " + element->GetType()->ToString() + " to list of type " + m_type->ToString());
+			Utils::Logger::LogError("Cannot add element of type '" + element->GetType()->ToString() + "' to list of type '" + m_type->ToString() + "'");
 		}
 	}
 	m_elements.push_back(element);

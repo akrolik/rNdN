@@ -5,6 +5,7 @@
 #include "CUDA/KernelInvocation.h"
 #include "CUDA/Module.h"
 
+#include "HorseIR/TypeUtils.h"
 #include "HorseIR/Analysis/EntryAnalysis.h"
 #include "HorseIR/Analysis/ShapeAnalysis.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
@@ -372,8 +373,14 @@ void Interpreter::Visit(HorseIR::Identifier *identifier)
 void Interpreter::Visit(HorseIR::SymbolLiteral *literal)
 {
 	// Create a vector of symbols from the literal
-
-	m_expressionMap.insert({literal, new Runtime::TypedDataVector<std::string>(static_cast<HorseIR::BasicType *>(literal->GetType()), literal->GetValues())});
+	
+	auto type = literal->GetType();
+	if (!HorseIR::IsSymbolType(type))
+	{
+		Utils::Logger::LogError("Invalid type '" + type->ToString() + "' for symbol literal");
+	}
+	auto basicType = HorseIR::GetBasicType(type);
+	m_expressionMap.insert({literal, new Runtime::TypedDataVector<std::string>(basicType, literal->GetValues())});
 }
 
 }
