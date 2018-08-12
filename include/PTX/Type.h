@@ -78,6 +78,18 @@ struct BitSize
 	constexpr static std::underlying_type<Bits>::type NumBytes = NumBits / 8;
 };
 
+struct DynamicBitSize
+{
+	static std::underlying_type<Bits>::type GetBits(Bits B)
+	{
+		return static_cast<std::underlying_type<Bits>::type>(B);
+	}
+	static std::underlying_type<Bits>::type GetByte(Bits B)
+	{
+		return static_cast<std::underlying_type<Bits>::type>(B) / 8;
+	}
+};
+
 // @struct BitType
 //
 // Untyped data representation

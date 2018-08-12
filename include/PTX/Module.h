@@ -64,7 +64,7 @@ public:
 
 		code += ".version " + std::to_string(m_versionMajor) + "." + std::to_string(m_versionMinor) + "\n";
 		code += ".target " + m_target + "\n";
-		code += ".address_size " + std::to_string(static_cast<std::underlying_type<Bits>::type>(m_addressSize)) + "\n";
+		code += ".address_size " + std::to_string(DynamicBitSize::GetBits(m_addressSize)) + "\n";
 		code += "\n";
 
 		bool first = true;
@@ -87,7 +87,7 @@ public:
 		j["version_major"] = m_versionMajor;
 		j["version_minor"] = m_versionMinor;
 		j["target"] = m_target;
-		j["address_size"] = static_cast<std::underlying_type<Bits>::type>(m_addressSize);
+		j["address_size"] = DynamicBitSize::GetBits(m_addressSize);
 		for (const auto& declaration : m_declarations)
 		{
 			j["declarations"].push_back(declaration->ToJSON());
