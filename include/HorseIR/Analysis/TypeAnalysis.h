@@ -22,6 +22,7 @@ public:
 
 private:
 	Type *AnalyzeCall(const MethodDeclaration *method, const std::vector<Type *>& arguments);
+	Type *AnalyzeCall(const Method *method, const std::vector<Type *>& arguments);
 	Type *AnalyzeCall(const BuiltinMethod *method, const std::vector<Type *>& arguments);
 };
 

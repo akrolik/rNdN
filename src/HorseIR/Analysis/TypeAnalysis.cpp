@@ -3,6 +3,7 @@
 #include "HorseIR/TypeUtils.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
@@ -66,14 +67,13 @@ Type *TypeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vect
 		case MethodDeclaration::Kind::Builtin:
 			return AnalyzeCall(static_cast<const BuiltinMethod *>(method), argumentTypes);
 		case MethodDeclaration::Kind::Definition:
-			//TODO: Analyze arguments
-			return static_cast<const Method *>(method)->GetReturnType();
+			return AnalyzeCall(static_cast<const Method *>(method), argumentTypes);
 		default:
 			Utils::Logger::LogError("Unsupported method kind");
 	}
 }
 
-[[noreturn]] void TypeError(const BuiltinMethod *method, const std::vector<Type *>& argumentTypes)
+[[noreturn]] void TypeError(const MethodDeclaration *method, const std::vector<Type *>& argumentTypes)
 {
 	std::string message = "Incompatible arguments [";
 	bool first = true;
@@ -88,6 +88,28 @@ Type *TypeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vect
 	}
 	message += "] to builtin function '" + method->GetName() + "'";
 	Utils::Logger::LogError(message);
+}
+
+Type *TypeAnalysis::AnalyzeCall(const Method *method, const std::vector<Type *>& argumentTypes)
+{
+	auto argumentCount = argumentTypes.size();
+	auto parameterCount = method->GetParameterCount();
+	if (argumentCount != parameterCount)
+	{
+		TypeError(method, argumentTypes);
+	}
+
+	unsigned int index = 0;
+	for (const auto& parameter : method->GetParameters())
+	{
+		const auto& argumentType = argumentTypes.at(index);
+		if (*parameter->GetType() != *argumentType)
+		{
+			TypeError(method, argumentTypes);
+		}
+		index++;
+	}
+	return method->GetReturnType();
 }
 
 Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Type *>& argumentTypes)
