@@ -11,6 +11,7 @@
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
+#include "HorseIR/Tree/Statements/ReturnStatement.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/FunctionType.h"
@@ -23,6 +24,13 @@ namespace HorseIR {
 void TypeAnalysis::Analyze(Program *program)
 {
 	program->Accept(*this);
+}
+
+void TypeAnalysis::Visit(Method *method)
+{
+	m_currentMethod = method;
+	ForwardTraversal::Visit(method);
+	m_currentMethod = nullptr;
 }
 
 void TypeAnalysis::Visit(AssignStatement *assign)
@@ -810,6 +818,26 @@ void TypeAnalysis::Visit(CastExpression *cast)
 	else
 	{
 		Utils::Logger::LogError("Invalid cast, '" + expressionType->ToString() + "' cannot be cast to '" + castType->ToString() + "'");
+	}
+}
+
+void TypeAnalysis::Visit(ReturnStatement *ret)
+{
+	// Visit the returned identifier
+
+	ForwardTraversal::Visit(ret);
+
+	// Check the current function return type against that of the identifier
+
+	// The input value of a cast may not yet have a type, in which case we defer
+	// checking to the interpreter. Otherwise perform a static check
+
+	auto returnType = m_currentMethod->GetReturnType();
+	auto identifierType = ret->GetIdentifier()->GetType();
+
+	if (*returnType != *identifierType)
+	{
+		Utils::Logger::LogError("Method '" + m_currentMethod->GetName() + "' expects a return value of type '" + returnType->ToString() + "' but received '" + identifierType->ToString() + "'");
 	}
 }
 
