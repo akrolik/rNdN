@@ -12,7 +12,7 @@ namespace HorseIR {
 class DictionaryType : public Type
 {
 public:
-	DictionaryType(Type *keyType, Type *valueType) : Type(Type::Kind::Dictionary), m_keyType(keyType), m_valueType(valueType) {}
+	DictionaryType(Type *keyType, Type *valueType) : DictionaryType(Type::Kind::Dictionary, keyType, valueType) {}
 
 	Type *GetKeyType() const { return m_keyType; }
 	Type *GetValueType() const { return m_valueType; }
@@ -35,7 +35,9 @@ public:
 		return (*m_keyType != *other.m_keyType || *m_valueType != *other.m_valueType);
 	}
 
-private:
+protected:
+	DictionaryType(Type::Kind kind, Type *keyType, Type *valueType) : Type(kind), m_keyType(keyType), m_valueType(valueType) {}
+
 	Type *m_keyType = nullptr;
 	Type *m_valueType = nullptr;
 };

@@ -24,12 +24,12 @@ public:
 		Complex,
 		Symbol,
 		String,
-		Month,
+		Datetime,
 		Date,
-		DateTime,
+		Month,
+		Time,
 		Minute,
 		Second,
-		Time,
 		Function
 	};
 
@@ -65,7 +65,7 @@ public:
 				return "mm";
 			case Kind::Date:
 				return "dd";
-			case Kind::DateTime:
+			case Kind::Datetime:
 				return "dt";
 			case Kind::Minute:
 				return "mn";
@@ -110,7 +110,7 @@ public:
 				return "month";
 			case Kind::Date:
 				return "datee";
-			case Kind::DateTime:
+			case Kind::Datetime:
 				return "datetime";
 			case Kind::Minute:
 				return "minute";

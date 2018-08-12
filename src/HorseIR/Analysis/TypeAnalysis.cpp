@@ -177,7 +177,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Pi:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsNumberType(inputType));
+			Require(IsNumericType(inputType));
 			if (IsComplexType(inputType))
 			{
 				return inputType;
@@ -217,51 +217,57 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Date:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType));
+			Require(IsDatetimeType(inputType));
 			return new BasicType(BasicType::Kind::Date);
 		}
 		case BuiltinMethod::Kind::DateYear:
 		case BuiltinMethod::Kind::DateMonth:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType) || IsDateType(inputType) || IsMonthType(inputType));
+			Require(IsDatetimeType(inputType) || IsDateType(inputType) || IsMonthType(inputType));
 			return new BasicType(BasicType::Kind::Int16);
 		}
 		case BuiltinMethod::Kind::DateDay:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType) || IsDateType(inputType));
+			Require(IsDatetimeType(inputType) || IsDateType(inputType));
 			return new BasicType(BasicType::Kind::Int16);
 		}
 		case BuiltinMethod::Kind::Time:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType));
+			Require(IsDatetimeType(inputType));
 			return new BasicType(BasicType::Kind::Time);
 		}
 		case BuiltinMethod::Kind::TimeHour:
 		case BuiltinMethod::Kind::TimeMinute:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType) || IsMinuteType(inputType) || IsSecondType(inputType) || IsTimeType(inputType));
+			Require(IsDatetimeType(inputType) || IsMinuteType(inputType) || IsSecondType(inputType) || IsTimeType(inputType));
 			return new BasicType(BasicType::Kind::Int16);
 		}
 		case BuiltinMethod::Kind::TimeSecond:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType) || IsSecondType(inputType) || IsTimeType(inputType));
+			Require(IsDatetimeType(inputType) || IsSecondType(inputType) || IsTimeType(inputType));
 			return new BasicType(BasicType::Kind::Int16);
 		}
 		case BuiltinMethod::Kind::TimeMillisecond:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsDateTimeType(inputType) || IsTimeType(inputType));
+			Require(IsDatetimeType(inputType) || IsTimeType(inputType));
 			return new BasicType(BasicType::Kind::Int16);
 		}
 		case BuiltinMethod::Kind::Less:
 		case BuiltinMethod::Kind::Greater:
 		case BuiltinMethod::Kind::LessEqual:
 		case BuiltinMethod::Kind::GreaterEqual:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			Require(IsOrderableTypes(inputType0, inputType1));
+			return new BasicType(BasicType::Kind::Bool);
+		}
 		case BuiltinMethod::Kind::Equal:
 		case BuiltinMethod::Kind::NotEqual:
 		{
@@ -271,13 +277,51 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			return new BasicType(BasicType::Kind::Bool);
 		}
 		case BuiltinMethod::Kind::Plus:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			if (IsRealType(inputType0) && IsRealType(inputType1))
+			{
+				return WidestType(inputType0, inputType1);
+			}
+			else if (IsIntegerType(inputType0) && IsCalendarType(inputType1))
+			{
+				return inputType1;
+			}
+			else if (IsCalendarType(inputType0) && IsIntegerType(inputType1))
+			{
+				return inputType0;
+			}
+			break;
+		}
 		case BuiltinMethod::Kind::Minus:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			if (IsRealType(inputType0) && IsRealType(inputType1))
+			{
+				return WidestType(inputType0, inputType1);
+			}
+			else if (IsCalendarType(inputType0) && IsIntegerType(inputType1))
+			{
+				return inputType0;
+			}
+			else if (*inputType0 == *inputType1 && IsCalendarType(inputType0))
+			{
+				if (IsDatetimeType(inputType0))
+				{
+					return new BasicType(BasicType::Kind::Int64);
+				}
+				return new BasicType(BasicType::Kind::Int32);
+			}
+			break;
+		}
 		case BuiltinMethod::Kind::Multiply:
 		case BuiltinMethod::Kind::Divide:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsRealType(inputType0) && IsRealType(inputType1));
+			Require(IsNumericType(inputType0) && IsNumericType(inputType1));
 			return WidestType(inputType0, inputType1);
 		}
 		case BuiltinMethod::Kind::Power:
@@ -315,29 +359,57 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			Require(IsBoolType(inputType0) && IsBoolType(inputType1));
 			return inputType0;
 		}
+		case BuiltinMethod::Kind::DatetimeDifference:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			Require(*inputType0 == *inputType1 && IsCalendarType(inputType0));
+			if (IsDatetimeType(inputType0))
+			{
+				return new BasicType(BasicType::Kind::Int64);
+			}
+			return new BasicType(BasicType::Kind::Int32);
+		}
 		case BuiltinMethod::Kind::Unique:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsBasicType(inputType));
+			Require(IsValueType(inputType));
+			return new BasicType(BasicType::Kind::Int64);
+		}
+		case BuiltinMethod::Kind::String:
+		{
+			return new BasicType(BasicType::Kind::String);
+		}
+		case BuiltinMethod::Kind::Range:
+		case BuiltinMethod::Kind::Factorial:
+		{
+			auto inputType = argumentTypes.at(0);
+			Require(IsIntegerType(inputType));
+			return new BasicType(BasicType::Kind::Int64);
+		}
+		case BuiltinMethod::Kind::Reverse:
+		{
+			auto inputType = argumentTypes.at(0);
+			Require(IsValueType(inputType));
 			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Where:
 		{
 			auto inputType = argumentTypes.at(0);
-			if (auto listType = GetListType(inputType); listType != nullptr && IsBoolType(listType->GetElementType()))
-			{
-				return new ListType(new BasicType(BasicType::Kind::Int64));
-			}
-			else if (IsBoolType(inputType))
+			if (IsBoolType(inputType))
 			{
 				return new BasicType(BasicType::Kind::Int64);
+			}
+			else if (auto listType = GetListType(inputType); listType != nullptr && IsBoolType(listType->GetElementType()))
+			{
+				return new ListType(new BasicType(BasicType::Kind::Int64));
 			}
 			break;
 		}
 		case BuiltinMethod::Kind::Group:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsBasicType(inputType) || IsListType(inputType));
+			Require(IsValueType(inputType) || IsListType(inputType));
 			return new DictionaryType(
 				new BasicType(BasicType::Kind::Int64),
 				new ListType(new BasicType(BasicType::Kind::Int64))
@@ -351,6 +423,11 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			{
 				return WidestType(inputType0, inputType1);
 			}
+			else if (*inputType0 == *inputType1 && IsValueType(inputType0))
+			{
+				return inputType0;
+			}
+			//TODO: Enum cases
 			//TODO: List cases
 			break;
 		}
@@ -358,14 +435,14 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsStringType(inputType0) && IsStringType(inputType1));
+			Require(IsCharacterType(inputType0) && IsCharacterType(inputType1));
 			return new BasicType(BasicType::Kind::Bool);
 		}
 		case BuiltinMethod::Kind::Compress:
 		{
 			auto predicateType = argumentTypes.at(0);
 			auto dataType = argumentTypes.at(1);
-			Require(IsBoolType(predicateType) && IsBasicType(dataType));
+			Require(IsBoolType(predicateType) && IsValueType(dataType));
 			return dataType;
 		}
 		case BuiltinMethod::Kind::IndexOf:
@@ -377,22 +454,20 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 				(IsStringType(inputType0) && IsStringType(inputType1)) ||
 				(IsSymbolType(inputType0) && IsSymbolType(inputType1))
 			);
-			return new BasicType(BasicType::Kind::Int64);
+			return new BasicType(BasicType::Kind::Int32);
 		}
 		case BuiltinMethod::Kind::Order:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
+			Require(
+				IsRealType(inputType0) ||
+				IsCharacterType(inputType0) ||
+				IsCalendarType(inputType0) ||
+				IsListType(inputType0)
+			);
 			Require(IsBoolType(inputType1));
-			if (IsBasicType(inputType0) && !IsComplexType(inputType0))
-			{
-				return new BasicType(BasicType::Kind::Int32);
-			}
-			else if (IsListType(inputType1))
-			{
-				//TODO: List cases
-			}
-			break;
+			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Member:
 		{
@@ -400,7 +475,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			auto inputType1 = argumentTypes.at(1);
 			Require(
 				(IsRealType(inputType0) && IsRealType(inputType1)) ||
-				(IsBasicType(inputType0) && IsBasicType(inputType1) && *inputType0 == *inputType1)
+				(*inputType0 == *inputType1 && IsValueType(inputType0))
 			);
 			return new BasicType(BasicType::Kind::Bool);
 		}
@@ -408,7 +483,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsIntegerType(inputType0) && (IsBasicType(inputType1) || IsListType(inputType1)));
+			Require(IsIntegerType(inputType0) && (IsValueType(inputType1) || IsListType(inputType1)));
 			return inputType1;
 		}
 		// @count and @len are aliases
@@ -425,7 +500,11 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			{
 				return inputType;
 			}
-			return new BasicType(BasicType::Kind::Int64);
+			if (IsBasicType(inputType, BasicType::Kind::Int64))
+			{
+				return new BasicType(BasicType::Kind::Int64);
+			}
+			return new BasicType(BasicType::Kind::Int32);
 		}
 		case BuiltinMethod::Kind::Average:
 		{
@@ -448,7 +527,26 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto inputType = argumentTypes.at(0);
 			Require(IsListType(inputType));
-			return GetListType(inputType)->GetElementType();
+			auto elementType = GetListType(inputType)->GetElementType();
+			Require(IsValueType(elementType) && !IsBasicType(elementType, BasicType::Kind::Wildcard));
+			return elementType;
+		}
+		case BuiltinMethod::Kind::List:
+		{
+			Type *elementType = nullptr;
+			for (auto type : argumentTypes)
+			{
+				if (elementType == nullptr)
+				{
+					elementType = type;
+				}
+				else if (*elementType != *type)
+				{
+					elementType = new BasicType(BasicType::Kind::Wildcard);
+					break;
+				}
+			}
+			return new ListType(elementType);
 		}
 		case BuiltinMethod::Kind::Enlist:
 		{
@@ -457,7 +555,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::ToList:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsBasicType(inputType));
+			Require(IsValueType(inputType));
 			return new ListType(inputType);
 		}
 		case BuiltinMethod::Kind::Each:
@@ -480,8 +578,8 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			auto inputType2 = argumentTypes.at(2);
 			Require(
 				IsFunctionType(inputType0) && (
-					(IsBasicType(inputType1) || IsListType(inputType1)) ||
-					(IsBasicType(inputType2) || IsListType(inputType2))
+					(IsValueType(inputType1) || IsListType(inputType1)) ||
+					(IsValueType(inputType2) || IsListType(inputType2))
 				)
 			);
 
@@ -516,8 +614,16 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		}
 		case BuiltinMethod::Kind::Outer:
 		{
-			//TODO: Add outer product support
-			break;
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			auto inputType2 = argumentTypes.at(2);
+			Require(IsFunctionType(inputType0) && IsValueType(inputType1) && IsValueType(inputType2));
+
+			auto function = GetFunctionType(inputType0)->GetMethod();
+			auto returnType = AnalyzeCall(function, {inputType1, inputType2});
+			Require(IsBoolType(returnType));
+
+			return new ListType(new BasicType(BasicType::Kind::Wildcard));
 		}
 		case BuiltinMethod::Kind::Enum:
 		{
@@ -537,11 +643,67 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			Require(IsSymbolType(inputType0) && IsListType(inputType1));
 			return new TableType();
 		}
+		case BuiltinMethod::Kind::KeyedTable:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			Require(IsTableType(inputType0) && IsTableType(inputType1));
+			//TODO: KTable types
+			// return new KeyedTableType();
+		}
 		case BuiltinMethod::Kind::Keys:
+		{
+			auto inputType = argumentTypes.at(0);
+			if (IsDictionaryType(inputType))
+			{
+				GetDictionaryType(inputType)->GetKeyType();
+			}
+			else if (IsTableType(inputType))
+			{
+				GetTableType(inputType)->GetKeyType();
+			}
+			else if (IsEnumerationType(inputType))
+			{
+				//TODO: Enumeration types
+			}
+			else if (IsKeyedTableType(inputType))
+			{
+				//TODO: KTable types
+			}
+			break;
+		}
 		case BuiltinMethod::Kind::Values:
 		{
-			//TODO: Database functions
+			auto inputType = argumentTypes.at(0);
+			if (IsDictionaryType(inputType))
+			{
+				GetDictionaryType(inputType)->GetValueType();
+			}
+			else if (IsTableType(inputType))
+			{
+				GetTableType(inputType)->GetValueType();
+			}
+			else if (IsEnumerationType(inputType))
+			{
+				//TODO: Enumeration types
+			}
+			else if (IsKeyedTableType(inputType))
+			{
+				//TODO: KTable types
+			}
 			break;
+		}
+		case BuiltinMethod::Kind::Meta:
+		{
+			auto inputType = argumentTypes.at(0);
+			Require(IsTableType(inputType) || IsKeyedTableType(inputType));
+			return new TableType();
+		}
+		case BuiltinMethod::Kind::Fetch:
+		{
+			auto inputType = argumentTypes.at(0);
+			Require(IsEnumerationType(inputType));
+			//TODO: Enumeration types
 		}
 		case BuiltinMethod::Kind::ColumnValue:
 		{
@@ -560,18 +722,42 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			Require(IsSymbolType(inputType));
 			return new TableType();
 		}
-		case BuiltinMethod::Kind::Fetch:
+		case BuiltinMethod::Kind::DatetimeAdd:
+		case BuiltinMethod::Kind::DatetimeSubtract:
 		{
-			//TODO: @fetch type rules
-			break;
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			auto inputType2 = argumentTypes.at(2);
+			Require(IsCalendarType(inputType0) && IsIntegerType(inputType1) && IsSymbolType(inputType2));
+			return inputType0;
+		}
+		case BuiltinMethod::Kind::JoinIndex:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			auto inputType2 = argumentTypes.at(2);
+			Require(IsFunctionType(inputType0) &&
+				(IsValueType(inputType1) && IsValueType(inputType2)) ||
+				(IsListType(inputType1) && IsListType(inputType2))
+			);
+
+			auto function = GetFunctionType(inputType0)->GetMethod();
+			auto returnType = AnalyzeCall(function, {inputType1, inputType2});
+			Require(IsBoolType(returnType));
+
+			return new ListType(new BasicType(BasicType::Kind::Int64));
 		}
 		case BuiltinMethod::Kind::Index:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsBasicType(inputType0));
+			Require(IsValueType(inputType0));
 			if (IsIntegerType(inputType1))
 			{
+				if (IsCalendarType(inputType0) || IsCharacterType(inputType0) || IsComplexType(inputType0))
+				{
+					return new BasicType(BasicType::Kind::Float64);
+				}
 				return inputType0;
 			}
 			else if (auto listType = GetListType(inputType1); listType != nullptr && IsIntegerType(listType->GetElementType()))
@@ -585,7 +771,15 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			auto inputType2 = argumentTypes.at(2);
-			Require(IsBasicType(inputType0) && IsIntegerType(inputType1) && *inputType0 == *inputType2);
+			Require(IsValueType(inputType0) && IsIntegerType(inputType1) && IsAssignableType(inputType0, inputType2));
+			return inputType0;
+		}
+		case BuiltinMethod::Kind::SubString:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			auto inputType2 = argumentTypes.at(2);
+			Require(IsStringType(inputType0) && IsIntegerType(inputType1) && IsIntegerType(inputType2));
 			return inputType0;
 		}
 		default:
@@ -626,6 +820,8 @@ void TypeAnalysis::Visit(Identifier *identifier)
 
 void TypeAnalysis::Visit(FunctionLiteral *literal)
 {
+	// Propagate the method from the literal expression to the expression type
+
 	auto type = GetFunctionType(literal->GetType());
 	if (type == nullptr)
 	{

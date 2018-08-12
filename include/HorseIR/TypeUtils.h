@@ -2,6 +2,7 @@
 
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/FunctionType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 
@@ -32,6 +33,24 @@ static const ListType *GetListType(const Type *type)
 	if (type->GetKind() != Type::Kind::List)
 	{
 		return static_cast<const ListType *>(type);
+	}
+	return nullptr;
+}
+
+static const DictionaryType *GetDictionaryType(const Type *type)
+{
+	if (type->GetKind() != Type::Kind::Dictionary)
+	{
+		return static_cast<const DictionaryType *>(type);
+	}
+	return nullptr;
+}
+
+static const TableType *GetTableType(const Type *type)
+{
+	if (type->GetKind() != Type::Kind::Table)
+	{
+		return static_cast<const TableType *>(type);
 	}
 	return nullptr;
 }
@@ -78,6 +97,21 @@ static bool IsTableType(const Type *type)
 	return (type->GetKind() == Type::Kind::Table);
 }
 
+static bool IsDictionaryType(const Type *type)
+{
+	return (type->GetKind() == Type::Kind::Dictionary);
+}
+
+static bool IsEnumerationType(const Type *type)
+{
+	return (type->GetKind() == Type::Kind::Enumeration);
+}
+
+static bool IsKeyedTableType(const Type *type)
+{
+	return (type->GetKind() == Type::Kind::KeyedTable);
+}
+
 static bool IsBoolType(const Type *type)
 {                       
 	return IsBasicType(type, BasicType::Kind::Bool);
@@ -120,7 +154,7 @@ static bool IsRealType(const Type *type)
 	return IsIntegerType(type) || IsFloatType(type);
 }
 
-static bool IsNumberType(const Type *type)
+static bool IsNumericType(const Type *type)
 {
 	return IsRealType(type) || IsComplexType(type);
 }
@@ -135,18 +169,42 @@ static bool IsExtendedType(const Type *type)
 	return false;
 }
 
-static bool IsComparableTypes(const Type *type1, const Type *type2)
+static bool IsStringType(const Type *type)
 {
-	if (IsRealType(type1) && IsRealType(type2))
+	return IsBasicType(type, BasicType::Kind::String);
+}
+
+static bool IsSymbolType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Symbol);
+}
+
+static bool IsCharacterType(const Type *type)
+{
+	return IsStringType(type) || IsSymbolType(type);
+}
+
+static bool IsCalendarType(const Type *type)
+{
+	if (auto basicType = GetBasicType(type); basicType != nullptr)
 	{
-		return true;
+		switch (basicType->GetKind())
+		{
+			case BasicType::Kind::Datetime:
+			case BasicType::Kind::Date:
+			case BasicType::Kind::Month:
+			case BasicType::Kind::Time:
+			case BasicType::Kind::Minute:
+			case BasicType::Kind::Second:
+				return true;
+		}
 	}
 	return false;
 }
 
-static bool IsDateTimeType(const Type *type)
+static bool IsDatetimeType(const Type *type)
 {
-	return IsBasicType(type, BasicType::Kind::DateTime);
+	return IsBasicType(type, BasicType::Kind::Datetime);
 }
 
 static bool IsDateType(const Type *type)
@@ -174,14 +232,59 @@ static bool IsSecondType(const Type *type)
 	return IsBasicType(type, BasicType::Kind::Second);
 }
 
-static bool IsStringType(const Type *type)
-{                       
-	return IsBasicType(type, BasicType::Kind::String);
+static bool IsAssignableType(const Type *type1, const Type *type2)
+{
+	if (*type1 == *type2)
+	{
+		return true;
+	}
+
+	if (IsNumericType(type1) && IsNumericType(type2))
+	{
+		auto basicType1 = GetBasicType(type1);
+		auto basicType2 = GetBasicType(type2);
+
+		auto kind1 = static_cast<std::underlying_type<BasicType::Kind>::type>(basicType1->GetKind());
+		auto kind2 = static_cast<std::underlying_type<BasicType::Kind>::type>(basicType2->GetKind());
+
+		return kind1 > kind2;
+	}
+	return false;
 }
 
-static bool IsSymbolType(const Type *type)
-{                       
-	return IsBasicType(type, BasicType::Kind::Symbol);
+static bool IsOrderableTypes(const Type *type1, const Type *type2)
+{
+	if (IsRealType(type1) && IsRealType(type2))
+	{
+		return true;
+	}
+	if (*type1 == *type2 && (IsCalendarType(type1) || IsCharacterType(type1)))
+	{
+		return true;
+	}
+	return false;
+}
+
+static bool IsComparableTypes(const Type *type1, const Type *type2)
+{
+	if (IsRealType(type1) && IsRealType(type2))
+	{
+		return true;
+	}
+	if (*type1 == *type2 && (IsCalendarType(type1) || IsCharacterType(type1)))
+	{
+		return true;
+	}
+	return false;
+}
+
+static bool IsValueType(const Type *type)
+{
+	if (auto basicType = GetBasicType(type); basicType != nullptr)
+	{
+		return basicType->GetKind() != BasicType::Kind::Function;
+	}
+	return false;
 }
 
 static bool IsFunctionType(const Type *type)
@@ -191,7 +294,12 @@ static bool IsFunctionType(const Type *type)
 
 static BasicType *WidestType(const BasicType *type1, const BasicType *type2)
 {
-	if (type1->GetKind() == BasicType::Kind::Float64 ||
+	if (type1->GetKind() == BasicType::Kind::Complex ||
+		type2->GetKind() == BasicType::Kind::Complex)
+	{
+		return new BasicType(BasicType::Kind::Complex);
+	}
+	else if (type1->GetKind() == BasicType::Kind::Float64 ||
 		type2->GetKind() == BasicType::Kind::Float64)
 	{
 		return new BasicType(BasicType::Kind::Float64);

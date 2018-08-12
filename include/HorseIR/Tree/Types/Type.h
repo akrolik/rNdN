@@ -11,7 +11,9 @@ public:
 		Basic,
 		List,
 		Table,
-		Dictionary
+		Dictionary,
+		Enumeration,
+		KeyedTable
 	};
 
 	Kind GetKind() const { return m_kind; };
@@ -28,7 +30,9 @@ protected:
 }
 
 #include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/ListType.h"
+#include "HorseIR/Tree/Types/TableType.h"
 
 namespace HorseIR {
 
@@ -43,7 +47,9 @@ inline bool Type::operator==(const Type& other) const
 			case Kind::List:
 				return static_cast<const ListType&>(*this) == static_cast<const ListType&>(other);
 			case Kind::Table:
-				return true;
+				return static_cast<const TableType&>(*this) == static_cast<const TableType&>(other);
+			case Kind::Dictionary:
+				return static_cast<const DictionaryType&>(*this) == static_cast<const DictionaryType&>(other);
 		}
 	}
 	return false;
@@ -60,7 +66,9 @@ inline bool Type::operator!=(const Type& other) const
 			case Kind::List:
 				return static_cast<const ListType&>(*this) != static_cast<const ListType&>(other);
 			case Kind::Table:
-				return false;
+				return static_cast<const TableType&>(*this) != static_cast<const TableType&>(other);
+			case Kind::Dictionary:
+				return static_cast<const DictionaryType&>(*this) != static_cast<const DictionaryType&>(other);
 		}
 	}
 	return true;

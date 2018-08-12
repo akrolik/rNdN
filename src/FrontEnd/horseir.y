@@ -129,7 +129,7 @@ type : '?'                                                                      
      | tCOMPLEX                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Complex); }
      | tMONTH                                                                   { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Month); }
      | tDATE                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Date); }
-     | tDATETIME                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::DateTime); }
+     | tDATETIME                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Datetime); }
      | tMINUTE                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Minute); }
      | tSECOND                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Second); }
      | tTIME                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Time); }
