@@ -150,8 +150,9 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::Minimum:
 		case BuiltinMethod::Kind::Maximum:
 			return new Shape(Shape::Kind::Vector, 1);
-		case BuiltinMethod::Kind::Fill:
-			return new Shape(Shape::Kind::Vector, static_cast<Literal<int64_t> *>(arguments.at(0))->GetValue(0));
+			//TODO: @vector
+		// case BuiltinMethod::Kind::Fill:
+		// 	return new Shape(Shape::Kind::Vector, static_cast<Literal<int64_t> *>(arguments.at(0))->GetValue(0));
 		default:
 			Utils::Logger::LogError("Shape analysis does not support builtin method " + method->GetName());
 	}

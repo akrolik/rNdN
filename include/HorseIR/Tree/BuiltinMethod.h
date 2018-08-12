@@ -106,6 +106,7 @@ public:
 
 		// List
 		Raze,
+		List,
 		Enlist,
 		ToList,
 		Each,
@@ -123,11 +124,12 @@ public:
 		Keys,
 		Values,
 		Meta,
+		Fetch,
 		ColumnValue,
 		LoadTable,
-		Fetch,
 		DatetimeAdd,
 		DatetimeSubtract,
+		JoinIndex,
 
 		// Indexing
 		Index,
@@ -137,7 +139,7 @@ public:
 		LoadCSV,
 		Print,
 		Format,
-		Fill
+		SubString
 	};
 
 	static std::string BuiltinMethodName(Kind kind)
@@ -308,6 +310,8 @@ public:
 				return "max";
 			case Kind::Raze:
 				return "raze";
+			case Kind::List:
+				return "list";
 			case Kind::Enlist:
 				return "enlist";
 			case Kind::ToList:
@@ -338,16 +342,18 @@ public:
 				return "values";
 			case Kind::Meta:
 				return "meta";
+			case Kind::Fetch:
+				return "fetch";
 			case Kind::ColumnValue:
 				return "column_value";
 			case Kind::LoadTable:
 				return "load_table";
-			case Kind::Fetch:
-				return "fetch";
 			case Kind::DatetimeAdd:
 				return "datetime_add";
 			case Kind::DatetimeSubtract:
 				return "datetime_sub";
+			case Kind::JoinIndex:
+				return "join_index";
 			case Kind::Index:
 				return "index";
 			case Kind::IndexAssignment:
@@ -358,10 +364,10 @@ public:
 				return "print";
 			case Kind::Format:
 				return "format";
-			case Kind::Fill:
-				return "fill";
+			case Kind::SubString:
+				return "sub_string";
 		}
-		return "unknown";
+		return "<unknown>";
 	}
 
 	BuiltinMethod(Kind kind) : MethodDeclaration(MethodDeclaration::Kind::Builtin, BuiltinMethodName(kind)), m_kind(kind) {}
@@ -373,7 +379,9 @@ public:
 		return "def " + m_name + "() __BUILTIN__";
 	}
 
-	size_t GetParameterCount() const
+	constexpr static int VariadicParameterCount = -1;
+
+	int GetParameterCount() const
 	{
 		switch (m_kind)
 		{
@@ -475,6 +483,9 @@ public:
 
 			// List functions
 			case Kind::Raze:
+				return 1;
+			case Kind::List:
+				return VariadicParameterCount;
 			case Kind::Enlist:
 			case Kind::ToList:
 				return 1;
@@ -509,6 +520,8 @@ public:
 			case Kind::DatetimeAdd:
 			case Kind::DatetimeSubtract:
 				return 3;
+			case Kind::JoinIndex:
+				return 2;
 
 			// Indexing functions
 			case Kind::Index:
@@ -521,8 +534,8 @@ public:
 			case Kind::Print:
 			case Kind::Format:
 				return 1;
-			case Kind::Fill:
-				return 2;
+			case Kind::SubString:
+				return 3;
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

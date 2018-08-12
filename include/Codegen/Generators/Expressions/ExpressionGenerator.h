@@ -160,8 +160,9 @@ public:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Minimum);
 			case HorseIR::BuiltinMethod::Kind::Maximum:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Maximum);
-			case HorseIR::BuiltinMethod::Kind::Fill:
-				return new FillGenerator<B, T>(this->m_builder);
+			//TODO: Vector
+			// case HorseIR::BuiltinMethod::Kind::Fill:
+				// return new FillGenerator<B, T>(this->m_builder);
 		}
 		return nullptr;
 	}

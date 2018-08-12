@@ -99,6 +99,7 @@ static Module *BuiltinModule = new Module("Builtin", {
 
 	// List
 	new BuiltinMethod(BuiltinMethod::Kind::Raze),
+	new BuiltinMethod(BuiltinMethod::Kind::List),
 	new BuiltinMethod(BuiltinMethod::Kind::Enlist),
 	new BuiltinMethod(BuiltinMethod::Kind::ToList),
 	new BuiltinMethod(BuiltinMethod::Kind::Each),
@@ -116,11 +117,12 @@ static Module *BuiltinModule = new Module("Builtin", {
 	new BuiltinMethod(BuiltinMethod::Kind::Keys),
 	new BuiltinMethod(BuiltinMethod::Kind::Values),
 	new BuiltinMethod(BuiltinMethod::Kind::Meta),
+	new BuiltinMethod(BuiltinMethod::Kind::Fetch),
 	new BuiltinMethod(BuiltinMethod::Kind::ColumnValue),
 	new BuiltinMethod(BuiltinMethod::Kind::LoadTable),
-	new BuiltinMethod(BuiltinMethod::Kind::Fetch),
 	new BuiltinMethod(BuiltinMethod::Kind::DatetimeAdd),
 	new BuiltinMethod(BuiltinMethod::Kind::DatetimeSubtract),
+	new BuiltinMethod(BuiltinMethod::Kind::JoinIndex),
 
 	// Indexing
 	new BuiltinMethod(BuiltinMethod::Kind::Index),
@@ -130,7 +132,7 @@ static Module *BuiltinModule = new Module("Builtin", {
 	new BuiltinMethod(BuiltinMethod::Kind::LoadCSV),
 	new BuiltinMethod(BuiltinMethod::Kind::Print),
 	new BuiltinMethod(BuiltinMethod::Kind::Format),
-	new BuiltinMethod(BuiltinMethod::Kind::Fill)
+	new BuiltinMethod(BuiltinMethod::Kind::SubString)
 });
 
 }

@@ -21,6 +21,9 @@ public:
 	Method(const std::string& name, const std::vector<Parameter *>& parameters, Type *returnType, const std::vector<Statement *>& statements, bool kernel = false) : MethodDeclaration(MethodDeclaration::Kind::Definition, name), m_parameters(parameters), m_returnType(returnType), m_statements(statements), m_kernel(kernel) {}
 
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
+	size_t GetParameterCount() const { return m_parameters.size(); }
+
+
 	Type* GetReturnType() const { return m_returnType; }
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
 
