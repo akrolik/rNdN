@@ -122,6 +122,12 @@ public:
 			{
 				this->m_builder.AddStatement(new Op<T>(target, src1, src2, PTX::Float64Type::RoundingMode::Nearest));
 			}
+			else if constexpr(std::is_same<Op<T>, PTX::MultiplyInstruction<PTX::Int32Type>>::value)
+			{
+				auto instruction = new Op<T>(target, src1, src2);
+				instruction->SetLower(true);
+				this->m_builder.AddStatement(instruction);
+			}
 			else
 			{
 				this->m_builder.AddStatement(new Op<T>(target, src1, src2));
