@@ -2,20 +2,65 @@
 
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Types/FunctionType.h"
+#include "HorseIR/Tree/Types/ListType.h"
 
 #include "Utils/Logger.h"
 
 namespace HorseIR {
 
+static BasicType *GetBasicType(Type *type)
+{
+	if (type->GetKind() == Type::Kind::Basic)
+	{
+		return static_cast<BasicType *>(type);
+	}
+	return nullptr;
+}
+
+static const BasicType *GetBasicType(const Type *type)
+{
+	if (type->GetKind() == Type::Kind::Basic)
+	{
+		return static_cast<const BasicType *>(type);
+	}
+	return nullptr;
+}
+
+static const ListType *GetListType(const Type *type)
+{
+	if (type->GetKind() != Type::Kind::List)
+	{
+		return static_cast<const ListType *>(type);
+	}
+	return nullptr;
+}
+
+static FunctionType *GetFunctionType(Type *type)
+{
+	if (auto basicType = GetBasicType(type); type != nullptr && basicType->GetKind() == BasicType::Kind::Function)
+	{
+		return static_cast<FunctionType *>(type);
+	}
+	return nullptr;
+}
+
+static const FunctionType *GetFunctionType(const Type *type)
+{
+	if (auto basicType = GetBasicType(type); type != nullptr && basicType->GetKind() == BasicType::Kind::Function)
+	{
+		return static_cast<const FunctionType *>(type);
+	}
+	return nullptr;
+}
+
 static bool IsBasicType(const Type *type, BasicType::Kind kind)
 {
-	if (type->GetKind() != Type::Kind::Basic)
+	if (auto basicType = GetBasicType(type); basicType != nullptr)
 	{
-		return false;
+		return (basicType->GetKind() == kind);
 	}
-
-	auto basicType = static_cast<const BasicType *>(type);
-	return (basicType->GetKind() == kind);
+	return false;
 }
 
 static bool IsBasicType(const Type *type)
@@ -38,59 +83,31 @@ static bool IsBoolType(const Type *type)
 	return IsBasicType(type, BasicType::Kind::Bool);
 }
 
-static bool IsRealType(const Type *type)
-{                       
-	if (type->GetKind() != Type::Kind::Basic)
-	{
-		return false;
-	}
-
-	auto basicType = static_cast<const BasicType *>(type);
-	switch (basicType->GetKind())
-	{
-		case BasicType::Kind::Bool:
-		case BasicType::Kind::Int8:
-		case BasicType::Kind::Int16:
-		case BasicType::Kind::Int32:
-		case BasicType::Kind::Int64:
-		case BasicType::Kind::Float32:
-		case BasicType::Kind::Float64:
-			return true;
-	}
-	return false;
-}
-
 static bool IsIntegerType(const Type *type)
 {                       
-	if (type->GetKind() != Type::Kind::Basic)
+	if (auto basicType = GetBasicType(type); basicType != nullptr)
 	{
-		return false;
-	}
-
-	auto basicType = static_cast<const BasicType *>(type);
-	switch (basicType->GetKind())
-	{
-		case BasicType::Kind::Bool:
-		case BasicType::Kind::Int8:
-		case BasicType::Kind::Int16:
-		case BasicType::Kind::Int32:
-		case BasicType::Kind::Int64:
-			return true;
+		switch (basicType->GetKind())
+		{
+			case BasicType::Kind::Bool:
+			case BasicType::Kind::Int8:
+			case BasicType::Kind::Int16:
+			case BasicType::Kind::Int32:
+			case BasicType::Kind::Int64:
+				return true;
+		}
 	}
 	return false;
 }
 
 static bool IsFloatType(const Type *type)
 {                       
-	if (type->GetKind() != Type::Kind::Basic)
+	if (auto basicType = GetBasicType(type); basicType != nullptr)
 	{
-		return false;
+		auto kind = basicType->GetKind();
+		return (kind == BasicType::Kind::Float32 || kind == BasicType::Kind::Float64);
 	}
-
-	auto basicType = static_cast<const BasicType *>(type);
-	auto kind = basicType->GetKind();
-
-	return (kind == BasicType::Kind::Float32 || kind == BasicType::Kind::Float64);
+	return false;
 }
 
 static bool IsComplexType(const Type *type)
@@ -98,17 +115,24 @@ static bool IsComplexType(const Type *type)
 	return IsBasicType(type, BasicType::Kind::Complex);
 }
 
+static bool IsRealType(const Type *type)
+{
+	return IsIntegerType(type) || IsFloatType(type);
+}
+
+static bool IsNumberType(const Type *type)
+{
+	return IsRealType(type) || IsComplexType(type);
+}
+
 static bool IsExtendedType(const Type *type)
 {                       
-	if (type->GetKind() != Type::Kind::Basic)
+	if (auto basicType = GetBasicType(type); basicType != nullptr)
 	{
-		return false;
+		auto kind = basicType->GetKind();
+		return (kind == BasicType::Kind::Int64 || kind == BasicType::Kind::Float64);
 	}
-
-	auto basicType = static_cast<const BasicType *>(type);
-	auto kind = basicType->GetKind();
-
-	return (kind == BasicType::Kind::Int64 || kind == BasicType::Kind::Float64);
+	return false;
 }
 
 static bool IsComparableTypes(const Type *type1, const Type *type2)
@@ -119,7 +143,37 @@ static bool IsComparableTypes(const Type *type1, const Type *type2)
 	}
 	return false;
 }
- 
+
+static bool IsDateTimeType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::DateTime);
+}
+
+static bool IsDateType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Date);
+}
+
+static bool IsMonthType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Month);
+}
+
+static bool IsTimeType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Time);
+}
+
+static bool IsMinuteType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Minute);
+}
+
+static bool IsSecondType(const Type *type)
+{
+	return IsBasicType(type, BasicType::Kind::Second);
+}
+
 static bool IsStringType(const Type *type)
 {                       
 	return IsBasicType(type, BasicType::Kind::String);
