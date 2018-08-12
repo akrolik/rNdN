@@ -178,32 +178,37 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		}
 		case BuiltinMethod::Kind::Plus:
 		case BuiltinMethod::Kind::Minus:
-		{
-			auto inputType0 = argumentTypes.at(0);
-			auto inputType1 = argumentTypes.at(1);
-			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
-			return WidestType(inputType0, inputType1);
-		}
 		case BuiltinMethod::Kind::Multiply:
 		case BuiltinMethod::Kind::Divide:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
-			if (IsExtendedType(inputType0) || IsExtendedType(inputType1))
+			return WidestType(inputType0, inputType1);
+		}
+		case BuiltinMethod::Kind::Power:
+		case BuiltinMethod::Kind::LogarithmBase:
+		{
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
+			auto widest = WidestType(inputType0, inputType1);
+			if (IsExtendedType(widest))
 			{
 				return new BasicType(BasicType::Kind::Float64);
 			}
 			return new BasicType(BasicType::Kind::Float32);
 		}
-		case BuiltinMethod::Kind::Power:
-		case BuiltinMethod::Kind::LogarithmBase:
 		case BuiltinMethod::Kind::Modulo:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			RequireType(IsRealType(inputType0) && IsRealType(inputType1));
-			return new BasicType(BasicType::Kind::Float64);
+			if (IsBoolType(inputType0) && IsBoolType(inputType1))
+			{
+				return new BasicType(BasicType::Kind::Int16);
+			}
+			return WidestType(inputType0, inputType1);
 		}
 		case BuiltinMethod::Kind::And:
 		case BuiltinMethod::Kind::Or:
@@ -319,8 +324,6 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Length:
 		case BuiltinMethod::Kind::Count:
 		{
-			auto inputType = argumentTypes.at(0);
-			//TODO: Are there restrictions on the input type?
 			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Sum:
