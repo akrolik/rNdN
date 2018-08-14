@@ -12,7 +12,9 @@ namespace HorseIR {
 class ListType : public Type
 {
 public:
-	ListType(Type *elementType) : Type(Type::Kind::List), m_elementType(elementType) {}
+	constexpr static Type::Kind TypeKind = Type::Kind::List;
+
+	ListType(Type *elementType) : ListType(TypeKind, elementType) {}
 
 	Type *GetElementType() const { return m_elementType; }
 
@@ -34,7 +36,9 @@ public:
 		return (*m_elementType != *other.m_elementType);
 	}
 
-private:
+protected:
+	ListType(Type::Kind kind, Type *elementType) : Type(kind), m_elementType(elementType) {}
+
 	Type *m_elementType = nullptr;
 };
 

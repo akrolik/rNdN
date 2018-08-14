@@ -40,6 +40,9 @@ void yyerror(const char *s)
 	#include "HorseIR/Tree/Types/Type.h"
 	#include "HorseIR/Tree/Types/BasicType.h"
 	#include "HorseIR/Tree/Types/DictionaryType.h"
+	#include "HorseIR/Tree/Types/EnumerationType.h"
+	#include "HorseIR/Tree/Types/FunctionType.h"
+	#include "HorseIR/Tree/Types/KeyedTableType.h"
 	#include "HorseIR/Tree/Types/ListType.h"
 	#include "HorseIR/Tree/Types/TableType.h"
 }
@@ -133,10 +136,12 @@ type : '?'                                                                      
      | tMINUTE                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Minute); }
      | tSECOND                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Second); }
      | tTIME                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Time); }
-     | tFUNCTION                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Function); }
+     | tFUNCTION                                                                { $$ = new HorseIR::FunctionType(); }
      | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
      | tTABLE                                                                   { $$ = new HorseIR::TableType(); }
+     | tKTABLE                                                                  { $$ = new HorseIR::KeyedTableType(); }
      | tDICTIONARY '<' type ',' type '>'                                        { $$ = new HorseIR::DictionaryType($3, $5); }
+     | tENUM '<' type ',' type '>'                                              { $$ = new HorseIR::EnumerationType($3, $5); }
      ;
 
 int_type : tI8                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int8); }

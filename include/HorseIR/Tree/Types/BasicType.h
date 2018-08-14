@@ -29,11 +29,12 @@ public:
 		Month,
 		Time,
 		Minute,
-		Second,
-		Function
+		Second
 	};
 
-	BasicType(Kind kind) : Type(Type::Kind::Basic), m_kind(kind) {}
+	constexpr static Type::Kind TypeKind = Type::Kind::Basic;
+
+	BasicType(Kind kind) : Type(TypeKind), m_kind(kind) {}
 
 	static std::string KindString(Kind kind)
 	{
@@ -73,8 +74,6 @@ public:
 				return "second";
 			case Kind::Time:
 				return "time";
-			case Kind::Function:
-				return "func";
 			default:
 				return "<unknown>";
 		}
@@ -118,8 +117,6 @@ public:
 				return "second";
 			case Kind::Time:
 				return "time";
-			case Kind::Function:
-				return "function";
 			default:
 				return "<unknown>";
 		}

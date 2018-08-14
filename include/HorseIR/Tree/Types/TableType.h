@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "HorseIR/Tree/Types/BasicType.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
@@ -12,7 +13,9 @@ namespace HorseIR {
 class TableType : public DictionaryType
 {
 public:
-	TableType() : DictionaryType(Type::Kind::Table, new BasicType(BasicType::Kind::Symbol), new ListType(new BasicType(BasicType::Kind::Wildcard))) {}
+	constexpr static Type::Kind TypeKind = Type::Kind::Table;
+
+	TableType() : DictionaryType(TypeKind, new BasicType(BasicType::Kind::Symbol), new ListType(new BasicType(BasicType::Kind::Wildcard))) {}
 
 	std::string ToString() const override
 	{

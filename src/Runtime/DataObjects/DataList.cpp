@@ -11,7 +11,7 @@ void DataList::AddElement(DataVector *element)
 	// Check that this is either the same type as the list contents or that the list is heterogenous
 
 	auto elementType = m_type->GetElementType();
-	if (auto basicType = HorseIR::GetBasicType(elementType); basicType == nullptr || basicType->GetKind() != HorseIR::BasicType::Kind::Wildcard)
+	if (auto basicType = HorseIR::GetType<HorseIR::BasicType>(elementType); basicType == nullptr || basicType->GetKind() != HorseIR::BasicType::Kind::Wildcard)
 	{
 		if (*elementType != *element->GetType())
 		{

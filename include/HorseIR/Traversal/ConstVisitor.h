@@ -41,8 +41,10 @@ class FunctionLiteral;
 
 class Type;
 class BasicType;
-class FunctionType;
 class DictionaryType;
+class EnumerationType;
+class FunctionType;
+class KeyedTableType;
 class ListType;
 class TableType;
 
@@ -85,8 +87,10 @@ public:
 
 	virtual void Visit(const Type *type);
 	virtual void Visit(const BasicType *type);
-	virtual void Visit(const FunctionType *type);
 	virtual void Visit(const DictionaryType *type);
+	virtual void Visit(const EnumerationType *type);
+	virtual void Visit(const FunctionType *type);
+	virtual void Visit(const KeyedTableType *type);
 	virtual void Visit(const ListType *type);
 	virtual void Visit(const TableType *type);
 };

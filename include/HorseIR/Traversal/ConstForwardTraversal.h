@@ -24,6 +24,7 @@ public:
 	void Visit(const FunctionLiteral *literal) override;
 
 	void Visit(const DictionaryType *type) override;
+	void Visit(const EnumerationType *type) override;
 	void Visit(const ListType *type) override;
 };
 

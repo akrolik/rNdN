@@ -381,7 +381,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Unique:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsValueType(inputType));
+			Require(IsType<BasicType>(inputType));
 			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::String:
@@ -398,7 +398,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Reverse:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsValueType(inputType));
+			Require(IsType<BasicType>(inputType));
 			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Where:
@@ -408,7 +408,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			{
 				return new BasicType(BasicType::Kind::Int64);
 			}
-			else if (auto listType = GetListType(inputType); listType != nullptr && IsBoolType(listType->GetElementType()))
+			else if (auto listType = GetType<ListType>(inputType); listType != nullptr && IsBoolType(listType->GetElementType()))
 			{
 				return new ListType(new BasicType(BasicType::Kind::Int64));
 			}
@@ -417,7 +417,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Group:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsValueType(inputType) || IsListType(inputType));
+			Require(IsType<BasicType>(inputType) || IsType<ListType>(inputType));
 			return new DictionaryType(
 				new BasicType(BasicType::Kind::Int64),
 				new ListType(new BasicType(BasicType::Kind::Int64))
@@ -431,12 +431,24 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			{
 				return WidestType(inputType0, inputType1);
 			}
-			else if (*inputType0 == *inputType1 && IsValueType(inputType0))
+			else if (*inputType0 == *inputType1 && IsType<BasicType>(inputType0))
 			{
 				return inputType0;
 			}
+			else if (IsType<ListType>(inputType0) || IsType<ListType>(inputType1))
+			{
+				auto listType0 = GetType<ListType>(inputType0);
+				auto listType1 = GetType<ListType>(inputType1);
+
+				auto elementType0 = (listType0 == nullptr) ? inputType0 : listType0->GetElementType();
+				auto elementType1 = (listType1 == nullptr) ? inputType1 : listType1->GetElementType();
+				if (*elementType0 == *elementType1)
+				{
+					return new ListType(elementType0);
+				}
+				return new ListType(new BasicType(BasicType::Kind::Wildcard));
+			}
 			//TODO: Enum cases
-			//TODO: List cases
 			break;
 		}
 		case BuiltinMethod::Kind::Like:
@@ -450,7 +462,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto predicateType = argumentTypes.at(0);
 			auto dataType = argumentTypes.at(1);
-			Require(IsBoolType(predicateType) && IsValueType(dataType));
+			Require(IsBoolType(predicateType) && IsType<BasicType>(dataType));
 			return dataType;
 		}
 		case BuiltinMethod::Kind::IndexOf:
@@ -462,7 +474,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 				(IsStringType(inputType0) && IsStringType(inputType1)) ||
 				(IsSymbolType(inputType0) && IsSymbolType(inputType1))
 			);
-			return new BasicType(BasicType::Kind::Int32);
+			return new BasicType(BasicType::Kind::Int64);
 		}
 		case BuiltinMethod::Kind::Order:
 		{
@@ -472,7 +484,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 				IsRealType(inputType0) ||
 				IsCharacterType(inputType0) ||
 				IsCalendarType(inputType0) ||
-				IsListType(inputType0)
+				IsType<ListType>(inputType0)
 			);
 			Require(IsBoolType(inputType1));
 			return new BasicType(BasicType::Kind::Int64);
@@ -483,7 +495,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			auto inputType1 = argumentTypes.at(1);
 			Require(
 				(IsRealType(inputType0) && IsRealType(inputType1)) ||
-				(*inputType0 == *inputType1 && IsValueType(inputType0))
+				(*inputType0 == *inputType1 && IsType<BasicType>(inputType0))
 			);
 			return new BasicType(BasicType::Kind::Bool);
 		}
@@ -491,7 +503,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsIntegerType(inputType0) && (IsValueType(inputType1) || IsListType(inputType1)));
+			Require(IsIntegerType(inputType0) && (IsType<BasicType>(inputType1) || IsType<ListType>(inputType1)));
 			return inputType1;
 		}
 		// @count and @len are aliases
@@ -534,9 +546,9 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::Raze:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsListType(inputType));
-			auto elementType = GetListType(inputType)->GetElementType();
-			Require(IsValueType(elementType) && !IsBasicType(elementType, BasicType::Kind::Wildcard));
+			Require(IsType<ListType>(inputType));
+			auto elementType = GetType<ListType>(inputType)->GetElementType();
+			Require(IsType<BasicType>(elementType) && !IsBasicType(elementType, BasicType::Kind::Wildcard));
 			return elementType;
 		}
 		case BuiltinMethod::Kind::List:
@@ -563,47 +575,44 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		case BuiltinMethod::Kind::ToList:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsValueType(inputType));
+			Require(IsType<BasicType>(inputType));
 			return new ListType(inputType);
 		}
 		case BuiltinMethod::Kind::Each:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
+			Require(IsType<FunctionType>(inputType0) && IsType<ListType>(inputType1));
 
-			auto functionType = GetFunctionType(inputType0);
-			auto listType = GetListType(inputType1);
-			Require(functionType != nullptr && listType != nullptr);
+			auto functionType = GetType<FunctionType>(inputType0);
+			auto listType = GetType<ListType>(inputType1);
 
 			auto function = functionType->GetMethod();
 			auto returnType = AnalyzeCall(function, {listType->GetElementType()});
 			return new ListType(returnType);
 		}
 		case BuiltinMethod::Kind::EachItem:
+		case BuiltinMethod::Kind::EachLeft:
+		case BuiltinMethod::Kind::EachRight:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			auto inputType2 = argumentTypes.at(2);
-			Require(
-				IsFunctionType(inputType0) && (
-					(IsValueType(inputType1) || IsListType(inputType1)) ||
-					(IsValueType(inputType2) || IsListType(inputType2))
-				)
-			);
+			Require(IsType<FunctionType>(inputType0));
 
-			auto function = GetFunctionType(inputType0)->GetMethod();
+			auto function = GetType<FunctionType>(inputType0)->GetMethod();
 
 			auto unboxed1 = inputType1;
 			auto unboxed2 = inputType2;
 			bool unboxed = false;
-			if (IsListType(unboxed1))
+			if (IsType<ListType>(unboxed1))
 			{
-				unboxed1 = GetListType(unboxed1)->GetElementType();
+				unboxed1 = GetType<ListType>(unboxed1)->GetElementType();
 				unboxed = true;
 			}
-			if (IsListType(unboxed2))
+			if (IsType<ListType>(unboxed2))
 			{
-				unboxed2 = GetListType(unboxed2)->GetElementType();
+				unboxed2 = GetType<ListType>(unboxed2)->GetElementType();
 				unboxed = true;
 			}
 		       	
@@ -614,29 +623,32 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			}
 			return returnType;
 		}
-		case BuiltinMethod::Kind::EachLeft:
-		case BuiltinMethod::Kind::EachRight:
-		{
-			//TODO: Add each support
-			break;
-		}
 		case BuiltinMethod::Kind::Outer:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			auto inputType2 = argumentTypes.at(2);
-			Require(IsFunctionType(inputType0) && IsValueType(inputType1) && IsValueType(inputType2));
+			Require(IsType<FunctionType>(inputType0) && IsType<BasicType>(inputType1) && IsType<BasicType>(inputType2));
 
-			auto function = GetFunctionType(inputType0)->GetMethod();
+			auto function = GetType<FunctionType>(inputType0)->GetMethod();
 			auto returnType = AnalyzeCall(function, {inputType1, inputType2});
-			Require(IsBoolType(returnType));
 
-			return new ListType(new BasicType(BasicType::Kind::Wildcard));
+			return new ListType(returnType);
 		}
 		case BuiltinMethod::Kind::Enum:
 		{
-			//TODO: Add @enum type rules
-			break;
+			auto inputType0 = argumentTypes.at(0);
+			auto inputType1 = argumentTypes.at(1);
+			Require(
+				(IsType<BasicType>(inputType0) && IsType<BasicType>(inputType1)) ||
+				(IsType<ListType>(inputType0) && IsType<ListType>(inputType1))
+			);
+				
+			auto elementType0 = (IsType<BasicType>(inputType0)) ? inputType0 : GetType<ListType>(inputType0)->GetElementType();
+			auto elementType1 = (IsType<BasicType>(inputType1)) ? inputType1 : GetType<ListType>(inputType1)->GetElementType();
+			Require((IsRealType(elementType0) && IsRealType(elementType1)) || (IsType<BasicType>(elementType0) && *elementType0 == *elementType1));
+
+			return new EnumerationType(inputType0, inputType1);
 		}
 		case BuiltinMethod::Kind::Dictionary:
 		{
@@ -648,76 +660,75 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsSymbolType(inputType0) && IsListType(inputType1));
+			Require(IsSymbolType(inputType0) && IsType<ListType>(inputType1));
 			return new TableType();
 		}
 		case BuiltinMethod::Kind::KeyedTable:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsTableType(inputType0) && IsTableType(inputType1));
-			//TODO: KTable types
-			// return new KeyedTableType();
+			Require(IsType<TableType>(inputType0) && IsType<TableType>(inputType1));
+			return new KeyedTableType();
 		}
 		case BuiltinMethod::Kind::Keys:
 		{
 			auto inputType = argumentTypes.at(0);
-			if (IsDictionaryType(inputType))
+			if (IsType<DictionaryType>(inputType))
 			{
-				GetDictionaryType(inputType)->GetKeyType();
+				return GetType<DictionaryType>(inputType)->GetKeyType();
 			}
-			else if (IsTableType(inputType))
+			else if (IsType<TableType>(inputType))
 			{
-				GetTableType(inputType)->GetKeyType();
+				return GetType<TableType>(inputType)->GetKeyType();
 			}
-			else if (IsEnumerationType(inputType))
+			else if (IsType<EnumerationType>(inputType))
 			{
-				//TODO: Enumeration types
+				return GetType<EnumerationType>(inputType)->GetKeyType();
 			}
-			else if (IsKeyedTableType(inputType))
+			else if (IsType<KeyedTableType>(inputType))
 			{
-				//TODO: KTable types
+				return new TableType();
 			}
 			break;
 		}
 		case BuiltinMethod::Kind::Values:
 		{
 			auto inputType = argumentTypes.at(0);
-			if (IsDictionaryType(inputType))
+			if (IsType<DictionaryType>(inputType))
 			{
-				GetDictionaryType(inputType)->GetValueType();
+				return GetType<DictionaryType>(inputType)->GetValueType();
 			}
-			else if (IsTableType(inputType))
+			else if (IsType<TableType>(inputType))
 			{
-				GetTableType(inputType)->GetValueType();
+				return GetType<TableType>(inputType)->GetValueType();
 			}
-			else if (IsEnumerationType(inputType))
+			else if (IsType<EnumerationType>(inputType))
 			{
-				//TODO: Enumeration types
+				return GetType<EnumerationType>(inputType)->GetValueType();
 			}
-			else if (IsKeyedTableType(inputType))
+			else if (IsType<KeyedTableType>(inputType))
 			{
-				//TODO: KTable types
+				return new TableType();
 			}
 			break;
 		}
 		case BuiltinMethod::Kind::Meta:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsTableType(inputType) || IsKeyedTableType(inputType));
+			Require(IsType<TableType>(inputType) || IsType<KeyedTableType>(inputType));
 			return new TableType();
 		}
 		case BuiltinMethod::Kind::Fetch:
 		{
 			auto inputType = argumentTypes.at(0);
-			Require(IsEnumerationType(inputType));
-			//TODO: Enumeration types
+			Require(IsType<EnumerationType>(inputType));
+			return GetType<EnumerationType>(inputType)->GetValueType();
 		}
 		case BuiltinMethod::Kind::ColumnValue:
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsTableType(inputType0) && IsSymbolType(inputType1));
+			Require(IsType<TableType>(inputType0) && IsSymbolType(inputType1));
 
 			// A column value call is intentionally untyped since it comes from the runtime system.
 			// It must be cast before assigning to a variable
@@ -744,12 +755,12 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			auto inputType2 = argumentTypes.at(2);
-			Require(IsFunctionType(inputType0) &&
-				(IsValueType(inputType1) && IsValueType(inputType2)) ||
-				(IsListType(inputType1) && IsListType(inputType2))
+			Require(IsType<FunctionType>(inputType0) &&
+				(IsType<BasicType>(inputType1) && IsType<BasicType>(inputType2)) ||
+				(IsType<ListType>(inputType1) && IsType<ListType>(inputType2))
 			);
 
-			auto function = GetFunctionType(inputType0)->GetMethod();
+			auto function = GetType<FunctionType>(inputType0)->GetMethod();
 			auto returnType = AnalyzeCall(function, {inputType1, inputType2});
 			Require(IsBoolType(returnType));
 
@@ -759,16 +770,12 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 		{
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
-			Require(IsValueType(inputType0));
+			Require(IsType<BasicType>(inputType0));
 			if (IsIntegerType(inputType1))
 			{
-				if (IsCalendarType(inputType0) || IsCharacterType(inputType0) || IsComplexType(inputType0))
-				{
-					return new BasicType(BasicType::Kind::Float64);
-				}
 				return inputType0;
 			}
-			else if (auto listType = GetListType(inputType1); listType != nullptr && IsIntegerType(listType->GetElementType()))
+			else if (auto listType = GetType<ListType>(inputType1); listType != nullptr && IsIntegerType(listType->GetElementType()))
 			{
 				return new ListType(inputType0);
 			}
@@ -779,7 +786,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			auto inputType0 = argumentTypes.at(0);
 			auto inputType1 = argumentTypes.at(1);
 			auto inputType2 = argumentTypes.at(2);
-			Require(IsValueType(inputType0) && IsIntegerType(inputType1) && IsAssignableType(inputType0, inputType2));
+			Require(IsType<BasicType>(inputType0) && IsIntegerType(inputType1) && IsAssignableType(inputType0, inputType2));
 			return inputType0;
 		}
 		case BuiltinMethod::Kind::SubString:
@@ -850,12 +857,34 @@ void TypeAnalysis::Visit(FunctionLiteral *literal)
 {
 	// Propagate the method from the literal expression to the expression type
 
-	auto type = GetFunctionType(literal->GetType());
+	auto type = GetType<FunctionType>(literal->GetType());
 	if (type == nullptr)
 	{
 		Utils::Logger::LogError("Invalid type '" + literal->GetType()->ToString() + "' for function literal '" + literal->ToString() + "'");
 	}
 	type->SetMethod(literal->GetMethod());
+}
+
+void TypeAnalysis::Visit(EnumerationType *type)
+{
+	ForwardTraversal::Visit(type);
+
+	auto keyType = type->GetKeyType();
+	auto valueType = type->GetValueType();
+	
+	if ((IsType<BasicType>(keyType) && IsType<BasicType>(valueType)) ||
+		(IsType<ListType>(keyType) && IsType<ListType>(valueType)))
+	{
+		auto unboxedKeyType = (IsType<BasicType>(keyType)) ? keyType : GetType<ListType>(keyType)->GetElementType();
+		auto unboxedValueType = (IsType<BasicType>(valueType)) ? valueType : GetType<ListType>(valueType)->GetElementType();
+
+		if ((IsRealType(unboxedKeyType) && IsRealType(unboxedValueType)) || (IsType<BasicType>(unboxedKeyType) && *unboxedKeyType == *unboxedValueType))
+		{
+			return;
+		}
+	}
+
+	Utils::Logger::LogError("Invalid key/value types for enumeration '" + type->ToString() + "'");
 }
 
 }

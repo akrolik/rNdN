@@ -12,7 +12,9 @@ namespace HorseIR {
 class DictionaryType : public Type
 {
 public:
-	DictionaryType(Type *keyType, Type *valueType) : DictionaryType(Type::Kind::Dictionary, keyType, valueType) {}
+	constexpr static Type::Kind TypeKind = Type::Kind::Dictionary;
+
+	DictionaryType(Type *keyType, Type *valueType) : DictionaryType(TypeKind, keyType, valueType) {}
 
 	Type *GetKeyType() const { return m_keyType; }
 	Type *GetValueType() const { return m_valueType; }

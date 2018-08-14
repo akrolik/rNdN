@@ -17,12 +17,14 @@ public:
 
 	void Visit(AssignStatement *assign) override;
 
+	void Visit(ReturnStatement *ret) override;
+
 	void Visit(CallExpression *call) override;
 	void Visit(CastExpression *cast) override;
 	void Visit(Identifier *identifier) override;
 	void Visit(FunctionLiteral *literal) override;
 
-	void Visit(ReturnStatement *ret) override;
+	void Visit(EnumerationType *type) override;
 
 private:
 	Method *m_currentMethod = nullptr;

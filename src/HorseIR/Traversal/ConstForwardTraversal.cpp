@@ -11,6 +11,7 @@
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
+#include "HorseIR/Tree/Types/EnumerationType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 
 namespace HorseIR {
@@ -99,6 +100,13 @@ void ConstForwardTraversal::Visit(const FunctionLiteral *literal)
 }
 
 void ConstForwardTraversal::Visit(const DictionaryType *type)
+{
+	type->GetKeyType()->Accept(*this);
+	type->GetValueType()->Accept(*this);
+	ConstVisitor::Visit(type);
+}
+
+void ConstForwardTraversal::Visit(const EnumerationType *type)
 {
 	type->GetKeyType()->Accept(*this);
 	type->GetValueType()->Accept(*this);

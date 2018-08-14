@@ -32,8 +32,10 @@
 
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
-#include "HorseIR/Tree/Types/FunctionType.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
+#include "HorseIR/Tree/Types/EnumerationType.h"
+#include "HorseIR/Tree/Types/FunctionType.h"
+#include "HorseIR/Tree/Types/KeyedTableType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/TableType.h"
 
@@ -194,12 +196,22 @@ void Visitor::Visit(BasicType *type)
 	Visit(static_cast<Type*>(type));
 }
 
-void Visitor::Visit(FunctionType *type)
+void Visitor::Visit(DictionaryType *type)
 {
-	Visit(static_cast<BasicType*>(type));
+	Visit(static_cast<Type*>(type));
 }
 
-void Visitor::Visit(DictionaryType *type)
+void Visitor::Visit(EnumerationType *type)
+{
+	Visit(static_cast<Type*>(type));
+}
+
+void Visitor::Visit(FunctionType *type)
+{
+	Visit(static_cast<Type*>(type));
+}
+
+void Visitor::Visit(KeyedTableType *type)
 {
 	Visit(static_cast<Type*>(type));
 }

@@ -379,7 +379,7 @@ void Interpreter::Visit(HorseIR::SymbolLiteral *literal)
 	{
 		Utils::Logger::LogError("Invalid type '" + type->ToString() + "' for symbol literal");
 	}
-	auto basicType = HorseIR::GetBasicType(type);
+	auto basicType = HorseIR::GetType<HorseIR::BasicType>(type);
 	m_expressionMap.insert({literal, new Runtime::TypedDataVector<std::string>(basicType, literal->GetValues())});
 }
 
