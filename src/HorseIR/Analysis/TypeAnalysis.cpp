@@ -448,7 +448,6 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 				}
 				return new ListType(new BasicType(BasicType::Kind::Wildcard));
 			}
-			//TODO: Enum cases
 			break;
 		}
 		case BuiltinMethod::Kind::Like:
