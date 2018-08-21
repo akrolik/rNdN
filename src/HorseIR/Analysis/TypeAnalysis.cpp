@@ -126,7 +126,7 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 
 	auto argumentCount = argumentTypes.size();
 	auto parameterCount = method->GetParameterCount();
-	if (argumentCount != parameterCount)
+	if (parameterCount != BuiltinMethod::VariadicParameterCount && argumentCount != parameterCount)
 	{
 		TypeError(method, argumentTypes);
 	}
