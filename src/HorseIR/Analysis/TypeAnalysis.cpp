@@ -93,7 +93,7 @@ Type *TypeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vect
 		first = false;
 		message += argumentType->ToString();
 	}
-	message += "] to builtin function '" + method->GetName() + "'";
+	message += "] to function '" + method->GetName() + "'";
 	Utils::Logger::LogError(message);
 }
 
@@ -796,7 +796,9 @@ Type *TypeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<T
 			return inputType0;
 		}
 		default:
+		{
 			Utils::Logger::LogError("Type analysis does not support builtin method '" + method->GetName() + "'");
+		}
 	}
 	
 	// If we cannot infer a return type, report a type error

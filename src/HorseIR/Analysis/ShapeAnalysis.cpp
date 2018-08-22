@@ -1,5 +1,6 @@
 #include "HorseIR/Analysis/ShapeAnalysis.h"
 
+#include "HorseIR/Analysis/ShapeUtils.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Parameter.h"
@@ -100,6 +101,23 @@ void ShapeAnalysis::Visit(const CallExpression *call)
 	m_context = std::get<0>(m_shapes.top());
 }
 
+[[noreturn]] void ShapeAnalysis::ShapeError(const MethodDeclaration *method, const std::vector<Expression *>& arguments)
+{
+	std::string message = "Incompatible shapes [";
+	bool first = true;
+	for (const auto& argument : arguments)
+	{
+		if (!first)
+		{
+			message += ", ";
+		}
+		first = false;
+		message += GetShape(argument)->ToString();
+	}
+	message += "] to function '" + method->GetName() + "'";
+	Utils::Logger::LogError(message);
+}
+
 Shape *ShapeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vector<Expression *>& arguments)
 {
 	switch (method->GetKind())
@@ -145,6 +163,8 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 {
 	switch (method->GetKind())
 	{
+#define Require(x) if (!(x)) break
+
 		case BuiltinMethod::Kind::Absolute:
 		case BuiltinMethod::Kind::Negate:
 		case BuiltinMethod::Kind::Ceiling:
@@ -182,7 +202,9 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::TimeSecond:
 		case BuiltinMethod::Kind::TimeMillisecond:
 		{
-			return GetShape(arguments.at(0));
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<VectorShape>(argumentShape));
+			return argumentShape;
 		}
 		case BuiltinMethod::Kind::Less:
 		case BuiltinMethod::Kind::Greater:
@@ -204,8 +226,12 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::Xor:
 		case BuiltinMethod::Kind::DatetimeDifference:
 		{
-			auto argumentSize1 = GetShape(arguments.at(0))->GetSize();
-			auto argumentSize2 = GetShape(arguments.at(1))->GetSize();
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+
+			auto argumentSize1 = HorseIR::GetShape<VectorShape>(argumentShape1)->GetSize();
+			auto argumentSize2 = HorseIR::GetShape<VectorShape>(argumentShape2)->GetSize();
 
 			const Shape::Size *size = nullptr;
 
@@ -225,9 +251,12 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 			{
 				if (*argumentSize1 != *argumentSize2)
 				{
-					Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different symbol sizes [" + argumentSize1->ToString() + " != " + argumentSize2->ToString() + "]");
+					size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_context);
 				}
-				size = argumentSize1;
+				else
+				{
+					size = argumentSize1;
+				}
 			}
 			else
 			{
@@ -240,16 +269,20 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 				}
 				size = new Shape::ConstantSize(constant1);
 			}
-			return new Shape(Shape::Kind::Vector, size);
+			return new VectorShape(size);
 		}
 		case BuiltinMethod::Kind::Compress:
 		{
-			auto argumentSize0 = GetShape(arguments.at(0))->GetSize();
-			auto argumentSize1 = GetShape(arguments.at(1))->GetSize();
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
 
-			//TODO: Shape check
+			auto argumentSize1 = HorseIR::GetShape<VectorShape>(argumentShape1)->GetSize();
+			auto argumentSize2 = HorseIR::GetShape<VectorShape>(argumentShape2)->GetSize();
+			//TODO: Better handling of dynamics
+			Require(*argumentSize1 == *argumentSize2 || argumentSize1->m_kind == Shape::Size::Kind::Dynamic || argumentSize2->m_kind == Shape::Size::Kind::Dynamic);
 
-			return new Shape(Shape::Kind::Vector, new Shape::CompressedSize(std::get<0>(m_shapes.top()), m_context, argumentSize1));
+			return new VectorShape(new Shape::CompressedSize(std::get<0>(m_shapes.top()), m_context, argumentSize2));
 		}
 		// @count and @len are aliases
 		case BuiltinMethod::Kind::Length:
@@ -259,28 +292,68 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::Minimum:
 		case BuiltinMethod::Kind::Maximum:
 		{
-			return new Shape(Shape::Kind::Vector, new Shape::ConstantSize(1));
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<VectorShape>(argumentShape));
+			return new VectorShape(new Shape::ConstantSize(1));
+		}
+		case BuiltinMethod::Kind::List:
+		{
+			const Shape *shape = nullptr;
+			for (const auto& argument : arguments)
+			{
+				auto argumentShape = GetShape(argument);
+				if (shape == nullptr)
+				{
+					shape = argumentShape;
+				}
+				else if (*shape != *argumentShape)
+				{
+					//TODO: Implement full @list
+					break;
+				}
+			}
+			return new ListShape(new Shape::ConstantSize(arguments.size()), shape);
 		}
 		case BuiltinMethod::Kind::Enlist:
 		{
-
+			auto argumentShape = GetShape(arguments.at(0));
+			return new ListShape(new Shape::ConstantSize(1), argumentShape);
 		}
 		case BuiltinMethod::Kind::Table:
 		{
-			return nullptr;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<ListShape>(argumentShape2));
+
+			auto listShape = HorseIR::GetShape<ListShape>(argumentShape2);
+			auto elementShape = listShape->GetElementShape();
+			Require(IsShape<VectorShape>(elementShape));
+
+			auto argumentSize1 = HorseIR::GetShape<VectorShape>(argumentShape1)->GetSize();
+			auto argumentSize2 = listShape->GetListSize();
+			Require(*argumentSize1 == *argumentSize2);
+
+			return new TableShape(argumentSize1, HorseIR::GetShape<VectorShape>(elementShape)->GetSize());
 		}
 		case BuiltinMethod::Kind::ColumnValue:
 		{
-			auto argumentSize0 = GetShape(arguments.at(0))->GetSize();
-			return new Shape(Shape::Kind::Vector, argumentSize0);
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<TableShape>(argumentShape));
+
+			auto tableShape = HorseIR::GetShape<TableShape>(argumentShape);
+			return new VectorShape(tableShape->GetRowsSize());
 		}
 		case BuiltinMethod::Kind::LoadTable:
 		{
-			return new Shape(Shape::Kind::Table, new Shape::SymbolSize(static_cast<const SymbolLiteral *>(arguments.at(0))->GetValue(0)));
+			return new TableShape(new Shape::ConstantSize(0), new Shape::SymbolSize(static_cast<const SymbolLiteral *>(arguments.at(0))->GetValue(0)));
 		}
 		default:
+		{
 			Utils::Logger::LogError("Shape analysis is not supported for builtin method '" + method->GetName() + "'");
+		}
 	}
+
+	ShapeError(method, arguments);
 }
 
 void ShapeAnalysis::Visit(const CastExpression *cast)
@@ -288,6 +361,8 @@ void ShapeAnalysis::Visit(const CastExpression *cast)
 	// Traverse the expression
 
 	ConstForwardTraversal::Visit(cast);
+
+	// Propagate the shape from the expression to the cast
 
 	SetShape(cast, GetShape(cast->GetExpression()));
 }
@@ -299,57 +374,59 @@ void ShapeAnalysis::Visit(const Identifier *identifier)
 
 void ShapeAnalysis::Visit(const BoolLiteral *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const Int8Literal *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const Int16Literal *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const Int32Literal *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const Int64Literal *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const Float32Literal *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const Float64Literal *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const StringLiteral *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const SymbolLiteral *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const DateLiteral *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(literal->GetCount())));
 }
 
 void ShapeAnalysis::Visit(const FunctionLiteral *literal)
 {
-	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(1)));
+	// Function literals have only 1 element
+
+	SetShape(literal, new VectorShape(new Shape::ConstantSize(1)));
 }
 
 }

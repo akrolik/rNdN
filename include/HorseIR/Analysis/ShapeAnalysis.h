@@ -38,6 +38,8 @@ public:
 	void Visit(const FunctionLiteral *literal);
 
 private:
+	[[noreturn]] void ShapeError(const MethodDeclaration *method, const std::vector<Expression *>& arguments);
+
 	Shape *AnalyzeCall(const MethodDeclaration *method, const std::vector<Expression *>& arguments);
 	Shape *AnalyzeCall(const Method *method, const std::vector<Expression *>& arguments);
 	Shape *AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments);

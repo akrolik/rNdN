@@ -128,33 +128,127 @@ public:
 		Table
 	};
 
-	Shape(Kind kind, const Size *size) : m_kind(kind), m_size(size) {}
+	Kind GetKind() const { return m_kind; }
 
-	std::string ToString() const
+	virtual std::string ToString() const = 0;
+
+	bool operator==(const Shape& other) const;
+	bool operator!=(const Shape& other) const
 	{
-		std::string output = "Shape<";
-		switch (m_kind)
-		{
-			case Kind::Vector:
-				output += "vector";
-				break;
-			case Kind::List:
-				output += "list";
-				break;
-			case Kind::Table:
-				output += "table";
-				break;
-		}
-		return output + ", " + m_size->ToString() + ">";
+		return !(*this == other);
 	}
+
+protected:
+	Shape(Kind kind) : m_kind(kind) {}
+
+	const Kind m_kind;
+};
+
+class VectorShape : public Shape
+{
+public:
+	constexpr static Kind ShapeKind = Kind::Vector;
+
+	VectorShape(const Size *size) : Shape(Shape::Kind::Vector), m_size(size) {}
 
 	const Size *GetSize() const { return m_size; }
 
+	std::string ToString() const override
+	{
+		return "VectorShape<" + m_size->ToString() + ">";
+	}
+
+	bool operator==(const VectorShape& other) const
+	{
+		return (*m_size == *other.m_size);
+	}
+
+	bool operator!=(const VectorShape& other) const
+	{
+		return !(*this == other);
+	}
+
 private:
-	const Kind m_kind;
 	const Size *m_size = nullptr;
 };
 
+class ListShape : public Shape
+{
+public:
+	constexpr static Kind ShapeKind = Kind::List;
+
+	ListShape(const Size *listSize, const Shape *elementShape) : Shape(Shape::Kind::List), m_listSize(listSize), m_elementShape(elementShape) {}
+
+	const Size *GetListSize() const { return m_listSize; }
+	const Shape *GetElementShape() const { return m_elementShape; }
+
+	std::string ToString() const override
+	{
+		return "ListShape<" + m_listSize->ToString() + ", " + m_elementShape->ToString() + ">";
+	}
+
+	bool operator==(const ListShape& other) const
+	{
+		return (*m_listSize == *other.m_listSize && *m_elementShape == *other.m_elementShape);
+	}
+
+	bool operator!=(const ListShape& other) const
+	{
+		return !(*this == other);
+	}
+
+private:
+	const Size *m_listSize = nullptr;
+	const Shape *m_elementShape = nullptr;
+};
+
+class TableShape : public Shape
+{
+public:
+	constexpr static Kind ShapeKind = Kind::Table;
+
+	TableShape(const Size *columnsSize, const Size *rowsSize) : Shape(Shape::Kind::Table), m_columnsSize(columnsSize), m_rowsSize(rowsSize) {}
+
+	const Size *GetColumnsSize() const { return m_columnsSize; }
+	const Size *GetRowsSize() const { return m_rowsSize; }
+
+	std::string ToString() const override
+	{
+		return "TableShape<" + m_columnsSize->ToString() + ", " + m_rowsSize->ToString() + ">";
+	}
+
+	bool operator==(const TableShape& other) const
+	{
+		return (*m_columnsSize == *other.m_columnsSize && *m_rowsSize == *other.m_rowsSize);
+	}
+
+	bool operator!=(const TableShape& other) const
+	{
+		return !(*this == other);
+	}
+
+private:
+	const Size *m_columnsSize = nullptr;
+	const Size *m_rowsSize = nullptr;
+};
+
+inline bool Shape::operator==(const Shape& other) const
+{
+	if (m_kind == other.m_kind)
+	{
+		switch (m_kind)
+		{
+			case Kind::Vector:
+				return static_cast<const VectorShape&>(*this) == static_cast<const VectorShape&>(other);
+			case Kind::List:
+				return static_cast<const ListShape&>(*this) == static_cast<const ListShape&>(other);
+			case Kind::Table:
+				return static_cast<const TableShape&>(*this) == static_cast<const TableShape&>(other);
+		}
+	}
+	return false;
+}
+                 
 inline bool Shape::Size::operator==(const Shape::Size& other) const
 {
 	if (m_kind == other.m_kind)
