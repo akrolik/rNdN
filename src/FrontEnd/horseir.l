@@ -23,6 +23,7 @@ LETTER [A-Za-z_]
 %%
 
 [ \t\r\n]+   /* ignore */
+\/\/.*       /* ignore */
 
 "("          { _functionIdent = false; return '('; }
 ")"          return ')';
