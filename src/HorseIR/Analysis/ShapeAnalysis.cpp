@@ -7,60 +7,138 @@
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literals/Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/BoolLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/Int8Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int16Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int32Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Int64Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Float32Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/Float64Literal.h"
+#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/StringLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
+#include "HorseIR/Tree/Statements/ReturnStatement.h"
 
 #include "Utils/Logger.h"
 
 namespace HorseIR {
 
-void ShapeAnalysis::Analyze(HorseIR::Method *method)
+void ShapeAnalysis::Analyze(Method *method)
 {
+	m_shapes.push(std::make_tuple(nullptr, new MethodInvocationShapes()));
 	method->Accept(*this);
+
+	auto& context = m_shapes.top();
+	m_results->AddInvocationShapes(std::get<0>(context), std::get<1>(context));
+	m_shapes.pop();
 }
 
-void ShapeAnalysis::Visit(Parameter *parameter)
+Shape *ShapeAnalysis::GetShape(const Expression *expression)
+{
+	return std::get<1>(m_shapes.top())->GetShape(expression);
+}
+
+Shape *ShapeAnalysis::GetShape(const std::string& variable)
+{
+	return std::get<1>(m_shapes.top())->GetShape(variable);
+}
+
+void ShapeAnalysis::SetShape(const Expression *expression, Shape *shape)
+{
+	std::get<1>(m_shapes.top())->SetShape(expression, shape);
+}
+
+void ShapeAnalysis::SetShape(const std::string& variable, Shape *shape)
+{
+	std::get<1>(m_shapes.top())->SetShape(variable, shape);
+}
+
+void ShapeAnalysis::Visit(const Parameter *parameter)
 {
 	// Check to make sure the correct input shapes have been set
 
-	// if (parameter->GetShape() == nullptr)
-	// {
-	// 	Utils::Logger::LogError("Shape analysis missing input shape for parameter '" + parameter->GetName() + "'");
-	// }
+	GetShape(parameter->GetName());
 }
 
-void ShapeAnalysis::Visit(AssignStatement *assign)
+void ShapeAnalysis::Visit(const AssignStatement *assign)
 {
 	// Traverse all children of the assignment
 
-	ForwardTraversal::Visit(assign);
+	ConstForwardTraversal::Visit(assign);
 
 	// Update the declaration with the shape propagated from the expression
 
 	auto declaration = assign->GetDeclaration();
 	auto expression = assign->GetExpression();
 
-	// declaration->SetShape(expression->GetShape());
+        SetShape(declaration->GetName(), GetShape(expression));
 }
 
-void ShapeAnalysis::Visit(CallExpression *call)
+void ShapeAnalysis::Visit(const ReturnStatement *ret)
+{
+	m_contextResult = GetShape(ret->GetIdentifier()->GetString());
+}
+
+void ShapeAnalysis::Visit(const CallExpression *call)
 {
 	// Collect shape information for the arguments
 
-	ForwardTraversal::Visit(call);
+	ConstForwardTraversal::Visit(call);
+
+	// Store the current call to give context to the dynamic sizes
+
+	m_context = call;
 
 	// Analyze the function according to the shape rules
 
-	auto method = call->GetMethod();
+	SetShape(call, AnalyzeCall(call->GetMethod(), call->GetArguments()));
+
+	// Reset current expression to the enclosing call
+
+	m_context = std::get<0>(m_shapes.top());
+}
+
+Shape *ShapeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vector<Expression *>& arguments)
+{
 	switch (method->GetKind())
 	{
-		case HorseIR::MethodDeclaration::Kind::Builtin:
-			// call->SetShape(AnalyzeCall(static_cast<const HorseIR::BuiltinMethod *>(method), call->GetArguments()));
-			break;
-		case HorseIR::MethodDeclaration::Kind::Definition:
-			Utils::Logger::LogError("Shape analysis for user defined functions not implemented");
-			break;
+		case MethodDeclaration::Kind::Builtin:
+			return AnalyzeCall(static_cast<const BuiltinMethod *>(method), arguments);
+		case MethodDeclaration::Kind::Definition:
+			return AnalyzeCall(static_cast<const Method *>(method), arguments);
+		default:
+			Utils::Logger::LogError("Unsupported method kind");
 	}
+}
+
+Shape *ShapeAnalysis::AnalyzeCall(const Method *method, const std::vector<Expression *>& arguments)
+{
+	// Create a new shape mapping for this invocation and set all parameters
+
+	auto localShapes = new MethodInvocationShapes();
+
+	unsigned int i = 0;
+	auto& parameters = method->GetParameters();
+	for (auto& argument : arguments)
+	{
+		auto name = parameters.at(i);
+		localShapes->SetShape(name->GetName(), GetShape(argument));
+		++i;
+	}
+
+	// Update the scope for the new context
+
+	m_shapes.push(std::make_tuple(m_context, localShapes));
+
+	ConstForwardTraversal::Visit(method);
+
+	// Finalize the invocation shape map
+	m_results->AddInvocationShapes(std::get<0>(m_shapes.top()), std::get<1>(m_shapes.top()));
+	m_shapes.pop();
+
+	return m_contextResult;
 }
 
 Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments)
@@ -72,6 +150,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::Ceiling:
 		case BuiltinMethod::Kind::Floor:
 		case BuiltinMethod::Kind::Round:
+		case BuiltinMethod::Kind::Conjugate:
 		case BuiltinMethod::Kind::Reciprocal:
 		case BuiltinMethod::Kind::Sign:
 		case BuiltinMethod::Kind::Pi:
@@ -93,10 +172,18 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::HyperbolicInverseCosine:
 		case BuiltinMethod::Kind::HyperbolicInverseSine:
 		case BuiltinMethod::Kind::HyperbolicInverseTangent:
+		case BuiltinMethod::Kind::Date:
+		case BuiltinMethod::Kind::DateYear:
+		case BuiltinMethod::Kind::DateMonth:
+		case BuiltinMethod::Kind::DateDay:
+		case BuiltinMethod::Kind::Time:
+		case BuiltinMethod::Kind::TimeHour:
+		case BuiltinMethod::Kind::TimeMinute:
+		case BuiltinMethod::Kind::TimeSecond:
+		case BuiltinMethod::Kind::TimeMillisecond:
 		{
-			// const auto argumentShape = arguments.at(0)->GetShape();
-			// return new Shape(argumentShape->kind, argumentShape->size);
-		} 
+			return GetShape(arguments.at(0));
+		}
 		case BuiltinMethod::Kind::Less:
 		case BuiltinMethod::Kind::Greater:
 		case BuiltinMethod::Kind::LessEqual:
@@ -115,77 +202,154 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 		case BuiltinMethod::Kind::Nand:
 		case BuiltinMethod::Kind::Nor:
 		case BuiltinMethod::Kind::Xor:
+		case BuiltinMethod::Kind::DatetimeDifference:
 		{
-			// const auto argumentShape1 = arguments.at(0)->GetShape();
-			// const auto argumentShape2 = arguments.at(1)->GetShape();
+			auto argumentSize1 = GetShape(arguments.at(0))->GetSize();
+			auto argumentSize2 = GetShape(arguments.at(1))->GetSize();
 
-			// Shape::Kind kind = Shape::Kind::Vector;
-			// long size = 0;
+			const Shape::Size *size = nullptr;
 
-			// if (argumentShape1->size == argumentShape2->size)
-			// {
-			// 	size = argumentShape1->size;
-			// }
-			// else if (argumentShape1->size == 1)
-			// {
-			// 	size = argumentShape2->size;
-			// }
-			// else if (argumentShape2->size == 1)
-			// {
-			// 	size = argumentShape1->size;
-			// }
-			// else
-			// {
-			// 	Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(argumentShape1->size) + " != " + std::to_string(argumentShape2->size) + "]");
-			// }
+			if (argumentSize1->m_kind == Shape::Size::Kind::Constant && static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value == 1)
+			{
+				size = argumentSize2;
+			}
+			else if (argumentSize2->m_kind == Shape::Size::Kind::Constant && static_cast<const Shape::ConstantSize *>(argumentSize2)->m_value == 1)
+			{
+				size = argumentSize1;
+			}
+			else if (argumentSize1->m_kind == Shape::Size::Kind::Dynamic || argumentSize2->m_kind == Shape::Size::Kind::Dynamic)
+			{
+				size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_context);
+			}
+			else if (argumentSize1->m_kind == Shape::Size::Kind::Symbol || argumentSize2->m_kind == Shape::Size::Kind::Symbol)
+			{
+				if (*argumentSize1 != *argumentSize2)
+				{
+					Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different symbol sizes [" + argumentSize1->ToString() + " != " + argumentSize2->ToString() + "]");
+				}
+				size = argumentSize1;
+			}
+			else
+			{
+				auto constant1 = static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value;
+				auto constant2 = static_cast<const Shape::ConstantSize *>(argumentSize2)->m_value;
 
-			// return new Shape(kind, size);
+				if (constant1 != constant2)
+				{
+					Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(constant1) + " != " + std::to_string(constant2) + "]");
+				}
+				size = new Shape::ConstantSize(constant1);
+			}
+			return new Shape(Shape::Kind::Vector, size);
 		}
 		case BuiltinMethod::Kind::Compress:
-			//TODO: Should set some type of a reference variable to the input shape
-			return new Shape(Shape::Kind::Vector, Shape::DynamicSize);
+		{
+			auto argumentSize0 = GetShape(arguments.at(0))->GetSize();
+			auto argumentSize1 = GetShape(arguments.at(1))->GetSize();
+
+			//TODO: Shape check
+
+			return new Shape(Shape::Kind::Vector, new Shape::CompressedSize(std::get<0>(m_shapes.top()), m_context, argumentSize1));
+		}
+		// @count and @len are aliases
+		case BuiltinMethod::Kind::Length:
 		case BuiltinMethod::Kind::Count:
 		case BuiltinMethod::Kind::Sum:
 		case BuiltinMethod::Kind::Average:
 		case BuiltinMethod::Kind::Minimum:
 		case BuiltinMethod::Kind::Maximum:
-			return new Shape(Shape::Kind::Vector, 1);
-			//TODO: @vector
-		// case BuiltinMethod::Kind::Fill:
-		// 	return new Shape(Shape::Kind::Vector, static_cast<Literal<int64_t> *>(arguments.at(0))->GetValue(0));
+		{
+			return new Shape(Shape::Kind::Vector, new Shape::ConstantSize(1));
+		}
+		case BuiltinMethod::Kind::Enlist:
+		{
+
+		}
+		case BuiltinMethod::Kind::Table:
+		{
+			return nullptr;
+		}
+		case BuiltinMethod::Kind::ColumnValue:
+		{
+			auto argumentSize0 = GetShape(arguments.at(0))->GetSize();
+			return new Shape(Shape::Kind::Vector, argumentSize0);
+		}
+		case BuiltinMethod::Kind::LoadTable:
+		{
+			return new Shape(Shape::Kind::Table, new Shape::SymbolSize(static_cast<const SymbolLiteral *>(arguments.at(0))->GetValue(0)));
+		}
 		default:
-			Utils::Logger::LogError("Shape analysis does not support builtin method " + method->GetName());
+			Utils::Logger::LogError("Shape analysis is not supported for builtin method '" + method->GetName() + "'");
 	}
 }
 
-void ShapeAnalysis::Visit(CastExpression *cast)
+void ShapeAnalysis::Visit(const CastExpression *cast)
 {
-	// cast->SetShape(cast->GetExpression()->GetShape());
+	// Traverse the expression
+
+	ConstForwardTraversal::Visit(cast);
+
+	SetShape(cast, GetShape(cast->GetExpression()));
 }
 
-void ShapeAnalysis::Visit(Identifier *identifier)
+void ShapeAnalysis::Visit(const Identifier *identifier)
 {
-	// identifier->SetShape(identifier->GetDeclaration()->GetShape());
+	SetShape(identifier, GetShape(identifier->GetDeclaration()->GetName()));
 }
 
-// void ShapeAnalysis::Visit(Literal<int64_t> *literal)
-// {
-// 	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
-// }
+void ShapeAnalysis::Visit(const BoolLiteral *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
 
-// void ShapeAnalysis::Visit(Literal<double> *literal)
-// {
-// 	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
-// }
+void ShapeAnalysis::Visit(const Int8Literal *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
 
-// void ShapeAnalysis::Visit(Literal<std::string> *literal)
-// {
-// 	// literal->SetShape(new Shape(Shape::Kind::Vector, literal->GetCount()));
-// }
+void ShapeAnalysis::Visit(const Int16Literal *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
 
-// void ShapeAnalysis::Visit(Symbol *symbol)
-// {
-// 	// symbol->SetShape(new Shape(Shape::Kind::Vector, symbol->GetCount()));
-// }
+void ShapeAnalysis::Visit(const Int32Literal *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const Int64Literal *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const Float32Literal *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const Float64Literal *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const StringLiteral *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const SymbolLiteral *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const DateLiteral *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(literal->GetCount())));
+}
+
+void ShapeAnalysis::Visit(const FunctionLiteral *literal)
+{
+	SetShape(literal, new Shape(Shape::Kind::Vector, new Shape::ConstantSize(1)));
+}
 
 }

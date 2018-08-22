@@ -83,6 +83,8 @@ int main(int argc, const char *argv[])
 
 	auto timeTypes_start = Utils::Chrono::Start();
 
+	// Run the type checker
+
 	HorseIR::TypeAnalysis typeAnalysis;
 	typeAnalysis.Analyze(program);
 

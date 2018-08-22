@@ -36,7 +36,16 @@ void Interpreter::Execute(HorseIR::Program *program)
 
 	HorseIR::EntryAnalysis entryAnalysis;
 	entryAnalysis.Analyze(program);
-	auto result = Execute(entryAnalysis.GetEntry(), {});
+	auto entry = entryAnalysis.GetEntry();
+
+	// Perform a conservative shape analysis
+
+	HorseIR::ShapeAnalysis shapeAnalysis;
+	shapeAnalysis.Analyze(entry);
+
+	// Execute the entry point with no parameters
+
+	auto result = Execute(entry, {});
 	result->Dump();
 }
 
@@ -60,27 +69,29 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::ve
 	if (method->IsKernel())
 	{
 		// Run the shape and type analyses
+		//
+		//TODO: Runtime shape analysis if needed
 
-		HorseIR::ShapeAnalysis shapeAnalysis;
-		unsigned int i = 0;
-		for (auto& parameter : method->GetParameters())
-		{
-			auto type = parameter->GetType();
-			auto argument = arguments.at(i);
-			switch (type->GetKind())
-			{
-				case HorseIR::Type::Kind::Basic:
-				{
-					auto argumentData = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
-					// parameter->SetShape(new HorseIR::Shape(HorseIR::Shape::Kind::Vector, argumentData->GetElementCount()));
-					break;
-				}
-				default:
-					Utils::Logger::LogError("Unsupported argument type " + type->ToString());
-			}
-			++i;
-		}
-		shapeAnalysis.Analyze(method);
+// 		HorseIR::ShapeAnalysis shapeAnalysis;
+// 		unsigned int i = 0;
+// 		for (auto& parameter : method->GetParameters())
+// 		{
+// 			auto type = parameter->GetType();
+// 			auto argument = arguments.at(i);
+// 			switch (type->GetKind())
+// 			{
+// 				case HorseIR::Type::Kind::Basic:
+// 				{
+// 					auto argumentData = static_cast<Runtime::DataVector *>(m_expressionMap.at(argument));
+// 					// parameter->SetShape(new HorseIR::Shape(HorseIR::Shape::Kind::Vector, argumentData->GetElementCount()));
+// 					break;
+// 				}
+// 				default:
+// 					Utils::Logger::LogError("Unsupported argument type " + type->ToString());
+// 			}
+// 			++i;
+// 		}
+// 		shapeAnalysis.Analyze(method);
 
 		// Compile the HorseIR to PTX code using the current device
 

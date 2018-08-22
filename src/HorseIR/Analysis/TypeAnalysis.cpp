@@ -59,9 +59,8 @@ void TypeAnalysis::Visit(CallExpression *call)
 	// Analyze the function according to the type rules
 
 	auto method = call->GetMethod();
-	auto arguments = call->GetArguments();
 	std::vector<Type *> argumentTypes;
-	for (auto argument : arguments)
+	for (auto argument : call->GetArguments())
 	{
 		argumentTypes.push_back(argument->GetType());
 	}
