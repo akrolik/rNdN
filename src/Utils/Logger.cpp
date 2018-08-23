@@ -24,7 +24,7 @@ static std::string ReplaceString(std::string subject, const std::string& search,
 	return subject;
 }
 
-void Logger::LogInfo(const std::string& info, unsigned int indentation, const std::string& prefix)
+void Logger::LogInfo(const std::string& info, unsigned int indentation, bool newline, const std::string& prefix)
 {
 	std::string _prefix = "";
 	if (prefix != NoPrefix)
@@ -35,7 +35,11 @@ void Logger::LogInfo(const std::string& info, unsigned int indentation, const st
 	{
 		_prefix += std::string(indentation, ' ') + "- ";
 	}
-	std::cout << _prefix << ReplaceString(info, "\n", "\n" + _prefix) << std::endl;
+	std::cout << _prefix << ReplaceString(info, "\n", "\n" + _prefix);
+	if (newline)
+	{
+		std::cout << std::endl;
+	}
 }
 
 void Logger::LogError(const std::string& error, const std::string& prefix)
@@ -62,6 +66,11 @@ void Logger::LogTiming(const std::string& name, long time)
 void Logger::LogTimingComponent(const std::string& name, long time)
 {
 	std::cout << "[TIME]  - " << name << ": " << time << " mus" << std::endl;
+}
+
+void Logger::LogBlank(const std::string& prefix)
+{
+	std::cout << prefix << std::endl;
 }
 
 }

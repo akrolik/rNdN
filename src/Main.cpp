@@ -1,8 +1,9 @@
 #include "HorseIR/BuiltinModule.h"
 #include "HorseIR/Analysis/EntryAnalysis.h"
-#include "HorseIR/Analysis/ShapeAnalysis.h"
 #include "HorseIR/Analysis/SymbolTable.h"
 #include "HorseIR/Analysis/TypeAnalysis.h"
+#include "HorseIR/Analysis/Shape/ShapeAnalysis.h"
+#include "HorseIR/Analysis/Shape/ShapeAnalysisDumper.h"
 #include "HorseIR/Tree/Program.h"
 
 #include "Utils/Chrono.h"
@@ -120,6 +121,7 @@ int main(int argc, const char *argv[])
 
 	HorseIR::ShapeAnalysis shapeAnalysis;
 	shapeAnalysis.Analyze(entry);
+	auto shapes = shapeAnalysis.GetResults();
 
 	auto timeShapes = Utils::Chrono::End(timeShapes_start);
 
@@ -127,8 +129,8 @@ int main(int argc, const char *argv[])
 	{
 		// Dump the shape analysis results to stdout
 
-		// HorseIR::ShapeAnalysisDumper dump;
-		// dump.Dump(program);
+		HorseIR::ShapeAnalysisDumper dump;
+		dump.Dump(entry, shapes);
 	}
 	Utils::Logger::LogTiming("Shape analysis", timeShapes);
 

@@ -1,6 +1,6 @@
-#include "HorseIR/Analysis/ShapeAnalysis.h"
+#include "HorseIR/Analysis/Shape/ShapeAnalysis.h"
 
-#include "HorseIR/Analysis/ShapeUtils.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Parameter.h"
@@ -26,7 +26,7 @@
 
 namespace HorseIR {
 
-void ShapeAnalysis::Analyze(Method *method)
+void ShapeAnalysis::Analyze(const MethodDeclaration *method)
 {
 	m_shapes.push(std::make_tuple(nullptr, new MethodInvocationShapes()));
 	method->Accept(*this);
@@ -79,7 +79,7 @@ void ShapeAnalysis::Visit(const AssignStatement *assign)
 
 void ShapeAnalysis::Visit(const ReturnStatement *ret)
 {
-	m_contextResult = GetShape(ret->GetIdentifier()->GetString());
+	std::get<1>(m_shapes.top())->SetReturnShape(GetShape(ret->GetIdentifier()->GetString()));
 }
 
 void ShapeAnalysis::Visit(const CallExpression *call)
@@ -90,7 +90,7 @@ void ShapeAnalysis::Visit(const CallExpression *call)
 
 	// Store the current call to give context to the dynamic sizes
 
-	m_context = call;
+	m_call = call;
 
 	// Analyze the function according to the shape rules
 
@@ -98,7 +98,7 @@ void ShapeAnalysis::Visit(const CallExpression *call)
 
 	// Reset current expression to the enclosing call
 
-	m_context = std::get<0>(m_shapes.top());
+	m_call = std::get<0>(m_shapes.top());
 }
 
 [[noreturn]] void ShapeAnalysis::ShapeError(const MethodDeclaration *method, const std::vector<Expression *>& arguments)
@@ -148,7 +148,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const Method *method, const std::vector<Expres
 
 	// Update the scope for the new context
 
-	m_shapes.push(std::make_tuple(m_context, localShapes));
+	m_shapes.push(std::make_tuple(m_call, localShapes));
 
 	ConstForwardTraversal::Visit(method);
 
@@ -156,7 +156,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const Method *method, const std::vector<Expres
 	m_results->AddInvocationShapes(std::get<0>(m_shapes.top()), std::get<1>(m_shapes.top()));
 	m_shapes.pop();
 
-	return m_contextResult;
+	return localShapes->GetReturnShape();
 }
 
 Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments)
@@ -245,13 +245,13 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 			}
 			else if (argumentSize1->m_kind == Shape::Size::Kind::Dynamic || argumentSize2->m_kind == Shape::Size::Kind::Dynamic)
 			{
-				size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_context);
+				size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_call);
 			}
 			else if (argumentSize1->m_kind == Shape::Size::Kind::Symbol || argumentSize2->m_kind == Shape::Size::Kind::Symbol)
 			{
 				if (*argumentSize1 != *argumentSize2)
 				{
-					size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_context);
+					size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_call);
 				}
 				else
 				{
@@ -282,7 +282,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 			//TODO: Better handling of dynamics
 			Require(*argumentSize1 == *argumentSize2 || argumentSize1->m_kind == Shape::Size::Kind::Dynamic || argumentSize2->m_kind == Shape::Size::Kind::Dynamic);
 
-			return new VectorShape(new Shape::CompressedSize(std::get<0>(m_shapes.top()), m_context, argumentSize2));
+			return new VectorShape(new Shape::CompressedSize(std::get<0>(m_shapes.top()), arguments.at(0), argumentSize2));
 		}
 		// @count and @len are aliases
 		case BuiltinMethod::Kind::Length:

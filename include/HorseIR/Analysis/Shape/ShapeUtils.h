@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Analysis/Shape.h"
+#include "HorseIR/Analysis/Shape/Shape.h"
 
 namespace HorseIR {
 

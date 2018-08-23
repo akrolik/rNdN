@@ -6,8 +6,8 @@
 
 #include "HorseIR/Traversal/ConstForwardTraversal.h"
 
-#include "HorseIR/Analysis/Shape.h"
-#include "HorseIR/Analysis/ShapeResults.h"
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeResults.h"
 #include "HorseIR/Tree/Types/Type.h"
 
 namespace HorseIR {
@@ -15,7 +15,8 @@ namespace HorseIR {
 class ShapeAnalysis : public ConstForwardTraversal
 {
 public:
-	void Analyze(Method *method);
+	void Analyze(const MethodDeclaration *method);
+	ShapeResults *GetResults() const { return m_results; }
 
 	void Visit(const Parameter *parameter) override;
 	void Visit(const AssignStatement *assign) override;
@@ -53,8 +54,7 @@ private:
 	ShapeResults *m_results = new ShapeResults();
 	std::stack<std::tuple<const CallExpression *, MethodInvocationShapes *>> m_shapes;
 
-	const CallExpression *m_context = nullptr;
-	Shape *m_contextResult = nullptr;
+	const CallExpression *m_call = nullptr;
 };
 
 }
