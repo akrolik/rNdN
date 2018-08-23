@@ -279,10 +279,26 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 
 			auto argumentSize1 = HorseIR::GetShape<VectorShape>(argumentShape1)->GetSize();
 			auto argumentSize2 = HorseIR::GetShape<VectorShape>(argumentShape2)->GetSize();
-			//TODO: Better handling of dynamics
-			Require(*argumentSize1 == *argumentSize2 || argumentSize1->m_kind == Shape::Size::Kind::Dynamic || argumentSize2->m_kind == Shape::Size::Kind::Dynamic);
 
-			return new VectorShape(new Shape::CompressedSize(std::get<0>(m_shapes.top()), arguments.at(0), argumentSize2));
+			auto dynamic1 = (argumentSize1->m_kind == Shape::Size::Kind::Dynamic);
+			auto dynamic2 = (argumentSize2->m_kind == Shape::Size::Kind::Dynamic);
+			Require(*argumentSize1 == *argumentSize2 || dynamic1 || dynamic2);
+
+			const Shape::Size *size = nullptr;
+			if (dynamic1 && dynamic2)
+			{
+				size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_call);
+			}
+			else if (dynamic1)
+			{
+				size = argumentSize2;
+			}
+			else
+			{
+				size = argumentSize1;
+			}
+
+			return new VectorShape(new Shape::CompressedSize(std::get<0>(m_shapes.top()), arguments.at(0), size));
 		}
 		// @count and @len are aliases
 		case BuiltinMethod::Kind::Length:
@@ -308,7 +324,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 				}
 				else if (*shape != *argumentShape)
 				{
-					//TODO: Implement full @list
+					shape = new WildcardShape();
 					break;
 				}
 			}

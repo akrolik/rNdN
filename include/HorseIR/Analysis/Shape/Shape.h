@@ -123,6 +123,7 @@ public:
 	};
 
 	enum class Kind {
+		Wildcard,
 		Vector,
 		List,
 		Table
@@ -144,6 +145,31 @@ protected:
 	const Kind m_kind;
 };
 
+class WildcardShape : public Shape
+{
+public:
+	constexpr static Kind ShapeKind = Kind::Wildcard;
+
+	WildcardShape() : Shape(Shape::Kind::Wildcard) {}
+
+	std::string ToString() const override
+	{
+		return "*";
+	}
+
+	bool operator==(const WildcardShape& other) const
+	{
+		return false;
+	}
+
+	bool operator!=(const WildcardShape& other) const
+	{
+		return true;
+	}
+
+private:
+	const Size *m_size = nullptr;
+};
 class VectorShape : public Shape
 {
 public:
@@ -238,6 +264,8 @@ inline bool Shape::operator==(const Shape& other) const
 	{
 		switch (m_kind)
 		{
+			case Kind::Wildcard:
+				return static_cast<const WildcardShape&>(*this) == static_cast<const WildcardShape&>(other);
 			case Kind::Vector:
 				return static_cast<const VectorShape&>(*this) == static_cast<const VectorShape&>(other);
 			case Kind::List:
