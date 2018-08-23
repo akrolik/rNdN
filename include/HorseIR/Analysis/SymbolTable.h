@@ -1,8 +1,9 @@
 #pragma once
 
 #include <stack>
-#include <map>
+#include <unordered_map>
 
+#include "HorseIR/Traversal/ConstForwardTraversal.h"
 #include "HorseIR/Traversal/ForwardTraversal.h"
 
 namespace HorseIR {
@@ -13,6 +14,7 @@ public:
 	friend class SymbolPass_Modules;
 	friend class SymbolPass_Imports;
 	friend class SymbolPass_Methods;
+	friend class SymbolTableDumper;
 
 	struct Entry
 	{
@@ -32,24 +34,22 @@ public:
 
 	SymbolTable(SymbolTable *parent = nullptr) : m_parent(parent) {}
 
-	void Insert(const std::string& name, Entry *symbol);
-	Entry *Get(const std::string& name);
+	SymbolTable *GetParent() const { return m_parent; }
+
+	Entry *GetSymbol(const std::string& name);
 
 	Module *GetModule(const std::string& name);
 	MethodDeclaration *GetMethod(const std::string& name);
 	Declaration *GetVariable(const std::string& name);
 
+	void AddSymbol(const std::string& name, Entry *symbol);
 	void AddImport(const std::string& name, Entry *symbol);
-
-	SymbolTable *GetParent() const { return m_parent; }
-
-	std::string ToString() const;
 
 private:
 	SymbolTable *m_parent = nullptr;
-	std::map<std::string, Entry *> m_table;
 
-	std::map<std::string, Entry *> m_imports;
+	std::unordered_map<std::string, Entry *> m_table;
+	std::unordered_map<std::string, Entry *> m_imports;
 };
 
 class SymbolPass_Modules : public ForwardTraversal
@@ -111,16 +111,21 @@ public:
 	void Build(Program *program);
 };
 
-class SymbolTableDumper : public ForwardTraversal
+class SymbolTableDumper : public ConstForwardTraversal
 {
 public:
-	using ForwardTraversal::ForwardTraversal;
+	using ConstForwardTraversal::ConstForwardTraversal;
 
-	void Dump(Program *program);
+	void Dump(const Program *program);
 
-	void Visit(Program *program) override;
-	void Visit(Module *module) override;
-	void Visit(Method *method) override;
+	void Visit(const Program *program) override;
+	void Visit(const Module *module) override;
+	void Visit(const Method *method) override;
+
+	void Visit(const Declaration *declaration) override;
+
+private:
+	std::stack<SymbolTable *> m_scopes;
 };
 
 }

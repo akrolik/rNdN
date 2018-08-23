@@ -6,8 +6,6 @@
 #include "CUDA/Module.h"
 
 #include "HorseIR/TypeUtils.h"
-#include "HorseIR/Analysis/EntryAnalysis.h"
-#include "HorseIR/Analysis/ShapeAnalysis.h"
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 #include "HorseIR/Tree/Program.h"
@@ -29,25 +27,6 @@
 #include "Utils/Options.h"
 
 namespace Interpreter {
-
-void Interpreter::Execute(HorseIR::Program *program)
-{
-	Utils::Logger::LogSection("Starting program execution");
-
-	HorseIR::EntryAnalysis entryAnalysis;
-	entryAnalysis.Analyze(program);
-	auto entry = entryAnalysis.GetEntry();
-
-	// Perform a conservative shape analysis
-
-	HorseIR::ShapeAnalysis shapeAnalysis;
-	shapeAnalysis.Analyze(entry);
-
-	// Execute the entry point with no parameters
-
-	auto result = Execute(entry, {});
-	result->Dump();
-}
 
 Runtime::DataObject *Interpreter::Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments)
 {

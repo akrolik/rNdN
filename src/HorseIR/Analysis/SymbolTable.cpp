@@ -34,19 +34,7 @@ std::string SymbolTable::Entry::ToString() const
 	return output;
 }
 
-void SymbolTable::Insert(const std::string& name, Entry *symbol)
-{
-	// Check if symbol is already defined at this scope
-
-	if (m_table.find(name) != m_table.end())
-	{
-		Utils::Logger::LogError("Identifier " + name + " is already defined in current scope");
-	}
-
-	m_table.insert({name, symbol});
-}
-
-SymbolTable::Entry *SymbolTable::Get(const std::string& name)
+SymbolTable::Entry *SymbolTable::GetSymbol(const std::string& name)
 {
 	// Get symbol from the table, recursively traversing to parent
 	// Order is:
@@ -64,14 +52,14 @@ SymbolTable::Entry *SymbolTable::Get(const std::string& name)
 	}
 	if (m_parent != nullptr)
 	{
-		return m_parent->Get(name);
+		return m_parent->GetSymbol(name);
 	}
 	return nullptr;
 }
 
 Module *SymbolTable::GetModule(const std::string& name)
 {
-	auto symbol = Get(name);
+	auto symbol = GetSymbol(name);
 	if (symbol == nullptr)
 	{
 		Utils::Logger::LogError("Module " + name + " is not defined in current program");
@@ -85,7 +73,7 @@ Module *SymbolTable::GetModule(const std::string& name)
 
 MethodDeclaration *SymbolTable::GetMethod(const std::string& name)
 {
-	auto symbol = Get(name);
+	auto symbol = GetSymbol(name);
 	if (symbol == nullptr)
 	{
 		Utils::Logger::LogError("Method '" + name + "' cannot be found in the current module scope");
@@ -99,7 +87,7 @@ MethodDeclaration *SymbolTable::GetMethod(const std::string& name)
 
 Declaration *SymbolTable::GetVariable(const std::string& name)
 {
-	auto symbol = Get(name);
+	auto symbol = GetSymbol(name);
 	if (symbol == nullptr)
 	{
 		Utils::Logger::LogError("Variable '" + name + "' cannot be found in the current method scope");
@@ -109,6 +97,18 @@ Declaration *SymbolTable::GetVariable(const std::string& name)
 		Utils::Logger::LogError("'" + name + "' is not a variable");
 	}
 	return static_cast<Declaration *>(symbol->node);
+}
+
+void SymbolTable::AddSymbol(const std::string& name, Entry *symbol)
+{
+	// Check if symbol is already defined at this scope
+
+	if (m_table.find(name) != m_table.end())
+	{
+		Utils::Logger::LogError("Identifier " + name + " is already defined in current scope");
+	}
+
+	m_table.insert({name, symbol});
 }
 
 void SymbolTable::AddImport(const std::string& name, Entry *symbol)
@@ -121,21 +121,6 @@ void SymbolTable::AddImport(const std::string& name, Entry *symbol)
 	}
 
 	m_imports.insert({name, symbol});
-}
-
-std::string SymbolTable::ToString() const
-{
-	std::string output;
-	for (const auto& entry : m_table)
-	{
-		output += " - " + entry.first + " " + entry.second->ToString() + "\n";
-	}
-
-	for (const auto& entry : m_imports)
-	{
-		output += " * " + entry.first + " " + entry.second->ToString() + "\n";
-	}
-	return output;
 }
 
 void SymbolPass_Modules::Build(Program *program)
@@ -151,7 +136,7 @@ void SymbolPass_Modules::Build(Program *program)
 void SymbolPass_Modules::Visit(Module *module)
 {
 	auto symbolTable = m_scopes.top();
-	symbolTable->Insert(module->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Module, module));
+	symbolTable->AddSymbol(module->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Module, module));
 
 	auto localSymbolTable = new SymbolTable(symbolTable);
 	module->SetSymbolTable(localSymbolTable);
@@ -164,14 +149,13 @@ void SymbolPass_Modules::Visit(Module *module)
 void SymbolPass_Modules::Visit(BuiltinMethod *method)
 {
 	auto symbolTable = m_scopes.top();
-	symbolTable->Insert(method->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Method, method));
+	symbolTable->AddSymbol(method->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Method, method));
 }
-
 
 void SymbolPass_Modules::Visit(Method *method)
 {
 	auto symbolTable = m_scopes.top();
-	symbolTable->Insert(method->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Method, method));
+	symbolTable->AddSymbol(method->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Method, method));
 }
 
 void SymbolPass_Imports::Build(Program *program)
@@ -207,7 +191,7 @@ void SymbolPass_Imports::Visit(Import *import)
 	}
 	else
 	{
-		auto entry = importedSymbolTable->Get(name);
+		auto entry = importedSymbolTable->GetSymbol(name);
 		symbolTable->AddImport(name, entry);
 	}
 }
@@ -248,7 +232,7 @@ void SymbolPass_Methods::Visit(Method *method)
 void SymbolPass_Methods::Visit(Declaration *declaration)
 {
 	auto symbolTable = m_scopes.top();
-	symbolTable->Insert(declaration->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Variable, declaration));
+	symbolTable->AddSymbol(declaration->GetName(), new SymbolTable::Entry(SymbolTable::Entry::Kind::Variable, declaration));
 	ForwardTraversal::Visit(declaration);
 }
 
@@ -312,30 +296,69 @@ void SymbolTableBuilder::Build(Program *program)
 	methods.Build(program);
 }
 
-void SymbolTableDumper::Dump(Program *program)
+void SymbolTableDumper::Dump(const Program *program)
 {
-	Utils::Logger::LogInfo("Global symbol table");
 	program->Accept(*this);
 }
 
-void SymbolTableDumper::Visit(Program *program)
+void SymbolTableDumper::Visit(const Program *program)
 {
-	Utils::Logger::LogInfo(program->GetSymbolTable()->ToString(), 1);
-	ForwardTraversal::Visit(program);
+	Utils::Logger::LogInfo("Global symbol table");
+
+	auto symbolTable = program->GetSymbolTable();
+	for (const auto& entry : symbolTable->m_table)
+	{
+		Utils::Logger::LogInfo(entry.first + " " + entry.second->ToString(), 1);
+	}
+
+	m_scopes.push(symbolTable);
+	ConstForwardTraversal::Visit(program);
+	m_scopes.pop();
 }
 
-void SymbolTableDumper::Visit(Module *module)
+void SymbolTableDumper::Visit(const Module *module)
 {
+	Utils::Logger::LogInfo();
 	Utils::Logger::LogInfo("Module symbol table: " + module->GetName());
-	Utils::Logger::LogInfo(module->GetSymbolTable()->ToString(), 1);
-	ForwardTraversal::Visit(module);
+
+	auto symbolTable = module->GetSymbolTable();
+	for (const auto& entry : symbolTable->m_table)
+	{
+		Utils::Logger::LogInfo(entry.first + " " + entry.second->ToString(), 1);
+	}
+	if (symbolTable->m_imports.size() > 0)
+	{
+		Utils::Logger::LogInfo();
+		Utils::Logger::LogInfo(" Imports");
+	}
+	for (const auto& entry : symbolTable->m_imports)
+	{
+		Utils::Logger::LogInfo(" * " + entry.first + " " + entry.second->ToString());
+	}
+
+	m_scopes.push(symbolTable);
+	ConstForwardTraversal::Visit(module);
+	m_scopes.pop();
 }
 
-void SymbolTableDumper::Visit(Method *method)
+void SymbolTableDumper::Visit(const Method *method)
 {
+	Utils::Logger::LogInfo();
 	Utils::Logger::LogInfo("Method symbol table: " + method->GetName());
-	Utils::Logger::LogInfo(method->GetSymbolTable()->ToString(), 1);
-	ForwardTraversal::Visit(method);
+
+	m_scopes.push(method->GetSymbolTable());
+	ConstForwardTraversal::Visit(method);
+	m_scopes.pop();
+}
+
+void SymbolTableDumper::Visit(const Declaration *declaration)
+{
+	auto symbolTable = m_scopes.top();
+	auto entry = symbolTable->GetSymbol(declaration->GetName());
+
+	Utils::Logger::LogInfo(declaration->GetName() + " " + entry->ToString(), 1);
+
+	ConstForwardTraversal::Visit(declaration);
 }
 
 }

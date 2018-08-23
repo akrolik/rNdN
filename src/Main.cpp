@@ -1,4 +1,6 @@
 #include "HorseIR/BuiltinModule.h"
+#include "HorseIR/Analysis/EntryAnalysis.h"
+#include "HorseIR/Analysis/ShapeAnalysis.h"
 #include "HorseIR/Analysis/SymbolTable.h"
 #include "HorseIR/Analysis/TypeAnalysis.h"
 #include "HorseIR/Tree/Program.h"
@@ -58,7 +60,7 @@ int main(int argc, const char *argv[])
 
 	Utils::Logger::LogTiming("HorseIR frontend", timeFrontend);
 
-	Utils::Logger::LogSection("Building symbol table");
+	Utils::Logger::LogSection("Analyzing input program");
 	auto timeSymbols_start = Utils::Chrono::Start();
 
 	// Connect the builtin module to the program
@@ -81,9 +83,9 @@ int main(int argc, const char *argv[])
 	}
 	Utils::Logger::LogTiming("Symbol table", timeSymbols);
 
-	auto timeTypes_start = Utils::Chrono::Start();
-
 	// Run the type checker
+
+	auto timeTypes_start = Utils::Chrono::Start();
 
 	HorseIR::TypeAnalysis typeAnalysis;
 	typeAnalysis.Analyze(program);
@@ -94,12 +96,47 @@ int main(int argc, const char *argv[])
 	{
 		// Dump the type checking results to stdout
 
-		//TODO: Type dumper
+		// HorseIR::TypeAnalysisDumper dump;
+		// dump.Dump(program);
 	}
-	Utils::Logger::LogTiming("Type checker", timeTypes);
+	Utils::Logger::LogTiming("Typechecker", timeTypes);
 
-	// Execute the HorseIR program in an interpeter, compiling GPU sections as needed
+	// Find the entry point for the program
+
+	auto timeEntry_start = Utils::Chrono::Start();
+
+	HorseIR::EntryAnalysis entryAnalysis;
+	entryAnalysis.Analyze(program);
+	auto entry = entryAnalysis.GetEntry();
+
+	auto timeEntry = Utils::Chrono::End(timeEntry_start);
+
+	Utils::Logger::LogInfo("Found entry point '" + entry->GetName() + "'");
+	Utils::Logger::LogTiming("Entry analysis", timeEntry);
+
+	// Perform a conservative shape analysis
+
+	auto timeShapes_start = Utils::Chrono::Start();
+
+	HorseIR::ShapeAnalysis shapeAnalysis;
+	shapeAnalysis.Analyze(entry);
+
+	auto timeShapes = Utils::Chrono::End(timeShapes_start);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Dump_shape))
+	{
+		// Dump the shape analysis results to stdout
+
+		// HorseIR::ShapeAnalysisDumper dump;
+		// dump.Dump(program);
+	}
+	Utils::Logger::LogTiming("Shape analysis", timeShapes);
+
+	// Execute the HorseIR entry method in an interpeter, compiling GPU sections as needed
+
+	Utils::Logger::LogSection("Starting program execution");
 
 	Interpreter::Interpreter interpreter(runtime);
-	interpreter.Execute(program);
+	auto result = interpreter.Execute(entry, {});
+	result->Dump();
 }
