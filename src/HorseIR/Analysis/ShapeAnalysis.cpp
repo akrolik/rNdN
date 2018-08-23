@@ -243,11 +243,18 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 			{
 				size = argumentSize1;
 			}
-			else if (argumentSize1->m_kind == Shape::Size::Kind::Dynamic || argumentSize2->m_kind == Shape::Size::Kind::Dynamic)
+			else if (argumentSize1->m_kind == Shape::Size::Kind::Constant && argumentSize2->m_kind == Shape::Size::Kind::Constant)
 			{
-				size = new Shape::DynamicSize(std::get<0>(m_shapes.top()), m_call);
+				auto constant1 = static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value;
+				auto constant2 = static_cast<const Shape::ConstantSize *>(argumentSize2)->m_value;
+
+				if (constant1 != constant2)
+				{
+					Utils::Logger::LogError("Dyadic elementwise function '" + method->GetName() + "' requires vector of same length (or broadcast) [" + std::to_string(constant1) + " != " + std::to_string(constant2) + "]");
+				}
+				size = new Shape::ConstantSize(constant1);
 			}
-			else if (argumentSize1->m_kind == Shape::Size::Kind::Symbol || argumentSize2->m_kind == Shape::Size::Kind::Symbol)
+			else
 			{
 				if (*argumentSize1 != *argumentSize2)
 				{
@@ -257,17 +264,6 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 				{
 					size = argumentSize1;
 				}
-			}
-			else
-			{
-				auto constant1 = static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value;
-				auto constant2 = static_cast<const Shape::ConstantSize *>(argumentSize2)->m_value;
-
-				if (constant1 != constant2)
-				{
-					Utils::Logger::LogError("Dyadic elementwise functions cannot be vectors of different sizes [" + std::to_string(constant1) + " != " + std::to_string(constant2) + "]");
-				}
-				size = new Shape::ConstantSize(constant1);
 			}
 			return new VectorShape(size);
 		}
@@ -297,7 +293,6 @@ Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector
 			{
 				size = argumentSize1;
 			}
-
 			return new VectorShape(new Shape::CompressedSize(std::get<0>(m_shapes.top()), arguments.at(0), size));
 		}
 		// @count and @len are aliases
