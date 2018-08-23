@@ -21,7 +21,7 @@ static std::vector<T> ConvertValues(const std::vector<double>& values)
 }
 
 template<typename S>
-static Expression *CreateFloatLiteral(const std::vector<S>& values, BasicType *type)
+static Operand *CreateFloatLiteral(const std::vector<S>& values, BasicType *type)
 {
 	switch (type->GetKind())
 	{
@@ -35,7 +35,7 @@ static Expression *CreateFloatLiteral(const std::vector<S>& values, BasicType *t
 }
 
 template<typename S>
-static Expression *CreateFloatLiteral(S value, BasicType *type)
+static Operand *CreateFloatLiteral(S value, BasicType *type)
 {
 	std::vector<S> values = { value };
 	return CreateFloatLiteral<S>(values, type);

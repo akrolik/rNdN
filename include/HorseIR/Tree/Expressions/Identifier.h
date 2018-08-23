@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
@@ -10,10 +10,10 @@
 
 namespace HorseIR {
 
-class Identifier : public Expression
+class Identifier : public Operand
 {
 public:
-	Identifier(const std::string& string) : m_string(string) {}
+	Identifier(const std::string& string) : Operand(Operand::Kind::Identifier), m_string(string) {}
 
 	const std::string& GetString() const { return m_string; }
 
@@ -27,6 +27,16 @@ public:
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+
+	bool operator==(const Identifier& other) const
+	{
+		return (m_string == other.m_string && m_declaration == other.m_declaration);
+	}
+
+	bool operator!=(const Identifier& other) const
+	{
+		return !(*this == other);
+	}
 
 private:
 	std::string m_string;

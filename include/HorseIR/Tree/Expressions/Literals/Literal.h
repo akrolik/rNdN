@@ -3,16 +3,16 @@
 #include <string>
 #include <vector>
 
-#include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 
 namespace HorseIR {
 
 template<class T>
-class Literal : public Expression
+class Literal : public Operand
 {
 public:
-	Literal(const T& value, Type *type) : m_values({value}) { SetType(type); }
-	Literal(const std::vector<T>& values, Type *type) : m_values(values) { SetType(type); }
+	Literal(const T& value, Type *type) : Operand(Operand::Kind::Literal), m_values({value}) { SetType(type); }
+	Literal(const std::vector<T>& values, Type *type) : Operand(Operand::Kind::Literal), m_values(values) { SetType(type); }
 
 	const std::vector<T>& GetValues() const { return m_values; }
 	const T& GetValue(unsigned int index) const { return m_values.at(index); }
@@ -41,6 +41,16 @@ public:
 			code += ")";
 		}
 		return code + ":" + m_type->ToString();
+	}
+
+	bool operator==(const Literal& other)
+	{
+		return m_values == other.m_values;
+	}
+
+	bool operator!=(const Literal& other)
+	{
+		return !(*this == other);
 	}
 
 protected:

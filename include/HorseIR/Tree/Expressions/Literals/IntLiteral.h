@@ -24,7 +24,7 @@ static std::vector<T> ConvertValues(const std::vector<std::int64_t>& values)
 	return converted;
 }
 
-static Expression *CreateIntLiteral(const std::vector<std::int64_t>& values, BasicType *type)
+static Operand *CreateIntLiteral(const std::vector<std::int64_t>& values, BasicType *type)
 {
 	switch (type->GetKind())
 	{
@@ -41,7 +41,7 @@ static Expression *CreateIntLiteral(const std::vector<std::int64_t>& values, Bas
 	}
 }
 
-static Expression *CreateIntLiteral(std::int64_t value, BasicType *type)
+static Operand *CreateIntLiteral(std::int64_t value, BasicType *type)
 {
 	std::vector<std::int64_t> values = { value };
 	return CreateIntLiteral(values, type);

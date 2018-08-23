@@ -28,7 +28,7 @@
 
 namespace Interpreter {
 
-Runtime::DataObject *Interpreter::Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments)
+Runtime::DataObject *Interpreter::Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Operand *>& arguments)
 {
 	switch (method->GetKind())
 	{
@@ -41,7 +41,7 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::MethodDeclaration *method, co
 	Utils::Logger::LogError("Cannot execute method '" + method->GetName() + "'");
 }
 
-Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments)
+Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::vector<HorseIR::Operand *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing method '" + method->GetName() + "'");
 
@@ -236,7 +236,7 @@ Runtime::DataObject *Interpreter::Execute(HorseIR::Method *method, const std::ve
 	}
 }
 
-Runtime::DataObject *Interpreter::Execute(HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Expression *>& arguments)
+Runtime::DataObject *Interpreter::Execute(HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Operand *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing builtin method '" + method->GetName() + "'");
 

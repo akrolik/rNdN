@@ -8,11 +8,8 @@
 #include "HorseIR/Tree/BuiltinMethod.h"
 #include "HorseIR/Tree/Method.h"
 
-#include "HorseIR/Tree/Statements/Statement.h"
-#include "HorseIR/Tree/Statements/AssignStatement.h"
-#include "HorseIR/Tree/Statements/ReturnStatement.h"
-
 #include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
@@ -29,6 +26,10 @@
 #include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
+
+#include "HorseIR/Tree/Statements/Statement.h"
+#include "HorseIR/Tree/Statements/AssignStatement.h"
+#include "HorseIR/Tree/Statements/ReturnStatement.h"
 
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
@@ -111,6 +112,11 @@ void ConstVisitor::Visit(const Expression *expression)
 	Visit(static_cast<const Node*>(expression));
 }
 
+void ConstVisitor::Visit(const Operand *operand)
+{
+	Visit(static_cast<const Expression*>(operand));
+}
+
 void ConstVisitor::Visit(const CallExpression *call)
 {
 	Visit(static_cast<const Expression*>(call));
@@ -123,7 +129,7 @@ void ConstVisitor::Visit(const CastExpression *cast)
 
 void ConstVisitor::Visit(const Identifier *identifier)
 {
-	Visit(static_cast<const Expression*>(identifier));
+	Visit(static_cast<const Operand*>(identifier));
 }
 
 void ConstVisitor::Visit(const ModuleIdentifier *identifier)
@@ -133,57 +139,57 @@ void ConstVisitor::Visit(const ModuleIdentifier *identifier)
 
 void ConstVisitor::Visit(const BoolLiteral *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Int8Literal *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Int16Literal *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Int32Literal *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Int64Literal *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Float32Literal *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Float64Literal *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const StringLiteral *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const SymbolLiteral *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const DateLiteral *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const FunctionLiteral *literal)
 {
-	Visit(static_cast<const Expression*>(literal));
+	Visit(static_cast<const Operand*>(literal));
 }
 
 void ConstVisitor::Visit(const Type *type)

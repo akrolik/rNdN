@@ -12,9 +12,9 @@ class Interpreter : public HorseIR::Visitor
 public:
 	Interpreter(Runtime::Runtime& runtime) : m_runtime(runtime) {}
 
-	Runtime::DataObject *Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Expression *>& arguments);
-	Runtime::DataObject *Execute(HorseIR::Method *method, const std::vector<HorseIR::Expression *>& arguments);
-	Runtime::DataObject *Execute(HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Expression *>& arguments);
+	Runtime::DataObject *Execute(HorseIR::MethodDeclaration *method, const std::vector<HorseIR::Operand *>& arguments);
+	Runtime::DataObject *Execute(HorseIR::Method *method, const std::vector<HorseIR::Operand *>& arguments);
+	Runtime::DataObject *Execute(HorseIR::BuiltinMethod *method, const std::vector<HorseIR::Operand *>& arguments);
 
 	void Visit(HorseIR::AssignStatement *assign) override;
 	void Visit(HorseIR::ReturnStatement *ret) override;

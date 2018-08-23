@@ -4,6 +4,7 @@
 
 #include "HorseIR/Tree/Statements/Statement.h"
 
+#include "HorseIR/Tree/Expressions/Operand.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"

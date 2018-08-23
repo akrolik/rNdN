@@ -13,6 +13,7 @@
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 
 #include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
@@ -111,6 +112,11 @@ void Visitor::Visit(Expression *expression)
 	Visit(static_cast<Node*>(expression));
 }
 
+void Visitor::Visit(Operand *operand)
+{
+	Visit(static_cast<Expression*>(operand));
+}
+
 void Visitor::Visit(CallExpression *call)
 {
 	Visit(static_cast<Expression*>(call));
@@ -123,7 +129,7 @@ void Visitor::Visit(CastExpression *cast)
 
 void Visitor::Visit(Identifier *identifier)
 {
-	Visit(static_cast<Expression*>(identifier));
+	Visit(static_cast<Operand*>(identifier));
 }
 
 void Visitor::Visit(ModuleIdentifier *identifier)
@@ -133,57 +139,57 @@ void Visitor::Visit(ModuleIdentifier *identifier)
 
 void Visitor::Visit(BoolLiteral *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Int8Literal *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Int16Literal *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Int32Literal *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Int64Literal *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Float32Literal *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Float64Literal *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(StringLiteral *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(SymbolLiteral *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(DateLiteral *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(FunctionLiteral *literal)
 {
-	Visit(static_cast<Expression*>(literal));
+	Visit(static_cast<Operand*>(literal));
 }
 
 void Visitor::Visit(Type *type)

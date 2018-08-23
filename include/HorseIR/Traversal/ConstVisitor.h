@@ -22,6 +22,7 @@ class AssignStatement;
 class ReturnStatement;
 
 class Expression;
+class Operand;
 class CallExpression;
 class CastExpression;
 class Identifier;
@@ -68,6 +69,7 @@ public:
 	virtual void Visit(const ReturnStatement *ret);
 
 	virtual void Visit(const Expression *expression);
+	virtual void Visit(const Operand *operand);
 	virtual void Visit(const CallExpression *call);
 	virtual void Visit(const CastExpression *cast);
 	virtual void Visit(const Identifier *identifier);

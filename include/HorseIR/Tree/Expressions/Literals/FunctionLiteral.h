@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
@@ -10,11 +10,10 @@
 
 namespace HorseIR {
 
-class FunctionLiteral : public Expression
+class FunctionLiteral : public Operand
 {
 public:
-
-	FunctionLiteral(ModuleIdentifier *identifier) : m_identifier(identifier) { SetType(new FunctionType()); }
+	FunctionLiteral(ModuleIdentifier *identifier) : Operand(Operand::Kind::Literal), m_identifier(identifier) { SetType(new FunctionType()); }
 
 	ModuleIdentifier *GetIdentifier() const { return m_identifier; }
 	void SetIdentifier(ModuleIdentifier *identifier) { m_identifier = identifier; }

@@ -3,6 +3,8 @@
 #include <string>
 
 #include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
+#include "HorseIR/Tree/Expressions/CallExpression.h"
 
 namespace HorseIR {
 
@@ -77,7 +79,7 @@ public:
 
 	struct CompressedSize : Size
 	{
-		CompressedSize(const CallExpression *invocation, const Expression *predicate, const Size *size) : Size(Size::Kind::Compressed), m_invocation(invocation), m_predicate(predicate), m_size(size) {}
+		CompressedSize(const CallExpression *invocation, const Operand *predicate, const Size *size) : Size(Size::Kind::Compressed), m_invocation(invocation), m_predicate(predicate), m_size(size) {}
 
 		std::string ToString() const override
 		{
@@ -86,7 +88,7 @@ public:
 
 		bool operator==(const CompressedSize& other) const
 		{
-			return (m_invocation == other.m_invocation && m_predicate == other.m_predicate && m_size == m_size);
+			return (m_invocation == other.m_invocation && *m_predicate == *other.m_predicate && *m_size == *other.m_size);
 		}
 
 		bool operator!=(const CompressedSize& other) const
@@ -95,7 +97,7 @@ public:
 		}
 
 		const CallExpression *m_invocation = nullptr;
-		const Expression *m_predicate = nullptr;
+		const Operand *m_predicate = nullptr;
 		const Size *m_size = nullptr;;
 	};
 

@@ -39,11 +39,11 @@ public:
 	void Visit(const FunctionLiteral *literal);
 
 private:
-	[[noreturn]] void ShapeError(const MethodDeclaration *method, const std::vector<Expression *>& arguments);
+	[[noreturn]] void ShapeError(const MethodDeclaration *method, const std::vector<Operand *>& arguments);
 
-	Shape *AnalyzeCall(const MethodDeclaration *method, const std::vector<Expression *>& arguments);
-	Shape *AnalyzeCall(const Method *method, const std::vector<Expression *>& arguments);
-	Shape *AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments);
+	Shape *AnalyzeCall(const MethodDeclaration *method, const std::vector<Operand *>& arguments);
+	Shape *AnalyzeCall(const Method *method, const std::vector<Operand *>& arguments);
+	Shape *AnalyzeCall(const BuiltinMethod *method, const std::vector<Operand *>& arguments);
 
 	Shape *GetShape(const Expression *expression);
 	Shape *GetShape(const std::string& variable);

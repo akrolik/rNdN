@@ -7,6 +7,7 @@
 #include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Module.h"
 #include "HorseIR/Tree/Program.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"

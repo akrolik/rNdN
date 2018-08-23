@@ -7,6 +7,7 @@
 #include "HorseIR/Tree/Expressions/CallExpression.h"
 #include "HorseIR/Tree/Expressions/CastExpression.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 #include "HorseIR/Tree/Expressions/Identifier.h"
 #include "HorseIR/Tree/Expressions/Literals/BoolLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
@@ -101,7 +102,7 @@ void ShapeAnalysis::Visit(const CallExpression *call)
 	m_call = std::get<0>(m_shapes.top());
 }
 
-[[noreturn]] void ShapeAnalysis::ShapeError(const MethodDeclaration *method, const std::vector<Expression *>& arguments)
+[[noreturn]] void ShapeAnalysis::ShapeError(const MethodDeclaration *method, const std::vector<Operand *>& arguments)
 {
 	std::string message = "Incompatible shapes [";
 	bool first = true;
@@ -118,7 +119,7 @@ void ShapeAnalysis::Visit(const CallExpression *call)
 	Utils::Logger::LogError(message);
 }
 
-Shape *ShapeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vector<Expression *>& arguments)
+Shape *ShapeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::vector<Operand *>& arguments)
 {
 	switch (method->GetKind())
 	{
@@ -131,7 +132,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const MethodDeclaration *method, const std::ve
 	}
 }
 
-Shape *ShapeAnalysis::AnalyzeCall(const Method *method, const std::vector<Expression *>& arguments)
+Shape *ShapeAnalysis::AnalyzeCall(const Method *method, const std::vector<Operand *>& arguments)
 {
 	// Create a new shape mapping for this invocation and set all parameters
 
@@ -159,7 +160,7 @@ Shape *ShapeAnalysis::AnalyzeCall(const Method *method, const std::vector<Expres
 	return localShapes->GetReturnShape();
 }
 
-Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Expression *>& arguments)
+Shape *ShapeAnalysis::AnalyzeCall(const BuiltinMethod *method, const std::vector<Operand *>& arguments)
 {
 	switch (method->GetKind())
 	{

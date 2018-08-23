@@ -26,6 +26,7 @@ void yyerror(const char *s)
 	#include "HorseIR/Tree/Expressions/CallExpression.h"
 	#include "HorseIR/Tree/Expressions/CastExpression.h"
 	#include "HorseIR/Tree/Expressions/Expression.h"
+	#include "HorseIR/Tree/Expressions/Operand.h"
 	#include "HorseIR/Tree/Expressions/Identifier.h"
 	#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
 	#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
@@ -58,6 +59,7 @@ void yyerror(const char *s)
 	std::vector<HorseIR::ModuleContent *> *module_contents;
 	std::vector<HorseIR::Parameter *> *parameters;
 	std::vector<HorseIR::Statement *> *statements;
+	std::vector<HorseIR::Operand *> *operands;
 	std::vector<HorseIR::Expression *> *expressions;
 	std::vector<std::string> *string_list;
 	std::vector<std::int64_t> *int_list;
@@ -69,6 +71,7 @@ void yyerror(const char *s)
 	HorseIR::BasicType *basic_type;
 	HorseIR::Statement *statement;
 	HorseIR::ModuleIdentifier *module_identifier;
+	HorseIR::Operand *operand;
 	HorseIR::Expression *expression;
 }
 
@@ -89,8 +92,9 @@ void yyerror(const char *s)
 %type <statements> statements
 %type <statement> statement
 %type <module_identifier> module_identifier
-%type <expressions> literals literalsne
-%type <expression> expression call literal int_literal float_literal string_literal symbol_literal date_literal function_literal
+%type <operands> literals literalsne
+%type <expression> expression call
+%type <operand> literal int_literal float_literal string_literal symbol_literal date_literal function_literal
 %type <int_list> int_list date_list
 %type <float_list> float_list
 %type <string_list> string_list symbol_list
@@ -176,11 +180,11 @@ module_identifier : tIDENTIFIER '.' tIDENTIFIER                                 
                   ;
 
 literals : literalsne                                                           { $$ = $1; }
-         | %empty                                                               { $$ = new std::vector<HorseIR::Expression *>(); }
+         | %empty                                                               { $$ = new std::vector<HorseIR::Operand *>(); }
          ;
 
 literalsne : literalsne ',' literal                                             { $1->push_back($3); $$ = $1; }
-           | literal                                                            { $$ = new std::vector<HorseIR::Expression *>({$1}); } 
+           | literal                                                            { $$ = new std::vector<HorseIR::Operand *>({$1}); } 
            ;
 
 literal : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }

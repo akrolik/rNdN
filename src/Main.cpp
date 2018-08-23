@@ -92,14 +92,6 @@ int main(int argc, const char *argv[])
 	typeAnalysis.Analyze(program);
 
 	auto timeTypes = Utils::Chrono::End(timeTypes_start);
-
-	if (Utils::Options::Present(Utils::Options::Opt_Dump_type))
-	{
-		// Dump the type checking results to stdout
-
-		// HorseIR::TypeAnalysisDumper dump;
-		// dump.Dump(program);
-	}
 	Utils::Logger::LogTiming("Typechecker", timeTypes);
 
 	// Find the entry point for the program

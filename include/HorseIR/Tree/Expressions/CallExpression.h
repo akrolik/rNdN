@@ -9,19 +9,20 @@
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Tree/MethodDeclaration.h"
 #include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
+#include "HorseIR/Tree/Expressions/Operand.h"
 
 namespace HorseIR {
 
 class CallExpression : public Expression
 {
 public:
-	CallExpression(ModuleIdentifier *identifier, const std::vector<Expression *>& arguments) : m_identifier(identifier), m_arguments(arguments) {}
+	CallExpression(ModuleIdentifier *identifier, const std::vector<Operand *>& arguments) : m_identifier(identifier), m_arguments(arguments) {}
 
 	ModuleIdentifier *GetIdentifier() const { return m_identifier; }
 	void SetIdentifier(ModuleIdentifier *identifier) { m_identifier = identifier; }
 
-	const std::vector<Expression *>& GetArguments() const { return m_arguments; }
-	Expression *GetArgument(unsigned int index) const { return m_arguments.at(index); }
+	const std::vector<Operand *>& GetArguments() const { return m_arguments; }
+	Operand *GetArgument(unsigned int index) const { return m_arguments.at(index); }
 
 	MethodDeclaration *GetMethod() const { return m_method; }
 	void SetMethod(MethodDeclaration *method) { m_method = method; }
@@ -47,7 +48,7 @@ public:
 
 private:
 	ModuleIdentifier *m_identifier = nullptr;
-	std::vector<Expression *> m_arguments;
+	std::vector<Operand *> m_arguments;
 
 	MethodDeclaration *m_method = nullptr;
 };

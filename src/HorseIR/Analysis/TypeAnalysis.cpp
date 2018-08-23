@@ -60,7 +60,7 @@ void TypeAnalysis::Visit(CallExpression *call)
 
 	auto method = call->GetMethod();
 	std::vector<Type *> argumentTypes;
-	for (auto argument : call->GetArguments())
+	for (auto& argument : call->GetArguments())
 	{
 		argumentTypes.push_back(argument->GetType());
 	}

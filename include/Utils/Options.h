@@ -11,7 +11,6 @@ public:
 	static constexpr char const *Opt_Optimize = "optimize";
 	static constexpr char const *Opt_Dump_hir = "dump-hir";
 	static constexpr char const *Opt_Dump_symbol = "dump-symbol";
-	static constexpr char const *Opt_Dump_type = "dump-type";
 	static constexpr char const *Opt_Dump_shape = "dump-shape";
 	static constexpr char const *Opt_Dump_ptx = "dump-ptx";
 	static constexpr char const *Opt_Dump_json = "dump-json";
@@ -52,7 +51,6 @@ private:
 		m_options.add_options("Debug")
 			("i,dump-hir", "Dump pretty printed input HorseIR to stdout")
 			("s,dump-symbol", "Dump symbol table to stdout")
-			("t,dump-type", "Dump type analysis result to stdout")
 			("a,dump-shape", "Dump shape analysis result to stdout")
 			("p,dump-ptx", "Dump generated PTX code to stdout")
 			("j,dump-json", "Dump generated PTX JSON to stdout")
