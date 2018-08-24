@@ -43,12 +43,12 @@ public:
 		return code + ":" + m_type->ToString();
 	}
 
-	bool operator==(const Literal& other)
+	bool operator==(const Literal<T>& other) const
 	{
 		return m_values == other.m_values;
 	}
 
-	bool operator!=(const Literal& other)
+	bool operator!=(const Literal<T>& other) const
 	{
 		return !(*this == other);
 	}

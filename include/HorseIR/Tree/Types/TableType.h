@@ -4,6 +4,7 @@
 
 #include "HorseIR/Tree/Types/BasicType.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
+#include "HorseIR/Tree/Types/ListType.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"

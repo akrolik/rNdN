@@ -12,9 +12,12 @@
 #include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 #include "HorseIR/Tree/Statements/AssignStatement.h"
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
+#include "HorseIR/Tree/Types/BasicType.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
+#include "HorseIR/Tree/Types/EnumerationType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 #include "HorseIR/Tree/Types/FunctionType.h"
+#include "HorseIR/Tree/Types/KeyedTableType.h"
 #include "HorseIR/Tree/Types/TableType.h"
 
 #include "Utils/Logger.h"
