@@ -92,9 +92,9 @@ void yyerror(const char *s)
 %type <statements> statements
 %type <statement> statement
 %type <module_identifier> module_identifier
-%type <operands> literals literalsne
+%type <operands> operands operandsne
 %type <expression> expression call
-%type <operand> literal int_literal float_literal string_literal symbol_literal date_literal function_literal
+%type <operand> operand int_literal float_literal string_literal symbol_literal date_literal function_literal
 %type <int_list> int_list date_list
 %type <float_list> float_list
 %type <string_list> string_list symbol_list
@@ -168,26 +168,26 @@ statement : tIDENTIFIER ':' type '=' expression ';'                             
 
 expression : tCHECKCAST '(' expression ',' type ')'                             { $$ = new HorseIR::CastExpression($3, $5); }
 	   | call                                                               { $$ = $1; }
-           | literal                                                            { $$ = $1; }
+           | operand                                                            { $$ = $1; }
            ; 
 
-call : '@' module_identifier '(' literals ')'                                   { $$ = new HorseIR::CallExpression($2, *$4); }
-     | '@' tIDENTIFIER '(' literals ')'                                         { $$ = new HorseIR::CallExpression(new HorseIR::ModuleIdentifier(*$2), *$4); }
+call : '@' module_identifier '(' operands ')'                                   { $$ = new HorseIR::CallExpression($2, *$4); }
+     | '@' tIDENTIFIER '(' operands ')'                                         { $$ = new HorseIR::CallExpression(new HorseIR::ModuleIdentifier(*$2), *$4); }
      ;
 
 module_identifier : tIDENTIFIER '.' tIDENTIFIER                                 { $$ = new HorseIR::ModuleIdentifier(*$1, *$3); }
                   | tIDENTIFIER '.' '*'                                         { $$ = new HorseIR::ModuleIdentifier(*$1, "*"); }
                   ;
 
-literals : literalsne                                                           { $$ = $1; }
+operands : operandsne                                                           { $$ = $1; }
          | %empty                                                               { $$ = new std::vector<HorseIR::Operand *>(); }
          ;
 
-literalsne : literalsne ',' literal                                             { $1->push_back($3); $$ = $1; }
-           | literal                                                            { $$ = new std::vector<HorseIR::Operand *>({$1}); } 
+operandsne : operandsne ',' operand                                             { $1->push_back($3); $$ = $1; }
+           | operand                                                            { $$ = new std::vector<HorseIR::Operand *>({$1}); } 
            ;
 
-literal : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }
+operand : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }
         | int_literal                                                           { $$ = $1; }
         | float_literal                                                         { $$ = $1; }
 	| string_literal                                                        { $$ = $1; }
