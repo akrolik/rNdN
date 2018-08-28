@@ -1,4 +1,5 @@
 #include "HorseIR/BuiltinModule.h"
+#include "HorseIR/Analysis/DependencyAnalysis.h"
 #include "HorseIR/Analysis/EntryAnalysis.h"
 #include "HorseIR/Analysis/SymbolTable.h"
 #include "HorseIR/Analysis/TypeAnalysis.h"
@@ -125,6 +126,22 @@ int main(int argc, const char *argv[])
 		dump.Dump(entry, shapes);
 	}
 	Utils::Logger::LogTiming("Shape analysis", timeShapes);
+
+	auto timeDependencies_start = Utils::Chrono::Start();
+
+	HorseIR::DependencyAnalysis dependencyAnalysis;
+	dependencyAnalysis.Analyze(program);
+	auto dependencies = dependencyAnalysis.GetResults();
+
+	auto timeDependencies = Utils::Chrono::End(timeDependencies_start);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Dump_dependency))
+	{
+		// Dump the dependency graph to stdout
+
+		Utils::Logger::LogInfo(dependencies->ToString(), 0, true, Utils::Logger::NoPrefix);
+	}
+	Utils::Logger::LogTiming("Dependency analysis", timeDependencies);
 
 	// Execute the HorseIR entry method in an interpeter, compiling GPU sections as needed
 
