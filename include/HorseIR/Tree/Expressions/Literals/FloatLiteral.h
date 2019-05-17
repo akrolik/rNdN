@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HorseIR/Analysis/PrettyPrinter.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
 #include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/Float32Literal.h"
@@ -31,7 +32,7 @@ static VectorLiteral *CreateFloatLiteral(const std::vector<S>& values, BasicType
 		case BasicType::BasicKind::Float64:
 			return new Float64Literal(ConvertValues<double>(values));
 		default:
-			Utils::Logger::LogError("Invalid type '" + BasicType::BasicKindString(type->GetBasicKind()) + "' for float literal");
+			Utils::Logger::LogError("Invalid type '" + PrettyPrinter::PrintString(type) + "' for float literal");
 	}
 }
 

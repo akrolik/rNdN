@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "HorseIR/Analysis/PrettyPrinter.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
 #include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/Int8Literal.h"
@@ -38,7 +39,7 @@ static VectorLiteral *CreateIntLiteral(const std::vector<std::int64_t>& values, 
 		case BasicType::BasicKind::Int64:
 			return new Int64Literal(ConvertValues<std::int64_t>(values));
 		default:
-			Utils::Logger::LogError("Invalid type '" + BasicType::BasicKindString(type->GetBasicKind()) + "' for integer literal");
+			Utils::Logger::LogError("Invalid type '" + PrettyPrinter::PrintString(type) + "' for integer literal");
 	}
 }
 

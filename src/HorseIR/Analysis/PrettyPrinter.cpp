@@ -4,11 +4,12 @@
 
 namespace HorseIR {
 
-std::string PrettyPrinter::PrintString(const Program *program)
+std::string PrettyPrinter::PrintString(const Node *node)
 {
-	m_string.str("");
-	program->Accept(*this);
-	return m_string.str();
+	PrettyPrinter printer;
+	printer.m_string.str("");
+	node->Accept(printer);
+	return printer.m_string.str();
 }
 
 void PrettyPrinter::Indent()

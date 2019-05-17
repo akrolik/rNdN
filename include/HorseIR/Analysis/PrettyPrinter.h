@@ -11,7 +11,7 @@ namespace HorseIR {
 class PrettyPrinter : public ConstVisitor
 {
 public:
-	std::string PrintString(const Program *program);
+	static std::string PrintString(const Node *node);
 
 	// Modules
 

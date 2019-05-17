@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HorseIR/Analysis/PrettyPrinter.h"
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
 
@@ -256,7 +257,7 @@ static BasicType *WidestType(const BasicType *type1, const BasicType *type2)
 	{
 		return new BasicType(BasicType::BasicKind::Boolean);
 	}
-	Utils::Logger::LogError("Unknown widest type for " + BasicType::BasicKindString(type1->GetBasicKind()) + " and " + BasicType::BasicKindString(type2->GetBasicKind()));
+	Utils::Logger::LogError("Unknown widest type for " + PrettyPrinter::PrintString(type1) + " and " + PrettyPrinter::PrintString(type2));
 }
 
 static BasicType *WidestType(const Type *type1, const Type *type2)
@@ -265,8 +266,7 @@ static BasicType *WidestType(const Type *type1, const Type *type2)
 	{
 		return WidestType(GetType<BasicType>(type1), GetType<BasicType>(type2));
 	}
-	// //TODO:
-	// Utils::Logger::LogError("Unknown widest type for " + type1->ToString() + " and " + type2->ToString());
+	Utils::Logger::LogError("Unknown widest type for " + PrettyPrinter::PrintString(type1) + " and " + PrettyPrinter::PrintString(type2));
 }
 
 }
