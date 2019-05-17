@@ -5,16 +5,19 @@
 #include "HorseIR/Tree/Types/Type.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
 class BasicType : public Type
 {
 public:
-	enum class Kind {
+	enum class BasicKind {
 		Wildcard,
-		Bool,
+		Boolean,
+		Char,
 		Int8,
 		Int16,
 		Int32,
@@ -27,123 +30,89 @@ public:
 		Datetime,
 		Date,
 		Month,
-		Time,
 		Minute,
-		Second
+		Second,
+		Time
 	};
 
 	constexpr static Type::Kind TypeKind = Type::Kind::Basic;
 
-	BasicType(Kind kind) : Type(TypeKind), m_kind(kind) {}
+	BasicType(BasicKind kind) : Type(TypeKind), m_basicKind(kind) {}
 
-	static std::string KindString(Kind kind)
+	static std::string BasicKindString(BasicKind kind)
 	{
 		switch (kind)
 		{
-			case Kind::Wildcard:
+			case BasicKind::Wildcard:
 				return "?";
-			case Kind::Bool:
+			case BasicKind::Boolean:
 				return "bool";
-			case Kind::Int8:
-				return "i8";
-			case Kind::Int16:
-				return "i16";
-			case Kind::Int32:
-				return "i32";
-			case Kind::Int64:
-				return "i64";
-			case Kind::Float32:
-				return "f32";
-			case Kind::Float64:
-				return "f64";
-			case Kind::Complex:
-				return "clex";
-			case Kind::Symbol:
-				return "sym";
-			case Kind::String:
-				return "string";
-			case Kind::Month:
-				return "month";
-			case Kind::Date:
-				return "date";
-			case Kind::Datetime:
-				return "dt";
-			case Kind::Minute:
-				return "minute";
-			case Kind::Second:
-				return "second";
-			case Kind::Time:
-				return "time";
-			default:
-				return "<unknown>";
-		}
-	}
-
-	static std::string KindName(Kind kind)
-	{
-		switch (kind)
-		{
-			case Kind::Wildcard:
-				return "wildcard";
-			case Kind::Bool:
-				return "bool";
-			case Kind::Int8:
+			case BasicKind::Char:
 				return "char";
-			case Kind::Int16:
-				return "short";
-			case Kind::Int32:
-				return "int";
-			case Kind::Int64:
-				return "long";
-			case Kind::Float32:
-				return "float";
-			case Kind::Float64:
-				return "double";
-			case Kind::Complex:
+			case BasicKind::Int8:
+				return "i8";
+			case BasicKind::Int16:
+				return "i16";
+			case BasicKind::Int32:
+				return "i32";
+			case BasicKind::Int64:
+				return "i64";
+			case BasicKind::Float32:
+				return "f32";
+			case BasicKind::Float64:
+				return "f64";
+			case BasicKind::Complex:
 				return "complex";
-			case Kind::Symbol:
-				return "symbol";
-			case Kind::String:
+			case BasicKind::Symbol:
+				return "sym";
+			case BasicKind::String:
 				return "string";
-			case Kind::Month:
+			case BasicKind::Datetime:
+				return "dt";
+			case BasicKind::Date:
+				return "date";
+			case BasicKind::Month:
 				return "month";
-			case Kind::Date:
-				return "datee";
-			case Kind::Datetime:
-				return "datetime";
-			case Kind::Minute:
+			case BasicKind::Minute:
 				return "minute";
-			case Kind::Second:
+			case BasicKind::Second:
 				return "second";
-			case Kind::Time:
+			case BasicKind::Time:
 				return "time";
 			default:
 				return "<unknown>";
 		}
 	}
 
-	std::string ToString() const override
-	{
-		return KindString(m_kind);
-	}
-
-	Kind GetKind() const { return m_kind; }
+	BasicKind GetBasicKind() const { return m_basicKind; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 	bool operator==(const BasicType& other) const
 	{
-		return m_kind == other.m_kind;
+		return (m_basicKind == other.m_basicKind);
 	}
 
 	bool operator!=(const BasicType& other) const
 	{
-		return m_kind != other.m_kind;
+		return (m_basicKind != other.m_basicKind);
 	}
 
-private:
-	const Kind m_kind;
+protected:
+	BasicKind m_basicKind;
 };
 
 }

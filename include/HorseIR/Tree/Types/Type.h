@@ -25,7 +25,7 @@ public:
 protected:
 	Type(Kind kind) : m_kind(kind) {}
 
-	const Kind m_kind;
+	Kind m_kind;
 };
 
 }

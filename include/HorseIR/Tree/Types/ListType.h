@@ -1,11 +1,13 @@
 #pragma once
 
-#include <string>
+#include <vector>
 
 #include "HorseIR/Tree/Types/Type.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
@@ -14,32 +16,52 @@ class ListType : public Type
 public:
 	constexpr static Type::Kind TypeKind = Type::Kind::List;
 
-	ListType(Type *elementType) : ListType(TypeKind, elementType) {}
+	ListType(Type *elementTypes) : ListType(TypeKind, {elementTypes}) {}
+	ListType(const std::vector<Type *>& elementTypes) : ListType(TypeKind, elementTypes) {}
 
-	Type *GetElementType() const { return m_elementType; }
+	const std::vector<Type *>& GetElementTypes() const { return m_elementTypes; }
 
-	std::string ToString() const override
+	bool operator==(const ListType& other) const
 	{
-		return "list<" + m_elementType->ToString() + ">";
+		return (m_elementTypes == other.m_elementTypes);
+	}
+
+	bool operator!=(const ListType& other) const
+	{
+		return (m_elementTypes != other.m_elementTypes);
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
-	bool operator==(const ListType& other) const
+	void Accept(HierarchicalVisitor &visitor) override
 	{
-		return (*m_elementType == *other.m_elementType);
+		if (visitor.VisitIn(this))
+		{
+			for (auto& elementType : m_elementTypes)
+			{
+				elementType->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
 	}
 
-	bool operator!=(const ListType& other) const
+	void Accept(ConstHierarchicalVisitor &visitor) const override
 	{
-		return (*m_elementType != *other.m_elementType);
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& elementType : m_elementTypes)
+			{
+				elementType->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
 	}
 
 protected:
-	ListType(Type::Kind kind, Type *elementType) : Type(kind), m_elementType(elementType) {}
+	ListType(Type::Kind kind, const std::vector<Type *>& elementTypes) : Type(kind), m_elementTypes(elementTypes) {}
 
-	Type *m_elementType = nullptr;
+	std::vector<Type *> m_elementTypes;
 };
 
 }

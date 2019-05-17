@@ -1,35 +1,61 @@
 #pragma once
 
-#include <string>
+#include <vector>
 
 #include "HorseIR/Tree/Statements/Statement.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
-#include "HorseIR/Tree/Declaration.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
+
+#include "HorseIR/Tree/Expressions/LValue.h"
 #include "HorseIR/Tree/Expressions/Expression.h"
-#include "HorseIR/Tree/Types/Type.h"
 
 namespace HorseIR {
 
 class AssignStatement : public Statement
 {
 public:
-	AssignStatement(const std::string& name, Type *type, Expression *expression) : m_declaration(new Declaration(name, type)), m_expression(expression) {}
+	AssignStatement(const std::vector<LValue *>& targets, Expression *expression) : m_targets(targets), m_expression(expression) {}
 
-	Declaration *GetDeclaration() const { return m_declaration; }
+	const std::vector<LValue *>& GetTargets() const { return m_targets; }
+	void SetTargets(const std::vector<LValue *>& targets) { m_targets = targets; }
+
 	Expression *GetExpression() const { return m_expression; }
-
-	std::string ToString() const override
-	{
-		return m_declaration->ToString() + " = " + m_expression->ToString();
-	}
+	void SetExpression(Expression *expression) { m_expression = expression; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
-private:
-	Declaration *m_declaration = nullptr;
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (auto& target : m_targets)
+			{
+				target->Accept(visitor);
+			}
+			m_expression->Accept(visitor);
+		}
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& target : m_targets)
+			{
+				target->Accept(visitor);
+			}
+			m_expression->Accept(visitor);
+		}
+		visitor.VisitOut(this);
+	}
+
+protected:
+	std::vector<LValue *> m_targets;
 	Expression *m_expression = nullptr;
 };
 

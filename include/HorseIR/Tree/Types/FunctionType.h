@@ -3,7 +3,9 @@
 #include "HorseIR/Tree/Types/Type.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
@@ -14,29 +16,36 @@ public:
 
 	FunctionType() : Type(TypeKind) {}
 
-	std::string ToString() const override
-	{
-		return "func";
-	}
-
-	MethodDeclaration *GetMethod() const { return m_method; }
-	void SetMethod(MethodDeclaration *method) { m_method = method; }
-
-	void Accept(Visitor &visitor) override { visitor.Visit(this); }
-	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+	FunctionDeclaration *GetFunction() const { return m_function; }
+	void SetFunction(FunctionDeclaration *function) { m_function = function; }
 
 	bool operator==(const FunctionType& other) const
 	{
-		return true;
+		return (m_function == other.m_function);
 	}
 
 	bool operator!=(const FunctionType& other) const
 	{
-		return false;
+		return !(*this == other);
 	}
 
-private:
-	MethodDeclaration *m_method = nullptr;
+	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+protected:
+	FunctionDeclaration *m_function = nullptr;
 };
 
 }

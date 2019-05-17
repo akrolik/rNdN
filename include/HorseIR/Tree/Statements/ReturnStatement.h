@@ -1,34 +1,57 @@
 #pragma once
 
-#include <string>
+#include <vector>
 
 #include "HorseIR/Tree/Statements/Statement.h"
 
 #include "HorseIR/Tree/Expressions/Operand.h"
-#include "HorseIR/Tree/Expressions/Identifier.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
 class ReturnStatement : public Statement
 {
 public:
-	ReturnStatement(Identifier *identifier) : m_identifier(identifier) {}
+	ReturnStatement(const std::vector<Operand *>& operands) : m_operands(operands) {}
 
-	Identifier *GetIdentifier() const { return m_identifier; }
+	unsigned int GetOperandsCount() const { return m_operands.size(); }
 
-	std::string ToString() const override
-	{
-		return "return " + m_identifier->ToString();
-	}
+	const std::vector<Operand *>& GetOperands() const { return m_operands; }
+	void SetOperands(const std::vector<Operand *>& operands) { m_operands = operands; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
-private:
-	Identifier *m_identifier;
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (auto& operand : m_operands)
+			{
+				operand->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& operand : m_operands)
+			{
+				operand->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
+
+protected:
+	std::vector<Operand *> m_operands;
 };
 
 }

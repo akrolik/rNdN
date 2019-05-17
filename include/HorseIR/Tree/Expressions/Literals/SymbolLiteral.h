@@ -1,47 +1,37 @@
 #pragma once
 
-#include "HorseIR/Tree/Expressions/Literals/Literal.h"
-
-#include <string>
 #include <vector>
 
+#include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
+#include "HorseIR/Tree/Expressions/Literals/SymbolValue.h"
+
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
-#include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
-class SymbolLiteral : public Literal<std::string>
+class SymbolLiteral : public TypedVectorLiteral<SymbolValue *>
 {
 public:
-	SymbolLiteral(const std::string& value) : Literal<std::string>(value, new BasicType(BasicType::Kind::Symbol)) {}
-	SymbolLiteral(const std::vector<std::string>& values) : Literal<std::string>(values, new BasicType(BasicType::Kind::Symbol)) {}
-
-	std::string ToString() const override
-	{
-		std::string code;
-		if (m_values.size() > 1)
-		{
-			code += "(";
-		}
-		bool first = true;
-		for (const auto& value : m_values)
-		{
-			if (!first)
-			{
-				code += ", ";
-			}
-			code += "`" + value;
-		}
-		if (m_values.size() > 1)
-		{
-			code += ")";
-		}
-		return code + ":" + m_type->ToString();
-	}
+	SymbolLiteral(SymbolValue *value) : TypedVectorLiteral<SymbolValue *>(value) {}
+	SymbolLiteral(const std::vector<SymbolValue *>& values) : TypedVectorLiteral<SymbolValue *>(values) {}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
 };
 
 }

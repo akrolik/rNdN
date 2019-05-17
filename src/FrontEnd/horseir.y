@@ -17,104 +17,231 @@ void yyerror(const char *s)
 	#include <string>
 	#include <vector>
 
-	#include "HorseIR/Tree/Import.h"
-	#include "HorseIR/Tree/Method.h"
+	#include "HorseIR/Tree/Program.h"
 	#include "HorseIR/Tree/Module.h"
 	#include "HorseIR/Tree/ModuleContent.h"
+	#include "HorseIR/Tree/ImportDirective.h"
+	#include "HorseIR/Tree/GlobalDeclaration.h"
+	#include "HorseIR/Tree/Function.h"
 	#include "HorseIR/Tree/Parameter.h"
-	#include "HorseIR/Tree/Program.h"
-	#include "HorseIR/Tree/Expressions/CallExpression.h"
-	#include "HorseIR/Tree/Expressions/CastExpression.h"
+
 	#include "HorseIR/Tree/Expressions/Expression.h"
 	#include "HorseIR/Tree/Expressions/Operand.h"
+	#include "HorseIR/Tree/Expressions/CallExpression.h"
+	#include "HorseIR/Tree/Expressions/CastExpression.h"
 	#include "HorseIR/Tree/Expressions/Identifier.h"
-	#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
-	#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/BooleanLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/CharLiteral.h"
 	#include "HorseIR/Tree/Expressions/Literals/IntLiteral.h"
 	#include "HorseIR/Tree/Expressions/Literals/FloatLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/ComplexLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/ComplexValue.h"
 	#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
 	#include "HorseIR/Tree/Expressions/Literals/StringLiteral.h"
 	#include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
-	#include "HorseIR/Tree/Statements/AssignStatement.h"
-	#include "HorseIR/Tree/Statements/ReturnStatement.h"
+	#include "HorseIR/Tree/Expressions/Literals/SymbolValue.h"
+	#include "HorseIR/Tree/Expressions/Literals/DatetimeLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/MonthLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/MinuteLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/SecondLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/TimeLiteral.h"
+	#include "HorseIR/Tree/Expressions/Literals/DatetimeValue.h"
+	#include "HorseIR/Tree/Expressions/Literals/MonthValue.h"
+	#include "HorseIR/Tree/Expressions/Literals/DateValue.h"
+	#include "HorseIR/Tree/Expressions/Literals/MinuteValue.h"
+	#include "HorseIR/Tree/Expressions/Literals/SecondValue.h"
+	#include "HorseIR/Tree/Expressions/Literals/TimeValue.h"
+
 	#include "HorseIR/Tree/Statements/Statement.h"
+	#include "HorseIR/Tree/Statements/LabelledStatement.h"
+	#include "HorseIR/Tree/Statements/AssignStatement.h"
+	#include "HorseIR/Tree/Statements/IfStatement.h"
+	#include "HorseIR/Tree/Statements/WhileStatement.h"
+	#include "HorseIR/Tree/Statements/RepeatStatement.h"
+	#include "HorseIR/Tree/Statements/GotoStatement.h"
+	#include "HorseIR/Tree/Statements/SwitchStatement.h"
+	#include "HorseIR/Tree/Statements/ReturnStatement.h"
+	#include "HorseIR/Tree/Statements/BreakStatement.h"
+	#include "HorseIR/Tree/Statements/ContinueStatement.h"
+
 	#include "HorseIR/Tree/Types/Type.h"
 	#include "HorseIR/Tree/Types/BasicType.h"
+	#include "HorseIR/Tree/Types/FunctionType.h"
+	#include "HorseIR/Tree/Types/ListType.h"
 	#include "HorseIR/Tree/Types/DictionaryType.h"
 	#include "HorseIR/Tree/Types/EnumerationType.h"
-	#include "HorseIR/Tree/Types/FunctionType.h"
-	#include "HorseIR/Tree/Types/KeyedTableType.h"
-	#include "HorseIR/Tree/Types/ListType.h"
 	#include "HorseIR/Tree/Types/TableType.h"
+	#include "HorseIR/Tree/Types/KeyedTableType.h"
 }
 
 %locations
 %error-verbose
 
 %union {
+	char         char_val;
 	std::int64_t int_val;
-	double float_val;
-	std::string *string_val;
+	double       float_val;
+	std::string  *string_val;
 
+	HorseIR::ComplexValue  *complex_val;
+	HorseIR::SymbolValue   *symbol_val;
+	HorseIR::DatetimeValue *datetime_val;
+	HorseIR::MonthValue    *month_val;
+	HorseIR::DateValue     *date_val;
+	HorseIR::MinuteValue   *minute_val;
+	HorseIR::SecondValue   *second_val;
+	HorseIR::TimeValue     *time_val;
+
+	std::vector<HorseIR::Module *>        *modules;
 	std::vector<HorseIR::ModuleContent *> *module_contents;
-	std::vector<HorseIR::Parameter *> *parameters;
-	std::vector<HorseIR::Statement *> *statements;
-	std::vector<HorseIR::Operand *> *operands;
-	std::vector<HorseIR::Expression *> *expressions;
-	std::vector<std::string> *string_list;
-	std::vector<std::int64_t> *int_list;
-	std::vector<double> *float_list;
+	std::vector<std::string>              *names;
+	std::vector<HorseIR::Type *>          *types;
+	std::vector<HorseIR::Parameter *>     *parameters;
+	std::vector<HorseIR::Statement *>     *statements;
+	std::vector<HorseIR::LValue *>        *lvalues;
+	std::vector<HorseIR::Identifier *>    *identifiers;
+	std::vector<HorseIR::Expression *>    *expressions;
+	std::vector<HorseIR::Operand *>       *operands;
 
-	HorseIR::ModuleContent *module_content;
-	HorseIR::Parameter *parameter;
-	HorseIR::Type *type;
-	HorseIR::BasicType *basic_type;
-	HorseIR::Statement *statement;
-	HorseIR::ModuleIdentifier *module_identifier;
-	HorseIR::Operand *operand;
-	HorseIR::Expression *expression;
+	std::vector<char>                     *char_list;
+	std::vector<std::int64_t>             *int_list;
+	std::vector<double>                   *float_list;
+	std::vector<std::string>              *string_list;
+	std::vector<HorseIR::ComplexValue *>  *complex_list;
+	std::vector<HorseIR::SymbolValue *>   *symbol_list;
+	std::vector<HorseIR::DatetimeValue *> *datetime_list;
+	std::vector<HorseIR::MonthValue *>    *month_list;
+	std::vector<HorseIR::DateValue *>     *date_list;
+	std::vector<HorseIR::MinuteValue *>   *minute_list;
+	std::vector<HorseIR::SecondValue *>   *second_list;
+	std::vector<HorseIR::TimeValue *>     *time_list;
+
+	HorseIR::Module           *module;
+	HorseIR::ModuleContent    *module_content;
+	HorseIR::Type             *type;
+	HorseIR::ListType         *list_type;
+	HorseIR::DictionaryType   *dictionary_type;
+	HorseIR::EnumerationType  *enum_type;
+	HorseIR::TableType        *table_type;
+	HorseIR::KeyedTableType   *ktable_type;
+	HorseIR::BasicType        *basic_type;
+	HorseIR::Statement        *statement;
+	HorseIR::Parameter        *parameter;
+	HorseIR::Operand          *operand;
+	HorseIR::FunctionLiteral  *function;
+	HorseIR::LValue           *lvalue;
+	HorseIR::Expression       *expression;
+	HorseIR::Identifier       *identifier;
 }
 
-%token '(' ')' '{' '}' '<' '>'
-%token tBOOL tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tMONTH tDATE tDATETIME tMINUTE tSECOND tTIME tFUNCTION
-%token tLIST tDICTIONARY tENUM tTABLE tKTABLE
-%token tMODULE tIMPORT tDEF tKERNEL tCHECKCAST tRETURN
-%token <int_val> tINTVAL tDATEVAL
-%token <float_val> tFLOATVAL
-%token <string_val> tSTRINGVAL tSYMBOLVAL tIDENTIFIER
+%token tARROW
 
+%token tBOOL tCHAR tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tMONTH tDATE tDATETIME tMINUTE tSECOND tTIME tFUNCTION
+%token tLIST tDICTIONARY tENUM tTABLE tKTABLE
+%token tMODULE tIMPORT tGLOBAL tDEF tKERNEL tCHECKCAST tIF tELSE tWHILE tREPEAT tGOTO tRETURN tBREAK tCONTINUE
+
+%token <char_val> tCHARVAL
+%token <int_val> tINTVAL
+%token <float_val> tFLOATVAL
+%token <complex_val> tCOMPLEXVAL
+%token <string_val> tSTRINGVAL tIDENTIFIER
+%token <symbol_val> tSYMBOLVAL
+%token <datetime_val> tDATETIMEVAL
+%token <month_val> tMONTHVAL
+%token <date_val> tDATEVAL
+%token <minute_val> tMINUTEVAL
+%token <second_val> tSECONDVAL
+%token <time_val> tTIMEVAL
+
+%type <modules> modules
+%type <module> module
 %type <module_contents> module_contents
-%type <module_content> module_content
+%type <module_content> module_content global_declaration function import_directive
+%type <names> names
 %type <parameters> parametersne parameters
 %type <parameter> parameter
+%type <types> return_types types
 %type <type> type
 %type <basic_type> int_type float_type
-%type <statements> statements
+%type <list_type> list_type
+%type <dictionary_type> dictionary_type
+%type <enum_type> enum_type
+%type <table_type> table_type
+%type <ktable_type> ktable_type
+%type <statements> statements control_block
 %type <statement> statement
-%type <module_identifier> module_identifier
+%type <lvalues> lvalues
+%type <lvalue> lvalue
 %type <operands> operands operandsne
-%type <expression> expression call
-%type <operand> operand int_literal float_literal string_literal symbol_literal date_literal function_literal
-%type <int_list> int_list date_list
+%type <identifiers> identifiers
+%type <identifier> identifier
+%type <expression> expression
+%type <operand> operand bool_literal char_literal int_literal float_literal complex_literal string_literal symbol_literal datetime_literal date_literal month_literal minute_literal second_literal time_literal
+%type <function> function_literal
+
+%type <char_list> char_list
+%type <int_list> int_list
 %type <float_list> float_list
-%type <string_list> string_list symbol_list
+%type <complex_list> complex_list
+%type <string_list> string_list
+%type <symbol_list> symbol_list
+%type <datetime_list> datetime_list
+%type <month_list> month_list
+%type <date_list> date_list
+%type <minute_list> minute_list
+%type <second_list> second_list
+%type <time_list> time_list
+
+%nonassoc ')'
+%nonassoc tELSE
 
 %start program
 
 %%
 
-program : tMODULE tIDENTIFIER '{' module_contents '}'                           { program = new HorseIR::Program({new HorseIR::Module(*$2, *$4)}); }
+program : modules                                                               { program = new HorseIR::Program(*$1); }
 	;
+
+modules : modules module                                                        { $1->push_back($2); $$ = $1; }
+	| %empty                                                                { $$ = new std::vector<HorseIR::Module *>(); }
+        ;
+
+module : tMODULE tIDENTIFIER '{' module_contents '}'                            { $$ = new HorseIR::Module(*$2, *$4); }
+       ;
 
 module_contents : module_contents module_content                                { $1->push_back($2); $$ = $1; }
 	        | %empty                                                        { $$ = new std::vector<HorseIR::ModuleContent *>(); }
                 ;
 
-module_content : tDEF tIDENTIFIER '(' parameters ')' ':' type '{' statements '}'{ $$ = new HorseIR::Method(*$2, *$4, $7, *$9); }
-               | tKERNEL tIDENTIFIER '(' parameters ')' ':' type
-                     '{' statements '}'                                         { $$ = new HorseIR::Method(*$2, *$4, $7, *$9, true); }
-	       | tIMPORT module_identifier ';'                                  { $$ = new HorseIR::Import($2); }
+module_content : global_declaration ';'                                         { $$ = $1; }
+	       | function                                                       { $$ = $1; }
+               | import_directive ';'                                           { $$ = $1; }
                ;
+
+global_declaration : tGLOBAL tIDENTIFIER ':' type '=' operand ';'               { $$ = new HorseIR::GlobalDeclaration(*$2, $4, $6); }
+                   ;
+
+function : tDEF tIDENTIFIER '(' parameters ')' return_types '{' statements '}'     { $$ = new HorseIR::Function(*$2, *$4, *$6, *$8); }
+         | tKERNEL tIDENTIFIER '(' parameters ')' return_types '{' statements '}'  { $$ = new HorseIR::Function(*$2, *$4, *$6, *$8, true); }
+         ;
+
+return_types : ':' types                                                        { $$ = $2; }
+	     | %empty                                                           { $$ = new std::vector<HorseIR::Type *>(); }
+             ;
+
+types : types ',' type                                                          { $1->push_back($3); $$ = $1; }
+      | type                                                                    { $$ = new std::vector<HorseIR::Type *>({$1}); }
+      ;
+
+import_directive : tIMPORT tIDENTIFIER '.' '*'                                  { $$ = new HorseIR::ImportDirective(*$2, "*"); }
+		 | tIMPORT tIDENTIFIER '.' tIDENTIFIER                          { $$ = new HorseIR::ImportDirective(*$2, *$4); }
+                 | tIMPORT tIDENTIFIER '.' '{' names '}'                        { $$ = new HorseIR::ImportDirective(*$2, *$5); }
+                 ;
+
+names : names ',' tIDENTIFIER                                                   { $1->push_back(*$3); $$ = $1; }
+      | tIDENTIFIER                                                             { $$ = new std::vector<std::string>({*$1}); }
+      ;
 
 parameters : parametersne                                                       { $$ = $1; }
 	   | %empty                                                             { $$ = new std::vector<HorseIR::Parameter *>(); }
@@ -127,57 +254,93 @@ parametersne : parametersne ',' parameter                                       
 parameter : tIDENTIFIER ':' type                                                { $$ = new HorseIR::Parameter(*$1, $3); }
 	  ;
 
-type : '?'                                                                      { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Wildcard); }
-     | tBOOL                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Bool); }
+type : '?'                                                                      { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Wildcard); }
+     | tBOOL                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean); }
+     | tCHAR                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char); }
      | int_type                                                                 { $$ = $1; }
      | float_type                                                               { $$ = $1; }
-     | tSYMBOL                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Symbol); }
-     | tSTRING                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::String); }
-     | tCOMPLEX                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Complex); }
-     | tMONTH                                                                   { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Month); }
-     | tDATE                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Date); }
-     | tDATETIME                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Datetime); }
-     | tMINUTE                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Minute); }
-     | tSECOND                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Second); }
-     | tTIME                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Time); }
+     | tSYMBOL                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol); }
+     | tSTRING                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String); }
+     | tCOMPLEX                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Complex); }
+     | tMONTH                                                                   { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Month); }
+     | tDATE                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date); }
+     | tDATETIME                                                                { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Datetime); }
+     | tMINUTE                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Minute); }
+     | tSECOND                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Second); }
+     | tTIME                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Time); }
      | tFUNCTION                                                                { $$ = new HorseIR::FunctionType(); }
-     | tLIST '<' type '>'                                                       { $$ = new HorseIR::ListType($3); }
-     | tTABLE                                                                   { $$ = new HorseIR::TableType(); }
-     | tKTABLE                                                                  { $$ = new HorseIR::KeyedTableType(); }
-     | tDICTIONARY '<' type ',' type '>'                                        { $$ = new HorseIR::DictionaryType($3, $5); }
-     | tENUM '<' type ',' type '>'                                              { $$ = new HorseIR::EnumerationType($3, $5); }
+     | list_type                                                                { $$ = $1; }
+     | table_type                                                               { $$ = $1; }
+     | ktable_type                                                              { $$ = $1; }
+     | dictionary_type                                                          { $$ = $1; }
+     | enum_type                                                                { $$ = $1; }
      ;
 
-int_type : tI8                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int8); }
-         | tI16                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int16); }
-         | tI32                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int32); }
-         | tI64                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64); }
+int_type : tI8                                                                  { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int8); }
+         | tI16                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int16); }
+         | tI32                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32); }
+         | tI64                                                                 { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64); }
 	 ;
 
-float_type : tF32                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Float32); }
-           | tF64                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::Kind::Float64); }
+float_type : tF32                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float32); }
+           | tF64                                                               { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64); }
            ;
+
+list_type : tLIST '<' types '>'                                                 { $$ = new HorseIR::ListType(*$3); }
+	  ;
+
+dictionary_type : tDICTIONARY '<' type ',' type '>'                             { $$ = new HorseIR::DictionaryType($3, $5); }
+		;
+
+enum_type : tENUM '<' type ',' type '>'                                         { $$ = new HorseIR::EnumerationType($3, $5); }
+          | tENUM '<' type '>'                                                  { $$ = new HorseIR::EnumerationType($3); }
+	  ;
+
+table_type : tTABLE                                                             { $$ = new HorseIR::TableType(); }
+	   ;
+
+ktable_type : tKTABLE                                                           { $$ = new HorseIR::KeyedTableType(); }
+	    ;
 
 statements : statements statement                                               { $1->push_back($2); $$ = $1; }
 	   | %empty                                                             { $$ = new std::vector<HorseIR::Statement *>(); }
            ;
 
-statement : tIDENTIFIER ':' type '=' expression ';'                             { $$ = new HorseIR::AssignStatement(*$1, $3, $5); }
-          | tRETURN tIDENTIFIER ';'                                             { $$ = new HorseIR::ReturnStatement(new HorseIR::Identifier(*$2)); }
+statement : tIDENTIFIER '>' statement                                           { $$ = new HorseIR::LabelledStatement(*$1, $3); }
+	  | lvalues '=' expression ';'                                          { $$ = new HorseIR::AssignStatement(*$1, $3); }
+          | tIF '(' operand ')' control_block                                   { $$ = new HorseIR::IfStatement($3, *$5, {}); }
+          | tIF '(' operand ')' control_block tELSE control_block               { $$ = new HorseIR::IfStatement($3, *$5, *$7); }
+          | tWHILE '(' operand ')' control_block                                { $$ = new HorseIR::WhileStatement($3, *$5); }
+          | tREPEAT '(' operand ')' control_block                               { $$ = new HorseIR::RepeatStatement($3, *$5); }
+          | tGOTO tIDENTIFIER ';'                                               { $$ = new HorseIR::GotoStatement(*$2); }
+          | tGOTO '(' identifiers ')' '/' '(' names ')' ';'                     { $$ = new HorseIR::SwitchStatement(*$3, *$7); }
+          | tRETURN operandsne ';'                                              { $$ = new HorseIR::ReturnStatement(*$2); }
+          | tBREAK ';'                                                          { $$ = new HorseIR::BreakStatement(); }
+          | tBREAK tIDENTIFIER ';'                                              { $$ = new HorseIR::BreakStatement(*$2); }
+          | tCONTINUE ';'                                                       { $$ = new HorseIR::ContinueStatement(); }
+          | tCONTINUE tIDENTIFIER ';'                                           { $$ = new HorseIR::ContinueStatement(*$2); }
           ;
 
+control_block : '{' statements '}'                                              { $$ = $2; }
+	      | statement                                                       { $$ = new std::vector<HorseIR::Statement *>({$1}); }
+              ;
+
+lvalues : lvalues ',' lvalue                                                    { $1->push_back($3); $$ = $1; }
+	| lvalue                                                                { $$ = new std::vector<HorseIR::LValue *>({$1}); }
+        ;
+
+lvalue : identifier                                                             { $$ = $1; }
+       | tIDENTIFIER ':' type                                                   { $$ = new HorseIR::Declaration(*$1, $3); }
+       ;
+
+identifiers : identifiers ',' identifier                                        { $1->push_back($3); $$ = $1; }
+	    | identifier                                                        { $$ = new std::vector<HorseIR::Identifier *>({$1}); }
+            ;
+
 expression : tCHECKCAST '(' expression ',' type ')'                             { $$ = new HorseIR::CastExpression($3, $5); }
-	   | call                                                               { $$ = $1; }
+           | function_literal '(' operands ')'                                  { $$ = new HorseIR::CallExpression($1, *$3); }
            | operand                                                            { $$ = $1; }
            ; 
-
-call : '@' module_identifier '(' operands ')'                                   { $$ = new HorseIR::CallExpression($2, *$4); }
-     | '@' tIDENTIFIER '(' operands ')'                                         { $$ = new HorseIR::CallExpression(new HorseIR::ModuleIdentifier(*$2), *$4); }
-     ;
-
-module_identifier : tIDENTIFIER '.' tIDENTIFIER                                 { $$ = new HorseIR::ModuleIdentifier(*$1, *$3); }
-                  | tIDENTIFIER '.' '*'                                         { $$ = new HorseIR::ModuleIdentifier(*$1, "*"); }
-                  ;
 
 operands : operandsne                                                           { $$ = $1; }
          | %empty                                                               { $$ = new std::vector<HorseIR::Operand *>(); }
@@ -187,14 +350,42 @@ operandsne : operandsne ',' operand                                             
            | operand                                                            { $$ = new std::vector<HorseIR::Operand *>({$1}); } 
            ;
 
-operand : tIDENTIFIER                                                           { $$ = new HorseIR::Identifier(*$1); }
+operand : identifier                                                            { $$ = $1; }
+	| bool_literal                                                          { $$ = $1; }
+        | char_literal                                                          { $$ = $1; }
         | int_literal                                                           { $$ = $1; }
         | float_literal                                                         { $$ = $1; }
+        | complex_literal                                                       { $$ = $1; }
 	| string_literal                                                        { $$ = $1; }
 	| symbol_literal                                                        { $$ = $1; }
+        | datetime_literal                                                      { $$ = $1; }
+        | month_literal                                                         { $$ = $1; }
         | date_literal                                                          { $$ = $1; }
-        | function_literal                                                      { $$ = $1; }
+        | minute_literal                                                        { $$ = $1; }
+        | second_literal                                                        { $$ = $1; }
+        | time_literal                                                          { $$ = $1; }
+	| function_literal                                                      { $$ = $1; }
+	| function_literal ':' tFUNCTION                                        { $$ = $1; }
         ;
+
+function_literal : '@' identifier                                               { $$ = new HorseIR::FunctionLiteral($2); }
+                 ;
+
+identifier : tIDENTIFIER '.' tIDENTIFIER                                        { $$ = new HorseIR::Identifier(*$1, *$3); }
+           | tIDENTIFIER                                                        { $$ = new HorseIR::Identifier(*$1); }
+           ;
+
+bool_literal : tINTVAL ':' tBOOL                                                { $$ = HorseIR::CreateBooleanLiteral($1); }
+	     | '(' int_list ')' ':' tBOOL                                       { $$ = HorseIR::CreateBooleanLiteral(*$2); }
+             ;
+
+char_literal : tCHARVAL ':' tCHAR                                               { $$ = new HorseIR::CharLiteral($1); }
+	     | '(' char_list ')' ':' tCHAR                                      { $$ = new HorseIR::CharLiteral(*$2); }
+             ;
+
+char_list : char_list ',' tCHARVAL                                              { $1->push_back($3); $$ = $1; }
+	  | tCHARVAL                                                            { $$ = new std::vector<char>({$1}); }
+          ;
 
 int_literal : tINTVAL ':' int_type                                              { $$ = HorseIR::CreateIntLiteral($1, $3); }
             | '(' int_list ')' ':' int_type                                     { $$ = HorseIR::CreateIntLiteral(*$2, $5); }
@@ -203,15 +394,20 @@ int_list : int_list ',' tINTVAL                                                 
 	 | tINTVAL                                                              { $$ = new std::vector<std::int64_t>({$1}); }
          ;
 
-float_literal : tINTVAL ':' float_type                                          { $$ = HorseIR::CreateFloatLiteral($1, $3); }
-              | '(' int_list ')' ':' float_type                                 { $$ = HorseIR::CreateFloatLiteral(*$2, $5); }
-              | tFLOATVAL ':' float_type                                        { $$ = HorseIR::CreateFloatLiteral($1, $3); }
+float_literal : tFLOATVAL ':' float_type                                        { $$ = HorseIR::CreateFloatLiteral($1, $3); }
               | '(' float_list ')' ':' float_type                               { $$ = HorseIR::CreateFloatLiteral(*$2, $5); }
               ;
 
 float_list : float_list ',' tFLOATVAL                                           { $1->push_back($3); $$ = $1; } 
            | tFLOATVAL                                                          { $$ = new std::vector<double>({$1}); }
            ;
+
+complex_literal : tCOMPLEXVAL ':' tCOMPLEX                                      { $$ = new HorseIR::ComplexLiteral($1); }
+                | '(' complex_list ')' ':' tCOMPLEX                             { $$ = new HorseIR::ComplexLiteral(*$2); }
+
+complex_list : complex_list ',' tCOMPLEXVAL                                     { $1->push_back($3); $$ = $1; } 
+             | tCOMPLEXVAL                                                      { $$ = new std::vector<HorseIR::ComplexValue *>({$1}); }
+             ;
 
 string_literal : tSTRINGVAL ':' tSTRING                                         { $$ = new HorseIR::StringLiteral(*$1); }
                | '(' string_list ')' ':' tSTRING                                { $$ = new HorseIR::StringLiteral(*$2); }
@@ -221,24 +417,60 @@ string_list : string_list ',' tSTRINGVAL                                        
 	    | tSTRINGVAL                                                        { $$ = new std::vector<std::string>({*$1}); }
             ;
 
-symbol_literal : tSYMBOLVAL ':' tSYMBOL                                         { $$ = new HorseIR::SymbolLiteral(*$1); }
+symbol_literal : tSYMBOLVAL ':' tSYMBOL                                         { $$ = new HorseIR::SymbolLiteral($1); }
                | '(' symbol_list ')' ':' tSYMBOL                                { $$ = new HorseIR::SymbolLiteral(*$2); }
                ;
 
-symbol_list : symbol_list ',' tSYMBOLVAL                                        { $1->push_back(*$3); $$ = $1; } 
-	    | tSYMBOLVAL                                                        { $$ = new std::vector<std::string>({*$1}); }
+symbol_list : symbol_list ',' tSYMBOLVAL                                        { $1->push_back($3); $$ = $1; } 
+	    | tSYMBOLVAL                                                        { $$ = new std::vector<HorseIR::SymbolValue *>({$1}); }
             ;
+
+datetime_literal : tDATETIMEVAL ':' tDATETIME                                   { $$ = new HorseIR::DatetimeLiteral($1); }
+		 | '(' datetime_list ')' ':' tDATETIME                          { $$ = new HorseIR::DatetimeLiteral(*$2); }
+                 ;
+
+datetime_list : datetime_list ',' tDATETIMEVAL                                  { $1->push_back($3); $$ = $1; }
+	      | tDATETIMEVAL                                                    { $$ = new std::vector<HorseIR::DatetimeValue *>({$1}); }
+              ;
+
+month_literal : tMONTHVAL ':' tMONTH                                            { $$ = new HorseIR::MonthLiteral($1); }
+              | '(' month_list ')' ':' tMONTH                                   { $$ = new HorseIR::MonthLiteral(*$2); }
+              ;
+
+month_list : month_list ',' tMONTHVAL                                           { $1->push_back($3); $$ = $1; } 
+	   | tMONTHVAL                                                          { $$ = new std::vector<HorseIR::MonthValue *>({$1}); }
+           ;
 
 date_literal : tDATEVAL ':' tDATE                                               { $$ = new HorseIR::DateLiteral($1); }
              | '(' date_list ')' ':' tDATE                                      { $$ = new HorseIR::DateLiteral(*$2); }
              ;
 
 date_list : date_list ',' tDATEVAL                                              { $1->push_back($3); $$ = $1; } 
-	  | tDATEVAL                                                            { $$ = new std::vector<long>({$1}); }
+	  | tDATEVAL                                                            { $$ = new std::vector<HorseIR::DateValue *>({$1}); }
           ;
 
-function_literal : '@' module_identifier                                        { $$ = new HorseIR::FunctionLiteral($2); }
-                 | '@' tIDENTIFIER                                              { $$ = new HorseIR::FunctionLiteral(new HorseIR::ModuleIdentifier(*$2)); }
-                 ;
+minute_literal : tMINUTEVAL ':' tMINUTE                                         { $$ = new HorseIR::MinuteLiteral($1); }
+	       | '(' minute_list ')' ':' tMINUTE                                { $$ = new HorseIR::MinuteLiteral(*$2); }
+               ;
+
+minute_list : minute_list ',' tMINUTEVAL                                        { $1->push_back($3); $$ = $1; }
+	    | tMINUTEVAL                                                        { $$ = new std::vector<HorseIR::MinuteValue *>({$1}); }
+            ;
+
+second_literal : tSECONDVAL ':' tSECOND                                         { $$ = new HorseIR::SecondLiteral($1); }
+	       | '(' second_list ')' ':' tSECOND                                { $$ = new HorseIR::SecondLiteral(*$2); }
+               ;
+
+second_list : second_list ',' tSECONDVAL                                        { $1->push_back($3); $$ = $1; }
+	    | tSECONDVAL                                                        { $$ = new std::vector<HorseIR::SecondValue *>({$1}); }
+            ;
+
+time_literal : tTIMEVAL ':' tTIME                                               { $$ = new HorseIR::TimeLiteral($1); }
+	     | '(' time_list ')' ':' tTIME                                      { $$ = new HorseIR::TimeLiteral(*$2); }
+             ;
+
+time_list : time_list ',' tTIMEVAL                                              { $1->push_back($3); $$ = $1; }
+	  | tTIMEVAL                                                            { $$ = new std::vector<HorseIR::TimeValue *>({$1}); }
+          ;
 
 %%

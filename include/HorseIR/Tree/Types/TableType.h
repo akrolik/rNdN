@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
-
 #include "HorseIR/Tree/Types/BasicType.h"
 #include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/ListType.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
@@ -16,15 +16,7 @@ class TableType : public DictionaryType
 public:
 	constexpr static Type::Kind TypeKind = Type::Kind::Table;
 
-	TableType() : DictionaryType(TypeKind, new BasicType(BasicType::Kind::Symbol), new ListType(new BasicType(BasicType::Kind::Wildcard))) {}
-
-	std::string ToString() const override
-	{
-		return "table";
-	}
-
-	void Accept(Visitor &visitor) override { visitor.Visit(this); }
-	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+	TableType() : DictionaryType(TypeKind, new BasicType(BasicType::BasicKind::Symbol), new ListType(new BasicType(BasicType::BasicKind::Wildcard))) {}
 
 	bool operator==(const TableType& other) const
 	{
@@ -34,6 +26,21 @@ public:
 	bool operator!=(const TableType& other) const
 	{
 		return false;
+	}
+
+	void Accept(Visitor &visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
 	}
 };
 

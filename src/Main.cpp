@@ -57,7 +57,11 @@ int main(int argc, const char *argv[])
 		// Pretty print the input HorseIR program
 
 		Utils::Logger::LogInfo("Input HorseIR program");
-		Utils::Logger::LogInfo(program->ToString(), 0, Utils::Logger::NoPrefix);
+
+		HorseIR::PrettyPrinter printer;
+		auto programString = printer.PrintString(program);
+
+		Utils::Logger::LogInfo(programString, 0, true, Utils::Logger::NoPrefix);
 	}
 
 	Utils::Logger::LogTiming("HorseIR frontend", timeFrontend);

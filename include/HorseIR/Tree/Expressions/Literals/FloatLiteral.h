@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HorseIR/Tree/Expressions/Expression.h"
+#include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/Float32Literal.h"
 #include "HorseIR/Tree/Expressions/Literals/Float64Literal.h"
 #include "HorseIR/Tree/Types/BasicType.h"
@@ -21,21 +22,21 @@ static std::vector<T> ConvertValues(const std::vector<double>& values)
 }
 
 template<typename S>
-static Operand *CreateFloatLiteral(const std::vector<S>& values, BasicType *type)
+static VectorLiteral *CreateFloatLiteral(const std::vector<S>& values, BasicType *type)
 {
-	switch (type->GetKind())
+	switch (type->GetBasicKind())
 	{
-		case BasicType::Kind::Float32:
+		case BasicType::BasicKind::Float32:
 			return new Float32Literal(ConvertValues<float>(values));
-		case BasicType::Kind::Float64:
+		case BasicType::BasicKind::Float64:
 			return new Float64Literal(ConvertValues<double>(values));
 		default:
-			Utils::Logger::LogError("Invalid type '" + type->ToString() + "' for float literal");
+			Utils::Logger::LogError("Invalid type '" + BasicType::BasicKindString(type->GetBasicKind()) + "' for float literal");
 	}
 }
 
 template<typename S>
-static Operand *CreateFloatLiteral(S value, BasicType *type)
+static VectorLiteral *CreateFloatLiteral(S value, BasicType *type)
 {
 	std::vector<S> values = { value };
 	return CreateFloatLiteral<S>(values, type);

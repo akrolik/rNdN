@@ -1,38 +1,63 @@
 #pragma once
 
-#include "HorseIR/Tree/Expressions/Operand.h"
+#include "HorseIR/Tree/Expressions/Literals/Literal.h"
+
+#include "HorseIR/Tree/FunctionDeclaration.h"
+#include "HorseIR/Tree/Expressions/Identifier.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
-#include "HorseIR/Tree/MethodDeclaration.h"
-#include "HorseIR/Tree/Expressions/ModuleIdentifier.h"
-#include "HorseIR/Tree/Types/FunctionType.h"
+#include "HorseIR/Traversal/HierarchicalVisitor.h"
 
 namespace HorseIR {
 
-class FunctionLiteral : public Operand
+class FunctionLiteral : public Literal
 {
 public:
-	FunctionLiteral(ModuleIdentifier *identifier) : Operand(Operand::Kind::Literal), m_identifier(identifier) { SetType(new FunctionType()); }
+	FunctionLiteral(Identifier *identifier) : m_identifier(identifier) {}
 
-	ModuleIdentifier *GetIdentifier() const { return m_identifier; }
-	void SetIdentifier(ModuleIdentifier *identifier) { m_identifier = identifier; }
+	Identifier *GetIdentifier() const { return m_identifier; }
+	void SetIdentifier(Identifier *identifier) { m_identifier = identifier; }
 
-	MethodDeclaration *GetMethod() const { return m_method; }
-	void SetMethod(MethodDeclaration *method) { m_method = method; }
+	FunctionDeclaration *GetFunction() const { return m_function; }
+	void SetFunction(FunctionDeclaration *function) { m_function = function; }
 
-	std::string ToString() const override
+	bool operator==(const FunctionLiteral& other) const
 	{
-		return "@" + m_identifier->ToString();
+		return (*m_identifier == *other.m_identifier);
+	}
+
+	bool operator!=(const FunctionLiteral& other) const
+	{
+		return !(*this == other);
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
-protected:
-	ModuleIdentifier *m_identifier = nullptr;
+	void Accept(HierarchicalVisitor &visitor) override
+	{
+		if (visitor.VisitIn(this))
+		{
+			m_identifier->Accept(visitor);
+		}
+		visitor.VisitOut(this);
+	}
 
-	MethodDeclaration *m_method = nullptr;
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			m_identifier->Accept(visitor);
+		}
+		visitor.VisitOut(this);
+	}
+
+protected:
+	Identifier *m_identifier = nullptr;
+
+	FunctionDeclaration *m_function = nullptr;
 };
 
 }
