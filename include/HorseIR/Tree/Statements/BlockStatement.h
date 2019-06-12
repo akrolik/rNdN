@@ -2,27 +2,24 @@
 
 #include <vector>
 
-#include "HorseIR/Tree/Node.h"
-
-#include "HorseIR/Tree/Module.h"
+#include "HorseIR/Tree/Statements/Statement.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Traversal/HierarchicalVisitor.h"
 
-class SymbolTable;
-
 namespace HorseIR {
 
-class Program : public Node
+class SymbolTable;
+
+class BlockStatement : public Statement
 {
 public:
-	Program(const std::vector<Module *>& modules) : m_modules(modules) {}
+	BlockStatement(const std::vector<Statement *>& statements) : m_statements(statements) {}
 
-	const std::vector<Module *>& GetModules() const { return m_modules; }
-	void AddModule(Module *module) { m_modules.push_back(module); }
-	void SetModules(const std::vector<Module *> modules) { m_modules = modules; }
+	const std::vector<Statement *>& GetStatements() const { return m_statements; }
+	void SetStatements(const std::vector<Statement *>& statements) { m_statements = statements; }
 
 	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
@@ -34,9 +31,9 @@ public:
 	{
 		if (visitor.VisitIn(this))
 		{
-			for (auto& module : m_modules)
+			for (auto& statement : m_statements)
 			{
-				module->Accept(visitor);
+				statement->Accept(visitor);
 			}
 		}
 		visitor.VisitOut(this);
@@ -46,16 +43,16 @@ public:
 	{
 		if (visitor.VisitIn(this))
 		{
-			for (const auto& module : m_modules)
+			for (const auto& statement : m_statements)
 			{
-				module->Accept(visitor);
+				statement->Accept(visitor);
 			}
 		}
 		visitor.VisitOut(this);
 	}
 
 protected:
-	std::vector<Module *> m_modules;
+	std::vector<Statement *> m_statements;
 
 	SymbolTable *m_symbolTable = nullptr;
 };

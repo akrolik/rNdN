@@ -17,62 +17,7 @@ void yyerror(const char *s)
 	#include <string>
 	#include <vector>
 
-	#include "HorseIR/Tree/Program.h"
-	#include "HorseIR/Tree/Module.h"
-	#include "HorseIR/Tree/ModuleContent.h"
-	#include "HorseIR/Tree/ImportDirective.h"
-	#include "HorseIR/Tree/GlobalDeclaration.h"
-	#include "HorseIR/Tree/Function.h"
-	#include "HorseIR/Tree/Parameter.h"
-
-	#include "HorseIR/Tree/Expressions/Expression.h"
-	#include "HorseIR/Tree/Expressions/Operand.h"
-	#include "HorseIR/Tree/Expressions/CallExpression.h"
-	#include "HorseIR/Tree/Expressions/CastExpression.h"
-	#include "HorseIR/Tree/Expressions/Identifier.h"
-	#include "HorseIR/Tree/Expressions/Literals/BooleanLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/CharLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/IntLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/FloatLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/ComplexLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/ComplexValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/FunctionLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/StringLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/SymbolLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/SymbolValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/DatetimeLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/MonthLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/DateLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/MinuteLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/SecondLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/TimeLiteral.h"
-	#include "HorseIR/Tree/Expressions/Literals/DatetimeValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/MonthValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/DateValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/MinuteValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/SecondValue.h"
-	#include "HorseIR/Tree/Expressions/Literals/TimeValue.h"
-
-	#include "HorseIR/Tree/Statements/Statement.h"
-	#include "HorseIR/Tree/Statements/LabelledStatement.h"
-	#include "HorseIR/Tree/Statements/AssignStatement.h"
-	#include "HorseIR/Tree/Statements/IfStatement.h"
-	#include "HorseIR/Tree/Statements/WhileStatement.h"
-	#include "HorseIR/Tree/Statements/RepeatStatement.h"
-	#include "HorseIR/Tree/Statements/GotoStatement.h"
-	#include "HorseIR/Tree/Statements/SwitchStatement.h"
-	#include "HorseIR/Tree/Statements/ReturnStatement.h"
-	#include "HorseIR/Tree/Statements/BreakStatement.h"
-	#include "HorseIR/Tree/Statements/ContinueStatement.h"
-
-	#include "HorseIR/Tree/Types/Type.h"
-	#include "HorseIR/Tree/Types/BasicType.h"
-	#include "HorseIR/Tree/Types/FunctionType.h"
-	#include "HorseIR/Tree/Types/ListType.h"
-	#include "HorseIR/Tree/Types/DictionaryType.h"
-	#include "HorseIR/Tree/Types/EnumerationType.h"
-	#include "HorseIR/Tree/Types/TableType.h"
-	#include "HorseIR/Tree/Types/KeyedTableType.h"
+	#include "HorseIR/Tree/Tree.h"
 }
 
 %locations
@@ -100,7 +45,6 @@ void yyerror(const char *s)
 	std::vector<HorseIR::Parameter *>     *parameters;
 	std::vector<HorseIR::Statement *>     *statements;
 	std::vector<HorseIR::LValue *>        *lvalues;
-	std::vector<HorseIR::Identifier *>    *identifiers;
 	std::vector<HorseIR::Expression *>    *expressions;
 	std::vector<HorseIR::Operand *>       *operands;
 
@@ -117,29 +61,31 @@ void yyerror(const char *s)
 	std::vector<HorseIR::SecondValue *>   *second_list;
 	std::vector<HorseIR::TimeValue *>     *time_list;
 
-	HorseIR::Module           *module;
-	HorseIR::ModuleContent    *module_content;
-	HorseIR::Type             *type;
-	HorseIR::ListType         *list_type;
-	HorseIR::DictionaryType   *dictionary_type;
-	HorseIR::EnumerationType  *enum_type;
-	HorseIR::TableType        *table_type;
-	HorseIR::KeyedTableType   *ktable_type;
-	HorseIR::BasicType        *basic_type;
-	HorseIR::Statement        *statement;
-	HorseIR::Parameter        *parameter;
-	HorseIR::Operand          *operand;
-	HorseIR::FunctionLiteral  *function;
-	HorseIR::LValue           *lvalue;
-	HorseIR::Expression       *expression;
-	HorseIR::Identifier       *identifier;
+	HorseIR::Module              *module;
+	HorseIR::ModuleContent       *module_content;
+	HorseIR::Type                *type;
+	HorseIR::ListType            *list_type;
+	HorseIR::DictionaryType      *dictionary_type;
+	HorseIR::EnumerationType     *enum_type;
+	HorseIR::TableType           *table_type;
+	HorseIR::KeyedTableType      *ktable_type;
+	HorseIR::BasicType           *basic_type;
+	HorseIR::Statement           *statement;
+	HorseIR::BlockStatement      *block_statement;
+	HorseIR::VariableDeclaration *declaration;
+	HorseIR::Parameter           *parameter;
+	HorseIR::Operand             *operand;
+	HorseIR::FunctionLiteral     *function;
+	HorseIR::LValue              *lvalue;
+	HorseIR::Expression          *expression;
+	HorseIR::Identifier          *identifier;
 }
 
 %token tARROW
 
 %token tBOOL tCHAR tI8 tI16 tI32 tI64 tF32 tF64 tCOMPLEX tSYMBOL tSTRING tMONTH tDATE tDATETIME tMINUTE tSECOND tTIME tFUNCTION
 %token tLIST tDICTIONARY tENUM tTABLE tKTABLE
-%token tMODULE tIMPORT tGLOBAL tDEF tKERNEL tCHECKCAST tIF tELSE tWHILE tREPEAT tGOTO tRETURN tBREAK tCONTINUE
+%token tMODULE tIMPORT tGLOBAL tDEF tKERNEL tCHECKCAST tIF tELSE tWHILE tREPEAT tVAR tRETURN tBREAK tCONTINUE
 
 %token <char_val> tCHARVAL
 %token <int_val> tINTVAL
@@ -159,6 +105,7 @@ void yyerror(const char *s)
 %type <module_contents> module_contents
 %type <module_content> module_content global_declaration function import_directive
 %type <names> names
+%type <declaration> variable_declaration
 %type <parameters> parametersne parameters
 %type <parameter> parameter
 %type <types> return_types types
@@ -169,12 +116,12 @@ void yyerror(const char *s)
 %type <enum_type> enum_type
 %type <table_type> table_type
 %type <ktable_type> ktable_type
-%type <statements> statements control_block
+%type <statements> statements declaration_statement
 %type <statement> statement
+%type <block_statement> control_block
 %type <lvalues> lvalues
 %type <lvalue> lvalue
 %type <operands> operands operandsne
-%type <identifiers> identifiers
 %type <identifier> identifier
 %type <expression> expression
 %type <operand> operand bool_literal char_literal int_literal float_literal complex_literal string_literal symbol_literal datetime_literal date_literal month_literal minute_literal second_literal time_literal
@@ -214,13 +161,16 @@ module_contents : module_contents module_content                                
 	        | %empty                                                        { $$ = new std::vector<HorseIR::ModuleContent *>(); }
                 ;
 
-module_content : global_declaration ';'                                         { $$ = $1; }
+module_content : global_declaration                                             { $$ = $1; }
 	       | function                                                       { $$ = $1; }
                | import_directive ';'                                           { $$ = $1; }
                ;
 
-global_declaration : tGLOBAL tIDENTIFIER ':' type '=' operand ';'               { $$ = new HorseIR::GlobalDeclaration(*$2, $4, $6); }
+global_declaration : tGLOBAL variable_declaration '=' operand ';'               { $$ = new HorseIR::GlobalDeclaration($2, $4); }
                    ;
+
+variable_declaration : tIDENTIFIER ':' type                                     { $$ = new HorseIR::VariableDeclaration(*$1, $3); }
+		     ;
 
 function : tDEF tIDENTIFIER '(' parameters ')' return_types '{' statements '}'     { $$ = new HorseIR::Function(*$2, *$4, *$6, *$8); }
          | tKERNEL tIDENTIFIER '(' parameters ')' return_types '{' statements '}'  { $$ = new HorseIR::Function(*$2, *$4, *$6, *$8, true); }
@@ -254,7 +204,7 @@ parametersne : parametersne ',' parameter                                       
 parameter : tIDENTIFIER ':' type                                                { $$ = new HorseIR::Parameter(*$1, $3); }
 	  ;
 
-type : '?'                                                                      { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Wildcard); }
+type : '?'                                                                      { $$ = new HorseIR::WildcardType(); }
      | tBOOL                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean); }
      | tCHAR                                                                    { $$ = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char); }
      | int_type                                                                 { $$ = $1; }
@@ -292,8 +242,7 @@ list_type : tLIST '<' types '>'                                                 
 dictionary_type : tDICTIONARY '<' type ',' type '>'                             { $$ = new HorseIR::DictionaryType($3, $5); }
 		;
 
-enum_type : tENUM '<' type ',' type '>'                                         { $$ = new HorseIR::EnumerationType($3, $5); }
-          | tENUM '<' type '>'                                                  { $$ = new HorseIR::EnumerationType($3); }
+enum_type : tENUM '<' type '>'                                                  { $$ = new HorseIR::EnumerationType($3); }
 	  ;
 
 table_type : tTABLE                                                             { $$ = new HorseIR::TableType(); }
@@ -303,26 +252,26 @@ ktable_type : tKTABLE                                                           
 	    ;
 
 statements : statements statement                                               { $1->push_back($2); $$ = $1; }
+           | statements declaration_statement                                   { $1->insert($1->end(), $2->begin(), $2->end()); $$ = $1; }
 	   | %empty                                                             { $$ = new std::vector<HorseIR::Statement *>(); }
            ;
 
-statement : tIDENTIFIER '>' statement                                           { $$ = new HorseIR::LabelledStatement(*$1, $3); }
-	  | lvalues '=' expression ';'                                          { $$ = new HorseIR::AssignStatement(*$1, $3); }
-          | tIF '(' operand ')' control_block                                   { $$ = new HorseIR::IfStatement($3, *$5, {}); }
-          | tIF '(' operand ')' control_block tELSE control_block               { $$ = new HorseIR::IfStatement($3, *$5, *$7); }
-          | tWHILE '(' operand ')' control_block                                { $$ = new HorseIR::WhileStatement($3, *$5); }
-          | tREPEAT '(' operand ')' control_block                               { $$ = new HorseIR::RepeatStatement($3, *$5); }
-          | tGOTO tIDENTIFIER ';'                                               { $$ = new HorseIR::GotoStatement(*$2); }
-          | tGOTO '(' identifiers ')' '/' '(' names ')' ';'                     { $$ = new HorseIR::SwitchStatement(*$3, *$7); }
+declaration_statement : tVAR names ':' type ';'                                 { $$ = HorseIR::CreateDeclarationStatements(*$2, $4); }
+		      ;
+
+statement : lvalues '=' expression ';'                                          { $$ = new HorseIR::AssignStatement(*$1, $3); }
+          | expression ';'                                                      { $$ = new HorseIR::ExpressionStatement($1); }
+          | tIF '(' operand ')' control_block                                   { $$ = new HorseIR::IfStatement($3, $5); }
+          | tIF '(' operand ')' control_block tELSE control_block               { $$ = new HorseIR::IfStatement($3, $5, $7); }
+          | tWHILE '(' operand ')' control_block                                { $$ = new HorseIR::WhileStatement($3, $5); }
+          | tREPEAT '(' operand ')' control_block                               { $$ = new HorseIR::RepeatStatement($3, $5); }
           | tRETURN operandsne ';'                                              { $$ = new HorseIR::ReturnStatement(*$2); }
           | tBREAK ';'                                                          { $$ = new HorseIR::BreakStatement(); }
-          | tBREAK tIDENTIFIER ';'                                              { $$ = new HorseIR::BreakStatement(*$2); }
           | tCONTINUE ';'                                                       { $$ = new HorseIR::ContinueStatement(); }
-          | tCONTINUE tIDENTIFIER ';'                                           { $$ = new HorseIR::ContinueStatement(*$2); }
           ;
 
-control_block : '{' statements '}'                                              { $$ = $2; }
-	      | statement                                                       { $$ = new std::vector<HorseIR::Statement *>({$1}); }
+control_block : '{' statements '}'                                              { $$ = new HorseIR::BlockStatement(*$2); }
+	      | statement                                                       { $$ = new HorseIR::BlockStatement({$1}); }
               ;
 
 lvalues : lvalues ',' lvalue                                                    { $1->push_back($3); $$ = $1; }
@@ -330,12 +279,8 @@ lvalues : lvalues ',' lvalue                                                    
         ;
 
 lvalue : identifier                                                             { $$ = $1; }
-       | tIDENTIFIER ':' type                                                   { $$ = new HorseIR::Declaration(*$1, $3); }
+       | variable_declaration                                                   { $$ = $1; }
        ;
-
-identifiers : identifiers ',' identifier                                        { $1->push_back($3); $$ = $1; }
-	    | identifier                                                        { $$ = new std::vector<HorseIR::Identifier *>({$1}); }
-            ;
 
 expression : tCHECKCAST '(' expression ',' type ')'                             { $$ = new HorseIR::CastExpression($3, $5); }
            | function_literal '(' operands ')'                                  { $$ = new HorseIR::CallExpression($1, *$3); }

@@ -15,13 +15,13 @@ namespace HorseIR {
 class FunctionLiteral : public Literal
 {
 public:
-	FunctionLiteral(Identifier *identifier) : m_identifier(identifier) {}
+	FunctionLiteral(Identifier *identifier) : Literal(Literal::Kind::Function), m_identifier(identifier) {}
 
 	Identifier *GetIdentifier() const { return m_identifier; }
 	void SetIdentifier(Identifier *identifier) { m_identifier = identifier; }
 
-	FunctionDeclaration *GetFunction() const { return m_function; }
-	void SetFunction(FunctionDeclaration *function) { m_function = function; }
+	const FunctionDeclaration *GetFunction() const { return m_function; }
+	void SetFunction(const FunctionDeclaration *function) { m_function = function; }
 
 	bool operator==(const FunctionLiteral& other) const
 	{
@@ -57,7 +57,7 @@ public:
 protected:
 	Identifier *m_identifier = nullptr;
 
-	FunctionDeclaration *m_function = nullptr;
+	const FunctionDeclaration *m_function = nullptr;
 };
 
 }

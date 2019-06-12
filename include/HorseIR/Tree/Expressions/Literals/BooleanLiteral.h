@@ -4,6 +4,8 @@
 
 #include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
 
+#include "HorseIR/Tree/Types/BasicType.h"
+
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
@@ -14,8 +16,18 @@ namespace HorseIR {
 class BooleanLiteral : public TypedVectorLiteral<bool>
 {
 public:
-	BooleanLiteral(bool value) : TypedVectorLiteral<bool>(value) {}
-	BooleanLiteral(const std::vector<bool>& values) : TypedVectorLiteral<bool>(values) {}
+	BooleanLiteral(bool value) : TypedVectorLiteral<bool>(value, BasicType::BasicKind::Boolean) {}
+	BooleanLiteral(const std::vector<bool>& values) : TypedVectorLiteral<bool>(values, BasicType::BasicKind::Boolean) {}
+
+	bool operator==(const BooleanLiteral& other) const
+	{
+		return (m_values == other.m_values);
+	}
+
+	bool operator!=(const BooleanLiteral& other) const
+	{
+		return !(*this == other);
+	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

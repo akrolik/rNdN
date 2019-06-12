@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "HorseIR/Tree/Statements/Statement.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
@@ -14,12 +12,7 @@ namespace HorseIR {
 class ContinueStatement : public Statement
 {
 public:
-	ContinueStatement(const std::string& label = "") : m_label(label) {}
-
-	bool HasLabel() const { return (m_label != ""); }
-
-	const std::string& GetLabel() const { return m_label; }
-	void SetLabel(const std::string& label) { m_label = label; }
+	ContinueStatement() {}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
@@ -35,9 +28,6 @@ public:
 		visitor.VisitIn(this);
 		visitor.VisitOut(this);
 	}
-
-protected:
-	std::string m_label;
 };
 
 }

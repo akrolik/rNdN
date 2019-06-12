@@ -136,7 +136,6 @@ MILLISECOND {DIGIT}{DIGIT}{DIGIT}
 "."          return '.';
 "*"          RETURN('*');
 "/"          RETURN('/');
-"->"         RETURN(tARROW);
 
  /* Type reserved keywords */
 
@@ -176,7 +175,7 @@ if           RETURN(tIF);
 else         RETURN(tELSE);
 while        RETURN(tWHILE);
 repeat       RETURN(tREPEAT);
-goto         RETURN(tGOTO);
+var          RETURN(tVAR);
 return       RETURN(tRETURN);
 break        RETURN(tBREAK);
 continue     RETURN(tCONTINUE);

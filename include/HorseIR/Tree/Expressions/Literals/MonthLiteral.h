@@ -6,6 +6,8 @@
 #include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/MonthValue.h"
 
+#include "HorseIR/Tree/Types/BasicType.h"
+
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
@@ -16,8 +18,22 @@ namespace HorseIR {
 class MonthLiteral : public TypedVectorLiteral<MonthValue *>
 {
 public:
-	MonthLiteral(MonthValue *value) : TypedVectorLiteral<MonthValue *>(value) {}
-	MonthLiteral(const std::vector<MonthValue *>& values) : TypedVectorLiteral<MonthValue *>(values) {}
+	MonthLiteral(MonthValue *value) : TypedVectorLiteral<MonthValue *>(value, BasicType::BasicKind::Month) {}
+	MonthLiteral(const std::vector<MonthValue *>& values) : TypedVectorLiteral<MonthValue *>(values, BasicType::BasicKind::Month) {}
+
+	bool operator==(const MonthLiteral& other) const
+	{
+		return std::equal(
+			std::begin(m_values), std::end(m_values),
+			std::begin(other.m_values), std::end(other.m_values),
+			[](const MonthValue *v1, const MonthValue *v2) { return *v1 == *v2; }
+		);
+	}
+
+	bool operator!=(const MonthLiteral& other) const
+	{
+		return !(*this == other);
+	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

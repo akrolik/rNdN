@@ -1,8 +1,9 @@
 #pragma once
 
+#include "HorseIR/Tree/Types/WildcardType.h"
 #include "HorseIR/Tree/Types/BasicType.h"
-#include "HorseIR/Tree/Types/DictionaryType.h"
 #include "HorseIR/Tree/Types/ListType.h"
+#include "HorseIR/Tree/Types/DictionaryType.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -16,7 +17,7 @@ class TableType : public DictionaryType
 public:
 	constexpr static Type::Kind TypeKind = Type::Kind::Table;
 
-	TableType() : DictionaryType(TypeKind, new BasicType(BasicType::BasicKind::Symbol), new ListType(new BasicType(BasicType::BasicKind::Wildcard))) {}
+	TableType() : DictionaryType(TypeKind, new BasicType(BasicType::BasicKind::Symbol), new ListType(new WildcardType())) {}
 
 	bool operator==(const TableType& other) const
 	{

@@ -5,6 +5,8 @@
 #include "HorseIR/Tree/Expressions/Literals/VectorLiteral.h"
 #include "HorseIR/Tree/Expressions/Literals/MinuteValue.h"
 
+#include "HorseIR/Tree/Types/BasicType.h"
+
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
@@ -15,8 +17,22 @@ namespace HorseIR {
 class MinuteLiteral : public TypedVectorLiteral<MinuteValue *>
 {
 public:
-	MinuteLiteral(MinuteValue *value) : TypedVectorLiteral<MinuteValue *>(value) {}
-	MinuteLiteral(const std::vector<MinuteValue *>& values) : TypedVectorLiteral<MinuteValue *>(values) {}
+	MinuteLiteral(MinuteValue *value) : TypedVectorLiteral<MinuteValue *>(value, BasicType::BasicKind::Minute) {}
+	MinuteLiteral(const std::vector<MinuteValue *>& values) : TypedVectorLiteral<MinuteValue *>(values, BasicType::BasicKind::Minute) {}
+
+	bool operator==(const MinuteLiteral& other) const
+	{
+		return std::equal(
+			std::begin(m_values), std::end(m_values),
+			std::begin(other.m_values), std::end(other.m_values),
+			[](const MinuteValue *v1, const MinuteValue *v2) { return *v1 == *v2; }
+		);
+	}
+
+	bool operator!=(const MinuteLiteral& other) const
+	{
+		return !(*this == other);
+	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

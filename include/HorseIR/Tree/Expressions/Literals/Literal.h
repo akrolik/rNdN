@@ -6,8 +6,18 @@ namespace HorseIR {
 
 class Literal : public Operand
 {
+public:
+	bool operator==(const Literal& other) const;
+	bool operator!=(const Literal& other) const;
+
 protected:
-	Literal() : Operand(Operand::Kind::Literal) {}
+	enum class Kind {
+		Function,
+		Vector
+	};
+
+	Literal(Kind kind) : Operand(Operand::Kind::Literal), m_kind(kind) {}
+	Kind m_kind;
 };
 
 }

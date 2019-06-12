@@ -12,17 +12,17 @@ class GlobalDeclaration;
 class FunctionDeclaration;
 class BuiltinFunction;
 class Function;
-class Declaration;
+class VariableDeclaration;
 class Parameter;
 
 class Statement;
-class LabelledStatement;
+class DeclarationStatement;
 class AssignStatement;
+class ExpressionStatement;
 class IfStatement;
 class WhileStatement;
 class RepeatStatement;
-class GotoStatement;
-class SwitchStatement;
+class BlockStatement;
 class ReturnStatement;
 class BreakStatement;
 class ContinueStatement;
@@ -55,6 +55,7 @@ class TimeLiteral;
 class FunctionLiteral;
 
 class Type;
+class WildcardType;
 class BasicType;
 class FunctionType;
 class ListType;
@@ -81,7 +82,7 @@ public:
 	virtual bool VisitIn(FunctionDeclaration *function);
 	virtual bool VisitIn(BuiltinFunction *function);
 	virtual bool VisitIn(Function *function);
-	virtual bool VisitIn(Declaration *declaration);
+	virtual bool VisitIn(VariableDeclaration *declaration);
 	virtual bool VisitIn(Parameter *parameter);
 
 	virtual void VisitOut(Program *program);
@@ -92,31 +93,31 @@ public:
 	virtual void VisitOut(FunctionDeclaration *function);
 	virtual void VisitOut(BuiltinFunction *function);
 	virtual void VisitOut(Function *function);
-	virtual void VisitOut(Declaration *declaration);
+	virtual void VisitOut(VariableDeclaration *declaration);
 	virtual void VisitOut(Parameter *parameter);
 
 	// Statements
 
 	virtual bool VisitIn(Statement *statement);
-	virtual bool VisitIn(LabelledStatement *labelledS);
+	virtual bool VisitIn(DeclarationStatement *declarationS);
 	virtual bool VisitIn(AssignStatement *assignS);
+	virtual bool VisitIn(ExpressionStatement *expressionS);
         virtual bool VisitIn(IfStatement *ifS);
 	virtual bool VisitIn(WhileStatement *whileS);
 	virtual bool VisitIn(RepeatStatement *repeatS);
-	virtual bool VisitIn(GotoStatement *gotoS);
-	virtual bool VisitIn(SwitchStatement *switchS);
+	virtual bool VisitIn(BlockStatement *blockS);
 	virtual bool VisitIn(ReturnStatement *returnS);
 	virtual bool VisitIn(BreakStatement *breakS);
 	virtual bool VisitIn(ContinueStatement *continueS);
 
 	virtual void VisitOut(Statement *statement);
-	virtual void VisitOut(LabelledStatement *labelledS);
+	virtual void VisitOut(DeclarationStatement *declarationS);
 	virtual void VisitOut(AssignStatement *assignS);
+	virtual void VisitOut(ExpressionStatement *expressionS);
 	virtual void VisitOut(IfStatement *ifS);
 	virtual void VisitOut(WhileStatement *whileS);
 	virtual void VisitOut(RepeatStatement *repeatS);
-	virtual void VisitOut(GotoStatement *gotoS);
-	virtual void VisitOut(SwitchStatement *switchS);
+	virtual void VisitOut(BlockStatement *blockS);
 	virtual void VisitOut(ReturnStatement *returnS);
 	virtual void VisitOut(BreakStatement *breakS);
 	virtual void VisitOut(ContinueStatement *continueS);
@@ -182,6 +183,7 @@ public:
 	// Types
 
 	virtual bool VisitIn(Type *type);
+	virtual bool VisitIn(WildcardType *type);
 	virtual bool VisitIn(BasicType *type);
 	virtual bool VisitIn(FunctionType *type);
 	virtual bool VisitIn(ListType *type);
@@ -191,6 +193,7 @@ public:
 	virtual bool VisitIn(KeyedTableType *type);
 
 	virtual void VisitOut(Type *type);
+	virtual void VisitOut(WildcardType *type);
 	virtual void VisitOut(BasicType *type);
 	virtual void VisitOut(FunctionType *type);
 	virtual void VisitOut(ListType *type);

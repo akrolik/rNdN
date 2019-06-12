@@ -15,7 +15,7 @@ class KeyedTableType : public ListType
 public:
 	constexpr static Type::Kind TypeKind = Type::Kind::KeyedTable;
 
-	KeyedTableType() : ListType(TypeKind, {new TableType()}) {}
+	KeyedTableType() : ListType(TypeKind, {new TableType(), new TableType()}) {}
 
 	bool operator==(const KeyedTableType& other) const
 	{
@@ -26,6 +26,9 @@ public:
 	{
 		return false;
 	}
+
+	Type *GetKeyType() const { return m_elementTypes.at(0); }
+	Type *GetValueType() const { return m_elementTypes.at(1); }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

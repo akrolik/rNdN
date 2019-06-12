@@ -27,9 +27,6 @@ public:
 	Operand *GetArgument(unsigned int index) const { return m_arguments.at(index); }
 	void SetArguments(const std::vector<Operand *>& arguments) { m_arguments = arguments; }
 
-	FunctionDeclaration *GetFunction() const { return m_function; }
-	void SetFunction(FunctionDeclaration *function) { m_function = function; }
-
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
@@ -62,8 +59,6 @@ public:
 protected:
 	FunctionLiteral *m_literal = nullptr;
 	std::vector<Operand *> m_arguments;
-
-	FunctionDeclaration *m_function = nullptr;
 };
 
 }

@@ -80,6 +80,7 @@ public:
 
 		// Algebraic Binary
 		Append,
+		Replicate,
 		Like,
 		Compress,
 		Random_k,
@@ -262,6 +263,8 @@ public:
 				return "group";
 			case Primitive::Append:
 				return "append";
+			case Primitive::Replicate:
+				return "replicate";
 			case Primitive::Like:
 				return "like";
 			case Primitive::Compress:
@@ -446,6 +449,7 @@ public:
 
 			// Algebraic binary functions
 			case Primitive::Append:
+			case Primitive::Replicate:
 			case Primitive::Like:
 			case Primitive::Compress:
 			case Primitive::Random_k:
@@ -516,7 +520,7 @@ public:
 			case Primitive::Fetch:
 				return 1;
 			case Primitive::JoinIndex:
-				return 2;
+				return VariadicParameterCount;
 
 			// Indexing functions
 			case Primitive::Index:

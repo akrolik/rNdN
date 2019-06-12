@@ -58,14 +58,14 @@ bool ConstHierarchicalVisitor::VisitIn(const Function *function)
 	return VisitIn(static_cast<const FunctionDeclaration*>(function));
 }
 
-bool ConstHierarchicalVisitor::VisitIn(const Declaration *declaration)
+bool ConstHierarchicalVisitor::VisitIn(const VariableDeclaration *declaration)
 {
 	return VisitIn(static_cast<const Node*>(declaration));
 }
 
 bool ConstHierarchicalVisitor::VisitIn(const Parameter *parameter)
 {
-	return VisitIn(static_cast<const Declaration*>(parameter));
+	return VisitIn(static_cast<const VariableDeclaration*>(parameter));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const Program *program)
@@ -108,14 +108,14 @@ void ConstHierarchicalVisitor::VisitOut(const Function *function)
 	VisitOut(static_cast<const FunctionDeclaration*>(function));
 }
 
-void ConstHierarchicalVisitor::VisitOut(const Declaration *declaration)
+void ConstHierarchicalVisitor::VisitOut(const VariableDeclaration *declaration)
 {
 	VisitOut(static_cast<const Node*>(declaration));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const Parameter *parameter)
 {
-	VisitOut(static_cast<const Declaration*>(parameter));
+	VisitOut(static_cast<const VariableDeclaration*>(parameter));
 }
 
 // Statements
@@ -125,14 +125,19 @@ bool ConstHierarchicalVisitor::VisitIn(const Statement *statement)
 	return VisitIn(static_cast<const Node*>(statement));
 }
 
-bool ConstHierarchicalVisitor::VisitIn(const LabelledStatement *labelledS)
+bool ConstHierarchicalVisitor::VisitIn(const DeclarationStatement *declarationS)
 {
-	return VisitIn(static_cast<const Statement*>(labelledS));
+	return VisitIn(static_cast<const Statement*>(declarationS));
 }
 
 bool ConstHierarchicalVisitor::VisitIn(const AssignStatement *assignS)
 {
 	return VisitIn(static_cast<const Statement*>(assignS));
+}
+
+bool ConstHierarchicalVisitor::VisitIn(const ExpressionStatement *expressionS)
+{
+	return VisitIn(static_cast<const Statement*>(expressionS));
 }
 
 bool ConstHierarchicalVisitor::VisitIn(const IfStatement *ifS)
@@ -150,14 +155,9 @@ bool ConstHierarchicalVisitor::VisitIn(const RepeatStatement *repeatS)
 	return VisitIn(static_cast<const Statement*>(repeatS));
 }
 
-bool ConstHierarchicalVisitor::VisitIn(const GotoStatement *gotoS)
+bool ConstHierarchicalVisitor::VisitIn(const BlockStatement *blockS)
 {
-	return VisitIn(static_cast<const Statement*>(gotoS));
-}
-
-bool ConstHierarchicalVisitor::VisitIn(const SwitchStatement *switchS)
-{
-	return VisitIn(static_cast<const Statement*>(switchS));
+	return VisitIn(static_cast<const Statement*>(blockS));
 }
 
 bool ConstHierarchicalVisitor::VisitIn(const ReturnStatement *returnS)
@@ -180,14 +180,19 @@ void ConstHierarchicalVisitor::VisitOut(const Statement *statement)
 	VisitOut(static_cast<const Node*>(statement));
 }
 
-void ConstHierarchicalVisitor::VisitOut(const LabelledStatement *labelledS)
+void ConstHierarchicalVisitor::VisitOut(const DeclarationStatement *declarationS)
 {
-	VisitOut(static_cast<const Statement*>(labelledS));
+	VisitOut(static_cast<const Statement*>(declarationS));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const AssignStatement *assignS)
 {
 	VisitOut(static_cast<const Statement*>(assignS));
+}
+
+void ConstHierarchicalVisitor::VisitOut(const ExpressionStatement *expressionS)
+{
+	VisitOut(static_cast<const Statement*>(expressionS));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const IfStatement *ifS)
@@ -205,14 +210,9 @@ void ConstHierarchicalVisitor::VisitOut(const RepeatStatement *repeatS)
 	VisitOut(static_cast<const Statement*>(repeatS));
 }
 
-void ConstHierarchicalVisitor::VisitOut(const GotoStatement *gotoS)
+void ConstHierarchicalVisitor::VisitOut(const BlockStatement *blockS)
 {
-	VisitOut(static_cast<const Statement*>(gotoS));
-}
-
-void ConstHierarchicalVisitor::VisitOut(const SwitchStatement *switchS)
-{
-	VisitOut(static_cast<const Statement*>(switchS));
+	VisitOut(static_cast<const Statement*>(blockS));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const ReturnStatement *returnS)
@@ -491,6 +491,11 @@ bool ConstHierarchicalVisitor::VisitIn(const Type *type)
 	return VisitIn(static_cast<const Node*>(type));
 }
 
+bool ConstHierarchicalVisitor::VisitIn(const WildcardType *type)
+{
+	return VisitIn(static_cast<const Type*>(type));
+}
+
 bool ConstHierarchicalVisitor::VisitIn(const BasicType *type)
 {
 	return VisitIn(static_cast<const Type*>(type));
@@ -529,6 +534,11 @@ bool ConstHierarchicalVisitor::VisitIn(const KeyedTableType *type)
 void ConstHierarchicalVisitor::VisitOut(const Type *type)
 {
 	VisitOut(static_cast<const Node*>(type));
+}
+
+void ConstHierarchicalVisitor::VisitOut(const WildcardType *type)
+{
+	VisitOut(static_cast<const Type*>(type));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const BasicType *type)

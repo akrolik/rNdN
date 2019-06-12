@@ -53,14 +53,14 @@ void Visitor::Visit(Function *function)
 	Visit(static_cast<FunctionDeclaration*>(function));
 }
 
-void Visitor::Visit(Declaration *declaration)
+void Visitor::Visit(VariableDeclaration *declaration)
 {
 	Visit(static_cast<Node*>(declaration));
 }
 
 void Visitor::Visit(Parameter *parameter)
 {
-	Visit(static_cast<Declaration*>(parameter));
+	Visit(static_cast<VariableDeclaration*>(parameter));
 }
 
 // Statements
@@ -70,14 +70,19 @@ void Visitor::Visit(Statement *statement)
 	Visit(static_cast<Node*>(statement));
 }
 
-void Visitor::Visit(LabelledStatement *labelledS)
+void Visitor::Visit(DeclarationStatement *declarationS)
 {
-	Visit(static_cast<Statement*>(labelledS));
+	Visit(static_cast<Statement*>(declarationS));
 }
 
 void Visitor::Visit(AssignStatement *assignS)
 {
 	Visit(static_cast<Statement*>(assignS));
+}
+
+void Visitor::Visit(ExpressionStatement *expressionS)
+{
+	Visit(static_cast<Statement*>(expressionS));
 }
 
 void Visitor::Visit(IfStatement *ifS)
@@ -95,14 +100,9 @@ void Visitor::Visit(RepeatStatement *repeatS)
 	Visit(static_cast<Statement*>(repeatS));
 }
 
-void Visitor::Visit(GotoStatement *gotoS)
+void Visitor::Visit(BlockStatement *blockS)
 {
-	Visit(static_cast<Statement*>(gotoS));
-}
-
-void Visitor::Visit(SwitchStatement *switchS)
-{
-	Visit(static_cast<Statement*>(switchS));
+	Visit(static_cast<Statement*>(blockS));
 }
 
 void Visitor::Visit(ReturnStatement *returnS)
@@ -254,6 +254,11 @@ void Visitor::Visit(FunctionLiteral *literal)
 void Visitor::Visit(Type *type)
 {
 	Visit(static_cast<Node*>(type));
+}
+
+void Visitor::Visit(WildcardType *type)
+{
+	Visit(static_cast<Type*>(type));
 }
 
 void Visitor::Visit(BasicType *type)

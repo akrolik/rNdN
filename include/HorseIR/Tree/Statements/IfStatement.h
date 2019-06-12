@@ -1,10 +1,9 @@
 #pragma once
 
-#include <vector>
-
 #include "HorseIR/Tree/Statements/Statement.h"
 
 #include "HorseIR/Tree/Expressions/Operand.h"
+#include "HorseIR/Tree/Statements/BlockStatement.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -16,18 +15,18 @@ namespace HorseIR {
 class IfStatement : public Statement
 {
 public:
-	IfStatement(Operand *condition, const std::vector<Statement *> trueStatements, const std::vector<Statement *> falseStatements) : m_condition(condition), m_trueStatements(trueStatements), m_falseStatements(falseStatements) {}
+	IfStatement(Operand *condition, BlockStatement *trueBlock, BlockStatement *elseBlock = nullptr) : m_condition(condition), m_trueBlock(trueBlock), m_elseBlock(elseBlock) {}
 
 	Operand *GetCondition() const { return m_condition; }
 	void SetCondition(Operand *condition) { m_condition = condition; }
 
-	const std::vector<Statement *>& GetTrueStatements() const { return m_trueStatements; }
-	void SetTrueStatements(const std::vector<Statement *>& statements) { m_trueStatements = statements; }
+	BlockStatement *GetTrueBlock() const { return m_trueBlock; }
+	void SetTrueBlock(BlockStatement *block) { m_trueBlock = block; }
 
-	bool HasFalseBranch() const { return m_falseStatements.size() > 0; }
+	bool HasElseBranch() const { return m_elseBlock != nullptr; }
 
-	const std::vector<Statement *>& GetFalseStatements() const { return m_falseStatements; }
-	void SetFalseStatements(const std::vector<Statement *>& statements) { m_falseStatements = statements; }
+	BlockStatement *GetElseBlock() const { return m_elseBlock; }
+	void SetElseBlock(BlockStatement *block) { m_elseBlock = block; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
@@ -37,13 +36,10 @@ public:
 		if (visitor.VisitIn(this))
 		{
 			m_condition->Accept(visitor);
-			for (auto& statement : m_trueStatements)
+			m_trueBlock->Accept(visitor);
+			if (m_elseBlock != nullptr)
 			{
-				statement->Accept(visitor);
-			}
-			for (auto& statement : m_falseStatements)
-			{
-				statement->Accept(visitor);
+				m_elseBlock->Accept(visitor);
 			}
 		}
 		visitor.VisitOut(this);
@@ -54,13 +50,10 @@ public:
 		if (visitor.VisitIn(this))
 		{
 			m_condition->Accept(visitor);
-			for (const auto& statement : m_trueStatements)
+			m_trueBlock->Accept(visitor);
+			if (m_elseBlock != nullptr)
 			{
-				statement->Accept(visitor);
-			}
-			for (const auto& statement : m_falseStatements)
-			{
-				statement->Accept(visitor);
+				m_elseBlock->Accept(visitor);
 			}
 		}
 		visitor.VisitOut(this);
@@ -68,8 +61,8 @@ public:
 
 protected:
 	Operand *m_condition = nullptr;
-	std::vector<Statement *> m_trueStatements;
-	std::vector<Statement *> m_falseStatements;
+	BlockStatement *m_trueBlock = nullptr;
+	BlockStatement *m_elseBlock = nullptr;
 };
 
 }

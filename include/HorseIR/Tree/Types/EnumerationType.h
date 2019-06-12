@@ -14,20 +14,18 @@ class EnumerationType : public Type
 public:
 	constexpr static Type::Kind TypeKind = Type::Kind::Enumeration;
 
-	EnumerationType(Type *type) : Type(TypeKind), m_keyType(type), m_valueType(type) {}
-	EnumerationType(Type *keyType, Type *valueType) : Type(TypeKind), m_keyType(keyType), m_valueType(valueType) {}
+	EnumerationType(Type *type) : Type(TypeKind), m_elementType(type) {}
 
-	Type *GetKeyType() const { return m_keyType; }
-	Type *GetValueType() const { return m_valueType; }
+	Type *GetElementType() const { return m_elementType; }
 
 	bool operator==(const EnumerationType& other) const
 	{
-		return (*m_keyType == *other.m_keyType && *m_valueType == *other.m_valueType);
+		return (*m_elementType == *other.m_elementType);
 	}
 
 	bool operator!=(const EnumerationType& other) const
 	{
-		return (*m_keyType != *other.m_keyType || *m_valueType != *other.m_valueType);
+		return (*m_elementType != *other.m_elementType);
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
@@ -37,8 +35,7 @@ public:
 	{
 		if (visitor.VisitIn(this))
 		{
-			m_keyType->Accept(visitor);
-			m_valueType->Accept(visitor);
+			m_elementType->Accept(visitor);
 		}
 		visitor.VisitOut(this);
 	}
@@ -47,15 +44,13 @@ public:
 	{
 		if (visitor.VisitIn(this))
 		{
-			m_keyType->Accept(visitor);
-			m_valueType->Accept(visitor);
+			m_elementType->Accept(visitor);
 		}
 		visitor.VisitOut(this);
 	}
 
 protected:
-	Type *m_keyType = nullptr;
-	Type *m_valueType = nullptr;
+	Type *m_elementType = nullptr;
 };
 
 }

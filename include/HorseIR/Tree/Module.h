@@ -5,14 +5,13 @@
 
 #include "HorseIR/Tree/Node.h"
 
+#include "HorseIR/Semantics/SymbolTable/SymbolTable.h"
 #include "HorseIR/Tree/ModuleContent.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Traversal/HierarchicalVisitor.h"
-
-class SymbolTable;
 
 namespace HorseIR {
 
@@ -28,7 +27,6 @@ public:
 	void AddContent(ModuleContent *content) { m_contents.push_back(content); }
 	void SetContents(const std::vector<ModuleContent *>& contents) { m_contents = contents; }
 
-	//TODO: remove this
 	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
 

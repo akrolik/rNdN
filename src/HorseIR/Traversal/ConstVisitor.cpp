@@ -51,14 +51,14 @@ void ConstVisitor::Visit(const Function *function)
 	Visit(static_cast<const FunctionDeclaration*>(function));
 }
 
-void ConstVisitor::Visit(const Declaration *declaration)
+void ConstVisitor::Visit(const VariableDeclaration *declaration)
 {
 	Visit(static_cast<const Node*>(declaration));
 }
 
 void ConstVisitor::Visit(const Parameter *parameter)
 {
-	Visit(static_cast<const Declaration*>(parameter));
+	Visit(static_cast<const VariableDeclaration*>(parameter));
 }
 
 // Statements
@@ -68,14 +68,19 @@ void ConstVisitor::Visit(const Statement *statement)
 	Visit(static_cast<const Node*>(statement));
 }
 
-void ConstVisitor::Visit(const LabelledStatement *labelledS)
+void ConstVisitor::Visit(const DeclarationStatement *declarationS)
 {
-	Visit(static_cast<const Statement*>(labelledS));
+	Visit(static_cast<const Statement*>(declarationS));
 }
 
 void ConstVisitor::Visit(const AssignStatement *assignS)
 {
 	Visit(static_cast<const Statement*>(assignS));
+}
+
+void ConstVisitor::Visit(const ExpressionStatement *expressionS)
+{
+	Visit(static_cast<const Statement*>(expressionS));
 }
 
 void ConstVisitor::Visit(const IfStatement *ifS)
@@ -93,14 +98,9 @@ void ConstVisitor::Visit(const RepeatStatement *repeatS)
 	Visit(static_cast<const Statement*>(repeatS));
 }
 
-void ConstVisitor::Visit(const GotoStatement *gotoS)
+void ConstVisitor::Visit(const BlockStatement *blockS)
 {
-	Visit(static_cast<const Statement*>(gotoS));
-}
-
-void ConstVisitor::Visit(const SwitchStatement *switchS)
-{
-	Visit(static_cast<const Statement*>(switchS));
+	Visit(static_cast<const Statement*>(blockS));
 }
 
 void ConstVisitor::Visit(const ReturnStatement *returnS)
@@ -252,6 +252,11 @@ void ConstVisitor::Visit(const FunctionLiteral *literal)
 void ConstVisitor::Visit(const Type *type)
 {
 	Visit(static_cast<const Node*>(type));
+}
+
+void ConstVisitor::Visit(const WildcardType *type)
+{
+	Visit(static_cast<const Type*>(type));
 }
 
 void ConstVisitor::Visit(const BasicType *type)

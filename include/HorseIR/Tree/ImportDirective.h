@@ -18,8 +18,8 @@ public:
 	ImportDirective(const std::string& module, const std::string& contents) : m_module(module), m_contents({contents}) {}
 	ImportDirective(const std::string& module, const std::vector<std::string>& contents) : m_module(module), m_contents(contents) {}
 
-	const std::string& GetModule() const { return m_module; }
-	void SetModule(const std::string& module) { m_module = module; }
+	const std::string& GetModuleName() const { return m_module; }
+	void SetModuleName(const std::string& module) { m_module = module; }
 
 	const std::vector<std::string>& GetContents() const { return m_contents; }
 	void SetContents(const std::vector<std::string>& contents) { m_contents = contents; }

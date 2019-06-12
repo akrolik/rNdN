@@ -58,14 +58,14 @@ bool HierarchicalVisitor::VisitIn(Function *function)
 	return VisitIn(static_cast<FunctionDeclaration*>(function));
 }
 
-bool HierarchicalVisitor::VisitIn(Declaration *declaration)
+bool HierarchicalVisitor::VisitIn(VariableDeclaration *declaration)
 {
 	return VisitIn(static_cast<Node*>(declaration));
 }
 
 bool HierarchicalVisitor::VisitIn(Parameter *parameter)
 {
-	return VisitIn(static_cast<Declaration*>(parameter));
+	return VisitIn(static_cast<VariableDeclaration*>(parameter));
 }
 
 void HierarchicalVisitor::VisitOut(Program *program)
@@ -108,14 +108,14 @@ void HierarchicalVisitor::VisitOut(Function *function)
 	VisitOut(static_cast<FunctionDeclaration*>(function));
 }
 
-void HierarchicalVisitor::VisitOut(Declaration *declaration)
+void HierarchicalVisitor::VisitOut(VariableDeclaration *declaration)
 {
 	VisitOut(static_cast<Node*>(declaration));
 }
 
 void HierarchicalVisitor::VisitOut(Parameter *parameter)
 {
-	VisitOut(static_cast<Declaration*>(parameter));
+	VisitOut(static_cast<VariableDeclaration*>(parameter));
 }
 
 // Statements
@@ -125,14 +125,19 @@ bool HierarchicalVisitor::VisitIn(Statement *statement)
 	return VisitIn(static_cast<Node*>(statement));
 }
 
-bool HierarchicalVisitor::VisitIn(LabelledStatement *labelledS)
+bool HierarchicalVisitor::VisitIn(DeclarationStatement *declarationS)
 {
-	return VisitIn(static_cast<Statement*>(labelledS));
+	return VisitIn(static_cast<Statement*>(declarationS));
 }
 
 bool HierarchicalVisitor::VisitIn(AssignStatement *assignS)
 {
 	return VisitIn(static_cast<Statement*>(assignS));
+}
+
+bool HierarchicalVisitor::VisitIn(ExpressionStatement *expressionS)
+{
+	return VisitIn(static_cast<Statement*>(expressionS));
 }
 
 bool HierarchicalVisitor::VisitIn(IfStatement *ifS)
@@ -150,14 +155,9 @@ bool HierarchicalVisitor::VisitIn(RepeatStatement *repeatS)
 	return VisitIn(static_cast<Statement*>(repeatS));
 }
 
-bool HierarchicalVisitor::VisitIn(GotoStatement *gotoS)
+bool HierarchicalVisitor::VisitIn(BlockStatement *blockS)
 {
-	return VisitIn(static_cast<Statement*>(gotoS));
-}
-
-bool HierarchicalVisitor::VisitIn(SwitchStatement *switchS)
-{
-	return VisitIn(static_cast<Statement*>(switchS));
+	return VisitIn(static_cast<Statement*>(blockS));
 }
 
 bool HierarchicalVisitor::VisitIn(ReturnStatement *returnS)
@@ -180,14 +180,19 @@ void HierarchicalVisitor::VisitOut(Statement *statement)
 	VisitOut(static_cast<Node*>(statement));
 }
 
-void HierarchicalVisitor::VisitOut(LabelledStatement *labelledS)
+void HierarchicalVisitor::VisitOut(DeclarationStatement *declarationS)
 {
-	VisitOut(static_cast<Statement*>(labelledS));
+	VisitOut(static_cast<Statement*>(declarationS));
 }
 
 void HierarchicalVisitor::VisitOut(AssignStatement *assignS)
 {
 	VisitOut(static_cast<Statement*>(assignS));
+}
+
+void HierarchicalVisitor::VisitOut(ExpressionStatement *expressionS)
+{
+	VisitOut(static_cast<Statement*>(expressionS));
 }
 
 void HierarchicalVisitor::VisitOut(IfStatement *ifS)
@@ -205,14 +210,9 @@ void HierarchicalVisitor::VisitOut(RepeatStatement *repeatS)
 	VisitOut(static_cast<Statement*>(repeatS));
 }
 
-void HierarchicalVisitor::VisitOut(GotoStatement *gotoS)
+void HierarchicalVisitor::VisitOut(BlockStatement *blockS)
 {
-	VisitOut(static_cast<Statement*>(gotoS));
-}
-
-void HierarchicalVisitor::VisitOut(SwitchStatement *switchS)
-{
-	VisitOut(static_cast<Statement*>(switchS));
+	VisitOut(static_cast<Statement*>(blockS));
 }
 
 void HierarchicalVisitor::VisitOut(ReturnStatement *returnS)
@@ -491,6 +491,11 @@ bool HierarchicalVisitor::VisitIn(Type *type)
 	return VisitIn(static_cast<Node*>(type));
 }
 
+bool HierarchicalVisitor::VisitIn(WildcardType *type)
+{
+	return VisitIn(static_cast<Type*>(type));
+}
+
 bool HierarchicalVisitor::VisitIn(BasicType *type)
 {
 	return VisitIn(static_cast<Type*>(type));
@@ -529,6 +534,11 @@ bool HierarchicalVisitor::VisitIn(KeyedTableType *type)
 void HierarchicalVisitor::VisitOut(Type *type)
 {
 	VisitOut(static_cast<Node*>(type));
+}
+
+void HierarchicalVisitor::VisitOut(WildcardType *type)
+{
+	VisitOut(static_cast<Type*>(type));
 }
 
 void HierarchicalVisitor::VisitOut(BasicType *type)

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include "HorseIR/Tree/Statements/Statement.h"
+
+#include "HorseIR/Tree/Expressions/Expression.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -11,31 +11,37 @@
 
 namespace HorseIR {
 
-class GotoStatement : public Statement
+class ExpressionStatement : public Statement
 {
 public:
-	GotoStatement(const std::string& label) : m_label(label) {}
+	ExpressionStatement(Expression *expression) : m_expression(expression) {}
 
-	const std::string& GetLabel() const { return m_label; }
-	void SetLabel(const std::string& label) { m_label = label; }
+	Expression *GetExpression() const { return m_expression; }
+	void SetExpression(Expression *expression) { m_expression = expression; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
 	void Accept(HierarchicalVisitor &visitor) override
 	{
-		visitor.VisitIn(this);
+		if (visitor.VisitIn(this))
+		{
+			m_expression->Accept(visitor);
+		}
 		visitor.VisitOut(this);
 	}
 
 	void Accept(ConstHierarchicalVisitor &visitor) const override
 	{
-		visitor.VisitIn(this);
+		if (visitor.VisitIn(this))
+		{
+			m_expression->Accept(visitor);
+		}
 		visitor.VisitOut(this);
 	}
 
 protected:
-	std::string m_label;
+	Expression *m_expression = nullptr;
 };
 
 }

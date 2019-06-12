@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
+#include "HorseIR/Tree/LValue.h"
 #include "HorseIR/Tree/Expressions/Operand.h"
-#include "HorseIR/Tree/Expressions/LValue.h"
 
-#include "HorseIR/Tree/Declaration.h"
+#include "HorseIR/Tree/VariableDeclaration.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -28,12 +29,12 @@ public:
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 
-	Declaration *GetDeclaration() const { return m_declaration; }
-	void SetDeclaration(Declaration *declaration) { m_declaration = declaration; }
+	// LValue
+	const std::vector<Type *> GetTypes() const override { return Operand::GetTypes(); }
 
 	bool operator==(const Identifier& other) const
 	{
-		return (m_module == other.m_module && m_name == other.m_name && m_declaration == other.m_declaration);
+		return (m_module == other.m_module && m_name == other.m_name);
 	}
 
 	bool operator!=(const Identifier& other) const
@@ -59,8 +60,6 @@ public:
 protected:
 	std::string m_module = "";
 	std::string m_name;
-
-	Declaration *m_declaration = nullptr;
 };
 
 }

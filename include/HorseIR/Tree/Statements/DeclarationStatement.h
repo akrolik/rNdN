@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-#include "HorseIR/Tree/ModuleContent.h"
+#include "HorseIR/Tree/Statements/Statement.h"
 
 #include "HorseIR/Tree/VariableDeclaration.h"
-#include "HorseIR/Tree/Expressions/Operand.h"
+#include "HorseIR/Tree/Types/Type.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -14,16 +15,13 @@
 
 namespace HorseIR {
 
-class GlobalDeclaration : public ModuleContent
+class DeclarationStatement : public Statement
 {
 public:
-	GlobalDeclaration(VariableDeclaration *declaration, Operand *expression) : m_declaration(declaration), m_expression(expression) {}
+	DeclarationStatement(VariableDeclaration *declaration) : m_declaration(declaration) {}
 
 	VariableDeclaration *GetDeclaration() const { return m_declaration; }
 	void SetDeclaration(VariableDeclaration *declaration) { m_declaration = declaration; }
-
-	Operand *GetExpression() const { return m_expression; }
-	void SetExpression(Operand *expression) { m_expression = expression; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
@@ -33,7 +31,6 @@ public:
 		if (visitor.VisitIn(this))
 		{
 			m_declaration->Accept(visitor);
-			m_expression->Accept(visitor);
 		}
 		visitor.VisitOut(this);
 	}
@@ -43,14 +40,23 @@ public:
 		if (visitor.VisitIn(this))
 		{
 			m_declaration->Accept(visitor);
-			m_expression->Accept(visitor);
 		}
 		visitor.VisitOut(this);
 	}
 
 protected:
 	VariableDeclaration *m_declaration = nullptr;
-	Operand *m_expression = nullptr;
 };
+
+static std::vector<Statement *> *CreateDeclarationStatements(const std::vector<std::string>& names, Type *type)
+{
+	auto statements = new std::vector<Statement *>();
+	for (auto& name : names)
+	{
+		auto statement = new DeclarationStatement(new VariableDeclaration(name, type));
+		statements->push_back(statement);
+	}
+	return statements;
+}
 
 }

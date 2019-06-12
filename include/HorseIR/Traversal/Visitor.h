@@ -12,17 +12,17 @@ class GlobalDeclaration;
 class FunctionDeclaration;
 class BuiltinFunction;
 class Function;
-class Declaration;
+class VariableDeclaration;
 class Parameter;
 
 class Statement;
-class LabelledStatement;
+class DeclarationStatement;
 class AssignStatement;
+class ExpressionStatement;
 class IfStatement;
 class WhileStatement;
 class RepeatStatement;
-class GotoStatement;
-class SwitchStatement;
+class BlockStatement;
 class ReturnStatement;
 class BreakStatement;
 class ContinueStatement;
@@ -55,6 +55,7 @@ class TimeLiteral;
 class FunctionLiteral;
 
 class Type;
+class WildcardType;
 class BasicType;
 class FunctionType;
 class ListType;
@@ -80,19 +81,19 @@ public:
 	virtual void Visit(FunctionDeclaration *function);
 	virtual void Visit(BuiltinFunction *function);
 	virtual void Visit(Function *function);
-	virtual void Visit(Declaration *declaration);
+	virtual void Visit(VariableDeclaration *declaration);
 	virtual void Visit(Parameter *parameter);
 
 	// Statements
 
 	virtual void Visit(Statement *statement);
-	virtual void Visit(LabelledStatement *labelledS);
+	virtual void Visit(DeclarationStatement *declarationS);
 	virtual void Visit(AssignStatement *assignS);
+	virtual void Visit(ExpressionStatement *expressionS);
         virtual void Visit(IfStatement *ifS);
 	virtual void Visit(WhileStatement *whileS);
 	virtual void Visit(RepeatStatement *repeatS);
-	virtual void Visit(GotoStatement *gotoS);
-	virtual void Visit(SwitchStatement *switchS);
+	virtual void Visit(BlockStatement *blockS);
 	virtual void Visit(ReturnStatement *returnS);
 	virtual void Visit(BreakStatement *breakS);
 	virtual void Visit(ContinueStatement *continueS);
@@ -131,6 +132,7 @@ public:
 	// Types
 
 	virtual void Visit(Type *type);
+	virtual void Visit(WildcardType *type);
 	virtual void Visit(BasicType *type);
 	virtual void Visit(FunctionType *type);
 	virtual void Visit(ListType *type);

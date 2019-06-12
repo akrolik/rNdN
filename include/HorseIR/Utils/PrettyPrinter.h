@@ -11,7 +11,7 @@ namespace HorseIR {
 class PrettyPrinter : public ConstVisitor
 {
 public:
-	static std::string PrintString(const Node *node);
+	static std::string PrettyString(const Node *node, bool quick = false);
 
 	// Modules
 
@@ -21,17 +21,17 @@ public:
 	void Visit(const GlobalDeclaration *global) override;
 	void Visit(const BuiltinFunction *function) override;
 	void Visit(const Function *function) override;
-	void Visit(const Declaration *declaration) override;
+	void Visit(const VariableDeclaration *declaration) override;
 
 	// Statements
 
-	void Visit(const LabelledStatement *labelledS) override;
+	void Visit(const DeclarationStatement *declarationS) override;
 	void Visit(const AssignStatement *assignS) override;
+	void Visit(const ExpressionStatement *expressionS) override;
         void Visit(const IfStatement *ifS) override;
 	void Visit(const WhileStatement *whileS) override;
 	void Visit(const RepeatStatement *repeatS) override;
-	void Visit(const GotoStatement *gotoS) override;
-	void Visit(const SwitchStatement *switchS) override;
+	void Visit(const BlockStatement *blockS) override;
 	void Visit(const ReturnStatement *returnS) override;
 	void Visit(const BreakStatement *breakS) override;
 	void Visit(const ContinueStatement *continueS) override;
@@ -76,6 +76,7 @@ public:
 protected:
 	std::stringstream m_string;
 	unsigned int m_indent = 0;
+	bool m_quick = false;
 
 	void Indent();
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "HorseIR/Tree/Node.h"
 
 #include "HorseIR/Tree/Types/Type.h"
@@ -9,11 +11,13 @@ namespace HorseIR {
 class Expression : public Node
 {
 public:
-	Type *GetType() const { return m_type; }
-	void SetType(Type *type) { m_type = type; }
+	const std::vector<Type *>& GetTypes() const { return m_types; }
+
+	void SetTypes(Type *types) { m_types = {types}; }
+	void SetTypes(const std::vector<Type *>& types) { m_types = types; }
 
 protected:
-	Type* m_type = nullptr;
+	std::vector<Type *> m_types;
 };
 
 }

@@ -1,17 +1,140 @@
 #pragma once
 
-#include "HorseIR/Analysis/PrettyPrinter.h"
+#include <vector>
+
 #include "HorseIR/Tree/Types/Type.h"
 #include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Types/ListType.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
 
 namespace HorseIR {
 
+class TypeUtils {
+public:
+
+static std::string TypeString(const Type *type)
+{
+	return TypeString({type});
+}
+
+static std::string TypeString(const std::vector<Type *>& types)
+{
+	std::string s;
+	bool first = true;
+	for (const auto type : types)
+	{
+		if (!first)
+		{
+			s += ", ";
+		}
+		s += "'" + PrettyPrinter::PrettyString(type) + "'";
+		first = false;
+	}
+	return s;
+}
+
+static bool IsEmptyType(const std::vector<Type *>& types)
+{
+	return (types.size() == 0);
+}
+
+static bool IsSingleType(const std::vector<Type *>& types)
+{
+	return (types.size() == 1);
+}
+
+static Type *GetSingleType(const std::vector<Type *>& types)
+{
+	if (types.size() == 1)
+	{
+		return types.at(0);
+	}
+	return nullptr;
+}
+
+static bool IsTypesEqual(const Type *type1, const Type *type2)
+{
+	return *type1 == *type2;
+}
+
+static bool IsTypesEqual(const std::vector<Type *>& types1, const std::vector<Type *>& types2, bool allowNull = false)
+{
+	if (types1.size() != types2.size())
+	{
+		return false;
+	}
+	for (unsigned int i = 0; i < types1.size(); ++i)
+	{
+		auto type1 = types1.at(i);
+		auto type2 = types2.at(i);
+		if (type1 == nullptr || type2 == nullptr)
+		{
+			if (allowNull)
+			{
+				continue;
+			}
+			return false;
+		}
+
+		if (*type1 != *type2)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool IsReducibleTypes(const std::vector<Type *>& types)
+{
+	Type *firstType = nullptr;
+	for (const auto type : types)
+	{
+		if (firstType == nullptr)
+		{
+			firstType = type;
+		}
+		else if (*firstType != *type)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+static Type *GetReducedType(const std::vector<Type *>& types)
+{
+	if (IsReducibleTypes(types))
+	{
+		return types.at(0);
+	}
+	return nullptr;
+}
+
+static bool IsCastable(Type *destination, Type *source)
+{
+	//TODO: Check cast is valid according to rules
+
+	return true;
+}
+
+static bool ForallElements(const ListType *listType, bool (*f)(const Type *))
+{
+	for (const auto elementType : listType->GetElementTypes())
+	{
+		if (!(*f)(elementType))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 template<class T>
 static T *GetType(Type *type)
 {
-	if (type->GetKind() == T::TypeKind)
+	if (type->m_kind == T::TypeKind)
 	{
 		return static_cast<T *>(type);
 	}
@@ -21,7 +144,7 @@ static T *GetType(Type *type)
 template<class T>
 static const T *GetType(const Type *type)
 {
-	if (type->GetKind() == T::TypeKind)
+	if (type->m_kind == T::TypeKind)
 	{
 		return static_cast<const T *>(type);
 	}
@@ -31,7 +154,7 @@ static const T *GetType(const Type *type)
 template<class T>
 static bool IsType(const Type *type)
 {
-	return (type->GetKind() == T::TypeKind);
+	return (type->m_kind == T::TypeKind);
 }
 
 static bool IsBasicType(const Type *type, BasicType::BasicKind kind)
@@ -176,12 +299,17 @@ static bool IsAssignableType(const Type *type1, const Type *type2)
 		auto basicType1 = GetType<BasicType>(type1);
 		auto basicType2 = GetType<BasicType>(type2);
 
-		auto kind1 = static_cast<std::underlying_type<BasicType::BasicKind>::type>(basicType1->GetKind());
-		auto kind2 = static_cast<std::underlying_type<BasicType::BasicKind>::type>(basicType2->GetKind());
+		auto kind1 = static_cast<std::underlying_type<BasicType::BasicKind>::type>(basicType1->GetBasicKind());
+		auto kind2 = static_cast<std::underlying_type<BasicType::BasicKind>::type>(basicType2->GetBasicKind());
 
 		return kind1 > kind2;
 	}
 	return false;
+}
+
+static bool IsOrderableType(const Type *type)
+{
+	return (IsRealType(type) || IsCharacterType(type) || IsCalendarType(type));
 }
 
 static bool IsOrderableTypes(const Type *type1, const Type *type2)
@@ -257,7 +385,7 @@ static BasicType *WidestType(const BasicType *type1, const BasicType *type2)
 	{
 		return new BasicType(BasicType::BasicKind::Boolean);
 	}
-	Utils::Logger::LogError("Unknown widest type for " + PrettyPrinter::PrintString(type1) + " and " + PrettyPrinter::PrintString(type2));
+	Utils::Logger::LogError("Unknown widest type for " + PrettyPrinter::PrettyString(type1) + " and " + PrettyPrinter::PrettyString(type2));
 }
 
 static BasicType *WidestType(const Type *type1, const Type *type2)
@@ -266,7 +394,9 @@ static BasicType *WidestType(const Type *type1, const Type *type2)
 	{
 		return WidestType(GetType<BasicType>(type1), GetType<BasicType>(type2));
 	}
-	Utils::Logger::LogError("Unknown widest type for " + PrettyPrinter::PrintString(type1) + " and " + PrettyPrinter::PrintString(type2));
+	Utils::Logger::LogError("Unknown widest type for " + PrettyPrinter::PrettyString(type1) + " and " + PrettyPrinter::PrettyString(type2));
 }
+
+};
 
 }

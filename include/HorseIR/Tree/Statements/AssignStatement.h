@@ -4,13 +4,13 @@
 
 #include "HorseIR/Tree/Statements/Statement.h"
 
+#include "HorseIR/Tree/LValue.h"
+#include "HorseIR/Tree/Expressions/Expression.h"
+
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 #include "HorseIR/Traversal/Visitor.h"
 #include "HorseIR/Traversal/HierarchicalVisitor.h"
-
-#include "HorseIR/Tree/Expressions/LValue.h"
-#include "HorseIR/Tree/Expressions/Expression.h"
 
 namespace HorseIR {
 

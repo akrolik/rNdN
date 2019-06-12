@@ -1,6 +1,8 @@
 #pragma once
 
-#include "HorseIR/Tree/Statements/Statement.h"
+#include <string>
+
+#include "HorseIR/Tree/Types/Type.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -9,10 +11,12 @@
 
 namespace HorseIR {
 
-class BreakStatement : public Statement
+class WildcardType : public Type
 {
 public:
-	BreakStatement() {}
+	constexpr static Type::Kind TypeKind = Type::Kind::Wildcard;
+
+	WildcardType() : Type(Type::Kind::Wildcard) {}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
@@ -27,6 +31,16 @@ public:
 	{
 		visitor.VisitIn(this);
 		visitor.VisitOut(this);
+	}
+
+	bool operator==(const WildcardType& other) const
+	{
+		return false;
+	}
+
+	bool operator!=(const WildcardType& other) const
+	{
+		return true;
 	}
 };
 

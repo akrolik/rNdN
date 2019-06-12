@@ -23,12 +23,16 @@ public:
 
 	bool operator==(const ListType& other) const
 	{
-		return (m_elementTypes == other.m_elementTypes);
+		return std::equal(
+			std::begin(m_elementTypes), std::end(m_elementTypes),
+			std::begin(other.m_elementTypes), std::end(other.m_elementTypes),
+			[](const Type *t1, const Type *t2) { return *t1 == *t2; }
+		);
 	}
 
 	bool operator!=(const ListType& other) const
 	{
-		return (m_elementTypes != other.m_elementTypes);
+		return !(*this == other);
 	}
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }

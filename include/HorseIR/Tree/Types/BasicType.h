@@ -15,7 +15,6 @@ class BasicType : public Type
 {
 public:
 	enum class BasicKind {
-		Wildcard,
 		Boolean,
 		Char,
 		Int8,
@@ -43,8 +42,6 @@ public:
 	{
 		switch (kind)
 		{
-			case BasicKind::Wildcard:
-				return "?";
 			case BasicKind::Boolean:
 				return "bool";
 			case BasicKind::Char:

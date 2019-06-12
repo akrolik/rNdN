@@ -12,17 +12,17 @@ class GlobalDeclaration;
 class FunctionDeclaration;
 class BuiltinFunction;
 class Function;
-class Declaration;
+class VariableDeclaration;
 class Parameter;
 
 class Statement;
-class LabelledStatement;
+class DeclarationStatement;
 class AssignStatement;
+class ExpressionStatement;
 class IfStatement;
 class WhileStatement;
 class RepeatStatement;
-class GotoStatement;
-class SwitchStatement;
+class BlockStatement;
 class ReturnStatement;
 class BreakStatement;
 class ContinueStatement;
@@ -55,6 +55,7 @@ class TimeLiteral;
 class FunctionLiteral;
 
 class Type;
+class WildcardType;
 class BasicType;
 class FunctionType;
 class ListType;
@@ -80,19 +81,19 @@ public:
 	virtual void Visit(const FunctionDeclaration *function);
 	virtual void Visit(const BuiltinFunction *function);
 	virtual void Visit(const Function *function);
-	virtual void Visit(const Declaration *declaration);
+	virtual void Visit(const VariableDeclaration *declaration);
 	virtual void Visit(const Parameter *parameter);
 
 	// Statements
 
 	virtual void Visit(const Statement *statement);
-	virtual void Visit(const LabelledStatement *labelledS);
+	virtual void Visit(const DeclarationStatement *declarationS);
 	virtual void Visit(const AssignStatement *assignS);
+	virtual void Visit(const ExpressionStatement *expressionS);
         virtual void Visit(const IfStatement *ifS);
 	virtual void Visit(const WhileStatement *whileS);
 	virtual void Visit(const RepeatStatement *repeatS);
-	virtual void Visit(const GotoStatement *gotoS);
-	virtual void Visit(const SwitchStatement *switchS);
+	virtual void Visit(const BlockStatement *blockS);
 	virtual void Visit(const ReturnStatement *returnS);
 	virtual void Visit(const BreakStatement *breakS);
 	virtual void Visit(const ContinueStatement *continueS);
@@ -131,6 +132,7 @@ public:
 	// Types
 
 	virtual void Visit(const Type *type);
+	virtual void Visit(const WildcardType *type);
 	virtual void Visit(const BasicType *type);
 	virtual void Visit(const FunctionType *type);
 	virtual void Visit(const ListType *type);

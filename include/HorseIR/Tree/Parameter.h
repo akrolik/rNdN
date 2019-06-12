@@ -1,8 +1,6 @@
 #pragma once
 
-#include <string>
-
-#include "HorseIR/Tree/Declaration.h"
+#include "HorseIR/Tree/VariableDeclaration.h"
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
@@ -11,10 +9,10 @@
 
 namespace HorseIR {
 
-class Parameter : public Declaration
+class Parameter : public VariableDeclaration
 {
 public:
-	using Declaration::Declaration;
+	using VariableDeclaration::VariableDeclaration;
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

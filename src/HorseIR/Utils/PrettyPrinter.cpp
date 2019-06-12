@@ -1,13 +1,14 @@
-#include "HorseIR/Analysis/PrettyPrinter.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "HorseIR/Tree/Tree.h"
 
 namespace HorseIR {
 
-std::string PrettyPrinter::PrintString(const Node *node)
+std::string PrettyPrinter::PrettyString(const Node *node, bool quick)
 {
 	PrettyPrinter printer;
 	printer.m_string.str("");
+	printer.m_quick = quick;
 	node->Accept(printer);
 	return printer.m_string.str();
 }
@@ -75,7 +76,7 @@ void PrettyPrinter::Visit(const Module *module)
 void PrettyPrinter::Visit(const ImportDirective *import)
 {
 	Indent();
-	m_string << "import " << import->GetModule() << ".";
+	m_string << "import " << import->GetModuleName() << ".";
 
 	const auto& contents = import->GetContents();
 	if (contents.size() == 1)
@@ -97,8 +98,8 @@ void PrettyPrinter::Visit(const ImportDirective *import)
 void PrettyPrinter::Visit(const GlobalDeclaration *global)
 {
 	Indent();
-	m_string << "global " << global->GetName() << ":";
-	global->GetType()->Accept(*this);
+	m_string << "global ";
+	global->GetDeclaration()->Accept(*this);
 	m_string << " = ";
 	global->GetExpression()->Accept(*this);
 	m_string << ";" << std::endl;
@@ -107,7 +108,12 @@ void PrettyPrinter::Visit(const GlobalDeclaration *global)
 void PrettyPrinter::Visit(const BuiltinFunction *function)
 {
 	Indent();
-	m_string << "def " << function->GetName() << "() __BUILTIN__" << std::endl;
+	m_string << "def " << function->GetName() << "() __BUILTIN__";
+	if (m_quick)
+	{
+		return;
+	}
+	m_string << std::endl;
 }
 
 void PrettyPrinter::Visit(const Function *function)
@@ -123,6 +129,13 @@ void PrettyPrinter::Visit(const Function *function)
 		m_string << " : ";
 		CommaSeparated(returnTypes);
 	}
+
+	// Quick printing excludes body
+	if (m_quick)
+	{
+		return;
+	}
+
 	m_string << " {" << std::endl;
 
 	m_indent++;
@@ -136,60 +149,59 @@ void PrettyPrinter::Visit(const Function *function)
 	m_string << "}" << std::endl;
 }
 
-void PrettyPrinter::Visit(const Declaration *declaration)
+void PrettyPrinter::Visit(const VariableDeclaration *declaration)
 {
 	m_string << declaration->GetName() << ":";
 	declaration->GetType()->Accept(*this);
 }
 
-void PrettyPrinter::Visit(const LabelledStatement *labelledS)
+void PrettyPrinter::Visit(const DeclarationStatement *declarationS)
 {
 	Indent();
-
-	m_string << labelledS->GetLabelName() << "> ";
-	labelledS->GetStatement()->Accept(*this);
+	m_string << "var ";
+	declarationS->GetDeclaration()->Accept(*this);
+	m_string << ";" << std::endl;
 }
 
 void PrettyPrinter::Visit(const AssignStatement *assignS)
 {
 	Indent();
-
 	CommaSeparated(assignS->GetTargets());
+
+	// Quick skips RHS
+
+	if (m_quick)
+	{
+		return;
+	}
+
 	m_string << " = ";
 	assignS->GetExpression()->Accept(*this);
+	m_string << ";" << std::endl;
+}
+
+void PrettyPrinter::Visit(const ExpressionStatement *expressionS)
+{
+	Indent();
+	expressionS->GetExpression()->Accept(*this);
 	m_string << ";" << std::endl;
 }
 
 void PrettyPrinter::Visit(const IfStatement *ifS)
 {
 	Indent();
-
 	m_string << "if (";
 	ifS->GetCondition()->Accept(*this);
-	m_string << ") {" << std::endl;
+	m_string << ") ";
+	ifS->GetTrueBlock()->Accept(*this);
 
-	m_indent++;
-	for (const auto& statement : ifS->GetTrueStatements())
+	if (ifS->HasElseBranch())
 	{
-		statement->Accept(*this);
-	}
-	m_indent--;
-
-	if (ifS->HasFalseBranch())
-	{
-		Indent();
-		m_string << "} else {" << std::endl;
-			
-		m_indent++;
-		for (const auto& statement : ifS->GetFalseStatements())
-		{
-			statement->Accept(*this);
-		}
-		m_indent--;
+		m_string << " else ";
+		ifS->GetElseBlock()->Accept(*this);
 	}
 
-	Indent();
-	m_string << "}" << std::endl;
+	m_string << std::endl;
 }
 
 void PrettyPrinter::Visit(const WhileStatement *whileS)
@@ -197,52 +209,34 @@ void PrettyPrinter::Visit(const WhileStatement *whileS)
 	Indent();
 	m_string << "while (";
 	whileS->GetCondition()->Accept(*this);
-	m_string << ") {" << std::endl;
-		
-	m_indent++;
-	for (const auto& statement : whileS->GetBody())
-	{
-		statement->Accept(*this);
-	}
-	m_indent--;
-
-	Indent();
-	m_string << "}" << std::endl;
+	m_string << ") ";
+	whileS->GetBody()->Accept(*this);
+	m_string << std::endl;
 }
 
 void PrettyPrinter::Visit(const RepeatStatement *repeatS)
 {
 	Indent();
-
 	m_string << "repeat (";
 	repeatS->GetCondition()->Accept(*this);
-	m_string << ") {" << std::endl;
+	m_string << ") ";
+	repeatS->GetBody()->Accept(*this);
+	m_string << std::endl;
+}
+
+void PrettyPrinter::Visit(const BlockStatement *blockS)
+{
+	m_string << "{" << std::endl;
 
 	m_indent++;
-	for (const auto& statement : repeatS->GetBody())
+	for (const auto& statement : blockS->GetStatements())
 	{
 		statement->Accept(*this);
 	}
 	m_indent--;
 
 	Indent();
-	m_string << "}" << std::endl;
-}
-
-void PrettyPrinter::Visit(const GotoStatement *gotoS)
-{
-	Indent();
-	m_string << "goto " << gotoS->GetLabel() << ";" << std::endl;
-}
-
-void PrettyPrinter::Visit(const SwitchStatement *switchS)
-{
-	Indent();
-	m_string << "goto (";
-	CommaSeparated(switchS->GetConditions());
-	m_string << ") / (";
-	CommaSeparated(switchS->GetLabels());
-	m_string << ");" << std::endl;
+	m_string << "}";
 }
 
 void PrettyPrinter::Visit(const ReturnStatement *returnS)
@@ -261,25 +255,13 @@ void PrettyPrinter::Visit(const ReturnStatement *returnS)
 void PrettyPrinter::Visit(const BreakStatement *breakS)
 {
 	Indent();
-	m_string << "break";
-
-	if (breakS->HasLabel())
-	{
-		m_string << " " << breakS->GetLabel();
-	}
-	m_string << ";" << std::endl;
+	m_string << "break;" << std::endl;
 }
 
 void PrettyPrinter::Visit(const ContinueStatement *continueS)
 {
 	Indent();
-	m_string << "continue";
-
-	if (continueS->HasLabel())
-	{
-		m_string << " " << continueS->GetLabel();
-	}
-	m_string << ";" << std::endl;
+	m_string << "continue;" << std::endl;
 }
 
 void PrettyPrinter::Visit(const CallExpression *call)
@@ -477,12 +459,7 @@ void PrettyPrinter::Visit(const DictionaryType *type)
 void PrettyPrinter::Visit(const EnumerationType *type)
 {
 	m_string << "enum<";
-	type->GetKeyType()->Accept(*this);
-
-	if (*type->GetKeyType() != *type->GetValueType())
-	{
-		m_string << ", " << type->GetValueType();
-	}
+	type->GetElementType()->Accept(*this);
 	m_string << ">";
 }
 

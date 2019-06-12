@@ -3,7 +3,7 @@
 #include <string>
 
 #include "HorseIR/Tree/Node.h"
-#include "HorseIR/Tree/Expressions/LValue.h"
+#include "HorseIR/Tree/LValue.h"
 
 #include "HorseIR/Tree/Types/Type.h"
 
@@ -14,13 +14,16 @@
 
 namespace HorseIR {
 
-class Declaration : virtual public Node, public LValue
+class VariableDeclaration : virtual public Node, public LValue
 {
 public:
-	Declaration(const std::string& name, Type *type) : m_name(name), m_type(type) {}
+	VariableDeclaration(const std::string& name, Type *type) : m_name(name), m_type(type) {}
 
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
+
+	// LValue
+	const std::vector<Type *> GetTypes() const override { return {m_type}; }
 
 	Type *GetType() const { return m_type; }
 	void SetType(Type *type) { m_type = type; }
