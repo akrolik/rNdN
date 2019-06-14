@@ -2,25 +2,25 @@
 
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 
-#include "HorseIR/Analysis/ForwardAnalysis.h"
+#include "HorseIR/Analysis/FlowAnalysis.h"
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 namespace HorseIR {
 
 template<class F>
-class AnalysisPrinter : public ConstHierarchicalVisitor
+class FlowAnalysisPrinter : public ConstHierarchicalVisitor
 {
 public:
-	static std::string PrettyString(const ForwardAnalysis<F>& analysis, const Function *function)
+	static std::string PrettyString(const FlowAnalysis<F>& analysis, const Function *function)
 	{
-		AnalysisPrinter printer(analysis);
+		FlowAnalysisPrinter printer(analysis);
 		printer.m_string.str("");
 		function->Accept(printer);
 		return printer.m_string.str();
 	}
 
-	AnalysisPrinter(const ForwardAnalysis<F>& analysis) : m_analysis(analysis) {}
+	FlowAnalysisPrinter(const FlowAnalysis<F>& analysis) : m_analysis(analysis) {}
 
 	bool VisitIn(const Statement *statement) override
 	{
@@ -71,7 +71,7 @@ public:
 protected:
 	std::stringstream m_string;
 
-	const ForwardAnalysis<F>& m_analysis;
+	const FlowAnalysis<F>& m_analysis;
 };
 
 }
