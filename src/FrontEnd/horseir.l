@@ -113,6 +113,7 @@ MILLISECOND {DIGIT}{DIGIT}{DIGIT}
 \/\*                        { BEGIN(COMMENT); }
 <COMMENT>\*\/               { BEGIN(INITIAL); }
 <COMMENT>.                  { }
+<COMMENT>\n                 { }
 <COMMENT><<EOF>>            { Utils::Logger::LogError("(line " + std::to_string(yylineno) +") Unterminated block comment"); }
 
  /* Syntactic structural elements */
