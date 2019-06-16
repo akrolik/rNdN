@@ -6,6 +6,8 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/StreamIndent.h"
+
 namespace HorseIR {
 
 template<class F>
@@ -29,18 +31,12 @@ public:
 		m_string << "------------------------------------------------" << std::endl;
 
 	        m_string << "\tIn: {" << std::endl;
-		for (const auto& val : m_analysis.GetInSet(statement))
-		{
-			m_string << "\t\t" << *val << std::endl;
-		}
-		m_string << "\t}" << std::endl;
+		m_analysis.GetInSet(statement).Print(m_string, 2);
+		m_string << std::endl << "\t}" << std::endl;
 
 	        m_string << "\tOut: {" << std::endl;
-		for (const auto& val : m_analysis.GetOutSet(statement))
-		{
-			m_string << "\t\t" << *val << std::endl;
-		}
-		m_string << "\t}" << std::endl << std::endl;
+		m_analysis.GetOutSet(statement).Print(m_string, 2);
+		m_string << std::endl << "\t}" << std::endl;
 		
 		return false;
 	}

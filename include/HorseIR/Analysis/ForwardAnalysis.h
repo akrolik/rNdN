@@ -10,20 +10,19 @@ template<class F>
 class ForwardAnalysis : public FlowAnalysis<F>
 {
 public:
-	using SetType = typename FlowAnalysis<F>::SetType;
 	using FlowAnalysis<F>::Visit;
 
 	class LoopContext
 	{
 	public:
-		const std::vector<SetType>& GetBreakSets() const { return m_breakSets; }
-		void AddBreakSet(const SetType& set)
+		const std::vector<F>& GetBreakSets() const { return m_breakSets; }
+		void AddBreakSet(const F& set)
 		{
 			m_breakSets.push_back(set);
 		}
 
-		const std::vector<SetType>& GetContinueSets() const { return m_continueSets; }
-		void AddContinueSet(const SetType& set)
+		const std::vector<F>& GetContinueSets() const { return m_continueSets; }
+		void AddContinueSet(const F& set)
 		{
 			m_continueSets.push_back(set);
 		}
@@ -35,8 +34,8 @@ public:
 		}
 
 	private:
-		std::vector<SetType> m_breakSets;
-		std::vector<SetType> m_continueSets;
+		std::vector<F> m_breakSets;
+		std::vector<F> m_continueSets;
 	};
 
 	void Visit(const Node *node) override
@@ -102,7 +101,7 @@ public:
 		}
 	}
 
-	std::tuple<SetType, SetType> TraverseLoop(const Expression *condition, const BlockStatement *body) override
+	std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) override
 	{
 		// Create a new loop context, used for storing the continue/break sets
 
@@ -115,8 +114,8 @@ public:
 
 		// Final sets for the fixed point, used to set the current sets for the statement
 
-		SetType inSet;
-		SetType outSet;
+		F inSet;
+		F outSet;
 
 		do {
 			// Store previous out set, used to check for fixed point at the end of the loop
@@ -177,7 +176,7 @@ public:
 
 	// Each analysis must provide its own merge operation
 
-	virtual SetType Merge(const SetType& s1, const SetType& s2) const = 0;
+	virtual F Merge(const F& s1, const F& s2) const = 0;
 
 protected:
 	std::stack<LoopContext> m_loopContexts;
