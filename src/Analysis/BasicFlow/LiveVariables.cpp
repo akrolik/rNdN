@@ -1,24 +1,12 @@
-#include "Analysis/LiveVariables.h"
+#include "Analysis/BasicFlow/LiveVariables.h"
 
 namespace Analysis {
 
 void LiveVariables::Kill(const HorseIR::SymbolTable::Symbol *symbol)
 {
 	// Remove all matches in the set, note that we must be careful of the iterator
-
-	auto it = m_currentInSet.begin();
-	while(it != m_currentInSet.end())
-	{
-		auto value = *it;
-		if (value->GetSymbol() == symbol)
-		{
-			it = m_currentInSet.erase(it);
-		}
-		else
-		{
-			++it;
-		}
-	}
+	
+	m_currentInSet.erase(symbol);
 }
 
 void LiveVariables::Visit(const HorseIR::VariableDeclaration *declaration)
@@ -58,15 +46,15 @@ void LiveVariables::Visit(const HorseIR::Identifier *identifier)
 	}
 	else
 	{
-		m_currentInSet.insert(new LiveVariablesValue(identifier->GetSymbol()));
+		m_currentInSet.insert(identifier->GetSymbol());
 	}
 }
 
-LiveVariables::SetType LiveVariables::Merge(const SetType& s1, const SetType& s2) const
+LiveVariables::Properties LiveVariables::Merge(const Properties& s1, const Properties& s2) const
 {
 	// Simple merge operation, add all non-duplicate eelements to the out set
 
-	LiveVariables::SetType outSet;
+	Properties outSet;
 
 	outSet.insert(s1.begin(), s1.end());
 	outSet.insert(s2.begin(), s2.end());

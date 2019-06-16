@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include <stack>
 #include <unordered_set>
 #include <unordered_map>
@@ -11,10 +12,52 @@
 
 namespace HorseIR {
 
-template<class F>
-struct FlowAnalysisSet : public std::unordered_set<const F *, typename F::Hash, typename F::Equals>
+template<typename T>
+struct FlowAnalysisPointerValue
 {
-	bool operator==(const FlowAnalysisSet<F>& other) const
+	struct Equals
+	{
+		 bool operator()(const T *val1, const T *val2) const
+		 {
+			 return val1 == val2;
+		 }
+	};
+};
+
+template<typename T>
+struct FlowAnalysisValue
+{
+	struct Equals
+	{
+		 bool operator()(const T *val1, const T *val2) const
+		 {
+			 return *val1 == *val2;
+		 }
+	};
+};
+
+template<typename T>
+struct FlowAnalysisSet : public std::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>
+{
+	void Print(std::ostream& os, unsigned int level = 0) const
+	{
+		for (unsigned int i = 0; i < level; ++i)
+		{
+			os << '\t';
+		}
+		bool first = true;
+		for (const auto& val : *this)
+		{
+			if (!first)
+			{
+				os << ", ";
+			}
+			first = false;
+			T::Print(os, val);
+		}
+	}
+
+	bool operator==(const FlowAnalysisSet<T>& other) const
 	{
 		if (this->size() != other.size())
 		{
@@ -31,7 +74,55 @@ struct FlowAnalysisSet : public std::unordered_set<const F *, typename F::Hash, 
 		return true;
 	}
 
-	bool operator!=(const FlowAnalysisSet<F>& other) const
+	bool operator!=(const FlowAnalysisSet<T>& other) const
+	{
+		return !(*this == other);
+	}
+};
+
+template<typename K, typename V>
+struct FlowAnalysisMap : public std::unordered_map<const typename K::Type *, const typename V::Type *, typename K::Hash, typename K::Equals>
+{
+	void Print(std::ostream& os, unsigned int level = 0) const
+	{
+		bool first = true;
+		for (const auto& pair : *this)
+		{
+			if (!first)
+			{
+				os << std::endl;
+			}
+			first = false;
+			for (unsigned int i = 0; i < level; ++i)
+			{
+				os << '\t';
+			}
+			K::Print(os, pair.first);
+			os << "->";
+			V::Print(os, pair.second);
+		}
+	}
+
+	bool operator==(const FlowAnalysisMap<K, V>& other) const
+	{
+		if (this->size() != other.size())
+		{
+			return false;
+		}
+
+		for (auto it = this->begin(); it != this->end(); ++it)
+		{
+			auto y = other.find(it->first);
+			if (y == other.end() || !typename V::Equals()(y->second, it->second))
+			{
+				return false;
+			}
+
+		}
+		return true;
+	}
+
+	bool operator!=(const FlowAnalysisMap<K, V>& other)const
 	{
 		return !(*this == other);
 	}
@@ -46,7 +137,6 @@ class FlowAnalysis : public ConstVisitor
 public:
 	friend class FlowAnalysisPrinter<F>;
 
-	using SetType = FlowAnalysisSet<F>;
 	using ConstVisitor::Visit;
 
 	void Analyze(const Function *function)
@@ -160,37 +250,37 @@ public:
 	virtual void TraverseStatements(const std::vector<Statement *>& statements) = 0;
 
 	virtual void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *falseBlock) = 0;
-	virtual std::tuple<SetType, SetType> TraverseLoop(const Expression *condition, const BlockStatement *body) = 0;
+	virtual std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) = 0;
 
 	virtual void TraverseBreak(const BreakStatement *breakS) = 0;
 	virtual void TraverseContinue(const ContinueStatement *continueS) = 0;
 
 protected:
-	void SetInSet(const Statement *statement, const SetType& set)
+	void SetInSet(const Statement *statement, const F& set)
 	{
 		m_inSets.insert_or_assign(statement, set);
 	}
 
-	const SetType& GetInSet(const Statement *statement) const
+	const F& GetInSet(const Statement *statement) const
 	{
 		return m_inSets.at(statement);
 	}
 
-	void SetOutSet(const Statement *statement, const SetType& set)
+	void SetOutSet(const Statement *statement, const F& set)
 	{
 		m_outSets.insert_or_assign(statement, set);
 	}
 
-	const SetType& GetOutSet(const Statement *statement) const
+	const F& GetOutSet(const Statement *statement) const
 	{
 		return m_outSets.at(statement);
 	}
 
-	std::unordered_map<const Statement *, SetType> m_inSets;
-	std::unordered_map<const Statement *, SetType> m_outSets;
+	std::unordered_map<const Statement *, F> m_inSets;
+	std::unordered_map<const Statement *, F> m_outSets;
 
-	SetType m_currentInSet;
-	SetType m_currentOutSet;
+	F m_currentInSet;
+	F m_currentOutSet;
 };
 
 }

@@ -10,21 +10,20 @@ template<class F>
 class BackwardAnalysis : public FlowAnalysis<F>
 {
 public:
-	using SetType = typename FlowAnalysis<F>::SetType;
 	using FlowAnalysis<F>::Visit;
 
 	class LoopContext
 	{
 	public:
-		const SetType& GetBreakSet() const { return m_breakSet; }
-		void SetBreakSet(const SetType& set) { m_breakSet = set; }
+		const F& GetBreakSet() const { return m_breakSet; }
+		void SetBreakSet(const F& set) { m_breakSet = set; }
 
-		const SetType& GetContinueSet() const { return m_continueSet; }
-		void SetContinueSet(const SetType& set) { m_continueSet = set; }
+		const F& GetContinueSet() const { return m_continueSet; }
+		void SetContinueSet(const F& set) { m_continueSet = set; }
 
 	private:
-		SetType m_breakSet;
-		SetType m_continueSet;
+		F m_breakSet;
+		F m_continueSet;
 	};
 
 	void Visit(const Node *node) override
@@ -91,9 +90,7 @@ public:
 		condition->Accept(*this);
 	}
 
-	//TODO: break and continue/loop contexts needs updating for backwards (split)
-
-	std::tuple<SetType, SetType> TraverseLoop(const Expression *condition, const BlockStatement *body) override
+	std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) override
 	{
 		// Create a new loop context, used for storing the continue/break sets
 
@@ -111,7 +108,7 @@ public:
 
 		// Save the current in set (loop 0 iterations)
 		
-		SetType inSet = this->m_currentInSet;
+		F inSet = this->m_currentInSet;
 
 		do
 		{
@@ -157,7 +154,7 @@ public:
 
 	// Each analysis must provide its own merge operation
 
-	virtual SetType Merge(const SetType& s1, const SetType& s2) const = 0;
+	virtual F Merge(const F& s1, const F& s2) const = 0;
 
 protected:
 	std::stack<LoopContext> m_loopContexts;
