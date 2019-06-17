@@ -63,7 +63,7 @@ public:
 	void Visit(const HorseIR::AssignStatement *assignS) override;
 	void Visit(const HorseIR::BlockStatement *blockS) override;
 
-	virtual Properties Merge(const Properties& s1, const Properties& s2) const override;
+	Properties Merge(const Properties& s1, const Properties& s2) const override;
 };
 
 }
