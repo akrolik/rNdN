@@ -34,7 +34,7 @@ struct ShapeAnalysisValue : HorseIR::FlowAnalysisValue<Shape>
 
 	static void Print(std::ostream& os, const Type *val)
 	{
-		os << val;
+		os << *val;
 	}
 };
 
@@ -46,7 +46,8 @@ public:
 	using Properties = ShapeAnalysisProperties;
 	using HorseIR::ForwardAnalysis<Properties>::ForwardAnalysis;
 
-	void Visit(const HorseIR::AssignStatement *assign) override;
+	void Visit(const HorseIR::AssignStatement *assignS) override;
+	void Visit(const HorseIR::BlockStatement *blockS) override;
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
 

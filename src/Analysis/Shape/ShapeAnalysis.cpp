@@ -33,6 +33,30 @@ void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 	}
 }
 
+void ShapeAnalysis::Visit(const HorseIR::BlockStatement *blockS)
+{
+	// Visit all statements within the block and compute the sets
+
+	ForwardAnalysis<ShapeAnalysisProperties>::Visit(blockS);
+
+	// Kill all declarations that were part of the block
+
+	auto symbolTable = blockS->GetSymbolTable();
+	auto it = m_currentOutSet.begin();
+	while (it != m_currentOutSet.end())
+	{
+		auto symbol = it->first;
+		if (symbolTable->ContainsSymbol(symbol))
+		{
+			it = m_currentOutSet.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
 ShapeAnalysis::Properties ShapeAnalysis::Merge(const Properties& s1, const Properties& s2) const
 {
 	// Merge the maps using a shape merge operation on each element
@@ -58,7 +82,7 @@ ShapeAnalysis::Properties ShapeAnalysis::Merge(const Properties& s1, const Prope
 	return outSet;
 }
 
-const Shape *ShapeAnalysis::MergeShape(const Shape* shape1, const Shape *shape2) const
+const Shape *ShapeAnalysis::MergeShape(const Shape *shape1, const Shape *shape2) const
 {
 	if (*shape1 == *shape2)
 	{
@@ -71,10 +95,6 @@ const Shape *ShapeAnalysis::MergeShape(const Shape* shape1, const Shape *shape2)
 
 		switch (shape1->GetKind())
 		{
-			case Shape::Kind::Wildcard:
-			{
-				return new WildcardShape();
-			}
 			case Shape::Kind::Vector:
 			{
 				auto vectorShape1 = static_cast<const VectorShape *>(shape1);
@@ -123,7 +143,7 @@ const Shape *ShapeAnalysis::MergeShape(const Shape* shape1, const Shape *shape2)
 	
 	// If merging fails, return a wildcard
 
-	return new WildcardShape();
+	return new WildcardShape(shape1, shape2);
 }
 
 const Shape::Size *ShapeAnalysis::MergeSize(const Shape::Size *size1, const Shape::Size *size2) const
@@ -134,7 +154,7 @@ const Shape::Size *ShapeAnalysis::MergeSize(const Shape::Size *size1, const Shap
 	{
 		return size1;
 	}
-	return new Shape::DynamicSize();
+	return new Shape::DynamicSize(size1, size2);
 }
 
 }

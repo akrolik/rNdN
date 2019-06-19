@@ -6,8 +6,6 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
-#include "Utils/StreamIndent.h"
-
 namespace HorseIR {
 
 template<class F>

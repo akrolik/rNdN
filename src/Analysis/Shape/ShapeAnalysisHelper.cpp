@@ -44,7 +44,12 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Funct
 {
 	//TODO: Make a more specific wildcard type based on the type
 
-	return {new WildcardShape()};
+	return {new WildcardShape(m_call)};
+}
+
+bool ConstrainEquality(const Shape::Size *size1, const Shape::Size *size2)
+{
+	return true;
 }
 
 std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
@@ -52,7 +57,9 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 	switch (function->GetPrimitive())
 	{
 #define Require(x) if (!(x)) break
+#define Unsupported() return {new WildcardShape(m_call)}
 
+		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
 		case HorseIR::BuiltinFunction::Primitive::Negate:
 		case HorseIR::BuiltinFunction::Primitive::Ceiling:
@@ -80,6 +87,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseCosine:
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseSine:
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseTangent:
+		
+		// Date Unary
 		case HorseIR::BuiltinFunction::Primitive::Date:
 		case HorseIR::BuiltinFunction::Primitive::DateYear:
 		case HorseIR::BuiltinFunction::Primitive::DateMonth:
@@ -94,6 +103,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			Require(IsShape<VectorShape>(argumentShape));
 			return {argumentShape};
 		}
+
+		// Binary
 		case HorseIR::BuiltinFunction::Primitive::Less:
 		case HorseIR::BuiltinFunction::Primitive::Greater:
 		case HorseIR::BuiltinFunction::Primitive::LessEqual:
@@ -112,6 +123,10 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Nand:
 		case HorseIR::BuiltinFunction::Primitive::Nor:
 		case HorseIR::BuiltinFunction::Primitive::Xor:
+
+		// Date Binary
+		case HorseIR::BuiltinFunction::Primitive::DatetimeAdd:
+		case HorseIR::BuiltinFunction::Primitive::DatetimeSubtract:
 		case HorseIR::BuiltinFunction::Primitive::DatetimeDifference:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
@@ -123,7 +138,11 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 
 			const Shape::Size *size = nullptr;
 
-			if (argumentSize1->m_kind == Shape::Size::Kind::Constant && static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value == 1)
+			if (*argumentSize1 == *argumentSize2)
+			{
+				size = argumentSize1;
+			}
+			else if (argumentSize1->m_kind == Shape::Size::Kind::Constant && static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value == 1)
 			{
 				size = argumentSize2;
 			}
@@ -144,31 +163,24 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			}
 			else
 			{
-				if (*argumentSize1 != *argumentSize2)
-				{
-					size = new Shape::DynamicSize(m_call);
-				}
-				else
-				{
-					size = argumentSize1;
-				}
+				size = new Shape::DynamicSize(m_call);
 			}
 			return {new VectorShape(size)};
 		}
+		
+		// Algebraic Unary
 		case HorseIR::BuiltinFunction::Primitive::Unique:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
 			Require(IsShape<VectorShape>(argumentShape));
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
-		case HorseIR::BuiltinFunction::Primitive::String:
-		{
-			return {new VectorShape(new Shape::ConstantSize(1))};
-		}
 		case HorseIR::BuiltinFunction::Primitive::Range:
 		{
-			//TODO:
-			break;
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<VectorShape>(argumentShape));
+			//TODO: If the parameter is constant, we have a constant size
+			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Factorial:
 		case HorseIR::BuiltinFunction::Primitive::Reverse:
@@ -177,25 +189,62 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			Require(IsShape<VectorShape>(argumentShape));
 			return {argumentShape};
 		}
+		case HorseIR::BuiltinFunction::Primitive::Random:
+		case HorseIR::BuiltinFunction::Primitive::Seed:
+		case HorseIR::BuiltinFunction::Primitive::Flip:
+		{
+			Unsupported();
+		}
 		case HorseIR::BuiltinFunction::Primitive::Where:
 		{
-			//TODO:
+			auto argumentShape = GetShape(arguments.at(0));
+			if (IsShape<VectorShape>(argumentShape))
+			{
+				return {new VectorShape(new Shape::DynamicSize(m_call))};
+			}
+			else if (IsShape<ListShape>(argumentShape))
+			{
+				auto listShape = CastShape<ListShape>(argumentShape);
+				return {new ListShape(listShape->GetListSize(), new VectorShape(new Shape::DynamicSize(m_call)))};
+			}
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Group:
 		{
-			//TODO:
+			auto argumentShape = GetShape(arguments.at(0));
+			if (IsShape<VectorShape>(argumentShape))
+			{
+				return {new DictionaryShape(
+						new VectorShape(new Shape::DynamicSize(m_call, 1)),
+						new ListShape(new Shape::ConstantSize(1), new VectorShape(new Shape::DynamicSize(m_call, 2)))
+				)};
+			}
+			else if (IsShape<ListShape>(argumentShape))
+			{
+				auto listShape = CastShape<ListShape>(argumentShape);
+				return {new DictionaryShape(
+						new VectorShape(new Shape::DynamicSize(m_call, 1)),
+						new ListShape(listShape->GetListSize(), new VectorShape(new Shape::DynamicSize(m_call, 2)))
+				)};
+			}
 			break;
 		}
+
+		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Append:
 		{
-			//TODO:
-			break;
+			Unsupported();
+		}
+		case HorseIR::BuiltinFunction::Primitive::Replicate:
+		{
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Compress:
 		{
@@ -227,38 +276,48 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Take:
-		{
-			//TODO:
-			break;
-		}
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
-			//TODO:
+			auto argumentShape = GetShape(arguments.at(0));
+			if (IsShape<VectorShape>(argumentShape))
+			{
+				return {argumentShape};
+			}
+			else if (IsShape<ListShape>(argumentShape))
+			{
+				auto elementShape = CastShape<ListShape>(argumentShape)->GetElementShape();
+				Require(IsShape<VectorShape>(elementShape));
+				return {elementShape};
+			}
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Member:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
 		// @count and @len are aliases
 		case HorseIR::BuiltinFunction::Primitive::Length:
@@ -274,8 +333,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Raze:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
@@ -289,7 +347,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				}
 				else if (*shape != *argumentShape)
 				{
-					shape = new WildcardShape();
+					shape = new WildcardShape(m_call);
 					break;
 				}
 			}
@@ -297,43 +355,37 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::ToList:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachItem:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachLeft:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachRight:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Match:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Enum:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Dictionary:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			return {new DictionaryShape(argumentShape1, argumentShape2)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
@@ -353,28 +405,67 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::KeyedTable:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<TableShape>(argumentShape1) && IsShape<TableShape>(argumentShape2));
+			return {new KeyedTableShape(CastShape<TableShape>(argumentShape1), CastShape<TableShape>(argumentShape2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Keys:
 		{
-			//TODO:
+			auto argumentShape = GetShape(arguments.at(0));
+			if (IsShape<DictionaryShape>(argumentShape))
+			{
+				return {CastShape<DictionaryShape>(argumentShape)->GetKeyShape()};
+			}
+			else if (IsShape<TableShape>(argumentShape))
+			{
+				return {new VectorShape(CastShape<TableShape>(argumentShape)->GetColumnsSize())};
+			}
+			else if (IsShape<KeyedTableShape>(argumentShape))
+			{
+				return {CastShape<KeyedTableShape>(argumentShape)->GetKeyShape()};
+			}
+			else if (IsShape<EnumerationShape>(argumentShape))
+			{
+				return {new VectorShape(CastShape<EnumerationShape>(argumentShape)->GetMapSize())};
+			}
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Values:
 		{
-			//TODO:
+			auto argumentShape = GetShape(arguments.at(0));
+			if (IsShape<DictionaryShape>(argumentShape))
+			{
+				return {CastShape<DictionaryShape>(argumentShape)->GetValueShape()};
+			}
+			else if (IsShape<TableShape>(argumentShape))
+			{
+				auto tableShape = CastShape<TableShape>(argumentShape);
+				auto colsSize = tableShape->GetColumnsSize();
+				auto rowsSize = tableShape->GetRowsSize();
+				return {new ListShape(colsSize, new VectorShape(rowsSize))};
+			}
+			else if (IsShape<KeyedTableShape>(argumentShape))
+			{
+				return {CastShape<KeyedTableShape>(argumentShape)->GetValueShape()};
+			}
+			else if (IsShape<EnumerationShape>(argumentShape))
+			{
+				return {new VectorShape(CastShape<EnumerationShape>(argumentShape)->GetMapSize())};
+			}
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Meta:
 		{
-			//TODO:
-			break;
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<TableShape>(argumentShape) || IsShape<KeyedTableShape>(argumentShape));
+			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		{
-			//TODO:
-			break;
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<EnumerationShape>(argumentShape));
+			return {new VectorShape(CastShape<EnumerationShape>(argumentShape)->GetMapSize())};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
@@ -392,50 +483,42 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			auto rows = new Shape::SymbolSize(tableName + ".rows");
 			return {new TableShape(columns, rows)};
 		}
-		case HorseIR::BuiltinFunction::Primitive::DatetimeAdd:
-		{
-			//TODO:
-			break;
-		}
-		case HorseIR::BuiltinFunction::Primitive::DatetimeSubtract:
-		{
-			//TODO:
-			break;
-		}
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
-			//TODO:
-			break;
+			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Index:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			auto argumentShape3 = GetShape(arguments.at(2));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2) && IsShape<VectorShape>(argumentShape3));
+			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
-			//TODO:
-			break;
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			return {argumentShape2};
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadCSV:
 		{
-			//TODO:
-			break;
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(IsShape<VectorShape>(argumentShape));
+			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Print:
-		{
-			//TODO:
-			break;
-		}
 		case HorseIR::BuiltinFunction::Primitive::Format:
+		case HorseIR::BuiltinFunction::Primitive::String:
 		{
-			//TODO:
-			break;
+			return {new VectorShape(new Shape::ConstantSize(1))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			//TODO:
-			break;
+			auto argumentShape = GetShape(arguments.at(2));
+			Require(IsShape<VectorShape>(argumentShape));
+			return {argumentShape};
 		}
 		default:
 		{
