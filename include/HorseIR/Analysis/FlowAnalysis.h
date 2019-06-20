@@ -189,16 +189,12 @@ public:
 
 	void Visit(const WhileStatement *whileS) override
 	{
-		auto [inSet, outSet] = TraverseLoop(whileS->GetCondition(), whileS->GetBody());
-		//TODO: this is only needed for forward analysis
-		SetInSet(whileS, inSet);
+		TraverseLoop(whileS->GetCondition(), whileS->GetBody());
 	}
 
 	void Visit(const RepeatStatement *repeatS) override
 	{
-		auto [inSet, outSet] = TraverseLoop(repeatS->GetCondition(), repeatS->GetBody());
-		//TODO: this is only needed for forward analysis
-		SetInSet(repeatS, inSet);
+		TraverseLoop(repeatS->GetCondition(), repeatS->GetBody());
 	}
 
 	void Visit(const BlockStatement *blockS) override

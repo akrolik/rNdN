@@ -101,6 +101,18 @@ public:
 		}
 	}
 
+	void Visit(const WhileStatement *whileS) override
+	{
+		auto [inSet, _] = TraverseLoop(whileS->GetCondition(), whileS->GetBody());
+		this->SetInSet(whileS, inSet);
+	}
+
+	void Visit(const RepeatStatement *repeatS) override
+	{
+		auto [inSet, _] = TraverseLoop(repeatS->GetCondition(), repeatS->GetBody());
+		this->SetInSet(repeatS, inSet);
+	}
+
 	std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) override
 	{
 		// Create a new loop context, used for storing the continue/break sets
