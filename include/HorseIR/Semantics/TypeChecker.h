@@ -4,9 +4,7 @@
 
 #include "HorseIR/Traversal/HierarchicalVisitor.h"
 
-#include "HorseIR/Tree/Expressions/Operand.h"
-#include "HorseIR/Tree/Types/Type.h"
-#include "HorseIR/Tree/Types/FunctionType.h"
+#include "HorseIR/Tree/Tree.h"
 
 namespace HorseIR {
 
