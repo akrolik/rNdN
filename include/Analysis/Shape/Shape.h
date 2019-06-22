@@ -10,8 +10,9 @@ namespace Analysis {
 class Shape
 {
 public:
-	struct Size
+	class Size
 	{
+	public:
 		enum class Kind {
 			Constant,
 			Symbol,
@@ -19,7 +20,7 @@ public:
 			Dynamic
 		};
 
-		Size(Kind kind) : m_kind(kind) {}
+		Kind GetKind() const { return m_kind; }
 
 		friend std::ostream& operator<<(std::ostream& os, const Size& shape);
 
@@ -31,12 +32,20 @@ public:
 			return !(*this == other);
 		}
 
+	protected:
+		Size(Kind kind) : m_kind(kind) {}
+
 		const Kind m_kind;
 	};
 
-	struct ConstantSize : Size
+	class ConstantSize : public Size
 	{
+	public:
+		constexpr static Kind SizeKind = Size::Kind::Constant;
+
 		ConstantSize(long value) : Size(Size::Kind::Constant), m_value(value) {}
+
+		unsigned int GetValue() const { return m_value; }
 
 		void Print(std::ostream& os) const override
 		{
@@ -53,12 +62,18 @@ public:
 			return !(*this == other);
 		}
 
+	private:
 		const unsigned int m_value = 0;
 	};
 
-	struct SymbolSize : Size
+	class SymbolSize : public Size
 	{
+	public:
+		constexpr static Kind SizeKind = Size::Kind::Symbol;
+
 		SymbolSize(const std::string& symbol) : Size(Size::Kind::Symbol), m_symbol(symbol) {}
+
+		const std::string& GetSymbol() const  { return m_symbol; }
 
 		void Print(std::ostream& os) const override
 		{
@@ -74,13 +89,20 @@ public:
 		{
 			return !(*this == other);
 		}
-
+	
+	private:
 		const std::string m_symbol;
 	};
 
-	struct CompressedSize : Size
+	class CompressedSize : public Size
 	{
+	public:
+		constexpr static Kind SizeKind = Size::Kind::Compressed;
+
 		CompressedSize(const HorseIR::Operand *predicate, const Size *size) : Size(Size::Kind::Compressed), m_predicate(predicate), m_size(size) {}
+
+		const HorseIR::Operand *GetPredicate() const { return m_predicate; }
+		const Size *GetSize() const { return m_size; }
 
 		void Print(std::ostream& os) const override
 		{
@@ -97,14 +119,24 @@ public:
 			return !(*this == other);
 		}
 
+	private:
 		const HorseIR::Operand *m_predicate = nullptr;
 		const Size *m_size = nullptr;;
 	};
 
-	struct DynamicSize : Size
+	class DynamicSize : public Size
 	{
+	public:
+		constexpr static Kind SizeKind = Size::Kind::Dynamic;
+
 		DynamicSize(const Size *size1, const Size *size2) : Size(Size::Kind::Dynamic), m_size1(size1), m_size2(size2) {}
 		DynamicSize(const HorseIR::Expression *expression, unsigned int tag = 0) : Size(Size::Kind::Dynamic), m_expression(expression), m_tag(tag) {}
+
+		const Size *GetSize1() const { return m_size1; }
+		const Size *GetSize2() const { return m_size2; }
+
+		const HorseIR::Expression *GetExpression() const { return m_expression; }
+		unsigned int GetTag() const { return m_tag;}
 
 		void Print(std::ostream& os) const override
 		{
@@ -136,11 +168,12 @@ public:
 			return !(*this == other);
 		}
 
+	private:
 		const Size *m_size1 = nullptr;
 		const Size *m_size2 = nullptr;
 
 		const HorseIR::Expression *m_expression = nullptr;
-		unsigned int m_tag = -1;
+		const unsigned int m_tag = -1;
 	};
 
 	enum class Kind {

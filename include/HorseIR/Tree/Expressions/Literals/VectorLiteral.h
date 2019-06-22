@@ -29,6 +29,8 @@ template<class T>
 class TypedVectorLiteral : public VectorLiteral
 {
 public:
+	using Type = T;
+
 	TypedVectorLiteral(const T& value, BasicType::BasicKind basicKind) : VectorLiteral(basicKind),  m_values({value}) {}
 	TypedVectorLiteral(const std::vector<T>& values, BasicType::BasicKind basicKind) : VectorLiteral(basicKind), m_values(values) {}
 

@@ -26,6 +26,10 @@ private:
 	std::vector<const Shape *> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments);
 	std::vector<const Shape *> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments);
 
+	void AddScalarConstraint(const Shape::Size *size);
+	void AddBinaryConstraint(const Shape::Size *size1, const Shape::Size *size2);
+	void AddEqualityConstraint(const Shape::Size *size1, const Shape::Size *size2);
+
 	[[noreturn]] void ShapeError(const HorseIR::FunctionDeclaration *method, const std::vector<HorseIR::Operand *>& arguments) const;
 
 	const Shape *GetShape(const HorseIR::Operand *operand) const;

@@ -1,5 +1,6 @@
 #include "Analysis/Shape/ShapeAnalysisHelper.h"
 
+#include "Analysis/Helpers/ValueAnalysisHelper.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
 namespace Analysis {
@@ -47,9 +48,19 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Funct
 	return {new WildcardShape(m_call)};
 }
 
-bool ConstrainEquality(const Shape::Size *size1, const Shape::Size *size2)
+void ShapeAnalysisHelper::AddScalarConstraint(const Shape::Size *size)
 {
-	return true;
+	AddEqualityConstraint(size, new Shape::ConstantSize(1));
+}
+
+void ShapeAnalysisHelper::AddBinaryConstraint(const Shape::Size *size1, const Shape::Size *size2)
+{
+
+}
+
+void ShapeAnalysisHelper::AddEqualityConstraint(const Shape::Size *size1, const Shape::Size *size2)
+{
+
 }
 
 std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
@@ -100,7 +111,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::TimeMillisecond:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<VectorShape>(argumentShape));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
 			return {argumentShape};
 		}
 
@@ -131,10 +142,10 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
 
-			auto argumentSize1 = CastShape<VectorShape>(argumentShape1)->GetSize();
-			auto argumentSize2 = CastShape<VectorShape>(argumentShape2)->GetSize();
+			auto argumentSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
+			auto argumentSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
 
 			const Shape::Size *size = nullptr;
 
@@ -142,27 +153,28 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			{
 				size = argumentSize1;
 			}
-			else if (argumentSize1->m_kind == Shape::Size::Kind::Constant && static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value == 1)
+			else if (ShapeUtils::IsSize<Shape::ConstantSize>(argumentSize1) && ShapeUtils::GetSize<Shape::ConstantSize>(argumentSize1)->GetValue() == 1)
 			{
 				size = argumentSize2;
 			}
-			else if (argumentSize2->m_kind == Shape::Size::Kind::Constant && static_cast<const Shape::ConstantSize *>(argumentSize2)->m_value == 1)
+			else if (ShapeUtils::IsSize<Shape::ConstantSize>(argumentSize2) && ShapeUtils::GetSize<Shape::ConstantSize>(argumentSize2)->GetValue() == 1)
 			{
 				size = argumentSize1;
 			}
-			else if (argumentSize1->m_kind == Shape::Size::Kind::Constant && argumentSize2->m_kind == Shape::Size::Kind::Constant)
+			else if (ShapeUtils::IsSize<Shape::ConstantSize>(argumentSize1) && ShapeUtils::IsSize<Shape::ConstantSize>(argumentSize1))
 			{
-				auto constant1 = static_cast<const Shape::ConstantSize *>(argumentSize1)->m_value;
-				auto constant2 = static_cast<const Shape::ConstantSize *>(argumentSize2)->m_value;
+				auto constant1 = ShapeUtils::GetSize<Shape::ConstantSize>(argumentSize1)->GetValue();
+				auto constant2 = ShapeUtils::GetSize<Shape::ConstantSize>(argumentSize2)->GetValue();
 
 				if (constant1 != constant2)
 				{
-					Utils::Logger::LogError("Dyadic elementwise function '" + function->GetName() + "' requires vector of same length (or broadcast) [" + std::to_string(constant1) + " != " + std::to_string(constant2) + "]");
+					Utils::Logger::LogError("Binary function '" + function->GetName() + "' requires vector of same length (or broadcast) [" + std::to_string(constant1) + " != " + std::to_string(constant2) + "]");
 				}
 				size = new Shape::ConstantSize(constant1);
 			}
 			else
 			{
+				AddBinaryConstraint(argumentSize1, argumentSize2);
 				size = new Shape::DynamicSize(m_call);
 			}
 			return {new VectorShape(size)};
@@ -172,39 +184,48 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Unique:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<VectorShape>(argumentShape));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Range:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<VectorShape>(argumentShape));
-			//TODO: If the parameter is constant, we have a constant size
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
+
+			auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
+			AddScalarConstraint(vectorShape->GetSize());
+
+			if (ValueAnalysisHelper::IsConstant(arguments.at(0)))
+			{
+				auto value = ValueAnalysisHelper::GetConstant<std::int64_t>(arguments.at(0));
+				return {new VectorShape(new Shape::ConstantSize(value.at(0)))};
+			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Factorial:
 		case HorseIR::BuiltinFunction::Primitive::Reverse:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<VectorShape>(argumentShape));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
 			return {argumentShape};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Random:
 		case HorseIR::BuiltinFunction::Primitive::Seed:
 		case HorseIR::BuiltinFunction::Primitive::Flip:
 		{
+			//TODO: Unknown shape rules
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Where:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			if (IsShape<VectorShape>(argumentShape))
+			if (ShapeUtils::IsShape<VectorShape>(argumentShape))
 			{
 				return {new VectorShape(new Shape::DynamicSize(m_call))};
 			}
-			else if (IsShape<ListShape>(argumentShape))
+			else if (ShapeUtils::IsShape<ListShape>(argumentShape))
 			{
-				auto listShape = CastShape<ListShape>(argumentShape);
+				auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape);
 				return {new ListShape(listShape->GetListSize(), new VectorShape(new Shape::DynamicSize(m_call)))};
 			}
 			break;
@@ -212,16 +233,16 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Group:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			if (IsShape<VectorShape>(argumentShape))
+			if (ShapeUtils::IsShape<VectorShape>(argumentShape))
 			{
 				return {new DictionaryShape(
 						new VectorShape(new Shape::DynamicSize(m_call, 1)),
 						new ListShape(new Shape::ConstantSize(1), new VectorShape(new Shape::DynamicSize(m_call, 2)))
 				)};
 			}
-			else if (IsShape<ListShape>(argumentShape))
+			else if (ShapeUtils::IsShape<ListShape>(argumentShape))
 			{
-				auto listShape = CastShape<ListShape>(argumentShape);
+				auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape);
 				return {new DictionaryShape(
 						new VectorShape(new Shape::DynamicSize(m_call, 1)),
 						new ListShape(listShape->GetListSize(), new VectorShape(new Shape::DynamicSize(m_call, 2)))
@@ -233,30 +254,38 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Append:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Replicate:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
+
+			auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
+			AddScalarConstraint(vectorShape2->GetSize());
+
 			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Compress:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
 
-			auto argumentSize1 = CastShape<VectorShape>(argumentShape1)->GetSize();
-			auto argumentSize2 = CastShape<VectorShape>(argumentShape2)->GetSize();
+			auto argumentSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
+			auto argumentSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
 
-			auto dynamic1 = (argumentSize1->m_kind == Shape::Size::Kind::Dynamic);
-			auto dynamic2 = (argumentSize2->m_kind == Shape::Size::Kind::Dynamic);
+			//TODO: Constraint
+
+			auto dynamic1 = ShapeUtils::IsSize<Shape::DynamicSize>(argumentSize1);
+			auto dynamic2 = ShapeUtils::IsSize<Shape::DynamicSize>(argumentSize2);
 			Require(*argumentSize1 == *argumentSize2 || dynamic1 || dynamic2);
 
 			const Shape::Size *size = nullptr;
@@ -276,31 +305,42 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
 			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
-			auto argumentShape = GetShape(arguments.at(0));
-			if (IsShape<VectorShape>(argumentShape))
+			auto argumentShape1 = GetShape(arguments.at(0));
+			auto argumentShape2 = GetShape(arguments.at(1));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
+
+			auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
+			if (ShapeUtils::IsShape<VectorShape>(argumentShape1))
 			{
-				return {argumentShape};
+				AddScalarConstraint(vectorShape2->GetSize());
+				return {argumentShape1};
 			}
-			else if (IsShape<ListShape>(argumentShape))
+			else if (ShapeUtils::IsShape<ListShape>(argumentShape1))
 			{
-				auto elementShape = CastShape<ListShape>(argumentShape)->GetElementShape();
-				Require(IsShape<VectorShape>(elementShape));
+				auto elementShape = ShapeUtils::GetShape<ListShape>(argumentShape1)->GetElementShape();
+				Require(ShapeUtils::IsShape<VectorShape>(elementShape));
+
+				auto elementVectorShape = ShapeUtils::GetShape<VectorShape>(elementShape);
+				AddEqualityConstraint(vectorShape2->GetSize(), elementVectorShape->GetSize());
+
 				return {elementShape};
 			}
 			break;
@@ -309,16 +349,30 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
 			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
+
+			auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
+			auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
+			AddScalarConstraint(vectorShape1->GetSize());
+			AddScalarConstraint(vectorShape2->GetSize());
+
+			if (ValueAnalysisHelper::IsConstant(arguments.at(0)))
+			{
+				auto value = ValueAnalysisHelper::GetConstant<std::int64_t>(arguments.at(0));
+				return {new VectorShape(new Shape::ConstantSize(value.at(0)))};
+			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
+
+		// Reduction
+
 		// @count and @len are aliases
 		case HorseIR::BuiltinFunction::Primitive::Length:
 		case HorseIR::BuiltinFunction::Primitive::Count:
@@ -328,15 +382,19 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Maximum:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<VectorShape>(argumentShape));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
 			return {new VectorShape(new Shape::ConstantSize(1))};
 		}
+
+		// List
 		case HorseIR::BuiltinFunction::Primitive::Raze:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
+			//TODO: Update shape rule
 			const Shape *shape = nullptr;
 			for (const auto& argument : arguments)
 			{
@@ -377,6 +435,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		{
 			Unsupported();
 		}
+
+		// Database
 		case HorseIR::BuiltinFunction::Primitive::Enum:
 		{
 			Unsupported();
@@ -385,127 +445,137 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
+			//TODO: Constraint
 			return {new DictionaryShape(argumentShape1, argumentShape2)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
+			//TODO: Update shape rule
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<ListShape>(argumentShape2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2));
 
-			auto listShape = CastShape<ListShape>(argumentShape2);
+			auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape2);
 			auto elementShape = listShape->GetElementShape();
-			Require(IsShape<VectorShape>(elementShape));
+			Require(ShapeUtils::IsShape<VectorShape>(elementShape));
 
-			auto argumentSize1 = CastShape<VectorShape>(argumentShape1)->GetSize();
+			auto argumentSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
 			auto argumentSize2 = listShape->GetListSize();
 			Require(*argumentSize1 == *argumentSize2);
 
-			return {new TableShape(argumentSize1, CastShape<VectorShape>(elementShape)->GetSize())};
+			return {new TableShape(argumentSize1, ShapeUtils::GetShape<VectorShape>(elementShape)->GetSize())};
 		}
 		case HorseIR::BuiltinFunction::Primitive::KeyedTable:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<TableShape>(argumentShape1) && IsShape<TableShape>(argumentShape2));
-			return {new KeyedTableShape(CastShape<TableShape>(argumentShape1), CastShape<TableShape>(argumentShape2))};
+			Require(ShapeUtils::IsShape<TableShape>(argumentShape1) && ShapeUtils::IsShape<TableShape>(argumentShape2));
+			return {new KeyedTableShape(ShapeUtils::GetShape<TableShape>(argumentShape1), ShapeUtils::GetShape<TableShape>(argumentShape2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Keys:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			if (IsShape<DictionaryShape>(argumentShape))
+			if (ShapeUtils::IsShape<DictionaryShape>(argumentShape))
 			{
-				return {CastShape<DictionaryShape>(argumentShape)->GetKeyShape()};
+				return {ShapeUtils::GetShape<DictionaryShape>(argumentShape)->GetKeyShape()};
 			}
-			else if (IsShape<TableShape>(argumentShape))
+			else if (ShapeUtils::IsShape<TableShape>(argumentShape))
 			{
-				return {new VectorShape(CastShape<TableShape>(argumentShape)->GetColumnsSize())};
+				return {new VectorShape(ShapeUtils::GetShape<TableShape>(argumentShape)->GetColumnsSize())};
 			}
-			else if (IsShape<KeyedTableShape>(argumentShape))
+			else if (ShapeUtils::IsShape<KeyedTableShape>(argumentShape))
 			{
-				return {CastShape<KeyedTableShape>(argumentShape)->GetKeyShape()};
+				return {ShapeUtils::GetShape<KeyedTableShape>(argumentShape)->GetKeyShape()};
 			}
-			else if (IsShape<EnumerationShape>(argumentShape))
+			else if (ShapeUtils::IsShape<EnumerationShape>(argumentShape))
 			{
-				return {new VectorShape(CastShape<EnumerationShape>(argumentShape)->GetMapSize())};
+				return {new VectorShape(ShapeUtils::GetShape<EnumerationShape>(argumentShape)->GetMapSize())};
 			}
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Values:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			if (IsShape<DictionaryShape>(argumentShape))
+			if (ShapeUtils::IsShape<DictionaryShape>(argumentShape))
 			{
-				return {CastShape<DictionaryShape>(argumentShape)->GetValueShape()};
+				return {ShapeUtils::GetShape<DictionaryShape>(argumentShape)->GetValueShape()};
 			}
-			else if (IsShape<TableShape>(argumentShape))
+			else if (ShapeUtils::IsShape<TableShape>(argumentShape))
 			{
-				auto tableShape = CastShape<TableShape>(argumentShape);
+				auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape);
 				auto colsSize = tableShape->GetColumnsSize();
 				auto rowsSize = tableShape->GetRowsSize();
 				return {new ListShape(colsSize, new VectorShape(rowsSize))};
 			}
-			else if (IsShape<KeyedTableShape>(argumentShape))
+			else if (ShapeUtils::IsShape<KeyedTableShape>(argumentShape))
 			{
-				return {CastShape<KeyedTableShape>(argumentShape)->GetValueShape()};
+				return {ShapeUtils::GetShape<KeyedTableShape>(argumentShape)->GetValueShape()};
 			}
-			else if (IsShape<EnumerationShape>(argumentShape))
+			else if (ShapeUtils::IsShape<EnumerationShape>(argumentShape))
 			{
-				return {new VectorShape(CastShape<EnumerationShape>(argumentShape)->GetMapSize())};
+				return {new VectorShape(ShapeUtils::GetShape<EnumerationShape>(argumentShape)->GetMapSize())};
 			}
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Meta:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<TableShape>(argumentShape) || IsShape<KeyedTableShape>(argumentShape));
+			Require(ShapeUtils::IsShape<TableShape>(argumentShape) || ShapeUtils::IsShape<KeyedTableShape>(argumentShape));
 			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<EnumerationShape>(argumentShape));
-			return {new VectorShape(CastShape<EnumerationShape>(argumentShape)->GetMapSize())};
+			Require(ShapeUtils::IsShape<EnumerationShape>(argumentShape));
+			return {new VectorShape(ShapeUtils::GetShape<EnumerationShape>(argumentShape)->GetMapSize())};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<TableShape>(argumentShape));
-
-			auto tableShape = CastShape<TableShape>(argumentShape);
+			Require(ShapeUtils::IsShape<TableShape>(argumentShape));
+			auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape);
 			return {new VectorShape(tableShape->GetRowsSize())};
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{
+			//TODO: need to be more careful here with casting
 			auto tableName = static_cast<const HorseIR::SymbolLiteral *>(arguments.at(0))->GetValue(0)->GetName();
-
 			auto columns = new Shape::SymbolSize(tableName + ".cols");
 			auto rows = new Shape::SymbolSize(tableName + ".rows");
 			return {new TableShape(columns, rows)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
+
+		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::Index:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			auto argumentShape3 = GetShape(arguments.at(2));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2) && IsShape<VectorShape>(argumentShape3));
-			return {argumentShape1};
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2));
+			return {argumentShape2};
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			Require(IsShape<VectorShape>(argumentShape1) && IsShape<VectorShape>(argumentShape2));
-			return {argumentShape2};
+			auto argumentShape3 = GetShape(arguments.at(2));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2) && ShapeUtils::IsShape<VectorShape>(argumentShape3));
+
+			auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
+			auto vectorShape3 = ShapeUtils::GetShape<VectorShape>(argumentShape3);
+			AddEqualityConstraint(vectorShape2->GetSize(), vectorShape3->GetSize());
+			return {argumentShape1};
 		}
+
+		// Other
 		case HorseIR::BuiltinFunction::Primitive::LoadCSV:
 		{
 			auto argumentShape = GetShape(arguments.at(0));
-			Require(IsShape<VectorShape>(argumentShape));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
 			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Print:
@@ -517,7 +587,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
 			auto argumentShape = GetShape(arguments.at(2));
-			Require(IsShape<VectorShape>(argumentShape));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
 			return {argumentShape};
 		}
 		default:
