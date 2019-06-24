@@ -135,8 +135,6 @@ template<class F>
 class FlowAnalysis : public ConstVisitor
 {
 public:
-	friend class FlowAnalysisPrinter<F>;
-
 	using ConstVisitor::Visit;
 
 	void Analyze(const Function *function)
@@ -251,26 +249,12 @@ public:
 	virtual void TraverseBreak(const BreakStatement *breakS) = 0;
 	virtual void TraverseContinue(const ContinueStatement *continueS) = 0;
 
+	const F& GetInSet(const Statement *statement) const { return m_inSets.at(statement); }
+	const F& GetOutSet(const Statement *statement) const { return m_outSets.at(statement); }
+
 protected:
-	void SetInSet(const Statement *statement, const F& set)
-	{
-		m_inSets.insert_or_assign(statement, set);
-	}
-
-	const F& GetInSet(const Statement *statement) const
-	{
-		return m_inSets.at(statement);
-	}
-
-	void SetOutSet(const Statement *statement, const F& set)
-	{
-		m_outSets.insert_or_assign(statement, set);
-	}
-
-	const F& GetOutSet(const Statement *statement) const
-	{
-		return m_outSets.at(statement);
-	}
+	void SetInSet(const Statement *statement, const F& set) { m_inSets.insert_or_assign(statement, set); }
+	void SetOutSet(const Statement *statement, const F& set) { m_outSets.insert_or_assign(statement, set); }
 
 	std::unordered_map<const Statement *, F> m_inSets;
 	std::unordered_map<const Statement *, F> m_outSets;
