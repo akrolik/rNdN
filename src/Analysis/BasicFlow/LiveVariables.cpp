@@ -4,7 +4,7 @@ namespace Analysis {
 
 void LiveVariables::Kill(const HorseIR::SymbolTable::Symbol *symbol)
 {
-	// Remove all matches in the set, note that we must be careful of the iterator
+	// Remove all matches in the set
 	
 	m_currentInSet.erase(symbol);
 }
