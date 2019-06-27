@@ -11,15 +11,38 @@ namespace HorseIR {
 
 void DefinitelyAssigned::Analyze(const Program *program)
 {
+	// Traverse the program in sections, first collecting the globals, and then handling
+	// the function bodies
+
+	m_globalsPhase = true;
 	program->Accept(*this);
+
+	m_globalsPhase = false;
+	program->Accept(*this);
+}
+
+bool DefinitelyAssigned::VisitIn(const GlobalDeclaration *global)
+{
+	// If in globals mode, add the definition to the set
+
+	if (m_globalsPhase)
+	{
+		m_globals.insert(global->GetDeclaration()->GetSymbol());
+	}
+	return false;
 }
 
 bool DefinitelyAssigned::VisitIn(const Function *function)
 {
-	// Clear definitions for the function, previously set
+	// If we are in the globals mode, skip the function. Otherwise, handle the body with
+	// the globals definitions
 
-	m_definitions.clear();
-	return true;
+	if (!m_globalsPhase)
+	{
+		m_definitions = m_globals;
+		return true;
+	}
+	return false;
 }
 
 bool DefinitelyAssigned::VisitIn(const Parameter *parameter)

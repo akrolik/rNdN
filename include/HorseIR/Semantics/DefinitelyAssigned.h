@@ -16,8 +16,7 @@ public:
 
 	void Analyze(const Program *program);
 
-	//TODO: Need to traverse globals first!
-
+	bool VisitIn(const GlobalDeclaration *global) override;
 	bool VisitIn(const Function *function) override;
 	bool VisitIn(const Parameter *parameter) override;
 	
@@ -34,6 +33,9 @@ public:
 	bool VisitIn(const Identifier *identifier) override;
 
 private:
+	bool m_globalsPhase = false;
+
+	std::unordered_set<const SymbolTable::Symbol *> m_globals;
 	std::unordered_set<const SymbolTable::Symbol *> m_definitions;
 };
 
