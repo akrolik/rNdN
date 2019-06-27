@@ -139,21 +139,17 @@ public:
 
 	void Analyze(const Function *function)
 	{
-		m_currentInSet.clear();
-		m_currentOutSet.clear();
+		// Clear sets and traverse the function
 
-		for (const auto& parameter : function->GetParameters())
-		{
-			parameter->Accept(*this);
-			PropagateNext();
-		}
-		for (const auto& returnType : function->GetReturnTypes())
-		{
-			returnType->Accept(*this);
-			PropagateNext();
-		}
-		TraverseStatements(function->GetStatements());
+		this->m_currentInSet.clear();
+		this->m_currentOutSet.clear();
+
+		TraverseFunction(function);
 	}
+
+	virtual void PropagateNext() = 0;
+
+	virtual void Visit(const Node *node) = 0;
 
 	void Visit(const VariableDeclaration *declaration) override
 	{
@@ -239,8 +235,7 @@ public:
 		cast->GetCastType()->Accept(*this);
 	}
 
-	virtual void PropagateNext() = 0;
-
+	virtual void TraverseFunction(const Function *function) = 0;
 	virtual void TraverseStatements(const std::vector<Statement *>& statements) = 0;
 
 	virtual void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *falseBlock) = 0;

@@ -42,6 +42,14 @@ void ReachingDefinitions::Visit(const HorseIR::BlockStatement *blockS)
 	}
 }
 
+ReachingDefinitions::Properties ReachingDefinitions::InitialFlow() const
+{
+	// Initial flow is empty set, no definitions reach!
+
+	Properties initialFlow;
+	return initialFlow;
+}
+
 ReachingDefinitions::Properties ReachingDefinitions::Merge(const Properties& s1, const Properties& s2) const
 {
 	// Merge the maps using union. Find if the symbol is already present, and either merge the

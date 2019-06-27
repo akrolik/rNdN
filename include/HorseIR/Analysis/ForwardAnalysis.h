@@ -52,6 +52,27 @@ public:
 		this->m_currentInSet = this->m_currentOutSet;
 	}
 
+	void TraverseFunction(const Function *function) override
+	{
+		// Initialize the input flow set for the function
+
+		this->m_currentInSet = InitialFlow();
+
+		// Traverse the parameters and then the body
+
+		for (const auto& parameter : function->GetParameters())
+		{
+			parameter->Accept(*this);
+			PropagateNext();
+		}
+		for (const auto& returnType : function->GetReturnTypes())
+		{
+			returnType->Accept(*this);
+			PropagateNext();
+		}
+		TraverseStatements(function->GetStatements());
+	}
+
 	void TraverseStatements(const std::vector<Statement *>& statements) override
 	{
 		// Traverse each statement, recording the in/out and propagating sets
@@ -186,8 +207,9 @@ public:
 		context.AddContinueSet(this->m_currentInSet);
 	}
 
-	// Each analysis must provide its own merge operation
+	// Each analysis must provide its initial flows and merge operation
 
+	virtual F InitialFlow() const = 0;
 	virtual F Merge(const F& s1, const F& s2) const = 0;
 
 protected:

@@ -40,6 +40,27 @@ public:
 		this->m_currentOutSet = this->m_currentInSet;
 	}
 
+	void TraverseFunction(const Function *function) override
+	{
+		// Initialize the input flow set for the function
+
+		this->m_currentOutSet = InitialFlow();
+
+		// Traverse the body and then the parameters
+
+		TraverseStatements(function->GetStatements());
+		for (const auto& parameter : function->GetParameters())
+		{
+			parameter->Accept(*this);
+			PropagateNext();
+		}
+		for (const auto& returnType : function->GetReturnTypes())
+		{
+			returnType->Accept(*this);
+			PropagateNext();
+		}
+	}
+
 	void TraverseStatements(const std::vector<Statement *>& statements) override
 	{
 		// Traverse each statement, recording the in/out and propagating sets
@@ -106,9 +127,9 @@ public:
 		condition->Accept(*this);
 		PropagateNext();
 
-		// Save the current in set (loop 0 iterations)
+		// Information for computing the fixed point
 		
-		F inSet = this->m_currentInSet;
+		F inSet;
 
 		do
 		{
@@ -152,8 +173,9 @@ public:
 		this->SetOutSet(continueS, outSet);
 	}
 
-	// Each analysis must provide its own merge operation
+	// Each analysis must provide its own initial flows and merge operation
 
+	virtual F InitialFlow() const = 0;
 	virtual F Merge(const F& s1, const F& s2) const = 0;
 
 protected:

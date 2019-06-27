@@ -57,6 +57,13 @@ void ShapeAnalysis::Visit(const HorseIR::BlockStatement *blockS)
 	}
 }
 
+ShapeAnalysis::Properties ShapeAnalysis::InitialFlow() const
+{
+	Properties initialFlow;
+	//TODO: initial shape of global variables is the type + dynamic sizing
+	return initialFlow;
+}
+
 ShapeAnalysis::Properties ShapeAnalysis::Merge(const Properties& s1, const Properties& s2) const
 {
 	// Merge the maps using a shape merge operation on each element

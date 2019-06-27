@@ -50,6 +50,14 @@ void LiveVariables::Visit(const HorseIR::Identifier *identifier)
 	}
 }
 
+LiveVariables::Properties LiveVariables::InitialFlow() const
+{
+	// Initial flow is the empty set, no variables are live!
+
+        Properties initialFlow;
+	return initialFlow;
+}
+
 LiveVariables::Properties LiveVariables::Merge(const Properties& s1, const Properties& s2) const
 {
 	// Simple merge operation, add all non-duplicate eelements to the out set
