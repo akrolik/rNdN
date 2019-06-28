@@ -72,6 +72,9 @@ public:
 	bool VisitIn(Module *module) override;
 	void VisitOut(Module *module) override;
 
+	// Stop the traversal
+	bool VisitIn(ModuleContent *content) override;
+
 	bool VisitIn(Function *function) override;
 	void VisitOut(Function *function) override;
 

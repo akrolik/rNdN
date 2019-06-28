@@ -64,10 +64,9 @@ void SymbolPass_Modules::VisitOut(Module *module)
 bool SymbolPass_Modules::VisitIn(GlobalDeclaration *global)
 {
 	auto declaration = global->GetDeclaration();
-	m_currentSymbolTable->AddSymbol(
-		declaration->GetName(),
-		new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Variable, declaration)
-	);
+	auto symbol = new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Variable, declaration);
+	m_currentSymbolTable->AddSymbol(declaration->GetName(), symbol);
+	declaration->SetSymbol(symbol);
 	return false;
 }
 
@@ -169,6 +168,11 @@ void SymbolPass_Functions::VisitOut(Module *module)
 	m_currentSymbolTable = m_currentSymbolTable->GetParent();
 }
 
+bool SymbolPass_Functions::VisitIn(ModuleContent *content)
+{
+	// Stop the traversal
+	return false;
+}
 
 bool SymbolPass_Functions::VisitIn(Function *function)
 {
