@@ -160,6 +160,10 @@ void PrettyPrinter::Visit(const DeclarationStatement *declarationS)
 	Indent();
 	m_string << "var ";
 	declarationS->GetDeclaration()->Accept(*this);
+	if (m_quick)
+	{
+		return;
+	}
 	m_string << ";" << std::endl;
 }
 
@@ -168,15 +172,12 @@ void PrettyPrinter::Visit(const AssignStatement *assignS)
 	Indent();
 	CommaSeparated(assignS->GetTargets());
 
-	// Quick skips RHS
-
+	m_string << " = ";
+	assignS->GetExpression()->Accept(*this);
 	if (m_quick)
 	{
 		return;
 	}
-
-	m_string << " = ";
-	assignS->GetExpression()->Accept(*this);
 	m_string << ";" << std::endl;
 }
 
@@ -184,6 +185,10 @@ void PrettyPrinter::Visit(const ExpressionStatement *expressionS)
 {
 	Indent();
 	expressionS->GetExpression()->Accept(*this);
+	if (m_quick)
+	{
+		return;
+	}
 	m_string << ";" << std::endl;
 }
 
@@ -192,7 +197,12 @@ void PrettyPrinter::Visit(const IfStatement *ifS)
 	Indent();
 	m_string << "if (";
 	ifS->GetCondition()->Accept(*this);
-	m_string << ") ";
+	m_string << ")";
+	if (m_quick)
+	{
+		return;
+	}
+	m_string << " ";
 	ifS->GetTrueBlock()->Accept(*this);
 
 	if (ifS->HasElseBranch())
@@ -209,7 +219,12 @@ void PrettyPrinter::Visit(const WhileStatement *whileS)
 	Indent();
 	m_string << "while (";
 	whileS->GetCondition()->Accept(*this);
-	m_string << ") ";
+	m_string << ")";
+	if (m_quick)
+	{
+		return;
+	}
+	m_string << " ";
 	whileS->GetBody()->Accept(*this);
 	m_string << std::endl;
 }
@@ -219,7 +234,12 @@ void PrettyPrinter::Visit(const RepeatStatement *repeatS)
 	Indent();
 	m_string << "repeat (";
 	repeatS->GetCondition()->Accept(*this);
-	m_string << ") ";
+	m_string << ")";
+	if (m_quick)
+	{
+		return;
+	}
+	m_string << " ";
 	repeatS->GetBody()->Accept(*this);
 	m_string << std::endl;
 }
@@ -248,6 +268,10 @@ void PrettyPrinter::Visit(const ReturnStatement *returnS)
 	{
 		m_string << " ";
 		CommaSeparated(returnS->GetOperands());
+	}
+	if (m_quick)
+	{
+		return;
 	}
 	m_string << ";" << std::endl;
 }
