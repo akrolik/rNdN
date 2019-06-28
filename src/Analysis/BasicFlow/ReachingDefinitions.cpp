@@ -7,7 +7,7 @@ void ReachingDefinitions::Visit(const HorseIR::AssignStatement *assignS)
 	// For each target of the assignment, kill the previous definition (if any)
 	// and add a new value to the map associating the target to the assignment
 
-	ForwardAnalysis<ReachingDefinitionsProperties>::Visit(assignS);
+	m_currentOutSet = m_currentInSet;
 
 	for (const auto target : assignS->GetTargets())
 	{

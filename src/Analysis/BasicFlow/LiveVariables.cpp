@@ -36,10 +36,9 @@ void LiveVariables::Visit(const HorseIR::AssignStatement *assignS)
 
 void LiveVariables::Visit(const HorseIR::Identifier *identifier)
 {
-	m_currentInSet = m_currentOutSet;
-
 	// Kill all definitions, add all uses
 
+	m_currentInSet = m_currentOutSet;
 	if (m_isTarget)
 	{
 		Kill(identifier->GetSymbol());

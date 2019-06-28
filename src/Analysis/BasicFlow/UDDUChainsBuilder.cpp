@@ -43,7 +43,17 @@ bool UDDUChainsBuilder::VisitIn(const HorseIR::Identifier *identifier)
 
 	const auto& inSet = m_reachingDefinitions.GetInSet(m_currentStatement);
 
-	// By construction of the RD analysis, we already have the UD chain for this identifier
+	// Check if the identifier is a globally defined variable
+
+	if (inSet.find(identifier->GetSymbol()) == inSet.end())
+	{
+		// Skip global variables
+
+		m_useDefChains[identifier] = std::unordered_set<const HorseIR::AssignStatement *>();
+		return true;
+	}
+
+	// By construction of the RD analysis, we already have the UD chain for this identifier.
 
 	const auto& definitions = inSet.at(identifier->GetSymbol());
 	m_useDefChains[identifier] = *definitions;

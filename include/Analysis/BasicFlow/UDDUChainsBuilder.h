@@ -22,8 +22,8 @@ public:
 	bool VisitIn(const HorseIR::FunctionLiteral *literal) override;
 	bool VisitIn(const HorseIR::Identifier *identifier) override;
 
-	const std::unordered_set<const HorseIR::AssignStatement *>& GetDefinitions(const HorseIR::Identifier *identifier) { return m_useDefChains.at(identifier); }
-	const std::unordered_set<const HorseIR::Identifier *>& GetUses(const HorseIR::AssignStatement *assignS) { return m_defUseChains.at(assignS); }
+	const std::unordered_set<const HorseIR::AssignStatement *>& GetDefinitions(const HorseIR::Identifier *identifier) const { return m_useDefChains.at(identifier); }
+	const std::unordered_set<const HorseIR::Identifier *>& GetUses(const HorseIR::AssignStatement *assignS) const { return m_defUseChains.at(assignS); }
 
 	std::string DebugString(unsigned int indent = 0) const;
 
