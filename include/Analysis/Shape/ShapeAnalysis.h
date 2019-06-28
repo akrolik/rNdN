@@ -27,10 +27,17 @@ struct ShapeAnalysisKey : HorseIR::FlowAnalysisPointerValue<HorseIR::SymbolTable
 	}
 };
 
-struct ShapeAnalysisValue : HorseIR::FlowAnalysisValue<Shape>
+struct ShapeAnalysisValue
 {
 	using Type = Shape;
-	using HorseIR::FlowAnalysisValue<Type>::Equals;
+
+	struct Equals
+	{
+		 bool operator()(const Type *val1, const Type *val2) const
+		 {
+			 return val1->Equivalent(*val2);
+		 }
+	};
 
 	static void Print(std::ostream& os, const Type *val)
 	{
@@ -46,6 +53,7 @@ public:
 	using Properties = ShapeAnalysisProperties;
 	using HorseIR::ForwardAnalysis<Properties>::ForwardAnalysis;
 
+	void Visit(const HorseIR::Parameter *parameter) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
 	void Visit(const HorseIR::BlockStatement *blockS) override;
 

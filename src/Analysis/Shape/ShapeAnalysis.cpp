@@ -1,10 +1,19 @@
 #include "Analysis/Shape/ShapeAnalysis.h"
 
 #include "Analysis/Shape/ShapeAnalysisHelper.h"
+#include "Analysis/Shape/ShapeUtils.h"
 
 #include "Utils/Logger.h"
 
 namespace Analysis {
+
+void ShapeAnalysis::Visit(const HorseIR::Parameter *parameter)
+{
+	// Add dynamic sized shapes for all parameters
+
+	m_currentOutSet = m_currentInSet;
+	m_currentOutSet[parameter->GetSymbol()] = ShapeUtils::ShapeFromType(parameter->GetType());
+}
 
 void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 {
@@ -22,6 +31,8 @@ void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 	}
 
 	// Update map for each target symbol
+
+	m_currentOutSet = m_currentInSet;
 
 	unsigned int i = 0;
 	for (const auto target : targets)
@@ -59,8 +70,20 @@ void ShapeAnalysis::Visit(const HorseIR::BlockStatement *blockS)
 
 ShapeAnalysis::Properties ShapeAnalysis::InitialFlow() const
 {
+	// Add all global variables to the initial flow set
+
 	Properties initialFlow;
-	//TODO: initial shape of global variables is the type + dynamic sizing
+	for (const auto module : m_program->GetModules())
+	{
+		for (const auto content : module->GetContents())
+		{
+			if (auto global = dynamic_cast<const HorseIR::GlobalDeclaration *>(content))
+			{
+				auto declaration = global->GetDeclaration();
+				initialFlow[declaration->GetSymbol()] = ShapeUtils::ShapeFromType(declaration->GetType());
+			}
+		}
+	}
 	return initialFlow;
 }
 
@@ -116,8 +139,26 @@ const Shape *ShapeAnalysis::MergeShape(const Shape *shape1, const Shape *shape2)
 				auto listShape2 = static_cast<const ListShape *>(shape2);
 
 				auto mergedSize = MergeSize(listShape1->GetListSize(), listShape2->GetListSize());
-				auto mergedShape = MergeShape(listShape1->GetElementShape(), listShape2->GetElementShape());
-				return new ListShape(mergedSize, mergedShape);
+
+				auto elementShapes1 = listShape1->GetElementShapes();
+				auto elementShapes2 = listShape2->GetElementShapes();
+
+				std::vector<const Shape *> mergedElementShapes;
+				if (elementShapes1.size() == elementShapes2.size())
+				{
+					unsigned int i = 0;
+					for (const auto elementShape1 : elementShapes1)
+					{
+						const auto elementShape2 = elementShapes2.at(i++);
+						auto mergedShape = MergeShape(elementShape1, elementShape2);
+						mergedElementShapes.push_back(mergedShape);
+					}
+				}
+				else
+				{
+					mergedElementShapes.push_back(new WildcardShape(shape1, shape2));
+				}
+				return new ListShape(mergedSize, mergedElementShapes);
 			}
 			case Shape::Kind::Table:
 			{

@@ -43,9 +43,21 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Funct
 
 std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments)
 {
-	//TODO: Make a more specific wildcard type based on the type
-
-	return {new WildcardShape(m_call)};
+	const auto& returnTypes = function->GetReturnTypes();
+	if (returnTypes.size() == 1)
+	{
+		return {ShapeUtils::ShapeFromType(returnTypes.at(0), m_call)};
+	}
+	else
+	{
+		std::vector<const Shape *> returnShapes;
+		unsigned int tag = 1;
+		for (const auto returnType : function->GetReturnTypes())
+		{
+			returnShapes.push_back(ShapeUtils::ShapeFromType(returnType, m_call, tag++));
+		}
+		return returnShapes;
+	}
 }
 
 void ShapeAnalysisHelper::AddScalarConstraint(const Shape::Size *size)
@@ -226,7 +238,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			else if (ShapeUtils::IsShape<ListShape>(argumentShape))
 			{
 				auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape);
-				return {new ListShape(listShape->GetListSize(), new VectorShape(new Shape::DynamicSize(m_call)))};
+				return {new ListShape(listShape->GetListSize(), {new VectorShape(new Shape::DynamicSize(m_call))})};
 			}
 			break;
 		}
@@ -237,7 +249,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			{
 				return {new DictionaryShape(
 						new VectorShape(new Shape::DynamicSize(m_call, 1)),
-						new ListShape(new Shape::ConstantSize(1), new VectorShape(new Shape::DynamicSize(m_call, 2)))
+						new ListShape(new Shape::ConstantSize(1), {new VectorShape(new Shape::DynamicSize(m_call, 2))})
 				)};
 			}
 			else if (ShapeUtils::IsShape<ListShape>(argumentShape))
@@ -245,7 +257,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape);
 				return {new DictionaryShape(
 						new VectorShape(new Shape::DynamicSize(m_call, 1)),
-						new ListShape(listShape->GetListSize(), new VectorShape(new Shape::DynamicSize(m_call, 2)))
+						new ListShape(listShape->GetListSize(), {new VectorShape(new Shape::DynamicSize(m_call, 2))})
 				)};
 			}
 			break;
@@ -335,7 +347,10 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			}
 			else if (ShapeUtils::IsShape<ListShape>(argumentShape1))
 			{
-				auto elementShape = ShapeUtils::GetShape<ListShape>(argumentShape1)->GetElementShape();
+				auto elementShapes = ShapeUtils::GetShape<ListShape>(argumentShape1)->GetElementShapes();
+				Require(elementShapes.size() == 1);
+
+				auto elementShape = elementShapes.at(0);
 				Require(ShapeUtils::IsShape<VectorShape>(elementShape));
 
 				auto elementVectorShape = ShapeUtils::GetShape<VectorShape>(elementShape);
@@ -409,7 +424,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 					break;
 				}
 			}
-			return {new ListShape(new Shape::ConstantSize(arguments.size()), shape)};
+			return {new ListShape(new Shape::ConstantSize(arguments.size()), {shape})};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ToList:
 		{
@@ -456,7 +471,10 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2));
 
 			auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape2);
-			auto elementShape = listShape->GetElementShape();
+			auto elementShapes = listShape->GetElementShapes();
+			Require(elementShapes.size() == 1);
+
+			auto elementShape = elementShapes.at(0);
 			Require(ShapeUtils::IsShape<VectorShape>(elementShape));
 
 			auto argumentSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
@@ -505,7 +523,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape);
 				auto colsSize = tableShape->GetColumnsSize();
 				auto rowsSize = tableShape->GetRowsSize();
-				return {new ListShape(colsSize, new VectorShape(rowsSize))};
+				return {new ListShape(colsSize, {new VectorShape(rowsSize)})};
 			}
 			else if (ShapeUtils::IsShape<KeyedTableShape>(argumentShape))
 			{
@@ -623,7 +641,7 @@ void ShapeAnalysisHelper::Visit(const HorseIR::CastExpression *cast)
 {
 	// Traverse the expression
 
-	ConstVisitor::Visit(cast);
+	cast->GetExpression()->Accept(*this);
 
 	// Propagate the shape from the expression to the cast
 

@@ -1,12 +1,67 @@
 #pragma once
 
+#include <vector>
+
 #include "Analysis/Shape/Shape.h"
+#include "HorseIR/Utils/TypeUtils.h"
 
 namespace Analysis {
 
 class ShapeUtils
 {
 public:
+
+static Shape *ShapeFromType(const HorseIR::Type *type, const HorseIR::CallExpression *call = nullptr, unsigned int tag = 0)
+{
+	switch (type->m_kind)
+	{
+		case HorseIR::Type::Kind::Wildcard:
+		{
+			return new WildcardShape();
+		}
+		case HorseIR::Type::Kind::Basic:
+		{
+			return new VectorShape(new Shape::DynamicSize(call, tag));
+		}
+		case HorseIR::Type::Kind::List:
+		{
+			auto listType = static_cast<const HorseIR::ListType *>(type);
+
+			std::vector<const Shape *> elementShapes;
+			for (const auto elementType : listType->GetElementTypes())
+			{
+				elementShapes.push_back(ShapeFromType(elementType, call, tag));
+			}
+
+			return new ListShape(new Shape::DynamicSize(call, tag), elementShapes);
+		}
+		case HorseIR::Type::Kind::Table:
+		{
+			return new TableShape(new Shape::DynamicSize(call, tag), new Shape::DynamicSize(call, tag));
+		}
+		case HorseIR::Type::Kind::Dictionary:
+		{
+			auto dictionaryType = static_cast<const HorseIR::DictionaryType *>(type);
+			return new DictionaryShape(
+				ShapeFromType(dictionaryType->GetKeyType(), call, tag),
+				ShapeFromType(dictionaryType->GetValueType(), call, tag)
+			);
+		}
+		case HorseIR::Type::Kind::Enumeration:
+		{
+			return new EnumerationShape(new Shape::DynamicSize(call, tag));
+		}
+		case HorseIR::Type::Kind::KeyedTable:
+		{
+			return new KeyedTableShape(
+				new TableShape(new Shape::DynamicSize(call, tag), new Shape::DynamicSize(call, tag)),
+				new TableShape(new Shape::DynamicSize(call, tag), new Shape::DynamicSize(call, tag))
+			);
+		}
+	}
+
+	Utils::Logger::LogError("Unknown default shape for type " + HorseIR::TypeUtils::TypeString(type));
+}
 
 template<class S>
 static S *GetShape(Shape *shape)

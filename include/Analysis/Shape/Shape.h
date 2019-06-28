@@ -1,11 +1,14 @@
 #pragma once
 
 #include <sstream>
+#include <vector>
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 namespace Analysis {
+
+static unsigned int ShapeUniqueKey = 1;
 
 class Shape
 {
@@ -25,6 +28,8 @@ public:
 		friend std::ostream& operator<<(std::ostream& os, const Size& shape);
 
 		virtual void Print(std::ostream& os) const = 0;
+
+		bool Equivalent(const Size& other) const;
 
 		bool operator==(const Size& other) const;
 		bool operator!=(const Size& other) const
@@ -52,9 +57,14 @@ public:
 			os << m_value;
 		}
 
+		bool Equivalent(const ConstantSize& other) const
+		{
+			return (m_value == other.m_value);
+		}
+
 		bool operator==(const ConstantSize& other) const
 		{
-			return m_value == other.m_value;
+			return (m_value == other.m_value);
 		}
 
 		bool operator!=(const ConstantSize& other) const
@@ -80,9 +90,14 @@ public:
 			os << "`" << m_symbol;
 		}
 
+		bool Equivalent(const SymbolSize& other) const
+		{
+			return (m_symbol == other.m_symbol);
+		}
+
 		bool operator==(const SymbolSize& other) const
 		{
-			return m_symbol == other.m_symbol;
+			return (m_symbol == other.m_symbol);
 		}
 
 		bool operator!=(const SymbolSize& other) const
@@ -109,6 +124,11 @@ public:
 			os << *m_size << "[" << HorseIR::PrettyPrinter::PrettyString(m_predicate) << "]";
 		}
 
+		bool Equivalent(const CompressedSize& other) const
+		{
+			return (*m_predicate == *other.m_predicate && m_size->Equivalent(*other.m_size));
+		}
+
 		bool operator==(const CompressedSize& other) const
 		{
 			return (*m_predicate == *other.m_predicate && *m_size == *other.m_size);
@@ -129,6 +149,7 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Dynamic;
 
+		DynamicSize() : Size(Size::Kind::Dynamic) {};
 		DynamicSize(const Size *size1, const Size *size2) : Size(Size::Kind::Dynamic), m_size1(size1), m_size2(size2) {}
 		DynamicSize(const HorseIR::Expression *expression, unsigned int tag = 0) : Size(Size::Kind::Dynamic), m_expression(expression), m_tag(tag) {}
 
@@ -140,27 +161,32 @@ public:
 
 		void Print(std::ostream& os) const override
 		{
-			if (m_size1 != nullptr)
+			if (m_size1 != nullptr && m_size2 != nullptr)
 			{
-				os << "Dynamic/Merge<" << *m_size1 << ", " << *m_size2 << ">";
+				os << "Dynamic<" << *m_size1 << ", " << *m_size2 << ">";
 			}
-			else if (m_tag == 0)
+			else if (m_expression != nullptr)
 			{
 				os << "Dynamic/" << HorseIR::PrettyPrinter::PrettyString(m_expression);
 			}
 			else
 			{
-				os << "Dynamic/" << HorseIR::PrettyPrinter::PrettyString(m_expression) << "/" << m_tag;
+				os << "Dynamic";
 			}
+			if (m_tag > 0)
+			{
+				os << "/" << m_tag;
+			}
+		}
+
+		bool Equivalent(const DynamicSize& other) const
+		{
+			return true;
 		}
 
 		bool operator==(const DynamicSize& other) const
 		{
-			if (m_size1 != nullptr && other.m_size1 != nullptr && m_size2 != nullptr && other.m_size2 != nullptr)
-			{
-				return (*m_size1 == *other.m_size1 && *m_size2 == *other.m_size2);
-			}
-			return (m_expression == other.m_expression && m_tag == other.m_tag);
+			return (m_uniqueKey == other.m_uniqueKey);
 		}
 
 		bool operator!=(const DynamicSize& other) const
@@ -171,9 +197,10 @@ public:
 	private:
 		const Size *m_size1 = nullptr;
 		const Size *m_size2 = nullptr;
+		unsigned int m_uniqueKey = ShapeUniqueKey++;
 
 		const HorseIR::Expression *m_expression = nullptr;
-		const unsigned int m_tag = -1;
+		const unsigned int m_tag = 0;
 	};
 
 	enum class Kind {
@@ -192,6 +219,8 @@ public:
 
 	virtual void Print(std::ostream& os) const = 0;
 
+	bool Equivalent(const Shape& other) const;
+
 	bool operator==(const Shape& other) const;
 	bool operator!=(const Shape& other) const
 	{
@@ -209,28 +238,31 @@ class WildcardShape : public Shape
 public:
 	constexpr static Kind ShapeKind = Kind::Wildcard;
 
+	WildcardShape() : Shape(Shape::Kind::Wildcard) {}
 	WildcardShape(const Shape *shape1, const Shape *shape2) : Shape(Shape::Kind::Wildcard), m_shape1(shape1), m_shape2(shape2) {}
 	WildcardShape(const HorseIR::Expression *expression) : Shape(Shape::Kind::Wildcard), m_expression(expression) {}
 
 	void Print(std::ostream& os) const override
 	{
-		if (m_shape1 != nullptr)
+		os << "*";
+		if (m_shape1 != nullptr && m_shape2 != nullptr)
 		{
-			os << "*<" << *m_shape1 << ", " << *m_shape2 << ">";
+			os << "<" << *m_shape1 << ", " << *m_shape2 << ">";
 		}
-		else
+		else if (m_expression != nullptr)
 		{
-			os << "*";
+			os << "<" << HorseIR::PrettyPrinter::PrettyString(m_expression) << ">";
 		}
+	}
+
+	bool Equivalent(const WildcardShape& other) const
+	{
+		return true;
 	}
 
 	bool operator==(const WildcardShape& other) const
 	{
-		if (m_shape1 != nullptr && other.m_shape1 != nullptr && m_shape2 != nullptr && other.m_shape2 != nullptr)
-		{
-			return (*m_shape1 == *other.m_shape1 && *m_shape2 == *other.m_shape2);
-		}
-		return (m_expression == other.m_expression);
+		return false;
 	}
 
 	bool operator!=(const WildcardShape& other) const
@@ -259,6 +291,11 @@ public:
 		os << "VectorShape<" << *m_size << ">";
 	}
 
+	bool Equivalent(const VectorShape& other) const
+	{
+		return m_size->Equivalent(*other.m_size);
+	}
+
 	bool operator==(const VectorShape& other) const
 	{
 		return (*m_size == *other.m_size);
@@ -278,19 +315,63 @@ class ListShape : public Shape
 public:
 	constexpr static Kind ShapeKind = Kind::List;
 
-	ListShape(const Size *listSize, const Shape *elementShape) : Shape(Shape::Kind::List), m_listSize(listSize), m_elementShape(elementShape) {}
+	ListShape(const Size *listSize, const std::vector<const Shape *>& elementShapes) : Shape(Shape::Kind::List), m_listSize(listSize), m_elementShapes(elementShapes) {}
 
 	const Size *GetListSize() const { return m_listSize; }
-	const Shape *GetElementShape() const { return m_elementShape; }
+	const std::vector<const Shape *>& GetElementShapes() const { return m_elementShapes; }
 
 	void Print(std::ostream& os) const override
 	{
-		os << "ListShape<" << *m_listSize << ", " << *m_elementShape << ">";
+		os << "ListShape<" << *m_listSize << ", " << "{";
+		bool first = false;
+		for (const auto elementShape : m_elementShapes)
+		{
+			if (!first)
+			{
+				os << ", ";
+			}
+			first = false;
+			os << *elementShape;
+		}
+		os << "}>";
+	}
+
+	bool Equivalent(const ListShape& other) const
+	{
+		if (!m_listSize->Equivalent(*other.m_listSize) || m_elementShapes.size() != other.m_elementShapes.size())
+		{
+			return false;
+		}
+
+		unsigned int i = 0;
+		for (const auto elementShape1 : m_elementShapes)
+		{
+			const auto elementShape2 = other.m_elementShapes.at(i++);
+			if (!elementShape1->Equivalent(*elementShape2))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	bool operator==(const ListShape& other) const
 	{
-		return (*m_listSize == *other.m_listSize && *m_elementShape == *other.m_elementShape);
+		if (*m_listSize != *other.m_listSize || m_elementShapes.size() != other.m_elementShapes.size())
+		{
+			return false;
+		}
+
+		unsigned int i = 0;
+		for (const auto elementShape1 : m_elementShapes)
+		{
+			const auto elementShape2 = other.m_elementShapes.at(i++);
+			if (*elementShape1 != *elementShape2)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	bool operator!=(const ListShape& other) const
@@ -300,7 +381,7 @@ public:
 
 private:
 	const Size *m_listSize = nullptr;
-	const Shape *m_elementShape = nullptr;
+	const std::vector<const Shape *> m_elementShapes;
 };
 
 class TableShape : public Shape
@@ -316,6 +397,11 @@ public:
 	void Print(std::ostream& os) const override
 	{
 		os << "TableShape<" << *m_columnsSize << ", " << *m_rowsSize << ">";
+	}
+
+	bool Equivalent(const TableShape& other) const
+	{
+		return (m_columnsSize->Equivalent(*other.m_columnsSize) && m_rowsSize->Equivalent(*other.m_rowsSize));
 	}
 
 	bool operator==(const TableShape& other) const
@@ -348,6 +434,11 @@ public:
 		os << "KTableShape<" << *m_keyShape << ", " << *m_valueShape << ">";
 	}
 
+	bool Equivalent(const KeyedTableShape& other) const
+	{
+		return (m_keyShape->Equivalent(*other.m_keyShape) && m_valueShape->Equivalent(*other.m_valueShape));
+	}
+
 	bool operator==(const KeyedTableShape& other) const
 	{
 		return (*m_keyShape == *other.m_keyShape && *m_valueShape == *other.m_valueShape);
@@ -376,6 +467,11 @@ public:
 	void Print(std::ostream& os) const override
 	{
 		os << "DictionaryShape<" << *m_keyShape << ", " << *m_valueShape << ">";
+	}
+
+	bool Equivalent(const DictionaryShape& other) const
+	{
+		return (m_keyShape->Equivalent(*other.m_keyShape) && m_valueShape->Equivalent(*other.m_valueShape));
 	}
 
 	bool operator==(const DictionaryShape& other) const
@@ -407,6 +503,11 @@ public:
 		os << "EnumerateShape<" << *m_mapSize << ">";
 	}
 
+	bool Equivalent(const EnumerationShape& other) const
+	{
+		return (m_mapSize->Equivalent(*other.m_mapSize));
+	}
+
 	bool operator==(const EnumerationShape& other) const
 	{
 		return (*m_mapSize == *other.m_mapSize);
@@ -433,6 +534,31 @@ inline std::ostream& operator<<(std::ostream& os, const Shape::Size& size)
 	return os;
 }
 
+inline bool Shape::Equivalent(const Shape& other) const
+{
+	if (m_kind == other.m_kind)
+	{
+		switch (m_kind)
+		{
+			case Kind::Wildcard:
+				return static_cast<const WildcardShape&>(*this).Equivalent(static_cast<const WildcardShape&>(other));
+			case Kind::Vector:
+				return static_cast<const VectorShape&>(*this).Equivalent(static_cast<const VectorShape&>(other));
+			case Kind::List:
+				return static_cast<const ListShape&>(*this).Equivalent(static_cast<const ListShape&>(other));
+			case Kind::Table:
+				return static_cast<const TableShape&>(*this).Equivalent(static_cast<const TableShape&>(other));
+			case Kind::KeyedTable:
+				return static_cast<const KeyedTableShape&>(*this).Equivalent(static_cast<const KeyedTableShape&>(other));
+			case Kind::Dictionary:
+				return static_cast<const DictionaryShape&>(*this).Equivalent(static_cast<const DictionaryShape&>(other));
+			case Kind::Enumeration:
+				return static_cast<const EnumerationShape&>(*this).Equivalent(static_cast<const EnumerationShape&>(other));
+		}
+	}
+	return false;
+}
+                 
 inline bool Shape::operator==(const Shape& other) const
 {
 	if (m_kind == other.m_kind)
@@ -453,6 +579,25 @@ inline bool Shape::operator==(const Shape& other) const
 				return static_cast<const DictionaryShape&>(*this) == static_cast<const DictionaryShape&>(other);
 			case Kind::Enumeration:
 				return static_cast<const EnumerationShape&>(*this) == static_cast<const EnumerationShape&>(other);
+		}
+	}
+	return false;
+}
+                 
+inline bool Shape::Size::Equivalent(const Shape::Size& other) const
+{
+	if (m_kind == other.m_kind)
+	{
+		switch (m_kind)
+		{
+			case Kind::Constant:
+				return static_cast<const Shape::ConstantSize&>(*this).Equivalent(static_cast<const Shape::ConstantSize&>(other));
+			case Kind::Symbol:
+				return static_cast<const Shape::SymbolSize&>(*this).Equivalent(static_cast<const Shape::SymbolSize&>(other));
+			case Kind::Compressed:
+				return static_cast<const Shape::CompressedSize&>(*this).Equivalent(static_cast<const Shape::CompressedSize&>(other));
+			case Kind::Dynamic:
+				return static_cast<const Shape::DynamicSize&>(*this).Equivalent(static_cast<const Shape::DynamicSize&>(other));
 		}
 	}
 	return false;

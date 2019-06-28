@@ -10,6 +10,7 @@ template<class F>
 class ForwardAnalysis : public FlowAnalysis<F>
 {
 public:
+	using FlowAnalysis<F>::FlowAnalysis;
 	using FlowAnalysis<F>::Visit;
 
 	class LoopContext

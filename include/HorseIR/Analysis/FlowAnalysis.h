@@ -137,6 +137,8 @@ class FlowAnalysis : public ConstVisitor
 public:
 	using ConstVisitor::Visit;
 
+	FlowAnalysis(const Program *program) : m_program(program) {}
+
 	void Analyze(const Function *function)
 	{
 		// Clear sets and traverse the function
@@ -250,6 +252,8 @@ public:
 protected:
 	void SetInSet(const Statement *statement, const F& set) { m_inSets.insert_or_assign(statement, set); }
 	void SetOutSet(const Statement *statement, const F& set) { m_outSets.insert_or_assign(statement, set); }
+
+	const Program *m_program = nullptr;
 
 	std::unordered_map<const Statement *, F> m_inSets;
 	std::unordered_map<const Statement *, F> m_outSets;
