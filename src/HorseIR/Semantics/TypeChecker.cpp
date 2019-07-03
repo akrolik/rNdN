@@ -434,7 +434,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			{
 				return {new BasicType(BasicType::BasicKind::Int64)};
 			}
-			else if (const auto listType = TypeUtils::GetType<ListType>(inputType); listType != nullptr)
+			else if (const auto listType = TypeUtils::GetType<ListType>(inputType))
 			{
 				// All cells must be boolean type
 
@@ -447,7 +447,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsType<BasicType>(inputType) || TypeUtils::IsType<ListType>(inputType));
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType); listType != nullptr)
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType))
 			{
 				// All cells must be boolean type
 
@@ -463,7 +463,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType1 = argumentTypes.at(1);
 			Require(TypeUtils::IsIntegerType(inputType0) && (TypeUtils::IsType<BasicType>(inputType1) || TypeUtils::IsType<ListType>(inputType1)));
 
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType1); listType != nullptr)
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType1))
 			{
 				if (TypeUtils::IsSingleType(listType->GetElementTypes()))
 				{
@@ -550,7 +550,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsOrderableType(inputType0) || TypeUtils::IsType<ListType>(inputType0));
 			Require(TypeUtils::IsBooleanType(inputType1));
 
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType0); listType != nullptr)
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType0))
 			{
 				// List elements need to be comparable. Same return type as vector alternative
 
@@ -648,7 +648,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			// All element types must be the same, and non-wildcard
 			const auto listType = TypeUtils::GetType<ListType>(inputType);
-			if (const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes()); elementType != nullptr)
+			if (const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes()))
 			{
 				Require(TypeUtils::IsType<BasicType>(elementType));
 				return {elementType};
@@ -826,7 +826,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType1 = argumentTypes.at(1);
 			Require(TypeUtils::IsTypesEqual(inputType0, inputType1) && (TypeUtils::IsType<BasicType>(inputType0) || TypeUtils::IsType<ListType>(inputType0)));
 
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType0); listType != nullptr)
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType0))
 			{
 				const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes());
 				Require(elementType != nullptr && TypeUtils::IsType<BasicType>(elementType));
@@ -1099,7 +1099,7 @@ void TypeChecker::VisitOut(EnumerationType *type)
 	{
 		return;
 	}
-	if (const auto listType = TypeUtils::GetType<ListType>(elementType); listType != nullptr)
+	if (const auto listType = TypeUtils::GetType<ListType>(elementType))
 	{
 		const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes());
 		if (elementType != nullptr && TypeUtils::IsType<BasicType>(elementType))
