@@ -67,12 +67,17 @@ void ShapeAnalysisHelper::AddScalarConstraint(const Shape::Size *size)
 
 void ShapeAnalysisHelper::AddBinaryConstraint(const Shape::Size *size1, const Shape::Size *size2)
 {
-
+	//TODO: Add constraint to set
 }
 
 void ShapeAnalysisHelper::AddEqualityConstraint(const Shape::Size *size1, const Shape::Size *size2)
 {
+	if (*size1 == *size2)
+	{
+		return;
+	}
 
+	//TODO: Add constraint to set
 }
 
 std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
@@ -409,29 +414,24 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
-			//TODO: Update shape rule
-			const Shape *shape = nullptr;
+			std::vector<const Shape *> elementShapes;
 			for (const auto& argument : arguments)
 			{
-				auto argumentShape = GetShape(argument);
-				if (shape == nullptr)
-				{
-					shape = argumentShape;
-				}
-				else if (*shape != *argumentShape)
-				{
-					shape = new WildcardShape(m_call);
-					break;
-				}
+				elementShapes.push_back(GetShape(argument));
 			}
-			return {new ListShape(new Shape::ConstantSize(arguments.size()), {shape})};
+			return {new ListShape(new Shape::ConstantSize(arguments.size()), elementShapes)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ToList:
 		{
-			Unsupported();
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
+
+			auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
+			return {new ListShape(vectorShape->GetSize(), {new VectorShape(new Shape::ConstantSize(1))})};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		{
+			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachItem:
@@ -556,11 +556,19 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{
-			//TODO: need to be more careful here with casting
-			auto tableName = static_cast<const HorseIR::SymbolLiteral *>(arguments.at(0))->GetValue(0)->GetName();
-			auto columns = new Shape::SymbolSize(tableName + ".cols");
-			auto rows = new Shape::SymbolSize(tableName + ".rows");
-			return {new TableShape(columns, rows)};
+			auto argumentShape = GetShape(arguments.at(0));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
+
+			auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
+			AddScalarConstraint(vectorShape->GetSize());
+
+			if (ValueAnalysisHelper::IsConstant(arguments.at(0)))
+			{
+				auto value = ValueAnalysisHelper::GetConstant<const HorseIR::SymbolValue *>(arguments.at(0));
+				auto tableName = value.at(0)->GetName();
+				return {new TableShape(new Shape::SymbolSize(tableName + ".cols"), new Shape::SymbolSize(tableName + ".rows"))};
+			}
+			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
