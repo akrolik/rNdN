@@ -230,7 +230,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Seed:
 		case HorseIR::BuiltinFunction::Primitive::Flip:
 		{
-			//TODO: Unknown shape rules
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Where:
@@ -271,12 +270,10 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Append:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Replicate:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Like:
@@ -299,7 +296,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			auto argumentSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
 			auto argumentSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
 
-			//TODO: Constraint
+			//TODO: Add constraint
 
 			auto dynamic1 = ShapeUtils::IsSize<Shape::DynamicSize>(argumentSize1);
 			auto dynamic2 = ShapeUtils::IsSize<Shape::DynamicSize>(argumentSize2);
@@ -322,7 +319,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
@@ -335,7 +331,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::Order:
@@ -409,7 +404,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		// List
 		case HorseIR::BuiltinFunction::Primitive::Raze:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:
@@ -431,7 +425,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachItem:
@@ -460,12 +453,15 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		{
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
-			//TODO: Constraint
+
+			//TODO: Add constraint
+
 			return {new DictionaryShape(argumentShape1, argumentShape2)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
 			//TODO: Update shape rule
+
 			auto argumentShape1 = GetShape(arguments.at(0));
 			auto argumentShape2 = GetShape(arguments.at(1));
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2));
@@ -572,7 +568,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
-			//TODO: Unknown shape rule
 			Unsupported();
 		}
 
