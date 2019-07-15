@@ -18,7 +18,7 @@ struct ReachingDefinitionsKey : HorseIR::FlowAnalysisPointerValue<HorseIR::Symbo
 
 	struct Hash
 	{
-		bool operator()(const Type *val) const
+		std::size_t operator()(const Type *val) const
 		{
 			return std::hash<const Type *>()(val);
 		}
