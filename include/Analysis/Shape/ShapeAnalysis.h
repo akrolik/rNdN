@@ -55,14 +55,19 @@ public:
 
 	void Visit(const HorseIR::Parameter *parameter) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
+	void Visit(const HorseIR::ExpressionStatement *expressionS) override;
 	void Visit(const HorseIR::BlockStatement *blockS) override;
 
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
 
+	const std::vector<const Shape *>& GetShapes(const HorseIR::Expression *expression) const { return m_expressionShapes.at(expression); }
+
 private:
 	const Shape *MergeShape(const Shape *shape1, const Shape *shape2) const;
 	const Shape::Size *MergeSize(const Shape::Size *size1, const Shape::Size *size2) const;
+
+	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_expressionShapes;
 };
 
 }

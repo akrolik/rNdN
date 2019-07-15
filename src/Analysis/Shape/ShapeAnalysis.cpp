@@ -22,6 +22,8 @@ void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 	auto expression = assignS->GetExpression();
 	auto expressionShapes = ShapeAnalysisHelper::GetShapes(m_currentInSet, expression);
 
+	m_expressionShapes[expression] = expressionShapes;
+
 	// Check the number of shapes matches the number of targets
 
 	auto targets = assignS->GetTargets();
@@ -42,6 +44,18 @@ void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 		auto symbol = target->GetSymbol();
 		m_currentOutSet[symbol] = expressionShapes.at(i++);
 	}
+}
+
+void ShapeAnalysis::Visit(const HorseIR::ExpressionStatement *expressionS)
+{
+	ForwardAnalysis<ShapeAnalysisProperties>::Visit(expressionS);
+
+	// Store the result shape for other transformations/analyses
+
+	auto expression = expressionS->GetExpression();
+	auto expressionShapes = ShapeAnalysisHelper::GetShapes(m_currentInSet, expression);
+
+	m_expressionShapes[expression] = expressionShapes;
 }
 
 void ShapeAnalysis::Visit(const HorseIR::BlockStatement *blockS)
