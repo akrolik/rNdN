@@ -3,30 +3,39 @@
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 
 #include "Analysis/BasicFlow/UDDUChainsBuilder.h"
-#include "Analysis/Dependency/DependencyOverlay.h"
+#include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
+
+#include "Analysis/Compatibility/CompatibilityGraph.h"
+#include "Analysis/Compatibility/Overlay/CompatibilityOverlay.h"
 
 namespace Analysis {
 
-class DependencyAnalysis : public HorseIR::ConstHierarchicalVisitor
+class CompatibilityAnalysis : public HorseIR::ConstHierarchicalVisitor
 {
 public:
-	DependencyAnalysis(const UDDUChainsBuilder& useDefChains) : m_useDefChains(useDefChains) {}
+	CompatibilityAnalysis(const UDDUChainsBuilder& useDefChains, const GeometryAnalysis& geometryAnalysis) : m_useDefChains(useDefChains), m_geometryAnalysis(geometryAnalysis) {}
+
+	// Analysis inputs and outputs
 
 	void Analyze(const HorseIR::Function *function);
-	const DependencyGraph *GetDependencyGraph() const { return m_graph; }
-	const DependencyOverlay *GetDependencyOverlay() const { return m_graphOverlay; }
+
+	const CompatibilityGraph *GetGraph() const { return m_graph; }
+	const CompatibilityOverlay *GetOverlay() const { return m_graphOverlay; }
+
+	// Function
 
 	bool VisitIn(const HorseIR::Function *function) override;
+
+	// Statements
 
 	bool VisitIn(const HorseIR::Statement *statement) override;
 	void VisitOut(const HorseIR::Statement *statement) override;
 
-	// Special statements
-
 	bool VisitIn(const HorseIR::AssignStatement *assignS) override;
+	bool VisitIn(const HorseIR::ExpressionStatement *expressionS) override;
 
 	template<typename T>
-	void VisitCompoundStatement(const T *statement);
+	void VisitCompoundStatement(const typename T::NodeType *statement);
 
 	bool VisitIn(const HorseIR::IfStatement *ifS) override;
 	bool VisitIn(const HorseIR::WhileStatement *whileS) override;
@@ -45,11 +54,15 @@ public:
 	bool VisitIn(const HorseIR::Identifier *identifier) override;
 
 private:
+	bool IsCompatible(const Geometry *source, const Geometry *destination);
+
 	const UDDUChainsBuilder& m_useDefChains;
+	const GeometryAnalysis& m_geometryAnalysis;
+
 	const HorseIR::Statement *m_currentStatement = nullptr;
 
-	DependencyGraph *m_graph = new DependencyGraph();
-	DependencyOverlay *m_graphOverlay = nullptr;
+	CompatibilityGraph *m_graph = new CompatibilityGraph();
+	CompatibilityOverlay *m_graphOverlay = nullptr;
 };
 
 }

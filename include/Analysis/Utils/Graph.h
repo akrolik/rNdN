@@ -26,6 +26,7 @@ public:
 	}
 
 	const std::unordered_set<const T *>& GetNodes() const { return m_nodes; }
+	bool ContainsNode(const T *node) const { return (m_nodes.find(node) != m_nodes.end()); }
 
 	const std::unordered_set<const T *>& GetIncomingEdges(const T *node) const { return m_incomingEdges.at(node); }
 	const std::unordered_set<const T *>& GetOutgoingEdges(const T *node) const { return m_outgoingEdges.at(node); }
@@ -36,7 +37,7 @@ public:
 		{
 			return 0;
 		}
-		return m_incomingEdges[node].size();
+		return m_incomingEdges.at(node).size();
 	}
 
 	unsigned int GetOutDegree(const T *node) const
@@ -45,7 +46,7 @@ public:
 		{
 			return 0;
 		}
-		return m_outgoingEdges[node].size();
+		return m_outgoingEdges.at(node).size();
 	}
 
 protected:
