@@ -27,6 +27,46 @@ void GeometryAnalysis::VisitOut(const HorseIR::Statement *statement)
 	m_currentGeometry = nullptr;
 }
 
+bool GeometryAnalysis::VisitIn(const HorseIR::IfStatement *ifS)
+{
+	m_currentStatement = ifS;
+	ifS->GetCondition()->Accept(*this);
+	if (m_currentGeometry != nullptr)
+	{
+		m_geometries[ifS] = m_currentGeometry;
+	}
+	ifS->GetTrueBlock()->Accept(*this);
+	if (ifS->HasElseBranch())
+	{
+		ifS->GetElseBlock()->Accept(*this);
+	}
+	return false;
+}
+
+bool GeometryAnalysis::VisitIn(const HorseIR::WhileStatement *whileS)
+{
+	m_currentStatement = whileS;
+	whileS->GetCondition()->Accept(*this);
+	if (m_currentGeometry != nullptr)
+	{
+		m_geometries[whileS] = m_currentGeometry;
+	}
+	whileS->GetBody()->Accept(*this);
+	return false;
+}
+
+bool GeometryAnalysis::VisitIn(const HorseIR::RepeatStatement *repeatS)
+{
+	m_currentStatement = repeatS;
+	repeatS->GetCondition()->Accept(*this);
+	if (m_currentGeometry != nullptr)
+	{
+		m_geometries[repeatS] = m_currentGeometry;
+	}
+	repeatS->GetBody()->Accept(*this);
+	return false;
+}
+
 bool GeometryAnalysis::VisitIn(const HorseIR::AssignStatement *assignS)
 {
 	// Traverse the RHS of the assignment for operating geometry

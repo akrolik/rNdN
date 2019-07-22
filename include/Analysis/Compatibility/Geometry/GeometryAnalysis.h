@@ -22,6 +22,10 @@ public:
 	bool VisitIn(const HorseIR::Statement *statement) override;
 	void VisitOut(const HorseIR::Statement *statement) override;
 
+	bool VisitIn(const HorseIR::IfStatement *whileS) override;
+	bool VisitIn(const HorseIR::WhileStatement *whileS) override;
+	bool VisitIn(const HorseIR::RepeatStatement *whileS) override;
+
 	bool VisitIn(const HorseIR::AssignStatement *assignS) override;
 
 	bool VisitIn(const HorseIR::CallExpression *call) override;
