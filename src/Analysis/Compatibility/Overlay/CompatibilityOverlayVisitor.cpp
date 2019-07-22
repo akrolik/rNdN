@@ -9,12 +9,12 @@ void CompatibilityOverlayVisitor::Visit(CompatibilityOverlay *overlay)
 
 }
 
-void CompatibilityOverlayVisitor::Visit(FunctionCompatibilityOverlay *overlay)
+void CompatibilityOverlayVisitor::Visit(KernelCompatibilityOverlay *overlay)
 {
 	Visit(static_cast<CompatibilityOverlay *>(overlay));
 }
 
-void CompatibilityOverlayVisitor::Visit(KernelCompatibilityOverlay *overlay)
+void CompatibilityOverlayVisitor::Visit(FunctionCompatibilityOverlay *overlay)
 {
 	Visit(static_cast<CompatibilityOverlay *>(overlay));
 }

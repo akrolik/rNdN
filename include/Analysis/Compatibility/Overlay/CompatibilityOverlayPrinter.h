@@ -17,9 +17,9 @@ public:
 	static std::string PrettyString(const CompatibilityOverlay *overlay);
 
 	void Visit(const CompatibilityOverlay *overlay) override;
+	void Visit(const KernelCompatibilityOverlay *overlay) override;
 
 	void Visit(const FunctionCompatibilityOverlay *overlay) override;
-	void Visit(const KernelCompatibilityOverlay *overlay) override;
 	void Visit(const IfCompatibilityOverlay *overlay) override;
 	void Visit(const WhileCompatibilityOverlay *overlay) override;
 	void Visit(const RepeatCompatibilityOverlay *overlay) override;

@@ -14,7 +14,7 @@ class CompatibilityGraph : public Graph<HorseIR::Statement>
 public:
 	using Graph<HorseIR::Statement>::Graph;
 
-	void InsertNode(const HorseIR::Statement *statement, bool isGPU)
+	void InsertNode(const HorseIR::Statement *statement, bool isGPU, bool isSynchronized)
 	{
 		Graph<HorseIR::Statement>::InsertNode(statement);
 
@@ -24,11 +24,20 @@ public:
 		{
 			m_gpuNodes.insert(statement);
 		}
+		if (isSynchronized)
+		{
+			m_synchronizedNodes.insert(statement);
+		}
 	}
 
 	bool IsGPUNode(const HorseIR::Statement *statement) const
 	{
 		return (m_gpuNodes.find(statement) != m_gpuNodes.end());
+	}
+
+	bool IsSynchronizedNode(const HorseIR::Statement *statement) const
+	{
+		return (m_synchronizedNodes.find(statement) != m_synchronizedNodes.end());
 	}
 
 	void InsertEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, const HorseIR::SymbolTable::Symbol *symbol, bool isBackEdge, bool isCompatible)
@@ -66,13 +75,21 @@ public:
 		}
 	}
 
-	bool IsBackEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination) const
+	bool IsBackEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, bool flipped = false) const
 	{
+		if (flipped)
+		{
+			return (m_backEdges.find({destination, source}) != m_backEdges.end());
+		}
 		return (m_backEdges.find({source, destination}) != m_backEdges.end());
 	}
 
-	bool IsCompatibleEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination) const
+	bool IsCompatibleEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, bool flipped = false) const
 	{
+		if (flipped)
+		{
+			return m_compatibleEdges.at({destination, source});
+		}
 		return m_compatibleEdges.at({source, destination});
 	}
 
@@ -91,6 +108,7 @@ private:
 	std::unordered_map<EdgeType, bool, EdgeHash> m_compatibleEdges;
 
 	std::unordered_set<const HorseIR::Statement *> m_gpuNodes;
+	std::unordered_set<const HorseIR::Statement *> m_synchronizedNodes;
 
 	std::unordered_map<EdgeType, std::unordered_set<const HorseIR::SymbolTable::Symbol *>, EdgeHash> m_edgeData;
 };

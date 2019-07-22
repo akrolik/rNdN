@@ -25,6 +25,7 @@ public:
 	// Function
 
 	bool VisitIn(const HorseIR::Function *function) override;
+	void VisitOut(const HorseIR::Function *function) override;
 
 	// Statements
 

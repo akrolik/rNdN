@@ -14,8 +14,14 @@ void CompatibilityAnalysis::Analyze(const HorseIR::Function *function)
 
 bool CompatibilityAnalysis::VisitIn(const HorseIR::Function *function)
 {
-	m_graphOverlay = new FunctionCompatibilityOverlay(function, m_graph);
+	auto functionOverlay = new FunctionCompatibilityOverlay(function, m_graph);
+	m_graphOverlay = new CompatibilityOverlay(m_graph, functionOverlay);
 	return true;
+}
+
+void CompatibilityAnalysis::VisitOut(const HorseIR::Function *function)
+{
+	m_graphOverlay = m_graphOverlay->GetParent();
 }
 
 bool CompatibilityAnalysis::VisitIn(const HorseIR::Statement *statement)
@@ -25,7 +31,7 @@ bool CompatibilityAnalysis::VisitIn(const HorseIR::Statement *statement)
 	GPUAnalysisHelper gpuHelper;
 	gpuHelper.Analyze(statement);
 
-	m_graph->InsertNode(statement, gpuHelper.IsCapable());
+	m_graph->InsertNode(statement, gpuHelper.IsCapable(), gpuHelper.IsSynchronized());
 	m_graphOverlay->InsertStatement(statement);
 
 	m_currentStatement = statement;
@@ -46,7 +52,7 @@ bool CompatibilityAnalysis::VisitIn(const HorseIR::AssignStatement *assignS)
 
 	// Only traverse the expression, targets do not introduce dependencies
 
-	m_graph->InsertNode(assignS, gpuHelper.IsCapable());
+	m_graph->InsertNode(assignS, gpuHelper.IsCapable(), gpuHelper.IsSynchronized());
 	m_graphOverlay->InsertStatement(assignS);
 
 	m_currentStatement = assignS;
@@ -66,7 +72,7 @@ bool CompatibilityAnalysis::VisitIn(const HorseIR::ExpressionStatement *expressi
 
 	// Insert a new node into the graph and traverse the expression
 
-	m_graph->InsertNode(expressionS, gpuHelper.IsCapable());
+	m_graph->InsertNode(expressionS, gpuHelper.IsCapable(), gpuHelper.IsSynchronized());
 	m_graphOverlay->InsertStatement(expressionS);
 
 	m_currentStatement = expressionS;
@@ -76,9 +82,9 @@ bool CompatibilityAnalysis::VisitIn(const HorseIR::ExpressionStatement *expressi
 template<typename T>
 void CompatibilityAnalysis::VisitCompoundStatement(const typename T::NodeType *statement)
 {
-	// Add the statement to the graph, all compound statements are GPU capable
+	// Add the statement to the graph, all compound statements are GPU capable and unsynchronized
 
-	m_graph->InsertNode(statement, true);
+	m_graph->InsertNode(statement, true, false);
 	m_currentStatement = statement;
 
 	// Organize the contents in an overlay

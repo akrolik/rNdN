@@ -38,7 +38,14 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 
 		if (overlay->GetGraph()->IsGPUNode(node))
 		{
-			m_string << ", style=bold";
+			if (overlay->GetGraph()->IsSynchronizedNode(node))
+			{
+				m_string << ", style=\"bold, diagonals\"";
+			}
+			else
+			{
+				m_string << ", style=bold";
+			}
 		}
 			
 		m_string << "];" << std::endl;
@@ -52,12 +59,29 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 		m_string << "subgraph cluster_" << std::to_string(++m_nameIndex) << "{" << std::endl;
 		m_indent++;
 
+		Indent();
+		if (child->IsGPU())
+		{
+			m_string << "style=filled;" << std::endl;
+		}
+		else
+		{
+			m_string << "style=dashed;" << std::endl;
+		}
+		Indent();
+		m_string << "label=\"" << child->GetName() << "\";" << std::endl;
+
 		child->Accept(*this);
 
 		m_indent--;
 		Indent();
 		m_string << "}" << std::endl;
 	}
+}
+
+void CompatibilityOverlayPrinter::Visit(const KernelCompatibilityOverlay *overlay)
+{
+	CompatibilityOverlayConstVisitor::Visit(overlay);
 }
 
 void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *overlay)
@@ -71,8 +95,6 @@ void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *over
 	// Style the subgraphs with dashed borders
 
 	m_indent++;
-	Indent();
-	m_string << "style=dashed;" << std::endl;
 
 	// Visit all statements and child overlays
 
@@ -102,13 +124,6 @@ void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *over
 
 	m_string << "label=\"" << HorseIR::PrettyPrinter::PrettyString(function, true) << "\";" << std::endl;
 	m_string << "}";
-}
-
-void CompatibilityOverlayPrinter::Visit(const KernelCompatibilityOverlay *overlay)
-{
-	//TODO: Printing kernel boundary differently
-
-	CompatibilityOverlayConstVisitor::Visit(overlay);
 }
 
 void CompatibilityOverlayPrinter::Visit(const IfCompatibilityOverlay *overlay)
