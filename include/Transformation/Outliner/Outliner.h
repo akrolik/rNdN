@@ -13,12 +13,7 @@ namespace Transformation {
 class Outliner
 {
 public:
-	Outliner(const Analysis::ShapeAnalysis& shapeAnalysis) : m_shapeAnalysis(shapeAnalysis) {}
-
 	std::vector<HorseIR::Function *> Outline(const Analysis::CompatibilityOverlay *overlay);
-
-private:
-	const Analysis::ShapeAnalysis& m_shapeAnalysis;
 };
 
 }

@@ -14,7 +14,7 @@ std::vector<HorseIR::Function *> Outliner::Outline(const Analysis::Compatibility
 	// 1. Partition the overlay into an outlined overlay with nested functions
 	// 2. Build the partitioned graph into functions collected in a vector
 
-	OutlinePartitioner partitioner(m_shapeAnalysis);
+	OutlinePartitioner partitioner;
 	auto partitioned = partitioner.Partition(overlay);
 
 	//TODO: Printing debug?
@@ -23,8 +23,8 @@ std::vector<HorseIR::Function *> Outliner::Outline(const Analysis::Compatibility
 
 	std::vector<HorseIR::Function *> functions;
 
-	OutlineBuilder builder(functions);
-	builder.Build(partitioned);
+	// OutlineBuilder builder(functions);
+	// builder.Build(partitioned);
 
 	return functions;
 }
