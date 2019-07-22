@@ -1,6 +1,7 @@
 #include "Analysis/Shape/ShapeAnalysis.h"
 
 #include "Analysis/Shape/ShapeAnalysisHelper.h"
+#include "Analysis/Shape/ShapeCollector.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
 #include "Utils/Logger.h"
@@ -79,6 +80,49 @@ void ShapeAnalysis::Visit(const HorseIR::BlockStatement *blockS)
 		{
 			++it;
 		}
+	}
+}
+
+void ShapeAnalysis::Visit(const HorseIR::IfStatement *ifS)
+{
+	ForwardAnalysis<ShapeAnalysisProperties>::Visit(ifS);
+
+	CheckCondition(GetInSet(ifS), ifS->GetCondition());
+}
+
+void ShapeAnalysis::Visit(const HorseIR::WhileStatement *whileS)
+{
+	ForwardAnalysis<ShapeAnalysisProperties>::Visit(whileS);
+
+	CheckCondition(GetInSet(whileS), whileS->GetCondition());
+}
+
+void ShapeAnalysis::Visit(const HorseIR::RepeatStatement *repeatS)
+{
+	ForwardAnalysis<ShapeAnalysisProperties>::Visit(repeatS);
+
+	CheckCondition(GetInSet(repeatS), repeatS->GetCondition());
+}
+
+void ShapeAnalysis::CheckCondition(const ShapeAnalysisProperties& shapes, const HorseIR::Operand *operand)
+{
+	auto conditionShape = ShapeCollector::ShapeFromOperand(shapes, operand);
+	if (!ShapeUtils::IsShape<VectorShape>(conditionShape))
+	{
+		Utils::Logger::LogError("Condition expects a scalar expression");
+	}
+
+	auto conditionSize = ShapeUtils::GetShape<VectorShape>(conditionShape)->GetSize();
+	if (ShapeUtils::IsSize<Shape::ConstantSize>(conditionSize))
+	{
+		if (ShapeUtils::GetSize<Shape::ConstantSize>(conditionSize)->GetValue() != 1)
+		{
+			Utils::Logger::LogError("Condition expects a scalar expression");
+		}
+	}
+	else
+	{
+		//TODO: Add scalar constraint
 	}
 }
 
