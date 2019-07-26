@@ -9,12 +9,12 @@ class Options
 public:
 	static constexpr char const *Opt_Help = "help";
 	static constexpr char const *Opt_Optimize = "optimize";
-	static constexpr char const *Opt_Dump_hir = "dump-hir";
-	static constexpr char const *Opt_Dump_symbol = "dump-symbol";
-	static constexpr char const *Opt_Dump_shape = "dump-shape";
-	static constexpr char const *Opt_Dump_dependency = "dump-dependency";
-	static constexpr char const *Opt_Dump_ptx = "dump-ptx";
-	static constexpr char const *Opt_Dump_json = "dump-json";
+	static constexpr char const *Opt_Print_hir = "print-hir";
+	static constexpr char const *Opt_Print_symbol = "print-symbol";
+	static constexpr char const *Opt_Print_analysis = "print-analysis";
+	static constexpr char const *Opt_Print_outline = "print-hir-outline";
+	static constexpr char const *Opt_Print_ptx = "print-ptx";
+	static constexpr char const *Opt_Print_json = "print-json";
 
 	Options(Options const&) = delete;
 	void operator=(Options const&) = delete;
@@ -49,13 +49,13 @@ private:
 			("h,help", "Display this help menu")
 			("O,optimize", "Enable PTX optimizer")
 		;
-		m_options.add_options("Debug")
-			("i,dump-hir", "Dump pretty printed input HorseIR to stdout")
-			("s,dump-symbol", "Dump symbol table to stdout")
-			("a,dump-shape", "Dump shape analysis result to stdout")
-			("d,dump-dependency", "Dump dependency analysis graph to stdout")
-			("p,dump-ptx", "Dump generated PTX code to stdout")
-			("j,dump-json", "Dump generated PTX JSON to stdout")
+		m_options.add_options("Debug Printing (stdout)")
+			("print-hir", "Pretty print input HorseIR program")
+			("print-symbol", "Print symbol table")
+			("print-analysis", "Print analyses")
+			("print-hir-outline", "Pretty print outlined HorseIR program")
+			("print-ptx", "Print generated PTX code")
+			("print-json", "Print generated PTX JSON")
 		;
 	}
 
