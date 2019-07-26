@@ -62,6 +62,39 @@ static Shape *ShapeFromType(const HorseIR::Type *type, const HorseIR::CallExpres
 
 	Utils::Logger::LogError("Unknown default shape for type " + HorseIR::TypeUtils::TypeString(type));
 }
+ 
+static bool IsSubsize(const Shape::Size *needle, const Shape::Size *haystack)
+{
+	if (ShapeUtils::IsSize<Shape::ConstantSize>(needle))
+	{
+		return (ShapeUtils::GetSize<Shape::ConstantSize>(needle)->GetValue() == 1);
+	}
+
+	if (ShapeUtils::IsSize<Shape::CompressedSize>(needle))
+	{
+		auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(needle)->GetSize();
+		if (*unmaskedSize == *haystack)
+		{
+			return true;
+		}
+		return IsSubsize(unmaskedSize, haystack);
+	}
+
+	return false;
+}
+
+static bool IsSubshape(const Shape *needle, const Shape *haystack)
+{
+	if (!ShapeUtils::IsShape<VectorShape>(needle) || !ShapeUtils::IsShape<VectorShape>(haystack))
+	{
+		return false;
+	}
+
+	auto needleSize = ShapeUtils::GetShape<VectorShape>(needle)->GetSize();
+	auto haystackSize = ShapeUtils::GetShape<VectorShape>(haystack)->GetSize();
+
+	return IsSubsize(needleSize, haystackSize);
+}
 
 template<class S>
 static S *GetShape(Shape *shape)
