@@ -11,6 +11,7 @@ class Geometry
 public:
 	enum class Kind {
 		Unknown,
+		CPU,
 		Shape
 	};
 
@@ -47,6 +48,22 @@ private:
 	const HorseIR::CallExpression *m_call = nullptr;
 };
 
+class CPUGeometry : public Geometry
+{
+public:
+	CPUGeometry() : Geometry(Geometry::Kind::CPU) {}
+
+	bool operator==(const CPUGeometry& other) const
+	{
+		return false;
+	}
+
+	bool operator!=(const CPUGeometry& other) const
+	{
+		return true;
+	}
+};
+
 class ShapeGeometry : public Geometry
 {
 public:
@@ -76,6 +93,8 @@ inline bool Geometry::operator==(const Geometry& other) const
 		{
 			case Geometry::Kind::Unknown:
 				return (static_cast<const UnknownGeometry&>(*this) == static_cast<const UnknownGeometry&>(other));
+			case Geometry::Kind::CPU:
+				return (static_cast<const CPUGeometry&>(*this) == static_cast<const CPUGeometry&>(other));
 			case Geometry::Kind::Shape:
 				return (static_cast<const ShapeGeometry&>(*this) == static_cast<const ShapeGeometry&>(other));
 		}

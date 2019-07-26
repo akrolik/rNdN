@@ -9,11 +9,6 @@ void CompatibilityOverlayConstVisitor::Visit(const CompatibilityOverlay *overlay
 
 }
 
-void CompatibilityOverlayConstVisitor::Visit(const KernelCompatibilityOverlay *overlay)
-{
-	Visit(static_cast<const CompatibilityOverlay *>(overlay));
-}
-
 void CompatibilityOverlayConstVisitor::Visit(const FunctionCompatibilityOverlay *overlay)
 {
 	Visit(static_cast<const CompatibilityOverlay *>(overlay));

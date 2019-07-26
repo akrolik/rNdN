@@ -68,7 +68,9 @@ public:
 		return (m_children.size() == 1 && m_statements.size() == 0);
 	}
 
-	virtual bool IsGPU() const { return false; }
+	bool IsGPU() const { return m_gpu; }
+	void SetGPU(bool gpu) { m_gpu = gpu; }
+
 	bool IsSynchronized() const
 	{
 		for (const auto statement : m_statements)
@@ -100,19 +102,8 @@ protected:
 	std::vector<CompatibilityOverlay *> m_children;
 
 	std::unordered_set<const HorseIR::Statement *> m_statements;
-};
 
-class KernelCompatibilityOverlay : public CompatibilityOverlay
-{
-public:
-	using CompatibilityOverlay::CompatibilityOverlay;
-
-	std::string_view GetName() const override { return "Kernel"sv; }
-
-	bool IsGPU() const { return true; }
-
-	void Accept(CompatibilityOverlayVisitor& visitor) { visitor.Visit(this); }
-	void Accept(CompatibilityOverlayConstVisitor& visitor) const { visitor.Visit(this); }
+	bool m_gpu = false;
 };
 
 template<typename T>

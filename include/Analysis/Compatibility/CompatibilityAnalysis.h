@@ -54,9 +54,9 @@ public:
 	bool VisitIn(const HorseIR::FunctionLiteral *literal) override;
 	bool VisitIn(const HorseIR::Identifier *identifier) override;
 
-private:
-	bool IsCompatible(const Geometry *source, const Geometry *destination);
+	static bool IsCompatible(const Geometry *source, const Geometry *destination);
 
+private:
 	const UDDUChainsBuilder& m_useDefChains;
 	const GeometryAnalysis& m_geometryAnalysis;
 

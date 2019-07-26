@@ -1,5 +1,8 @@
 #include "Transformation/Outliner/OutlinePartitioner.h"
 
+#include "Analysis/Compatibility/CompatibilityAnalysis.h"
+#include "Analysis/Compatibility/Geometry/GeometryUtils.h"
+
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
@@ -13,7 +16,7 @@ Analysis::CompatibilityOverlay *OutlinePartitioner::Partition(const Analysis::Co
 	return m_currentOverlays.at(0);
 }
 
-Analysis::CompatibilityOverlay *OutlinePartitioner::GetChildOverlay(const std::vector<Analysis::CompatibilityOverlay *>& childOverlays, const HorseIR::Statement *statement)
+Analysis::CompatibilityOverlay *OutlinePartitioner::GetChildOverlay(const std::vector<Analysis::CompatibilityOverlay *>& childOverlays, const HorseIR::Statement *statement) const
 {
 	// Return the top-level child overlay which contains the statement
 
@@ -42,7 +45,7 @@ Analysis::CompatibilityOverlay *OutlinePartitioner::GetChildOverlay(const std::v
 	return nullptr;
 }
 
-void OutlinePartitioner::ProcessEdges(PartitionContext& context, const Analysis::CompatibilityOverlay *overlay, const HorseIR::Statement *statement, const std::unordered_set<const HorseIR::Statement *>& destinations, bool flipped)
+void OutlinePartitioner::ProcessEdges(PartitionContext& context, const Analysis::CompatibilityOverlay *overlay, const HorseIR::Statement *statement, const std::unordered_set<const HorseIR::Statement *>& destinations, bool incoming)
 {
 	// Check all connected in/out edges for compatibility, skipping back edges
 
@@ -64,7 +67,7 @@ void OutlinePartitioner::ProcessEdges(PartitionContext& context, const Analysis:
 
 			// Check that the edge is compatible and not a back edge, they will by the structure overlay
 
-			if (graph->IsCompatibleEdge(statement, destination, flipped) && !graph->IsBackEdge(statement, destination, flipped))
+			if (graph->IsCompatibleEdge(statement, destination, incoming) && !graph->IsBackEdge(statement, destination, incoming))
 			{
 				queue.push(destination);
 				visited.insert(destination);
@@ -72,10 +75,10 @@ void OutlinePartitioner::ProcessEdges(PartitionContext& context, const Analysis:
 		}
 		else
 		{
-			const auto childOverlay = GetChildOverlay(m_currentOverlays, destination);
 			const auto statementOverlay = GetChildOverlay(m_currentOverlays, statement);
+			const auto destinationOverlay = GetChildOverlay(m_currentOverlays, destination);
 
-			if (childOverlay == nullptr || childOverlay == statementOverlay)
+			if (destinationOverlay == nullptr || destinationOverlay == statementOverlay)
 			{
 				// Skip edges to parent or sibling overlays, they will be handled via recursion
 
@@ -84,27 +87,34 @@ void OutlinePartitioner::ProcessEdges(PartitionContext& context, const Analysis:
 
 			// If the destination is in a child overlay, consider the overlay for expansion
 
-			if (visited.find(childOverlay) != visited.end())
+			if (visited.find(destinationOverlay) != visited.end())
 			{
 				continue;
 			}
 
-			// Skip synchronized child overlays as they cannot be merged
+			// Check if the overlay is GPU compatible, which is a requirement for compatibility
 
-			if (childOverlay->IsSynchronized())
+			if (!destinationOverlay->IsGPU())
 			{
 				continue;
 			}
 
-			//TODO: We need to check compatibility with the geometry of the OVERLAY!
+			// Skip synchronized destination overlays if the edge is incoming (outgoing from the overlay)
 
-			// Check only a single ingoing edge as it's all we need to initiate a connected component.
-			// Compatibility with a GPU is checked via reducibility and kernel flag
-
-			if (graph->IsCompatibleEdge(statement, destination, flipped))
+			if (incoming && destinationOverlay->IsSynchronized())
 			{
-				queue.push(childOverlay);
-				visited.insert(childOverlay);
+				continue;
+			}
+
+			// Check the statement geometry compatibility with the geometry of the overlay
+
+			auto statementGeometry = m_geometryAnalysis.GetGeometry(statement);
+			auto overlayGeometry = m_overlayGeometries.at(destinationOverlay);
+
+			if (Analysis::CompatibilityAnalysis::IsCompatible(statementGeometry, overlayGeometry))
+			{
+				queue.push(destinationOverlay);
+				visited.insert(destinationOverlay);
 			}
 		}
 	}
@@ -145,10 +155,6 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 	// Construct the set of nodes for the overlay, including statements and children overlays
 
 	std::unordered_set<NodeType> nodes;
-	std::unordered_set<NodeType> visited;
-	std::queue<NodeType> queue;
-
-	PartitionContext context(visited, queue);
 
 	for (const auto statement : overlay->GetStatements())
 	{
@@ -161,6 +167,10 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 	}
 
 	// Build the connected components for the graph
+
+	std::unordered_set<NodeType> visited;
+	std::queue<NodeType> queue;
+	PartitionContext context(visited, queue);
 
 	const auto graph = overlay->GetGraph();
 	auto newOverlay = new Analysis::CompatibilityOverlay(graph);
@@ -181,7 +191,7 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 
 		// Construct a connected component from the queue elements
 
-		Analysis::KernelCompatibilityOverlay *kernelOverlay = nullptr;
+		Analysis::CompatibilityOverlay *kernelOverlay = nullptr;
 
 		while (!queue.empty())
 		{
@@ -197,11 +207,12 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 				{
 					if (graph->IsGPUNode(statement))
 					{
-						// Check if we already have a kernel started, if yes extend, if no start
+						// Check if we already have a kernel started. If yes extend, if no start
 
 						if (kernelOverlay == nullptr)
 						{
-							kernelOverlay = new Analysis::KernelCompatibilityOverlay(graph, newOverlay);
+							kernelOverlay = new Analysis::CompatibilityOverlay(graph, newOverlay);
+							kernelOverlay->SetGPU(true);
 						}
 
 						// Add the statement to the kernel
@@ -228,26 +239,17 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 
 						if (kernelOverlay == nullptr)
 						{
-							kernelOverlay = new Analysis::KernelCompatibilityOverlay(graph, newOverlay);
+							kernelOverlay = new Analysis::CompatibilityOverlay(graph, newOverlay);
+							kernelOverlay->SetGPU(true);
 						}
 
 						// Transfer the contents of the kernel to the current kernel overlay
 
-						for (auto child : childOverlay->GetChildren())
-						{
-							kernelOverlay->AddChild(child);
-						}
-
-						for (auto statement : childOverlay->GetStatements())
-						{
-							kernelOverlay->InsertStatement(statement);
-						}
+						kernelOverlay->AddChild(childOverlay);
 
 						// Process all crossing edges of the overlay
 
 						ProcessOverlayEdges(context, overlay, childOverlay);
-
-						//TODO: Delete old kernel overlay
 					}
 					else
 					{
@@ -259,6 +261,22 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 				node
 			);
 		}
+
+		// Compute the effective geometry of the kernel
+
+		const Analysis::Geometry *geometry = nullptr;
+		for (const auto statement : kernelOverlay->GetStatements())
+		{
+			geometry = Analysis::GeometryUtils::MaxGeometry(geometry, m_geometryAnalysis.GetGeometry(statement));
+		}
+
+		for (const auto child : kernelOverlay->GetChildren())
+		{
+			geometry = Analysis::GeometryUtils::MaxGeometry(geometry, m_overlayGeometries.at(child));
+		}
+		m_overlayGeometries[kernelOverlay] = geometry;
+
+		// Reset the kernel for the next component, by construction the parent/child relationship is already set
 
 		kernelOverlay = nullptr;
 	}
@@ -275,12 +293,8 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 	else
 	{
 		m_currentOverlays.push_back(newOverlay);
+		m_overlayGeometries[newOverlay] = new Analysis::CPUGeometry();
 	}
-}
-
-void OutlinePartitioner::Visit(const Analysis::KernelCompatibilityOverlay *overlay)
-{
-	CompatibilityOverlayConstVisitor::Visit(overlay);
 }
 
 void OutlinePartitioner::Visit(const Analysis::FunctionCompatibilityOverlay *overlay)
@@ -294,6 +308,8 @@ void OutlinePartitioner::Visit(const Analysis::FunctionCompatibilityOverlay *ove
 
 	auto functionOverlay = new Analysis::FunctionCompatibilityOverlay(overlay->GetNode(), overlay->GetGraph());
 	functionOverlay->SetChildren({bodyOverlay});
+
+	m_overlayGeometries[functionOverlay] = m_overlayGeometries[bodyOverlay];
 
 	m_currentOverlays.push_back(functionOverlay);
 }
@@ -310,50 +326,47 @@ void OutlinePartitioner::Visit(const Analysis::IfCompatibilityOverlay *overlay)
 	m_currentOverlays.pop_back();
 	m_currentOverlays.pop_back();
 
+	// Determine if the if statement is GPU compatible. Check that both branches are GPU overlays.
+	// We don't check synchronization as there is no looping and both may exit and synchronize independently
+
+	bool kernel = false;
+
+	if (trueOverlay->IsGPU() && elseOverlay->IsGPU())
+	{
+		// Check geometries of both branches are compatible
+
+		auto trueGeometry = m_overlayGeometries.at(trueOverlay);
+		auto elseGeometry = m_overlayGeometries.at(elseOverlay);
+
+		kernel = Analysis::CompatibilityAnalysis::IsCompatible(trueGeometry, elseGeometry);
+	}
+
+	// Create the if statement overlay with the statement, bodies, and GPU flag, setting the resulting geometry
+
 	auto node = overlay->GetNode();
 	auto graph = overlay->GetGraph();
 
-	if (trueOverlay->IsGPU() && !trueOverlay->IsSynchronized() && elseOverlay->IsGPU() && !elseOverlay->IsSynchronized())
+	auto ifOverlay = new Analysis::IfCompatibilityOverlay(node, graph);
+	ifOverlay->SetGPU(kernel);
+
+	ifOverlay->SetChildren({trueOverlay, elseOverlay});
+	ifOverlay->InsertStatement(node);
+
+	if (kernel)
 	{
-		//TODO: Check if both branches compatible
+		// If both geometries are compatible, find the max operating range for the entire if statement
 
-		bool isCompatible = true;
-		if (isCompatible)
-		{
-			auto kernelOverlay = new Analysis::KernelCompatibilityOverlay(graph);
-			auto ifOverlay = new Analysis::IfCompatibilityOverlay(node, graph, kernelOverlay);
+		auto trueGeometry = m_overlayGeometries.at(trueOverlay);
+		auto elseGeometry = m_overlayGeometries.at(elseOverlay);
 
-			auto newTrueOverlay = new Analysis::CompatibilityOverlay(graph, ifOverlay);
-			auto newElseOverlay = new Analysis::CompatibilityOverlay(graph, ifOverlay);
-
-			// Copy across the kernel internals into the true/else branches
-
-			newTrueOverlay->SetChildren(trueOverlay->GetChildren());
-			newTrueOverlay->SetStatements(trueOverlay->GetStatements());
-
-			newElseOverlay->SetChildren(elseOverlay->GetChildren());
-			newElseOverlay->SetStatements(elseOverlay->GetStatements());
-
-			ifOverlay->SetChildren({newTrueOverlay, newElseOverlay});
-			ifOverlay->InsertStatement(node);
-
-			m_currentOverlays.push_back(kernelOverlay);
-
-			// Deallocate the old branch and kernel overlays
-
-			delete trueOverlay;
-			delete elseOverlay;
-		}
+		m_overlayGeometries[ifOverlay] = Analysis::GeometryUtils::MaxGeometry(trueGeometry, elseGeometry);
 	}
 	else
 	{
-		auto ifOverlay = new Analysis::IfCompatibilityOverlay(node, graph);
-
-		ifOverlay->SetChildren({trueOverlay, elseOverlay});
-		ifOverlay->InsertStatement(node);
-
-		m_currentOverlays.push_back(ifOverlay);
+		m_overlayGeometries[ifOverlay] = new Analysis::CPUGeometry();
 	}
+
+	m_currentOverlays.push_back(ifOverlay);
 }
 
 template<typename T>
@@ -372,41 +385,26 @@ void OutlinePartitioner::VisitLoop(const T *overlay)
 	auto graph = overlay->GetGraph();
 
 	// Check that the body overlay is GPU capable and has no synchronized statements
+	
+	bool kernel = false;
 
-	//TODO: Check for back edge compatibility
 	if (bodyOverlay->IsGPU() && !bodyOverlay->IsSynchronized())
 	{
-		// Create a new kernel overlay and embed the loop
-
-		auto kernelOverlay = new Analysis::KernelCompatibilityOverlay(graph);
-		auto loopOverlay = new T(node, graph, kernelOverlay);
-		auto newBodyOverlay = new Analysis::CompatibilityOverlay(graph, loopOverlay);
-
-		// Copy across the kernel internals into the loop
-
-		newBodyOverlay->SetChildren(bodyOverlay->GetChildren());
-		newBodyOverlay->SetStatements(bodyOverlay->GetStatements());
-
-		loopOverlay->SetChildren({newBodyOverlay});
-		loopOverlay->InsertStatement(node);
-
-		m_currentOverlays.push_back(kernelOverlay);
-
-		// Deallocate the old kernel overlay
-
-		delete bodyOverlay;
+		//TODO: Check for back edge compatibility
+		kernel = true;
 	}
-	else
-	{
-		// Construct a simple loop with the body
 
-		auto loopOverlay = new T(node, graph);
+	// Construct a loop with the body and GPU flag, propagating the geometry
 
-		loopOverlay->SetChildren({bodyOverlay});
-		loopOverlay->InsertStatement(node);
+	auto loopOverlay = new T(node, graph);
+	loopOverlay->SetGPU(kernel);
 
-		m_currentOverlays.push_back(loopOverlay);
-	}
+	loopOverlay->SetChildren({bodyOverlay});
+	loopOverlay->InsertStatement(node);
+
+	m_overlayGeometries[loopOverlay] = m_overlayGeometries[bodyOverlay];
+
+	m_currentOverlays.push_back(loopOverlay);
 }
 
 void OutlinePartitioner::Visit(const Analysis::WhileCompatibilityOverlay *overlay)

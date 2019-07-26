@@ -75,18 +75,18 @@ public:
 		}
 	}
 
-	bool IsBackEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, bool flipped = false) const
+	bool IsBackEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, bool incoming = false) const
 	{
-		if (flipped)
+		if (incoming)
 		{
 			return (m_backEdges.find({destination, source}) != m_backEdges.end());
 		}
 		return (m_backEdges.find({source, destination}) != m_backEdges.end());
 	}
 
-	bool IsCompatibleEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, bool flipped = false) const
+	bool IsCompatibleEdge(const HorseIR::Statement *source, const HorseIR::Statement *destination, bool incoming = false) const
 	{
-		if (flipped)
+		if (incoming)
 		{
 			return m_compatibleEdges.at({destination, source});
 		}

@@ -36,9 +36,13 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 
 		// Bold GPU capable statements
 
-		if (overlay->GetGraph()->IsGPUNode(node))
+		auto graph = overlay->GetGraph();
+
+		if (graph->IsGPUNode(node))
 		{
-			if (overlay->GetGraph()->IsSynchronizedNode(node))
+			// Add diagonal marks on the corner if the node is synchronized
+
+			if (graph->IsSynchronizedNode(node))
 			{
 				m_string << ", style=\"bold, diagonals\"";
 			}
@@ -60,7 +64,10 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 		m_indent++;
 
 		Indent();
-		if (child->IsGPU())
+
+		// Fill overlays which are GPU kernels
+
+		if (child->IsGPU() && !overlay->IsGPU())
 		{
 			m_string << "style=filled;" << std::endl;
 		}
@@ -77,11 +84,6 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 		Indent();
 		m_string << "}" << std::endl;
 	}
-}
-
-void CompatibilityOverlayPrinter::Visit(const KernelCompatibilityOverlay *overlay)
-{
-	CompatibilityOverlayConstVisitor::Visit(overlay);
 }
 
 void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *overlay)
@@ -109,9 +111,12 @@ void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *over
 		{
 			Indent();
 			m_string << m_nameMap[node] << " -> " << m_nameMap[dependency];
+
+			// Label compatible edges with an asterisk
+
 			if (graph->IsCompatibleEdge(node, dependency))
 			{	
-				m_string << " [label=\"X\"]";
+				m_string << " [label=\"*\"]";
 			}
 			m_string << ";" << std::endl;
 		}

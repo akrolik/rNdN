@@ -181,6 +181,7 @@ bool CompatibilityAnalysis::VisitIn(const HorseIR::Identifier *identifier)
 	return true;
 }
 
+//TODO: Review this function
 bool CompatibilityAnalysis::IsCompatible(const Geometry *source, const Geometry *destination)
 {
 	if (*source == *destination)

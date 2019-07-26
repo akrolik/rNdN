@@ -3,7 +3,6 @@
 namespace Analysis {
 
 class CompatibilityOverlay;
-class KernelCompatibilityOverlay;
 
 class FunctionCompatibilityOverlay;
 class IfCompatibilityOverlay;
@@ -14,7 +13,6 @@ class CompatibilityOverlayConstVisitor
 {
 public:
 	virtual void Visit(const CompatibilityOverlay *node);
-	virtual void Visit(const KernelCompatibilityOverlay *node);
 
 	virtual void Visit(const FunctionCompatibilityOverlay *node);
 	virtual void Visit(const IfCompatibilityOverlay *node);

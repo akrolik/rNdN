@@ -252,7 +252,6 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 		case HorseIR::BuiltinFunction::Primitive::Minimum:
 		case HorseIR::BuiltinFunction::Primitive::Maximum:
 		{
-			//TODO: Eliminate ShapeCollector
 			return new ShapeGeometry(ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0)));
 		}
 
