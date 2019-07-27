@@ -259,23 +259,26 @@ void OutlinePartitioner::Visit(const Analysis::CompatibilityOverlay *overlay)
 			);
 		}
 
-		// Compute the effective geometry of the kernel
-
-		const Analysis::Geometry *geometry = nullptr;
-		for (const auto statement : kernelOverlay->GetStatements())
+		if (kernelOverlay != nullptr)
 		{
-			geometry = Analysis::GeometryUtils::MaxGeometry(geometry, m_geometryAnalysis.GetGeometry(statement));
+			// Compute the effective geometry of the kernel
+
+			const Analysis::Geometry *geometry = nullptr;
+			for (const auto statement : kernelOverlay->GetStatements())
+			{
+				geometry = Analysis::GeometryUtils::MaxGeometry(geometry, m_geometryAnalysis.GetGeometry(statement));
+			}
+
+			for (const auto child : kernelOverlay->GetChildren())
+			{
+				geometry = Analysis::GeometryUtils::MaxGeometry(geometry, m_overlayGeometries.at(child));
+			}
+			m_overlayGeometries[kernelOverlay] = geometry;
+
+			// Reset the kernel for the next component, by construction the parent/child relationship is already set
+
+			kernelOverlay = nullptr;
 		}
-
-		for (const auto child : kernelOverlay->GetChildren())
-		{
-			geometry = Analysis::GeometryUtils::MaxGeometry(geometry, m_overlayGeometries.at(child));
-		}
-		m_overlayGeometries[kernelOverlay] = geometry;
-
-		// Reset the kernel for the next component, by construction the parent/child relationship is already set
-
-		kernelOverlay = nullptr;
 	}
 
 	m_currentOverlays = currentOverlays;
