@@ -3,9 +3,6 @@
 #include "Analysis/Compatibility/CompatibilityAnalysis.h"
 #include "Analysis/Compatibility/Geometry/GeometryUtils.h"
 
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
-
 namespace Transformation {
 
 Analysis::CompatibilityOverlay *OutlinePartitioner::Partition(const Analysis::CompatibilityOverlay *overlay)

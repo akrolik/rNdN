@@ -2,7 +2,6 @@
 
 #include <queue>
 #include <unordered_set>
-#include <variant>
 #include <vector>
 
 #include "Analysis/Compatibility/Overlay/CompatibilityOverlayConstVisitor.h"
@@ -10,6 +9,8 @@
 #include "Analysis/Compatibility/Geometry/Geometry.h"
 #include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
 #include "Analysis/Compatibility/Overlay/CompatibilityOverlay.h"
+
+#include "Utils/Variant.h"
 
 namespace Transformation {
 
