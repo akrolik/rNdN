@@ -14,9 +14,8 @@ namespace Transformation {
 class OutlineBuilder : public Analysis::CompatibilityOverlayConstVisitor
 {
 public:
-	OutlineBuilder(std::vector<HorseIR::Function *>& functions) : m_functions(functions) {}
-
 	void Build(const Analysis::CompatibilityOverlay *overlay);
+	const std::vector<HorseIR::Function *>& GetFunctions() const { return m_functions; }
 
 	void Visit(const Analysis::CompatibilityOverlay *overlay) override;
 
@@ -26,9 +25,13 @@ public:
 	void Visit(const Analysis::RepeatCompatibilityOverlay *overlay) override;
 
 private:
-	std::vector<HorseIR::Function *>& m_functions;
+	Analysis::CompatibilityOverlay *GetChildOverlay(const std::vector<Analysis::CompatibilityOverlay *>& childOverlays, const HorseIR::Statement *statement) const;
+	unsigned int GetOutDegree(const Analysis::CompatibilityOverlay *overlay) const;
 
-	std::stack<std::pair<const HorseIR::Function *, unsigned int>> m_containerFunctions;
+	std::vector<HorseIR::Function *> m_functions;
+
+	unsigned int m_kernelIndex = 1;
+	const HorseIR::Function *m_currentFunction = nullptr;
 	std::stack<std::vector<HorseIR::Statement *>> m_statements;
 };
 
