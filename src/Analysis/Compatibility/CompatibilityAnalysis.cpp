@@ -158,7 +158,7 @@ bool CompatibilityAnalysis::VisitIn(const HorseIR::Identifier *identifier)
 	{
 		// Check for edge properties, back edge and compatibility
 
-		bool isBackEdge = (m_graph->ContainsNode(definition) == false);
+		bool isBackEdge = (m_graph->ContainsNode(definition) == false || definition == m_currentStatement);
 		bool isCompatible = false;
 
 		if (m_graph->IsGPUNode(definition) && m_graph->IsGPUNode(m_currentStatement))
