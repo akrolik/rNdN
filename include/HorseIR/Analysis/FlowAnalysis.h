@@ -4,6 +4,7 @@
 #include <stack>
 #include <unordered_set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "HorseIR/Traversal/ConstVisitor.h"
@@ -125,6 +126,39 @@ struct FlowAnalysisMap : public std::unordered_map<const typename K::Type *, con
 	bool operator!=(const FlowAnalysisMap<K, V>& other)const
 	{
 		return !(*this == other);
+	}
+};
+
+template<typename T1, typename T2>
+struct FlowAnalysisPair : public std::pair<T1, T2>
+{
+	void clear() noexcept
+	{
+		this->first.clear();
+		this->second.clear();
+	}
+
+	void Print(std::ostream& os, unsigned int level = 0) const
+	{
+		for (unsigned int i = 0; i < level; ++i)
+		{
+			os << '\t';
+		}
+		os << "<" << std::endl;
+		this->first.Print(os, level + 1);
+		os << std::endl;
+		for (unsigned int i = 0; i < level; ++i)
+		{
+			os << '\t';
+		}
+		os << "," << std::endl;
+		this->second.Print(os, level + 1);
+		os << std::endl;
+		for (unsigned int i = 0; i < level; ++i)
+		{
+			os << '\t';
+		}
+		os << ">";
 	}
 };
 
