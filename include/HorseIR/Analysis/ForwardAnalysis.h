@@ -80,12 +80,15 @@ public:
 
 		for (const auto statement : statements)                 
 		{
+			this->m_currentStatement = statement;
+
 			this->SetInSet(statement, this->m_currentInSet);
 			statement->Accept(*this);
 			this->SetOutSet(statement, this->m_currentOutSet);
 
 			PropagateNext();
 		}
+		this->m_currentStatement = nullptr;
 	}
 
 	void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *elseBlock) override
@@ -100,7 +103,6 @@ public:
 
 		trueBlock->Accept(*this);
 		auto trueOutSet = this->m_currentOutSet;
-
 
 		if (elseBlock != nullptr)
 		{
@@ -137,6 +139,10 @@ public:
 
 	std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) override
 	{
+		// Save current statement for traversing the condition
+
+		const auto currentStatement = this->m_currentStatement;
+
 		// Create a new loop context, used for storing the continue/break sets
 
 		m_loopContexts.emplace();
@@ -144,6 +150,8 @@ public:
 		// Store the in set for the loop, not including the condition (we want under all circumstanes)
 
 		auto preSet = this->m_currentInSet;
+
+		this->m_currentStatement = currentStatement;
 		condition->Accept(*this);
 
 		// Final sets for the fixed point, used to set the current sets for the statement
@@ -177,6 +185,8 @@ public:
 			// and use this to evaluate the condition and compute the new out set
 
 			this->m_currentInSet = inSet = Merge(mergedOutSet, preSet);
+
+			this->m_currentStatement = currentStatement;
 			condition->Accept(*this);
 
 		} while (outSet != this->m_currentOutSet);

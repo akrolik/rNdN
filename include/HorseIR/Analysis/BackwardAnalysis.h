@@ -70,16 +70,23 @@ public:
 		{
 			auto statement = *it;
 
+			this->m_currentStatement = statement;
+
 			this->SetOutSet(statement, this->m_currentOutSet);
 			statement->Accept(*this);
 			this->SetInSet(statement, this->m_currentInSet);
 
 			PropagateNext();
 		}
+		this->m_currentStatement = nullptr;
 	}
 
 	void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *elseBlock) override
 	{
+		// Save current statement for traversing the condition
+
+		const auto currentStatement = this->m_currentStatement;
+
 		// Traverse the true branch and collect sets, store the previous out set
 		// for traversing the else branch (if any)
 
@@ -109,11 +116,17 @@ public:
 		}
 
 		PropagateNext();
+
+		this->m_currentStatement = currentStatement;
 		condition->Accept(*this);
 	}
 
 	std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) override
 	{
+		// Save current statement for traversing the condition
+
+		const auto currentStatement = this->m_currentStatement;
+
 		// Create a new loop context, used for storing the continue/break sets
 
 		m_loopContexts.emplace();
@@ -125,7 +138,9 @@ public:
 
 		// Evaluate the condition after break setup (breaks do not evaluate the condition)
 
+		this->m_currentStatement = currentStatement;
 		condition->Accept(*this);
+
 		PropagateNext();
 
 		// Information for computing the fixed point
@@ -151,6 +166,7 @@ public:
 
 			this->m_currentInSet = Merge(outSet, this->m_currentInSet);
 
+			this->m_currentStatement = currentStatement;
 			condition->Accept(*this);
 
 		} while (inSet != this->m_currentInSet);

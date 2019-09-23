@@ -200,33 +200,35 @@ public:
 
 	void Visit(const ReturnStatement *returnS) override
 	{
+		bool first = true;
 		for (const auto& operand : returnS->GetOperands())
 		{
+			if (!first)
+			{
+				PropagateNext();
+			}
+			first = false;
 			operand->Accept(*this);
-			PropagateNext();
 		}
 	}
 
 	void Visit(const BreakStatement *breakS) override
 	{
 		TraverseBreak(breakS);
-		Visit(static_cast<const Statement *>(breakS));
 	}
 
 	void Visit(const ContinueStatement *continueS) override
 	{
 		TraverseContinue(continueS);
-		Visit(static_cast<const Statement *>(continueS));
 	}
 
 	void Visit(const CallExpression *call) override
 	{
 		call->GetFunctionLiteral()->Accept(*this);
-		PropagateNext();
 		for (const auto& argument : call->GetArguments())
 		{
-			argument->Accept(*this);
 			PropagateNext();
+			argument->Accept(*this);
 		}
 	}
 
@@ -254,6 +256,7 @@ protected:
 	void SetOutSet(const Statement *statement, const F& set) { m_outSets.insert_or_assign(statement, set); }
 
 	const Program *m_program = nullptr;
+	const Statement *m_currentStatement = nullptr;
 
 	std::unordered_map<const Statement *, F> m_inSets;
 	std::unordered_map<const Statement *, F> m_outSets;
