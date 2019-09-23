@@ -1,4 +1,4 @@
-#include "Transformation/Outline/Outliner.h"
+#include "Transformation/Outliner/Outliner.h"
 
 #include "Analysis/Compatibility/CompatibilityAnalysis.h"
 #include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
@@ -7,6 +7,8 @@
 #include "Analysis/Dependency/DependencySubgraphAnalysis.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
 #include "Analysis/Shape/ShapeAnalysis.h"
+
+#include "HorseIR/Analysis/FlowAnalysisPrinter.h"
 
 #include "Transformation/Outliner/OutlineBuilder.h"
 

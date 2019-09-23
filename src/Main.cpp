@@ -5,7 +5,7 @@
 #include "HorseIR/Semantics/SymbolTable/SymbolTableBuilder.h"
 #include "HorseIR/Semantics/SymbolTable/SymbolTablePrinter.h"
 #include "HorseIR/Semantics/TypeChecker.h"
-#include "HorseIR/Tree/Program.h"
+#include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Analysis/EntryAnalysis.h"
