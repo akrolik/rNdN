@@ -1,69 +1,72 @@
 #pragma once
 
-#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
+#include <vector>
+#include <unordered_map>
 
-#include "Analysis/BasicFlow/UDDUChainsBuilder.h"
+#include "Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
+
+#include "Analysis/Compatibility/Geometry/Geometry.h"
 #include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
 
-#include "Analysis/Compatibility/CompatibilityGraph.h"
-#include "Analysis/Compatibility/Overlay/CompatibilityOverlay.h"
+#include "Analysis/Dependency/DependencyGraph.h"
+#include "Analysis/Dependency/DependencySubgraph.h"
+
+#include "Analysis/Helpers/GPUAnalysisHelper.h"
+
+#include "Utils/Variant.h"
 
 namespace Analysis {
 
-class CompatibilityAnalysis : public HorseIR::ConstHierarchicalVisitor
+class CompatibilityAnalysis : public DependencyOverlayConstVisitor
 {
 public:
-	CompatibilityAnalysis(const UDDUChainsBuilder& useDefChains, const GeometryAnalysis& geometryAnalysis) : m_useDefChains(useDefChains), m_geometryAnalysis(geometryAnalysis) {}
+	CompatibilityAnalysis(const GeometryAnalysis& geometryAnalysis) : m_geometryAnalysis(geometryAnalysis) {}
 
-	// Analysis inputs and outputs
+	// Analysis input/output
 
-	void Analyze(const HorseIR::Function *function);
+	void Analyze(const DependencyOverlay *overlay);
 
-	const CompatibilityGraph *GetGraph() const { return m_graph; }
-	const CompatibilityOverlay *GetOverlay() const { return m_graphOverlay; }
+	DependencyOverlay *GetOverlay() const { return m_currentOverlays.at(0); }
 
-	// Function
+	// Overlay visitors
 
-	bool VisitIn(const HorseIR::Function *function) override;
-	void VisitOut(const HorseIR::Function *function) override;
+	void Visit(const DependencyOverlay *overlay) override;
 
-	// Statements
-
-	bool VisitIn(const HorseIR::Statement *statement) override;
-	void VisitOut(const HorseIR::Statement *statement) override;
-
-	bool VisitIn(const HorseIR::AssignStatement *assignS) override;
-	bool VisitIn(const HorseIR::ExpressionStatement *expressionS) override;
+	void Visit(const FunctionDependencyOverlay *overlay) override;
+	void Visit(const IfDependencyOverlay *overlay) override;
+	void Visit(const WhileDependencyOverlay *overlay) override;
+	void Visit(const RepeatDependencyOverlay *overlay) override;
 
 	template<typename T>
-	void VisitCompoundStatement(const typename T::NodeType *statement);
-
-	bool VisitIn(const HorseIR::IfStatement *ifS) override;
-	bool VisitIn(const HorseIR::WhileStatement *whileS) override;
-	bool VisitIn(const HorseIR::RepeatStatement *repeatS) override;
-
-	void VisitOut(const HorseIR::IfStatement *ifS) override;
-	void VisitOut(const HorseIR::WhileStatement *whileS) override;
-	void VisitOut(const HorseIR::RepeatStatement *repeatS) override;
-
-	bool VisitIn(const HorseIR::BlockStatement *blockS) override;
-	void VisitOut(const HorseIR::BlockStatement *blockS) override;
-
-	// Expressions
-
-	bool VisitIn(const HorseIR::FunctionLiteral *literal) override;
-	bool VisitIn(const HorseIR::Identifier *identifier) override;
-
-	static bool IsCompatible(const Geometry *source, const Geometry *destination);
+	void VisitLoop(const T *overlay);
 
 private:
-	const UDDUChainsBuilder& m_useDefChains;
+	// Successor compatibility checking
+
+	DependencyOverlay *GetKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node, DependencyOverlay *parentOverlay) const;
+	DependencyOverlay *GetSuccessorsKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node) const;
+
+	bool IsSynchronized(const DependencySubgraphNode& node) const;
+	bool BuildSynchronized(const DependencyOverlay *overlay) const;
+
+	bool IsIterable(const DependencyOverlay *overlay) const;
+
+	// Utility for handling overlay construction
+
+	mutable GPUAnalysisHelper m_gpuHelper;
+
+	std::vector<DependencyOverlay *> m_currentOverlays;
+	std::unordered_map<DependencySubgraphNode, DependencyOverlay *> m_kernelMap;
+	std::unordered_map<const DependencyOverlay *, DependencyOverlay *> m_overlayMap;
+
+	// Geometry analysis for statements and map for overlays
+
 	const GeometryAnalysis& m_geometryAnalysis;
+	std::unordered_map<const DependencyOverlay *, const Geometry *> m_overlayGeometries;
 
-	const HorseIR::Statement *m_currentStatement = nullptr;
-
-	CompatibilityGraph *m_graph = new CompatibilityGraph();
-	CompatibilityOverlay *m_graphOverlay = nullptr;
+	const Geometry *GetGeometry(const DependencySubgraphNode& node) const;
+	const Geometry *BuildGeometry(const DependencyOverlay *overlay) const;
+	bool IsCompatible(const Geometry *source, const Geometry *destination) const;
 };
 
 }

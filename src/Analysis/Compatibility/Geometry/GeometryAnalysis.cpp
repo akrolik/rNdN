@@ -10,6 +10,14 @@ void GeometryAnalysis::Analyze(const HorseIR::Function *function)
 	function->Accept(*this);
 }
 
+bool GeometryAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)
+{
+	//TODO: Flexible geometry
+	//TODO: We need to insert edges between the declaration and uses
+	m_geometries[declarationS] = new UnknownGeometry(nullptr);
+	return true;
+}
+
 bool GeometryAnalysis::VisitIn(const HorseIR::Statement *statement)
 {
 	m_currentStatement = statement;

@@ -1,10 +1,10 @@
-#include "Analysis/Compatibility/Overlay/CompatibilityOverlayPrinter.h"
+#include "Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
 
-#include "Analysis/Compatibility/Overlay/CompatibilityOverlay.h"
+#include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 
 namespace Analysis {
 
-void CompatibilityOverlayPrinter::Indent()
+void DependencyOverlayPrinter::Indent()
 {
 	for (unsigned int i = 0; i < m_indent; ++i)
 	{
@@ -12,15 +12,15 @@ void CompatibilityOverlayPrinter::Indent()
 	}
 }
 
-std::string CompatibilityOverlayPrinter::PrettyString(const CompatibilityOverlay *overlay)
+std::string DependencyOverlayPrinter::PrettyString(const DependencyOverlay *overlay)
 {
-	CompatibilityOverlayPrinter printer;
+	DependencyOverlayPrinter printer;
 	printer.m_string.str("");
 	overlay->Accept(printer);
 	return printer.m_string.str();
 }
 
-void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
+void DependencyOverlayPrinter::Visit(const DependencyOverlay *overlay)
 {
 	// Add all statements in the overlay to the DOT cluster
 
@@ -38,19 +38,20 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 
 		auto graph = overlay->GetGraph();
 
-		if (graph->IsGPUNode(node))
-		{
-			// Add diagonal marks on the corner if the node is synchronized
+		//TODO: correct printing
+		// if (graph->IsGPUNode(node))
+		// {
+		// 	// Add diagonal marks on the corner if the node is synchronized
 
-			if (graph->IsSynchronizedNode(node))
-			{
-				m_string << ", style=\"bold, diagonals\"";
-			}
-			else
-			{
-				m_string << ", style=bold";
-			}
-		}
+		// 	if (graph->IsSynchronizedNode(node))
+		// 	{
+		// 		m_string << ", style=\"bold, diagonals\"";
+		// 	}
+		// 	else
+		// 	{
+		// 		m_string << ", style=bold";
+		// 	}
+		// }
 			
 		m_string << "];" << std::endl;
 	}
@@ -69,7 +70,7 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 
 		if (child->IsGPU() && !overlay->IsGPU())
 		{
-			m_string << "style=filled;" << std::endl;
+			m_string << "style=\"filled, dashed\";" << std::endl;
 		}
 		else
 		{
@@ -86,7 +87,7 @@ void CompatibilityOverlayPrinter::Visit(const CompatibilityOverlay *overlay)
 	}
 }
 
-void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *overlay)
+void DependencyOverlayPrinter::Visit(const FunctionDependencyOverlay *overlay)
 {
 	// Construct the DOT surrounding structure with a unique name for the cluster
 
@@ -100,24 +101,25 @@ void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *over
 
 	// Visit all statements and child overlays
 
-	CompatibilityOverlayConstVisitor::Visit(overlay);
+	DependencyOverlayConstVisitor::Visit(overlay);
 
 	// Add all edges in the graph
 
 	auto graph = overlay->GetGraph();
 	for (const auto& node : graph->GetNodes())
 	{
-		for (const auto& dependency : graph->GetOutgoingEdges(node))
+		for (const auto& dependency : graph->GetSuccessors(node))
 		{
 			Indent();
 			m_string << m_nameMap[node] << " -> " << m_nameMap[dependency];
 
 			// Label compatible edges with an asterisk
 
-			if (graph->IsCompatibleEdge(node, dependency))
-			{	
-				m_string << " [label=\"*\"]";
-			}
+			//TODO: correct printing
+			// if (graph->IsCompatibleEdge(node, dependency))
+			// {	
+			// 	m_string << " [label=\"*\"]";
+			// }
 			m_string << ";" << std::endl;
 		}
 	}
@@ -131,19 +133,19 @@ void CompatibilityOverlayPrinter::Visit(const FunctionCompatibilityOverlay *over
 	m_string << "}";
 }
 
-void CompatibilityOverlayPrinter::Visit(const IfCompatibilityOverlay *overlay)
+void DependencyOverlayPrinter::Visit(const IfDependencyOverlay *overlay)
 {
-	CompatibilityOverlayConstVisitor::Visit(overlay);
+	DependencyOverlayConstVisitor::Visit(overlay);
 }
 
-void CompatibilityOverlayPrinter::Visit(const WhileCompatibilityOverlay *overlay)
+void DependencyOverlayPrinter::Visit(const WhileDependencyOverlay *overlay)
 {
-	CompatibilityOverlayConstVisitor::Visit(overlay);
+	DependencyOverlayConstVisitor::Visit(overlay);
 }
 
-void CompatibilityOverlayPrinter::Visit(const RepeatCompatibilityOverlay *overlay)
+void DependencyOverlayPrinter::Visit(const RepeatDependencyOverlay *overlay)
 {
-	CompatibilityOverlayConstVisitor::Visit(overlay);
+	DependencyOverlayConstVisitor::Visit(overlay);
 }
 
 }
