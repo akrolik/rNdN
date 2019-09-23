@@ -20,6 +20,11 @@ class DeclarationStatement : public Statement
 public:
 	DeclarationStatement(VariableDeclaration *declaration) : m_declaration(declaration) {}
 
+	DeclarationStatement *Clone() const override
+	{
+		return new DeclarationStatement(m_declaration->Clone());
+	}
+
 	VariableDeclaration *GetDeclaration() const { return m_declaration; }
 	void SetDeclaration(VariableDeclaration *declaration) { m_declaration = declaration; }
 

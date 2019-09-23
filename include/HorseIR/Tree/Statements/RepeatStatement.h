@@ -17,6 +17,11 @@ class RepeatStatement : public Statement
 public:
 	RepeatStatement(Operand *condition, BlockStatement *body) : m_condition(condition), m_body(body) {}
 
+	RepeatStatement *Clone() const override
+	{
+		return new RepeatStatement(m_condition->Clone(), m_body->Clone());
+	}
+
 	Operand *GetCondition() const { return m_condition; }
 	void SetCondition(Operand *condition) { m_condition = condition; }
 

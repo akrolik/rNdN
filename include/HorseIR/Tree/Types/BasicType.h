@@ -38,6 +38,11 @@ public:
 
 	BasicType(BasicKind kind) : Type(TypeKind), m_basicKind(kind) {}
 
+	BasicType *Clone() const override
+	{
+		return new BasicType(m_basicKind);
+	}
+
 	static std::string BasicKindString(BasicKind kind)
 	{
 		switch (kind)

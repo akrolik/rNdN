@@ -11,6 +11,11 @@ class MinuteValue
 public:
 	MinuteValue(std::uint8_t hour, std::uint8_t minute) : m_hour(hour), m_minute(minute) {}
 
+	MinuteValue *Clone() const
+	{
+		return new MinuteValue(m_hour, m_minute);
+	}
+
 	std::uint8_t GetHour() const { return m_hour; }
 	void SetHour(std::uint8_t hour) { m_hour = hour; }
 

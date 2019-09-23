@@ -16,6 +16,11 @@ class ExpressionStatement : public Statement
 public:
 	ExpressionStatement(Expression *expression) : m_expression(expression) {}
 
+	ExpressionStatement *Clone() const override
+	{
+		return new ExpressionStatement(m_expression->Clone());
+	}
+
 	Expression *GetExpression() const { return m_expression; }
 	void SetExpression(Expression *expression) { m_expression = expression; }
 

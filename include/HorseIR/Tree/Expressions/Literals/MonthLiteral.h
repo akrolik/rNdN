@@ -21,6 +21,16 @@ public:
 	MonthLiteral(MonthValue *value) : TypedVectorLiteral<MonthValue *>(value, BasicType::BasicKind::Month) {}
 	MonthLiteral(const std::vector<MonthValue *>& values) : TypedVectorLiteral<MonthValue *>(values, BasicType::BasicKind::Month) {}
 
+	MonthLiteral *Clone() const override
+	{
+		std::vector<MonthValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new MonthLiteral(values);
+	}
+
 	bool operator==(const MonthLiteral& other) const
 	{
 		return std::equal(

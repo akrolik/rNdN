@@ -20,6 +20,16 @@ public:
 	TimeLiteral(TimeValue *value) : TypedVectorLiteral<TimeValue *>(value, BasicType::BasicKind::Time) {}
 	TimeLiteral(const std::vector<TimeValue *>& values) : TypedVectorLiteral<TimeValue *>(values, BasicType::BasicKind::Time) {}
 
+	TimeLiteral *Clone() const override
+	{
+		std::vector<TimeValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new TimeLiteral(values);
+	}
+
 	bool operator==(const TimeLiteral& other) const
 	{
 		return std::equal(

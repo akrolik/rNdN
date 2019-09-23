@@ -18,6 +18,16 @@ class BlockStatement : public Statement
 public:
 	BlockStatement(const std::vector<Statement *>& statements) : m_statements(statements) {}
 
+	BlockStatement *Clone() const override
+	{
+		std::vector<Statement *> statements;
+		for (const auto& statement : m_statements)
+		{
+			statements.push_back(statement->Clone());
+		}
+		return new BlockStatement(statements);
+	}
+
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
 	void SetStatements(const std::vector<Statement *>& statements) { m_statements = statements; }
 

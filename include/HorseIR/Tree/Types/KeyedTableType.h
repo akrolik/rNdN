@@ -17,6 +17,11 @@ public:
 
 	KeyedTableType() : ListType(TypeKind, {new TableType(), new TableType()}) {}
 
+	KeyedTableType *Clone() const override
+	{
+		return new KeyedTableType();
+	}
+
 	bool operator==(const KeyedTableType& other) const
 	{
 		return true;

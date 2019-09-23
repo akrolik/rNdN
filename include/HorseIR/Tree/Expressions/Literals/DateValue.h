@@ -11,6 +11,11 @@ class DateValue
 public:
 	DateValue(std::uint16_t year, std::uint8_t month, std::uint8_t day) : m_year(year), m_month(month), m_day(day) {}
 
+	DateValue *Clone() const
+	{
+		return new DateValue(m_year, m_month, m_day);
+	}
+
 	std::uint16_t GetYear() const { return m_year; }
 	void SetYear(std::uint16_t year) { m_year = year; }
 

@@ -20,6 +20,16 @@ public:
 	MinuteLiteral(MinuteValue *value) : TypedVectorLiteral<MinuteValue *>(value, BasicType::BasicKind::Minute) {}
 	MinuteLiteral(const std::vector<MinuteValue *>& values) : TypedVectorLiteral<MinuteValue *>(values, BasicType::BasicKind::Minute) {}
 
+	MinuteLiteral *Clone() const override
+	{
+		std::vector<MinuteValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new MinuteLiteral(values);
+	}
+
 	bool operator==(const MinuteLiteral& other) const
 	{
 		return std::equal(

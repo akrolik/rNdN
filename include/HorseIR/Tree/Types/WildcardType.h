@@ -18,6 +18,11 @@ public:
 
 	WildcardType() : Type(Type::Kind::Wildcard) {}
 
+	WildcardType *Clone() const override
+	{
+		return new WildcardType();
+	}
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

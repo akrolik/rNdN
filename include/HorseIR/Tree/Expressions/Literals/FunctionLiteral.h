@@ -17,6 +17,11 @@ class FunctionLiteral : public Literal
 public:
 	FunctionLiteral(Identifier *identifier) : Literal(Literal::Kind::Function), m_identifier(identifier) {}
 
+	FunctionLiteral *Clone() const override
+	{
+		return new FunctionLiteral(m_identifier->Clone());
+	}
+
 	Identifier *GetIdentifier() const { return m_identifier; }
 	void SetIdentifier(Identifier *identifier) { m_identifier = identifier; }
 

@@ -20,6 +20,16 @@ class CallExpression : public Expression
 public:
 	CallExpression(FunctionLiteral *literal, const std::vector<Operand *>& arguments) : m_literal(literal), m_arguments(arguments) {}
 
+	CallExpression *Clone() const override
+	{
+		std::vector<Operand *> arguments;
+		for (const auto& argument : m_arguments)
+		{
+			arguments.push_back(argument->Clone());
+		}
+		return new CallExpression(m_literal->Clone(), arguments);
+	}
+
 	FunctionLiteral *GetFunctionLiteral() const { return m_literal; }
 	void SetFunctionLiteral(FunctionLiteral *literal) { m_literal = literal; }
 

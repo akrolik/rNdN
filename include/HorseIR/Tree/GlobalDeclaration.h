@@ -19,6 +19,11 @@ class GlobalDeclaration : public ModuleContent
 public:
 	GlobalDeclaration(VariableDeclaration *declaration, Operand *expression) : m_declaration(declaration), m_expression(expression) {}
 
+	GlobalDeclaration *Clone() const override
+	{
+		return new GlobalDeclaration(m_declaration->Clone(), m_expression->Clone());
+	}
+
 	VariableDeclaration *GetDeclaration() const { return m_declaration; }
 	void SetDeclaration(VariableDeclaration *declaration) { m_declaration = declaration; }
 

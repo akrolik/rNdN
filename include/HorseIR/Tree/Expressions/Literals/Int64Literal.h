@@ -20,6 +20,11 @@ public:
 	Int64Literal(std::int64_t value) : TypedVectorLiteral<std::int64_t>(value, BasicType::BasicKind::Int64) {}
 	Int64Literal(const std::vector<std::int64_t>& values) : TypedVectorLiteral<std::int64_t>(values, BasicType::BasicKind::Int64) {}
 
+	Int64Literal *Clone() const override
+	{
+		return new Int64Literal(m_values);
+	}
+
 	bool operator==(const Int64Literal& other) const
 	{
 		return (m_values == other.m_values);

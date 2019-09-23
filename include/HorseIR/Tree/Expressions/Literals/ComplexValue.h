@@ -9,6 +9,11 @@ class ComplexValue
 public:
 	ComplexValue(double real, double imag) : m_real(real), m_imaginary(imag) {}
 
+	ComplexValue *Clone() const
+	{
+		return new ComplexValue(m_real, m_imaginary);
+	}
+
 	double GetReal() const { return m_real; }
 	void SetReal(double real) { m_real = real; }
 

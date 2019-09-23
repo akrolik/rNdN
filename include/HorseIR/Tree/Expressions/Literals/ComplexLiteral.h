@@ -20,6 +20,16 @@ public:
 	ComplexLiteral(ComplexValue *value) : TypedVectorLiteral<ComplexValue *>(value, BasicType::BasicKind::Complex) {}
 	ComplexLiteral(const std::vector<ComplexValue *>& values) : TypedVectorLiteral<ComplexValue *>(values, BasicType::BasicKind::Complex) {}
 
+	ComplexLiteral *Clone() const override
+	{
+		std::vector<ComplexValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new ComplexLiteral(values);
+	}
+
 	bool operator==(const ComplexLiteral& other) const
 	{
 		return std::equal(

@@ -9,6 +9,8 @@ namespace HorseIR {
 class Type : public Node
 {
 public:
+	virtual Type *Clone() const override = 0;
+
 	bool operator==(const Type& other) const;
 	bool operator!=(const Type& other) const;
 

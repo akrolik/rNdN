@@ -20,6 +20,16 @@ class Program : public Node
 public:
 	Program(const std::vector<Module *>& modules) : m_modules(modules) {}
 
+	Program *Clone() const override
+	{
+		std::vector<Module *> modules;
+		for (const auto& module : m_modules)
+		{
+			modules.push_back(module->Clone());
+		}
+		return new Program(modules);
+	}
+
 	const std::vector<Module *>& GetModules() const { return m_modules; }
 	void AddModule(Module *module) { m_modules.push_back(module); }
 	void SetModules(const std::vector<Module *> modules) { m_modules = modules; }

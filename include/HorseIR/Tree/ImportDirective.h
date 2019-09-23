@@ -18,6 +18,11 @@ public:
 	ImportDirective(const std::string& module, const std::string& contents) : m_module(module), m_contents({contents}) {}
 	ImportDirective(const std::string& module, const std::vector<std::string>& contents) : m_module(module), m_contents(contents) {}
 
+	ImportDirective *Clone() const override
+	{
+		return new ImportDirective(m_module, m_contents);
+	}
+
 	const std::string& GetModuleName() const { return m_module; }
 	void SetModuleName(const std::string& module) { m_module = module; }
 

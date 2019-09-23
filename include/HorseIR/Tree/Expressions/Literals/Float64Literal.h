@@ -19,6 +19,11 @@ public:
 	Float64Literal(double value) : TypedVectorLiteral<double>(value, BasicType::BasicKind::Float64) {}
 	Float64Literal(const std::vector<double>& values) : TypedVectorLiteral<double>(values, BasicType::BasicKind::Float64) {}
 
+	Float64Literal *Clone() const override
+	{
+		return new Float64Literal(m_values);
+	}
+
 	bool operator==(const Float64Literal& other) const
 	{
 		return (m_values == other.m_values);

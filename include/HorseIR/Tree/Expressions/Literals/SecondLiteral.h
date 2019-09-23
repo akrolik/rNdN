@@ -20,6 +20,16 @@ public:
 	SecondLiteral(SecondValue *value) : TypedVectorLiteral<SecondValue *>(value, BasicType::BasicKind::Second) {}
 	SecondLiteral(const std::vector<SecondValue *>& values) : TypedVectorLiteral<SecondValue *>(values, BasicType::BasicKind::Second) {}
 
+	SecondLiteral *Clone() const override
+	{
+		std::vector<SecondValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new SecondLiteral(values);
+	}
+
 	bool operator==(const SecondLiteral& other) const
 	{
 		return std::equal(

@@ -16,6 +16,11 @@ class CastExpression : public Expression
 public:
 	CastExpression(Expression *expression, Type *castType) : m_expression(expression), m_castType(castType) {}
 
+	CastExpression *Clone() const override
+	{
+		return new CastExpression(m_expression->Clone(), m_castType->Clone());
+	}
+
 	Expression *GetExpression() const { return m_expression; }
 	void SetExpression(Expression *expression) { m_expression = expression; }
 

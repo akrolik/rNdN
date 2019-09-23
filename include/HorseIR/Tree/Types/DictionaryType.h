@@ -18,6 +18,11 @@ public:
 
 	DictionaryType(Type *keyType, Type *valueType) : DictionaryType(TypeKind, keyType, valueType) {}
 
+	DictionaryType *Clone() const override
+	{
+		return new DictionaryType(m_keyType->Clone(), m_valueType->Clone());
+	}
+
 	Type *GetKeyType() const { return m_keyType; }
 	Type *GetValueType() const { return m_valueType; }
 

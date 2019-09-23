@@ -20,6 +20,11 @@ public:
 	Int8Literal(std::int8_t value) : TypedVectorLiteral<std::int8_t>(value, BasicType::BasicKind::Int8) {}
 	Int8Literal(const std::vector<std::int8_t>& values) : TypedVectorLiteral<std::int8_t>(values, BasicType::BasicKind::Int8) {}
 
+	Int8Literal *Clone() const override
+	{
+		return new Int8Literal(m_values);
+	}
+
 	bool operator==(const Int8Literal& other) const
 	{
 		return (m_values == other.m_values);

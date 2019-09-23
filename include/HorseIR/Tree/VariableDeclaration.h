@@ -19,6 +19,11 @@ class VariableDeclaration : virtual public Node, public LValue
 public:
 	VariableDeclaration(const std::string& name, Type *type) : m_name(name), m_type(type) {}
 
+	VariableDeclaration *Clone() const override
+	{
+		return new VariableDeclaration(m_name, m_type->Clone());
+	}
+
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 

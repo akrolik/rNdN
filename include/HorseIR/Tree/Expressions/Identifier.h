@@ -21,6 +21,11 @@ public:
 	Identifier(const std::string& name) : Operand(Operand::Kind::Identifier), m_module(""), m_name(name) {}
 	Identifier(const std::string& module, const std::string& name) : Operand(Operand::Kind::Identifier), m_module(module), m_name(name) {}
 
+	Identifier *Clone() const override
+	{
+		return new Identifier(m_module, m_name);
+	}
+
 	bool HasModule() const { return (m_module != ""); }
 
 	const std::string& GetModule() const { return m_module; }

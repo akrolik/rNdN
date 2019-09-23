@@ -20,6 +20,16 @@ public:
 	SymbolLiteral(SymbolValue *value) : TypedVectorLiteral<SymbolValue *>(value, BasicType::BasicKind::Symbol) {}
 	SymbolLiteral(const std::vector<SymbolValue *>& values) : TypedVectorLiteral<SymbolValue *>(values, BasicType::BasicKind::Symbol) {}
 
+	SymbolLiteral *Clone() const override
+	{
+		std::vector<SymbolValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new SymbolLiteral(values);
+	}
+
 	bool operator==(const SymbolLiteral& other) const
 	{
 		return std::equal(

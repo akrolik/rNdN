@@ -28,7 +28,24 @@ public:
 
 	FunctionType() : Type(TypeKind), m_functionKind(FunctionKind::Undefined) {}
 	FunctionType(const BuiltinFunction *function) : Type(TypeKind), m_functionKind(FunctionKind::Builtin), m_function(function) {}
-	FunctionType(const Function *function, const std::vector<Type *>& returnTypes, const std::vector<Type *>& parameterTypes) : Type(TypeKind), m_functionKind(FunctionKind::Definition), m_returnTypes(returnTypes), m_parameterTypes(parameterTypes) {}
+	FunctionType(const Function *function, const std::vector<Type *>& returnTypes, const std::vector<Type *>& parameterTypes) : Type(TypeKind), m_functionKind(FunctionKind::Definition), m_function(function), m_returnTypes(returnTypes), m_parameterTypes(parameterTypes) {}
+
+	FunctionType *Clone() const override
+	{
+		std::vector<Type *> returnTypes;
+		for (const auto& returnType : m_returnTypes)
+		{
+			returnTypes.push_back(returnType->Clone());
+		}
+
+		std::vector<Type *> parameterTypes;
+		for (const auto& parameterType : parameterTypes)
+		{
+			parameterTypes.push_back(parameterType->Clone());
+		}
+
+		return new FunctionType(m_functionKind, m_function, returnTypes, parameterTypes);
+	}
 
 	FunctionKind GetFunctionKind() const { return m_functionKind; }
 	const FunctionDeclaration *GetFunctionDeclaration() const { return m_function; }
@@ -77,6 +94,8 @@ public:
 	}
 
 protected:
+	FunctionType(FunctionKind functionKind, const FunctionDeclaration *function, const std::vector<Type *>& returnTypes, const std::vector<Type *>& parameterTypes) : Type(TypeKind), m_functionKind(functionKind), m_function(function), m_returnTypes(returnTypes), m_parameterTypes(parameterTypes) {}
+
 	FunctionKind m_functionKind = FunctionKind::Undefined;
 	const FunctionDeclaration *m_function = nullptr;
 

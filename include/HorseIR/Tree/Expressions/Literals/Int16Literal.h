@@ -20,6 +20,11 @@ public:
 	Int16Literal(std::int16_t value) : TypedVectorLiteral<std::int16_t>(value, BasicType::BasicKind::Int16) {}
 	Int16Literal(const std::vector<std::int16_t>& values) : TypedVectorLiteral<std::int16_t>(values, BasicType::BasicKind::Int16) {}
 
+	Int16Literal *Clone() const override
+	{
+		return new Int16Literal(m_values);
+	}
+
 	bool operator==(const Int16Literal& other) const
 	{
 		return (m_values == other.m_values);

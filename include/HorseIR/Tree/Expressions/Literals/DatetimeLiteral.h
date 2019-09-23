@@ -21,6 +21,16 @@ public:
 	DatetimeLiteral(DatetimeValue *value) : TypedVectorLiteral<DatetimeValue *>(value, BasicType::BasicKind::Datetime) {}
 	DatetimeLiteral(const std::vector<DatetimeValue *>& values) : TypedVectorLiteral<DatetimeValue *>(values, BasicType::BasicKind::Datetime) {}
 
+	DatetimeLiteral *Clone() const override
+	{
+		std::vector<DatetimeValue *> values;
+		for (const auto& value : m_values)
+		{
+			values.push_back(value->Clone());
+		}
+		return new DatetimeLiteral(values);
+	}
+
 	bool operator==(const DatetimeLiteral& other) const
 	{
 		return std::equal(

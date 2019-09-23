@@ -19,6 +19,11 @@ public:
 	Float32Literal(float value) : TypedVectorLiteral<float>(value, BasicType::BasicKind::Float32) {}
 	Float32Literal(const std::vector<float>& values) : TypedVectorLiteral<float>(values, BasicType::BasicKind::Float32) {}
 
+	Float32Literal *Clone() const override
+	{
+		return new Float32Literal(m_values);
+	}
+
 	bool operator==(const Float32Literal& other) const
 	{
 		return (m_values == other.m_values);

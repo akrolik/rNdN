@@ -20,6 +20,16 @@ class Module : public Node
 public:
 	Module(const std::string& name, const std::vector<ModuleContent *>& contents) : m_name(name), m_contents(contents) {}
 
+	Module *Clone() const override
+	{
+		std::vector<ModuleContent *> contents;
+		for (const auto& content : m_contents)
+		{
+			contents.push_back(content->Clone());
+		}
+		return new Module(m_name, contents);
+	}
+
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 

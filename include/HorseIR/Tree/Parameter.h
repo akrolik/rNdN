@@ -14,6 +14,11 @@ class Parameter : public VariableDeclaration
 public:
 	using VariableDeclaration::VariableDeclaration;
 
+	Parameter *Clone() const override
+	{
+		return new Parameter(m_name, m_type->Clone());
+	}
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

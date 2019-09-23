@@ -19,6 +19,11 @@ public:
 	CharLiteral(char value) : TypedVectorLiteral<char>(value, BasicType::BasicKind::Char) {}
 	CharLiteral(const std::vector<char>& values) : TypedVectorLiteral<char>(values, BasicType::BasicKind::Char) {}
 
+	CharLiteral *Clone() const override
+	{
+		return new CharLiteral(m_values);
+	}
+
 	bool operator==(const CharLiteral& other) const
 	{
 		return (m_values == other.m_values);

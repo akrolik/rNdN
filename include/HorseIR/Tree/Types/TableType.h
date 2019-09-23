@@ -19,6 +19,11 @@ public:
 
 	TableType() : DictionaryType(TypeKind, new BasicType(BasicType::BasicKind::Symbol), new ListType(new WildcardType())) {}
 
+	TableType *Clone() const override
+	{
+		return new TableType();
+	}
+
 	bool operator==(const TableType& other) const
 	{
 		return true;

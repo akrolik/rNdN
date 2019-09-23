@@ -20,6 +20,11 @@ public:
 	StringLiteral(const std::string& value) : TypedVectorLiteral<std::string>(value, BasicType::BasicKind::String) {}
 	StringLiteral(const std::vector<std::string>& values) : TypedVectorLiteral<std::string>(values, BasicType::BasicKind::String) {}
 
+	StringLiteral *Clone() const override
+	{
+		return new StringLiteral(m_values);
+	}
+
 	bool operator==(const StringLiteral& other) const
 	{
 		return (m_values == other.m_values);

@@ -7,6 +7,8 @@ namespace HorseIR {
 class Operand : public Expression
 {
 public:
+	virtual Operand *Clone() const override = 0;
+
 	bool operator==(const Operand& other) const;
 	bool operator!=(const Operand& other) const;
 

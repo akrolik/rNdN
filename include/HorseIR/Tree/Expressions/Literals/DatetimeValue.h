@@ -12,6 +12,11 @@ class DatetimeValue
 public:
 	DatetimeValue(DateValue *date, TimeValue *time) : m_date(date), m_time(time) {}
 
+	DatetimeValue *Clone() const
+	{
+		return new DatetimeValue(m_date->Clone(), m_time->Clone());
+	}
+
 	DateValue *GetDate() const { return m_date; }
 	void SetDate(DateValue *date) { m_date = date; }
 

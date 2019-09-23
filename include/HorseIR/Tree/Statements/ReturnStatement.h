@@ -18,6 +18,16 @@ class ReturnStatement : public Statement
 public:
 	ReturnStatement(const std::vector<Operand *>& operands) : m_operands(operands) {}
 
+	ReturnStatement *Clone() const override
+	{
+		std::vector<Operand *> operands;
+		for (const auto& operand : m_operands)
+		{
+			operands.push_back(operand->Clone());
+		}
+		return new ReturnStatement(operands);
+	}
+
 	unsigned int GetOperandsCount() const { return m_operands.size(); }
 
 	const std::vector<Operand *>& GetOperands() const { return m_operands; }

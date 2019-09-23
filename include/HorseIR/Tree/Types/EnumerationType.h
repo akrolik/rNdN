@@ -16,6 +16,11 @@ public:
 
 	EnumerationType(Type *type) : Type(TypeKind), m_elementType(type) {}
 
+	EnumerationType *Clone() const override
+	{
+		return new EnumerationType(m_elementType->Clone());
+	}
+
 	Type *GetElementType() const { return m_elementType; }
 
 	bool operator==(const EnumerationType& other) const

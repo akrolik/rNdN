@@ -19,6 +19,16 @@ public:
 	ListType(Type *elementTypes) : ListType(TypeKind, {elementTypes}) {}
 	ListType(const std::vector<Type *>& elementTypes) : ListType(TypeKind, elementTypes) {}
 
+	ListType *Clone() const override
+	{
+		std::vector<Type *> elementTypes;
+		for (const auto& elementType : m_elementTypes)
+		{
+			elementTypes.push_back(elementType->Clone());
+		}
+		return new ListType(elementTypes);
+	}
+
 	const std::vector<Type *>& GetElementTypes() const { return m_elementTypes; }
 
 	bool operator==(const ListType& other) const

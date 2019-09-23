@@ -14,6 +14,11 @@ class ContinueStatement : public Statement
 public:
 	ContinueStatement() {}
 
+	ContinueStatement *Clone() const override
+	{
+		return new ContinueStatement();
+	}
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

@@ -20,6 +20,11 @@ public:
 	Int32Literal(std::int32_t value) : TypedVectorLiteral<std::int32_t>(value, BasicType::BasicKind::Int32) {}
 	Int32Literal(const std::vector<std::int32_t>& values) : TypedVectorLiteral<std::int32_t>(values, BasicType::BasicKind::Int32) {}
 
+	Int32Literal *Clone() const override
+	{
+		return new Int32Literal(m_values);
+	}
+
 	bool operator==(const Int32Literal& other) const
 	{
 		return (m_values == other.m_values);

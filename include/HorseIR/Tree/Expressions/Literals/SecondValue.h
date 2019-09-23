@@ -11,6 +11,11 @@ class SecondValue
 public:
 	SecondValue(std::uint8_t hour, std::uint8_t minute, std::uint8_t second) : m_hour(hour), m_minute(minute), m_second(second) {}
 
+	SecondValue *Clone() const
+	{
+		return new SecondValue(m_hour, m_minute, m_second);
+	}
+
 	std::uint8_t GetHour() const { return m_hour; }
 	void SetHour(std::uint8_t hour) { m_hour = hour; }
 

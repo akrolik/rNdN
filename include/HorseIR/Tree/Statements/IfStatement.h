@@ -17,6 +17,11 @@ class IfStatement : public Statement
 public:
 	IfStatement(Operand *condition, BlockStatement *trueBlock, BlockStatement *elseBlock = nullptr) : m_condition(condition), m_trueBlock(trueBlock), m_elseBlock(elseBlock) {}
 
+	IfStatement *Clone() const override
+	{
+		return new IfStatement(m_condition->Clone(), m_trueBlock->Clone(), (m_elseBlock == nullptr) ? nullptr : m_elseBlock->Clone());
+	}
+
 	Operand *GetCondition() const { return m_condition; }
 	void SetCondition(Operand *condition) { m_condition = condition; }
 

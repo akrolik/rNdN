@@ -11,6 +11,11 @@ class MonthValue
 public:
 	MonthValue(std::uint16_t year, std::uint8_t month) : m_year(year), m_month(month) {}
 
+	MonthValue *Clone() const
+	{
+		return new MonthValue(m_year, m_month);
+	}
+
 	std::uint16_t GetYear() const { return m_year; }
 	void SetYear(std::uint16_t year) { m_year = year; }
 

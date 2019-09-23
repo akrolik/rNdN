@@ -14,6 +14,11 @@ class BreakStatement : public Statement
 public:
 	BreakStatement() {}
 
+	BreakStatement *Clone() const override
+	{
+		return new BreakStatement();
+	}
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

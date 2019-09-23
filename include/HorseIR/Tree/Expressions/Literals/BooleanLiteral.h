@@ -19,6 +19,11 @@ public:
 	BooleanLiteral(bool value) : TypedVectorLiteral<bool>(value, BasicType::BasicKind::Boolean) {}
 	BooleanLiteral(const std::vector<bool>& values) : TypedVectorLiteral<bool>(values, BasicType::BasicKind::Boolean) {}
 
+	BooleanLiteral *Clone() const override
+	{
+		return new BooleanLiteral(m_values);
+	}
+
 	bool operator==(const BooleanLiteral& other) const
 	{
 		return (m_values == other.m_values);

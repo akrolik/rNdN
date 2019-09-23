@@ -11,6 +11,8 @@ namespace HorseIR {
 class Expression : public Node
 {
 public:
+	virtual Expression *Clone() const override = 0;
+
 	const std::vector<Type *>& GetTypes() const { return m_types; }
 
 	void SetTypes(Type *types) { m_types = {types}; }

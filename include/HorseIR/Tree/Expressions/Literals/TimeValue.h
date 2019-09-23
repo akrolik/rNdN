@@ -11,6 +11,11 @@ class TimeValue
 public:
 	TimeValue(std::uint8_t hour, std::uint8_t minute, std::uint8_t second, std::uint16_t millisecond) : m_hour(hour), m_minute(minute), m_second(second), m_millisecond(millisecond) {}
 
+	TimeValue *Clone() const
+	{
+		return new TimeValue(m_hour, m_minute, m_second, m_millisecond);
+	}
+
 	std::uint8_t GetHour() const { return m_hour; }
 	void SetHour(std::uint8_t hour) { m_hour = hour; }
 

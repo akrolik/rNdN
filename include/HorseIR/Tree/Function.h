@@ -23,6 +23,29 @@ class Function : public FunctionDeclaration
 public:
 	Function(const std::string& name, const std::vector<Parameter *>& parameters, const std::vector<Type *>& returnTypes, const std::vector<Statement *>& statements, bool kernel = false) : FunctionDeclaration(FunctionDeclaration::Kind::Definition, name), m_parameters(parameters), m_returnTypes(returnTypes), m_statements(statements), m_kernel(kernel) {}
 
+	Function *Clone() const override
+	{
+		std::vector<Parameter *> parameters;
+		for (const auto& parameter : m_parameters)
+		{
+			parameters.push_back(parameter->Clone());
+		}
+
+		std::vector<Type *> returnTypes;
+		for (const auto& returnType : m_returnTypes)
+		{
+			returnTypes.push_back(returnType->Clone());
+		}
+
+		std::vector<Statement *> statements;
+		for (const auto& statement : m_statements)
+		{
+			statements.push_back(statement->Clone());
+		}
+
+		return new Function(m_name, parameters, returnTypes, statements, m_kernel);
+	}
+
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
 	size_t GetParameterCount() const { return m_parameters.size(); }
 	void SetParameters(const std::vector<Parameter *>& parameters) { m_parameters = parameters; }

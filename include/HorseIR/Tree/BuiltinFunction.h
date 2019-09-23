@@ -540,6 +540,11 @@ public:
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}
 
+	BuiltinFunction *Clone() const override
+	{
+		return new BuiltinFunction(m_primitive);
+	}
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

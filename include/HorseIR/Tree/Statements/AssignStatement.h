@@ -19,6 +19,16 @@ class AssignStatement : public Statement
 public:
 	AssignStatement(const std::vector<LValue *>& targets, Expression *expression) : m_targets(targets), m_expression(expression) {}
 
+	AssignStatement *Clone() const override
+	{
+		std::vector<LValue *> targets;
+		for (const auto& target : m_targets)
+		{
+			targets.push_back(target->Clone());
+		}
+		return new AssignStatement(targets, m_expression->Clone());
+	}
+
 	const std::vector<LValue *>& GetTargets() const { return m_targets; }
 	void SetTargets(const std::vector<LValue *>& targets) { m_targets = targets; }
 
