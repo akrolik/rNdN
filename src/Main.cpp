@@ -12,13 +12,8 @@
 #include "Analysis/BasicFlow/ReachingDefinitions.h"
 #include "Analysis/BasicFlow/LiveVariables.h"
 #include "Analysis/BasicFlow/UDDUChainsBuilder.h"
-#include "Analysis/Compatibility/CompatibilityAnalysis.h"
-#include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
-#include "Analysis/Compatibility/Overlay/CompatibilityOverlayPrinter.h"
-#include "Analysis/Shape/ShapeAnalysis.h"
 
-#include "Transformation/Outliner/OutlinePartitioner.h"
-#include "Transformation/Outliner/OutlineBuilder.h"
+#include "Transformation/Outliner/Outliner.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -196,91 +191,10 @@ int main(int argc, const char *argv[])
 
 	Utils::Logger::LogTiming("Live variables", timeLiveVariables);
 
-	// Perform a conservative shape analysis
+	// Outliner
 
-	auto timeShapes_start = Utils::Chrono::Start();
-
-	Analysis::ShapeAnalysis shapeAnalysis(program);
-	shapeAnalysis.Analyze(entry);
-
-	auto timeShapes = Utils::Chrono::End(timeShapes_start);
-
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
-	{
-		Utils::Logger::LogInfo("Shapes analysis");
-
-		auto shapesString = HorseIR::FlowAnalysisPrinter<Analysis::ShapeAnalysisProperties>::PrettyString(shapeAnalysis, entry);
-		Utils::Logger::LogInfo(shapesString, 0, true, Utils::Logger::NoPrefix);
-	}
-
-	Utils::Logger::LogTiming("Shape analysis", timeShapes);
-
-	// Compatibility analysis from UD chains and geometry helper analysis
-
-	auto timeCompatibility_start = Utils::Chrono::Start();
-
-	Analysis::GeometryAnalysis geometryAnalysis(shapeAnalysis);
-	geometryAnalysis.Analyze(entry);
-
-	Analysis::CompatibilityAnalysis compatibilityAnalysis(useDefs, geometryAnalysis);
-	compatibilityAnalysis.Analyze(entry);
-
-	auto timeCompatibility = Utils::Chrono::End(timeCompatibility_start);
-
-	auto compatibilityOverlay = compatibilityAnalysis.GetOverlay();
-
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
-	{
-		Utils::Logger::LogInfo("Compatibility graph");
-
-		auto compatibilityString = Analysis::CompatibilityOverlayPrinter::PrettyString(compatibilityOverlay);
-		Utils::Logger::LogInfo(compatibilityString, 0, true, Utils::Logger::NoPrefix);
-	}
-
-	Utils::Logger::LogTiming("Compatibility analysis", timeCompatibility);
-
-	// Outline GPU kernels
-	// 1. Partition the overlay into an outlined overlay with nested functions
-	// 2. Build the partitioned graph into functions collected in a vector
-
-	auto timePartitioner_start = Utils::Chrono::Start();
-
-	Transformation::OutlinePartitioner partitioner(geometryAnalysis);
-	auto partitionedOverlay = partitioner.Partition(compatibilityOverlay);
-
-	auto timePartitioner = Utils::Chrono::End(timePartitioner_start);
-
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
-	{
-		Utils::Logger::LogInfo("Partitioned compatibility graph");
-
-		auto partitionedString = Analysis::CompatibilityOverlayPrinter::PrettyString(partitionedOverlay);
-		Utils::Logger::LogInfo(partitionedString, 0, true, Utils::Logger::NoPrefix);
-	}
-
-	Utils::Logger::LogTiming("Partitioner", timePartitioner);
-
-	auto timeBuilder_start = Utils::Chrono::Start();
-
-	Transformation::OutlineBuilder builder;
-	builder.Build(partitionedOverlay);
-
-	auto timeBuilder = Utils::Chrono::End(timeBuilder_start);
-
-	auto outlinedFunctions = builder.GetFunctions();
-
-	if (Utils::Options::Present(Utils::Options::Opt_Print_outline))
-	{
-		Utils::Logger::LogInfo("Outlined HorseIR functions");
-
-		for (auto function : outlinedFunctions)
-		{
-			auto outlinedString = HorseIR::PrettyPrinter::PrettyString(function);
-			Utils::Logger::LogInfo(outlinedString, 0, true, Utils::Logger::NoPrefix);
-		}
-	}
-
-	Utils::Logger::LogTiming("Builder", timeBuilder);
+	Transformation::Outliner outliner(program);
+	outliner.Outline(entry);
 
 	// Execute the HorseIR entry method in an interpeter, compiling GPU sections as needed
 
