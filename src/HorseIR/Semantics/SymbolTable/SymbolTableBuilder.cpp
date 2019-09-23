@@ -44,9 +44,10 @@ void SymbolPass_Modules::VisitOut(Program *program)
 
 bool SymbolPass_Modules::VisitIn(Module *module)
 {
+	auto& name = module->GetName();
 	m_currentSymbolTable->AddSymbol(
-		module->GetName(),
-		new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Module, module)
+		name,
+		new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Module, name, module)
 	);
 
 	auto localSymbolTable = new SymbolTable(m_currentSymbolTable);
@@ -64,17 +65,19 @@ void SymbolPass_Modules::VisitOut(Module *module)
 bool SymbolPass_Modules::VisitIn(GlobalDeclaration *global)
 {
 	auto declaration = global->GetDeclaration();
-	auto symbol = new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Variable, declaration);
-	m_currentSymbolTable->AddSymbol(declaration->GetName(), symbol);
+	auto& name = declaration->GetName();
+	auto symbol = new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Variable, name, declaration);
+	m_currentSymbolTable->AddSymbol(name, symbol);
 	declaration->SetSymbol(symbol);
 	return false;
 }
 
 bool SymbolPass_Modules::VisitIn(FunctionDeclaration *function)
 {
+	auto& name = function->GetName();
 	m_currentSymbolTable->AddSymbol(
-		function->GetName(),
-		new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Function, function)
+		name,
+		new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Function, name, function)
 	);
 	return false;
 }
@@ -216,9 +219,10 @@ bool SymbolPass_Functions::VisitIn(AssignStatement *assignS)
 
 bool SymbolPass_Functions::VisitIn(VariableDeclaration *declaration)
 {
-	auto symbol = new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Variable, declaration);
+	auto& name = declaration->GetName();
+	auto symbol = new SymbolTable::Symbol(SymbolTable::Symbol::Kind::Variable, name, declaration);
 	declaration->SetSymbol(symbol);
-	m_currentSymbolTable->AddSymbol(declaration->GetName(), symbol); 
+	m_currentSymbolTable->AddSymbol(name, symbol); 
 	return true;
 }
 

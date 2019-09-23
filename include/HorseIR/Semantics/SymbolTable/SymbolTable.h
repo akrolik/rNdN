@@ -26,11 +26,12 @@ public:
 			Variable
 		};
 
-		Symbol(Kind k, const Node *n) : kind(k), node(n) {}
+		Symbol(Kind k, const std::string& name, const Node *n) : kind(k), name(name), node(n) {}
 
 		friend std::ostream& operator<<(std::ostream& os, const Symbol& value);
 
 		Kind kind;
+		std::string name;
 		const Node *node = nullptr;
 	};
 
