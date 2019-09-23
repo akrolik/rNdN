@@ -1,31 +1,15 @@
 #pragma once
 
+#include <sstream>
+
 #include "HorseIR/Analysis/ForwardAnalysis.h"
 
 #include "Analysis/Shape/Shape.h"
+#include "Analysis/Utils/SymbolObject.h"
 
 #include "HorseIR/Tree/Tree.h"
 
 namespace Analysis {
-                                                       
-struct ShapeAnalysisKey : HorseIR::FlowAnalysisPointerValue<HorseIR::SymbolTable::Symbol>
-{
-	using Type = HorseIR::SymbolTable::Symbol;
-	using HorseIR::FlowAnalysisPointerValue<Type>::Equals;
-
-	struct Hash
-	{
-		std::size_t operator()(const Type *val) const
-		{
-			return std::hash<const Type *>()(val);
-		}
-	};
-
-	static void Print(std::ostream& os, const Type *val)
-	{
-		os << HorseIR::PrettyPrinter::PrettyString(val->node);
-	}
-};
 
 struct ShapeAnalysisValue
 {
@@ -45,12 +29,13 @@ struct ShapeAnalysisValue
 	}
 };
 
-using ShapeAnalysisProperties = HorseIR::FlowAnalysisMap<ShapeAnalysisKey, ShapeAnalysisValue>; 
+using ShapeAnalysisProperties = HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>; 
  
 class ShapeAnalysis : public HorseIR::ForwardAnalysis<ShapeAnalysisProperties>
 {
 public:
 	using Properties = ShapeAnalysisProperties;
+
 	using HorseIR::ForwardAnalysis<Properties>::ForwardAnalysis;
 
 	void Visit(const HorseIR::Parameter *parameter) override;

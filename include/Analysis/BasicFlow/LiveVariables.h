@@ -4,32 +4,13 @@
 
 #include "HorseIR/Analysis/BackwardAnalysis.h"
 
-#include "HorseIR/Semantics/SymbolTable/SymbolTable.h"
+#include "Analysis/Utils/SymbolObject.h"
+
 #include "HorseIR/Tree/Tree.h"
-#include "HorseIR/Utils/PrettyPrinter.h"
 
 namespace Analysis {
 
-struct LiveVariablesValue : HorseIR::FlowAnalysisPointerValue<HorseIR::SymbolTable::Symbol>
-{
-	using Type = HorseIR::SymbolTable::Symbol;
-	using HorseIR::FlowAnalysisPointerValue<Type>::Equals;
-
-	struct Hash
-	{
-		std::size_t operator()(const Type *val) const
-		{
-			return std::hash<const Type *>()(val);
-		}
-	};
-
-	static void Print(std::ostream& os, const Type *val)
-	{
-		os << HorseIR::PrettyPrinter::PrettyString(val->node);
-	}
-};
-
-using LiveVariablesProperties = HorseIR::FlowAnalysisSet<LiveVariablesValue>;
+using LiveVariablesProperties = HorseIR::FlowAnalysisSet<SymbolObject>;
 
 class LiveVariables : public HorseIR::BackwardAnalysis<LiveVariablesProperties>
 {
