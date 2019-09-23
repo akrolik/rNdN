@@ -1,254 +1,249 @@
 #include "Transformation/Outliner/OutlineBuilder.h"
 
-#include "Utils/Variant.h"
+#include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 
-#include <queue>
+#include "Utils/Variant.h"
 
 namespace Transformation {
 
-void OutlineBuilder::Build(const Analysis::CompatibilityOverlay *overlay)
+void OutlineBuilder::Build(const Analysis::DependencyOverlay *overlay)
 {
 	overlay->Accept(*this);
 }
 
-Analysis::CompatibilityOverlay *OutlineBuilder::GetChildOverlay(const std::vector<Analysis::CompatibilityOverlay *>& childOverlays, const HorseIR::Statement *statement) const
+void OutlineBuilder::Visit(const HorseIR::Statement *statement)
 {
-	// Return the top-level child overlay which contains the statement
+	// Regular statements are clone before being inserted
 
-	for (const auto child : childOverlays)
-	{
-		// Check the current overlay for the statement
-
-		if (child->ContainsStatement(statement))
-		{
-			return child;
-		}
-	}
-
-	// Check all children overlays, note that we want the highest *containing* overlay, not the actual overlay
-
-	for (const auto child : childOverlays)
-	{
-		if (GetChildOverlay(child->GetChildren(), statement) != nullptr)
-		{
-			return child;
-		}
-	}
-
-	// Else, this is contained in a sibling or parent overlay
-
-	return nullptr;
+	InsertStatement(statement->Clone());
 }
 
-
-unsigned int OutlineBuilder::GetOutDegree(const Analysis::CompatibilityOverlay *overlay) const
+void OutlineBuilder::Visit(const HorseIR::AssignStatement *assignS)
 {
-	// Count the number of outgoing edges with destinations either in the parent or sibling overlay
+	// Transform the assignment statement, removing all declarations. The declarations
+	// are accumulated and inserted at the top of the function/kernel
 
-	// If there is no parent, then all edges are internal to the overlay
-
-	auto parent = overlay->GetParent();
-	if (parent == nullptr)
+	std::vector<HorseIR::LValue *> targets;
+	for (const auto& target : assignS->GetTargets())
 	{
-		return 0;
+		auto symbol = target->GetSymbol();
+		m_symbols.top().insert(symbol);
+		targets.push_back(new HorseIR::Identifier(symbol->name));
 	}
 
-	auto graph = overlay->GetGraph();
-	auto edges = 0u;
-	
-	for (const auto statement : overlay->GetStatements())
-	{
-		for (const auto destination : graph->GetOutgoingEdges(statement))
-		{
-			if (graph->IsBackEdge(statement, destination))
-			{
-				continue;
-			}
-
-			// Check if the destination is in the parent overlay
-
-			if (!parent->ContainsStatement(destination))
-			{
-				// Check if the destination is in a sibling overlay
-
-				//TODO: Think about back edges
-				auto destinationOverlay = GetChildOverlay(parent->GetChildren(), destination);
-				if (destinationOverlay == nullptr || destinationOverlay == overlay)
-				{
-					continue;
-				}
-			}
-			edges++;
-		}
-	}
-	
-	return edges;
+	auto expression = assignS->GetExpression();
+	InsertStatement(new HorseIR::AssignStatement(targets, expression->Clone()));
 }
 
-void OutlineBuilder::Visit(const Analysis::CompatibilityOverlay *overlay)
+void OutlineBuilder::InsertStatement(HorseIR::Statement *statement)
 {
-	auto graph = overlay->GetGraph();
+	auto& statements = m_statements.top();
+	statements.insert(std::begin(statements), statement);
+}
 
-	// Queue: store the current nodes 0 in-degree
-	// Edges: count the in-degree of each node
-
-	using NodeType = std::variant<const HorseIR::Statement *, const Analysis::CompatibilityOverlay *>;
-
-	std::queue<NodeType> queue;
-	std::unordered_map<NodeType, unsigned int> edges;
-
-	// Initialization with root nodes and count for incoming edges of each node
-
-	for (const auto& statement : overlay->GetStatements())
+const HorseIR::Type *OutlineBuilder::GetType(const HorseIR::SymbolTable::Symbol *symbol)
+{
+	if (symbol->kind == HorseIR::SymbolTable::Symbol::Kind::Variable)
 	{
-		auto count = 0u;
-		for (const auto destination : graph->GetOutgoingEdges(statement))
-		{
-			// Check if the destination is in the parent overlay
-
-			if (graph->IsBackEdge(statement, destination))
-			{
-				continue;
-			}
-
-			if (!overlay->ContainsStatement(destination))
-			{
-				// Check if the destination is in a sibling overlay
-
-				auto destinationOverlay = GetChildOverlay(overlay->GetChildren(), destination);
-				if (destinationOverlay == nullptr)
-				{
-					continue;
-				}
-			}
-			count++;
-		}
-
-		if (count == 0)
-		{
-			queue.push(statement);
-		}
-		edges.insert({statement, count});
+		return dynamic_cast<const HorseIR::VariableDeclaration *>(symbol->node)->GetType();
 	}
 
-	for (const auto& child : overlay->GetChildren())
+	Utils::Logger::LogError("'" + symbol->name + "' does not name a variable");
+}
+
+void OutlineBuilder::BuildDeclarations()
+{
+	// For each symbol in the current set of symbols, add a declaration to the top of the current function
+
+	for (const auto& symbol : m_symbols.top())
 	{
-		auto count = GetOutDegree(child);
-		if (count == 0)
-		{
-			queue.push(child);
-		}
-		edges.insert({child, count});
+		auto type = GetType(symbol);
+		InsertStatement(new HorseIR::DeclarationStatement(
+			new HorseIR::VariableDeclaration(symbol->name, type->Clone())
+		));
+	}
+}
+
+void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
+{
+	// Construct a new kernel if needed
+
+	bool isKernel = (overlay->IsGPU() && !overlay->GetParent()->IsGPU());
+	if (isKernel)
+	{
+		m_statements.emplace();
+		m_symbols.emplace();
 	}
 
-	// Perform the topological sort
+	// Perform the topological sort and construct the statement list recursively
 
-	while (!queue.empty())
+	const auto subgraph = overlay->GetSubgraph();
+	subgraph->TopologicalOrdering([&](const Analysis::DependencySubgraphNode& node)
 	{
-		const auto& node = queue.front();
-		queue.pop();
-
-		std::visit(overloaded {
-
+		std::visit(overloaded
+		{
 			[&](const HorseIR::Statement *statement)
 			{
-				for (auto& destination : graph->GetIncomingEdges(statement))
-				{
-					if (overlay->ContainsStatement(destination))
-					{
-						// Decrease the degree of the destination if it's in the current overlay
-
-						edges[destination]--;
-						if (edges[destination] == 0)
-						{
-							queue.push(destination);
-						}
-					}
-					else
-					{
-						// Check for a child overlay destination to decrease
-
-						auto destinationOverlay = GetChildOverlay(overlay->GetChildren(), destination);
-						if (destinationOverlay != nullptr)
-						{
-							edges[destinationOverlay]--;
-							if (edges[destinationOverlay] == 0)
-							{
-								queue.push(destinationOverlay);
-							}
-						}
-					}
-				}
-
 				// Insert the statement into the statement list
-				//TODO: Avoid const_cast, need to deep copy the AST probably
 
-				auto& statements = m_statements.top();
-				statements.insert(std::begin(statements), const_cast<HorseIR::Statement *>(statement));
+				statement->Accept(*this);
 			},
-			[&](const Analysis::CompatibilityOverlay *childOverlay)
+			[&](const Analysis::DependencyOverlay *childOverlay)
 			{
-				//TODO: Check that we haven't double nested the kernel
-				if (childOverlay->IsGPU())
-				{
-					// Traversing the kernel body and accumulate statements
-
-					m_statements.emplace();
-					childOverlay->Accept(*this);
-
-					auto index = m_kernelIndex++;
-					auto name = m_currentFunction->GetName() + "_" + std::to_string(index);
-
-					auto kernel = new HorseIR::Function(
-						name,
-						{},
-						{},
-						m_statements.top(),
-						true
-					);
-
-					m_functions.push_back(kernel); 
-					m_statements.pop();
-
-					//TODO: We need to insert a call in the previous statement group with the incoming stuff
-				}
-				else
-				{
-					childOverlay->Accept(*this);
-				}
-
-				//TODO: Decrease all other incoming edges
+				childOverlay->Accept(*this);
 			}},
 			node
 		);
+	});
+
+	if (isKernel)
+	{
+		// Collect the incoming and outgoing symbols
+
+		std::unordered_set<const HorseIR::SymbolTable::Symbol *> inSet;
+		std::unordered_set<const HorseIR::SymbolTable::Symbol *> outSet;
+
+		const auto containerGraph = overlay->GetParent()->GetSubgraph();
+		for (const auto& predecessor : containerGraph->GetPredecessors(overlay))
+		{
+			const auto& symbols = containerGraph->GetEdgeData(predecessor, overlay);
+			inSet.insert(std::begin(symbols), std::end(symbols));
+		}
+
+		for (const auto& successor : containerGraph->GetSuccessors(overlay))
+		{
+			const auto& symbols = containerGraph->GetEdgeData(overlay, successor);
+			outSet.insert(std::begin(symbols), std::end(symbols));
+		}
+
+		std::vector<const HorseIR::SymbolTable::Symbol *> inSymbols(std::begin(inSet), std::end(inSet));
+		std::vector<const HorseIR::SymbolTable::Symbol *> outSymbols(std::begin(outSet), std::end(outSet));
+
+		// Collect the input paramters (name+type) and return types
+
+		std::vector<HorseIR::Parameter *> parameters;
+		std::vector<HorseIR::Type *> returnTypes;
+
+		for (const auto& symbol : inSymbols)
+		{
+			auto type = GetType(symbol);
+			parameters.push_back(new HorseIR::Parameter(symbol->name, type->Clone()));
+		}
+
+		for (const auto& symbol : outSymbols)
+		{
+			auto type = GetType(symbol);
+			returnTypes.push_back(type->Clone());
+		}
+
+		// Create a return statement at the end of the kernel
+
+		std::vector<HorseIR::Operand *> returnOperands;
+		for (const auto& symbol : outSymbols)
+		{
+			returnOperands.push_back(new HorseIR::Identifier(symbol->name));
+		}
+		m_statements.top().push_back(new HorseIR::ReturnStatement(returnOperands));
+
+		// Add all variable declarations to the top of the block
+
+		BuildDeclarations();
+
+		// Construct the new kernel function
+
+		auto name = m_currentFunction->GetName() + "_" + std::to_string(m_kernelIndex++);
+		auto kernel = new HorseIR::Function(
+			name,
+			parameters,
+			returnTypes,
+			m_statements.top(),
+			true
+		);
+
+		m_functions.push_back(kernel); 
+		m_statements.pop();
+		m_symbols.pop();
+
+		// Insert a call to the new kernel in the containing function
+
+		std::vector<HorseIR::Operand *> callOperands;
+		for (const auto& symbol : inSymbols)
+		{
+			callOperands.push_back(new HorseIR::Identifier(symbol->name));
+		}
+		auto call = new HorseIR::CallExpression(
+			new HorseIR::FunctionLiteral(new HorseIR::Identifier(name)),
+			callOperands
+		);
+
+		// Generate the containing statement depending on the number of output parameters
+
+		if (outSymbols.size() > 0)
+		{
+			// Create the assignment statement (at least one return value exists)
+
+			std::vector<HorseIR::LValue *> assignLValues;
+			for (const auto& symbol : outSymbols)
+			{
+				assignLValues.push_back(new HorseIR::Identifier(symbol->name));
+			}
+			InsertStatement(new HorseIR::AssignStatement(assignLValues, call));
+		}
+		else
+		{
+			// Create an expression statement (no return values)
+
+			InsertStatement(new HorseIR::ExpressionStatement(call));
+		}
 	}
 }
 
-void OutlineBuilder::Visit(const Analysis::FunctionCompatibilityOverlay *overlay)
+void OutlineBuilder::Visit(const Analysis::FunctionDependencyOverlay *overlay)
 {
 	// Traversing the function body and accumulate statements
 
-	auto oldFunction = overlay->GetNode();
-	m_currentFunction = oldFunction;
+	m_currentFunction = overlay->GetNode();
 
 	m_statements.emplace();
+	m_symbols.emplace();
+
 	overlay->GetBody()->Accept(*this);
 
-	// Create a new function with the entry function and body
+	// Create a new function with the entry function and body, cloning inputs/outputs
+
+	std::vector<HorseIR::Parameter *> parameters;
+	for (const auto& parameter : m_currentFunction->GetParameters())
+	{
+		parameters.push_back(parameter->Clone());
+	}
+
+	std::vector<HorseIR::Type *> returnTypes;
+	for (const auto& returnType : m_currentFunction->GetReturnTypes())
+	{
+		returnTypes.push_back(returnType->Clone());
+	}
+
+	// Add declaration statements to the top of the function
+
+	BuildDeclarations();
 
 	auto newFunction = new HorseIR::Function(
 		m_currentFunction->GetName(),
-		m_currentFunction->GetParameters(),
-		m_currentFunction->GetReturnTypes(),
+		parameters,
+		returnTypes,
 		m_statements.top(),
 		false
 	);
 
 	m_functions.insert(std::begin(m_functions), newFunction); 
+
 	m_statements.pop();
+	m_symbols.pop();
+
+	m_currentFunction = nullptr;
 }
 
-void OutlineBuilder::Visit(const Analysis::IfCompatibilityOverlay *overlay)
+void OutlineBuilder::Visit(const Analysis::IfDependencyOverlay *overlay)
 {
 	// Construct the true block of statements from the child overlay
 
@@ -258,26 +253,25 @@ void OutlineBuilder::Visit(const Analysis::IfCompatibilityOverlay *overlay)
 	auto trueBlock = new HorseIR::BlockStatement(m_statements.top());
 	m_statements.pop();
 
-	// Construct the true block of statements from the child overlay
+	// Construct the else block of statements from the child overlay
 
-	m_statements.emplace();
-	overlay->GetElseBranch()->Accept(*this);
+	HorseIR::BlockStatement *elseBlock = nullptr;
+	if (overlay->HasElseBranch())
+	{
+		m_statements.emplace();
+		overlay->GetElseBranch()->Accept(*this);
 
-	auto elseBlock = new HorseIR::BlockStatement(m_statements.top());
-	m_statements.pop();
+		elseBlock = new HorseIR::BlockStatement(m_statements.top());
+		m_statements.pop();
+	}
 
 	// Create if statement with condition and both blocks
 
 	auto condition = overlay->GetNode()->GetCondition();
-	auto statement = new HorseIR::IfStatement(condition, trueBlock, elseBlock);
-
-	// Insert into the current statement list
-
-	auto& statements = m_statements.top();
-	statements.insert(std::begin(statements), statement);
+	InsertStatement(new HorseIR::IfStatement(condition->Clone(), trueBlock, elseBlock));
 }
 
-void OutlineBuilder::Visit(const Analysis::WhileCompatibilityOverlay *overlay)
+void OutlineBuilder::Visit(const Analysis::WhileDependencyOverlay *overlay)
 {
 	// Construct the body from the child overlay
 
@@ -290,15 +284,10 @@ void OutlineBuilder::Visit(const Analysis::WhileCompatibilityOverlay *overlay)
 	// Create while statement with condition and body
 
 	auto condition = overlay->GetNode()->GetCondition();
-	auto statement = new HorseIR::WhileStatement(condition, block);
-
-	// Insert into the current statement list
-
-	auto& statements = m_statements.top();
-	statements.insert(std::begin(statements), statement);
+	InsertStatement(new HorseIR::WhileStatement(condition->Clone(), block));
 }
 
-void OutlineBuilder::Visit(const Analysis::RepeatCompatibilityOverlay *overlay)
+void OutlineBuilder::Visit(const Analysis::RepeatDependencyOverlay *overlay)
 {
 	// Construct the body from the child overlay
 
@@ -311,12 +300,7 @@ void OutlineBuilder::Visit(const Analysis::RepeatCompatibilityOverlay *overlay)
 	// Create repeat statement with condition and body
 
 	auto condition = overlay->GetNode()->GetCondition();
-	auto statement = new HorseIR::RepeatStatement(condition, block);
-
-	// Insert into the current statement list
-
-	auto& statements = m_statements.top();
-	statements.insert(std::begin(statements), statement);
+	InsertStatement(new HorseIR::RepeatStatement(condition->Clone(), block));
 }
 
 }
