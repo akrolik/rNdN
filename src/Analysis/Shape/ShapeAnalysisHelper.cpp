@@ -803,7 +803,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			Require(elementShapes1.size() == elementShapes2.size());
 
 			std::vector<const Shape *> newElementShapes;
-			for (unsigned int i = 0u; i < elementTypes1.size(); ++i)
+			for (unsigned int i = 0u; i < elementShapes1.size(); ++i)
 			{
 				const auto elementShape1 = elementShapes1.at(i);
 				const auto elementShape2 = elementShapes2.at(i);
@@ -812,7 +812,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
 
-			return {new ListShape(listShape->GetListSize(), newElementShapes)};
+			return {new ListShape(listShape1->GetListSize(), newElementShapes)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachLeft:
 		{
@@ -836,7 +836,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				Require(ShapeUtils::IsSingleShape(shapes));
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
-			return {new ListShape(listShape->GetListSize(), newElementShapes)};
+			return {new ListShape(listShape1->GetListSize(), newElementShapes)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachRight:
 		{
@@ -860,7 +860,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				Require(ShapeUtils::IsSingleShape(shapes));
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
-			return {new ListShape(listShape->GetListSize(), newElementShapes)};
+			return {new ListShape(listShape2->GetListSize(), newElementShapes)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Match:
 		{

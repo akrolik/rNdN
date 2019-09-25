@@ -426,7 +426,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		case BuiltinFunction::Primitive::Flip:
 		{
 			const auto inputType = argumentTypes.at(0);
-			Require(TypsUtils::IsType<ListType>(inputType));
+			Require(TypeUtils::IsType<ListType>(inputType));
 			return {inputType};
 		}
 		case BuiltinFunction::Primitive::Reverse:
@@ -535,7 +535,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
-			Require(TypeUtils::IsIntgerType(inputType0) && TypeUtils::IsIntgerType(inputType1));
+			Require(TypeUtils::IsIntegerType(inputType0) && TypeUtils::IsIntegerType(inputType1));
 			return {new BasicType(BasicType::BasicKind::Int64)};
 		}
 		case BuiltinFunction::Primitive::IndexOf:
