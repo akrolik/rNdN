@@ -20,6 +20,14 @@ public:
 	}
 
 	template<typename T>
+	static T GetScalar(const HorseIR::Expression *expression)
+	{
+		ValueHelper<T> helper;
+		helper.Analyze(expression);
+		return helper.GetValue().at(0);
+	}
+
+	template<typename T>
 	static std::vector<T> GetConstant(const HorseIR::Expression *expression)
 	{
 		ValueHelper<T> helper;
