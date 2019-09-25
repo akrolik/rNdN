@@ -54,9 +54,6 @@ public:
 private:
 	void CheckCondition(const ShapeAnalysisProperties& shapes, const HorseIR::Operand *operand);
 
-	const Shape *MergeShape(const Shape *shape1, const Shape *shape2) const;
-	const Shape::Size *MergeSize(const Shape::Size *size1, const Shape::Size *size2) const;
-
 	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_expressionShapes;
 };
 

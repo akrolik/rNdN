@@ -494,23 +494,24 @@ class EnumerationShape : public Shape
 public:
 	constexpr static Kind ShapeKind = Kind::Enumeration;
 
-	EnumerationShape(const Size *mapSize) : Shape(Shape::Kind::Enumeration), m_mapSize(mapSize) {}
+	EnumerationShape(const Shape *keyShape, const Shape *valueShape) : Shape(Shape::Kind::Enumeration), m_keyShape(keyShape), m_valueShape(valueShape) {}
 
-	const Size *GetMapSize() const { return m_mapSize; }
+	const Shape *GetKeyShape() const { return m_keyShape; }
+	const Shape *GetValueShape() const { return m_valueShape; }
 
 	void Print(std::ostream& os) const override
 	{
-		os << "EnumerateShape<" << *m_mapSize << ">";
+		os << "EnumerateShape<" << *m_keyShape << ", " << *m_valueShape << ">";
 	}
 
 	bool Equivalent(const EnumerationShape& other) const
 	{
-		return (m_mapSize->Equivalent(*other.m_mapSize));
+		return (m_keyShape->Equivalent(*other.m_keyShape) && m_valueShape->Equivalent(*other.m_valueShape));
 	}
 
 	bool operator==(const EnumerationShape& other) const
 	{
-		return (*m_mapSize == *other.m_mapSize);
+		return (*m_keyShape == *other.m_keyShape && *m_valueShape == *other.m_valueShape);
 	}
 
 	bool operator!=(const EnumerationShape& other) const
@@ -519,7 +520,8 @@ public:
 	}
 
 private:
-	const Size *m_mapSize = nullptr;
+	const Shape *m_keyShape = nullptr;
+	const Shape *m_valueShape = nullptr;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Shape& shape)
