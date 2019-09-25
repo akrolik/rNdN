@@ -68,7 +68,6 @@ public:
 
 		// Algebraic Unary
 		Unique,
-		Length,
 		Range,
 		Factorial,
 		Random,
@@ -92,7 +91,7 @@ public:
 		Vector,
 
 		// Reduction
-		Count,
+		Length,
 		Sum,
 		Average,
 		Minimum,
@@ -243,8 +242,6 @@ public:
 				return "xor";
 			case Primitive::Unique:
 				return "unique";
-			case Primitive::Length:
-				return "len";
 			case Primitive::Range:
 				return "range";
 			case Primitive::Factorial:
@@ -283,8 +280,8 @@ public:
 				return "member";
 			case Primitive::Vector:
 				return "vector";
-			case Primitive::Count:
-				return "count";
+			case Primitive::Length:
+				return "len";
 			case Primitive::Sum:
 				return "sum";
 			case Primitive::Average:
@@ -436,7 +433,6 @@ public:
 			
 			// Algebraic unary functions
 			case Primitive::Unique:
-			case Primitive::Length:
 			case Primitive::Range:
 			case Primitive::Factorial:
 			case Primitive::Random:
@@ -462,7 +458,7 @@ public:
 				return 2;
 
 			// Reduction functions
-			case Primitive::Count:
+			case Primitive::Length:
 			case Primitive::Sum:
 			case Primitive::Average:
 			case Primitive::Minimum:

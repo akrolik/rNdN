@@ -57,7 +57,6 @@ static Module *BuiltinModule = new Module("Builtin", {
 
 	// Algebraic Unary
 	new BuiltinFunction(BuiltinFunction::Primitive::Unique),
-	new BuiltinFunction(BuiltinFunction::Primitive::Length),
 	new BuiltinFunction(BuiltinFunction::Primitive::Range),
 	new BuiltinFunction(BuiltinFunction::Primitive::Factorial),
 	new BuiltinFunction(BuiltinFunction::Primitive::Random),
@@ -80,7 +79,7 @@ static Module *BuiltinModule = new Module("Builtin", {
 	new BuiltinFunction(BuiltinFunction::Primitive::Vector),
 
 	// Reduction
-	new BuiltinFunction(BuiltinFunction::Primitive::Count),
+	new BuiltinFunction(BuiltinFunction::Primitive::Length),
 	new BuiltinFunction(BuiltinFunction::Primitive::Sum),
 	new BuiltinFunction(BuiltinFunction::Primitive::Average),
 	new BuiltinFunction(BuiltinFunction::Primitive::Minimum),

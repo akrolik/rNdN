@@ -251,10 +251,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 		}
 
 		// Reduction
-
-		// @count and @len are aliases
 		case HorseIR::BuiltinFunction::Primitive::Length:
-		case HorseIR::BuiltinFunction::Primitive::Count:
 		case HorseIR::BuiltinFunction::Primitive::Sum:
 		case HorseIR::BuiltinFunction::Primitive::Average:
 		case HorseIR::BuiltinFunction::Primitive::Minimum:

@@ -577,10 +577,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 
 		// Reduction
-
-		// @count and @len are aliases
 		case BuiltinFunction::Primitive::Length:
-		case BuiltinFunction::Primitive::Count:
 		{
 			return {new BasicType(BasicType::BasicKind::Int64)};
 		}

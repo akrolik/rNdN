@@ -115,7 +115,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseCosine:
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseSine:
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseTangent:
-		
+
 		// Date Unary
 		case HorseIR::BuiltinFunction::Primitive::Date:
 		case HorseIR::BuiltinFunction::Primitive::DateYear:
@@ -196,7 +196,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			}
 			return {new VectorShape(size)};
 		}
-		
+
 		// Algebraic Unary
 		case HorseIR::BuiltinFunction::Primitive::Unique:
 		{
@@ -387,10 +387,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 
 		// Reduction
-
-		// @count and @len are aliases
 		case HorseIR::BuiltinFunction::Primitive::Length:
-		case HorseIR::BuiltinFunction::Primitive::Count:
 		case HorseIR::BuiltinFunction::Primitive::Sum:
 		case HorseIR::BuiltinFunction::Primitive::Average:
 		case HorseIR::BuiltinFunction::Primitive::Minimum:
