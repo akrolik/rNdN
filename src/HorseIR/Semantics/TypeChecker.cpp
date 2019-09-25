@@ -1,5 +1,7 @@
 #include "HorseIR/Semantics/TypeChecker.h"
 
+#include <algorithm>
+
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/TypeUtils.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -475,9 +477,8 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				const auto listType0 = TypeUtils::GetType<ListType>(inputType0);
 				const auto listType1 = TypeUtils::GetType<ListType>(inputType1);
 
-				//TODO: Avoid vector copy
-				const auto elementTypes0 = (listType0 == nullptr) ? std::vector<Type *>({inputType0}) : listType0->GetElementTypes();
-				const auto elementTypes1 = (listType1 == nullptr) ? std::vector<Type *>({inputType1}) : listType1->GetElementTypes();
+				const auto& elementTypes0 = (listType0 == nullptr) ? std::vector<Type *>({inputType0}) : listType0->GetElementTypes();
+				const auto& elementTypes1 = (listType1 == nullptr) ? std::vector<Type *>({inputType1}) : listType1->GetElementTypes();
 
 				if (!TypeUtils::IsSingleType(elementTypes0) && !TypeUtils::IsSingleType(elementTypes1))
 				{
@@ -634,6 +635,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsType<ListType>(inputType));
 
 			// All element types must be the same, and non-wildcard
+
 			const auto listType = TypeUtils::GetType<ListType>(inputType);
 			if (const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes()))
 			{
@@ -644,28 +646,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::List:
 		{
-			//TODO: Rewrite this to use reduced type function
-			Type *elementType = nullptr;
-			for (const auto type : argumentTypes)
-			{
-				if (elementType == nullptr)
-				{
-					elementType = type;
-				}
-				else if (*elementType != *type)
-				{
-					elementType = nullptr;
-					break;
-				}
-			}
-			
 			// If the element type is set, then all cells have the same type, otherwise we can form a tuple
 
-			if (elementType == nullptr)
+			if (const auto elementType = TypeUtils::GetReducedType(argumentTypes))
 			{
-				return {new ListType(argumentTypes)};
+				return {new ListType(elementType)};
 			}
-			return {new ListType(elementType)};
+			return {new ListType(argumentTypes)};
 		}
 		case BuiltinFunction::Primitive::ToList:
 		{
@@ -708,15 +695,21 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			const auto& elementTypes1 = listType1->GetElementTypes();
 			const auto& elementTypes2 = listType2->GetElementTypes();
-			//TODO: Make more genetric
-			Require(elementTypes1.size() == elementTypes2.size());
 
+			auto elementCount1 = elementTypes1.size();
+			auto elementCount2 = elementTypes2.size();
+			Require(elementCount1 == elementCount2 || elementCount1 == 1 || elementCount2 == 1);
+
+			auto count = std::max(elementCount1, elementCount2);
 			std::vector<Type *> returnTypes;
-			for (unsigned int i = 0u; i < elementTypes1.size(); ++i)
+			for (unsigned int i = 0u; i < count; ++i)
 			{
-				const auto elementType1 = elementTypes1.at(i);
-				const auto elementType2 = elementTypes2.at(i);
-				const auto types = AnalyzeCall(functionType, {elementType1, elementType2});
+				// Get the arguments from the lists
+
+				const auto l_inputType1 = elementTypes1.at((elementCount1 == 1) ? 0 : i);
+				const auto l_inputType2 = elementTypes2.at((elementCount2 == 1) ? 0 : i);
+
+				const auto types = AnalyzeCall(functionType, {l_inputType1, l_inputType2});
 				Require(TypeUtils::IsSingleType(types));
 				returnTypes.push_back(TypeUtils::GetSingleType(types));
 			}
@@ -972,21 +965,39 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			if (TypeUtils::IsType<ListType>(inputType1))
 			{
-				//TODO: Can be only a single function
 				const auto elementTypes1 = TypeUtils::GetType<ListType>(inputType1)->GetElementTypes();
 				const auto elementTypes2 = TypeUtils::GetType<ListType>(inputType2)->GetElementTypes();
-				Require(elementTypes1.size() == functionCount && elementTypes2.size() == functionCount);
 
-				for (unsigned int i = 0; i < functionCount; ++i)
+				auto elementCount1 = elementTypes1.size();
+				auto elementCount2 = elementTypes2.size();
+				if (elementCount1 == elementCount2)
 				{
-					const auto inputType = argumentTypes.at(i);
+					Require(functionCount == 1 || elementCount1 == functionCount);
+				}
+				else if (elementCount1 == 1)
+				{
+					Require(functionCount == 1 || elementCount2 == functionCount);
+				}
+				else if (elementCount2 == 1)
+				{
+					Require(functionCount == 1 || elementCount1 == functionCount);
+				}
+				else
+				{
+					Require(false);
+				}
+
+				auto count = std::max({elementCount1, elementCount2, functionCount});
+				for (unsigned int i = 0u; i < count; ++i)
+				{
+					const auto inputType = argumentTypes.at((functionCount == 1) ? 0 : i);
 					Require(TypeUtils::IsType<FunctionType>(inputType));
 
 					// Get the arguments from the lists and the function
 
 					const auto functionType = TypeUtils::GetType<FunctionType>(inputType);
-					const auto l_inputType1 = elementTypes1.at(i);
-					const auto l_inputType2 = elementTypes2.at(i);
+					const auto l_inputType1 = elementTypes1.at((elementCount1 == 1) ? 0 : i);
+					const auto l_inputType2 = elementTypes2.at((elementCount2 == 1) ? 0 : i);
 
 					const auto returnType = AnalyzeCall(functionType, {l_inputType1, l_inputType2});
 					Require(TypeUtils::IsSingleType(returnType) && TypeUtils::IsBooleanType(TypeUtils::GetSingleType(returnType)));
