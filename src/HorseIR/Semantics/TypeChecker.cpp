@@ -257,12 +257,6 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsRealType(inputType));
 			return {new BasicType(BasicType::BasicKind::Int16)};
 		}
-		case BuiltinFunction::Primitive::Not:
-		{
-			const auto inputType = argumentTypes.at(0);
-			Require(TypeUtils::IsBooleanType(inputType));
-			return {inputType};
-		}
 		case BuiltinFunction::Primitive::Pi:
 		{
 			const auto inputType = argumentTypes.at(0);
@@ -276,6 +270,12 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				return {new BasicType(BasicType::BasicKind::Float64)};
 			}
 			return {new BasicType(BasicType::BasicKind::Float32)};
+		}
+		case BuiltinFunction::Primitive::Not:
+		{
+			const auto inputType = argumentTypes.at(0);
+			Require(TypeUtils::IsBooleanType(inputType));
+			return {inputType};
 		}
 		case BuiltinFunction::Primitive::Logarithm:
 		case BuiltinFunction::Primitive::Logarithm2:
@@ -416,10 +416,18 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::Range:
 		case BuiltinFunction::Primitive::Factorial:
+		case BuiltinFunction::Primitive::Seed:
+		case BuiltinFunction::Primitive::Random:
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsIntegerType(inputType));
 			return {new BasicType(BasicType::BasicKind::Int64)};
+		}
+		case BuiltinFunction::Primitive::Flip:
+		{
+			const auto inputType = argumentTypes.at(0);
+			Require(TypsUtils::IsType<ListType>(inputType));
+			return {inputType};
 		}
 		case BuiltinFunction::Primitive::Reverse:
 		{
@@ -430,18 +438,8 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		case BuiltinFunction::Primitive::Where:
 		{
 			const auto inputType = argumentTypes.at(0);
-			if (TypeUtils::IsBooleanType(inputType))
-			{
-				return {new BasicType(BasicType::BasicKind::Int64)};
-			}
-			else if (const auto listType = TypeUtils::GetType<ListType>(inputType))
-			{
-				// All cells must be boolean type
-
-				Require(TypeUtils::ForallElements(listType, TypeUtils::IsBooleanType));
-				return {new ListType(new BasicType(BasicType::BasicKind::Int64))};
-			}
-			break;
+			Require(TypeUtils::IsBooleanType(inputType));
+			return {new BasicType(BasicType::BasicKind::Int64)};
 		}
 		case BuiltinFunction::Primitive::Group:
 		{
@@ -453,26 +451,10 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 				Require(TypeUtils::ForallElements(listType, TypeUtils::IsType<BasicType>));
 			}
-			return {new DictionaryType(new BasicType(BasicType::BasicKind::Int64), new ListType(new BasicType(BasicType::BasicKind::Int64)))};
+			return {new DictionaryType(new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64))};
 		}
 
 		// Algebraic Binary
-		case BuiltinFunction::Primitive::Replicate:
-		{
-			const auto inputType0 = argumentTypes.at(0);
-			const auto inputType1 = argumentTypes.at(1);
-			Require(TypeUtils::IsIntegerType(inputType0) && (TypeUtils::IsType<BasicType>(inputType1) || TypeUtils::IsType<ListType>(inputType1)));
-
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType1))
-			{
-				if (TypeUtils::IsSingleType(listType->GetElementTypes()))
-				{
-					return {inputType1};
-				}
-				return {new ListType(new WildcardType())};
-			}
-			return {new ListType({inputType1})};
-		}
 		case BuiltinFunction::Primitive::Append:
 		{
 			const auto inputType0 = argumentTypes.at(0);
@@ -493,6 +475,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				const auto listType0 = TypeUtils::GetType<ListType>(inputType0);
 				const auto listType1 = TypeUtils::GetType<ListType>(inputType1);
 
+				//TODO: Avoid vector copy
 				const auto elementTypes0 = (listType0 == nullptr) ? std::vector<Type *>({inputType0}) : listType0->GetElementTypes();
 				const auto elementTypes1 = (listType1 == nullptr) ? std::vector<Type *>({inputType1}) : listType1->GetElementTypes();
 
@@ -518,6 +501,22 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			break;
 		}
+		case BuiltinFunction::Primitive::Replicate:
+		{
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			Require(TypeUtils::IsIntegerType(inputType0) && (TypeUtils::IsType<BasicType>(inputType1) || TypeUtils::IsType<ListType>(inputType1)));
+
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType1))
+			{
+				if (TypeUtils::IsSingleType(listType->GetElementTypes()))
+				{
+					return {inputType1};
+				}
+				return {new ListType(new WildcardType())};
+			}
+			return {new ListType({inputType1})};
+		}
 		case BuiltinFunction::Primitive::Like:
 		{
 			const auto inputType0 = argumentTypes.at(0);
@@ -532,6 +531,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsBooleanType(predicateType) && TypeUtils::IsType<BasicType>(dataType));
 			return {dataType};
 		}
+		case BuiltinFunction::Primitive::Random_k:
+		{
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			Require(TypeUtils::IsIntgerType(inputType0) && TypeUtils::IsIntgerType(inputType1));
+			return {new BasicType(BasicType::BasicKind::Int64)};
+		}
 		case BuiltinFunction::Primitive::IndexOf:
 		{
 			const auto inputType0 = argumentTypes.at(0);
@@ -542,6 +548,14 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				(TypeUtils::IsSymbolType(inputType0) && TypeUtils::IsSymbolType(inputType1))
 			);
 			return {new BasicType(BasicType::BasicKind::Int64)};
+		}
+		case BuiltinFunction::Primitive::Take:
+		case BuiltinFunction::Primitive::Drop:
+		{
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			Require(TypeUtils::IsIntegerType(inputType0) && TypeUtils::IsType<BasicType>(inputType1));
+			return {inputType1};
 		}
 		case BuiltinFunction::Primitive::Order:
 		{
@@ -614,8 +628,23 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 
 		// List
+		case BuiltinFunction::Primitive::Raze:
+		{
+			const auto inputType = argumentTypes.at(0);
+			Require(TypeUtils::IsType<ListType>(inputType));
+
+			// All element types must be the same, and non-wildcard
+			const auto listType = TypeUtils::GetType<ListType>(inputType);
+			if (const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes()))
+			{
+				Require(TypeUtils::IsType<BasicType>(elementType));
+				return {elementType};
+			}
+			break;
+		}
 		case BuiltinFunction::Primitive::List:
 		{
+			//TODO: Rewrite this to use reduced type function
 			Type *elementType = nullptr;
 			for (const auto type : argumentTypes)
 			{
@@ -637,20 +666,6 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				return {new ListType(argumentTypes)};
 			}
 			return {new ListType(elementType)};
-		}
-		case BuiltinFunction::Primitive::Raze:
-		{
-			const auto inputType = argumentTypes.at(0);
-			Require(TypeUtils::IsType<ListType>(inputType));
-
-			// All element types must be the same, and non-wildcard
-			const auto listType = TypeUtils::GetType<ListType>(inputType);
-			if (const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes()))
-			{
-				Require(TypeUtils::IsType<BasicType>(elementType));
-				return {elementType};
-			}
-			break;
 		}
 		case BuiltinFunction::Primitive::ToList:
 		{
@@ -683,7 +698,9 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
 			const auto inputType2 = argumentTypes.at(2);
-			Require(TypeUtils::IsType<FunctionType>(inputType0) && TypeUtils::IsType<ListType>(inputType1) && TypeUtils::IsType<ListType>(inputType2));
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<ListType>(inputType1));
+			Require(TypeUtils::IsType<ListType>(inputType2));
 
 			const auto functionType = TypeUtils::GetType<FunctionType>(inputType0);
 			const auto listType1 = TypeUtils::GetType<ListType>(inputType1);
@@ -691,10 +708,11 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			const auto& elementTypes1 = listType1->GetElementTypes();
 			const auto& elementTypes2 = listType2->GetElementTypes();
+			//TODO: Make more genetric
 			Require(elementTypes1.size() == elementTypes2.size());
 
 			std::vector<Type *> returnTypes;
-			for (unsigned int i = 0; i < elementTypes1.size(); ++i)
+			for (unsigned int i = 0u; i < elementTypes1.size(); ++i)
 			{
 				const auto elementType1 = elementTypes1.at(i);
 				const auto elementType2 = elementTypes2.at(i);
@@ -709,7 +727,8 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
 			const auto inputType2 = argumentTypes.at(2);
-			Require(TypeUtils::IsType<FunctionType>(inputType0) && TypeUtils::IsType<ListType>(inputType1));
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<ListType>(inputType1));
 
 			const auto functionType = TypeUtils::GetType<FunctionType>(inputType0);
 			const auto listType1 = TypeUtils::GetType<ListType>(inputType1);
@@ -860,7 +879,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType = argumentTypes.at(0);
 			if (TypeUtils::IsType<DictionaryType>(inputType))
 			{
-				return {TypeUtils::GetType<DictionaryType>(inputType)->GetKeyType()};
+				const auto dictionaryType = TypeUtils::GetType<DictionaryType>(inputType);
+				const auto keyType = dictionaryType->GetKeyType();
+				if (TypeUtils::IsType<BasicType>(keyType) || TypeUtils::IsType<ListType>(keyType))
+				{
+					return {keyType};
+				}
+				return {new ListType(keyType)};
 			}
 			else if (TypeUtils::IsType<TableType>(inputType))
 			{
@@ -881,7 +906,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType = argumentTypes.at(0);
 			if (TypeUtils::IsType<DictionaryType>(inputType))
 			{
-				return {TypeUtils::GetType<DictionaryType>(inputType)->GetValueType()};
+				const auto dictionaryType = TypeUtils::GetType<DictionaryType>(inputType);
+				const auto valueType = dictionaryType->GetValueType();
+				if (TypeUtils::IsType<ListType>(valueType))
+				{
+					return {valueType};
+				}
+				return {new ListType(valueType)};
 			}
 			else if (TypeUtils::IsType<TableType>(inputType))
 			{
@@ -941,6 +972,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			if (TypeUtils::IsType<ListType>(inputType1))
 			{
+				//TODO: Can be only a single function
 				const auto elementTypes1 = TypeUtils::GetType<ListType>(inputType1)->GetElementTypes();
 				const auto elementTypes2 = TypeUtils::GetType<ListType>(inputType2)->GetElementTypes();
 				Require(elementTypes1.size() == functionCount && elementTypes2.size() == functionCount);
