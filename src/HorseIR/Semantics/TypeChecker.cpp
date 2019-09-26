@@ -702,7 +702,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			auto count = std::max(elementCount1, elementCount2);
 			std::vector<Type *> returnTypes;
-			for (unsigned int i = 0u; i < count; ++i)
+			for (auto i = 0u; i < count; ++i)
 			{
 				// Get the arguments from the lists
 
@@ -988,7 +988,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				}
 
 				auto count = std::max({elementCount1, elementCount2, functionCount});
-				for (unsigned int i = 0u; i < count; ++i)
+				for (auto i = 0u; i < count; ++i)
 				{
 					const auto inputType = argumentTypes.at((functionCount == 1) ? 0 : i);
 					Require(TypeUtils::IsType<FunctionType>(inputType));
