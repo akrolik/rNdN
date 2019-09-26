@@ -47,8 +47,10 @@ bool ShapeAnalysisHelper::CheckStaticScalar(const Shape::Size *size, bool enforc
 
 bool ShapeAnalysisHelper::CheckStaticEquality(const Shape::Size *size1, const Shape::Size *size2, bool enforce) const
 {
-	// Check if the two sizes are equal, enforcing if required
-	//TODO: Enforce if possible
+	if (*size1 == *size2)
+	{
+		return true;
+	}
 	return !enforce;
 }
 
@@ -114,7 +116,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Funct
 	else
 	{
 		std::vector<const Shape *> returnShapes;
-		unsigned int tag = 1;
+		auto tag = 1u;
 		for (const auto returnType : function->GetReturnTypes())
 		{
 			returnShapes.push_back(ShapeUtils::ShapeFromType(returnType, m_call, tag++));
@@ -358,9 +360,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			const auto argumentShape = argumentShapes.at(0);
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape) || ShapeUtils::IsShape<ListShape>(argumentShape));
 
-			if (ShapeUtils::IsShape<ListShape>(argumentShape))
+			if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape))
 			{
-				const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape);
 				Require(CheckStaticTabular(listShape));
 			}
 			return {new DictionaryShape(
@@ -380,11 +381,137 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: Vector<SizeDynamic>
 			// 
 			// -- List appending
+			// Input: List<k1, {Shapes1*}>, List<k2, {Shapes2*}>
+			// Output: List<k1 + k2, {Shapes1*}U{Shapes2*}>
+			//
+			// Input: List<k1, {Shape1*}>, List<k2, {Shape1*}>
+			// Output: List<k1 + k2, {Shape1*}>
+			//
+			// Input: List<Size1*, {Shapes1*}>, List<Size2*, {Shapes2*}>
+			// Output: List<SizeDynamic, {Merge(Shapes1*, Shapes2*)}>
 			//
 			// -- Enumeration appending
+			// Input: Enum<Vector<Size*>, Vector<k1>>, Vector<k2>
+			// Output: Enum<Vector<Size*>, Vector<k1 + k2>>
 			//
-			//TODO: Implement
-			Unsupported();
+			// Input: Enum<Vector<Size1*>, Vector<Size2*>>, Vector<Size3*>
+			// Output:Enum<Vector<Size1*>, Vector<SizeDynamic>>
+			//
+			// Input: Enum<List<Size*, {Shapes1*}>, List<Size*, {Shapes2*}>>, List<Size*, {Shapes3*}>
+			// Output: Enum<List<Size*, {Shapes1*}>, List<Size*, {Merge(Shapes2*, Shapes3*)}>>
+
+			const auto argumentShape1 = argumentShapes.at(0);
+			const auto argumentShape2 = argumentShapes.at(1);
+
+			if (ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2))
+			{
+				const auto vectorSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
+				const auto vectorSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
+
+				if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1) && ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
+				{
+					auto length1 = ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1);
+					auto length2 = ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2);
+					return {new VectorShape(new Shape::ConstantSize(length1 + length2))};
+				}
+				return {new VectorShape(new Shape::DynamicSize(m_call))};
+			}
+			else if (ShapeUtils::IsShape<ListShape>(argumentShape1) || ShapeUtils::IsShape<ListShape>(argumentShape2))
+			{
+				const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1);
+				const auto listShape2 = ShapeUtils::GetShape<ListShape>(argumentShape2);
+
+				const auto& elementShapes1 = (listShape1 == nullptr) ? std::vector<const Shape *>({argumentShape1}) : listShape1->GetElementShapes();
+				const auto& elementShapes2 = (listShape2 == nullptr) ? std::vector<const Shape *>({argumentShape2}) : listShape2->GetElementShapes();
+
+				const auto listSize1 = (listShape1 == nullptr) ? nullptr : listShape1->GetListSize();
+				const auto listSize2 = (listShape2 == nullptr) ? nullptr : listShape2->GetListSize();
+
+				bool constant1 = (listSize1 == nullptr || ShapeUtils::IsSize<Shape::ConstantSize>(listSize1));
+				bool constant2 = (listSize2 == nullptr || ShapeUtils::IsSize<Shape::ConstantSize>(listSize2));
+				if (constant1 && constant2)
+				{
+					auto length1 = (listSize1 == nullptr) ? 1 : ShapeUtils::GetSize<Shape::ConstantSize>(listSize1)->GetValue();
+					auto length2 = (listSize1 == nullptr) ? 1 : ShapeUtils::GetSize<Shape::ConstantSize>(listSize1)->GetValue();
+
+					std::vector<const Shape *> elementShapes;
+					if (elementShapes1.size() == length1 && elementShapes2.size() == length2)
+					{
+						elementShapes.insert(std::begin(elementShapes), std::begin(elementShapes1), std::end(elementShapes1));
+						elementShapes.insert(std::begin(elementShapes), std::begin(elementShapes2), std::end(elementShapes2));
+					}
+					else
+					{
+						auto mergedShapes1 = ShapeUtils::MergeShapes(elementShapes1);
+						auto mergedShapes2 = ShapeUtils::MergeShapes(elementShapes2);
+						elementShapes.push_back(ShapeUtils::MergeShape(mergedShapes1, mergedShapes2));
+					}
+					return {new ListShape(new Shape::ConstantSize(length1 + length2), elementShapes)};
+				}
+
+				auto mergedShapes1 = ShapeUtils::MergeShapes(elementShapes1);
+				auto mergedShapes2 = ShapeUtils::MergeShapes(elementShapes2);
+				auto mergedShape = ShapeUtils::MergeShape(mergedShapes1, mergedShapes2);
+				return {new ListShape(new Shape::DynamicSize(m_call), {mergedShape})};
+			}
+			else if (const auto enumShape = ShapeUtils::GetShape<EnumerationShape>(argumentShape1))
+			{
+				const auto keyShape = enumShape->GetKeyShape();
+				const auto valueShape = enumShape->GetValueShape();
+				if (const auto vectorValueShape = ShapeUtils::GetShape<VectorShape>(valueShape))
+				{
+					Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
+
+					const auto vectorSize1 = vectorValueShape->GetSize();
+					const auto vectorSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
+
+					if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1) && ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
+					{
+						auto length1 = ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1);
+						auto length2 = ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2);
+						return {new EnumerationShape(keyShape, new VectorShape(new Shape::ConstantSize(length1 + length2)))};
+					}
+					return {new EnumerationShape(keyShape, new VectorShape(new Shape::DynamicSize(m_call)))};
+				}
+				else if (const auto listValueShape = ShapeUtils::GetShape<ListShape>(valueShape))
+				{
+					Require(ShapeUtils::IsShape<ListShape>(argumentShape2));
+
+					const auto listShape2 = ShapeUtils::GetShape<ListShape>(argumentShape2);
+					Require(CheckStaticEquality(listValueShape->GetListSize(), listShape2->GetListSize()));
+					Require(CheckStaticTabular(listShape2));
+
+					const auto& elementShapes1 = listValueShape->GetElementShapes();
+					const auto& elementShapes2 = listShape2->GetElementShapes();
+					if (elementShapes1.size() == elementShapes2.size())
+					{
+						std::vector<const Shape *> newElementShapes;
+						for (auto i = 0u; i < elementShapes1.size(); ++i)
+						{
+							const auto elementShape1 = elementShapes1.at(0);
+							const auto elementShape2 = elementShapes2.at(1);
+							Require(ShapeUtils::IsShape<VectorShape>(elementShape1));
+							Require(ShapeUtils::IsShape<VectorShape>(elementShape2));
+
+							const auto vectorSize1 = ShapeUtils::GetShape<VectorShape>(elementShape1)->GetSize();
+							const auto vectorSize2 = ShapeUtils::GetShape<VectorShape>(elementShape2)->GetSize();
+							if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1) && ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
+							{
+								auto length1 = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize1)->GetValue();
+								auto length2 = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize2)->GetValue();
+								newElementShapes.push_back(new VectorShape(new Shape::ConstantSize(length1 + length2)));
+							}
+							else
+							{
+								newElementShapes.push_back(new VectorShape(new Shape::DynamicSize(m_call, i+1)));
+							}
+						}
+						return {new EnumerationShape(keyShape, new ListShape(listValueShape->GetListSize(), newElementShapes))};
+					}
+					return {new EnumerationShape(keyShape, new ListShape(listValueShape->GetListSize(), {new VectorShape(new Shape::DynamicSize(m_call))}))};
+				}
+			}
+			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::Replicate:
 		{
@@ -419,34 +546,26 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				{
 					return {new ListShape(new Shape::ConstantSize(value), {argumentShape2})};
 				}
-				else if (ShapeUtils::IsShape<ListShape>(argumentShape2))
+				else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape2))
 				{
-					const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape2);
-					const auto listSize = listShape->GetListSize();
-
-					if (ShapeUtils::IsSize<Shape::ConstantSize>(listSize))
+					if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(listShape->GetListSize()))
 					{
-						auto listLength = ShapeUtils::GetSize<Shape::ConstantSize>(listSize)->GetValue();
+						auto listLength = constantSize->GetValue();
 
 						const auto& elementShapes = listShape->GetElementShapes();
 						if (elementShapes.size() == 1)
 						{
 							return {new ListShape(new Shape::ConstantSize(value * listLength), {elementShapes.at(0)})};
 						}
-						else
+
+						std::vector<const Shape *> newElementShapes;
+						for (auto i = 0u; i < listLength; ++i)
 						{
-							std::vector<const Shape *> newElementShapes;
-							for (auto i = 0u; i < listLength; ++i)
-							{
-								newElementShapes.insert(std::end(newElementShapes), std::begin(elementShapes), std::end(elementShapes));
-							}
-							return {new ListShape(new Shape::ConstantSize(value * listLength), newElementShapes)};
+							newElementShapes.insert(std::end(newElementShapes), std::begin(elementShapes), std::end(elementShapes));
 						}
+						return {new ListShape(new Shape::ConstantSize(value * listLength), newElementShapes)};
 					}
-					else
-					{
-						return {new ListShape(new Shape::DynamicSize(m_call), {ShapeUtils::MergeShapes(listShape->GetElementShapes())})};
-					}
+					return {new ListShape(new Shape::DynamicSize(m_call), {ShapeUtils::MergeShapes(listShape->GetElementShapes())})};
 				}
 			}
 			else
@@ -455,10 +574,9 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				{
 					return {new ListShape(new Shape::DynamicSize(m_call), {argumentShape2})};
 				}
-				else if (ShapeUtils::IsShape<ListShape>(argumentShape2))
+				else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape2))
 				{
-					const auto listShape2 = ShapeUtils::GetShape<ListShape>(argumentShape2);
-					const auto elementShape = ShapeUtils::MergeShapes(listShape2->GetElementShapes());
+					const auto elementShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
 					return {new ListShape(new Shape::DynamicSize(m_call), {elementShape})};
 				}
 			}
@@ -477,7 +595,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 
 			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
 			Require(CheckStaticScalar(vectorShape2->GetSize()));
-
 			return {argumentShape1};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Compress:
@@ -494,7 +611,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			const auto argumentSize1 = ShapeUtils::GetShape<VectorShape>(argumentShape1)->GetSize();
 			const auto argumentSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
 			Require(CheckStaticEquality(argumentSize1, argumentSize2));
-
 			return {new VectorShape(new Shape::CompressedSize(arguments.at(0), argumentSize2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
@@ -618,9 +734,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				Require(CheckStaticScalar(vectorShape2->GetSize()));
 				return {argumentShape1};
 			}
-			else if (ShapeUtils::IsShape<ListShape>(argumentShape1))
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
 			{
-				const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1);
 				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape2->GetSize()));
 				Require(CheckStaticTabular(listShape));
 				return {ShapeUtils::MergeShapes(listShape->GetElementShapes())};
@@ -696,9 +811,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			Require(ShapeUtils::IsShape<ListShape>(argumentShape));
 
 			const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape);
-			const auto listSize = listShape->GetListSize();
-
-			if (ShapeUtils::IsSize<Shape::ConstantSize>(listSize))
+			if (const auto listSize = ShapeUtils::GetSize<Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				const auto& elementShapes = listShape->GetElementShapes();
 				if (elementShapes.size() == 1)
@@ -706,12 +819,9 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 					Require(ShapeUtils::IsShape<VectorShape>(elementShapes.at(0)));
 
 					const auto vectorShape = ShapeUtils::GetShape<VectorShape>(elementShapes.at(0));
-					const auto vectorSize = vectorShape->GetSize();
-					if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize))
+					if (const auto vectorSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 					{
-						auto vectorLength = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize)->GetValue();
-						auto listLength = ShapeUtils::GetSize<Shape::ConstantSize>(listSize)->GetValue();
-						return {new VectorShape(new Shape::ConstantSize(vectorLength * listLength))};
+						return {new VectorShape(new Shape::ConstantSize(listSize->GetValue() * vectorSize->GetValue()))};
 					}
 				}
 				else
@@ -722,10 +832,9 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 						Require(ShapeUtils::IsShape<VectorShape>(elementShape));
 
 						const auto vectorShape = ShapeUtils::GetShape<VectorShape>(elementShape);
-						const auto vectorSize = vectorShape->GetSize();
-						if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize))
+						if (const auto vectorSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 						{
-							count += ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize)->GetValue();
+							count += vectorSize->GetValue();
 						}
 						else
 						{
@@ -764,7 +873,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: List<Size*, f(Shape*)>
 
 			const auto type = arguments.at(0)->GetTypes().at(0);
-			const auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type);
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape = argumentShapes.at(1);
 			Require(ShapeUtils::IsShape<ListShape>(argumentShape));
@@ -774,7 +883,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			std::vector<const Shape *> newElementShapes;
 			for (const auto& elementShape : listShape->GetElementShapes())
 			{
-				const auto shapes = AnalyzeCall(functionType->GetFunctionDeclaration(), {elementShape}, {});
+				const auto shapes = AnalyzeCall(function, {elementShape}, {});
 				Require(ShapeUtils::IsSingleShape(shapes));
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
@@ -787,7 +896,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: List<Size*, f(Shape1*, Shape2*)>
 
 			const auto type = arguments.at(0)->GetTypes().at(0);
-			const auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type);
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape1 = argumentShapes.at(1);
 			const auto argumentShape2 = argumentShapes.at(2);
@@ -799,19 +908,22 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 
 			const auto& elementShapes1 = listShape1->GetElementShapes();
 			const auto& elementShapes2 = listShape2->GetElementShapes();
-			//TODO: Make more genetric
-			Require(elementShapes1.size() == elementShapes2.size());
 
+			auto elementCount1 = elementShapes1.size();
+			auto elementCount2 = elementShapes1.size();
+			Require(elementCount1 == elementCount2 || elementCount1 == 1 || elementCount2 == 1);
+
+			auto count = std::max(elementCount1, elementCount2);
 			std::vector<const Shape *> newElementShapes;
-			for (unsigned int i = 0u; i < elementShapes1.size(); ++i)
+			for (auto i = 0u; i < count; ++i)
 			{
-				const auto elementShape1 = elementShapes1.at(i);
-				const auto elementShape2 = elementShapes2.at(i);
-				const auto shapes = AnalyzeCall(functionType->GetFunctionDeclaration(), {elementShape1, elementShape2}, {});
+				const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
+				const auto l_inputShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
+
+				const auto shapes = AnalyzeCall(function, {l_inputShape1, l_inputShape2}, {});
 				Require(ShapeUtils::IsSingleShape(shapes));
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
-
 			return {new ListShape(listShape1->GetListSize(), newElementShapes)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::EachLeft:
@@ -821,7 +933,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: List<Size*, {f(Shape1*, Shape2*)}>
 
 			const auto type = arguments.at(0)->GetTypes().at(0);
-			const auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type);
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape1 = argumentShapes.at(1);
 			const auto argumentShape2 = argumentShapes.at(2);
@@ -832,7 +944,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			std::vector<const Shape *> newElementShapes;
 			for (const auto& elementShape1 : listShape1->GetElementShapes())
 			{
-				const auto shapes = AnalyzeCall(functionType->GetFunctionDeclaration(), {elementShape1, argumentShape2}, {});
+				const auto shapes = AnalyzeCall(function, {elementShape1, argumentShape2}, {});
 				Require(ShapeUtils::IsSingleShape(shapes));
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
@@ -845,7 +957,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: List<Size*, {f(Shape1*, Shape2*)}>
 
 			const auto type = arguments.at(0)->GetTypes().at(0);
-			const auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type);
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape1 = argumentShapes.at(1);
 			const auto argumentShape2 = argumentShapes.at(2);
@@ -856,7 +968,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			std::vector<const Shape *> newElementShapes;
 			for (const auto& elementShape2 : listShape2->GetElementShapes())
 			{
-				const auto shapes = AnalyzeCall(functionType->GetFunctionDeclaration(), {argumentShape1, elementShape2}, {});
+				const auto shapes = AnalyzeCall(function, {argumentShape1, elementShape2}, {});
 				Require(ShapeUtils::IsSingleShape(shapes));
 				newElementShapes.push_back(ShapeUtils::GetSingleShape(shapes));
 			}
@@ -890,16 +1002,14 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				(ShapeUtils::IsShape<ListShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2))
 			);
 
-			if (ShapeUtils::IsShape<ListShape>(argumentShape1))
+			if (const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1))
 			{
-				const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1);
 				const auto listShape2 = ShapeUtils::GetShape<ListShape>(argumentShape2);
 				Require(CheckStaticEquality(listShape1->GetListSize(), listShape2->GetListSize()));
 
 				Require(CheckStaticTabular(listShape1));
 				Require(CheckStaticTabular(listShape2));
 			}
-
 			return {new EnumerationShape(argumentShape1, argumentShape2)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Dictionary:
@@ -921,7 +1031,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			const auto size1 = ShapeUtils::GetMappingSize(argumentShape1);
 			const auto size2 = ShapeUtils::GetMappingSize(argumentShape2);
 			Require(CheckStaticEquality(size1, size2));
-
 			return {new DictionaryShape(argumentShape1, argumentShape2)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
@@ -983,9 +1092,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: Shape1*
 
 			const auto argumentShape = argumentShapes.at(0);
-			if (ShapeUtils::IsShape<DictionaryShape>(argumentShape))
+			if (const auto dictionaryShape = ShapeUtils::GetShape<DictionaryShape>(argumentShape))
 			{
-				const auto dictionaryShape = ShapeUtils::GetShape<DictionaryShape>(argumentShape);
 				const auto keyShape = dictionaryShape->GetKeyShape();
 				if (ShapeUtils::IsShape<VectorShape>(keyShape) || ShapeUtils::IsShape<ListShape>(keyShape))
 				{
@@ -993,17 +1101,17 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				}
 				return {new ListShape(new Shape::DynamicSize(m_call), {keyShape})};
 			}
-			else if (ShapeUtils::IsShape<TableShape>(argumentShape))
+			else if (const auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape))
 			{
-				return {new VectorShape(ShapeUtils::GetShape<TableShape>(argumentShape)->GetColumnsSize())};
+				return {new VectorShape(tableShape->GetColumnsSize())};
 			}
-			else if (ShapeUtils::IsShape<KeyedTableShape>(argumentShape))
+			else if (const auto kTableShape = ShapeUtils::GetShape<KeyedTableShape>(argumentShape))
 			{
-				return {ShapeUtils::GetShape<KeyedTableShape>(argumentShape)->GetKeyShape()};
+				return {kTableShape->GetKeyShape()};
 			}
-			else if (ShapeUtils::IsShape<EnumerationShape>(argumentShape))
+			else if (const auto enumShape = ShapeUtils::GetShape<EnumerationShape>(argumentShape))
 			{
-				return {ShapeUtils::GetShape<EnumerationShape>(argumentShape)->GetKeyShape()};
+				return {enumShape->GetKeyShape()};
 			}
 			break;
 		}
@@ -1029,9 +1137,8 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Output: Shape2*
 
 			const auto argumentShape = argumentShapes.at(0);
-			if (ShapeUtils::IsShape<DictionaryShape>(argumentShape))
+			if (const auto dictionaryShape = ShapeUtils::GetShape<DictionaryShape>(argumentShape))
 			{
-				const auto dictionaryShape = ShapeUtils::GetShape<DictionaryShape>(argumentShape);
 				const auto valueShape = dictionaryShape->GetValueShape();
 				if (ShapeUtils::IsShape<ListShape>(valueShape))
 				{
@@ -1039,20 +1146,19 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				}
 				return {new ListShape(new Shape::DynamicSize(m_call), {valueShape})};
 			}
-			else if (ShapeUtils::IsShape<TableShape>(argumentShape))
+			else if (const auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape))
 			{
-				const auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape);
 				const auto colsSize = tableShape->GetColumnsSize();
 				const auto rowsSize = tableShape->GetRowsSize();
 				return {new ListShape(colsSize, {new VectorShape(rowsSize)})};
 			}
-			else if (ShapeUtils::IsShape<KeyedTableShape>(argumentShape))
+			else if (const auto kTableShape = ShapeUtils::GetShape<KeyedTableShape>(argumentShape))
 			{
-				return {ShapeUtils::GetShape<KeyedTableShape>(argumentShape)->GetValueShape()};
+				return {kTableShape->GetValueShape()};
 			}
-			else if (ShapeUtils::IsShape<EnumerationShape>(argumentShape))
+			else if (const auto enumShape = ShapeUtils::GetShape<EnumerationShape>(argumentShape))
 			{
-				return {ShapeUtils::GetShape<EnumerationShape>(argumentShape)->GetValueShape()};
+				return {enumShape->GetValueShape()};
 			}
 			break;
 		}
@@ -1139,13 +1245,43 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				(ShapeUtils::IsShape<ListShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2))
 			);
 
-			if (ShapeUtils::IsShape<ListShape>(argumentShape1))
+			if (const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1))
 			{
-				//TODO: Implement
-				// - Check functions
-				// - Check list size equality
-				// - Check list tabular
-				// - Can also be only a single function
+				const auto elementShapes1 = listShape1->GetElementShapes();
+				const auto elementShapes2 = ShapeUtils::GetShape<ListShape>(argumentShape2)->GetElementShapes();
+
+				auto elementCount1 = elementShapes1.size();
+				auto elementCount2 = elementShapes2.size();
+				if (elementCount1 == elementCount2)
+				{
+					Require(functionCount == 1 || elementCount1 == functionCount);
+				}
+				else if (elementCount1 == 1)
+				{
+					Require(functionCount == 1 || elementCount2 == functionCount);
+				}
+				else if (elementCount2 == 1)
+				{
+					Require(functionCount == 1 || elementCount1 == functionCount);
+				}
+				else
+				{
+					Require(false);
+				}
+
+				auto count = std::max({elementCount1, elementCount2, functionCount});
+				for (auto i = 0u; i < count; ++i)
+				{
+					const auto type = arguments.at((functionCount == 1) ? 0 : i)->GetTypes().at(0);
+					const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+
+					const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
+					const auto l_inputShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
+
+					const auto returnShapes = AnalyzeCall(function, {l_inputShape1, l_inputShape2}, {});
+					Require(ShapeUtils::IsSingleShape(returnShapes));
+					Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
+				}
 			}
 			else
 			{
@@ -1153,8 +1289,12 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 
 				Require(functionCount == 1);
 
-				//TODO: Implement
-				// - Check the function call is okay
+				const auto type = arguments.at(0)->GetTypes().at(0);
+				const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+
+				const auto returnShapes = AnalyzeCall(function, {argumentShape1, argumentShape2}, {});
+				Require(ShapeUtils::IsSingleShape(returnShapes));
+				Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
 			}
 			return {new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call))})};
 		}
@@ -1188,7 +1328,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
 			const auto vectorShape3 = ShapeUtils::GetShape<VectorShape>(argumentShape3);
 			Require(CheckStaticEquality(vectorShape2->GetSize(), vectorShape2->GetSize()));
-
 			return {argumentShape1};
 		}
 
@@ -1204,7 +1343,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 
 			const auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
 			Require(CheckStaticScalar(vectorShape->GetSize()));
-
 			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Print:
@@ -1234,7 +1372,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			const auto vectorShape3 = ShapeUtils::GetShape<VectorShape>(argumentShape3);
 			Require(CheckStaticScalar(vectorShape2->GetSize()));
 			Require(CheckStaticScalar(vectorShape3->GetSize()));
-
 			return {argumentShape1};
 		}
 		default:
