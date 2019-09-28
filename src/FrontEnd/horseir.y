@@ -1,7 +1,7 @@
 %{
 extern int yylineno;
 
-#include "HorseIR/Tree/Program.h"
+#include "HorseIR/Tree/Tree.h"
 #include "Utils/Logger.h"
 
 extern HorseIR::Program *program;

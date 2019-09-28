@@ -1,7 +1,6 @@
 #pragma once
 
-#include "HorseIR/Tree/Module.h"
-#include "HorseIR/Tree/BuiltinFunction.h"
+#include "HorseIR/Tree/Tree.h"
 
 namespace HorseIR {
 

@@ -4,14 +4,7 @@
 #include "HorseIR_Parser.hpp"
 #include "Utils/Logger.h"
 
-#include "HorseIR/Tree/Expressions/Literals/ComplexValue.h"
-#include "HorseIR/Tree/Expressions/Literals/SymbolValue.h"
-#include "HorseIR/Tree/Expressions/Literals/DatetimeValue.h"
-#include "HorseIR/Tree/Expressions/Literals/MonthValue.h"
-#include "HorseIR/Tree/Expressions/Literals/DateValue.h"
-#include "HorseIR/Tree/Expressions/Literals/MinuteValue.h"
-#include "HorseIR/Tree/Expressions/Literals/SecondValue.h"
-#include "HorseIR/Tree/Expressions/Literals/TimeValue.h"
+#include "HorseIR/Tree/Tree.h"
 
 #define YY_USER_RETURN yylloc.first_line = yylloc.last_line = yylineno;
 

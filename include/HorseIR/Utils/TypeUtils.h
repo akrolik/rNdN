@@ -2,9 +2,7 @@
 
 #include <vector>
 
-#include "HorseIR/Tree/Types/Type.h"
-#include "HorseIR/Tree/Types/BasicType.h"
-#include "HorseIR/Tree/Types/ListType.h"
+#include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"

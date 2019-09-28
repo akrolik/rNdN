@@ -1,9 +1,6 @@
 #include "HorseIR/Semantics/SymbolTable/SymbolTable.h"
 
-#include "HorseIR/Tree/Node.h"
-#include "HorseIR/Tree/Module.h"
-#include "HorseIR/Tree/FunctionDeclaration.h"
-#include "HorseIR/Tree/VariableDeclaration.h"
+#include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
