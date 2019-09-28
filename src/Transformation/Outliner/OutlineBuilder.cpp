@@ -72,8 +72,11 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 	if (isKernel)
 	{
 		m_statements.emplace();
-		m_symbols.emplace();
 	}
+
+	// Collect the declarations for this block
+
+	m_symbols.emplace();
 
 	// Perform the topological sort and construct the statement list recursively
 
@@ -95,6 +98,11 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 			node
 		);
 	});
+
+	// Add all variable declarations to the top of the block
+
+	BuildDeclarations();
+	m_symbols.pop();
 
 	if (isKernel)
 	{
@@ -145,10 +153,6 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 		}
 		m_statements.top().push_back(new HorseIR::ReturnStatement(returnOperands));
 
-		// Add all variable declarations to the top of the block
-
-		BuildDeclarations();
-
 		// Construct the new kernel function
 
 		auto name = m_currentFunction->GetName() + "_" + std::to_string(m_kernelIndex++);
@@ -162,7 +166,6 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 
 		m_functions.push_back(kernel); 
 		m_statements.pop();
-		m_symbols.pop();
 
 		// Insert a call to the new kernel in the containing function
 
