@@ -45,7 +45,7 @@ private:
 
 	// Utility error function
 
-	[[noreturn]] void ShapeError(const HorseIR::FunctionDeclaration *method, const std::vector<const Shape *>& argumentShapes) const;
+	[[noreturn]] void ShapeError(const HorseIR::FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes) const;
 
 	// Shape utilities for propagation
 

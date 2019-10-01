@@ -1383,7 +1383,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 	ShapeError(function, argumentShapes);
 }         
 
-[[noreturn]] void ShapeAnalysisHelper::ShapeError(const HorseIR::FunctionDeclaration *method, const std::vector<const Shape *>& argumentShapes) const
+[[noreturn]] void ShapeAnalysisHelper::ShapeError(const HorseIR::FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes) const
 {
 	std::stringstream message;
 	message << "Incompatible shapes [";
@@ -1399,7 +1399,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		message << *argumentShape;
 	}
 
-	message << "] to function '" << method->GetName() << "'";
+	message << "] to function '" << function->GetName() << "'";
 	Utils::Logger::LogError(message.str());
 }
 

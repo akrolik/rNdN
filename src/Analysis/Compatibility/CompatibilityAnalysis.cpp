@@ -183,6 +183,7 @@ bool CompatibilityAnalysis::IsCompatible(const Geometry *source, const Geometry 
 		return false;
 	}
 
+	//TODO: Place these transformations in a utility class
 	auto sourceShape = static_cast<const ShapeGeometry *>(source)->GetShape();
 	auto destinationShape = static_cast<const ShapeGeometry *>(destination)->GetShape();
 

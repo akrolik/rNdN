@@ -38,7 +38,7 @@ void DependencyOverlayPrinter::Visit(const DependencyOverlay *overlay)
 
 		auto graph = overlay->GetGraph();
 
-		//TODO: correct printing
+		//TODO: Add GPU/synchronized data to printing
 		// if (graph->IsGPUNode(node))
 		// {
 		// 	// Add diagonal marks on the corner if the node is synchronized
@@ -115,7 +115,7 @@ void DependencyOverlayPrinter::Visit(const FunctionDependencyOverlay *overlay)
 
 			// Label compatible edges with an asterisk
 
-			//TODO: correct printing
+			//TODO: Add compatibility edges to printing
 			// if (graph->IsCompatibleEdge(node, dependency))
 			// {	
 			// 	m_string << " [label=\"*\"]";

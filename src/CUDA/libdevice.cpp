@@ -83,7 +83,7 @@ std::string Generate(const std::string& compute)
 
 	auto timeLib = Utils::Chrono::End(timeLib_start);
 
-	// Link the libdevice module into the dummy module, keeping only methods that
+	// Link the libdevice module into the dummy module, keeping only functions that
 	// are referenced in the dummy
 
 	auto timeLink_start = Utils::Chrono::Start();
