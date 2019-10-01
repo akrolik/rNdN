@@ -30,6 +30,7 @@ public:
 	}
 
 	const std::vector<Type *>& GetElementTypes() const { return m_elementTypes; }
+	void AddElementType(Type *elementType) { m_elementTypes.push_back(elementType); }
 
 	bool operator==(const ListType& other) const
 	{

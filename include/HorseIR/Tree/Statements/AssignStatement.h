@@ -30,6 +30,7 @@ public:
 	}
 
 	const std::vector<LValue *>& GetTargets() const { return m_targets; }
+	unsigned int GetTargetCount() const { return m_targets.size(); }
 	void SetTargets(const std::vector<LValue *>& targets) { m_targets = targets; }
 
 	Expression *GetExpression() const { return m_expression; }

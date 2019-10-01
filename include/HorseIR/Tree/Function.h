@@ -51,6 +51,7 @@ public:
 	void SetParameters(const std::vector<Parameter *>& parameters) { m_parameters = parameters; }
 
 	const std::vector<Type *>& GetReturnTypes() const { return m_returnTypes; }
+	size_t GetReturnCount() const { return m_returnTypes.size(); }
 	void SetReturnType(const std::vector<Type *>& returnTypes) { m_returnTypes = returnTypes; }
 
 	const std::vector<Statement *>& GetStatements() const { return m_statements; }
