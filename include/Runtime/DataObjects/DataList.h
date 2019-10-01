@@ -5,31 +5,53 @@
 #include <string>
 #include <vector>
 
-#include "HorseIR/Tree/Types/ListType.h"
-#include "HorseIR/Tree/Types/Type.h"
-
-#include "Runtime/DataObjects/DataVector.h"
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 namespace Runtime {
 
 class DataList : public DataObject
 {
 public:
-	DataList(HorseIR::Type *elementType, DataVector *element) : DataList(elementType, std::vector<DataVector *>({element})) {}
-	DataList(HorseIR::Type *elementType, const std::vector<DataVector *>& elements) : m_type(new HorseIR::ListType(elementType)), m_elements(elements) {}
+	DataList(DataObject *element) : DataList(std::vector<DataObject *>({element})) {}
+	DataList(const std::vector<DataObject *>& elements) : m_elements(elements)
+	{
+		std::vector<HorseIR::Type *> elementTypes;
+		for (const auto& element : elements)
+		{
+			elementTypes.push_back(element->GetType()->Clone());
+		}
+		m_type = new HorseIR::ListType(elementTypes);
+	}
 
-	HorseIR::ListType *GetType() const { return m_type; }
+	const HorseIR::ListType *GetType() const { return m_type; }
 
-	void AddElement(DataVector *element);
-	DataVector *GetElement(unsigned int index) { return m_elements.at(index); }
+	void AddElement(DataObject *element);
+	DataObject *GetElement(unsigned int index) { return m_elements.at(index); }
 	size_t GetElementCount() const { return m_elements.size(); }
 
-	void Dump() const override;
+	std::string Description() const override
+	{
+		std::string description = HorseIR::PrettyPrinter::PrettyString(m_type) + "{";
+		bool first = true;
+		for (const auto& object : m_elements)
+		{
+			if (!first)
+			{
+				description += ", ";
+			}
+			first = false;
+			description += object->Description();
+		}
+		return description + "}";
+	}
+
+	std::string DebugDump() const override;
 
 private:
 	HorseIR::ListType *m_type = nullptr;
 
-	std::vector<DataVector *> m_elements;
+	std::vector<DataObject *> m_elements;
 };
 
 }

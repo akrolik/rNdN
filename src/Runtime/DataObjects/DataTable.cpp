@@ -22,25 +22,23 @@ DataVector *DataTable::GetColumn(const std::string& name) const
 	return m_columns.at(name);
 }
 
-void DataTable::Dump() const
+std::string DataTable::DebugDump() const
 {
-	std::string columnNames = " ";
+	std::string string = " ";
 	for (const auto& column : m_columns)
 	{
-		columnNames += column.first + "\t";
+		string += column.first + "\t";
 	}
-	Utils::Logger::LogInfo(columnNames, 0, "RESULT");
-	Utils::Logger::LogInfo("", 0, "RESULT");
-
-	for (unsigned long i = 0; i < m_size; ++i)
+	string += "\n";
+	for (auto i = 0ul; i < m_size; ++i)
 	{
-		std::string row;
 		for (const auto& column : m_columns)
 		{
-			row += column.second->Dump(i) + "\t";
+			string += column.second->DebugDump(i) + "\t";
 		}
-		Utils::Logger::LogInfo(row, 0, "RESULT");
+		string += "\n";
 	}
+	return string;
 }
 
 }

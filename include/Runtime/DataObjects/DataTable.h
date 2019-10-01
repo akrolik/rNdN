@@ -5,7 +5,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "HorseIR/Tree/Types/TableType.h"
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Runtime/DataObjects/DataVector.h"
 
@@ -23,7 +24,23 @@ public:
 
 	unsigned long GetSize() const { return m_size; }
 
-	void Dump() const override;
+	std::string Description() const override
+	{
+		std::string description = HorseIR::PrettyPrinter::PrettyString(m_type) + "{";
+		bool first = true;
+		for (const auto& column : m_columns)
+		{
+			if (!first)
+			{
+				description += ", ";
+			}
+			first = false;
+			description += column.first + "=" + column.second->Description();
+		}
+		return description + "}";
+	}
+
+	std::string DebugDump() const override;
 
 private:
 	HorseIR::TableType *m_type = new HorseIR::TableType();

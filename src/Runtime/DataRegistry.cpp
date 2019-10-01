@@ -1,11 +1,13 @@
 #include "Runtime/DataRegistry.h"
 
+#include "HorseIR/Utils/PrettyPrinter.h"
+
 #include "Utils/Logger.h"
 
 namespace Runtime {
 
 template<typename T>
-void DataRegistry::LoadDebugData(DataTable *table, HorseIR::BasicType *type, unsigned long size)
+void DataRegistry::LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size)
 {
 	std::vector<T> zeros(size);
 	std::vector<T> ones(size);
@@ -18,9 +20,10 @@ void DataRegistry::LoadDebugData(DataTable *table, HorseIR::BasicType *type, uns
 		inc.at(i) = i;
 	}
 
-	table->AddColumn("zeros_" + type->ToString(), new TypedDataVector<T>(type, zeros));
-	table->AddColumn("ones_" + type->ToString(), new TypedDataVector<T>(type, ones));
-	table->AddColumn("inc_" + type->ToString(), new TypedDataVector<T>(type, inc));
+	auto name = HorseIR::PrettyPrinter::PrettyString(type);
+	table->AddColumn("zeros_" + name, new TypedDataVector<T>(type, zeros));
+	table->AddColumn("ones_" + name, new TypedDataVector<T>(type, ones));
+	table->AddColumn("inc_" + name, new TypedDataVector<T>(type, inc));
 }
 
 void DataRegistry::LoadDebugData()
@@ -31,13 +34,13 @@ void DataRegistry::LoadDebugData()
 	{
 		auto table = new DataTable(i);
 
-		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Bool), i);
-		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int8), i);
-		LoadDebugData<int16_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int16), i);
-		LoadDebugData<int32_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int32), i);
-		LoadDebugData<int64_t>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Int64), i);
-		LoadDebugData<float>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Float32), i);
-		LoadDebugData<double>(table, new HorseIR::BasicType(HorseIR::BasicType::Kind::Float64), i);
+		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), i);
+		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int8), i);
+		LoadDebugData<int16_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int16), i);
+		LoadDebugData<int32_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), i);
+		LoadDebugData<int64_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), i);
+		LoadDebugData<float>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float32), i);
+		LoadDebugData<double>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), i);
 
 		AddTable("debug_" + std::to_string(i), table);
 	}
