@@ -28,6 +28,11 @@ bool ConstHierarchicalVisitor::VisitIn(const Module *module)
 	return VisitIn(static_cast<const Node*>(module));
 }
 
+bool ConstHierarchicalVisitor::VisitIn(const LibraryModule *module)
+{
+	return VisitIn(static_cast<const Module*>(module));
+}
+
 bool ConstHierarchicalVisitor::VisitIn(const ModuleContent *moduleContent)
 {
 	return VisitIn(static_cast<const Node*>(moduleContent));
@@ -76,6 +81,11 @@ void ConstHierarchicalVisitor::VisitOut(const Program *program)
 void ConstHierarchicalVisitor::VisitOut(const Module *module)
 {
 	VisitOut(static_cast<const Node*>(module));
+}
+
+void ConstHierarchicalVisitor::VisitOut(const LibraryModule *module)
+{
+	VisitOut(static_cast<const Module*>(module));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const ModuleContent *moduleContent)

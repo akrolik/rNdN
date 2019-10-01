@@ -21,6 +21,11 @@ void ConstVisitor::Visit(const Module *module)
 	Visit(static_cast<const Node*>(module));
 }
 
+void ConstVisitor::Visit(const LibraryModule *module)
+{
+	Visit(static_cast<const Module*>(module));
+}
+
 void ConstVisitor::Visit(const ModuleContent *moduleContent)
 {
 	Visit(static_cast<const Node*>(moduleContent));

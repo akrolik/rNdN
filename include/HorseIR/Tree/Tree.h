@@ -1,10 +1,10 @@
 #pragma once
 
-
 #include "HorseIR/Tree/Node.h"
 
 #include "HorseIR/Tree/Program.h"
 #include "HorseIR/Tree/Module.h"
+#include "HorseIR/Tree/LibraryModule.h"
 #include "HorseIR/Tree/ModuleContent.h"
 #include "HorseIR/Tree/ImportDirective.h"
 #include "HorseIR/Tree/GlobalDeclaration.h"

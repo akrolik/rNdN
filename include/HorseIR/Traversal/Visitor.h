@@ -6,6 +6,7 @@ class Node;
 
 class Program;
 class Module;
+class LibraryModule;
 class ModuleContent;
 class ImportDirective;
 class GlobalDeclaration;
@@ -75,6 +76,7 @@ public:
 
 	virtual void Visit(Program *program);
 	virtual void Visit(Module *module);
+	virtual void Visit(LibraryModule *module);
 	virtual void Visit(ModuleContent *moduleContent);
 	virtual void Visit(ImportDirective *import);
 	virtual void Visit(GlobalDeclaration *global);

@@ -23,6 +23,11 @@ void Visitor::Visit(Module *module)
 	Visit(static_cast<Node*>(module));
 }
 
+void Visitor::Visit(LibraryModule *module)
+{
+	Visit(static_cast<Module*>(module));
+}
+
 void Visitor::Visit(ModuleContent *moduleContent)
 {
 	Visit(static_cast<Node*>(moduleContent));

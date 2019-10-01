@@ -6,6 +6,7 @@ class Node;
 
 class Program;
 class Module;
+class LibraryModule;
 class ModuleContent;
 class ImportDirective;
 class GlobalDeclaration;
@@ -76,6 +77,7 @@ public:
 
 	virtual bool VisitIn(const Program *program);
 	virtual bool VisitIn(const Module *module);
+	virtual bool VisitIn(const LibraryModule *module);
 	virtual bool VisitIn(const ModuleContent *moduleContent);
 	virtual bool VisitIn(const ImportDirective *import);
 	virtual bool VisitIn(const GlobalDeclaration *global);
@@ -87,6 +89,7 @@ public:
 
 	virtual void VisitOut(const Program *program);
 	virtual void VisitOut(const Module *module);
+	virtual void VisitOut(const LibraryModule *module);
 	virtual void VisitOut(const ModuleContent *moduleContent);
 	virtual void VisitOut(const ImportDirective *import);
 	virtual void VisitOut(const GlobalDeclaration *global);

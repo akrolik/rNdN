@@ -4,7 +4,7 @@
 
 namespace HorseIR {
 
-static Module *BuiltinModule = new Module("Builtin", {
+static Module *BuiltinModule = new LibraryModule("Builtin", {
 	// Unary
 	new BuiltinFunction(BuiltinFunction::Primitive::Absolute),
 	new BuiltinFunction(BuiltinFunction::Primitive::Negate),
