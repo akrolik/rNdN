@@ -263,13 +263,14 @@ void GPUAnalysisHelper::Visit(const HorseIR::CastExpression *cast)
 
 void GPUAnalysisHelper::Visit(const HorseIR::Literal *literal)
 {
-	m_capable = true;
+	//TODO: At the moment, we keep literals on the CPU
+	m_capable = false;
 	m_synchronized = false;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::Identifier *identifier)
 {
-	m_capable = true;
+	m_capable = false;
 	m_synchronized = false;
 }
 
