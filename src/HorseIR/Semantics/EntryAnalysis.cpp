@@ -1,15 +1,15 @@
-#include "Analysis/EntryAnalysis.h"
+#include "HorseIR/Semantics/EntryAnalysis.h"
 
 #include "Utils/Logger.h"
 
-namespace Analysis {
+namespace HorseIR {
 
-void EntryAnalysis::Analyze(HorseIR::Program *program)
+void EntryAnalysis::Analyze(Program *program)
 {
 	program->Accept(*this);
 }
 
-bool EntryAnalysis::VisitIn(HorseIR::Function *function)
+bool EntryAnalysis::VisitIn(Function *function)
 {
 	// Check if this is an entry point into the program
 

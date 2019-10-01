@@ -18,7 +18,69 @@
 
 namespace Transformation {
 
-void Outliner::Outline(const HorseIR::Function *function)
+void Outliner::Outline(const HorseIR::Program *program)
+{
+	Utils::Logger::LogSection("Outlining program");
+
+	m_currentProgram = program;
+	m_outlinedProgram = nullptr;
+	program->Accept(*this);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Print_outline))
+	{
+		Utils::Logger::LogInfo("Outlined HorseIR program");
+
+		auto outlinedString = HorseIR::PrettyPrinter::PrettyString(m_outlinedProgram);
+		Utils::Logger::LogInfo(outlinedString, 0, true, Utils::Logger::NoPrefix);
+	}
+}
+
+bool Outliner::VisitIn(const HorseIR::Program *program)
+{
+	m_outlinedModules.clear();
+	return true;
+}
+
+void Outliner::VisitOut(const HorseIR::Program *program)
+{
+	m_outlinedProgram = new HorseIR::Program(m_outlinedModules);
+}
+
+bool Outliner::VisitIn(const HorseIR::Module *module)
+{
+	m_outlinedContents.clear();
+	return true;
+}
+
+bool Outliner::VisitIn(const HorseIR::LibraryModule *module)
+{
+	return false;
+}
+
+void Outliner::VisitOut(const HorseIR::LibraryModule *module)
+{
+	// Do nothing
+}
+
+void Outliner::VisitOut(const HorseIR::Module *module)
+{
+	auto outlinedModule = new HorseIR::Module(module->GetName(), m_outlinedContents);
+	m_outlinedModules.push_back(outlinedModule);
+}
+
+bool Outliner::VisitIn(const HorseIR::ImportDirective *import)
+{
+	m_outlinedContents.push_back(import->Clone());
+	return false;
+}
+
+bool Outliner::VisitIn(const HorseIR::GlobalDeclaration *global)
+{
+	m_outlinedContents.push_back(global->Clone());
+	return false;
+}
+
+bool Outliner::VisitIn(const HorseIR::Function *function)
 {
 	// Outline GPU kernels
 	// 1. Partition the overlay into an outlined overlay with nested functions
@@ -28,7 +90,7 @@ void Outliner::Outline(const HorseIR::Function *function)
 
 	auto timeDependencies_start = Utils::Chrono::Start();
 
-	Analysis::DependencyAccessAnalysis accessAnalysis(m_program);
+	Analysis::DependencyAccessAnalysis accessAnalysis(m_currentProgram);
 	accessAnalysis.Analyze(function);
 
 	Analysis::DependencyAnalysis dependencyAnalysis(accessAnalysis);
@@ -60,7 +122,7 @@ void Outliner::Outline(const HorseIR::Function *function)
 
 	auto timeShapes_start = Utils::Chrono::Start();
 
-	Analysis::ShapeAnalysis shapeAnalysis(m_program);
+	Analysis::ShapeAnalysis shapeAnalysis(m_currentProgram);
 	shapeAnalysis.Analyze(function);
 
 	auto timeShapes = Utils::Chrono::End(timeShapes_start);
@@ -110,19 +172,11 @@ void Outliner::Outline(const HorseIR::Function *function)
 	auto timeBuilder = Utils::Chrono::End(timeBuilder_start);
 
 	auto outlinedFunctions = builder.GetFunctions();
-
-	if (Utils::Options::Present(Utils::Options::Opt_Print_outline))
-	{
-		Utils::Logger::LogInfo("Outlined HorseIR functions");
-
-		for (auto function : outlinedFunctions)
-		{
-			auto outlinedString = HorseIR::PrettyPrinter::PrettyString(function);
-			Utils::Logger::LogInfo(outlinedString, 0, true, Utils::Logger::NoPrefix);
-		}
-	}
+	m_outlinedContents.insert(std::end(m_outlinedContents), std::begin(outlinedFunctions), std::end(outlinedFunctions));
 
 	Utils::Logger::LogTiming("Builder", timeBuilder);
+
+	return false;
 }
 
 }

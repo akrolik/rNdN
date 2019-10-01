@@ -179,7 +179,9 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 			callOperands
 		);
 
-		// Generate the containing statement depending on the number of output parameters
+		// Generate the containing statement and add the output symbols to the outer scope
+
+		m_symbols.top().insert(std::begin(outSymbols), std::end(outSymbols));
 
 		if (outSymbols.size() > 0)
 		{
