@@ -5,6 +5,10 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Generator.h"
+#include "Codegen/Generators/TargetGenerator.h"
+
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
 
@@ -16,7 +20,7 @@ class BuiltinGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	virtual void Generate(const std::string& target, const HorseIR::CallExpression *call)
+	virtual void Generate(const HorseIR::LValue *target, const HorseIR::CallExpression *call)
 	{
 		// The default behaviour for a builtin generator creates a target register
 		// of the correct type and generates the corresponding operation. This may
@@ -25,8 +29,8 @@ public:
 		// Depending on the input arguments, the output value may be compressed. If so,
 		// the generator must provide a single compression predicate
 
-		auto resources = this->m_builder.GetLocalResources();
-		const PTX::Register<T> *targetRegister = resources->template AllocateRegister<T>(target, GenerateCompressionPredicate(call));
+		TargetGenerator<B, T> targetGenerator(this->m_builder);
+		auto targetRegister = targetGenerator.Generate(target, GenerateCompressionPredicate(call));
 		Generate(targetRegister, call);
 	}
 
@@ -44,7 +48,7 @@ public:
 
 	[[noreturn]] static void Unimplemented(const HorseIR::CallExpression *call)
 	{
-		Unimplemented("builtin function " + call->GetIdentifier()->ToString());
+		Unimplemented("builtin function " + HorseIR::PrettyPrinter::PrettyString(call->GetFunctionLiteral()));
 	}
 
 	[[noreturn]] static void Unimplemented(const std::string& context)

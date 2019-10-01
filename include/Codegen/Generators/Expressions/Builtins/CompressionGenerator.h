@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HorseIR/Traversal/ConstForwardTraversal.h"
+#include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
@@ -12,12 +12,12 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class CompressionGenerator : public BuiltinGenerator<B, T>, public HorseIR::ConstForwardTraversal
+class CompressionGenerator : public BuiltinGenerator<B, T>, public HorseIR::ConstVisitor
 {
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
-	void Generate(const std::string& target, const HorseIR::CallExpression *call) override
+	void Generate(const HorseIR::LValue *target, const HorseIR::CallExpression *call) override
 	{
 		// Update the resource generator with the compression information. @compress arguments:
 		//   0 - bool mask
@@ -51,7 +51,8 @@ public:
 		auto value = opGen.GenerateRegister(identifier);
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto compression = resources->template GetCompressionRegister<T>(identifier->GetString());
+		//TODO: Global variables
+		auto compression = resources->template GetCompressionRegister<T>(identifier->GetName());
 
 		if (compression != nullptr)
 		{
@@ -61,18 +62,20 @@ public:
 			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
-			resources->AddCompressedRegister(m_target, value, predicate);
+			//TODO: Global variables
+			resources->AddCompressedRegister(m_target->GetSymbol()->name, value, predicate);
 		}
 		else
 		{
 			// Otherwise this is the first compression and it is simply stored
 
-			resources->AddCompressedRegister(m_target, value, m_predicate);
+			//TODO: Global variables
+			resources->AddCompressedRegister(m_target->GetSymbol()->name, value, m_predicate);
 		}
 	}
 
 private:
-	std::string m_target;
+	const HorseIR::LValue *m_target = nullptr;
 	const PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
 };
 

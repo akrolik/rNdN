@@ -1,22 +1,18 @@
 #pragma once
 
-#include "HorseIR/Traversal/ConstForwardTraversal.h"
+#include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
-#include "Codegen/Generators/AssignmentGenerator.h"
+#include "Codegen/Generators/DeclarationGenerator.h"
 #include "Codegen/Generators/ParameterGenerator.h"
 #include "Codegen/Generators/ReturnGenerator.h"
 #include "Codegen/Generators/ReturnParameterGenerator.h"
+#include "Codegen/Generators/Expressions/ExpressionGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
-#include "HorseIR/Tree/Method.h"
-#include "HorseIR/Tree/Module.h"
-#include "HorseIR/Tree/Parameter.h"
-#include "HorseIR/Tree/Program.h"
-#include "HorseIR/Tree/Statements/AssignStatement.h"
-#include "HorseIR/Tree/Statements/ReturnStatement.h"
+#include "HorseIR/Tree/Tree.h"
 
 #include "PTX/Program.h"
 #include "PTX/Type.h"
@@ -26,7 +22,7 @@
 namespace Codegen {
 
 template<PTX::Bits B>
-class CodeGenerator : public HorseIR::ConstForwardTraversal
+class CodeGenerator : public HorseIR::ConstVisitor
 {
 public:
 	CodeGenerator(const TargetOptions& targetOptions, const InputOptions& inputOptions) : m_builder(targetOptions, inputOptions) {}
@@ -56,27 +52,27 @@ public:
 		return ptxProgram;
 	}
 
-	PTX::Program *Generate(const std::vector<const HorseIR::Method *>& methods)
+	PTX::Program *Generate(const std::vector<const HorseIR::Function *>& functions)
 	{
-		// At the finest granularity, our codegen may compile a single method for the GPU.
-		// All child-methods are expected to be in the vector
+		// At the finest granularity, our codegen may compile a single function for the GPU.
+		// All child-functions are expected to be in the vector
 
 		PTX::Program *ptxProgram = new PTX::Program();
 		m_builder.SetCurrentProgram(ptxProgram);
 
-		// When compiling a list of methods we create a single container
+		// When compiling a list of functions we create a single container
 		// module for all
 
 		auto ptxModule = CreateModule();
 		m_builder.AddModule(ptxModule);
 		m_builder.SetCurrentModule(ptxModule);
 
-		// Generate the code for each method in the list. We assume this will produce
+		// Generate the code for each function in the list. We assume this will produce
 		// a full working PTX program
 
-		for (auto& methods : methods)
+		for (const auto& function : functions)
 		{
-			methods->Accept(*this);
+			function->Accept(*this);
 		}
 
 		// Finish generating the full module
@@ -99,11 +95,11 @@ public:
 		m_builder.SetCurrentModule(ptxModule);
 
 		// Visit the module contents
-		//
-		// At the moment we only consider methods, but in the future we could support
-		// cross module calling using PTX extern declarations.
 
-		HorseIR::ConstForwardTraversal::Visit(module);
+		for (const auto& content : module->GetContents())
+		{
+			content->Accept(*this);
+		}
 
 		// Complete the codegen for the module
 
@@ -126,17 +122,25 @@ public:
 		return ptxModule;
 	}
 
-	void Visit(const HorseIR::Method *method) override
+	void Visit(const HorseIR::ImportDirective *import) override
 	{
-		// Some modules may share both GPU and non-GPU code. We require the method
+		// At the moment we only consider functions, but in the future we could support
+		// cross module calling using PTX extern declarations.
+
+		//TODO: Add extern declarations for other modules
+	}
+
+	void Visit(const HorseIR::Function *function) override
+	{
+		// Some modules may share both GPU and non-GPU code. We require the function
 		// be flagged for GPU compilation.
 
-		if (!method->IsKernel())
+		if (!function->IsKernel())
 		{
 			return;
 		}
 
-		// Create a dynamiclly typed kernel function for the HorseIR method.
+		// Create a dynamiclly typed kernel function for the HorseIR function.
 		// Dynamic typing is used since we don't (at the compiler compile time)
 		// know the types of the parameters.
 		//
@@ -144,20 +148,20 @@ public:
 		// PTX modules. Currently there is no use for the link directive, but it
 		// is provided for future proofing.
 
-		auto function = new PTX::FunctionDefinition<PTX::VoidType>();
-		function->SetName(method->GetName());
-		function->SetEntry(true);
-		function->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
+		auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
+		kernel->SetName(function->GetName());
+		kernel->SetEntry(true);
+		kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
 		// Update the state for this function
 
-		m_builder.AddFunction(function);
-		m_builder.SetCurrentFunction(function, method);
-		m_builder.OpenScope(function);
+		m_builder.AddKernel(kernel);
+		m_builder.SetCurrentKernel(kernel, function);
+		m_builder.OpenScope(kernel);
 
-		// Visit the method contents (i.e. parameters + statements!)
+		// Visit the function contents (i.e. parameters + statements!)
 
-		for (auto& parameter : method->GetParameters())
+		for (const auto& parameter : function->GetParameters())
 		{
 			parameter->Accept(*this);
 		}
@@ -173,20 +177,24 @@ public:
 
 		// Lastly, add the return parameter to the function
 
+		//TODO: See if we can combine the parameter generation for both inputs and outputs, and split the value loading into a second generator
 		ReturnParameterGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, method->GetReturnType());
+		for (const auto& returnType : function->GetReturnTypes())
+		{
+			DispatchType(generator, returnType);
+		}
 
-		for (auto& statement : method->GetStatements())
+		for (const auto& statement : function->GetStatements())
 		{
 			statement->Accept(*this);
 		}
 
-		// Complete the codegen for the method by setting up the options and closing the scope
+		// Complete the codegen for the function by setting up the options and closing the scope
 
-		m_builder.GetFunctionOptions().SetSharedMemorySize(m_builder.GetGlobalResources()->GetSharedMemorySize());
+		m_builder.GetKernelOptions().SetSharedMemorySize(m_builder.GetGlobalResources()->GetSharedMemorySize());
 
 		m_builder.CloseScope();
-		m_builder.SetCurrentFunction(nullptr, nullptr);
+		m_builder.SetCurrentKernel(nullptr, nullptr);
 	}
 
 	void Visit(const HorseIR::Parameter *parameter) override
@@ -194,21 +202,42 @@ public:
 		//TODO: Use shape analysis for loading the correct index
 
 		ParameterGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
+		DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
 	}
 
-	void Visit(const HorseIR::AssignStatement *assign) override
+	void Visit(const HorseIR::DeclarationStatement *declarationS) override
 	{
-		AssignmentGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, assign->GetDeclaration()->GetType(), assign);
+		DeclarationGenerator<B> generator(m_builder);
+		DispatchType(generator, declarationS->GetDeclaration()->GetType(), declarationS->GetDeclaration());
 	}
 
-	void Visit(const HorseIR::ReturnStatement *ret) override
+	void Visit(const HorseIR::AssignStatement *assignS) override
+	{
+		// An assignment in HorseIR consists of: one or more LValues and expression (typically a function call).
+		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements into
+		// a single instruction. Additionally, for functions with more than one return value, it is challenging
+		// to maintain static type-correctness.
+		//
+		// In this setup, the expression visitor is expected to produce the full assignment
+
+		ExpressionGenerator<B> generator(this->m_builder);
+		generator.Generate(assignS->GetTargets(), assignS->GetExpression());
+	}
+
+	void Visit(const HorseIR::ExpressionStatement *expressionS) override
+	{
+		// Expression generator may also take zero targets and discard the resulting value
+
+		ExpressionGenerator<B> generator(this->m_builder);
+		generator.Generate(expressionS->GetExpression());
+	}
+
+	void Visit(const HorseIR::ReturnStatement *returnS) override
 	{
 		//TODO: Use shape analysis for loading the correct index
 
 		ReturnGenerator<B> generator(m_builder);
-		Codegen::DispatchType(generator, m_builder.GetReturnType(), ret, ReturnGenerator<B>::IndexKind::Global);
+		generator.Generate(returnS, ReturnGenerator<B>::IndexKind::Global);
 	}
 
 private:

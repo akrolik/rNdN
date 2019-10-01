@@ -21,6 +21,7 @@ public:
 	template<class T>
 	void Generate()
 	{
+		//TODO: This does not correctly generate - we should move to a standard generator
 		const std::string returnName = "$return";
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{

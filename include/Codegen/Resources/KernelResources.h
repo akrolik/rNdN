@@ -9,7 +9,7 @@
 namespace Codegen {
 
 template<class T>
-class FunctionResources : public Resources
+class KernelResources : public Resources
 {
 public:
 	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const override

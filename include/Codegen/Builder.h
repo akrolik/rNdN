@@ -5,12 +5,13 @@
 
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
-#include "Codegen/Resources/FunctionAllocator.h"
+#include "Codegen/Resources/KernelAllocator.h"
 #include "Codegen/Resources/ModuleAllocator.h"
 #include "Codegen/Resources/RegisterAllocator.h"
 
-#include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/Tree.h"
 
+#include "PTX/FunctionOptions.h"
 #include "PTX/Module.h"
 #include "PTX/Program.h"
 #include "PTX/Type.h"
@@ -34,9 +35,9 @@ public:
 		{
 			context += "Module::";
 		}
-		if (m_currentFunction != nullptr)
+		if (m_currentKernel != nullptr)
 		{
-			context += "Function['" + m_currentFunction->GetName() + "']::";
+			context += "Kernel['" + m_currentKernel->GetName() + "']::";
 		}
 		return context + string;
 	}
@@ -62,19 +63,19 @@ public:
 		m_currentModule->InsertDeclarations(declarations, 0);
 	}
 
-	void AddFunction(PTX::FunctionDefinition<PTX::VoidType> *function)
+	void AddKernel(PTX::FunctionDefinition<PTX::VoidType> *kernel)
 	{
-		m_currentModule->AddDeclaration(function);
-		m_currentModule->AddEntryFunction(function);
+		m_currentModule->AddDeclaration(kernel);
+		m_currentModule->AddEntryFunction(kernel);
 	}
 
-	void SetCurrentFunction(PTX::FunctionDefinition<PTX::VoidType> *function, const HorseIR::Method *method)
+	void SetCurrentKernel(PTX::FunctionDefinition<PTX::VoidType> *kernel, const HorseIR::Function *function)
 	{
+		m_currentKernel = kernel;
 		m_currentFunction = function;
-		m_currentMethod = method;
-		if (function != nullptr && m_functionResources.find(function) == m_functionResources.end())
+		if (kernel != nullptr && m_kernelResources.find(kernel) == m_kernelResources.end())
 		{
-			m_functionResources.insert({function, new FunctionAllocator()});
+			m_kernelResources.insert({kernel, new KernelAllocator()});
 		}
 	}
 
@@ -82,13 +83,13 @@ public:
 	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
 	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *parameter)
 	{
-		m_currentFunction->AddParameter(parameter);
-		GetFunctionResources()->AddParameter(identifier, parameter);
+		m_currentKernel->AddParameter(parameter);
+		GetKernelResources()->AddParameter(identifier, parameter);
 	}
 
-	HorseIR::Type *GetReturnType() const
+	const std::vector<HorseIR::Type *>& GetReturnTypes() const
 	{
-		return m_currentMethod->GetReturnType();
+		return m_currentFunction->GetReturnTypes();
 	}
 
 	void AddStatement(const PTX::Statement *statement)
@@ -123,8 +124,8 @@ public:
 
 	void CloseScope()
 	{
-		// Attach the resource declarations to the function. In PTX code, the declarations
-		// must come before use, and are typically grouped at the top of the function.
+		// Attach the resource declarations to the kernel. In PTX code, the declarations
+		// must come before use, and are typically grouped at the top of the kernel.
 
 		auto declarations = GetLocalResources()->GetDeclarations();
 		if (declarations.size() > 0)
@@ -136,13 +137,13 @@ public:
 	}
 
 	RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
-	FunctionAllocator *GetFunctionResources() const { return m_functionResources.at(m_currentFunction); }
+	KernelAllocator *GetKernelResources() const { return m_kernelResources.at(m_currentKernel); }
 	ModuleAllocator *GetGlobalResources() const { return m_globalResources.at(m_currentModule); }
 
 	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
 	const InputOptions& GetInputOptions() const { return m_inputOptions; }
 
-	PTX::Function::Options& GetFunctionOptions() { return m_currentFunction->GetOptions(); }
+	PTX::FunctionOptions& GetKernelOptions() { return m_currentKernel->GetOptions(); }
 
 private:
 	PTX::StatementList *GetCurrentBlock() const
@@ -156,12 +157,12 @@ private:
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;
 
-	PTX::FunctionDefinition<PTX::VoidType> *m_currentFunction = nullptr;
-	const HorseIR::Method *m_currentMethod = nullptr;
+	PTX::FunctionDefinition<PTX::VoidType> *m_currentKernel = nullptr;
+	const HorseIR::Function *m_currentFunction = nullptr;
 
 	std::stack<PTX::StatementList *> m_scopes;
 	std::unordered_map<PTX::StatementList *, RegisterAllocator *> m_localResources;
-	std::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, FunctionAllocator *> m_functionResources;
+	std::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, KernelAllocator *> m_kernelResources;
 	std::unordered_map<PTX::Module *, ModuleAllocator *> m_globalResources;
 };
 

@@ -29,11 +29,11 @@ public:
 			// Load it from the parameter space
 
 			auto resources = this->m_builder.GetLocalResources();
-			auto functionResources = this->m_builder.GetFunctionResources();
+			auto kernelResources = this->m_builder.GetKernelResources();
 
-			// Get the size variable from the function resources
+			// Get the size variable from the kernel resources
 
-			auto sizeVariable = functionResources->template GetParameter<PTX::UInt64Type, PTX::ParameterSpace>("$size");
+			auto sizeVariable = kernelResources->template GetParameter<PTX::UInt64Type, PTX::ParameterSpace>("$size");
 
 			auto sizeAddress = new PTX::MemoryAddress<B, PTX::UInt64Type, PTX::ParameterSpace>(sizeVariable);
 			auto size = resources->template AllocateTemporary<PTX::UInt64Type>("size");

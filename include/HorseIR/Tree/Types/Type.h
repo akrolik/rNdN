@@ -2,7 +2,12 @@
 
 #include "HorseIR/Tree/Node.h"
 
+namespace HorseIR { class Type; }
 namespace Analysis { class ShapeUtils; }
+namespace Codegen {
+	template<class G, typename... N>
+	void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes);
+}
 
 namespace HorseIR {
 
@@ -16,6 +21,9 @@ public:
 
 	friend class TypeUtils;
 	friend class Analysis::ShapeUtils;
+
+	template<class G, typename... N>
+	friend void Codegen::DispatchType(G &generator, const Type *type, N ...nodes);
 
 protected:
 	enum class Kind {

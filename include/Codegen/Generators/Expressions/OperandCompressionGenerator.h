@@ -1,9 +1,9 @@
 #pragma once
 
-#include "HorseIR/Traversal/ConstForwardTraversal.h"
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "Codegen/Generators/Generator.h"
 
-#include "HorseIR/Tree/Expressions/Identifier.h"
+#include "HorseIR/Tree/Tree.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
@@ -12,7 +12,7 @@
 
 namespace Codegen {
 
-class OperandCompressionGenerator : public HorseIR::ConstForwardTraversal, public Generator
+class OperandCompressionGenerator : public HorseIR::ConstVisitor, public Generator
 {
 public:
 	using Generator::Generator;
@@ -59,8 +59,9 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
+		//TODO: Global variables and out of module variables
 		auto resources = this->m_builder.GetLocalResources();
-		m_compression = resources->GetCompressionRegister<S>(identifier->GetString());
+		m_compression = resources->GetCompressionRegister<S>(identifier->GetName());
 	}
 
 private:

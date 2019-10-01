@@ -42,7 +42,7 @@
 namespace Codegen {
 
 enum class ReductionOperation {
-	Count,
+	Length,
 	Sum,
 	Average,
 	Minimum,
@@ -53,8 +53,8 @@ static std::string ReductionOperationString(ReductionOperation reductionOp)
 {
 	switch (reductionOp)
 	{
-		case ReductionOperation::Count:
-			return "count";
+		case ReductionOperation::Length:
+			return "length";
 		case ReductionOperation::Sum:
 			return "sum";
 		case ReductionOperation::Average:
@@ -78,9 +78,10 @@ public:
 
 	//TODO: Support correct type matrix for reductions
 
-	std::enable_if_t<!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8 && T::TypeBits != PTX::Bits::Bits16, void>
-	Generate(const std::string& target, const HorseIR::CallExpression *call) override
+	void Generate(const HorseIR::LValue *target, const HorseIR::CallExpression *call) override
 	{
+		if constexpr(!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8 && T::TypeBits != PTX::Bits::Bits16)
+		{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// Load the underlying data size
@@ -114,7 +115,7 @@ public:
 		auto compress = compGen.GetCompressionRegister(call->GetArgument(0));
 
 		const PTX::TypedOperand<T> *src = nullptr;
-		if (m_reductionOp == ReductionOperation::Count)
+		if (m_reductionOp == ReductionOperation::Length)
 		{
 			// A count reduction is value agnostic performs a sum over 1's, one value for each active thread
 
@@ -153,9 +154,11 @@ public:
 		}
 
 		//TODO: Select which type of reduction we want to implement
-		GenerateShuffleBlock(value);
-		// GenerateShuffleWarp(value);
+		//TODO: Shuffle block only reduces a single warp
+		// GenerateShuffleBlock(value);
+		GenerateShuffleWarp(value);
 		// GenerateShared(value);
+		}
 	}
 
 	void GenerateShuffleReduction(const PTX::Register<T> *value)
@@ -165,8 +168,8 @@ public:
 		auto resources = this->m_builder.GetLocalResources();
 		auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
 
-		auto& functionOptions = this->m_builder.GetFunctionOptions();
-		functionOptions.SetThreadMultiple(warpSize);
+		auto& kernelOptions = this->m_builder.GetKernelOptions();
+		kernelOptions.SetThreadMultiple(warpSize);
 
 		for (unsigned int offset = warpSize >> 1; offset > 0; offset >>= 1)
 		{
@@ -265,12 +268,11 @@ public:
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(labelBlock);
 
-		// Write a single value per thread to the global atomic value
+		// Write a single value per block to the global atomic value
 
 		auto localIndex = indexGen.GenerateLocalIndex();
 		GenerateAtomicWrite(localIndex, value);
 	}
-
 
 	void GenerateShuffleWarp(const PTX::Register<T> *value)
 	{
@@ -297,14 +299,14 @@ public:
 
 		// Compute the number of threads used in this reduction
 
-		auto& functionOptions = this->m_builder.GetFunctionOptions();
+		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
 		unsigned int threadCount = targetOptions.MaxBlockSize;
 		if (inputOptions.InputSize < threadCount)
 		{
 			threadCount = std::ceil(std::log2(inputOptions.InputSize));
 		}
-		functionOptions.SetThreadCount(threadCount);
+		kernelOptions.SetThreadCount(threadCount);
 
 		auto sharedMemoryAddress = resources->template AllocateSharedMemory<B, T>(threadCount);
 
@@ -391,10 +393,10 @@ public:
 		// At the end of the partial reduction we only have a single active thread. Use it to load the final value
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto functionResources = this->m_builder.GetFunctionResources();
+		auto kernelResources = this->m_builder.GetKernelResources();
 
-		auto& functionOptions = this->m_builder.GetFunctionOptions();
-		functionOptions.SetAtomicReturn(true);
+		auto& kernelOptions = this->m_builder.GetKernelOptions();
+		kernelOptions.SetAtomicReturn(true);
 
 		auto predEnd = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto labelEnd = new PTX::Label("RED_END");
@@ -412,7 +414,7 @@ public:
 
 		// Get the function return parameter
 
-		auto returnVariable = functionResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>("$return");
+		auto returnVariable = kernelResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>("$return");
 
 		// Since atomics only output a single value, we use null addressing
 
@@ -435,7 +437,7 @@ private:
 	{
 		switch (reductionOp)
 		{
-			case ReductionOperation::Count:
+			case ReductionOperation::Length:
 			case ReductionOperation::Average:
 			case ReductionOperation::Sum:
 				return new PTX::Value<T>(0);
@@ -483,29 +485,37 @@ private:
 		const PTX::Register<PTX::PredicateType> *predicate = nullptr;
 		switch (m_reductionOp)
 		{
-			case ReductionOperation::Count:
+			case ReductionOperation::Length:
 			case ReductionOperation::Average:
 			case ReductionOperation::Sum:
+			{
 				// All 3 reductions are essentially a sum. Count on all 1's, average performs a final division
 
 				this->m_builder.AddStatement(new PTX::AddInstruction<T>(result, val, offsetVal));
 				break;
+			}
 			case ReductionOperation::Minimum:
+			{
 				// Minimum reduction checks if the offset value is less than the initial value. If so, we
 				// will write it back in place of the initial value
 
 				predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Less));
 				break;
+			}
 			case ReductionOperation::Maximum:
+			{
 				// Maximum reduction checks if the offset value is greater than the initial value. If so, we
 				// will write it back in place of the initial value
 
 				predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, offsetVal, val, T::ComparisonOperator::Greater));
 				break;
+			}
 			default:
+			{
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(m_reductionOp));
+			}
 		}
 
 		return std::make_pair(result, predicate);
@@ -515,7 +525,7 @@ private:
 	{
 		switch (reductionOp)
 		{
-			case ReductionOperation::Count:
+			case ReductionOperation::Length:
 			case ReductionOperation::Average:
 			case ReductionOperation::Sum:
 				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value);

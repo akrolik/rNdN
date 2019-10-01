@@ -4,6 +4,7 @@
 
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/TypeDispatch.h"
 
 #include "HorseIR/Tree/Statements/ReturnStatement.h"
 
@@ -24,13 +25,22 @@ public:
 
 	using IndexKind = typename AddressGenerator<B>::IndexKind;
 
-	template<class T>
-	void Generate(const HorseIR::ReturnStatement *ret, IndexKind indexKind)
+	void Generate(const HorseIR::ReturnStatement *returnS, IndexKind indexKind)
 	{
-		// Check if the function is returned by one of the generators using an atomic action
+		for (const auto& operand : returnS->GetOperands())
+		{
+			Codegen::DispatchType(*this, operand->GetType(), operand, indexKind);
+		}
+	}
 
-		auto& functionOptions = this->m_builder.GetFunctionOptions();
-		if (functionOptions.IsAtomicReturn())
+	template<class T>
+	void Generate(const HorseIR::Operand *operand, IndexKind indexKind)
+	{
+		// Check if the kernel is returned by one of the generators using an atomic action
+
+		//TODO: Atomic return may be only a single variable
+		auto& kernelOptions = this->m_builder.GetKernelOptions();
+		if (kernelOptions.IsAtomicReturn())
 		{
 			return;
 		}
@@ -43,7 +53,7 @@ public:
 			// so a conversion must first be run
 
 			OperandGenerator<B, PTX::PredicateType> opGen(this->m_builder);
-			auto value = opGen.GenerateRegister(ret->GetIdentifier());
+			auto value = opGen.GenerateRegister(operand);
 			auto converted = ConversionGenerator::ConvertSource<PTX::Int8Type>(this->m_builder, value);
 
 			Generate(converted, indexKind);
@@ -51,7 +61,7 @@ public:
 		else
 		{
 			OperandGenerator<B, T> opGen(this->m_builder);
-			auto value = opGen.GenerateRegister(ret->GetIdentifier());
+			auto value = opGen.GenerateRegister(operand);
 			Generate(value, indexKind);
 		}
 	}
@@ -61,8 +71,8 @@ public:
 	{
 		// Fetch the return variable
 
-		auto functionResources = this->m_builder.GetFunctionResources();
-		auto variable = functionResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>("$return");
+		auto kernelResources = this->m_builder.GetKernelResources();
+		auto variable = kernelResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>("$return");
 
 		// Store the value at the appropriate index
 

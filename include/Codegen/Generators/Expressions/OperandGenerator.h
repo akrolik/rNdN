@@ -1,17 +1,10 @@
 #pragma once
 
-#include "HorseIR/Traversal/ConstForwardTraversal.h"
+#include "HorseIR/Traversal/ConstVisitor.h"
 #include "Codegen/Generators/Generator.h"
 
-#include "HorseIR/Tree/Expressions/Identifier.h"
-#include "HorseIR/Tree/Expressions/Literals/Literal.h"
-#include "HorseIR/Tree/Expressions/Literals/Int8Literal.h"
-#include "HorseIR/Tree/Expressions/Literals/Int16Literal.h"
-#include "HorseIR/Tree/Expressions/Literals/Int32Literal.h"
-#include "HorseIR/Tree/Expressions/Literals/Int64Literal.h"
-#include "HorseIR/Tree/Expressions/Literals/Float32Literal.h"
-#include "HorseIR/Tree/Expressions/Literals/Float64Literal.h"
-#include "HorseIR/Tree/Types/Type.h"
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "PTX/Instructions/Data/MoveInstruction.h"
 #include "PTX/Instructions/Data/PackInstruction.h"
@@ -31,7 +24,7 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class OperandGenerator : public HorseIR::ConstForwardTraversal, public Generator
+class OperandGenerator : public HorseIR::ConstVisitor, public Generator
 {
 public:
 	using Generator::Generator;
@@ -44,7 +37,7 @@ public:
 		{
 			return m_operand;
 		}
-		Utils::Logger::LogError("Unable to generate operand " + expression->ToString());
+		Utils::Logger::LogError("Unable to generate operand '" + HorseIR::PrettyPrinter::PrettyString(expression) + "'");
 	}
 
 	const PTX::Register<T> *GenerateRegister(const HorseIR::Expression *expression)
@@ -88,14 +81,15 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
+		//TODO: Identifiers may be global and have a module name
 		auto resources = this->m_builder.GetLocalResources();
 		if constexpr(std::is_same<T, S>::value)
 		{
-			m_operand = resources->GetRegister<T>(identifier->GetString());
+			m_operand = resources->GetRegister<T>(identifier->GetName());
 		}
 		else
 		{
-			auto source = resources->GetRegister<S>(identifier->GetString());
+			auto source = resources->GetRegister<S>(identifier->GetName());
 			m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, source);
 		}
 		m_register = true;
@@ -132,7 +126,7 @@ public:
 	}
 
 	template<class L>
-	void Generate(const HorseIR::Literal<L> *literal)
+	void Generate(const HorseIR::TypedVectorLiteral<L> *literal)
 	{
 		if (literal->GetCount() == 1)
 		{

@@ -2,7 +2,7 @@
 
 #include "Codegen/Resources/ResourceAllocator.h"
 
-#include "Codegen/Resources/FunctionResources.h"
+#include "Codegen/Resources/KernelResources.h"
 
 #include "PTX/Declarations/VariableDeclaration.h"
 #include "PTX/Operands/Variables/AddressableVariable.h"
@@ -10,7 +10,7 @@
 
 namespace Codegen {
 
-class FunctionAllocator : public ResourceAllocator<FunctionResources>
+class KernelAllocator : public ResourceAllocator<KernelResources>
 {
 public:
 	template<class T, class S>

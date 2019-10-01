@@ -1,19 +1,18 @@
 #pragma once
 
-#include "HorseIR/Tree/Types/Type.h"
-#include "HorseIR/Tree/Types/ListType.h"
-#include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
 
-// @method Dispatch<G, N> (G = Generator, N = NodeType)
+// @function Dispatch<G, N> (G = Generator, N = NodeType)
 //
 // @requires
-// 	- G is a class containing template method
+// 	- G is a class containing template function
 // 		template<class T>
 // 		void Generate(const N*)
 //
-// Convenience method for converting between HorseIR dynamic types and PTX static types, and
+// Convenience function for converting between HorseIR dynamic types and PTX static types, and
 // instantiating the statically typed PTX generator.
 //
 // This allows the code generator to centralize the type mapping for various constructs
@@ -30,7 +29,7 @@ static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes
 template<class G, typename... N>
 static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 {
-	switch (type->GetKind())
+	switch (type->m_kind)
 	{
 		case HorseIR::Type::Kind::Basic:
 			DispatchBasic<G, N...>(generator, static_cast<const HorseIR::BasicType *>(type), nodes...);
@@ -39,45 +38,46 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 			DispatchList<G, N...>(generator, static_cast<const HorseIR::ListType *>(type), nodes...);
 			break;
 		default:
-			Utils::Logger::LogError("Unsupported type " + type->ToString() + " in function " + generator.m_builder.GetContextString("Dispatch"));
+			Utils::Logger::LogError("Unsupported type " + HorseIR::PrettyPrinter::PrettyString(type) + " in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
 }
 
 template<class G, typename... N>
 static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nodes)
 {
-	switch (type->GetKind())
+	switch (type->GetBasicKind())
 	{
-		case HorseIR::BasicType::Kind::Bool:
+		case HorseIR::BasicType::BasicKind::Boolean:
 			generator.template Generate<PTX::PredicateType>(nodes...);
 			break;
-		case HorseIR::BasicType::Kind::Int8:
+		case HorseIR::BasicType::BasicKind::Int8:
 			generator.template Generate<PTX::Int8Type>(nodes...);
 			break;
-		case HorseIR::BasicType::Kind::Int16:
+		case HorseIR::BasicType::BasicKind::Int16:
 			generator.template Generate<PTX::Int16Type>(nodes...);
 			break;
-		case HorseIR::BasicType::Kind::Int32:
+		case HorseIR::BasicType::BasicKind::Int32:
 			generator.template Generate<PTX::Int32Type>(nodes...);
 			break;
-		case HorseIR::BasicType::Kind::Int64:
+		case HorseIR::BasicType::BasicKind::Int64:
 			generator.template Generate<PTX::Int64Type>(nodes...);
 			break;
-		case HorseIR::BasicType::Kind::Float32:
+		case HorseIR::BasicType::BasicKind::Float32:
 			generator.template Generate<PTX::Float32Type>(nodes...);
 			break;
-		case HorseIR::BasicType::Kind::Float64:
+		case HorseIR::BasicType::BasicKind::Float64:
 			generator.template Generate<PTX::Float64Type>(nodes...);
 			break;
 		default:
-			Utils::Logger::LogError("Unsupported type " + type->ToString() + " in function " + generator.m_builder.GetContextString("Dispatch"));
+			Utils::Logger::LogError("Unsupported type " + HorseIR::PrettyPrinter::PrettyString(type) + " in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
 }
 
 template<class G, typename... N>
 static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes)
 {
-	DispatchBasic<G, N...>(generator, static_cast<const HorseIR::BasicType *>(type->GetElementType()), nodes...);
+	//TODO: List generation
+	// DispatchBasic<G, N...>(generator, static_cast<const HorseIR::BasicType *>(type->GetElementType()), nodes...);
 }
 
 }
