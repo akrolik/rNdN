@@ -8,7 +8,7 @@
 
 namespace Runtime {
 
-PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& methods)
+PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Function *>& functions)
 {
 	// Generate 64-bit PTX code from the input HorseIR for the current device
 
@@ -21,7 +21,7 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& m
 	auto timeCode_start = Utils::Chrono::Start();
 
 	auto codegen = new Codegen::CodeGenerator<PTX::Bits::Bits64>(m_targetOptions, m_inputOptions);
-	auto ptxProgram = codegen->Generate(methods);
+	auto ptxProgram = codegen->Generate(functions);
 
 	auto timeCode = Utils::Chrono::End(timeCode_start);
 
@@ -29,21 +29,21 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& m
 
 	// Dump the PTX program or JSON string to stdout
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Dump_ptx))
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
 	{
 		Utils::Logger::LogInfo("Generated PTX program");
 		for (const auto& module : ptxProgram->GetModules())
 		{
-			Utils::Logger::LogInfo(module->ToString(), 0, Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(module->ToString(), 0, true, Utils::Logger::NoPrefix);
 		}
 	}
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Dump_json))
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_json))
 	{
 		Utils::Logger::LogInfo("Generated PTX program (JSON)");
 		for (const auto& module : ptxProgram->GetModules())
 		{
-			Utils::Logger::LogInfo(module->ToJSON().dump(4), 0, Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(module->ToJSON().dump(4), 0, true, Utils::Logger::NoPrefix);
 		}
 	}
 
@@ -53,7 +53,6 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Method *>& m
 void JITCompiler::Optimize(PTX::Program *program)
 {
 	//TODO: Implement optimizer
-
 }
 
 }

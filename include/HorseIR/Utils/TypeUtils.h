@@ -110,11 +110,14 @@ static Type *GetReducedType(const std::vector<Type *>& types)
 	return nullptr;
 }
 
-static bool IsCastable(Type *destination, Type *source)
+static bool IsCastable(const Type *destination, const Type *source)
 {
+	if (source == nullptr)
+	{
+		return true;
+	}
 	//TODO: Check cast is valid according to rules
-
-	return true;
+	return (*destination == *source);
 }
 
 static bool ForallElements(const ListType *listType, bool (*f)(const Type *))

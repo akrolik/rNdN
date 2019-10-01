@@ -71,7 +71,8 @@ void GPUManager::InitializeLibraries()
 
 CUDA::Module GPUManager::AssembleProgram(const PTX::Program *program)
 {
-	// Generate the CUDA module for the program
+	// Generate the CUDA module for the program with the program
+	// modules and linked external modules (libraries)
 
 	auto timeJIT_start = Utils::Chrono::Start();
 
@@ -84,6 +85,9 @@ CUDA::Module GPUManager::AssembleProgram(const PTX::Program *program)
 	{
 		cModule.AddLinkedModule(module);
 	}
+
+	// Compile the module and geneate the cuBin
+
 	cModule.Compile();
 
 	auto timeJIT = Utils::Chrono::End(timeJIT_start);

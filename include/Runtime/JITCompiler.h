@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "HorseIR/Tree/Method.h"
+#include "HorseIR/Tree/Function.h"
 
 #include "PTX/Program.h"
 
@@ -16,7 +16,7 @@ class JITCompiler
 public:
 	JITCompiler(const Codegen::TargetOptions& targetOptions, const Codegen::InputOptions& inputOptions) : m_targetOptions(targetOptions), m_inputOptions(inputOptions) {}
 
-	PTX::Program *Compile(const std::vector<const HorseIR::Method *>& methods);
+	PTX::Program *Compile(const std::vector<const HorseIR::Function *>& functions);
 	void Optimize(PTX::Program *program);
 
 private:
