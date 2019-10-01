@@ -75,10 +75,10 @@ void TypeChecker::VisitOut(IfStatement *ifS)
 {
 	// Check the condition is a boolean type
 
-	const auto& conditionTypes = ifS->GetCondition()->GetTypes();
-	if (!TypeUtils::IsSingleType(conditionTypes) || !TypeUtils::IsBooleanType(TypeUtils::GetSingleType(conditionTypes)))
+	const auto conditionType = ifS->GetCondition()->GetType();
+	if (!TypeUtils::IsBooleanType(conditionType))
 	{
-		Utils::Logger::LogError("If condition must be a boolean type, received " + TypeUtils::TypeString(conditionTypes));
+		Utils::Logger::LogError("If condition must be a boolean type, received " + TypeUtils::TypeString(conditionType));
 	}
 }
 
@@ -86,10 +86,10 @@ void TypeChecker::VisitOut(WhileStatement *whileS)
 {
 	// Check the condition is a boolean type
 
-	const auto& conditionTypes = whileS->GetCondition()->GetTypes();
-	if (!TypeUtils::IsSingleType(conditionTypes) || !TypeUtils::IsBooleanType(TypeUtils::GetSingleType(conditionTypes)))
+	const auto conditionType = whileS->GetCondition()->GetType();
+	if (!TypeUtils::IsBooleanType(conditionType))
 	{
-		Utils::Logger::LogError("While condition must be a boolean type, received " + TypeUtils::TypeString(conditionTypes));
+		Utils::Logger::LogError("While condition must be a boolean type, received " + TypeUtils::TypeString(conditionType));
 	}
 }
 
@@ -97,10 +97,10 @@ void TypeChecker::VisitOut(RepeatStatement *repeatS)
 {
 	// Check the condition is an integer type
 
-	const auto& conditionTypes = repeatS->GetCondition()->GetTypes();
-	if (!TypeUtils::IsSingleType(conditionTypes) || !TypeUtils::IsIntegerType(TypeUtils::GetSingleType(conditionTypes)))
+	const auto conditionType = repeatS->GetCondition()->GetType();
+	if (!TypeUtils::IsIntegerType(conditionType))
 	{
-		Utils::Logger::LogError("Repeat condition must be an integer type, received " + TypeUtils::TypeString(conditionTypes));
+		Utils::Logger::LogError("Repeat condition must be an integer type, received " + TypeUtils::TypeString(conditionType));
 	}
 }
 
@@ -114,8 +114,7 @@ void TypeChecker::VisitOut(ReturnStatement *ret)
 	std::vector<Type *> operandTypes;
 	for (const auto operand : ret->GetOperands())
 	{
-		const auto& types = operand->GetTypes();
-		operandTypes.insert(std::end(operandTypes), std::begin(types), std::end(types));
+		operandTypes.push_back(operand->GetType());
 	}
 	const auto& returnTypes = m_currentFunction->GetReturnTypes();
 
@@ -150,21 +149,14 @@ void TypeChecker::VisitOut(CastExpression *cast)
 void TypeChecker::VisitOut(CallExpression *call)
 {
 	const auto function = call->GetFunctionLiteral()->GetFunction();
-	const auto functionType = TypeUtils::GetType<FunctionType>(TypeUtils::GetSingleType(call->GetFunctionLiteral()->GetTypes()));
+	const auto functionType = TypeUtils::GetType<FunctionType>(call->GetFunctionLiteral()->GetType());
 
 	// Construct the list of argument types, decomposing lists (for future compatibility), and checking void
 
 	std::vector<Type *> argumentTypes;
 	for (const auto argument : call->GetArguments())
 	{
-		// Check against void types
-
-		const auto argumentType = argument->GetTypes();
-		if (TypeUtils::IsEmptyType(argumentType))
-		{
-			Utils::Logger::LogError("Argument '" + PrettyPrinter::PrettyString(argument) + "' to function '" + function->GetName() + "' has void type");
-		}
-		argumentTypes.insert(std::end(argumentTypes), std::begin(argumentType), std::end(argumentType));
+		argumentTypes.push_back(argument->GetType());
 	}
 
 	// Analyze the function according to the type rules and form the return types

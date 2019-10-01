@@ -12,6 +12,9 @@ public:
 	bool operator==(const Operand& other) const;
 	bool operator!=(const Operand& other) const;
 
+	// An operand only has a single type
+	Type *GetType() const { return m_types.at(0); }
+
 protected:
 	enum class Kind {
 		Identifier,

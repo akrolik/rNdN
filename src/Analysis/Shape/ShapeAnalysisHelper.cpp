@@ -872,7 +872,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Input: f, List<Size*, {Shape*}>
 			// Output: List<Size*, f(Shape*)>
 
-			const auto type = arguments.at(0)->GetTypes().at(0);
+			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape = argumentShapes.at(1);
@@ -895,7 +895,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Input: f, List<Size*, {Shape1*}>, List<Size*, {Shape2*}>
 			// Output: List<Size*, f(Shape1*, Shape2*)>
 
-			const auto type = arguments.at(0)->GetTypes().at(0);
+			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape1 = argumentShapes.at(1);
@@ -932,7 +932,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Input: f, List<Size*, {Shape1*}>, Shape2*
 			// Output: List<Size*, {f(Shape1*, Shape2*)}>
 
-			const auto type = arguments.at(0)->GetTypes().at(0);
+			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape1 = argumentShapes.at(1);
@@ -956,7 +956,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			// Input: f, Shape1*, List<Size*, {Shape2*}>
 			// Output: List<Size*, {f(Shape1*, Shape2*)}>
 
-			const auto type = arguments.at(0)->GetTypes().at(0);
+			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto argumentShape1 = argumentShapes.at(1);
@@ -1272,7 +1272,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 				auto count = std::max({elementCount1, elementCount2, functionCount});
 				for (auto i = 0u; i < count; ++i)
 				{
-					const auto type = arguments.at((functionCount == 1) ? 0 : i)->GetTypes().at(0);
+					const auto type = arguments.at((functionCount == 1) ? 0 : i)->GetType();
 					const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 					const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
@@ -1289,7 +1289,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 
 				Require(functionCount == 1);
 
-				const auto type = arguments.at(0)->GetTypes().at(0);
+				const auto type = arguments.at(0)->GetType();
 				const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 				const auto returnShapes = AnalyzeCall(function, {argumentShape1, argumentShape2}, {});
