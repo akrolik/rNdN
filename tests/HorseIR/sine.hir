@@ -1,8 +1,0 @@
-module default {
-        import Builtin;
-
-        def main(a:f32) : f32 {
-		b:f32 = @sin(a);
-                return b;
-        }
-}
