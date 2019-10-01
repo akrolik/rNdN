@@ -1,6 +1,8 @@
 #pragma once
 
 #include "PTX/Instructions/InstructionBase.h"
+#include "PTX/Instructions/Modifiers/RoundingModifier.h"
+#include "PTX/Instructions/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
