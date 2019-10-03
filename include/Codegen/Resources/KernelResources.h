@@ -24,11 +24,11 @@ public:
 	{
 		if constexpr(std::is_same<S, PTX::RegisterSpace>::value)
 		{
-			m_registerMap.insert({identifier, declaration});
+			m_registerMap[identifier] = declaration;
 		}
 		else if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 		{
-			m_parameterMap.insert({identifier, declaration});
+			m_parameterMap[identifier] = declaration;
 		}
 	}
 

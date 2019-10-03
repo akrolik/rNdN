@@ -23,6 +23,12 @@ public:
 	}
 
 	template<class T>
+	const PTX::Register<T> *CompressRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate)
+	{
+		return this->GetResources<T>()->CompressRegister(identifier, predicate);
+	}
+
+	template<class T>
 	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
 	{
 		this->GetResources<T>()->AddCompressedRegister(identifier, value, predicate);

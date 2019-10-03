@@ -32,7 +32,14 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
-		m_targetRegister = resources->GetRegister<T>(identifier->GetName());
+		if (m_predicateRegister == nullptr)
+		{
+			m_targetRegister = resources->GetRegister<T>(identifier->GetName());
+		}
+		else
+		{
+			m_targetRegister = resources->CompressRegister<T>(identifier->GetName(), m_predicateRegister);
+		}
 	}
 
 private:
