@@ -156,8 +156,8 @@ public:
 		//TODO: Select which type of reduction we want to implement
 		//TODO: Shuffle block only reduces a single warp
 		// GenerateShuffleBlock(value);
-		GenerateShuffleWarp(value);
-		// GenerateShared(value);
+		// GenerateShuffleWarp(value);
+		GenerateShared(value);
 		}
 	}
 
@@ -293,6 +293,7 @@ public:
 		// Fetch generation state and options
 
 		auto resources = this->m_builder.GetLocalResources();
+		auto globalResources = this->m_builder.GetGlobalResources();
 
 		auto& targetOptions = this->m_builder.GetTargetOptions();
 		auto& inputOptions = this->m_builder.GetInputOptions();
@@ -304,14 +305,15 @@ public:
 		unsigned int threadCount = targetOptions.MaxBlockSize;
 		if (inputOptions.InputSize < threadCount)
 		{
-			threadCount = std::ceil(std::log2(inputOptions.InputSize));
+			//TODO: Reduce the number of threads if the data is small
+			// threadCount = std::ceil(std::log2(inputOptions.InputSize));
 		}
 		kernelOptions.SetThreadCount(threadCount);
 
-		auto sharedMemoryAddress = resources->template AllocateSharedMemory<B, T>(threadCount);
+		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(threadCount);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemoryAddress->GetVariable(), AddressGenerator<B>::IndexKind::Local, sharedMemoryAddress->GetOffset());
+		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Local);
 
 		// Load the the local thread index for accessing the shared memory
 
@@ -328,11 +330,9 @@ public:
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
 
-
-		const unsigned int NumThreads = 512;
 		int warpSize = targetOptions.WarpSize;
 
-		for (unsigned int i = (NumThreads >> 1); i >= warpSize; i >>= 1)
+		for (unsigned int i = (threadCount >> 1); i >= warpSize; i >>= 1)
 		{
 			// At each level, half the threads become inactive
 
@@ -374,7 +374,7 @@ public:
 		}
 
 		auto result = resources->template AllocateTemporary<T>();
-		auto loadResult = new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(result, sharedMemoryAddress);
+		auto loadResult = new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(result, sharedThreadAddress);
 		GenerateAtomicWrite(localIndex, result, loadResult);
 	}
 
@@ -429,7 +429,6 @@ public:
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(labelEnd);
-		this->m_builder.AddStatement(new PTX::ReturnInstruction());
 	}
 
 private:
