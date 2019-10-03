@@ -11,6 +11,10 @@ void Runtime::Initialize()
 	// Debug tables are used for test queries instead of real query data
 
 	m_dataRegistry.LoadDebugData();
+
+	// TPC-H data for benchmarking
+
+	m_dataRegistry.LoadTPCHData();
 }
 
 }

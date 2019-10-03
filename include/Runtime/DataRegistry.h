@@ -16,6 +16,7 @@ public:
 	static void LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size);
 
 	void LoadDebugData();
+	void LoadTPCHData();
 
 	void AddTable(const std::string& name, DataTable *table);
 	DataTable *GetTable(const std::string& name) const;

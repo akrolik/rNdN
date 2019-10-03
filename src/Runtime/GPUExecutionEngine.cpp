@@ -29,7 +29,7 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	//TODO: Get the input geometry size from the table
 	Codegen::InputOptions inputOptions;
-	inputOptions.InputSize = 256;
+	inputOptions.InputSize = 6001215;
 
 	JITCompiler compiler(targetOptions, inputOptions);
 	auto ptxProgram = compiler.Compile({function});
@@ -62,7 +62,6 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	Utils::Logger::LogInfo(kernelOptions.ToString(), 1);
 
 	// Execute the compiled kernel on the GPU
-	//
 	//   1. Create the invocation (thread sizes + arguments)
 	//   2. Transfer the arguments
 	//   3. Execute
@@ -90,7 +89,6 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		//TODO: We should push this conversion to the calling class
 		auto contiguousArgument = static_cast<ContiguousDataObject *>(argument);
 
-		//TODO: All buffers should be padded to a multiple of the thread count
 		//TODO: Add a container buffer object to synchronize the transfers automatically (and only as needed)
 
 		// Transfer the buffer to the GPU
@@ -135,7 +133,14 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Launch the kernel!
 
+	auto timeInvocation_start = Utils::Chrono::Start();
+
 	invocation.Launch();
+	//TODO: Move to CUDA class
+	cudaDeviceSynchronize();
+
+	auto timeInvocation = Utils::Chrono::End(timeInvocation_start);
+	Utils::Logger::LogTiming("Kernel invocation", timeInvocation);
 
 	// Complete the execution by transferring the results back to the host
 
@@ -145,8 +150,7 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	}
 
 	auto timeExec = Utils::Chrono::End(timeExec_start);
-
-	Utils::Logger::LogTiming("Kernel execution", timeExec);
+	Utils::Logger::LogTiming("Kernel execution (including transfers)", timeExec);
 
 	return returnObjects;
 }

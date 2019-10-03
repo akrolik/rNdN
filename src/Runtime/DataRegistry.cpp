@@ -1,6 +1,10 @@
 #include "Runtime/DataRegistry.h"
 
+#include <stdlib.h>
+
 #include "HorseIR/Utils/PrettyPrinter.h"
+
+#include "Libraries/csv.h"
 
 #include "Utils/Logger.h"
 
@@ -46,6 +50,49 @@ void DataRegistry::LoadDebugData()
 	}
 }
 
+void DataRegistry::LoadTPCHData()
+{
+	Utils::Logger::LogSection("Loading TPC-H data");
+
+	std::vector<double> quantity;
+	std::vector<double> extPrice;
+	std::vector<double> discount;
+	std::vector<std::int32_t> shipDate;
+
+	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> reader("../data/tpc-h/lineitem.tbl");
+
+	char *l_orderKey, *l_partKey, *l_supplyKey, *l_lineNumber, *l_quantity, *l_extPrice, *l_discount, *l_tax, *l_returnFlag,
+	     *l_lineStatus, *l_shipDate, *l_commitDate, *l_receiptDate, *l_shipInstruct, *l_shipMode, *l_comment, *l_end;
+
+	auto count = 0u;
+	while (reader.read_row(
+		l_orderKey, l_partKey, l_supplyKey, l_lineNumber, l_quantity, l_extPrice, l_discount, l_tax, l_returnFlag,
+		l_lineStatus, l_shipDate, l_commitDate, l_receiptDate, l_shipInstruct, l_shipMode, l_comment, l_end
+	))
+	{
+		quantity.push_back(atof(l_quantity));
+		extPrice.push_back(atof(l_extPrice));
+		discount.push_back(atof(l_discount));
+
+		int year, month, day;
+		sscanf(l_shipDate, "%d-%d-%d", &year, &month, &day);
+		auto date_val = new HorseIR::DateValue(year, month, day);
+		shipDate.push_back(date_val->GetEpochTime());
+		delete date_val;
+
+		count++;
+	}
+
+	auto table = new DataTable(count);
+
+	table->AddColumn("l_quantity", new TypedDataVector<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity));
+	table->AddColumn("l_extendedprice", new TypedDataVector<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice));
+	table->AddColumn("l_discount", new TypedDataVector<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount));
+	table->AddColumn("l_shipdate", new TypedDataVector<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate));
+	
+	AddTable("lineitem", table);
+}
+
 void DataRegistry::AddTable(const std::string& name, DataTable *table)
 {
 	m_registry.insert({name, table});
@@ -60,11 +107,6 @@ DataTable *DataRegistry::GetTable(const std::string& name) const
 		Utils::Logger::LogError("Table '" + name + "' not found");
 	}
 	return m_registry.at(name);
-}
-
-void LoadFile(const std::string& name)
-{
-	//TODO: Load data from file into the registry
 }
 
 }
