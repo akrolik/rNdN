@@ -201,6 +201,8 @@ public:
 	{
 		//TODO: Use shape analysis for loading the correct index
 
+		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(parameter, true)));
+
 		ParameterGenerator<B> generator(m_builder);
 		DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
 	}
@@ -220,6 +222,8 @@ public:
 		//
 		// In this setup, the expression visitor is expected to produce the full assignment
 
+		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(assignS, true)));
+
 		ExpressionGenerator<B> generator(this->m_builder);
 		generator.Generate(assignS->GetTargets(), assignS->GetExpression());
 	}
@@ -228,6 +232,8 @@ public:
 	{
 		// Expression generator may also take zero targets and discard the resulting value
 
+		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(expressionS, true)));
+
 		ExpressionGenerator<B> generator(this->m_builder);
 		generator.Generate(expressionS->GetExpression());
 	}
@@ -235,6 +241,8 @@ public:
 	void Visit(const HorseIR::ReturnStatement *returnS) override
 	{
 		//TODO: Use shape analysis for loading the correct index
+
+		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(returnS, true)));
 
 		ReturnGenerator<B> generator(m_builder);
 		generator.Generate(returnS, ReturnGenerator<B>::IndexKind::Global);

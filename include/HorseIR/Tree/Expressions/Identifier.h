@@ -28,6 +28,8 @@ public:
 
 	bool HasModule() const { return (m_module != ""); }
 
+	std::string GetFullName() const { return m_module + "." + m_name; }
+
 	const std::string& GetModule() const { return m_module; }
 	void SetModule(const std::string& module) { m_module = module; }
 
