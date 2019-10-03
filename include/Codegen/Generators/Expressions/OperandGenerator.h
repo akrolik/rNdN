@@ -125,6 +125,19 @@ public:
 		Generate<double>(literal);
 	}
 
+	void Visit(const HorseIR::DateLiteral *literal) override
+	{
+		//TODO: Extend to other date types
+		if (literal->GetCount() == 1)
+		{
+			m_operand = new PTX::Value<T>(literal->GetValue(0)->GetEpochTime());
+		}
+		else
+		{
+			Utils::Logger::LogError("Unsupported literal count " + std::to_string(literal->GetCount()));
+		}
+	}
+
 	template<class L>
 	void Generate(const HorseIR::TypedVectorLiteral<L> *literal)
 	{

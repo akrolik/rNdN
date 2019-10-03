@@ -341,7 +341,11 @@ static bool IsComparableTypes(const Type *type1, const Type *type2)
 
 static BasicType *WidestType(const BasicType *type1, const BasicType *type2)
 {
-	if (type1->GetBasicKind() == BasicType::BasicKind::Complex ||
+	if (type1->GetBasicKind() == type2->GetBasicKind())
+	{
+		return new BasicType(type1->GetBasicKind());
+	}
+	else if (type1->GetBasicKind() == BasicType::BasicKind::Complex ||
 		type2->GetBasicKind() == BasicType::BasicKind::Complex)
 	{
 		return new BasicType(BasicType::BasicKind::Complex);

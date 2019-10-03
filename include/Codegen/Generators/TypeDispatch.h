@@ -38,7 +38,7 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 			DispatchList<G, N...>(generator, static_cast<const HorseIR::ListType *>(type), nodes...);
 			break;
 		default:
-			Utils::Logger::LogError("Unsupported type " + HorseIR::PrettyPrinter::PrettyString(type) + " in function " + generator.m_builder.GetContextString("Dispatch"));
+			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
 }
 
@@ -50,6 +50,7 @@ static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nod
 		case HorseIR::BasicType::BasicKind::Boolean:
 			generator.template Generate<PTX::PredicateType>(nodes...);
 			break;
+		case HorseIR::BasicType::BasicKind::Char:
 		case HorseIR::BasicType::BasicKind::Int8:
 			generator.template Generate<PTX::Int8Type>(nodes...);
 			break;
@@ -68,8 +69,11 @@ static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nod
 		case HorseIR::BasicType::BasicKind::Float64:
 			generator.template Generate<PTX::Float64Type>(nodes...);
 			break;
+		case HorseIR::BasicType::BasicKind::Date:
+			generator.template Generate<PTX::Int32Type>(nodes...);
+			break;
 		default:
-			Utils::Logger::LogError("Unsupported type " + HorseIR::PrettyPrinter::PrettyString(type) + " in function " + generator.m_builder.GetContextString("Dispatch"));
+			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
 }
 
