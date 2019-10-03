@@ -18,6 +18,12 @@ public:
 	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
 	size_t GetSize() const { return m_size; }
 
+	size_t GetPaddedSize() const
+	{
+		const auto multiple = 1024;
+		return (((m_size + multiple - 1) / multiple) * multiple);
+	}
+
 private:
 	void *m_CPUBuffer = nullptr;
 	CUdeviceptr m_GPUBuffer;

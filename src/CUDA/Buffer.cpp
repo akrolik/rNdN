@@ -6,7 +6,7 @@ namespace CUDA {
 
 void Buffer::AllocateOnGPU()
 {
-	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_size));
+	checkDriverResult(cuMemAlloc(&m_GPUBuffer, GetPaddedSize()));
 }
 
 void Buffer::TransferToGPU()
