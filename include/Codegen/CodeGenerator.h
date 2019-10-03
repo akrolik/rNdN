@@ -238,6 +238,8 @@ public:
 
 		ReturnGenerator<B> generator(m_builder);
 		generator.Generate(returnS, ReturnGenerator<B>::IndexKind::Global);
+
+		this->m_builder.AddStatement(new PTX::ReturnInstruction());
 	}
 
 private:

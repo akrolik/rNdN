@@ -80,7 +80,6 @@ public:
 		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
 
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		this->m_builder.AddStatement(new PTX::ReturnInstruction());
 	}
 };
 
