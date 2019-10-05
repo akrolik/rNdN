@@ -7,7 +7,7 @@
 
 #include "Runtime/ExecutionEnvironment.h"
 #include "Runtime/Runtime.h"
-#include "Runtime/DataObjects/DataObject.h"
+#include "Runtime/DataBuffers/DataBuffer.h"
 
 namespace Runtime {
 
@@ -18,9 +18,9 @@ public:
 
 	// Function execution engine
 
-	std::vector<DataObject *> Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataObject *>& arguments);
-	std::vector<DataObject *> Execute(const HorseIR::Function *function, const std::vector<DataObject *>& arguments);
-	std::vector<DataObject *> Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataObject *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataBuffer *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments);
 
 	// Modules
 

@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "Runtime/DataObjects/DataObject.h"
 #include "Runtime/Runtime.h"
+#include "Runtime/DataBuffers/DataBuffer.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -14,7 +14,7 @@ class BuiltinExecutionEngine
 public:
 	BuiltinExecutionEngine(Runtime& runtime) : m_runtime(runtime) {}
 
-	std::vector<DataObject *> Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataObject *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments);
 
 private:
 	Runtime& m_runtime;

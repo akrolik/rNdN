@@ -2,16 +2,17 @@
 
 #include <string>
 
-#include "HorseIR/Tree/Tree.h"
-
 namespace Runtime {
 
 class DataObject
 {
 public:
-	virtual const HorseIR::Type *GetType() const = 0;
+	// Data pointers
 
-	// Printers
+	virtual void *GetData() = 0;
+	virtual size_t GetDataSize() const = 0;
+
+	// Printer
 
 	virtual std::string Description() const = 0;
 	virtual std::string DebugDump() const = 0;

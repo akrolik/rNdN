@@ -11,7 +11,7 @@
 namespace Runtime {
 
 template<typename T>
-void DataRegistry::LoadDebugData(DataTable *table, const HorseIR::BasicType *type, unsigned long size)
+void DataRegistry::LoadDebugData(TableBuffer *table, const HorseIR::BasicType *type, unsigned long size)
 {
 	std::vector<T> zeros(size);
 	std::vector<T> ones(size);
@@ -25,9 +25,9 @@ void DataRegistry::LoadDebugData(DataTable *table, const HorseIR::BasicType *typ
 	}
 
 	auto name = HorseIR::PrettyPrinter::PrettyString(type);
-	table->AddColumn("zeros_" + name, new TypedDataVector<T>(type, zeros));
-	table->AddColumn("ones_" + name, new TypedDataVector<T>(type, ones));
-	table->AddColumn("inc_" + name, new TypedDataVector<T>(type, inc));
+	table->AddColumn("zeros_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, zeros)));
+	table->AddColumn("ones_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, ones)));
+	table->AddColumn("inc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, inc)));
 }
 
 void DataRegistry::LoadDebugData()
@@ -36,7 +36,7 @@ void DataRegistry::LoadDebugData()
 
 	for (unsigned long i = 256; i <= 2048; i <<= 1)
 	{
-		auto table = new DataTable(i);
+		auto table = new TableBuffer(i);
 
 		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), i);
 		LoadDebugData<int8_t>(table, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int8), i);
@@ -83,24 +83,24 @@ void DataRegistry::LoadTPCHData()
 		count++;
 	}
 
-	auto table = new DataTable(count);
+	auto table = new TableBuffer(count);
 
-	table->AddColumn("l_quantity", new TypedDataVector<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity));
-	table->AddColumn("l_extendedprice", new TypedDataVector<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice));
-	table->AddColumn("l_discount", new TypedDataVector<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount));
-	table->AddColumn("l_shipdate", new TypedDataVector<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate));
+	table->AddColumn("l_quantity", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity)));
+	table->AddColumn("l_extendedprice", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice)));
+	table->AddColumn("l_discount", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount)));
+	table->AddColumn("l_shipdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate)));
 	
 	AddTable("lineitem", table);
 }
 
-void DataRegistry::AddTable(const std::string& name, DataTable *table)
+void DataRegistry::AddTable(const std::string& name, TableBuffer *table)
 {
 	m_registry.insert({name, table});
 
 	Utils::Logger::LogInfo("Loaded table '" + name + "'");
 }
 
-DataTable *DataRegistry::GetTable(const std::string& name) const
+TableBuffer *DataRegistry::GetTable(const std::string& name) const
 {
 	if (m_registry.find(name) == m_registry.end())
 	{

@@ -16,8 +16,10 @@ public:
 
 	void *GetCPUBuffer() const { return m_CPUBuffer; }
 	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
-	size_t GetSize() const { return m_size; }
 
+	void SetCPUBuffer(void *buffer) { m_CPUBuffer = buffer; }
+
+	size_t GetSize() const { return m_size; }
 	size_t GetPaddedSize() const
 	{
 		const auto multiple = 1024;
@@ -27,6 +29,7 @@ public:
 private:
 	void *m_CPUBuffer = nullptr;
 	CUdeviceptr m_GPUBuffer;
+
 	size_t m_size = 0;
 };
 

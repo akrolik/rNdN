@@ -2,15 +2,15 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
-#include "Runtime/DataObjects/DataList.h"
-#include "Runtime/DataObjects/DataTable.h"
-#include "Runtime/DataObjects/DataVector.h"
+#include "Runtime/DataBuffers/ListBuffer.h"
+#include "Runtime/DataBuffers/TableBuffer.h"
+#include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "Utils/Logger.h"
 
 namespace Runtime {
 
-std::vector<DataObject *> BuiltinExecutionEngine::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataObject *>& arguments)
+std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing builtin function '" + function->GetName() + "'");
 
@@ -19,22 +19,22 @@ std::vector<DataObject *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 	{
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
-			return {new DataList(arguments)};
+			return {new ListBuffer(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
-			auto columnNames = static_cast<TypedDataVector<HorseIR::SymbolValue *> *>(arguments.at(0));
-			auto columnValues = static_cast<DataList *>(arguments.at(1));
+			auto columnNames = static_cast<TypedVectorBuffer<HorseIR::SymbolValue *> *>(arguments.at(0))->GetCPUReadBuffer();
+			auto columnValues = static_cast<ListBuffer *>(arguments.at(1));
 
 			//TODO: Ensure the columnValues have tabular size
 			//TODO: Check the column names have the same size as the columns
 			//TODO: Determine the correct table size
-			auto table = new DataTable(1);
+			auto table = new TableBuffer(1);
 
 			auto i = 0u;
 			for (const auto& columnName : columnNames->GetValues())
 			{
-				auto columnVector = static_cast<DataVector *>(columnValues->GetElement(i++));
+				auto columnVector = static_cast<VectorBuffer *>(columnValues->GetCell(i++));
 				table->AddColumn(columnName->GetName(), columnVector);
 			}
 
@@ -42,8 +42,8 @@ std::vector<DataObject *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
-			auto table = static_cast<DataTable *>(arguments.at(0));
-			auto columnSymbol = static_cast<TypedDataVector<HorseIR::SymbolValue *> *>(arguments.at(1));
+			auto table = static_cast<TableBuffer *>(arguments.at(0));
+			auto columnSymbol = static_cast<TypedVectorBuffer<HorseIR::SymbolValue *> *>(arguments.at(1))->GetCPUReadBuffer();
 
 			if (columnSymbol->GetElementCount() != 1)
 			{
@@ -55,7 +55,7 @@ std::vector<DataObject *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{
 			auto& dataRegistry = m_runtime.GetDataRegistry();
-			auto tableSymbol = static_cast<TypedDataVector<HorseIR::SymbolValue *> *>(arguments.at(0));
+			auto tableSymbol = static_cast<TypedVectorBuffer<HorseIR::SymbolValue *> *>(arguments.at(0))->GetCPUReadBuffer();
 
 			if (tableSymbol->GetElementCount() != 1)
 			{

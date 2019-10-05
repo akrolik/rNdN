@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Runtime/DataObjects/ContiguousDataObject.h"
+#include "Runtime/DataBuffers/DataObjects/DataObject.h"
 
 #include <string>
 #include <vector>
@@ -10,10 +10,10 @@
 
 namespace Runtime {
 
-class DataVector : public ContiguousDataObject
+class VectorData : public DataObject
 {
 public:
-	static DataVector *CreateVector(const HorseIR::BasicType *type, unsigned long size);
+	static VectorData *CreateVector(const HorseIR::BasicType *type, unsigned long size);
 
 	virtual size_t GetElementCount() const = 0;
 	virtual size_t GetElementSize() const = 0;
@@ -22,12 +22,11 @@ public:
 };
 
 template<typename T>
-class TypedDataVector : public DataVector
+class TypedVectorData : public VectorData
 {
 public:
-	TypedDataVector(const HorseIR::BasicType *elementType, const std::vector<T>& data) : m_type(elementType), m_data(data) {}
-
-	TypedDataVector(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType)
+	TypedVectorData(const HorseIR::BasicType *elementType, const std::vector<T>& data) : m_type(elementType), m_data(data) {}
+	TypedVectorData(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType)
 	{
 		m_data.resize(size);
 	}
@@ -44,12 +43,12 @@ public:
 	size_t GetElementCount() const override { return m_data.size(); }
 	size_t GetElementSize() const override { return sizeof(T); }
 
-	std::string Description() const override
+	std::string Description() const
 	{
 		return (HorseIR::PrettyPrinter::PrettyString(m_type) + "(" + std::to_string(GetElementSize()) + " bytes) x " + std::to_string(GetElementCount()));
 	}
 
-	std::string DebugDump() const override
+	std::string DebugDump() const
 	{
 		std::string string;
 		auto count = std::min(m_data.size(), 10ul);

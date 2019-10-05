@@ -2,7 +2,8 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
-#include "Runtime/DataObjects/DataVector.h"
+#include "Runtime/DataBuffers/VectorBuffer.h"
+#include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
 #include "Runtime/BuiltinExecutionEngine.h"
 #include "Runtime/GPUExecutionEngine.h"
@@ -12,7 +13,7 @@
 
 namespace Runtime {
 
-std::vector<DataObject *> Interpreter::Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataObject *>& arguments)
+std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataBuffer *>& arguments)
 {
 	switch (function->GetKind())
 	{
@@ -25,7 +26,7 @@ std::vector<DataObject *> Interpreter::Execute(const HorseIR::FunctionDeclaratio
 	Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
 }
 
-std::vector<DataObject *> Interpreter::Execute(const HorseIR::Function *function, const std::vector<DataObject *>& arguments)
+std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing function '" + function->GetName() + "'");
 
@@ -61,7 +62,7 @@ std::vector<DataObject *> Interpreter::Execute(const HorseIR::Function *function
 	}
 }
 
-std::vector<DataObject *> Interpreter::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataObject *>& arguments)
+std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
 	BuiltinExecutionEngine engine(m_runtime);
 	return engine.Execute(function, arguments);
@@ -168,6 +169,7 @@ void Interpreter::Visit(const HorseIR::CastExpression *cast)
 	}
 
 	auto data = dataObjects.at(0);
+
 	auto dataType = data->GetType();
 	auto castType = cast->GetCastType();
 
@@ -185,7 +187,7 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 {
 	// Evaluate arguments and collect the data objects
 
-	std::vector<DataObject *> argumentsData;
+	std::vector<DataBuffer *> argumentsData;
 	for (const auto& argument : call->GetArguments())
 	{
 		argument->Accept(*this);
@@ -223,7 +225,8 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 	}
 
 	auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type);
-	m_environment.Insert(literal, new TypedDataVector<T>(basicType, literal->GetValues()));
+	auto vector = new TypedVectorData<T>(basicType, literal->GetValues());
+	m_environment.Insert(literal, new TypedVectorBuffer<T>(vector));
 }
 
 void Interpreter::Visit(const HorseIR::BooleanLiteral *literal)

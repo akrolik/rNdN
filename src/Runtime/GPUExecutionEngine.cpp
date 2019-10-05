@@ -15,7 +15,7 @@
 
 namespace Runtime {
 
-std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<DataObject *>& arguments)
+std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
 	// Compile the HorseIR to PTX code using the current device
 
@@ -84,18 +84,11 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	auto paramIndex = 0u;
 	for (const auto& argument : arguments)
 	{
-		Utils::Logger::LogInfo("Transferring input argument [" + argument->Description() + "]");
+		Utils::Logger::LogInfo("Initializing input argument [" + argument->Description() + "]");
 
-		//TODO: We should push this conversion to the calling class
-		auto contiguousArgument = static_cast<ContiguousDataObject *>(argument);
+		// Transfer the buffer to the GPU, for input parameters we assume read only
 
-		//TODO: Add a container buffer object to synchronize the transfers automatically (and only as needed)
-
-		// Transfer the buffer to the GPU
-
-		auto buffer = new CUDA::Buffer(contiguousArgument->GetData(), contiguousArgument->GetDataSize());
-		buffer->AllocateOnGPU();
-		buffer->TransferToGPU();
+		auto buffer = argument->GetGPUReadBuffer();
 		invocation.SetParameter(paramIndex++, *buffer);
 	}
 
@@ -104,27 +97,21 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	if (inputOptions.InputSize == Codegen::InputOptions::DynamicSize)
 	{
 		//TODO: This just uses the dynamic size constant and not the actual size!
-		//TODO: Should this move?
 		CUDA::TypedConstant<uint64_t> sizeConstant(inputOptions.InputSize);
 		invocation.SetParameter(paramIndex++, sizeConstant);
 	}
 
-	std::vector<CUDA::Buffer> returnBuffers;
-	std::vector<DataObject *> returnObjects;
+	std::vector<DataBuffer *> returnBuffers;
 	for (const auto& returnType : function->GetReturnTypes())
 	{
-		//TODO: Create data objects correctly
-		DataVector *returnObject = DataVector::CreateVector(static_cast<HorseIR::BasicType *>(returnType), 1);
+		//TODO: Determine size
+		auto returnBuffer = VectorBuffer::Create(static_cast<HorseIR::BasicType *>(returnType), 1);
+		returnBuffers.push_back(returnBuffer);
 
-		Utils::Logger::LogInfo("Initializing return argument [" + returnObject->Description() + "]");
+		Utils::Logger::LogInfo("Initializing return argument [" + returnBuffer->Description() + "]");
 
-		CUDA::Buffer returnBuffer(returnObject->GetData(), returnObject->GetDataSize());
-		returnBuffer.AllocateOnGPU();
-		returnBuffer.TransferToGPU();
-		invocation.SetParameter(paramIndex++, returnBuffer);
-
-		returnBuffers.push_back(std::move(returnBuffer));
-		returnObjects.push_back(returnObject);
+		auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
+		invocation.SetParameter(paramIndex++, *gpuBuffer);
 	}
 
 	// Configure the dynamic shared memory according to the kernel
@@ -136,23 +123,12 @@ std::vector<DataObject *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	auto timeInvocation_start = Utils::Chrono::Start();
 
 	invocation.Launch();
-	//TODO: Move to CUDA class
-	cudaDeviceSynchronize();
 
-	auto timeInvocation = Utils::Chrono::End(timeInvocation_start);
-	Utils::Logger::LogTiming("Kernel invocation", timeInvocation);
-
-	// Complete the execution by transferring the results back to the host
-
-	for (auto& returnBuffer : returnBuffers)
-	{
-		returnBuffer.TransferToCPU();
-	}
-
+	//TODO: Get correct kernel execution time
 	auto timeExec = Utils::Chrono::End(timeExec_start);
-	Utils::Logger::LogTiming("Kernel execution (including transfers)", timeExec);
+	Utils::Logger::LogTiming("Kernel execution", timeExec);
 
-	return returnObjects;
+	return returnBuffers;
 }
 
 unsigned int GPUExecutionEngine::GetBlockSize(const Codegen::InputOptions& inputOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const
