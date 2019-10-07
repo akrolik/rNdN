@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "Analysis/Shape/Shape.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/VectorBuffer.h"
@@ -14,12 +16,17 @@ namespace Runtime {
 class TableBuffer : public DataBuffer
 {
 public:
-	TableBuffer(unsigned long rows) : m_rows(rows) {}
+	TableBuffer(unsigned long rows) : m_rows(rows)
+	{
+		m_shape = new Analysis::TableShape(new Analysis::Shape::ConstantSize(0), new Analysis::Shape::ConstantSize(rows));
+	}
 
-	HorseIR::TableType *GetType() const { return m_type; }
+	HorseIR::TableType *GetType() const override { return m_type; }
+	const Analysis::TableShape *GetShape() const override { return m_shape; }
 
 	// Columns
 
+	//TODO: Update table size
 	void AddColumn(const std::string& name, VectorBuffer *column);
 	VectorBuffer *GetColumn(const std::string& column) const;
 
@@ -37,6 +44,7 @@ public:
 
 private:
 	HorseIR::TableType *m_type = new HorseIR::TableType();
+	Analysis::TableShape *m_shape = nullptr;
 
 	std::unordered_map<std::string, VectorBuffer *> m_columns;
 	unsigned long m_rows = 0;

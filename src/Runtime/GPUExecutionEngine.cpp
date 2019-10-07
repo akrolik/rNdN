@@ -32,17 +32,18 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
 	targetOptions.WarpSize = device->GetWarpSize();
 
-	// Collect shape information for kernel
+	// Collect shape information for input arguments
 
 	//GLOBAL: Collect shape information
 	Analysis::ShapeAnalysis::Properties inputShapes;
 	for (auto i = 0u; i < arguments.size(); ++i)
 	{
-		//TODO: Form shapes from buffers of different kinds
-		const auto vectorBuffer = static_cast<const VectorBuffer *>(arguments.at(i));
 		const auto symbol = function->GetParameter(i)->GetSymbol();
-		inputShapes[symbol] = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(vectorBuffer->GetElementCount()));
+		const auto shape = arguments.at(i)->GetShape();
+		inputShapes[symbol] = shape;
 	}
+
+	// Determine the thread geometry for the kernel
 
 	Analysis::ShapeAnalysis shapeAnalysis(m_program);
 	shapeAnalysis.Analyze(function, inputShapes);

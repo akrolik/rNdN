@@ -16,6 +16,7 @@ public:
 	static DataBuffer *Create(const HorseIR::Type *type, const Analysis::Shape *shape);
 
 	virtual const HorseIR::Type *GetType() const = 0;
+	virtual const Analysis::Shape *GetShape() const = 0;
 
 	// GPU/CPU management
 

@@ -26,11 +26,18 @@ template<typename T>
 class TypedVectorBuffer : public VectorBuffer
 {
 public:
-	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : m_elementType(elementType), m_elementCount(elementCount) {}
+	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : m_elementType(elementType), m_elementCount(elementCount)
+	{
+		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
+	}
 
-	TypedVectorBuffer(TypedVectorData<T> *buffer) : m_elementType(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer) {}
+	TypedVectorBuffer(TypedVectorData<T> *buffer) : m_elementType(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer)
+	{
+		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
+	}
 
-	const HorseIR::BasicType *GetType() const { return m_elementType; }
+	const HorseIR::BasicType *GetType() const override { return m_elementType; }
+	const Analysis::VectorShape *GetShape() const override { return m_shape; }
 
 	size_t GetElementCount() const override { return m_elementCount; }
 	size_t GetElementSize() const override { return sizeof(T); }
@@ -120,6 +127,7 @@ private:
 	}
 
 	const HorseIR::BasicType *m_elementType = nullptr;
+	const Analysis::VectorShape *m_shape = nullptr;
 	unsigned long m_elementCount = 0;
 
 	mutable TypedVectorData<T> *m_cpuBuffer = nullptr;
