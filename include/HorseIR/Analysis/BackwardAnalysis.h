@@ -41,11 +41,11 @@ public:
 		this->m_currentOutSet = this->m_currentInSet;
 	}
 
-	void TraverseFunction(const Function *function) override
+	void TraverseFunction(const Function *function, const F& initialFlow) override
 	{
 		// Initialize the input flow set for the function
 
-		this->m_currentOutSet = InitialFlow();
+		this->m_currentOutSet = initialFlow;
 
 		// Traverse the body and then the parameters
 
@@ -105,14 +105,14 @@ public:
 			elseBlock->Accept(*this);
 			auto elseInSet = this->m_currentInSet;
 
-			this->m_currentInSet = Merge(trueInSet, elseInSet);
+			this->m_currentInSet = this->Merge(trueInSet, elseInSet);
 		}
 		else
 		{
 			// If no else branch is present, merge the in set from the if statement
 			// which represents a null else branch (false condition case)
 
-			this->m_currentInSet = Merge(trueInSet, outSet);
+			this->m_currentInSet = this->Merge(trueInSet, outSet);
 		}
 
 		PropagateNext();
@@ -164,7 +164,7 @@ public:
 			body->Accept(*this);
 			PropagateNext();
 
-			this->m_currentInSet = Merge(outSet, this->m_currentInSet);
+			this->m_currentInSet = this->Merge(outSet, this->m_currentInSet);
 
 			this->m_currentStatement = currentStatement;
 			condition->Accept(*this);
@@ -189,11 +189,6 @@ public:
 		auto outSet = m_loopContexts.top().GetContinueSet();
 		this->SetOutSet(continueS, outSet);
 	}
-
-	// Each analysis must provide its own initial flows and merge operation
-
-	virtual F InitialFlow() const = 0;
-	virtual F Merge(const F& s1, const F& s2) const = 0;
 
 protected:
 	std::stack<LoopContext> m_loopContexts;

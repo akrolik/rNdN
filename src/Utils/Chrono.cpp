@@ -1,7 +1,5 @@
 #include "Utils/Chrono.h"
 
-#include <iostream>
-
 namespace Utils {
 
 Chrono::TimeTy Chrono::Start()

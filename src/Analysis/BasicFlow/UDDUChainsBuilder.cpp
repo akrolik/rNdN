@@ -3,11 +3,24 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
+
 namespace Analysis {
 
 void UDDUChainsBuilder::Build(const HorseIR::Function *function)
 {
+	auto timeUDDU_start = Utils::Chrono::Start();
 	function->Accept(*this);
+	auto timeUDDU = Utils::Chrono::End(timeUDDU_start);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	{
+		Utils::Logger::LogInfo("UD/DU chains");
+		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
+	}
+	Utils::Logger::LogTiming("UD/DU chains", timeUDDU);
 }
 
 bool UDDUChainsBuilder::VisitIn(const HorseIR::Statement *statement)

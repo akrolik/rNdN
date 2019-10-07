@@ -1,3 +1,5 @@
+#pragma once
+
 #include <chrono>
 
 namespace Utils {
@@ -5,9 +7,6 @@ namespace Utils {
 class Chrono
 {
 public:
-	Chrono(Chrono const&) = delete;
-	void operator=(Chrono const&) = delete;
-
 	using TimeTy = std::chrono::time_point<std::chrono::steady_clock>;
 
 	static TimeTy Start();
@@ -15,12 +14,6 @@ public:
 
 private:
 	Chrono() {}
-
-	static Chrono& GetInstance()
-	{
-		static Chrono instance;
-		return instance;
-	}
 };
 
 }

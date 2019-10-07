@@ -2,13 +2,18 @@
 
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
 #include "Utils/Variant.h"
 
 namespace Transformation {
 
 void OutlineBuilder::Build(const Analysis::DependencyOverlay *overlay)
 {
+	auto timeBuilder_start = Utils::Chrono::Start();
 	overlay->Accept(*this);
+	auto timeBuilder = Utils::Chrono::End(timeBuilder_start);
+	Utils::Logger::LogTiming("Builder", timeBuilder);
 }
 
 void OutlineBuilder::Visit(const HorseIR::Statement *statement)

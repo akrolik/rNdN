@@ -47,6 +47,8 @@ public:
 
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
+
+	std::string Name() const override { return "Reaching definitions"; }
 };
 
 }

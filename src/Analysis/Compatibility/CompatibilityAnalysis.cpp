@@ -2,12 +2,28 @@
 
 #include "Analysis/Compatibility/Geometry/GeometryUtils.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
+#include "Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
+
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Analysis {
 
 void CompatibilityAnalysis::Analyze(const DependencyOverlay *overlay)
 {
+	auto timeCompatibility_start = Utils::Chrono::Start();
 	overlay->Accept(*this);
+	auto timeCompatibility = Utils::Chrono::End(timeCompatibility_start);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	{
+		Utils::Logger::LogInfo("Compatibility graph");
+
+		auto compatibilityString = Analysis::DependencyOverlayPrinter::PrettyString(m_currentOverlays.at(0));
+		Utils::Logger::LogInfo(compatibilityString, 0, true, Utils::Logger::NoPrefix);
+	}
+	Utils::Logger::LogTiming("Compatibility analysis", timeCompatibility);
 }
 
 DependencyOverlay *CompatibilityAnalysis::GetKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node, DependencyOverlay *parentOverlay) const

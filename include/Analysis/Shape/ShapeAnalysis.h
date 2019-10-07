@@ -49,6 +49,8 @@ public:
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
 
+	std::string Name() const override { return "Shape analysis"; }
+
 	const std::vector<const Shape *>& GetShapes(const HorseIR::Expression *expression) const { return m_expressionShapes.at(expression); }
 
 private:

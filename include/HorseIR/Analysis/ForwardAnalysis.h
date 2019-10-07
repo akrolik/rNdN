@@ -53,11 +53,11 @@ public:
 		this->m_currentInSet = this->m_currentOutSet;
 	}
 
-	void TraverseFunction(const Function *function) override
+	void TraverseFunction(const Function *function, const F& initialFlow) override
 	{
 		// Initialize the input flow set for the function
 
-		this->m_currentInSet = InitialFlow();
+		this->m_currentInSet = initialFlow;
 
 		// Traverse the parameters and then the body
 
@@ -114,14 +114,14 @@ public:
 			elseBlock->Accept(*this);
 			auto elseOutSet = this->m_currentOutSet;
 
-			this->m_currentOutSet = Merge(trueOutSet, elseOutSet);
+			this->m_currentOutSet = this->Merge(trueOutSet, elseOutSet);
 		}
 		else
 		{
 			// If no else branch is present, merge the in set from the if statement
 			// which represents a null else branch (false condition case)
 
-			this->m_currentOutSet = Merge(trueOutSet, inSet);
+			this->m_currentOutSet = this->Merge(trueOutSet, inSet);
 		}
 	}
 
@@ -178,13 +178,13 @@ public:
 			auto mergedOutSet = this->m_currentOutSet;
 			for (const auto& continueSet : m_loopContexts.top().GetContinueSets())
 			{
-				mergedOutSet = Merge(mergedOutSet, continueSet);
+				mergedOutSet = this->Merge(mergedOutSet, continueSet);
 			}
 
 			// Create the new in set for the loop, including the previous in set
 			// and use this to evaluate the condition and compute the new out set
 
-			this->m_currentInSet = inSet = Merge(mergedOutSet, preSet);
+			this->m_currentInSet = inSet = this->Merge(mergedOutSet, preSet);
 
 			this->m_currentStatement = currentStatement;
 			condition->Accept(*this);
@@ -195,7 +195,7 @@ public:
 
 		for (const auto& breakSet : m_loopContexts.top().GetBreakSets())
 		{
-			outSet = Merge(outSet, breakSet);
+			outSet = this->Merge(outSet, breakSet);
 		}
 
 		this->m_currentOutSet = outSet;
@@ -217,11 +217,6 @@ public:
 		auto context = m_loopContexts.top();
 		context.AddContinueSet(this->m_currentInSet);
 	}
-
-	// Each analysis must provide its initial flows and merge operation
-
-	virtual F InitialFlow() const = 0;
-	virtual F Merge(const F& s1, const F& s2) const = 0;
 
 protected:
 	std::stack<LoopContext> m_loopContexts;

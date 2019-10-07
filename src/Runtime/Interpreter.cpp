@@ -8,7 +8,6 @@
 #include "Runtime/BuiltinExecutionEngine.h"
 #include "Runtime/GPUExecutionEngine.h"
 
-#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
