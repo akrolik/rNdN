@@ -116,8 +116,76 @@ static bool IsCastable(const Type *destination, const Type *source)
 	{
 		return true;
 	}
-	//TODO: Check cast is valid according to rules
-	return (*destination == *source);
+
+	if (*destination == *source)
+	{
+		return true;
+	}
+
+	if (!IsType<BasicType>(source) || !IsType<BasicType>(destination))
+	{
+		return false;
+	}
+
+	const auto basicDestination = GetType<BasicType>(destination);
+	const auto basicSource = GetType<BasicType>(source);
+
+	if (IsIntegerType(basicDestination))
+	{
+		if (IsIntegerType(basicSource))
+		{
+			// Allow if destination is wider than source
+
+			return (GetBitSize(basicDestination) >= GetBitSize(basicSource));
+		}
+		else if (IsFloatType(basicSource))
+		{
+			// Truncate decimal part
+
+			return (GetBitSize(basicDestination) >= GetBitSize(basicSource));
+		}
+		else if (IsBooleanType(basicSource))
+		{
+			// Always allowed (0-false, 1-true)
+
+			return true;
+		}
+		return false;
+	}
+	else if (IsFloatType(basicDestination))
+	{
+		if (IsIntegerType(basicSource))
+		{
+			// Always allowed, but loss of precision may occur
+			
+			return true;
+		}
+		else if (IsFloatType(basicSource))
+		{
+			// Allow if destination is wider than source
+
+			return (GetBitSize(basicDestination) >= GetBitSize(basicSource));
+		}
+		return false;
+	}
+	else if (IsBooleanType(basicDestination))
+	{
+		if (IsIntegerType(basicSource))
+		{
+			// Always allowed (0-false, 1-true)
+
+			return true;
+		}
+		return false;
+	}
+	else if (IsCharacterType(basicDestination))
+	{
+		// Symbol and string may be cast to each other
+
+		return IsCharacterType(basicSource);
+	}
+
+	return false;
 }
 
 static bool ForallElements(const ListType *listType, bool (*f)(const Type *))
@@ -160,11 +228,35 @@ static bool IsType(const Type *type)
 
 static bool IsBasicType(const Type *type, BasicType::BasicKind kind)
 {
-	if (auto basicType = GetType<BasicType>(type); basicType != nullptr)
+	if (const auto basicType = GetType<BasicType>(type))
 	{
 		return (basicType->GetBasicKind() == kind);
 	}
 	return false;
+}
+
+static int GetBitSize(const BasicType *type)
+{                       
+	switch (type->GetBasicKind())
+	{
+		case BasicType::BasicKind::Boolean:
+			return 1;
+		case BasicType::BasicKind::Char:
+			return 8;
+		case BasicType::BasicKind::Int8:
+			return 8;
+		case BasicType::BasicKind::Int16:
+			return 16;
+		case BasicType::BasicKind::Int32:
+			return 32;
+		case BasicType::BasicKind::Int64:
+			return 64;
+		case BasicType::BasicKind::Float32:
+			return 32;
+		case BasicType::BasicKind::Float64:
+			return 64;
+	}
+	return 0;
 }
 
 static bool IsBooleanType(const Type *type)
@@ -174,7 +266,7 @@ static bool IsBooleanType(const Type *type)
 
 static bool IsIntegerType(const Type *type)
 {                       
-	if (auto basicType = GetType<BasicType>(type); basicType != nullptr)
+	if (const auto basicType = GetType<BasicType>(type))
 	{
 		switch (basicType->GetBasicKind())
 		{
@@ -192,7 +284,7 @@ static bool IsIntegerType(const Type *type)
 
 static bool IsFloatType(const Type *type)
 {                       
-	if (auto basicType = GetType<BasicType>(type); basicType != nullptr)
+	if (const auto basicType = GetType<BasicType>(type))
 	{
 		auto kind = basicType->GetBasicKind();
 		return (kind == BasicType::BasicKind::Float32 || kind == BasicType::BasicKind::Float64);
@@ -217,7 +309,7 @@ static bool IsNumericType(const Type *type)
 
 static bool IsExtendedType(const Type *type)
 {                       
-	if (auto basicType = GetType<BasicType>(type); basicType != nullptr)
+	if (const auto basicType = GetType<BasicType>(type))
 	{
 		auto kind = basicType->GetBasicKind();
 		return (kind == BasicType::BasicKind::Int64 || kind == BasicType::BasicKind::Float64);
@@ -242,7 +334,7 @@ static bool IsCharacterType(const Type *type)
 
 static bool IsCalendarType(const Type *type)
 {
-	if (auto basicType = GetType<BasicType>(type); basicType != nullptr)
+	if (const auto basicType = GetType<BasicType>(type))
 	{
 		switch (basicType->GetBasicKind())
 		{
