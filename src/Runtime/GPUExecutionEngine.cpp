@@ -9,7 +9,6 @@
 
 #include "Runtime/JITCompiler.h"
 
-#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
 
@@ -120,13 +119,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Launch the kernel!
 
-	auto timeInvocation_start = Utils::Chrono::Start();
-
 	invocation.Launch();
-
-	//TODO: Get correct kernel execution time
-	auto timeExec = Utils::Chrono::End(timeExec_start);
-	Utils::Logger::LogTiming("Kernel execution", timeExec);
 
 	return returnBuffers;
 }
