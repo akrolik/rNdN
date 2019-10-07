@@ -7,6 +7,12 @@
 
 #include "PTX/Program.h"
 
+#include "Analysis/Geometry/GeometryAnalysis.h"
+#include "Analysis/Geometry/KernelAnalysis.h"
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeAnalysis.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Runtime/JITCompiler.h"
 
 #include "Utils/Logger.h"
@@ -26,9 +32,44 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
 	targetOptions.WarpSize = device->GetWarpSize();
 
-	//TODO: Get the input geometry size from the table
+	// Collect shape information for kernel
+
+	//GLOBAL: Collect shape information
+	Analysis::ShapeAnalysis::Properties inputShapes;
+	for (auto i = 0u; i < arguments.size(); ++i)
+	{
+		//TODO: Form shapes from buffers of different kinds
+		const auto vectorBuffer = static_cast<const VectorBuffer *>(arguments.at(i));
+		const auto symbol = function->GetParameter(i)->GetSymbol();
+		inputShapes[symbol] = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(vectorBuffer->GetElementCount()));
+	}
+
+	Analysis::ShapeAnalysis shapeAnalysis(m_program);
+	shapeAnalysis.Analyze(function, inputShapes);
+
+	Analysis::GeometryAnalysis geometryAnalysis(shapeAnalysis);
+	geometryAnalysis.Analyze(function);
+
+	Analysis::KernelAnalysis kernelAnalysis(geometryAnalysis);
+	kernelAnalysis.Analyze(function);
+
+	auto threadGeometry = kernelAnalysis.GetThreadGeometry();
+	Utils::Logger::LogInfo("Thread geometry: " + threadGeometry->ToString());
+
 	Codegen::InputOptions inputOptions;
-	inputOptions.InputSize = 6001215;
+	switch (threadGeometry->GetKind())
+	{
+		case Analysis::ThreadGeometry::Kind::Vector:
+		{
+			inputOptions.ActiveThreads = threadGeometry->GetSize();
+			break;
+		}
+		case Analysis::ThreadGeometry::Kind::List:
+		{
+			inputOptions.ActiveBlocks = threadGeometry->GetSize();
+			break;
+		}
+	}
 
 	JITCompiler compiler(targetOptions, inputOptions);
 	auto ptxProgram = compiler.Compile({function});
@@ -44,13 +85,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	auto cModule = gpu.AssembleProgram(ptxProgram);
 
-	// Compute the number of input arguments: function arguments + return arguments + (dynamic size)
+	// Compute the number of input arguments: function arguments + return arguments
 
 	unsigned int kernelArgumentCount = function->GetParameterCount() + function->GetReturnCount();
-	if (inputOptions.InputSize == Codegen::InputOptions::DynamicSize)
-	{
-		kernelArgumentCount++;
-	}
 
 	// Fetch the handle to the GPU entry function
 
@@ -62,21 +99,19 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Execute the compiled kernel on the GPU
 	//   1. Create the invocation (thread sizes + arguments)
-	//   2. Transfer the arguments
+	//   2. Initialize the arguments
 	//   3. Execute
-	//   4. Transfer return value
+	//   4. Initialize return values
 
 	Utils::Logger::LogSection("Continuing program execution");
 
-	auto timeExec_start = Utils::Chrono::Start();
-
 	// Initialize kernel invocation with the thread options
 
-	auto blockSize = GetBlockSize(inputOptions, targetOptions, kernelOptions);
+	auto [blockSize, blockCount] = GetBlockShape(inputOptions, targetOptions, kernelOptions);
 
 	CUDA::KernelInvocation invocation(kernel);
 	invocation.SetBlockShape(blockSize, 1, 1);
-	invocation.SetGridShape((inputOptions.InputSize - 1) / blockSize + 1, 1, 1);
+	invocation.SetGridShape(blockCount, 1, 1);
 
 	// Initialize the input buffers for the kernel
 
@@ -91,26 +126,19 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		invocation.SetParameter(paramIndex++, *buffer);
 	}
 
-	// Add the dynamic size parameter if needed
-
-	if (inputOptions.InputSize == Codegen::InputOptions::DynamicSize)
-	{
-		//TODO: This just uses the dynamic size constant and not the actual size!
-		CUDA::TypedConstant<uint64_t> sizeConstant(inputOptions.InputSize);
-		invocation.SetParameter(paramIndex++, sizeConstant);
-	}
-
 	std::vector<DataBuffer *> returnBuffers;
-	for (const auto& returnType : function->GetReturnTypes())
+	for (auto i = 0u; i < function->GetReturnCount(); ++i)
 	{
-		//TODO: Determine size
-		auto returnBuffer = VectorBuffer::Create(static_cast<HorseIR::BasicType *>(returnType), 1);
-		returnBuffers.push_back(returnBuffer);
+		// Create a new buffer for the return value
+
+		const auto returnType = function->GetReturnType(i);
+		const auto returnShape = shapeAnalysis.GetReturnShape(i);
+		auto returnBuffer = DataBuffer::Create(returnType, returnShape);
 
 		Utils::Logger::LogInfo("Initializing return argument [" + returnBuffer->Description() + "]");
 
-		auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
-		invocation.SetParameter(paramIndex++, *gpuBuffer);
+		returnBuffers.push_back(returnBuffer);
+		invocation.SetParameter(paramIndex++, *returnBuffer->GetGPUWriteBuffer());
 	}
 
 	// Configure the dynamic shared memory according to the kernel
@@ -124,42 +152,49 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	return returnBuffers;
 }
 
-unsigned int GPUExecutionEngine::GetBlockSize(const Codegen::InputOptions& inputOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const
+std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(const Codegen::InputOptions& inputOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const
 {
-	// Compute the number of threads based on the kernel and target configurations
+	// Compute the block size and count based on the kernel, input and target configurations
 
-	auto kernelThreadCount = kernelOptions.GetThreadCount();
-	if (kernelThreadCount == PTX::FunctionOptions::DynamicThreadCount)
+	auto blockSize = kernelOptions.GetBlockSize();
+	if (blockSize == PTX::FunctionOptions::DynamicBlockSize)
 	{
 		if (kernelOptions.GetThreadMultiple() != 0)
 		{
-			// Maximize the thread count based on the GPU and thread multiple
+			// Maximize the block size based on the GPU and thread multiple
 
 			auto multiple = kernelOptions.GetThreadMultiple();
-			if (inputOptions.InputSize < targetOptions.MaxBlockSize)
+			if (inputOptions.ActiveThreads != Codegen::InputOptions::DynamicSize && inputOptions.ActiveThreads < targetOptions.MaxBlockSize)
 			{
-				return (multiple * (inputOptions.InputSize / multiple));
+				blockSize = (multiple * (inputOptions.ActiveThreads / multiple));
 			}
-			return (multiple * (targetOptions.MaxBlockSize / multiple));
+			blockSize = (multiple * (targetOptions.MaxBlockSize / multiple));
 		}
-		
-		// Fill the multiprocessors, but not more than the data size
-
-		if (inputOptions.InputSize < targetOptions.MaxBlockSize)
+		else
 		{
-			return inputOptions.InputSize;
+			// Fill the multiprocessors, but not more than the data size
+
+			if (inputOptions.ActiveThreads != Codegen::InputOptions::DynamicSize && inputOptions.ActiveThreads < targetOptions.MaxBlockSize)
+			{
+				blockSize = inputOptions.ActiveThreads;
+			}
+			else
+			{
+				blockSize = targetOptions.MaxBlockSize;
+			}
 		}
-
-		return targetOptions.MaxBlockSize;
 	}
 
-	// Fixed number of threads
-
-	if (kernelThreadCount > targetOptions.MaxBlockSize)
+	if (inputOptions.ActiveThreads == Codegen::InputOptions::DynamicSize)
 	{
-		Utils::Logger::LogError("Thread count " + std::to_string(kernelThreadCount) + " is not supported by target (MaxBlockSize= " + std::to_string(targetOptions.MaxBlockSize));
+		auto blockCount = inputOptions.ActiveBlocks;
+		return {blockSize, blockCount};
 	}
-	return kernelThreadCount;
+	else
+	{
+		auto blockCount = ((inputOptions.ActiveThreads - 1) / blockSize + 1);
+		return {blockSize, blockCount};
+	}
 }
 
 }

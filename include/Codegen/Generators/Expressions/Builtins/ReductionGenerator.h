@@ -302,15 +302,14 @@ public:
 
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
-		unsigned int threadCount = targetOptions.MaxBlockSize;
-		if (inputOptions.InputSize < threadCount)
+		unsigned int blockSize = targetOptions.MaxBlockSize;
+		if (inputOptions.ActiveThreads != InputOptions::DynamicSize && inputOptions.ActiveThreads < blockSize)
 		{
-			//TODO: Reduce the number of threads if the data is small
-			// threadCount = std::ceil(std::log2(inputOptions.InputSize));
+			blockSize = std::pow(2, std::ceil(std::log2(inputOptions.ActiveThreads)));
 		}
-		kernelOptions.SetThreadCount(threadCount);
+		kernelOptions.SetBlockSize(blockSize);
 
-		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(threadCount);
+		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(blockSize);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Local);
@@ -332,7 +331,7 @@ public:
 
 		int warpSize = targetOptions.WarpSize;
 
-		for (unsigned int i = (threadCount >> 1); i >= warpSize; i >>= 1)
+		for (unsigned int i = (blockSize >> 1); i >= warpSize; i >>= 1)
 		{
 			// At each level, half the threads become inactive
 

@@ -14,7 +14,7 @@ namespace Runtime {
 class Interpreter : public HorseIR::ConstVisitor
 {
 public:
-	Interpreter(Runtime& runtime) : m_runtime(runtime) {}
+	Interpreter(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
 	// Function execution engine
 
@@ -69,6 +69,8 @@ public:
 private:
 	Runtime& m_runtime;
 	ExecutionEnvironment m_environment;
+
+	const HorseIR::Program *m_program = nullptr;
 };
 
 }

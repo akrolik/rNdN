@@ -1,10 +1,10 @@
 #include "Transformation/Outliner/Outliner.h"
 
 #include "Analysis/Compatibility/CompatibilityAnalysis.h"
-#include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
 #include "Analysis/Dependency/DependencyAccessAnalysis.h"
 #include "Analysis/Dependency/DependencyAnalysis.h"
 #include "Analysis/Dependency/DependencySubgraphAnalysis.h"
+#include "Analysis/Geometry/GeometryAnalysis.h"
 #include "Analysis/Shape/ShapeAnalysis.h"
 
 #include "Transformation/Outliner/OutlineBuilder.h"

@@ -166,15 +166,6 @@ public:
 			parameter->Accept(*this);
 		}
 
-		// If the input is dynamically sized, then we pass by parameter
-
-		if (m_builder.GetInputOptions().InputSize == InputOptions::DynamicSize)
-		{
-			auto sizeName = "$size";
-			auto sizeDeclaration = new PTX::TypedVariableDeclaration<PTX::UInt64Type, PTX::ParameterSpace>(sizeName);
-			m_builder.AddParameter(sizeName, sizeDeclaration);
-		}
-
 		// Lastly, add the return parameter to the function
 
 		//TODO: See if we can combine the parameter generation for both inputs and outputs, and split the value loading into a second generator

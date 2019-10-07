@@ -4,6 +4,8 @@
 
 #include "CUDA/Buffer.h"
 
+#include "Analysis/Shape/Shape.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 namespace Runtime {
@@ -11,6 +13,8 @@ namespace Runtime {
 class DataBuffer
 {
 public:
+	static DataBuffer *Create(const HorseIR::Type *type, const Analysis::Shape *shape);
+
 	virtual const HorseIR::Type *GetType() const = 0;
 
 	// GPU/CPU management

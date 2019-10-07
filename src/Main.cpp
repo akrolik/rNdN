@@ -86,7 +86,7 @@ int main(int argc, const char *argv[])
 	Runtime::Runtime runtime;
 	runtime.Initialize();
 
-	Runtime::Interpreter interpreter(runtime);
+	Runtime::Interpreter interpreter(runtime, outlinedProgram);
 	auto results = interpreter.Execute(outlinedEntry, {});
 
 	Utils::Logger::LogSection("Execution result");

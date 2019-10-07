@@ -23,29 +23,16 @@ public:
 	{
 		auto& inputOptions = m_builder.GetInputOptions();
 
-		if (inputOptions.InputSize == InputOptions::DynamicSize)
+		if (inputOptions.ActiveThreads == InputOptions::DynamicSize)
 		{
-			// If the input size is dyanmic, then it will be passed as a parameter
-			// Load it from the parameter space
-
-			auto resources = this->m_builder.GetLocalResources();
-			auto kernelResources = this->m_builder.GetKernelResources();
-
-			// Get the size variable from the kernel resources
-
-			auto sizeVariable = kernelResources->template GetParameter<PTX::UInt64Type, PTX::ParameterSpace>("$size");
-
-			auto sizeAddress = new PTX::MemoryAddress<B, PTX::UInt64Type, PTX::ParameterSpace>(sizeVariable);
-			auto size = resources->template AllocateTemporary<PTX::UInt64Type>("size");
-			this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::UInt64Type, PTX::ParameterSpace>(size, sizeAddress));
-
-			return size;
+			//TODO: Check bounds
+			Utils::Logger::LogError("Non-constant number of threads");
 		}
 		else
 		{
 			// If the input size is specified, we can use a constant value
 
-			return new PTX::UInt64Value(inputOptions.InputSize);
+			return new PTX::UInt64Value(inputOptions.ActiveThreads);
 		}
 	}
 

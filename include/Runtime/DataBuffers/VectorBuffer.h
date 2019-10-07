@@ -2,6 +2,8 @@
 
 #include "Runtime/DataBuffers/DataBuffer.h"
 
+#include "Analysis/Shape/Shape.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
@@ -11,7 +13,7 @@ namespace Runtime {
 class VectorBuffer : public DataBuffer
 {
 public:
-	static VectorBuffer *Create(const HorseIR::BasicType *type, unsigned long elementCount);
+	static VectorBuffer *Create(const HorseIR::BasicType *type, const Analysis::VectorShape *shape);
 
 	virtual VectorData *GetCPUWriteBuffer() = 0;
 	virtual VectorData *GetCPUReadBuffer() const = 0;

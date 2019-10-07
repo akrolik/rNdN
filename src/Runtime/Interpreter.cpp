@@ -33,7 +33,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 	{
 		// Pass function execution to the GPU engine
 
-		GPUExecutionEngine engine(m_runtime);
+		GPUExecutionEngine engine(m_runtime, m_program);
 		return engine.Execute(function, arguments);
 	}
 	else

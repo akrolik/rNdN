@@ -8,12 +8,14 @@ struct InputOptions
 {
 	constexpr static unsigned long DynamicSize = 0;
 
-	unsigned long InputSize = DynamicSize;
+	unsigned long ActiveThreads = DynamicSize;
+	unsigned long ActiveBlocks = DynamicSize;
 
 	std::string ToString() const
 	{
 		std::string output;
-		output += "Input size: " + ((InputSize == DynamicSize) ? "dynamic" : std::to_string(InputSize));
+		output += "Active threads: " + ((ActiveThreads == DynamicSize) ? "dynamic" : std::to_string(ActiveThreads)) + "\n";
+		output += "Active blocks: " + ((ActiveBlocks == DynamicSize) ? "dynamic" : std::to_string(ActiveBlocks));
 		return output;
 	}
 };

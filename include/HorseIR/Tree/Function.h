@@ -47,10 +47,12 @@ public:
 	}
 
 	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
+	Parameter *GetParameter(unsigned int i) const { return m_parameters.at(i); }
 	size_t GetParameterCount() const { return m_parameters.size(); }
 	void SetParameters(const std::vector<Parameter *>& parameters) { m_parameters = parameters; }
 
 	const std::vector<Type *>& GetReturnTypes() const { return m_returnTypes; }
+	Type *GetReturnType(unsigned int i) const { return m_returnTypes.at(i); }
 	size_t GetReturnCount() const { return m_returnTypes.size(); }
 	void SetReturnType(const std::vector<Type *>& returnTypes) { m_returnTypes = returnTypes; }
 
