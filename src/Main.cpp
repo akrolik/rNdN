@@ -12,19 +12,6 @@
 #include "Runtime/Interpreter.h"
 #include "Runtime/Runtime.h"
 
-//TODO: Move these somewhere
-// #include "PTX/ArithmeticTest.h"
-// #include "PTX/ComparisonTest.h"
-// #include "PTX/ControlFlowTest.h"
-// #include "PTX/DataTest.h"
-// #include "PTX/LogicalTest.h"
-// #include "PTX/ShiftTest.h"
-// #include "PTX/SynchronizationTest.h"
-
-// #include "PTX/AddTest.h"
-// #include "PTX/BasicTest.h"
-// #include "PTX/ConditionalTest.h"
-
 int yyparse();
 
 HorseIR::Program *program;

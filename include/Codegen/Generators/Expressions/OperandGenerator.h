@@ -81,7 +81,7 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		//TODO: Identifiers may be global and have a module name
+		//GLOBAL: Identifiers may be global and have a module name
 		auto resources = this->m_builder.GetLocalResources();
 		if constexpr(std::is_same<T, S>::value)
 		{

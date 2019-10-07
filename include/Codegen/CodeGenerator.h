@@ -127,7 +127,7 @@ public:
 		// At the moment we only consider functions, but in the future we could support
 		// cross module calling using PTX extern declarations.
 
-		//TODO: Add extern declarations for other modules
+		//GLOBAL: Add extern declarations for other modules
 	}
 
 	void Visit(const HorseIR::Function *function) override

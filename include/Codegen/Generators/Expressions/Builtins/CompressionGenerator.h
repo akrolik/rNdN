@@ -51,7 +51,7 @@ public:
 		auto value = opGen.GenerateRegister(identifier);
 
 		auto resources = this->m_builder.GetLocalResources();
-		//TODO: Global variables
+		//GLOBAL: Global variables have a module name
 		auto compression = resources->template GetCompressionRegister<T>(identifier->GetName());
 
 		if (compression != nullptr)
@@ -62,14 +62,14 @@ public:
 			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
-			//TODO: Global variables
+			//GLOBAL: Global variables have a module name
 			resources->AddCompressedRegister(m_target->GetSymbol()->name, value, predicate);
 		}
 		else
 		{
 			// Otherwise this is the first compression and it is simply stored
 
-			//TODO: Global variables
+			//GLOBAL: Global variables have a module name
 			resources->AddCompressedRegister(m_target->GetSymbol()->name, value, m_predicate);
 		}
 	}

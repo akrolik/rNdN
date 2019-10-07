@@ -14,8 +14,8 @@ struct InputOptions
 	std::string ToString() const
 	{
 		std::string output;
-		output += "Active threads: " + ((ActiveThreads == DynamicSize) ? "dynamic" : std::to_string(ActiveThreads)) + "\n";
-		output += "Active blocks: " + ((ActiveBlocks == DynamicSize) ? "dynamic" : std::to_string(ActiveBlocks));
+		output += "Active threads: " + ((ActiveThreads == DynamicSize) ? "<dynamic>" : std::to_string(ActiveThreads)) + "\n";
+		output += "Active blocks: " + ((ActiveBlocks == DynamicSize) ? "<dynamic>" : std::to_string(ActiveBlocks));
 		return output;
 	}
 };

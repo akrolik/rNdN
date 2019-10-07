@@ -2,7 +2,7 @@
 
 namespace Runtime {
 
-//TODO: Add global variable support to all symbol functions. Have a link from symbol to module, and from function to module
+//GLOBAL: Add global variable support to all symbol functions. Have a link from symbol to module, and from function to module
 
 void ExecutionEnvironment::Insert(const HorseIR::SymbolTable::Symbol *symbol, DataBuffer *object)
 {

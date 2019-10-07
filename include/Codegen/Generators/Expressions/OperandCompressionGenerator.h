@@ -59,7 +59,7 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		//TODO: Global variables and out of module variables
+		//GLOBAL: Support identifiers which contain a module name
 		auto resources = this->m_builder.GetLocalResources();
 		m_compression = resources->GetCompressionRegister<S>(identifier->GetName());
 	}

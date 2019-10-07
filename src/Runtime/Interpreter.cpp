@@ -69,7 +69,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *f
 
 void Interpreter::InitializeModule(const HorseIR::Module *module)
 {
-	//TODO: Handle modules. We should transitively initialize modules by import. Cyclical imports are problematic
+	//GLOBAL: Handle modules. We should transitively initialize modules by import. Cyclical imports are problematic
 }
 
 void Interpreter::Visit(const HorseIR::GlobalDeclaration *global)

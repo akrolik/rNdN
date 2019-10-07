@@ -52,7 +52,6 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Function *>&
 
 void JITCompiler::Optimize(PTX::Program *program)
 {
-	//TODO: Implement optimizer
 }
 
 }
