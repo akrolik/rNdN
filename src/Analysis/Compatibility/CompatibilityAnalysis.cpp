@@ -185,7 +185,6 @@ const Shape *CompatibilityAnalysis::BuildGeometry(const DependencyOverlay *overl
 	}
 }
 
-//TODO: Review this function
 bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *destination) const
 {
 	if (*source == *destination)
@@ -193,23 +192,46 @@ bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *desti
 		return true;
 	}
 
+	if (source->GetKind() != destination->GetKind())
+	{
+		return false;
+	}
+
+	switch (source->GetKind())
+	{
+		case Shape::Kind::Vector:
+		{
+			auto sourceSize = ShapeUtils::GetShape<VectorShape>(source)->GetSize();
+			auto destinationSize = ShapeUtils::GetShape<VectorShape>(destination)->GetSize();
+			return IsCompatible(sourceSize, destinationSize);
+		}
+		case Shape::Kind::List:
+		{
+			//TODO: Add list support
+		}
+	}
+
+	return false;
+}
+
+bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape::Size *destination) const
+{
+	// Check for initialization compatibility
+
+	if (ShapeUtils::IsSize<Shape::InitSize>(source))
+	{
+		return true;
+	}
+
 	// Check for compression compatibility
 
-	if (!ShapeUtils::IsShape<VectorShape>(source) || !ShapeUtils::IsShape<VectorShape>(destination))
+	if (!ShapeUtils::IsSize<Shape::CompressedSize>(destination))
 	{
 		return false;
 	}
 
-	auto sourceSize = ShapeUtils::GetShape<VectorShape>(source)->GetSize();
-	auto destinationSize = ShapeUtils::GetShape<VectorShape>(destination)->GetSize();
-
-	if (!ShapeUtils::IsSize<Shape::CompressedSize>(destinationSize))
-	{
-		return false;
-	}
-
-	auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(destinationSize)->GetSize();
-	return (*sourceSize == *unmaskedSize);
+	auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(destination)->GetSize();
+	return (*source == *unmaskedSize);
 }
 
 void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)

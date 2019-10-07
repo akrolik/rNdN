@@ -29,10 +29,9 @@ void GeometryAnalysis::Analyze(const HorseIR::Function *function)
 
 bool GeometryAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)
 {
-	//TODO: Flexible geometry
-	//TODO: We need to insert edges between the declaration and uses
-	m_geometries[declarationS] = new WildcardShape();
-	return true;
+	const auto& outShapes = m_shapeAnalysis.GetOutSet(declarationS);
+	m_geometries[declarationS] = outShapes.at(declarationS->GetDeclaration()->GetSymbol());
+	return false;
 }
 
 bool GeometryAnalysis::VisitIn(const HorseIR::Statement *statement)

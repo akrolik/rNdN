@@ -17,6 +17,7 @@ public:
 	{
 	public:
 		enum class Kind {
+			Init,
 			Constant,
 			Symbol,
 			Compressed,
@@ -41,6 +42,34 @@ public:
 		Size(Kind kind) : m_kind(kind) {}
 
 		const Kind m_kind;
+	};
+
+	class InitSize : public Size
+	{
+	public:
+		constexpr static Kind SizeKind = Size::Kind::Init;
+
+		InitSize() : Size(Size::Kind::Init) {}
+
+		void Print(std::ostream& os) const override
+		{
+			os << "-";
+		}
+
+		bool Equivalent(const InitSize& other) const
+		{
+			return true;
+		}
+
+		bool operator==(const InitSize& other) const
+		{
+			return false;
+		}
+
+		bool operator!=(const InitSize& other) const
+		{
+			return !(*this == other);
+		}
 	};
 
 	class ConstantSize : public Size
@@ -323,7 +352,7 @@ public:
 	void Print(std::ostream& os) const override
 	{
 		os << "ListShape<" << *m_listSize << ", " << "{";
-		bool first = false;
+		bool first = true;
 		for (const auto elementShape : m_elementShapes)
 		{
 			if (!first)
@@ -592,6 +621,8 @@ inline bool Shape::Size::Equivalent(const Shape::Size& other) const
 	{
 		switch (m_kind)
 		{
+			case Kind::Init:
+				return static_cast<const Shape::InitSize&>(*this).Equivalent(static_cast<const Shape::InitSize&>(other));
 			case Kind::Constant:
 				return static_cast<const Shape::ConstantSize&>(*this).Equivalent(static_cast<const Shape::ConstantSize&>(other));
 			case Kind::Symbol:
@@ -611,6 +642,8 @@ inline bool Shape::Size::operator==(const Shape::Size& other) const
 	{
 		switch (m_kind)
 		{
+			case Kind::Init:
+				return static_cast<const Shape::InitSize&>(*this) == static_cast<const Shape::InitSize&>(other);
 			case Kind::Constant:
 				return static_cast<const Shape::ConstantSize&>(*this) == static_cast<const Shape::ConstantSize&>(other);
 			case Kind::Symbol:

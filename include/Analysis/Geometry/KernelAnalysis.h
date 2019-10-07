@@ -20,7 +20,6 @@ public:
 	const ThreadGeometry *GetThreadGeometry() const { return m_threadGeometry; }
 
 	bool VisitIn(const HorseIR::Statement *statement) override;
-	bool VisitIn(const HorseIR::DeclarationStatement *declarationS) override;
 
 private:
 	const GeometryAnalysis& m_geometryAnalysis;

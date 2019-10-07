@@ -67,6 +67,7 @@ private:
 	const Shape *GetGeometry(const DependencySubgraphNode& node) const;
 	const Shape *BuildGeometry(const DependencyOverlay *overlay) const;
 	bool IsCompatible(const Shape *source, const Shape *destination) const;
+	bool IsCompatible(const Shape::Size *source, const Shape::Size *destination) const;
 };
 
 }

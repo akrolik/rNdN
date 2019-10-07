@@ -50,10 +50,4 @@ bool KernelAnalysis::VisitIn(const HorseIR::Statement *statement)
 	return false;
 }
 
-bool KernelAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)
-{
-	//TODO: Handle flexible geometry
-	return false;
-}
-
 }

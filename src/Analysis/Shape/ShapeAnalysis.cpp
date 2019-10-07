@@ -21,6 +21,16 @@ void ShapeAnalysis::Visit(const HorseIR::Parameter *parameter)
 	}
 }
 
+void ShapeAnalysis::Visit(const HorseIR::DeclarationStatement *declarationS)
+{
+	m_currentOutSet = m_currentInSet;
+
+	// Set initial geometry for variable
+
+	auto declaration = declarationS->GetDeclaration();
+	m_currentOutSet[declaration->GetSymbol()] = ShapeUtils::InitialShapeFromType(declaration->GetType());
+}
+
 void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 {
 	// For each target, update the shape with the shape from the expression

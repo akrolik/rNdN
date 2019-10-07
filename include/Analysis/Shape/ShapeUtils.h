@@ -11,6 +11,71 @@ class ShapeUtils
 {
 public:
 
+static Shape *InitialShapeFromType(const HorseIR::Type *type)
+{
+	switch (type->m_kind)
+	{
+		case HorseIR::Type::Kind::Wildcard:
+		{
+			return new WildcardShape();
+		}
+		case HorseIR::Type::Kind::Basic:
+		{
+			return new VectorShape(new Shape::InitSize());
+		}
+		case HorseIR::Type::Kind::List:
+		{
+			auto listType = static_cast<const HorseIR::ListType *>(type);
+
+			std::vector<const Shape *> elementShapes;
+			for (const auto elementType : listType->GetElementTypes())
+			{
+				elementShapes.push_back(InitialShapeFromType(elementType));
+			}
+
+			if (elementShapes.size() == 1)
+			{
+				return new ListShape(new Shape::InitSize(), elementShapes);
+			}
+			return new ListShape(new Shape::ConstantSize(elementShapes.size()), elementShapes);
+		}
+		case HorseIR::Type::Kind::Table:
+		{
+			return new TableShape(new Shape::InitSize(), new Shape::InitSize());
+		}
+		case HorseIR::Type::Kind::Dictionary:
+		{
+			auto dictionaryType = static_cast<const HorseIR::DictionaryType *>(type);
+			return new DictionaryShape(
+				InitialShapeFromType(dictionaryType->GetKeyType()),
+				InitialShapeFromType(dictionaryType->GetValueType())
+			);
+		}
+		case HorseIR::Type::Kind::Enumeration:
+		{
+			auto enumType = static_cast<const HorseIR::EnumerationType *>(type);
+			return new EnumerationShape(
+				InitialShapeFromType(enumType->GetElementType()),
+				InitialShapeFromType(enumType->GetElementType())
+			);
+		}
+		case HorseIR::Type::Kind::KeyedTable:
+		{
+			auto tableType = static_cast<const HorseIR::KeyedTableType *>(type);
+
+			auto keyTableType = InitialShapeFromType(tableType->GetKeyType());
+			auto valueTableType = InitialShapeFromType(tableType->GetValueType());
+
+			return new KeyedTableShape(
+				GetShape<TableShape>(keyTableType),
+				GetShape<TableShape>(valueTableType)
+			);
+		}
+	}
+
+	Utils::Logger::LogError("Unknown initial shape for type " + HorseIR::TypeUtils::TypeString(type));
+}
+
 static Shape *ShapeFromType(const HorseIR::Type *type, const HorseIR::CallExpression *call = nullptr, unsigned int tag = 0)
 {
 	switch (type->m_kind)
@@ -33,7 +98,11 @@ static Shape *ShapeFromType(const HorseIR::Type *type, const HorseIR::CallExpres
 				elementShapes.push_back(ShapeFromType(elementType, call, tag));
 			}
 
-			return new ListShape(new Shape::DynamicSize(call, tag), elementShapes);
+			if (elementShapes.size() == 1)
+			{
+				return new ListShape(new Shape::DynamicSize(call, tag), elementShapes);
+			}
+			return new ListShape(new Shape::ConstantSize(elementShapes.size()), elementShapes);
 		}
 		case HorseIR::Type::Kind::Table:
 		{
@@ -179,16 +248,16 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 		{
 			case Shape::Kind::Vector:
 			{
-				auto vectorShape1 = static_cast<const VectorShape *>(shape1);
-				auto vectorShape2 = static_cast<const VectorShape *>(shape2);
+				auto vectorShape1 = GetShape<VectorShape>(shape1);
+				auto vectorShape2 = GetShape<VectorShape>(shape2);
 
 				auto mergedSize = MergeSize(vectorShape1->GetSize(), vectorShape2->GetSize());
 				return new VectorShape(mergedSize);
 			}
 			case Shape::Kind::List:
 			{
-				auto listShape1 = static_cast<const ListShape *>(shape1);
-				auto listShape2 = static_cast<const ListShape *>(shape2);
+				auto listShape1 = GetShape<ListShape>(shape1);
+				auto listShape2 = GetShape<ListShape>(shape2);
 
 				auto mergedSize = MergeSize(listShape1->GetListSize(), listShape2->GetListSize());
 
@@ -214,8 +283,8 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 			}
 			case Shape::Kind::Table:
 			{
-				auto tableShape1 = static_cast<const TableShape *>(shape1);
-				auto tableShape2 = static_cast<const TableShape *>(shape2);
+				auto tableShape1 = GetShape<TableShape>(shape1);
+				auto tableShape2 = GetShape<TableShape>(shape2);
 
 				auto mergedColsSize = MergeSize(tableShape1->GetColumnsSize(), tableShape2->GetColumnsSize());
 				auto mergedRowsSize = MergeSize(tableShape1->GetRowsSize(), tableShape2->GetRowsSize());
@@ -223,8 +292,8 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 			}
 			case Shape::Kind::Dictionary:
 			{
-				auto dictShape1 = static_cast<const DictionaryShape *>(shape1);
-				auto dictShape2 = static_cast<const DictionaryShape *>(shape2);
+				auto dictShape1 = GetShape<DictionaryShape>(shape1);
+				auto dictShape2 = GetShape<DictionaryShape>(shape2);
 
 				auto mergedKeyShape = MergeShape(dictShape1->GetKeyShape(), dictShape2->GetKeyShape());
 				auto mergedValueShape = MergeShape(dictShape1->GetValueShape(), dictShape2->GetValueShape());
@@ -232,8 +301,8 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 			}
 			case Shape::Kind::Enumeration:
 			{
-				auto enumShape1 = static_cast<const EnumerationShape *>(shape1);
-				auto enumShape2 = static_cast<const EnumerationShape *>(shape2);
+				auto enumShape1 = GetShape<EnumerationShape>(shape1);
+				auto enumShape2 = GetShape<EnumerationShape>(shape2);
 
 				auto mergedKeyShape = MergeShape(enumShape1->GetKeyShape(), enumShape2->GetKeyShape());
 				auto mergedValueShape = MergeShape(enumShape1->GetValueShape(), enumShape2->GetValueShape());
@@ -241,14 +310,14 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 			}
 			case Shape::Kind::KeyedTable:
 			{
-				auto tableShape1 = static_cast<const KeyedTableShape *>(shape1);
-				auto tableShape2 = static_cast<const KeyedTableShape *>(shape2);
+				auto tableShape1 = GetShape<KeyedTableShape>(shape1);
+				auto tableShape2 = GetShape<KeyedTableShape>(shape2);
 
 				auto mergedKeyShape = MergeShape(tableShape1->GetKeyShape(), tableShape1->GetKeyShape());
 				auto mergedValueShape = MergeShape(tableShape2->GetValueShape(), tableShape2->GetValueShape());
 
-				auto mergedKeyTable = static_cast<const TableShape *>(mergedKeyShape);
-				auto mergedValueTable = static_cast<const TableShape *>(mergedValueShape);
+				auto mergedKeyTable = GetShape<TableShape>(mergedKeyShape);
+				auto mergedValueTable = GetShape<TableShape>(mergedValueShape);
 				return new KeyedTableShape(mergedKeyTable, mergedValueTable);
 			}
 		}
@@ -287,23 +356,27 @@ static bool IsSize(const Shape::Size *size)
 		
 static bool IsScalarSize(const Shape::Size *size)
 {
-	if (ShapeUtils::IsSize<Shape::ConstantSize>(size))
+	if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(size))
 	{
-		return (ShapeUtils::GetSize<Shape::ConstantSize>(size)->GetValue() == 1);
+		return (constantSize->GetValue() == 1);
 	}
 	return false;
 }
 
 static bool IsSubsize(const Shape::Size *needle, const Shape::Size *haystack)
 {
-	if (ShapeUtils::IsSize<Shape::ConstantSize>(needle))
+	if (const auto needleConstant = ShapeUtils::GetSize<Shape::ConstantSize>(needle))
 	{
-		return (ShapeUtils::GetSize<Shape::ConstantSize>(needle)->GetValue() == 1);
+		if (const auto haystackConstant = ShapeUtils::GetSize<Shape::ConstantSize>(haystack))
+		{
+			return (needleConstant->GetValue() < haystackConstant->GetValue());
+		}
+		return (needleConstant->GetValue() == 1);
 	}
 
-	if (ShapeUtils::IsSize<Shape::CompressedSize>(needle))
+	if (const auto compressedNeedle = ShapeUtils::GetSize<Shape::CompressedSize>(needle))
 	{
-		auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(needle)->GetSize();
+		auto unmaskedSize = compressedNeedle->GetSize();
 		if (*unmaskedSize == *haystack)
 		{
 			return true;

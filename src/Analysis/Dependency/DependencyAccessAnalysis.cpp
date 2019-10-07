@@ -2,6 +2,16 @@
 
 namespace Analysis {
 
+void DependencyAccessAnalysis::Visit(const HorseIR::DeclarationStatement *declarationS)
+{
+	m_currentOutSet = m_currentInSet;
+
+	// Add an implicit write for declarations
+
+	auto symbol = declarationS->GetDeclaration()->GetSymbol();
+	m_currentOutSet.second[symbol] = new DependencyAccessValue::Type({declarationS});
+}
+
 void DependencyAccessAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 {
 	m_currentOutSet = m_currentInSet;

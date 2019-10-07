@@ -45,6 +45,7 @@ public:
 	using Properties = DependencyAccessProperties;
 	using HorseIR::ForwardAnalysis<Properties>::ForwardAnalysis;
 
+	void Visit(const HorseIR::DeclarationStatement *declarationS) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
 	void Visit(const HorseIR::Identifier *identifier) override;
 

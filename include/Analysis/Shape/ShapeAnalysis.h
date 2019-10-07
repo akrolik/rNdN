@@ -39,6 +39,7 @@ public:
 	using HorseIR::ForwardAnalysis<Properties>::ForwardAnalysis;
 
 	void Visit(const HorseIR::Parameter *parameter) override;
+	void Visit(const HorseIR::DeclarationStatement *declarations) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
 	void Visit(const HorseIR::ExpressionStatement *expressionS) override;
 	void Visit(const HorseIR::BlockStatement *blockS) override;
