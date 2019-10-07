@@ -5,8 +5,8 @@
 
 #include "Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 
-#include "Analysis/Compatibility/Geometry/Geometry.h"
-#include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
+#include "Analysis/Geometry/GeometryAnalysis.h"
+#include "Analysis/Shape/Shape.h"
 
 #include "Analysis/Dependency/DependencyGraph.h"
 #include "Analysis/Dependency/DependencySubgraph.h"
@@ -62,11 +62,11 @@ private:
 	// Geometry analysis for statements and map for overlays
 
 	const GeometryAnalysis& m_geometryAnalysis;
-	std::unordered_map<const DependencyOverlay *, const Geometry *> m_overlayGeometries;
+	std::unordered_map<const DependencyOverlay *, const Shape *> m_overlayGeometries;
 
-	const Geometry *GetGeometry(const DependencySubgraphNode& node) const;
-	const Geometry *BuildGeometry(const DependencyOverlay *overlay) const;
-	bool IsCompatible(const Geometry *source, const Geometry *destination) const;
+	const Shape *GetGeometry(const DependencySubgraphNode& node) const;
+	const Shape *BuildGeometry(const DependencyOverlay *overlay) const;
+	bool IsCompatible(const Shape *source, const Shape *destination) const;
 };
 
 }

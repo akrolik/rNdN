@@ -13,7 +13,12 @@ void ShapeAnalysis::Visit(const HorseIR::Parameter *parameter)
 	// Add dynamic sized shapes for all parameters
 
 	m_currentOutSet = m_currentInSet;
-	m_currentOutSet[parameter->GetSymbol()] = ShapeUtils::ShapeFromType(parameter->GetType());
+	
+	auto symbol = parameter->GetSymbol();
+	if (m_currentOutSet.find(symbol) == m_currentOutSet.end())
+	{
+		m_currentOutSet[parameter->GetSymbol()] = ShapeUtils::ShapeFromType(parameter->GetType());
+	}
 }
 
 void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
@@ -118,6 +123,29 @@ void ShapeAnalysis::CheckCondition(const ShapeAnalysisProperties& shapes, const 
 		if (!ShapeUtils::IsScalarSize(conditionSize))
 		{
 			Utils::Logger::LogError("Condition expects a scalar expression");
+		}
+	}
+}
+
+void ShapeAnalysis::Visit(const HorseIR::ReturnStatement *returnS)
+{
+	ForwardAnalysis<ShapeAnalysisProperties>::Visit(returnS);
+
+	std::vector<const Shape *> returnShapes;
+	for (const auto& operand : returnS->GetOperands())
+	{
+		returnShapes.push_back(ShapeCollector::ShapeFromOperand(this->m_currentOutSet, operand));
+	}
+
+	if (m_returnShapes.size() == 0)
+	{
+		m_returnShapes = returnShapes;
+	}
+	else
+	{
+		for (auto i = 0u; i < m_returnShapes.size(); ++i)
+		{
+			m_returnShapes.at(i) = ShapeUtils::MergeShape(m_returnShapes.at(i), returnShapes.at(i));
 		}
 	}
 }

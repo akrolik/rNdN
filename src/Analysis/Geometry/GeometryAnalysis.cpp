@@ -1,20 +1,37 @@
-#include "Analysis/Compatibility/Geometry/GeometryAnalysis.h"
+#include "Analysis/Geometry/GeometryAnalysis.h"
 
 #include "Analysis/Shape/ShapeCollector.h"
 #include "Analysis/Shape/ShapeUtils.h"
+
+#include "HorseIR/Analysis/StatementAnalysisPrinter.h"
+
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Analysis {
 
 void GeometryAnalysis::Analyze(const HorseIR::Function *function)
 {
+	auto timeGeometry_start = Utils::Chrono::Start();
 	function->Accept(*this);
+	auto timeGeometry = Utils::Chrono::End(timeGeometry_start);
+
+	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	{
+		Utils::Logger::LogInfo("Geometry analysis");
+
+		auto string = HorseIR::StatementAnalysisPrinter::PrettyString(*this, function);
+		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);
+	}
+	Utils::Logger::LogTiming("Geomery analysis", timeGeometry);
 }
 
 bool GeometryAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)
 {
 	//TODO: Flexible geometry
 	//TODO: We need to insert edges between the declaration and uses
-	m_geometries[declarationS] = new UnknownGeometry(nullptr);
+	m_geometries[declarationS] = new WildcardShape();
 	return true;
 }
 
@@ -95,7 +112,7 @@ bool GeometryAnalysis::VisitIn(const HorseIR::CallExpression *call)
 	return false;
 }
 
-Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments)
+const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments)
 {
 	switch (function->GetKind())
 	{
@@ -108,14 +125,14 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::FunctionDeclaration *func
 	}
 }
 
-Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments)
+const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments)
 {
 	// Without interprocedural analysis, assume the function operates on an unknown geometry
 
-	return new UnknownGeometry(m_call);
+	return new WildcardShape();
 }
 
-Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
+const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
 {
 	const auto& inShapes = m_shapeAnalysis.GetInSet(m_currentStatement);
 	const auto& outShapes = m_shapeAnalysis.GetOutSet(m_currentStatement);
@@ -123,7 +140,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 	switch (function->GetPrimitive())
 	{
 #define Require(x) if (!(x)) break
-#define Unsupported() return {new UnknownGeometry(m_call)}
+#define Unsupported() return {new WildcardShape()}
 
 		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
@@ -167,7 +184,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
-			return new ShapeGeometry(shapes.at(0));
+			return shapes.at(0);
 		}
 
 		// Binary
@@ -197,7 +214,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
-			return new ShapeGeometry(shapes.at(0));
+			return shapes.at(0);
 		}
 		
 		// Algebraic Unary
@@ -232,7 +249,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 			Require(ShapeUtils::IsSize<Shape::CompressedSize>(vectorShape->GetSize()));
 
 			auto fullSize = ShapeUtils::GetSize<Shape::CompressedSize>(vectorShape->GetSize())->GetSize();
-			return new ShapeGeometry(new VectorShape(fullSize));
+			return new VectorShape(fullSize);
 		}
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
@@ -247,7 +264,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
-			return new ShapeGeometry(shapes.at(0));
+			return shapes.at(0);
 		}
 
 		// Reduction
@@ -257,7 +274,7 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 		case HorseIR::BuiltinFunction::Primitive::Minimum:
 		case HorseIR::BuiltinFunction::Primitive::Maximum:
 		{
-			return new ShapeGeometry(ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0)));
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 		}
 
 		// List
@@ -317,8 +334,19 @@ Geometry *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function
 bool GeometryAnalysis::VisitIn(const HorseIR::Operand *operand)
 {
 	const auto& inShapes = m_shapeAnalysis.GetInSet(m_currentStatement);
-	m_currentGeometry = new ShapeGeometry(ShapeCollector::ShapeFromOperand(inShapes, operand));
+	m_currentGeometry = ShapeCollector::ShapeFromOperand(inShapes, operand);
 	return false;
+}
+
+std::string GeometryAnalysis::DebugString(const HorseIR::Statement *statement, unsigned int indent) const
+{
+	std::stringstream string;
+	for (auto i = 0u; i < indent; ++i)
+	{
+		string << "\t";
+	}
+	string << *m_geometries.at(statement);
+	return string.str();
 }
 
 }

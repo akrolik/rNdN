@@ -1,6 +1,7 @@
 #include "Analysis/Compatibility/CompatibilityAnalysis.h"
 
-#include "Analysis/Compatibility/Geometry/GeometryUtils.h"
+#include "Analysis/Geometry/GeometryUtils.h"
+#include "Analysis/Shape/ShapeUtils.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
 
@@ -139,9 +140,9 @@ bool CompatibilityAnalysis::BuildSynchronized(const DependencyOverlay *overlay) 
 	return false;
 }
 
-const Geometry *CompatibilityAnalysis::GetGeometry(const DependencySubgraphNode& node) const
+const Shape *CompatibilityAnalysis::GetGeometry(const DependencySubgraphNode& node) const
 {
-	const Geometry *geometry = nullptr;
+	const Shape *geometry = nullptr;
 	std::visit(overloaded
 	{
 		[&](const HorseIR::Statement *statement)
@@ -159,7 +160,7 @@ const Geometry *CompatibilityAnalysis::GetGeometry(const DependencySubgraphNode&
 	return geometry;
 }
 
-const Geometry *CompatibilityAnalysis::BuildGeometry(const DependencyOverlay *overlay) const
+const Shape *CompatibilityAnalysis::BuildGeometry(const DependencyOverlay *overlay) const
 {
 	// Build the geometry of the overlay
 
@@ -167,7 +168,7 @@ const Geometry *CompatibilityAnalysis::BuildGeometry(const DependencyOverlay *ov
 	{
 		// Compute the effective geometry of the kernel for all statements and children overlays
 
-		const Geometry *geometry = nullptr;
+		const Shape *geometry = nullptr;
 		for (const auto& statement : overlay->GetStatements())
 		{
 			geometry = GeometryUtils::MaxGeometry(geometry, m_geometryAnalysis.GetGeometry(statement));
@@ -180,12 +181,12 @@ const Geometry *CompatibilityAnalysis::BuildGeometry(const DependencyOverlay *ov
 	}
 	else
 	{
-		return new CPUGeometry();
+		return new WildcardShape();
 	}
 }
 
 //TODO: Review this function
-bool CompatibilityAnalysis::IsCompatible(const Geometry *source, const Geometry *destination) const
+bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *destination) const
 {
 	if (*source == *destination)
 	{
@@ -194,22 +195,13 @@ bool CompatibilityAnalysis::IsCompatible(const Geometry *source, const Geometry 
 
 	// Check for compression compatibility
 
-	if (source->GetKind() != Geometry::Kind::Shape || destination->GetKind() != Geometry::Kind::Shape)
+	if (!ShapeUtils::IsShape<VectorShape>(source) || !ShapeUtils::IsShape<VectorShape>(destination))
 	{
 		return false;
 	}
 
-	//TODO: Place these transformations in a utility class
-	auto sourceShape = static_cast<const ShapeGeometry *>(source)->GetShape();
-	auto destinationShape = static_cast<const ShapeGeometry *>(destination)->GetShape();
-
-	if (!ShapeUtils::IsShape<VectorShape>(sourceShape) || !ShapeUtils::IsShape<VectorShape>(destinationShape))
-	{
-		return false;
-	}
-
-	auto sourceSize = ShapeUtils::GetShape<VectorShape>(sourceShape)->GetSize();
-	auto destinationSize = ShapeUtils::GetShape<VectorShape>(destinationShape)->GetSize();
+	auto sourceSize = ShapeUtils::GetShape<VectorShape>(source)->GetSize();
+	auto destinationSize = ShapeUtils::GetShape<VectorShape>(destination)->GetSize();
 
 	if (!ShapeUtils::IsSize<Shape::CompressedSize>(destinationSize))
 	{
@@ -386,7 +378,7 @@ void CompatibilityAnalysis::Visit(const IfDependencyOverlay *overlay)
 		}
 		else
 		{
-			m_overlayGeometries[ifOverlay] = new CPUGeometry();
+			m_overlayGeometries[ifOverlay] = new WildcardShape();
 		}
 
 		m_overlayMap[overlay] = ifOverlay;
@@ -426,7 +418,7 @@ void CompatibilityAnalysis::Visit(const IfDependencyOverlay *overlay)
 		}
 		else
 		{
-			m_overlayGeometries[ifOverlay] = new CPUGeometry();
+			m_overlayGeometries[ifOverlay] = new WildcardShape();
 		}
 
 		m_overlayMap[overlay] = ifOverlay;
@@ -495,7 +487,7 @@ void CompatibilityAnalysis::VisitLoop(const T *overlay)
 	}
 	else
 	{
-		m_overlayGeometries[loopOverlay] = new CPUGeometry();
+		m_overlayGeometries[loopOverlay] = new WildcardShape();
 	}
 
 	m_overlayMap[overlay] = loopOverlay;
