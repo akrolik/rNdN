@@ -14,10 +14,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 
-#include "PTX/Program.h"
-#include "PTX/Type.h"
-#include "PTX/Functions/FunctionDeclaration.h"
-#include "PTX/Functions/FunctionDefinition.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

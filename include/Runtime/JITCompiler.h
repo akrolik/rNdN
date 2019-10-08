@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "HorseIR/Tree/Function.h"
+#include "HorseIR/Tree/Tree.h"
 
 #include "PTX/Program.h"
 

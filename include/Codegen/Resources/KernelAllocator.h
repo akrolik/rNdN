@@ -4,9 +4,7 @@
 
 #include "Codegen/Resources/KernelResources.h"
 
-#include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Operands/Variables/AddressableVariable.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

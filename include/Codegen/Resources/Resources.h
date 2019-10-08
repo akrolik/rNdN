@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "PTX/Declarations/VariableDeclaration.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

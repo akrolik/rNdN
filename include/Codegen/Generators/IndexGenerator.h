@@ -6,15 +6,7 @@
 
 #include "Codegen/Builder.h"
 
-#include "PTX/Type.h"
-#include "PTX/Declarations/SpecialRegisterDeclarations.h"
-#include "PTX/Instructions/Arithmetic/DivideInstruction.h"
-#include "PTX/Instructions/Arithmetic/MADInstruction.h"
-#include "PTX/Instructions/Arithmetic/RemainderInstruction.h"
-#include "PTX/Instructions/Data/MoveInstruction.h"
-#include "PTX/Operands/SpecialConstants.h"
-#include "PTX/Operands/Value.h"
-#include "PTX/Operands/Variables/IndexedRegister.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

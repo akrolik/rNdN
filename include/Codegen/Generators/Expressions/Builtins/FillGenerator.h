@@ -2,12 +2,7 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
-#include "PTX/Instructions/Data/MoveInstruction.h"
-#include "PTX/Instructions/Data/PackInstruction.h"
-#include "PTX/Instructions/Data/UnpackInstruction.h"
-#include "PTX/Operands/Adapters/BitAdapter.h"
-#include "PTX/Operands/Variables/SinkRegister.h"
-#include "PTX/Statements/BlockStatement.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

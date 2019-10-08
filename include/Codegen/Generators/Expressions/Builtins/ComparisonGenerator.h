@@ -8,10 +8,7 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
-#include "PTX/Instructions/Comparison/SelectInstruction.h"
-#include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
-#include "PTX/Instructions/Data/MoveInstruction.h"
-#include "PTX/Statements/BlockStatement.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

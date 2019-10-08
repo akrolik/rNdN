@@ -2,9 +2,7 @@
 
 #include "Codegen/Resources/Resources.h"
 
-#include "PTX/Type.h"
-#include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

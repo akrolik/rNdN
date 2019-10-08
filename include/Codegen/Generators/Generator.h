@@ -2,8 +2,7 @@
 
 #include "Codegen/Builder.h"
 
-#include "HorseIR/Tree/Types/Type.h"
-#include "HorseIR/Tree/Types/BasicType.h"
+#include "HorseIR/Tree/Tree.h"
 
 namespace Codegen {
 

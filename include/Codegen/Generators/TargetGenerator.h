@@ -1,12 +1,11 @@
 #pragma once
 
-#include "PTX/Type.h"
-#include "PTX/Operands/Variables/Register.h"
-
 #include "Codegen/Generators/Generator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Traversal/ConstVisitor.h"
+
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

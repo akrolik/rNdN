@@ -6,14 +6,9 @@
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
-#include "HorseIR/Tree/Statements/ReturnStatement.h"
+#include "HorseIR/Tree/Tree.h"
 
-#include "PTX/Type.h"
-#include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Instructions/Comparison/SelectInstruction.h"
-#include "PTX/Instructions/Data/ConvertInstruction.h"
-#include "PTX/Instructions/Data/StoreInstruction.h"
-#include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

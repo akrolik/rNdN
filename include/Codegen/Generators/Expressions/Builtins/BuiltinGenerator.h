@@ -1,14 +1,14 @@
 #pragma once
 
-#include "PTX/Type.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/Generator.h"
 #include "Codegen/Generators/TargetGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
+
+#include "PTX/PTX.h"
 
 #include "Utils/Logger.h"
 

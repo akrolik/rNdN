@@ -6,8 +6,6 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
-#include "PTX/Operands/Variables/Register.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
@@ -20,6 +18,8 @@
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
+
+#include "PTX/PTX.h"
 
 #include "Utils/Logger.h"
 

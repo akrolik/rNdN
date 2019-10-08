@@ -7,13 +7,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 
-#include "PTX/Functions/ExternalMathFunctions.h"
-#include "PTX/Instructions/ControlFlow/CallInstruction.h"
-#include "PTX/Instructions/Data/LoadInstruction.h"
-#include "PTX/Instructions/Data/StoreInstruction.h"
-#include "PTX/Operands/Adapters/BitAdapter.h"
-#include "PTX/Operands/Address/MemoryAddress.h"
-#include "PTX/Operands/Variables/AddressableVariable.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

@@ -5,9 +5,9 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Resources/RegisterAllocator.h"
 
-#include "HorseIR/Tree/VariableDeclaration.h"
+#include "HorseIR/Tree/Tree.h"
 
-#include "PTX/Type.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

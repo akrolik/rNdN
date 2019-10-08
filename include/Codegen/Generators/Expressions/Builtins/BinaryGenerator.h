@@ -5,15 +5,7 @@
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
-#include "PTX/Instructions/Arithmetic/AddInstruction.h"
-#include "PTX/Instructions/Arithmetic/DivideInstruction.h"
-#include "PTX/Instructions/Arithmetic/MultiplyInstruction.h"
-#include "PTX/Instructions/Arithmetic/SubtractInstruction.h"
-#include "PTX/Instructions/Logical/AndInstruction.h"
-#include "PTX/Instructions/Logical/OrInstruction.h"
-#include "PTX/Instructions/Logical/XorInstruction.h"
-#include "PTX/Operands/Operand.h"
-#include "PTX/Statements/BlockStatement.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

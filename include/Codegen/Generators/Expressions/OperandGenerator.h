@@ -3,21 +3,14 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "Codegen/Generators/Generator.h"
 
-#include "HorseIR/Tree/Tree.h"
-#include "HorseIR/Utils/PrettyPrinter.h"
-
-#include "PTX/Instructions/Data/MoveInstruction.h"
-#include "PTX/Instructions/Data/PackInstruction.h"
-#include "PTX/Instructions/Data/UnpackInstruction.h"
-#include "PTX/Operands/BracedOperand.h"
-#include "PTX/Operands/Value.h"
-#include "PTX/Operands/Adapters/BitAdapter.h"
-#include "PTX/Operands/Variables/BracedRegister.h"
-#include "PTX/Operands/Variables/SinkRegister.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
+
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
+
+#include "PTX/PTX.h"
 
 #include "Utils/Logger.h"
 

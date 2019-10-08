@@ -7,13 +7,9 @@
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Resources/RegisterAllocator.h"
 
-#include "HorseIR/Tree/Parameter.h"
+#include "HorseIR/Tree/Tree.h"
 
-#include "PTX/Type.h"
-#include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
-#include "PTX/Instructions/Data/ConvertInstruction.h"
-#include "PTX/Instructions/Data/LoadInstruction.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

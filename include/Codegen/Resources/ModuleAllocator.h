@@ -4,11 +4,7 @@
 
 #include "Codegen/Resources/ModuleResources.h"
 
-#include "PTX/Type.h"
-#include "PTX/Declarations/VariableDeclaration.h"
-#include "PTX/Functions/FunctionDeclaration.h"
-#include "PTX/Operands/Adapters/ArrayAdapter.h"
-#include "PTX/Operands/Variables/AddressableVariable.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

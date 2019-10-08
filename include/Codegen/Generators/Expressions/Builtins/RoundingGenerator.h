@@ -7,7 +7,7 @@
 
 #include "Codegen/Generators/TypeDispatch.h"
 
-#include "PTX/Instructions/Data/ConvertInstruction.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

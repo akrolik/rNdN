@@ -4,8 +4,7 @@
 
 #include "Codegen/Resources/RegisterResources.h"
 
-#include "PTX/Type.h"
-#include "PTX/Operands/Variables/Register.h"
+#include "PTX/PTX.h"
 
 #include "Utils/Logger.h"
 

@@ -2,17 +2,9 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "PTX/Operands/Adapters/BitAdapter.h"
-#include "PTX/Operands/Adapters/SignedAdapter.h"
-#include "PTX/Operands/Adapters/TruncateAdapter.h"
-#include "PTX/Operands/Adapters/TypeAdapter.h"
-#include "PTX/Operands/Adapters/UnsignedAdapter.h"
-#include "PTX/Instructions/Comparison/SetPredicateInstruction.h"
-#include "PTX/Instructions/Comparison/SelectInstruction.h"
-#include "PTX/Instructions/Data/ConvertInstruction.h"
-#include "PTX/Instructions/Data/MoveInstruction.h"
-
 #include "Codegen/Builder.h"
+
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

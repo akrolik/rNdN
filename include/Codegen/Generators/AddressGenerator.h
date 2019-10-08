@@ -4,32 +4,12 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/IndexGenerator.h"
 
-#include "Codegen/Builder.h"
+#include "HorseIR/Tree/Tree.h"
 
-#include "HorseIR/Tree/Statements/ReturnStatement.h"
-
-#include "PTX/StateSpace.h"
-#include "PTX/Type.h"
-#include "PTX/Declarations/SpecialRegisterDeclarations.h"
-#include "PTX/Functions/Function.h"
-#include "PTX/Instructions/Arithmetic/AddInstruction.h"
-#include "PTX/Instructions/Arithmetic/MultiplyWideInstruction.h"
-#include "PTX/Instructions/Data/ConvertAddressInstruction.h"
-#include "PTX/Instructions/Data/LoadInstruction.h"
-#include "PTX/Instructions/Data/MoveAddressInstruction.h"
-#include "PTX/Instructions/Data/MoveInstruction.h"
-#include "PTX/Instructions/ControlFlow/ReturnInstruction.h"
-#include "PTX/Instructions/Shift/ShiftLeftInstruction.h"
-#include "PTX/Operands/Adapters/PointerAdapter.h"
-#include "PTX/Operands/Adapters/BitAdapter.h"
-#include "PTX/Operands/Address/MemoryAddress.h"
-#include "PTX/Operands/Address/RegisterAddress.h"
-#include "PTX/Operands/Variables/AddressableVariable.h"
-#include "PTX/Operands/Variables/IndexedRegister.h"
-#include "PTX/Operands/Variables/Variable.h"
-#include "PTX/Operands/Value.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 

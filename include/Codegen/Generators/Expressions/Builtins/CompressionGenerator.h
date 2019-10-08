@@ -1,13 +1,11 @@
 #pragma once
 
 #include "HorseIR/Traversal/ConstVisitor.h"
-
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 
-#include "PTX/Statements/CommentStatement.h"
-#include "PTX/Instructions/Logical/AndInstruction.h"
+#include "PTX/PTX.h"
 
 namespace Codegen {
 
