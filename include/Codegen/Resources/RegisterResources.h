@@ -83,12 +83,40 @@ public:
 		return m_temporariesMap.at(identifier);
 	}
 
+	enum class ReductionGranularity {
+		Warp,
+		Block
+	};
+
+	enum class ReductionOperation {
+		Add,
+		Maximum,
+		Minimum
+	};
+
+	void SetReductionRegister(const PTX::Register<T> *value, ReductionGranularity granularity, ReductionOperation op)
+	{
+		m_reductionMap[value] = {granularity, op};
+	}
+
+	bool IsReductionRegister(const PTX::Register<T> *value) const
+	{
+		return m_reductionMap.find(value) != m_reductionMap.end();
+	}
+
+	std::pair<ReductionGranularity, ReductionOperation> GetReductionRegister(const PTX::Register<T> *value) const
+	{
+		return m_reductionMap.at(value);
+	}
+
 private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
 
 	std::unordered_map<std::string, ResourceType> m_registersMap;
 	std::unordered_map<std::string, const PTX::Register<T> *> m_temporariesMap;
 	unsigned int m_temporaries = 0;
+
+	std::unordered_map<const PTX::Register<T> *, std::pair<ReductionGranularity, ReductionOperation>> m_reductionMap;
 };
 
 }

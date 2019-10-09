@@ -163,14 +163,11 @@ public:
 			parameter->Accept(*this);
 		}
 
-		// Lastly, add the return parameter to the function
+		// Lastly, add the return parameters to the function (we do this now
+		// in case there are multiple return statements)
 
-		//TODO: See if we can combine the parameter generation for both inputs and outputs, and split the value loading into a second generator
 		ReturnParameterGenerator<B> generator(m_builder);
-		for (const auto& returnType : function->GetReturnTypes())
-		{
-			DispatchType(generator, returnType);
-		}
+		generator.Generate(function->GetReturnTypes());
 
 		for (const auto& statement : function->GetStatements())
 		{
@@ -228,12 +225,13 @@ public:
 
 	void Visit(const HorseIR::ReturnStatement *returnS) override
 	{
-		//TODO: Use shape analysis for loading the correct index
+		// Return generator generates the output results (atomic, compressed, or list/vector) and we finalize
+		// with a return instruction
 
 		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(returnS, true)));
 
 		ReturnGenerator<B> generator(m_builder);
-		generator.Generate(returnS, ReturnGenerator<B>::IndexKind::Global);
+		generator.Generate(returnS);
 
 		this->m_builder.AddStatement(new PTX::ReturnInstruction());
 	}

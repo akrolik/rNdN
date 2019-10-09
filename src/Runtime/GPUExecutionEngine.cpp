@@ -160,29 +160,23 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(const Co
 	auto blockSize = kernelOptions.GetBlockSize();
 	if (blockSize == PTX::FunctionOptions::DynamicBlockSize)
 	{
+		// Fill the multiprocessors, but not more than the data size
+
+		if (inputOptions.ActiveThreads != Codegen::InputOptions::DynamicSize && inputOptions.ActiveThreads < targetOptions.MaxBlockSize)
+		{
+			blockSize = inputOptions.ActiveThreads;
+		}
+		else
+		{
+			blockSize = targetOptions.MaxBlockSize;
+		}
+
 		if (kernelOptions.GetThreadMultiple() != 0)
 		{
 			// Maximize the block size based on the GPU and thread multiple
 
 			auto multiple = kernelOptions.GetThreadMultiple();
-			if (inputOptions.ActiveThreads != Codegen::InputOptions::DynamicSize && inputOptions.ActiveThreads < targetOptions.MaxBlockSize)
-			{
-				blockSize = (multiple * (inputOptions.ActiveThreads / multiple));
-			}
-			blockSize = (multiple * (targetOptions.MaxBlockSize / multiple));
-		}
-		else
-		{
-			// Fill the multiprocessors, but not more than the data size
-
-			if (inputOptions.ActiveThreads != Codegen::InputOptions::DynamicSize && inputOptions.ActiveThreads < targetOptions.MaxBlockSize)
-			{
-				blockSize = inputOptions.ActiveThreads;
-			}
-			else
-			{
-				blockSize = targetOptions.MaxBlockSize;
-			}
+			blockSize = ((blockSize + multiple - 1) / multiple) * multiple;
 		}
 	}
 

@@ -78,6 +78,31 @@ public:
 		return this->GetResources<T>()->AllocateTemporary(identifier);
 	}
 
+
+	template<class T>
+	using ReductionGranularity = typename RegisterResources<T>::ReductionGranularity;
+
+	template<class T>
+	using ReductionOperation = typename RegisterResources<T>::ReductionOperation;
+
+	template<class T>
+	void SetReductionRegister(const PTX::Register<T> *value, ReductionGranularity<T> granularity, ReductionOperation<T> op)
+	{
+		this->GetResources<T>()->SetReductionRegister(value, granularity, op);
+	}
+
+	template<class T>
+	bool IsReductionRegister(const PTX::Register<T> *value) const
+	{
+		return this->GetResources<T>()->IsReductionRegister(value);
+	}
+
+	template<class T>
+	std::pair<ReductionGranularity<T>, ReductionOperation<T>> GetReductionRegister(const PTX::Register<T> *value) const
+	{
+		return this->GetResources<T>()->GetReductionRegister(value);
+	}
+
 private:
 	RegisterAllocator *m_parent = nullptr;
 };

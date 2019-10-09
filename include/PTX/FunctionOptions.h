@@ -77,16 +77,12 @@ public:
 	unsigned int GetSharedMemorySize() const { return m_sharedMemorySize; }
 	void SetSharedMemorySize(unsigned int sharedMemorySize) { m_sharedMemorySize  = sharedMemorySize; }
 
-	bool IsAtomicReturn() const { return m_atomicReturn; }
-	void SetAtomicReturn(bool atomicReturn) { m_atomicReturn = atomicReturn; }
-
 	std::string ToString() const
 	{
 		std::string output;
 		output += "Block size: " + ((m_blockSize == DynamicBlockSize) ? "<dynamic>" : std::to_string(m_blockSize)) + "\n";
 		output += "Thread multiple: " + std::to_string(m_threadMultiple) + "\n";
-		output += "Shared memory size: " + std::to_string(m_sharedMemorySize) + " bytes\n";
-		output += "Atomic return: " + ((m_atomicReturn) ? std::string("true") : std::string("false"));
+		output += "Shared memory size: " + std::to_string(m_sharedMemorySize) + " bytes";
 		return output;
 	}
 
@@ -96,7 +92,6 @@ public:
 		j["block_size"] = (m_blockSize == DynamicBlockSize) ? "<dynamic>" : std::to_string(m_blockSize);
 		j["thread_multiple"] = std::to_string(m_threadMultiple);
 		j["shared_memory"] = m_sharedMemorySize;
-		j["atomic_return"] = m_atomicReturn;
 		return j;
 	}
 
@@ -106,8 +101,6 @@ private:
 	unsigned int m_blockSize = DynamicBlockSize;
 	unsigned int m_threadMultiple = 0;
 	unsigned int m_sharedMemorySize = 0;
-
-	bool m_atomicReturn = false;
 };
 
 }

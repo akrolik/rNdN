@@ -319,12 +319,18 @@ template<> struct IntType<Bits::Bits8, 1> : IntTypeBase<Bits::Bits8>
 {
 	using SystemType = int8_t;
 	static std::string TypePrefix() { return "rc"; }
+
+	// Disable reduction
+	using ReductionOperation = std::nullptr_t;
 };
 template<> struct IntType<Bits::Bits16, 1> : IntTypeBase<Bits::Bits16>
 {
 	using SystemType = int16_t;
 	using WideType = IntType<Bits::Bits32>;
 	static std::string TypePrefix() { return "rs"; }
+
+	// Disable reduction
+	using ReductionOperation = std::nullptr_t;
 };
 template<> struct IntType<Bits::Bits32, 1> : IntTypeBase<Bits::Bits32>
 {
@@ -920,5 +926,15 @@ struct is_rounding_type : std::false_type {};
 
 template <class T>
 struct is_rounding_type<T, std::enable_if_t<std::is_enum<typename T::RoundingMode>::value>> : std::true_type {};
+
+// @struct is_reduction_type
+//
+// Type trait for determining if a PTX::Type has reduction support
+
+template <class T, typename E = void>
+struct is_reduction_type : std::false_type {};
+
+template <class T>
+struct is_reduction_type<T, std::enable_if_t<std::is_enum<typename T::ReductionOperation>::value>> : std::true_type {};
 
 }

@@ -3,6 +3,9 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/TypeDispatch.h"
+
+#include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
 
@@ -14,11 +17,19 @@ class ReturnParameterGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	template<class T>
-	void Generate()
+	void Generate(const std::vector<HorseIR::Type *>& returnTypes)
 	{
-		//TODO: This does not correctly generate - we should move to a standard generator
-		const std::string returnName = "$return";
+		auto returnIndex = 0u;
+		for (const auto& returnType : returnTypes)
+		{
+			DispatchType(*this, returnType, returnIndex++);
+		}
+	}
+
+	template<class T>
+	void Generate(unsigned int index)
+	{
+		const std::string returnName = "$return_" + std::to_string(index);
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			auto declaration = new PTX::PointerDeclaration<B, PTX::Int8Type>(returnName);
