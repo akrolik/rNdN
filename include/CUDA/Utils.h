@@ -4,6 +4,8 @@
 
 #include <nvvm.h>
 
+#include "Utils/Logger.h"
+
 #define checkDriverResult(result) CUDA::_checkDriverResult(result, __FILE__, __LINE__)
 #define checkRuntimeError(error) CUDA::_checkRuntimeError(error, __FILE__, __LINE__)
 #define checkNVVMResult(result) CUDA::_checkNVVMResult(result, __FILE__, __LINE__)
@@ -23,14 +25,13 @@ static void _checkDriverResult(CUresult result, const char *file, int line)
 	CUresult l_result = cuGetErrorName(result, &name);
 	if (l_result == CUDA_ERROR_INVALID_VALUE)
 	{
-		std::cerr << "[Driver Error] Unknown CUDA error <" << file << ":" << line << ">" << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Unknown CUDA error <" + std::string(file) + ":" + std::to_string(line) + ">", "DRIVER ERROR");
 	}
 
 	cuGetErrorString(result, &string);
 
-	std::cerr << "[Driver Error] " << name << " <" << file << ":" << line << ">" << std::endl << string << std::endl;
-	std::exit(EXIT_FAILURE);
+	Utils::Logger::LogErrorPart(std::string(name) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "DRIVER ERROR");
+	Utils::Logger::LogError(string, "DRIVER ERROR");
 }
 
 static void _checkRuntimeError(cudaError_t error, const char *file, int line)
@@ -40,8 +41,7 @@ static void _checkRuntimeError(cudaError_t error, const char *file, int line)
 		return;
 	}
 
-	std::cerr << "[Runtime Error] " << cudaGetErrorString(error) << " <" << file << ":" << line << ">" << std::endl;
-	std::exit(EXIT_FAILURE);
+	Utils::Logger::LogErrorPart(std::string(cudaGetErrorString(error)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "RUNTIME ERROR");
 }
 
 static void _checkNVVMResult(nvvmResult result, const char *file, int line)
@@ -51,8 +51,7 @@ static void _checkNVVMResult(nvvmResult result, const char *file, int line)
 		return;
 	}
 
-	std::cerr << "[NVVM Error] " << nvvmGetErrorString(result) << " <" << file << ":" << line << ">" << std::endl;
-	std::exit(EXIT_FAILURE);
+	Utils::Logger::LogErrorPart(std::string(nvvmGetErrorString(result)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "NVVM ERROR");
 }
 
 }

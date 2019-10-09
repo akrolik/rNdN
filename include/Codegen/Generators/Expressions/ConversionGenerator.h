@@ -6,6 +6,8 @@
 
 #include "PTX/PTX.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 class ConversionGenerator : public Generator
@@ -183,8 +185,7 @@ private:
 			return;
 		}
 
-		std::cerr << "[ERROR] Unable to convert type " + S::Name() + " to type " + D::Name() << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Unable to convert type " + S::Name() + " to type " + D::Name());
 	}
 };
 
