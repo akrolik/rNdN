@@ -12,8 +12,10 @@ namespace Runtime {
 class ListBuffer : public DataBuffer
 {
 public:
+	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::List;
+
 	ListBuffer(DataBuffer *cell) : ListBuffer(std::vector<DataBuffer *>({cell})) {}
-	ListBuffer(const std::vector<DataBuffer *>& cells) : m_cells(cells)
+	ListBuffer(const std::vector<DataBuffer *>& cells) : DataBuffer(DataBuffer::Kind::List), m_cells(cells)
 	{
 		std::vector<HorseIR::Type *> cellTypes;
 		std::vector<const Analysis::Shape *> cellShapes;

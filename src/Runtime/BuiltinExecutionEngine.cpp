@@ -2,6 +2,7 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ListBuffer.h"
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
@@ -14,7 +15,8 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 {
 	Utils::Logger::LogInfo("Executing builtin function '" + function->GetName() + "'");
 
-	//TODO: We need to verify all casts before they execute
+#define Error(m) Utils::Logger::LogError("Builtin function '" + function->GetName() + "' " + m);
+
 	switch (function->GetPrimitive())
 	{
 		case HorseIR::BuiltinFunction::Primitive::List:
@@ -23,31 +25,30 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
-			auto columnNames = static_cast<TypedVectorBuffer<HorseIR::SymbolValue *> *>(arguments.at(0))->GetCPUReadBuffer();
-			auto columnValues = static_cast<ListBuffer *>(arguments.at(1));
+			auto columnNames = BufferUtils::GetVectorBuffer<HorseIR::SymbolValue *>(arguments.at(0))->GetCPUReadBuffer();
+			auto columnValues = BufferUtils::GetBuffer<ListBuffer>(arguments.at(1));
 
-			//TODO: Ensure the columnValues have tabular size
-			//TODO: Check the column names have the same size as the columns
-			//TODO: Determine the correct table size
-			auto table = new TableBuffer(1);
-
-			auto i = 0u;
-			for (const auto& columnName : columnNames->GetValues())
+			if (columnNames->GetElementCount() != columnValues->GetCellCount())
 			{
-				auto columnVector = static_cast<VectorBuffer *>(columnValues->GetCell(i++));
-				table->AddColumn(columnName->GetName(), columnVector);
+				Error("expects header and columns of same size [" + std::to_string(columnNames->GetElementCount()) + " != " + std::to_string(columnValues->GetCellCount()) + "]");
 			}
 
-			return {table};
+			auto i = 0u;
+			std::unordered_map<std::string, VectorBuffer *> columns;
+			for (const auto& columnName : columnNames->GetValues())
+			{
+				columns[columnName->GetName()] = BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++));
+			}
+			return {new TableBuffer(columns)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
-			auto table = static_cast<TableBuffer *>(arguments.at(0));
-			auto columnSymbol = static_cast<TypedVectorBuffer<HorseIR::SymbolValue *> *>(arguments.at(1))->GetCPUReadBuffer();
+			auto table = BufferUtils::GetBuffer<TableBuffer>(arguments.at(0));
+			auto columnSymbol = BufferUtils::GetVectorBuffer<HorseIR::SymbolValue *>(arguments.at(1))->GetCPUReadBuffer();
 
 			if (columnSymbol->GetElementCount() != 1)
 			{
-				Utils::Logger::LogError("Builtin function '" + function->GetName() + "' expects a single column argument");
+				Error("expects a single column argument");
 			}
 
 			return {table->GetColumn(columnSymbol->GetValue(0)->GetName())};
@@ -55,18 +56,18 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{
 			auto& dataRegistry = m_runtime.GetDataRegistry();
-			auto tableSymbol = static_cast<TypedVectorBuffer<HorseIR::SymbolValue *> *>(arguments.at(0))->GetCPUReadBuffer();
+			auto tableSymbol = BufferUtils::GetVectorBuffer<HorseIR::SymbolValue *>(arguments.at(0))->GetCPUReadBuffer();
 
 			if (tableSymbol->GetElementCount() != 1)
 			{
-				Utils::Logger::LogError("Builtin function '" + function->GetName() + "' expects a single table argument");
+				Error("expects a single table argument");
 			}
 
 			return {dataRegistry.GetTable(tableSymbol->GetValue(0)->GetName())};
 		}
 		default:
 		{
-			Utils::Logger::LogError("Builtin function '" + function->GetName() + "' not implemented");
+			Error("not implemented");
 		}
 	}
 }

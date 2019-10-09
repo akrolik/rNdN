@@ -6,13 +6,23 @@
 
 namespace Runtime {
 
-void TableBuffer::AddColumn(const std::string& name, VectorBuffer *column)
+TableBuffer::TableBuffer(const std::unordered_map<std::string, VectorBuffer *>& columns) : DataBuffer(DataBuffer::Kind::Table), m_columns(columns)
 {
-	if (column->GetElementCount() != m_rows)
+	bool first = true;
+	for (const auto& column : columns)
 	{
-		Utils::Logger::LogError("Column length does not match table size [" + std::to_string(column->GetElementCount()) + " != " + std::to_string(m_rows) + "]");
+		auto columnRows = column.second->GetElementCount();
+		if (first)
+		{
+			m_rows = columnRows;
+			first = false;
+		}
+		else if (columnRows != m_rows)
+		{
+			Utils::Logger::LogError("Column length does not match table size [" + std::to_string(columnRows) + " != " + std::to_string(m_rows) + "]");
+		}
 	}
-	m_columns.insert({name, column});
+	m_shape = new Analysis::TableShape(new Analysis::Shape::ConstantSize(m_columns.size()), new Analysis::Shape::ConstantSize(m_rows));
 }
 
 VectorBuffer *TableBuffer::GetColumn(const std::string& name) const

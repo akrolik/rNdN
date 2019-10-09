@@ -1,5 +1,8 @@
 #pragma once
 
+#include <typeindex>
+#include <typeinfo>
+
 #include "Runtime/DataBuffers/DataBuffer.h"
 
 #include "Analysis/Shape/Shape.h"
@@ -10,9 +13,13 @@
 
 namespace Runtime {
 
+class BufferUtils;
 class VectorBuffer : public DataBuffer
 {
+	friend class BufferUtils;
 public:
+	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Vector;
+
 	static VectorBuffer *Create(const HorseIR::BasicType *type, const Analysis::VectorShape *shape);
 
 	virtual VectorData *GetCPUWriteBuffer() = 0;
@@ -20,18 +27,23 @@ public:
 
 	virtual size_t GetElementCount() const = 0;
 	virtual size_t GetElementSize() const = 0;
+
+protected:
+	VectorBuffer(const std::type_index &tid) : DataBuffer(DataBuffer::Kind::Vector), m_typeid(tid) {}
+
+	std::type_index m_typeid;
 };
 
 template<typename T>
 class TypedVectorBuffer : public VectorBuffer
 {
 public:
-	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : m_elementType(elementType), m_elementCount(elementCount)
+	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T)), m_elementType(elementType), m_elementCount(elementCount)
 	{
 		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
 	}
 
-	TypedVectorBuffer(TypedVectorData<T> *buffer) : m_elementType(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer)
+	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T)), m_elementType(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer)
 	{
 		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
 	}

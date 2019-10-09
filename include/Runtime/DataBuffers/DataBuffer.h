@@ -10,9 +10,31 @@
 
 namespace Runtime {
 
+class BufferUtils;
 class DataBuffer
 {
+	friend class BufferUtils;
 public:
+	enum class Kind {
+		Vector,
+		List,
+		Table
+	};
+
+	static std::string KindString(Kind kind)
+	{
+		switch (kind)
+		{
+			case Kind::Vector:
+				return "DataBuffer::Vector";
+			case Kind::List:
+				return "DataBuffer::List";
+			case Kind::Table:
+				return "DataBuffer::Table";
+		}
+		return "<unknown>";
+	}
+
 	static DataBuffer *Create(const HorseIR::Type *type, const Analysis::Shape *shape);
 
 	virtual const HorseIR::Type *GetType() const = 0;
@@ -35,6 +57,9 @@ public:
 	virtual std::string DebugDump() const = 0;
 
 protected:
+	DataBuffer(Kind kind) : m_kind(kind) {}
+	Kind m_kind;
+
 	mutable bool m_gpuConsistent = false;
 	mutable bool m_cpuConsistent = false;
 };

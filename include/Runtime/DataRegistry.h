@@ -13,7 +13,7 @@ class DataRegistry
 {
 public:
 	template<typename T>
-	static void LoadDebugData(TableBuffer *table, const HorseIR::BasicType *type, unsigned long size);
+	static void LoadDebugData(std::unordered_map<std::string, VectorBuffer *>& columns, const HorseIR::BasicType *type, unsigned long size);
 
 	void LoadDebugData();
 	void LoadTPCHData();

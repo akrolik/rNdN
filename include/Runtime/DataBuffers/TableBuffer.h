@@ -16,21 +16,16 @@ namespace Runtime {
 class TableBuffer : public DataBuffer
 {
 public:
-	TableBuffer(unsigned long rows) : m_rows(rows)
-	{
-		m_shape = new Analysis::TableShape(new Analysis::Shape::ConstantSize(0), new Analysis::Shape::ConstantSize(rows));
-	}
+	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Table;
+
+	TableBuffer(const std::unordered_map<std::string, VectorBuffer *>& columns);
 
 	HorseIR::TableType *GetType() const override { return m_type; }
 	const Analysis::TableShape *GetShape() const override { return m_shape; }
 
 	// Columns
 
-	//TODO: Update table size
-	void AddColumn(const std::string& name, VectorBuffer *column);
 	VectorBuffer *GetColumn(const std::string& column) const;
-
-	unsigned long GetRows() const { return m_rows; }
 
 	// CPU/GPU management
 
@@ -47,7 +42,7 @@ private:
 	Analysis::TableShape *m_shape = nullptr;
 
 	std::unordered_map<std::string, VectorBuffer *> m_columns;
-	unsigned long m_rows = 0;
+	unsigned int m_rows = 0;
 };
 
 }
