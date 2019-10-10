@@ -17,27 +17,25 @@ public:
 		return { m_declaration };
 	}
 
-	//TODO: Move and not copy make_pair
-
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr)
 	{
 		auto name = "%" + T::TypePrefix() + "_" + identifier;
 		m_declaration->AddNames(name);
 		const auto resource = m_declaration->GetVariable(name);
-		m_registersMap[identifier] = std::make_pair(resource, predicate);
+		m_registersMap.insert_or_assign(identifier, std::make_pair(resource, predicate));
 		return resource;
 	}
 
 	const PTX::Register<T> *CompressRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate)
 	{
 		auto resource = GetRegister(identifier);
-		m_registersMap[identifier] = std::make_pair(resource, predicate);
+		m_registersMap.insert_or_assign(identifier, std::make_pair(resource, predicate));
 		return resource;
 	}
 
 	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
 	{
-		m_registersMap[identifier] = std::make_pair(value, predicate);
+		m_registersMap.insert_or_assign(identifier, std::make_pair(value, predicate));
 	}
 
 	bool ContainsKey(const std::string& identifier) const override

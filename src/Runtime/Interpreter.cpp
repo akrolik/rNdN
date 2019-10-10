@@ -98,7 +98,6 @@ void Interpreter::Visit(const HorseIR::AssignStatement *assignS)
 	auto index = 0u;
 	for (const auto& target : assignS->GetTargets())
 	{
-		//TODO: Copy if this is a plain assignment. We assume that functions return a new variable
 		m_environment.Insert(target->GetSymbol(), values.at(index++));
 	}
 }

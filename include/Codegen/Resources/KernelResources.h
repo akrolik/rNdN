@@ -12,7 +12,6 @@ class KernelResources : public Resources
 public:
 	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const override
 	{
-		//TODO:
 		return {};
 	}
 
