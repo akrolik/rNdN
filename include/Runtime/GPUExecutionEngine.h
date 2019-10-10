@@ -25,6 +25,9 @@ public:
 private:
 	std::pair<unsigned int, unsigned int> GetBlockShape(const Codegen::InputOptions& inputOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const;
 
+	Codegen::InputOptions::IndexKind GetVectorGeometryIndexKind(const Analysis::Shape *shape) const;
+	Codegen::InputOptions::IndexKind GetListGeometryIndexKind(const Analysis::Shape *shape) const;
+
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;
 };

@@ -58,16 +58,35 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	Utils::Logger::LogInfo("Thread geometry: " + threadGeometry->ToString());
 
 	Codegen::InputOptions inputOptions;
+
 	switch (threadGeometry->GetKind())
 	{
 		case Analysis::ThreadGeometry::Kind::Vector:
 		{
 			inputOptions.ActiveThreads = threadGeometry->GetSize();
+			for (const auto& parameter : function->GetParameters())
+			{
+				auto shape = inputShapes.at(parameter->GetSymbol());
+				inputOptions.ParameterIndexKinds[parameter] = GetVectorGeometryIndexKind(shape);
+			}
+			for (const auto& returnShape : shapeAnalysis.GetReturnShapes())
+			{
+				inputOptions.ReturnIndexKinds.push_back(GetVectorGeometryIndexKind(returnShape));
+			}
 			break;
 		}
 		case Analysis::ThreadGeometry::Kind::List:
 		{
 			inputOptions.ActiveBlocks = threadGeometry->GetSize();
+			for (const auto& parameter : function->GetParameters())
+			{
+				auto shape = inputShapes.at(parameter->GetSymbol());
+				inputOptions.ParameterIndexKinds[parameter] = GetListGeometryIndexKind(shape);
+			}
+			for (const auto& returnShape : shapeAnalysis.GetReturnShapes())
+			{
+				inputOptions.ReturnIndexKinds.push_back(GetListGeometryIndexKind(returnShape));
+			}
 			break;
 		}
 	}
@@ -190,6 +209,36 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(const Co
 		auto blockCount = ((inputOptions.ActiveThreads - 1) / blockSize + 1);
 		return {blockSize, blockCount};
 	}
+}
+
+Codegen::InputOptions::IndexKind GPUExecutionEngine::GetVectorGeometryIndexKind(const Analysis::Shape *shape) const
+{
+	if (Analysis::ShapeUtils::IsScalar(shape))
+	{
+		return Codegen::InputOptions::IndexKind::Scalar;
+	}
+	else if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+	{
+		return  Codegen::InputOptions::IndexKind::Vector;
+	}
+	Utils::Logger::LogError("Vector thread geometry expects vector shapes as input arguments");
+}
+
+Codegen::InputOptions::IndexKind GPUExecutionEngine::GetListGeometryIndexKind(const Analysis::Shape *shape) const
+{
+	if (Analysis::ShapeUtils::IsScalar(shape))
+	{
+		return Codegen::InputOptions::IndexKind::Scalar;
+	}
+	else if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+	{
+		return Codegen::InputOptions::IndexKind::Cell;
+	}
+	else if (Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+	{
+		return Codegen::InputOptions::IndexKind::List;
+	}
+	Utils::Logger::LogError("List thread geometry expects vector/list shapes as input arguments");
 }
 
 }

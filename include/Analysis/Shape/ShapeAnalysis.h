@@ -54,6 +54,8 @@ public:
 	std::string Name() const override { return "Shape analysis"; }
 
 	const std::vector<const Shape *>& GetShapes(const HorseIR::Expression *expression) const { return m_expressionShapes.at(expression); }
+
+	const std::vector<const Shape *>& GetReturnShapes() const { return m_returnShapes; }
 	const Shape *GetReturnShape(unsigned int i) const { return m_returnShapes.at(i); }
 
 private:

@@ -22,9 +22,11 @@ public:
 	using IndexKind = typename AddressGenerator<B>::IndexKind;
 
 	template<class T>
-	void Generate(const HorseIR::Parameter *parameter, IndexKind indexKind)
+	void Generate(const HorseIR::Parameter *parameter)
 	{
 		auto resources = this->m_builder.GetLocalResources();
+		auto indexKind = GetIndexKind(parameter);
+
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			auto value = resources->AllocateTemporary<PTX::Int8Type>();
@@ -51,6 +53,28 @@ public:
 		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(variable, indexKind);
 
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
+	}
+
+	IndexKind GetIndexKind(const HorseIR::Parameter *parameter) const
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+
+		// Translate the high-level indexing to a low-level thread mapping
+
+		auto indexKind = inputOptions.ParameterIndexKinds.at(parameter);
+		switch (indexKind)
+		{
+			case InputOptions::IndexKind::Scalar:
+				return IndexKind::Null;
+			case InputOptions::IndexKind::Vector:
+				return IndexKind::Global;
+			case InputOptions::IndexKind::List:
+			case InputOptions::IndexKind::Cell:
+				//TODO: List indexing
+				break;
+		}
+
+		Utils::Logger::LogError("Unknown thread mapping for index kind " + InputOptions::IndexKindString(indexKind));
 	}
 };
 

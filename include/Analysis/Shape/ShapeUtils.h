@@ -180,6 +180,15 @@ static bool IsShape(const Shape *shape)
 	return (shape->GetKind() == S::ShapeKind);
 }
 
+static bool IsScalar(const Shape *shape)
+{
+	if (const auto vectorShape = GetShape<VectorShape>(shape))
+	{
+		return IsScalarSize(vectorShape->GetSize());
+	}
+	return false;
+}
+
 static bool IsSingleShape(const std::vector<const Shape *>& shapes)
 {
 	return (shapes.size() == 1);

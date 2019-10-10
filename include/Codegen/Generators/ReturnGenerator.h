@@ -87,12 +87,10 @@ public:
 		}
 		else
 		{
-			//TODO: Use shape analysis for loading the correct index
-			GenerateIndexedWrite(value, returnIndex, IndexKind::Global);
+			GenerateIndexedWrite(value, returnIndex, GetIndexKind(returnIndex));
 		}
 	}
 
-	// template<class T, typename Enable = std::enable_if_t<PTX::StoreInstruction<B, T, PTX::GlobalSpace, PTX::StoreSynchronization::Weak, false>::TypeSupported>>
 	template<class T>
 	void GenerateIndexedWrite(const PTX::Register<T> *value, unsigned int returnIndex, IndexKind indexKind)
 	{
@@ -131,10 +129,10 @@ public:
 		auto returnName = "$return_" + std::to_string(returnIndex);
 		auto returnVariable = kernelResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>(returnName);
 
-		// Since atomics only output a single value, we use null addressing
+		// Generate the write address according to the index calculation
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(returnVariable, AddressGenerator<B>::IndexKind::Null);
+		auto address = addressGenerator.template GenerateParameter<T, PTX::GlobalSpace>(returnVariable, GetIndexKind(returnIndex));
 
 		// Generate the reduction operation
 
@@ -160,6 +158,28 @@ public:
 			default:
 				Utils::Logger::LogError("Generator does not support reduction operation");
 		}
+	}
+
+	IndexKind GetIndexKind(unsigned int returnIndex) const
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+
+		// Translate the high-level indexing to a low-level thread mapping
+
+		auto indexKind = inputOptions.ReturnIndexKinds.at(returnIndex);
+		switch (indexKind)
+		{
+			case InputOptions::IndexKind::Scalar:
+				return IndexKind::Null;
+			case InputOptions::IndexKind::Vector:
+				return IndexKind::Global;
+			case InputOptions::IndexKind::List:
+			case InputOptions::IndexKind::Cell:
+				//TODO: List indexing
+				break;
+		}
+
+		Utils::Logger::LogError("Unknown thread mapping for index kind " + InputOptions::IndexKindString(indexKind));
 	}
 };
 

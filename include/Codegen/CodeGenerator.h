@@ -184,12 +184,10 @@ public:
 
 	void Visit(const HorseIR::Parameter *parameter) override
 	{
-		//TODO: Use shape analysis for loading the correct index
-
 		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(parameter, true)));
 
 		ParameterGenerator<B> generator(m_builder);
-		DispatchType(generator, parameter->GetType(), parameter, ParameterGenerator<B>::IndexKind::Global);
+		DispatchType(generator, parameter->GetType(), parameter);
 	}
 
 	void Visit(const HorseIR::DeclarationStatement *declarationS) override
