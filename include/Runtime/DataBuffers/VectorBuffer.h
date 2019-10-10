@@ -82,7 +82,7 @@ public:
 
 	std::string Description() const override
 	{
-		return GetCPUReadBuffer()->Description();
+		return (HorseIR::PrettyPrinter::PrettyString(m_type) + "(" + std::to_string(GetElementSize()) + " bytes) x " + std::to_string(GetElementCount()));
 	}
 
 	std::string DebugDump() const override
