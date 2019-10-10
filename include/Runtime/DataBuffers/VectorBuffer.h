@@ -38,17 +38,17 @@ template<typename T>
 class TypedVectorBuffer : public VectorBuffer
 {
 public:
-	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T)), m_elementType(elementType), m_elementCount(elementCount)
+	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T)), m_type(elementType), m_elementCount(elementCount)
 	{
 		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
 	}
 
-	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T)), m_elementType(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer)
+	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T)), m_type(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer)
 	{
 		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
 	}
 
-	const HorseIR::BasicType *GetType() const override { return m_elementType; }
+	const HorseIR::BasicType *GetType() const override { return m_type; }
 	const Analysis::VectorShape *GetShape() const override { return m_shape; }
 
 	size_t GetElementCount() const override { return m_elementCount; }
@@ -93,7 +93,7 @@ public:
 private:
 	void AllocateCPUBuffer() const
 	{
-		m_cpuBuffer = new TypedVectorData<T>(m_elementType, m_elementCount);
+		m_cpuBuffer = new TypedVectorData<T>(m_type, m_elementCount);
 		if (m_gpuBuffer != nullptr)
 		{
 			m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
@@ -102,7 +102,14 @@ private:
 
 	void AllocateGPUBuffer() const
 	{
-		m_gpuBuffer = new CUDA::Buffer(m_cpuBuffer->GetData(), sizeof(T) * m_elementCount);
+		if (m_cpuBuffer != nullptr)
+		{
+			m_gpuBuffer = new CUDA::Buffer(m_cpuBuffer->GetData(), sizeof(T) * m_elementCount);
+		}
+		else
+		{
+			m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
+		}
 		m_gpuBuffer->AllocateOnGPU();
 	}
 
@@ -134,11 +141,15 @@ private:
 			{
 				m_gpuBuffer->TransferToGPU();
 			}
+			else
+			{
+				m_gpuBuffer->Clear();
+			}
 			m_gpuConsistent = true;
 		}
 	}
 
-	const HorseIR::BasicType *m_elementType = nullptr;
+	const HorseIR::BasicType *m_type = nullptr;
 	const Analysis::VectorShape *m_shape = nullptr;
 	unsigned long m_elementCount = 0;
 

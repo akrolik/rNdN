@@ -11,11 +11,20 @@ void Buffer::AllocateOnGPU()
 {
 	auto start = Chrono::Start();
 
-	auto paddedSize = GetPaddedSize();
-	checkDriverResult(cuMemAlloc(&m_GPUBuffer, paddedSize));
+	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_paddedSize));
 
 	auto time = Chrono::End(start);
-	Utils::Logger::LogTiming("CUDA allocation (" + std::to_string(paddedSize) + " bytes)", time);
+	Utils::Logger::LogTiming("CUDA allocation (" + std::to_string(m_paddedSize) + " bytes)", time);
+}
+
+void Buffer::Clear()
+{
+	auto start = Chrono::Start();
+
+	checkDriverResult(cuMemsetD8(m_GPUBuffer, 0, m_paddedSize));
+
+	auto time = Chrono::End(start);
+	Utils::Logger::LogTiming("CUDA clear (" + std::to_string(m_paddedSize) + " bytes)", time);
 }
 
 void Buffer::TransferToGPU()
