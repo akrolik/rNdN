@@ -1,5 +1,7 @@
 #include "Analysis/Helpers/GPUAnalysisHelper.h"
 
+#include "HorseIR/Utils/TypeUtils.h"
+
 namespace Analysis {
 
 void GPUAnalysisHelper::Analyze(const HorseIR::Expression *expression)
@@ -7,7 +9,7 @@ void GPUAnalysisHelper::Analyze(const HorseIR::Expression *expression)
 	// Reset the analysis and traverse
 
 	m_capable = false;
-	m_synchronized = false;
+	m_synchronizedOut = false;
 
 	expression->Accept(*this);
 }
@@ -17,7 +19,7 @@ void GPUAnalysisHelper::Analyze(const HorseIR::Statement *statement)
 	// Reset the analysis and traverse
 
 	m_capable = false;
-	m_synchronized = false;
+	m_synchronizedOut = false;
 
 	statement->Accept(*this);
 }
@@ -25,7 +27,7 @@ void GPUAnalysisHelper::Analyze(const HorseIR::Statement *statement)
 void GPUAnalysisHelper::Visit(const HorseIR::DeclarationStatement *declarationS)
 {
 	m_capable = true;
-	m_synchronized = false;
+	m_synchronizedOut = false;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::AssignStatement *assignS)
@@ -43,38 +45,42 @@ void GPUAnalysisHelper::Visit(const HorseIR::ReturnStatement *returnS)
 	// Explicitly disallow return from kernels, we will insert as needed
 
 	m_capable = false;
-	m_synchronized = false;
+	m_synchronizedOut = false;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::CallExpression *call)
 {
-	auto [capable, synchronized] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction());
+	auto [capable, synchronized] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments());
 	m_capable = capable;
-	m_synchronized = synchronized;
+	m_synchronizedOut = synchronized;
 }
 
-std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::FunctionDeclaration *function)
+std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments)
 {
 	switch (function->GetKind())
 	{
 		case HorseIR::FunctionDeclaration::Kind::Builtin:
-			return AnalyzeCall(static_cast<const HorseIR::BuiltinFunction *>(function));
+			return AnalyzeCall(static_cast<const HorseIR::BuiltinFunction *>(function), arguments);
 		case HorseIR::FunctionDeclaration::Kind::Definition:
-			return AnalyzeCall(static_cast<const HorseIR::Function *>(function));
+			return AnalyzeCall(static_cast<const HorseIR::Function *>(function), arguments);
 		default:
 			Utils::Logger::LogError("Unsupported function kind");
 	}
 }
 
-std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Function *function)
+std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments)
 {
 	return {false, false}; // CPU, unsynchronized
 }
 
-std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function)
+std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
 {
 	switch (function->GetPrimitive())
 	{
+		// ---------------
+		// Vector Geometry
+		// ---------------
+
 		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
 		case HorseIR::BuiltinFunction::Primitive::Negate:
@@ -103,9 +109,6 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseCosine:
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseSine:
 		case HorseIR::BuiltinFunction::Primitive::HyperbolicInverseTangent:
-		{
-			return {true, false}; // GPU, unsychronized
-		}
 		
 		// Date Unary
 		case HorseIR::BuiltinFunction::Primitive::Date:
@@ -117,9 +120,6 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::TimeMinute:
 		case HorseIR::BuiltinFunction::Primitive::TimeSecond:
 		case HorseIR::BuiltinFunction::Primitive::TimeMillisecond:
-		{
-			return {true, false}; // GPU, unsychronized
-		}
 
 		// Binary
 		case HorseIR::BuiltinFunction::Primitive::Less:
@@ -140,56 +140,77 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::Nand:
 		case HorseIR::BuiltinFunction::Primitive::Nor:
 		case HorseIR::BuiltinFunction::Primitive::Xor:
-		{
-			return {true, false}; // GPU, unsynchronized
-		}
 
 		// Date Binary
 		case HorseIR::BuiltinFunction::Primitive::DatetimeAdd:
 		case HorseIR::BuiltinFunction::Primitive::DatetimeSubtract:
 		case HorseIR::BuiltinFunction::Primitive::DatetimeDifference:
-		{
-			return {true, false}; // GPU, unsynchronized
-		}
-		
+
 		// Algebraic Unary
-		case HorseIR::BuiltinFunction::Primitive::Unique:
 		case HorseIR::BuiltinFunction::Primitive::Range:
 		case HorseIR::BuiltinFunction::Primitive::Factorial:
 		case HorseIR::BuiltinFunction::Primitive::Reverse:
-		case HorseIR::BuiltinFunction::Primitive::Random:
-		case HorseIR::BuiltinFunction::Primitive::Seed:
-		case HorseIR::BuiltinFunction::Primitive::Flip:
-		case HorseIR::BuiltinFunction::Primitive::Where:
-		case HorseIR::BuiltinFunction::Primitive::Group:
-		{
-			return {false, false}; // CPU, unsynchronized
-		}
 
 		// Algebraic Binary
-		case HorseIR::BuiltinFunction::Primitive::Append:
-		case HorseIR::BuiltinFunction::Primitive::Replicate:
-		case HorseIR::BuiltinFunction::Primitive::Like:
-		{
-			return {false, false}; // CPU, unsynchronized
-		}
-		case HorseIR::BuiltinFunction::Primitive::Compress:
-		{
-			return {true, false}; // GPU, unsynchronized
-		}
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
-		case HorseIR::BuiltinFunction::Primitive::Order:
 		case HorseIR::BuiltinFunction::Primitive::Member:
-		{
-			return {false, false}; // CPU, unsynchronized
-		}
 		case HorseIR::BuiltinFunction::Primitive::Vector:
+
+		// Database
+		case HorseIR::BuiltinFunction::Primitive::Keys:
+		case HorseIR::BuiltinFunction::Primitive::Values:
+		case HorseIR::BuiltinFunction::Primitive::Fetch:
+		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
 			return {true, false}; // GPU, unsynchronized
 		}
+
+		// Indexing
+		case HorseIR::BuiltinFunction::Primitive::Index:
+		{
+			//TODO: Data synchronized in
+			return {true, false}; // GPU, unsynchronized out, synchronized in
+
+		}
+		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
+		{
+			return {true, true}; // GPU, synchronized out
+		}
+
+		// --------------------
+		// Compression Geometry
+		// --------------------
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Where:
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Compress:
+		{
+			return {true, false}; // GPU, unsynchronized
+		}
+
+		// ----------------------
+		// Independent Operations
+		// ----------------------
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Unique:
+		case HorseIR::BuiltinFunction::Primitive::Group:
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Order:
+		{
+			//TODO: Data synchronization in
+			return {true, true}; // GPU, synchronized in & out
+		}
+
+		// --------------------
+		// Reduction Operations
+		// --------------------
 
 		// Reduction
 		case HorseIR::BuiltinFunction::Primitive::Length:
@@ -198,44 +219,61 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::Minimum:
 		case HorseIR::BuiltinFunction::Primitive::Maximum:
 		{
-			return {true, true}; // GPU, synchronized
+			return {true, true}; // GPU, synchronized out
 		}
 
+		// ---------------
+		// List Operations
+		// ---------------
+
 		// List
-		case HorseIR::BuiltinFunction::Primitive::Raze:
-		case HorseIR::BuiltinFunction::Primitive::List:
-		case HorseIR::BuiltinFunction::Primitive::ToList:
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		case HorseIR::BuiltinFunction::Primitive::EachItem:
 		case HorseIR::BuiltinFunction::Primitive::EachLeft:
 		case HorseIR::BuiltinFunction::Primitive::EachRight:
-		case HorseIR::BuiltinFunction::Primitive::Match:
 		{
-			return {false, false}; // CPU, unsynchronized
+			const auto type = arguments.at(0)->GetType();
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+			return AnalyzeCall(function, {}); // Nested function properties
 		}
+
+		// ---------------
+		// Cell Operations
+		// ---------------
+
+		// List
+		case HorseIR::BuiltinFunction::Primitive::Raze:
+		{
+			return {true, false}; // GPU, unsynchronized
+		}
+
+		// --------------
+		// CPU Operations
+		// --------------
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Random:
+		case HorseIR::BuiltinFunction::Primitive::Seed:
+		case HorseIR::BuiltinFunction::Primitive::Flip:
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Append:
+		case HorseIR::BuiltinFunction::Primitive::Replicate:
+		case HorseIR::BuiltinFunction::Primitive::Like:
+
+		// List
+		case HorseIR::BuiltinFunction::Primitive::List:
+		case HorseIR::BuiltinFunction::Primitive::ToList:
+		case HorseIR::BuiltinFunction::Primitive::Match:
 
 		// Database
 		case HorseIR::BuiltinFunction::Primitive::Enum:
 		case HorseIR::BuiltinFunction::Primitive::Dictionary:
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		case HorseIR::BuiltinFunction::Primitive::KeyedTable:
-		case HorseIR::BuiltinFunction::Primitive::Keys:
-		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Meta:
-		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
-		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
-		{
-			return {false, false}; // CPU, unsynchronized
-		}
-
-		// Indexing
-		case HorseIR::BuiltinFunction::Primitive::Index:
-		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
-		{
-			return {false, false}; // CPU, unsynchronized
-		}
 
 		// Other
 		case HorseIR::BuiltinFunction::Primitive::LoadCSV:
@@ -264,13 +302,13 @@ void GPUAnalysisHelper::Visit(const HorseIR::CastExpression *cast)
 void GPUAnalysisHelper::Visit(const HorseIR::Literal *literal)
 {
 	m_capable = false;
-	m_synchronized = false;
+	m_synchronizedOut = false;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::Identifier *identifier)
 {
 	m_capable = true;
-	m_synchronized = false;
+	m_synchronizedOut = false;
 }
 
 }

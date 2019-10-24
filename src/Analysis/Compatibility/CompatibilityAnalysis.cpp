@@ -106,7 +106,7 @@ bool CompatibilityAnalysis::IsSynchronized(const DependencySubgraphNode& node) c
 		[&](const HorseIR::Statement *statement)
 		{
 			m_gpuHelper.Analyze(statement);
-			synchronized = m_gpuHelper.IsSynchronized();
+			synchronized = m_gpuHelper.IsSynchronizedOut();
 		},
 		[&](const DependencyOverlay *overlay)
 		{
@@ -124,7 +124,7 @@ bool CompatibilityAnalysis::BuildSynchronized(const DependencyOverlay *overlay) 
 		for (const auto& statement : overlay->GetStatements())
 		{
 			m_gpuHelper.Analyze(statement);
-			if (m_gpuHelper.IsSynchronized())
+			if (m_gpuHelper.IsSynchronizedOut())
 			{
 				return true;
 			}
@@ -207,7 +207,7 @@ bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *desti
 		}
 		case Shape::Kind::List:
 		{
-			//TODO: Add list support
+			//TODO: Add support for list compression
 		}
 	}
 

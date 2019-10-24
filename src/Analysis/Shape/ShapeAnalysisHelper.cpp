@@ -130,7 +130,6 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 	switch (function->GetPrimitive())
 	{
 #define Require(x) if (!(x)) break
-#define Unsupported() return {new WildcardShape(m_call)}
 
 		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
@@ -341,13 +340,15 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Where:
 		{
-			// -- Vector input
-			// Input: Vector<Size*>
-			// Output: Vector<SizeDynamic>
+			// -- Compress itself(!) by the mask
+			// Input: Vector<Size*> (mask)
+			// Output: Vector<Size*[mask]>
 
 			const auto argumentShape = argumentShapes.at(0);
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
-			return {new VectorShape(new Shape::DynamicSize(m_call))};
+
+			const auto argumentSize = ShapeUtils::GetShape<VectorShape>(argumentShape)->GetSize();
+			return {new VectorShape(new Shape::CompressedSize(arguments.at(0), argumentSize))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Group:
 		{
@@ -1430,6 +1431,13 @@ void ShapeAnalysisHelper::Visit(const HorseIR::VectorLiteral *literal)
 
 const Shape *ShapeAnalysisHelper::GetShape(const HorseIR::Operand *operand) const
 {
+	// Skip function operands
+
+	if (HorseIR::TypeUtils::IsType<HorseIR::FunctionType>(operand->GetType()))
+	{
+		return nullptr;
+	}
+
 	// Utility for getting a single shape for an operand
 
 	const auto& shapes = m_shapes.at(operand);

@@ -139,7 +139,12 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 	switch (function->GetPrimitive())
 	{
 #define Require(x) if (!(x)) break
-#define Unsupported() return {new WildcardShape()}
+#define CPU() return {new WildcardShape()}
+#define Independent() return {new WildcardShape()}
+
+		// ---------------
+		// Vector Geometry
+		// ---------------
 
 		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
@@ -180,11 +185,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::TimeMinute:
 		case HorseIR::BuiltinFunction::Primitive::TimeSecond:
 		case HorseIR::BuiltinFunction::Primitive::TimeMillisecond:
-		{
-			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
-			Require(shapes.size() == 1);
-			return shapes.at(0);
-		}
 
 		// Binary
 		case HorseIR::BuiltinFunction::Primitive::Less:
@@ -210,33 +210,43 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::DatetimeAdd:
 		case HorseIR::BuiltinFunction::Primitive::DatetimeSubtract:
 		case HorseIR::BuiltinFunction::Primitive::DatetimeDifference:
+		
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Range:
+		case HorseIR::BuiltinFunction::Primitive::Factorial:
+		case HorseIR::BuiltinFunction::Primitive::Reverse:
+		case HorseIR::BuiltinFunction::Primitive::Where:
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Random_k:
+		case HorseIR::BuiltinFunction::Primitive::IndexOf:
+		case HorseIR::BuiltinFunction::Primitive::Take:
+		case HorseIR::BuiltinFunction::Primitive::Drop:
+		case HorseIR::BuiltinFunction::Primitive::Member:
+		case HorseIR::BuiltinFunction::Primitive::Vector:
+
+		// Indexing
+		case HorseIR::BuiltinFunction::Primitive::Index:
+		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
+		//TODO: @index_a geometry may be an input parameter?
+
+		// Database
+		case HorseIR::BuiltinFunction::Primitive::Keys:
+		case HorseIR::BuiltinFunction::Primitive::Values:
+		case HorseIR::BuiltinFunction::Primitive::Fetch:
+		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
+		//TODO: @join_index may belong in a separate group
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
 			return shapes.at(0);
 		}
-		
-		// Algebraic Unary
-		case HorseIR::BuiltinFunction::Primitive::Unique:
-		case HorseIR::BuiltinFunction::Primitive::Range:
-		case HorseIR::BuiltinFunction::Primitive::Factorial:
-		case HorseIR::BuiltinFunction::Primitive::Reverse:
-		case HorseIR::BuiltinFunction::Primitive::Random:
-		case HorseIR::BuiltinFunction::Primitive::Seed:
-		case HorseIR::BuiltinFunction::Primitive::Flip:
-		case HorseIR::BuiltinFunction::Primitive::Where:
-		case HorseIR::BuiltinFunction::Primitive::Group:
-		{
-			Unsupported();
-		}
+
+		// --------------------
+		// Compression Geometry
+		// --------------------
 
 		// Algebraic Binary
-		case HorseIR::BuiltinFunction::Primitive::Append:
-		case HorseIR::BuiltinFunction::Primitive::Replicate:
-		case HorseIR::BuiltinFunction::Primitive::Like:
-		{
-			Unsupported();
-		}
 		case HorseIR::BuiltinFunction::Primitive::Compress:
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
@@ -250,21 +260,24 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			auto fullSize = ShapeUtils::GetSize<Shape::CompressedSize>(vectorShape->GetSize())->GetSize();
 			return new VectorShape(fullSize);
 		}
-		case HorseIR::BuiltinFunction::Primitive::Random_k:
-		case HorseIR::BuiltinFunction::Primitive::IndexOf:
-		case HorseIR::BuiltinFunction::Primitive::Take:
-		case HorseIR::BuiltinFunction::Primitive::Drop:
+
+		// ----------------------
+		// Independent Operations
+		// ----------------------
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Unique:
+		case HorseIR::BuiltinFunction::Primitive::Group:
+
+		// Algebriac Binary
 		case HorseIR::BuiltinFunction::Primitive::Order:
-		case HorseIR::BuiltinFunction::Primitive::Member:
 		{
-			Unsupported();
+			Independent();
 		}
-		case HorseIR::BuiltinFunction::Primitive::Vector:
-		{
-			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
-			Require(shapes.size() == 1);
-			return shapes.at(0);
-		}
+
+		// --------------------
+		// Reduction Operations
+		// --------------------
 
 		// Reduction
 		case HorseIR::BuiltinFunction::Primitive::Length:
@@ -276,41 +289,62 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 		}
 
+		// ---------------
+		// List Operations
+		// ---------------
+
 		// List
-		case HorseIR::BuiltinFunction::Primitive::Raze:
-		case HorseIR::BuiltinFunction::Primitive::List:
-		case HorseIR::BuiltinFunction::Primitive::ToList:
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		case HorseIR::BuiltinFunction::Primitive::EachItem:
-		case HorseIR::BuiltinFunction::Primitive::EachLeft:
-		case HorseIR::BuiltinFunction::Primitive::EachRight:
-		case HorseIR::BuiltinFunction::Primitive::Match:
 		{
-			Unsupported();
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(1));
 		}
+		case HorseIR::BuiltinFunction::Primitive::EachLeft:
+		{
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(1));
+		}
+		case HorseIR::BuiltinFunction::Primitive::EachRight:
+		{
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(2));
+		}
+
+		// ---------------
+		// Cell Operations
+		// ---------------
+
+		// List
+		case HorseIR::BuiltinFunction::Primitive::Raze:
+		{
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
+		}
+		
+		// --------------
+		// CPU Operations
+		// --------------
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Random:
+		case HorseIR::BuiltinFunction::Primitive::Seed:
+		case HorseIR::BuiltinFunction::Primitive::Flip:
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Append:
+		case HorseIR::BuiltinFunction::Primitive::Replicate:
+		case HorseIR::BuiltinFunction::Primitive::Like:
+
+		// List
+		case HorseIR::BuiltinFunction::Primitive::List:
+		case HorseIR::BuiltinFunction::Primitive::ToList:
+		case HorseIR::BuiltinFunction::Primitive::Match:
 
 		// Database
 		case HorseIR::BuiltinFunction::Primitive::Enum:
 		case HorseIR::BuiltinFunction::Primitive::Dictionary:
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		case HorseIR::BuiltinFunction::Primitive::KeyedTable:
-		case HorseIR::BuiltinFunction::Primitive::Keys:
-		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Meta:
-		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
-		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
-		{
-			Unsupported();
-		}
-
-		// Indexing
-		case HorseIR::BuiltinFunction::Primitive::Index:
-		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
-		{
-			Unsupported();
-		}
 
 		// Other
 		case HorseIR::BuiltinFunction::Primitive::LoadCSV:
@@ -319,8 +353,9 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::String:
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			Unsupported();
+			CPU();
 		}
+
 		default:
 		{
 			Utils::Logger::LogError("Geometry analysis is not supported for builtin function '" + function->GetName() + "'");

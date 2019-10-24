@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <vector>
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 
@@ -15,7 +16,8 @@ public:
 	void Analyze(const HorseIR::Statement *statement);
 
 	bool IsCapable() const { return m_capable; }
-	bool IsSynchronized() const { return m_synchronized; }
+	bool IsSynchronizedIn(unsigned int index) const { return m_synchronizedIn.at(index); }
+	bool IsSynchronizedOut() const { return m_synchronizedOut; }
 
 	void Visit(const HorseIR::DeclarationStatement *declarationS) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
@@ -28,12 +30,13 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override;
 
 private:
-	std::pair<bool, bool> AnalyzeCall(const HorseIR::FunctionDeclaration *function);
-	std::pair<bool, bool> AnalyzeCall(const HorseIR::Function *function);
-	std::pair<bool, bool> AnalyzeCall(const HorseIR::BuiltinFunction *function);
+	std::pair<bool, bool> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments);
+	std::pair<bool, bool> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments);
+	std::pair<bool, bool> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments);
 
 	bool m_capable = false;
-	bool m_synchronized = false;
+	std::vector<bool> m_synchronizedIn;
+	bool m_synchronizedOut = false;
 };
 
 }
