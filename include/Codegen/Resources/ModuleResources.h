@@ -17,12 +17,12 @@ public:
 
 	const PTX::SharedVariable<T> *AllocateSharedMemory()
 	{
-		auto name = "$" + T::TypePrefix() + "_sdata" + std::to_string(m_count++);
+		auto name = "$sdata$" + T::TypePrefix() + std::to_string(m_count++);
 		m_declaration->AddNames(name);
 		return m_declaration->GetVariable(name);
 	}
 
-	bool ContainsKey(const std::string &name) const override
+	bool ContainsKey(const std::string& name) const override
 	{
 		return false;
 	}

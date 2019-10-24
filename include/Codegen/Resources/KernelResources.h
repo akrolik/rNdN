@@ -47,7 +47,7 @@ public:
 		}
 	}
 
-	bool ContainsKey(const std::string &name) const override
+	bool ContainsKey(const std::string& name) const override
 	{
 		return m_parameterMap.find(name) != m_parameterMap.end() ||
 			m_registerMap.find(name) != m_registerMap.end();

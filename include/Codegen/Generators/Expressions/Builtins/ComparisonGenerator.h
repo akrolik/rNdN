@@ -6,6 +6,7 @@
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
+#include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
 #include "PTX/PTX.h"
@@ -58,30 +59,28 @@ template<PTX::Bits B>
 class ComparisonGenerator<B, PTX::PredicateType> : public BuiltinGenerator<B, PTX::PredicateType>
 {
 public:
-	using NodeType = HorseIR::CallExpression;
-
 	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::PredicateType>(builder), m_comparisonOp(comparisonOp) {}
 
-	virtual const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call)
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	void Generate(const PTX::Register<PTX::PredicateType> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		auto arg1 = call->GetArgument(0);
-		auto arg2 = call->GetArgument(1);
-		auto type = HorseIR::TypeUtils::WidestType(arg1->GetType(), arg2->GetType());
-		Codegen::DispatchType(*this, type, target, call);
+		auto type = HorseIR::TypeUtils::WidestType(arguments.at(0)->GetType(), arguments.at(1)->GetType());
+		DispatchType(*this, type, target, arguments);
+		return m_targetRegister;
 	}
 
 	template<class T>
-	void Generate(const PTX::Register<PTX::PredicateType> *target, const HorseIR::CallExpression *call)
+	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
-		auto src1 = opGen.GenerateOperand(call->GetArgument(0));
-		auto src2 = opGen.GenerateOperand(call->GetArgument(1));
-		Generate(target, src1, src2);
+		auto src1 = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+		auto src2 = opGen.GenerateOperand(arguments.at(1), OperandGenerator<B, T>::LoadKind::Vector);
+		m_targetRegister = this->GenerateTargetRegister(target, arguments);
+		Generate(m_targetRegister, src1, src2);
 	}
 
 	template<class T>
@@ -122,27 +121,26 @@ private:
 	}
 
 	ComparisonOperator m_comparisonOp;
+	const PTX::Register<PTX::PredicateType> *m_targetRegister = nullptr;
 };
 
 template<PTX::Bits B, PTX::Bits S>
 class ComparisonGenerator<B, PTX::IntType<S>, std::enable_if_t<S == PTX::Bits::Bits32 || S == PTX::Bits::Bits64>> : public BuiltinGenerator<B, PTX::IntType<S>>
 {
 public:
-	using NodeType = HorseIR::CallExpression;
-
 	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_comparisonOp(comparisonOp) {}
 
-	virtual const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call)
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		if (m_comparisonOp == ComparisonOperator::Sign)
 		{
-			auto arg = call->GetArgument(0);
-			Codegen::DispatchType(*this, arg->GetType(), target, call);
+			DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
+			return m_targetRegister;
 		}
 		else
 		{
@@ -151,14 +149,15 @@ public:
 	}
 
 	template<class T>
-	void Generate(const PTX::Register<PTX::IntType<S>> *target, const HorseIR::CallExpression *call)
+	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder.AddStatement(block);
 		auto resources = this->m_builder.OpenScope(block);
 
 		OperandGenerator<B, T> opGen(this->m_builder);
-		auto src = opGen.GenerateOperand(call->GetArgument(0));
+		auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+		m_targetRegister = this->GenerateTargetRegister(target, arguments);
 
 		auto tempP = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto tempQ = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -166,14 +165,14 @@ public:
 		ComparisonGenerator<B, PTX::PredicateType> gen1(this->m_builder, ComparisonOperator::Equal);
 		gen1.template Generate<T>(tempP, src, new PTX::Value<T>(0));
 
-		auto move = new PTX::MoveInstruction<PTX::IntType<S>>(target, new PTX::Value<PTX::IntType<S>>(0));
+		auto move = new PTX::MoveInstruction<PTX::IntType<S>>(m_targetRegister, new PTX::Value<PTX::IntType<S>>(0));
 		move->SetPredicate(tempP);
 		this->m_builder.AddStatement(move);
 
 		ComparisonGenerator<B, PTX::PredicateType> gen2(this->m_builder, ComparisonOperator::Greater);
 		gen2.template Generate<T>(tempQ, src, new PTX::Value<T>(0));
 
-		auto select = new PTX::SelectInstruction<PTX::IntType<S>>(target, new PTX::Value<PTX::IntType<S>>(1), new PTX::Value<PTX::IntType<S>>(-1), tempQ);
+		auto select = new PTX::SelectInstruction<PTX::IntType<S>>(m_targetRegister, new PTX::Value<PTX::IntType<S>>(1), new PTX::Value<PTX::IntType<S>>(-1), tempQ);
 		select->SetPredicate(tempP, true);
 		this->m_builder.AddStatement(select);
 
@@ -182,6 +181,8 @@ public:
 
 private:
 	ComparisonOperator m_comparisonOp;
+	
+	const PTX::Register<PTX::IntType<S>> *m_targetRegister = nullptr;
 };
 
 }

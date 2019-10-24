@@ -7,6 +7,8 @@
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 
+#include "HorseIR/Tree/Tree.h"
+
 #include "PTX/PTX.h"
 
 namespace Codegen {
@@ -47,17 +49,21 @@ class ExternalBinaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::B
 public:
 	ExternalBinaryGenerator(Builder& builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_binaryOp(binaryOp) {}
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::FloatType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
-		auto src1 = opGen.GenerateRegister(call->GetArgument(0));
-		auto src2 = opGen.GenerateRegister(call->GetArgument(1));
-		Generate(target, src1, src2);
+		auto src1 = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::BitType<S>>::LoadKind::Vector);
+		auto src2 = opGen.GenerateRegister(arguments.at(1), OperandGenerator<B, PTX::BitType<S>>::LoadKind::Vector);
+
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+		Generate(targetRegister, src1, src2);
+
+		return targetRegister;
 	}
 
 	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src1, const PTX::Register<PTX::BitType<S>> *src2)

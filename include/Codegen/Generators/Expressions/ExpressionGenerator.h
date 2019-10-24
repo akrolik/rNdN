@@ -46,6 +46,11 @@ public:
 	void Visit(const HorseIR::CallExpression *call) override
 	{
 		auto function = call->GetFunctionLiteral()->GetFunction();
+		Generate(function, call->GetTypes(), call->GetArguments());
+	}
+
+	void Generate(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	{
 		switch (function->GetKind())
 		{
 			case HorseIR::FunctionDeclaration::Kind::Builtin:
@@ -54,7 +59,7 @@ public:
 				{
 					Utils::Logger::LogError("Builtin function generators expect a single target");
 				}
-				DispatchType(*this, HorseIR::TypeUtils::GetSingleType(call->GetTypes()), static_cast<const HorseIR::BuiltinFunction *>(function), call);
+				DispatchType(*this, HorseIR::TypeUtils::GetSingleType(returnTypes), static_cast<const HorseIR::BuiltinFunction *>(function), returnTypes, arguments);
 				break;
 			}
 			case HorseIR::FunctionDeclaration::Kind::Definition:
@@ -65,15 +70,39 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::BuiltinFunction *function, const HorseIR::CallExpression *call)
+	void Generate(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		BuiltinGenerator<B, T> *generator = GetBuiltinGenerator<T>(function);
-		if (generator == nullptr)
+		switch (function->GetPrimitive())
 		{
-			Utils::Logger::LogError("Generator for builtin function " + function->GetName() + " not implemented");
+			case HorseIR::BuiltinFunction::Primitive::Each: 
+			case HorseIR::BuiltinFunction::Primitive::EachItem: 
+			case HorseIR::BuiltinFunction::Primitive::EachLeft: 
+			case HorseIR::BuiltinFunction::Primitive::EachRight: 
+			{
+				// List functions apply the underlying function. We ensure correct geometry through
+				// the kernel setup (threads and data loading)
+
+				const auto l_function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(arguments.at(0)->GetType())->GetFunctionDeclaration();
+
+				std::vector<HorseIR::Operand *> l_arguments;
+				l_arguments.insert(std::begin(l_arguments), std::begin(arguments) + 1, std::end(arguments));
+
+				Generate(l_function, returnTypes, l_arguments);
+				break;
+			}
+			default:
+			{
+				BuiltinGenerator<B, T> *generator = GetBuiltinGenerator<T>(function);
+				if (generator == nullptr)
+				{
+					Utils::Logger::LogError("Generator for builtin function " + function->GetName() + " not implemented");
+				}
+				generator->Generate(m_targets.at(0), arguments);
+
+				delete generator;
+				break;
+			}
 		}
-		generator->Generate(m_targets.at(0), call);
-		delete generator;
 	}
 
 	template<typename T>

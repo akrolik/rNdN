@@ -34,6 +34,12 @@ public:
 	}
 
 	template<class T>
+	bool ContainsRegister(const std::string& identifier) const
+	{
+		return ContainsKey<T>(identifier);
+	}
+
+	template<class T>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
 		if (ContainsKey<T>(identifier))
@@ -58,7 +64,7 @@ public:
 		{
 			return m_parent->GetCompressionRegister<T>(identifier);
 		}
-		Utils::Logger::LogError("PTX::Register(" + identifier + ", " + T::Name() + ") not found");
+		Utils::Logger::LogError("PTX::Register*(" + identifier + ", " + T::Name() + ") not found");
 	}
 
 	template<class T>
@@ -66,18 +72,6 @@ public:
 	{
 		return this->GetResources<T>()->AllocateTemporary();
 	}
-
-	template<class T>
-	const PTX::Register<T> *AllocateTemporary(const std::string& identifier)
-	{
-		auto resources = GetResources<T>();
-		if (resources->ContainsTemporary(identifier))
-		{
-			return resources->GetTemporary(identifier);
-		}
-		return this->GetResources<T>()->AllocateTemporary(identifier);
-	}
-
 
 	template<class T>
 	using ReductionGranularity = typename RegisterResources<T>::ReductionGranularity;

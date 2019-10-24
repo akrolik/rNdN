@@ -5,6 +5,8 @@
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
+#include "HorseIR/Tree/Tree.h"
+
 #include "PTX/PTX.h"
 
 namespace Codegen {
@@ -56,17 +58,21 @@ class BinaryGenerator : public BuiltinGenerator<B, T>
 public:
 	BinaryGenerator(Builder& builder, BinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
-		auto src1 = opGen.GenerateOperand(call->GetArgument(0));
-		auto src2 = opGen.GenerateOperand(call->GetArgument(1));
-		Generate(target, src1, src2);
+		auto src1 = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+		auto src2 = opGen.GenerateOperand(arguments.at(1), OperandGenerator<B, T>::LoadKind::Vector);
+
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+		Generate(targetRegister, src1, src2);
+
+		return targetRegister;
 	}
 
 	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
@@ -144,20 +150,15 @@ class BinaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Ty
 public:
 	BinaryGenerator(Builder& builder, BinaryOperation binaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_binaryOp(binaryOp) {}
 
-	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		auto block = new PTX::BlockStatement();
-		this->m_builder.AddStatement(block);
-		auto resources = this->m_builder.OpenScope(block);
-
-		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
-
 		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
-		gen.Generate(temp, call);
+		auto temp = gen.Generate(target, arguments);
 
-		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(targetRegister, temp));
 
-		this->m_builder.CloseScope();
+		return targetRegister;
 	}
 
 private:
@@ -174,17 +175,13 @@ template<PTX::Bits B, class T>
 template<template<class, bool = true> class Op>
 void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 {
-	auto block = new PTX::BlockStatement();
-	this->m_builder.AddStatement(block);
-	auto resources = this->m_builder.OpenScope(block);
+	auto resources = this->m_builder.GetLocalResources();
 
 	auto temp = resources->template AllocateTemporary<T>();
 	GenerateInstruction<Op>(temp, src1, src2);
 
 	UnaryGenerator<B, T> gen(this->m_builder, UnaryOperation::Not);
 	gen.Generate(target, temp);
-
-	this->m_builder.CloseScope();
 };
 
 }

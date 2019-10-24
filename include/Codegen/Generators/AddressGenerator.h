@@ -5,9 +5,7 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/IndexGenerator.h"
-
-#include "HorseIR/Tree/Tree.h"
+#include "Codegen/NameUtils.h"
 
 #include "PTX/PTX.h"
 
@@ -19,10 +17,8 @@ class AddressGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	using IndexKind = IndexGenerator::Kind;
-
 	template<class T, class S>
-	PTX::Address<B, T, S> *Generate(const PTX::Variable<T, S> *variable, IndexKind indexKind, unsigned int offset = 0)
+	PTX::RegisterAddress<B, T, S> *GenerateAddress(const PTX::Variable<T, S> *variable, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -35,43 +31,98 @@ public:
 
 		this->m_builder.AddStatement(new PTX::MoveAddressInstruction<B, T, S>(base, baseAddress));
 
-		return GenerateBase(base, indexKind);
+		// Create an address from the register
+
+		return GenerateAddress<T, S>(base->GetVariable(), index);
 	}
 
-	template<class T, class S>
-	PTX::Address<B, T, S> *GenerateParameter(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable, IndexKind indexKind)
+	template<class T>
+	void LoadParameterAddress(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// Get the base address of the variable in generic space
 
-		auto genericBase = new PTX::PointerRegisterAdapter<B, T>(resources->template AllocateTemporary<PTX::UIntType<B>>());
-		auto spaceBase = new PTX::PointerRegisterAdapter<B, T, S>(resources->template AllocateTemporary<PTX::UIntType<B>>());
-
 		auto baseAddress = new PTX::MemoryAddress<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(variable);
-
-		// Load the generic address of the underlying variable from the parameter space,
-		// and convert it to the underlying space
+		auto genericBase = new PTX::PointerRegisterAdapter<B, T>(resources->template AllocateTemporary<PTX::UIntType<B>>());
 
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::PointerType<B, T>, PTX::ParameterSpace>(genericBase, baseAddress));
-		this->m_builder.AddStatement(new PTX::ConvertToAddressInstruction<B, T, S>(spaceBase, new PTX::RegisterAddress<B, T>(genericBase)));
 
-		return GenerateBase(spaceBase, indexKind);
+		// Convert the generic address of the underlying variable to the global space
+
+		auto name = NameUtils::DataAddressName(variable->GetName());
+		auto globalBase = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(resources->template AllocateRegister<PTX::UIntType<B>>(name));
+		auto genericAddress = new PTX::RegisterAddress<B, T>(genericBase);
+
+		this->m_builder.AddStatement(new PTX::ConvertToAddressInstruction<B, T, PTX::GlobalSpace>(globalBase, genericAddress));
 	}
 
-private:
+	template<class T>
+	void LoadParameterAddress(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *variable, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	{
+		using DataType = PTX::PointerType<B, T, PTX::GlobalSpace>;
+
+		auto resources = this->m_builder.GetLocalResources();
+
+		// Get the base address of the variable in generic space
+
+		auto baseAddress = new PTX::MemoryAddress<B, PTX::PointerType<B, DataType>, PTX::ParameterSpace>(variable);
+		auto genericBase = new PTX::PointerRegisterAdapter<B, DataType>(resources->template AllocateTemporary<PTX::UIntType<B>>());
+
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::PointerType<B, DataType>, PTX::ParameterSpace>(genericBase, baseAddress));
+
+		// Convert the generic address of the underlying variable to the global space
+
+		auto genericAddress = new PTX::RegisterAddress<B, DataType>(genericBase);
+		auto globalBase = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(resources->template AllocateTemporary<PTX::UIntType<B>>());
+
+		this->m_builder.AddStatement(new PTX::ConvertToAddressInstruction<B, DataType, PTX::GlobalSpace>(globalBase, genericAddress));
+
+		// Get the address of the value in the indirection structure (by the bitsize of the address)
+
+		auto globalIndexed = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(resources->template AllocateTemporary<PTX::UIntType<B>>());
+		auto offset = GenerateAddressOffset<B>(index);
+
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(globalIndexed->GetVariable(), globalBase->GetVariable(), offset));
+
+		// Load the address of the data
+
+		auto name = NameUtils::DataAddressName(variable->GetName());
+		auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(resources->template AllocateRegister<PTX::UIntType<B>>(name));
+		auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(globalIndexed);
+
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, DataType, PTX::GlobalSpace>(dataPointer, indexedAddress));
+	}
+
 	template<class T, class S>
-	PTX::Address<B, T, S> *GenerateBase(const PTX::PointerRegisterAdapter<B, T, S> *base, IndexKind indexKind)
+	PTX::RegisterAddress<B, T, S> *GenerateAddress(const PTX::Register<PTX::UIntType<B>> *base, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
-		auto offset = resources->template AllocateTemporary<PTX::UIntType<B>>();
-		auto address = resources->template AllocateTemporary<PTX::UIntType<B>>();
+		// Sum the base and the offset to create the full address for the thread and store the value in a register
 
-		IndexGenerator indexGen(this->m_builder);
-		auto index = indexGen.GenerateIndex(indexKind);
+		if (index == nullptr)
+		{
+			return new PTX::RegisterAddress(new PTX::PointerRegisterAdapter<B, T, S>(base));
+		}
+		else
+		{
+			auto address = resources->template AllocateTemporary<PTX::UIntType<B>>();
+			auto offset = GenerateAddressOffset<T::TypeBits>(index);
 
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(address, base, offset));
+
+			return new PTX::RegisterAddress(new PTX::PointerRegisterAdapter<B, T, S>(address));
+		}
+	}
+
+	template<PTX::Bits OffsetBits>
+	const PTX::TypedOperand<PTX::UIntType<B>> *GenerateAddressOffset(const PTX::TypedOperand<PTX::UInt32Type> *index)
+	{
 		// Compute offset from the base address using the thread id and the data size
+
+		auto resources = this->m_builder.GetLocalResources();
+		auto offset = resources->template AllocateTemporary<PTX::UIntType<B>>();
 
 		if constexpr(B == PTX::Bits::Bits32)
 		{
@@ -82,7 +133,7 @@ private:
 			this->m_builder.AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
 				new PTX::Bit32RegisterAdapter<PTX::UIntType>(offset),
 				new PTX::Bit32Adapter<PTX::UIntType>(index),
-				new PTX::UInt32Value(std::log2(PTX::BitSize<T::TypeBits>::NumBytes))
+				new PTX::UInt32Value(std::log2(PTX::BitSize<OffsetBits>::NumBytes))
 			));
 		}
 		else
@@ -91,16 +142,10 @@ private:
 			// id and the data size. A wide multiplication extends the result past the 32-bit
 			// size of both operands
 
-			this->m_builder.AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(offset, index, new PTX::UInt32Value(PTX::BitSize<T::TypeBits>::NumBytes)));
+			this->m_builder.AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(offset, index, new PTX::UInt32Value(PTX::BitSize<OffsetBits>::NumBytes)));
 		}
 
-		// Sum the base and the offset to create the full address for the thread and store the value in a register
-
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(address, base->GetVariable(), offset));
-
-		// Create an address from the resulting sum
-
-		return new PTX::RegisterAddress<B, T, S>(new PTX::PointerRegisterAdapter<B, T, S>(address));
+                return offset;
 	}
 };
 

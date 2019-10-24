@@ -5,12 +5,9 @@
 #include "Codegen/Builder.h"
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
-#include "Codegen/Generators/DeclarationGenerator.h"
-#include "Codegen/Generators/ParameterGenerator.h"
-#include "Codegen/Generators/ReturnGenerator.h"
-#include "Codegen/Generators/ReturnParameterGenerator.h"
-#include "Codegen/Generators/Expressions/ExpressionGenerator.h"
-#include "Codegen/Generators/TypeDispatch.h"
+#include "Codegen/Generators/Data/ParameterGenerator.h"
+#include "Codegen/Generators/Functions/ListFunctionGenerator.h"
+#include "Codegen/Generators/Functions/VectorFunctionGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -156,82 +153,30 @@ public:
 		m_builder.SetCurrentKernel(kernel, function);
 		m_builder.OpenScope(kernel);
 
-		// Visit the function contents (i.e. parameters + statements!)
+		// Setup the parameter (in/out) declarations in the kernel
 
-		for (const auto& parameter : function->GetParameters())
+		ParameterGenerator<B> parameterGenerator(this->m_builder);
+		parameterGenerator.Generate(function);
+
+		// Generate the function body
+
+		auto& inputOptions = m_builder.GetInputOptions();
+		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
-			parameter->Accept(*this);
+			VectorFunctionGenerator<B> functionGenerator(m_builder);
+			functionGenerator.Generate(function);
 		}
-
-		// Lastly, add the return parameters to the function (we do this now
-		// in case there are multiple return statements)
-
-		ReturnParameterGenerator<B> generator(m_builder);
-		generator.Generate(function->GetReturnTypes());
-
-		for (const auto& statement : function->GetStatements())
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
-			statement->Accept(*this);
+			ListFunctionGenerator<B> functionGenerator(m_builder);
+			functionGenerator.Generate(function);
 		}
 
 		// Complete the codegen for the function by setting up the options and closing the scope
 
 		m_builder.GetKernelOptions().SetSharedMemorySize(m_builder.GetGlobalResources()->GetSharedMemorySize());
-
 		m_builder.CloseScope();
 		m_builder.SetCurrentKernel(nullptr, nullptr);
-	}
-
-	void Visit(const HorseIR::Parameter *parameter) override
-	{
-		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(parameter, true)));
-
-		ParameterGenerator<B> generator(m_builder);
-		DispatchType(generator, parameter->GetType(), parameter);
-	}
-
-	void Visit(const HorseIR::DeclarationStatement *declarationS) override
-	{
-		DeclarationGenerator<B> generator(m_builder);
-		DispatchType(generator, declarationS->GetDeclaration()->GetType(), declarationS->GetDeclaration());
-	}
-
-	void Visit(const HorseIR::AssignStatement *assignS) override
-	{
-		// An assignment in HorseIR consists of: one or more LValues and expression (typically a function call).
-		// This presents a small difficulty since PTX is 3-address code and links together all 3 elements into
-		// a single instruction. Additionally, for functions with more than one return value, it is challenging
-		// to maintain static type-correctness.
-		//
-		// In this setup, the expression visitor is expected to produce the full assignment
-
-		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(assignS, true)));
-
-		ExpressionGenerator<B> generator(this->m_builder);
-		generator.Generate(assignS->GetTargets(), assignS->GetExpression());
-	}
-
-	void Visit(const HorseIR::ExpressionStatement *expressionS) override
-	{
-		// Expression generator may also take zero targets and discard the resulting value
-
-		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(expressionS, true)));
-
-		ExpressionGenerator<B> generator(this->m_builder);
-		generator.Generate(expressionS->GetExpression());
-	}
-
-	void Visit(const HorseIR::ReturnStatement *returnS) override
-	{
-		// Return generator generates the output results (atomic, compressed, or list/vector) and we finalize
-		// with a return instruction
-
-		m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(returnS, true)));
-
-		ReturnGenerator<B> generator(m_builder);
-		generator.Generate(returnS);
-
-		this->m_builder.AddStatement(new PTX::ReturnInstruction());
 	}
 
 private:

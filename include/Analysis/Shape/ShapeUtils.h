@@ -226,13 +226,13 @@ static Shape *ShapeFromType(const HorseIR::Type *type, const HorseIR::CallExpres
  
 static bool IsSubshape(const Shape *needle, const Shape *haystack)
 {
-	if (!ShapeUtils::IsShape<VectorShape>(needle) || !ShapeUtils::IsShape<VectorShape>(haystack))
+	if (!IsShape<VectorShape>(needle) || !IsShape<VectorShape>(haystack))
 	{
 		return false;
 	}
 
-	auto needleSize = ShapeUtils::GetShape<VectorShape>(needle)->GetSize();
-	auto haystackSize = ShapeUtils::GetShape<VectorShape>(haystack)->GetSize();
+	auto needleSize = GetShape<VectorShape>(needle)->GetSize();
+	auto haystackSize = GetShape<VectorShape>(haystack)->GetSize();
 
 	return IsSubsize(needleSize, haystackSize);
 }
@@ -420,6 +420,56 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 	return new WildcardShape(shape1, shape2);
 }
 
+static bool IsDynamicShape(const Shape *shape)
+{
+	switch (shape->GetKind())
+	{
+		case Shape::Kind::Vector:
+		{
+			auto vectorShape = GetShape<VectorShape>(shape);
+			return IsDynamicSize(vectorShape->GetSize());
+		}
+		case Shape::Kind::List:
+		{
+			auto listShape = GetShape<ListShape>(shape);
+			if (IsDynamicSize(listShape->GetListSize()))
+			{
+				return true;
+			}
+
+			for (auto elementShape : listShape->GetElementShapes())
+			{
+				if (IsDynamicShape(elementShape))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		case Shape::Kind::Table:
+		{
+			auto tableShape = GetShape<TableShape>(shape);
+			return (IsDynamicSize(tableShape->GetColumnsSize()) || IsDynamicSize(tableShape->GetRowsSize()));
+		}
+		case Shape::Kind::Dictionary:
+		{
+			auto dictShape = GetShape<DictionaryShape>(shape);
+			return (IsDynamicShape(dictShape->GetKeyShape()) || IsDynamicShape(dictShape->GetValueShape()));
+		}
+		case Shape::Kind::Enumeration:
+		{
+			auto enumShape = GetShape<EnumerationShape>(shape);
+			return (IsDynamicShape(enumShape->GetKeyShape()) || IsDynamicShape(enumShape->GetValueShape()));
+		}
+		case Shape::Kind::KeyedTable:
+		{
+			auto tableShape = GetShape<KeyedTableShape>(shape);
+			return (IsDynamicShape(tableShape->GetKeyShape()) || IsDynamicShape(tableShape->GetValueShape()));
+		}
+	}
+	return false;
+}
+
 template<class S>
 static S *GetSize(Shape::Size *size)
 {
@@ -448,7 +498,7 @@ static bool IsSize(const Shape::Size *size)
 		
 static bool IsScalarSize(const Shape::Size *size)
 {
-	if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(size))
+	if (const auto constantSize = GetSize<Shape::ConstantSize>(size))
 	{
 		return (constantSize->GetValue() == 1);
 	}
@@ -457,16 +507,16 @@ static bool IsScalarSize(const Shape::Size *size)
 
 static bool IsSubsize(const Shape::Size *needle, const Shape::Size *haystack)
 {
-	if (const auto needleConstant = ShapeUtils::GetSize<Shape::ConstantSize>(needle))
+	if (const auto needleConstant = GetSize<Shape::ConstantSize>(needle))
 	{
-		if (const auto haystackConstant = ShapeUtils::GetSize<Shape::ConstantSize>(haystack))
+		if (const auto haystackConstant = GetSize<Shape::ConstantSize>(haystack))
 		{
 			return (needleConstant->GetValue() < haystackConstant->GetValue());
 		}
 		return (needleConstant->GetValue() == 1);
 	}
 
-	if (const auto compressedNeedle = ShapeUtils::GetSize<Shape::CompressedSize>(needle))
+	if (const auto compressedNeedle = GetSize<Shape::CompressedSize>(needle))
 	{
 		auto unmaskedSize = compressedNeedle->GetSize();
 		if (*unmaskedSize == *haystack)
@@ -488,6 +538,11 @@ static const Shape::Size *MergeSize(const Shape::Size *size1, const Shape::Size 
 		return size1;
 	}
 	return new Shape::DynamicSize(size1, size2);
+}
+
+static bool IsDynamicSize(const Shape::Size *size)
+{
+	return (IsSize<Shape::ConstantSize>(size) == false);
 }
 
 };

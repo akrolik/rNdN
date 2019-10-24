@@ -55,6 +55,8 @@ public:
 
 	const std::vector<const Shape *>& GetShapes(const HorseIR::Expression *expression) const { return m_expressionShapes.at(expression); }
 
+	const Shape *GetParameterShape(const HorseIR::Parameter *parameter) const { return m_parameterShapes.at(parameter); }
+
 	const std::vector<const Shape *>& GetReturnShapes() const { return m_returnShapes; }
 	const Shape *GetReturnShape(unsigned int i) const { return m_returnShapes.at(i); }
 
@@ -62,6 +64,7 @@ private:
 	void CheckCondition(const ShapeAnalysisProperties& shapes, const HorseIR::Operand *operand);
 
 	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_expressionShapes;
+	std::unordered_map<const HorseIR::Parameter *, const Shape *> m_parameterShapes;
 	std::vector<const Shape *> m_returnShapes;
 };
 

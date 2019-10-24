@@ -32,11 +32,20 @@ private:
 	typename T::SystemType m_value;
 };
 
+template<Bits B>
+using IntValue = Value<IntType<B>>;
+
 using Int32Value = Value<Int32Type>;
 using Int64Value = Value<Int64Type>;
 
+template<Bits B>
+using UIntValue = Value<UIntType<B>>;
+
 using UInt32Value = Value<UInt32Type>;
 using UInt64Value = Value<UInt64Type>;
+
+template<Bits B>
+using FloatValue = Value<FloatType<B>>;
 
 using Float32Value = Value<Float32Type>;
 using Float64Value = Value<Float64Type>;

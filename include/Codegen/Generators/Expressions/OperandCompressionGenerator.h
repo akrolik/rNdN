@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "Codegen/Generators/Generator.h"
 
@@ -17,17 +19,22 @@ class OperandCompressionGenerator : public HorseIR::ConstVisitor, public Generat
 public:
 	using Generator::Generator;
 
-	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder& builder, const HorseIR::CallExpression *call) 
+	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments) 
 	{
+		// Propagate the compression mask used as input
+
 		OperandCompressionGenerator compGen(builder);
-		return compGen.GetCompressionRegister(call->GetArgument(0));
+		return compGen.GetCompressionRegister(arguments.at(0));
 	}
 
-	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder& builder, const HorseIR::CallExpression *call)
+	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments)
 	{
+		// Ensure either both paths are compressed with the same mask, or that we only mask on one path
+		// (and therefore are shrinking one variable to use with another)
+
 		OperandCompressionGenerator compGen(builder);
-		auto compression1 = compGen.GetCompressionRegister(call->GetArgument(0));
-		auto compression2 = compGen.GetCompressionRegister(call->GetArgument(1));
+		auto compression1 = compGen.GetCompressionRegister(arguments.at(0));
+		auto compression2 = compGen.GetCompressionRegister(arguments.at(1));
 
 		if (compression1 == compression2)
 		{
@@ -53,15 +60,21 @@ public:
 
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
-		Codegen::DispatchType(*this, identifier->GetType(), identifier);
+		DispatchType(*this, identifier->GetType(), identifier);
 	}
 
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
 		//GLOBAL: Support identifiers which contain a module name
+
+		// Only fetch compression for registers which already exist (this handles non-reassigned parameters which do ont have compression)
+
 		auto resources = this->m_builder.GetLocalResources();
-		m_compression = resources->GetCompressionRegister<S>(identifier->GetName());
+		if (resources->ContainsRegister<S>(identifier->GetName()))
+		{
+			m_compression = resources->GetCompressionRegister<S>(identifier->GetName());
+		}
 	}
 
 private:

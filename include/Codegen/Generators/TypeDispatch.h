@@ -2,6 +2,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
+#include "HorseIR/Utils/TypeUtils.h"
 
 #include "Utils/Logger.h"
 
@@ -80,8 +81,15 @@ static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nod
 template<class G, typename... N>
 static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes)
 {
-	//TODO: List generation
-	// DispatchBasic<G, N...>(generator, static_cast<const HorseIR::BasicType *>(type->GetElementType()), nodes...);
+	if (const auto elementType = HorseIR::TypeUtils::GetSingleType(type->GetElementTypes()))
+	{
+		if (const auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(elementType))
+		{
+			DispatchBasic(generator, basicType, nodes...);
+			return;
+		}
+	}
+	Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
 }
 
 }

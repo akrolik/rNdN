@@ -7,8 +7,8 @@ namespace Codegen {
 struct TargetOptions
 {
 	std::string ComputeCapability = "sm_61";
-	unsigned int MaxBlockSize = 512;
-	int WarpSize = 32;
+	std::uint32_t MaxBlockSize = 512;
+	std::uint32_t WarpSize = 32;
 
 	std::string ToString() const
 	{

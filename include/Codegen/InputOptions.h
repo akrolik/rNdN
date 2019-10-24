@@ -4,6 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
@@ -11,63 +14,43 @@ namespace Codegen {
 
 struct InputOptions
 {
-	constexpr static unsigned long DynamicSize = 0;
+	const Analysis::Shape *ThreadGeometry = nullptr;
 
-	unsigned long ActiveThreads = DynamicSize;
-	unsigned long ActiveBlocks = DynamicSize;
+	constexpr static std::uint32_t DynamicSize = 0;
+	std::uint32_t ListCellThreads = DynamicSize;
 
-	enum class IndexKind {
-		Scalar,  // data[0]
-		Vector,  // data[thread id]
-		List,    // data[cell id][local thread id]
-		Cell     // data[cell id]
-	};
-
-	static std::string IndexKindString(IndexKind kind)
-	{
-		switch (kind)
-		{
-			case IndexKind::Scalar:
-				return "Scalar";
-			case IndexKind::Vector:
-				return "Vector";
-			case IndexKind::List:
-				return "List";
-			case IndexKind::Cell:
-				return "Cell";
-		}
-		return "<unknown>";
-	}
-
-	std::unordered_map<const HorseIR::Parameter *, IndexKind> ParameterIndexKinds;
-	std::vector<IndexKind> ReturnIndexKinds;
+	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const Analysis::Shape *> ParameterShapes;
+	std::vector<const Analysis::Shape *> ReturnShapes;
 
 	std::string ToString() const
 	{
 		std::string output;
-		output += "Active threads: " + ((ActiveThreads == DynamicSize) ? "<dynamic>" : std::to_string(ActiveThreads)) + "\n";
-		output += "Active blocks: " + ((ActiveBlocks == DynamicSize) ? "<dynamic>" : std::to_string(ActiveBlocks)) + "\n";
-		output += "Parameter indexes: ";
-		bool first = true;
-		for (const auto& param : ParameterIndexKinds)
+		output += "Thread geometry: " + Analysis::ShapeUtils::ShapeString(ThreadGeometry) + "\n";
+		if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(ThreadGeometry))
 		{
-			if (!first)
-			{
-				output += ", ";
-			}
-			first = false;
-			output += HorseIR::PrettyPrinter::PrettyString(param.first) + " = " + IndexKindString(param.second);
+			output += "List cell threads: " + ((ListCellThreads == DynamicSize) ? "<dynamic>" : std::to_string(ListCellThreads)) + "\n";
 		}
-		output += "\nReturn indexes: ";
-		first = true;
-		for (const auto& ret : ReturnIndexKinds)
+		output += "Parameter shapes: ";
+		bool first = true;
+		for (const auto& parameter : ParameterShapes)
 		{
 			if (!first)
 			{
 				output += ", ";
 			}
 			first = false;
-			output += IndexKindString(ret);
+			output += parameter.first->name + " = " + Analysis::ShapeUtils::ShapeString(parameter.second);
+		}
+		output += "\nReturn shapes: ";
+		first = true;
+		for (const auto& shape : ReturnShapes)
+		{
+			if (!first)
+			{
+				output += ", ";
+			}
+			first = false;
+			output += Analysis::ShapeUtils::ShapeString(shape);
 		}
 		return output;
 	}

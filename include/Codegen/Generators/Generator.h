@@ -17,6 +17,9 @@ public:
 	template<class G, typename... N>
 	friend void DispatchBasic(G&, const HorseIR::BasicType*, N ...);
 
+	template<class G, typename... N>
+	friend void DispatchList(G&, const HorseIR::ListType*, N ...);
+
 protected:
 	Builder &m_builder;
 };

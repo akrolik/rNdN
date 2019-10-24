@@ -62,25 +62,6 @@ public:
 		return resource;
 	}
 
-	const PTX::Register<T> *AllocateTemporary(const std::string& identifier)
-	{
-		auto name = "$" + T::TypePrefix() + "_" + identifier;
-		m_declaration->AddNames(name);
-		const auto resource = m_declaration->GetVariable(name);
-		m_temporariesMap[identifier] = resource;
-		return resource;
-	}
-
-	bool ContainsTemporary(const std::string& identifier) const
-	{
-		return m_temporariesMap.find(identifier) != m_temporariesMap.end();
-	}
-
-	const PTX::Register<T> *GetTemporary(const std::string& identifier) const
-	{
-		return m_temporariesMap.at(identifier);
-	}
-
 	enum class ReductionGranularity {
 		Warp,
 		Block
@@ -111,7 +92,6 @@ private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
 
 	std::unordered_map<std::string, ResourceType> m_registersMap;
-	std::unordered_map<std::string, const PTX::Register<T> *> m_temporariesMap;
 	unsigned int m_temporaries = 0;
 
 	std::unordered_map<const PTX::Register<T> *, std::pair<ReductionGranularity, ReductionOperation>> m_reductionMap;

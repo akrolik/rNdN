@@ -5,6 +5,8 @@
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
+#include "HorseIR/Tree/Tree.h"
+
 #include "PTX/PTX.h"
 
 namespace Codegen {
@@ -46,16 +48,20 @@ class UnaryGenerator : public BuiltinGenerator<B, T>
 public:
 	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, call);
+		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
-		auto src = opGen.GenerateOperand(call->GetArgument(0));
-		Generate(target, src);
+		auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+		Generate(targetRegister, src);
+
+		return targetRegister;
 	}
 
 	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
@@ -107,20 +113,15 @@ class UnaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Typ
 public:
 	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_unaryOp(unaryOp) {}
 
-	void Generate(const PTX::Register<PTX::Int8Type> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		auto block = new PTX::BlockStatement();
-		this->m_builder.AddStatement(block);
-		auto resources = this->m_builder.OpenScope(block);
-
-		auto temp = resources->template AllocateTemporary<PTX::Int16Type>();
-
 		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
-		gen.Generate(temp, call);
+		auto temp = gen.Generate(target, arguments);
 
-		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(target, temp));
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(targetRegister, temp));
 
-		this->m_builder.CloseScope();
+		return targetRegister;
 	}
 
 private:

@@ -8,9 +8,11 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
-#include "Codegen/Generators/SizeGenerator.h"
+#include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+
+#include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
 
@@ -48,38 +50,50 @@ class ReductionGenerator : public BuiltinGenerator<B, T>
 public:
 	ReductionGenerator(Builder& builder, ReductionOperation reductionOp) : BuiltinGenerator<B, T>(builder), m_reductionOp(reductionOp) {}
 
-	// The output of a reduction function has no compression predicate. We therefore do not implement
-	// GenerateCompressionPredicate in this subclass
+	// The output of a reduction function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-
-	void Generate(const PTX::Register<T> *target, const HorseIR::CallExpression *call) override
+	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		//TODO: Support correct type matrix for reductions
 		if constexpr(!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8 && T::TypeBits != PTX::Bits::Bits16)
 		{
 		auto resources = this->m_builder.GetLocalResources();
+		auto& inputOptions = this->m_builder.GetInputOptions();
 
-		// Load the underlying data size
-
-		SizeGenerator<B> sizeGen(this->m_builder);
-		auto size = sizeGen.GenerateInputSize();
-
-		// Load the the global thread index for checking the data bounds
-
-		IndexGenerator indexGen(this->m_builder);
-		auto globalIndex = indexGen.GenerateGlobalIndex();
-
-		// Some operations require a 64-bit value for comparison
-
-		auto globalIndex64 = resources->template AllocateTemporary<PTX::UInt64Type>();
-		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::UInt64Type, PTX::UInt32Type>(globalIndex64, globalIndex));
-
-		// Check if the thread is in bounds for the input data
+		// Load the underlying data size, ensuring it is within bounds
 
 		auto inputPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt64Type>(inputPredicate, globalIndex64, size, PTX::UInt64Type::ComparisonOperator::Less));
 
-		// Get the initial value for reduction and store it in the shared memory
+		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		{
+			GeometryGenerator geometryGenerator(this->m_builder);
+			auto size = geometryGenerator.GenerateVectorSize();
+
+			// Load the the global thread index for checking the data bounds
+
+			IndexGenerator indexGen(this->m_builder);
+			auto globalIndex = indexGen.GenerateGlobalIndex();
+
+			// Check if the thread is in bounds for the input data
+
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, globalIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
+		}
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		{
+			GeometryGenerator geometryGenerator(this->m_builder);
+			auto cellSize = geometryGenerator.GenerateCellSize();
+
+			// Load the the cell thread index for checking the data bounds
+
+			IndexGenerator indexGen(this->m_builder);
+			auto dataIndex = indexGen.GenerateCellDataIndex();
+
+			// Check if the thread is in bounds for the input data
+
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, dataIndex, cellSize, PTX::UInt32Type::ComparisonOperator::Less));
+		}
+
+		// Get the initial value for reduction
 
 		OperandGenerator<B, T> opGen(this->m_builder);
 
@@ -87,7 +101,7 @@ public:
 		// initial load according to the predicate
 
 		OperandCompressionGenerator compGen(this->m_builder);
-		auto compress = compGen.GetCompressionRegister(call->GetArgument(0));
+		auto compress = compGen.GetCompressionRegister(arguments.at(0));
 
 		const PTX::TypedOperand<T> *src = nullptr;
 		if (m_reductionOp == ReductionOperation::Length)
@@ -100,37 +114,42 @@ public:
 		{
 			// All other reductions use the value for the thread
 
-			src = opGen.GenerateOperand(call->GetArgument(0));
+			src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
 		}
 
 		// Select the initial value for the reduction depending on the data size and compression mask
 
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		if (compress == nullptr)
 		{
 			// If no compression is active, select between the source and the null value depending on the compression
 
-			this->m_builder.AddStatement(new PTX::SelectInstruction<T>(target, src, GenerateNullValue(m_reductionOp), inputPredicate));
+			this->m_builder.AddStatement(new PTX::SelectInstruction<T>(targetRegister, src, GenerateNullValue(m_reductionOp), inputPredicate));
 		}
 		else
 		{
 			// If the input is within range, select between the source and null values depending on the compression
 
-			auto s1 = new PTX::SelectInstruction<T>(target, src, GenerateNullValue(m_reductionOp), compress);
+			auto s1 = new PTX::SelectInstruction<T>(targetRegister, src, GenerateNullValue(m_reductionOp), compress);
 			s1->SetPredicate(inputPredicate);
 			this->m_builder.AddStatement(s1);
 
 			// If the input is out of range, set the index to the null value
 
-			auto s2 = new PTX::MoveInstruction<T>(target, GenerateNullValue(m_reductionOp));
+			auto s2 = new PTX::MoveInstruction<T>(targetRegister, GenerateNullValue(m_reductionOp));
 			s2->SetPredicate(inputPredicate, true);
 			this->m_builder.AddStatement(s2);
 		}
 
 		//TODO: Select which type of reduction we want to implement
-		GenerateShuffleBlock(target);
-		// GenerateShuffleWarp(target);
-		// GenerateShared(target);
+		// GenerateShuffleBlock(targetRegister);
+		GenerateShuffleWarp(targetRegister);
+		// GenerateShared(targetRegister);
+
+		return targetRegister;
 		}
+
+		return nullptr;
 	}
 
 	void GenerateShuffleReduction(const PTX::Register<T> *target)
@@ -222,13 +241,11 @@ public:
 		auto& inputOptions = this->m_builder.GetInputOptions();
 
 		int warpSize = targetOptions.WarpSize;
-		unsigned int blockSize = targetOptions.MaxBlockSize;
-		if (inputOptions.ActiveThreads != InputOptions::DynamicSize && inputOptions.ActiveThreads < blockSize)
-		{
-			blockSize = ((inputOptions.ActiveThreads + warpSize - 1) / warpSize) * warpSize;
-		}
+
+		auto blockSize = ((GetBlockSize() + warpSize - 1) / warpSize) * warpSize;
 		kernelOptions.SetBlockSize(blockSize);
 
+		//TODO: Allow multiple cells per block: shared memory offset, block size
 		auto sharedMemorySize = blockSize / warpSize;
 		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(sharedMemorySize);
 
@@ -239,7 +256,7 @@ public:
 		// Write a single reduced value to shared memory for each warp
 
 		IndexGenerator indexGen(this->m_builder);
-		auto laneid = indexGen.GenerateLaneIndex();
+		auto laneIndex = indexGen.GenerateLaneIndex();
 
 		// Check if we are the first lane in the warp
 
@@ -248,14 +265,16 @@ public:
 		auto branchWarp = new PTX::BranchInstruction(labelWarp);
 		branchWarp->SetPredicate(predWarp);
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, laneid, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, laneIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 		this->m_builder.AddStatement(branchWarp);
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Store the value in shared memory
 
+		auto warpIndex = indexGen.GenerateWarpIndex();
+
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedWarpAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Warp);
+		auto sharedWarpAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, warpIndex);
 
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedWarpAddress, target));
 
@@ -266,18 +285,18 @@ public:
 
 		// Synchronize all values in shared memory from across warps
 
-		this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
+		GenerateBarrierInstruction();
 
 		// Load the values back from the shared memory into the individual threads
 
-		auto sharedLaneAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Lane);
+		auto sharedLaneAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, laneIndex);
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedLaneAddress));
 
-		SizeGenerator<B> sizeGen(this->m_builder);
-		auto warpCount = sizeGen.GenerateWarpCount();
+		GeometryGenerator geometryGenerator(this->m_builder);
+		auto warpCount = geometryGenerator.GenerateWarpCount();
 
 		auto predActive = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predActive, laneid, warpCount, PTX::UInt32Type::ComparisonOperator::Less));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predActive, laneIndex, warpCount, PTX::UInt32Type::ComparisonOperator::Less));
 		this->m_builder.AddStatement(new PTX::SelectInstruction<T>(target, target, GenerateNullValue(m_reductionOp), predActive));
 
 		// Check if we are the first warp in the block for the final part of the reduction
@@ -328,27 +347,22 @@ public:
 
 		auto& targetOptions = this->m_builder.GetTargetOptions();
 		auto& inputOptions = this->m_builder.GetInputOptions();
+		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
 		// Compute the number of threads used in this reduction
 
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
-
-		unsigned int blockSize = targetOptions.MaxBlockSize;
-		if (inputOptions.ActiveThreads != InputOptions::DynamicSize && inputOptions.ActiveThreads < blockSize)
-		{
-			blockSize = std::pow(2, std::ceil(std::log2(inputOptions.ActiveThreads)));
-		}
+		auto blockSize = static_cast<std::uint32_t>(std::pow(2, std::ceil(std::log2(GetBlockSize()))));
 		kernelOptions.SetBlockSize(blockSize);
 
 		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(blockSize);
-
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedThreadAddress = addressGenerator.template Generate<T, PTX::SharedSpace>(sharedMemory, AddressGenerator<B>::IndexKind::Local);
 
 		// Load the the local thread index for accessing the shared memory
 
 		IndexGenerator indexGen(this->m_builder);
 		auto localIndex = indexGen.GenerateLocalIndex();
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		auto sharedThreadAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, localIndex);
 
 		// Load the initial value into shared memory
 
@@ -356,7 +370,7 @@ public:
 
 		// Synchronize the thread group for a consistent view of shared memory
 
-		this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
+		GenerateBarrierInstruction();
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
 
@@ -399,7 +413,7 @@ public:
 			{
 				// If we still have >1 warps running, synchronize the group since they may not be in lock-step
 
-				this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
+				GenerateBarrierInstruction();
 			}
 		}
 
@@ -409,6 +423,42 @@ public:
 	}
 
 private:
+
+	std::uint32_t GetBlockSize() const
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		auto& targetOptions = this->m_builder.GetTargetOptions();
+
+		// Determine the block size, based on the machine characteristics and data size
+
+		auto blockSize = targetOptions.MaxBlockSize;
+		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		{
+			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
+			{
+				// Allocate a smaller number of threads if possible, otherwise use the entire block
+
+				auto size = constantSize->GetValue();
+				if (size < blockSize)
+				{
+					blockSize = size;
+				}
+			}
+		}
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		{
+			//TODO: Allow less threads per cell than the entire block if possible
+			// For each cell, limit by the number of cell threads if specified, otherwise us the entire block for each cell
+
+			// auto size = inputOptions.ListCellThreads;
+			// if (size != InputOptions::DynamicSize && size < blockSize)
+			// {
+			// 	blockSize = size;
+			// }
+		}
+		return blockSize;
+	}
+
 	static RegisterAllocator::ReductionOperation<T> GetRegisterReductionOperation(ReductionOperation reductionOp)
 	{
 		switch (reductionOp)
@@ -453,7 +503,6 @@ private:
 		auto offsetVal = resources->template AllocateTemporary<T>();
 		auto offsetAddress = address->CreateOffsetAddress(offset * PTX::BitSize<T::TypeBits>::NumBytes);
 
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, address));
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(offsetVal, offsetAddress));
 
 		// Generate the reduction instruction
@@ -520,6 +569,31 @@ private:
 			{
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(m_reductionOp));
 			}
+		}
+	}
+
+	void GenerateBarrierInstruction()
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		{
+			// All threads in the group participate in the barrier
+
+			this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
+		}
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		{
+			// The special barrier instruction requires threads be in multiples of the warp size
+
+			auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
+			auto& kernelOptions = this->m_builder.GetKernelOptions();
+			kernelOptions.SetThreadMultiple(warpSize);
+			
+			// Since some threads may have exited (cells out of range), count the number of active threads
+
+			GeometryGenerator geometryGenerator(this->m_builder);
+			auto activeThreads = geometryGenerator.GenerateActiveThreads();
+			this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), activeThreads, true, true));
 		}
 	}
 
