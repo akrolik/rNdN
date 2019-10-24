@@ -29,6 +29,9 @@ public:
 		m_gridZ = z;
 	}
 
+	void AddParameter(Constant &value) { SetParameter(m_paramIndex++, value); }
+	void AddParameter(Buffer &buffer) { SetParameter(m_paramIndex++, buffer); }
+
 	void SetParameter(unsigned int index, Constant &value);
 	void SetParameter(unsigned int index, Buffer &buffer);
 	void SetSharedMemorySize(unsigned int bytes) { m_sharedMemorySize = bytes; }
@@ -47,6 +50,7 @@ private:
 	unsigned int m_gridZ = 0;
 
 	unsigned int m_sharedMemorySize = 0;
+	unsigned int m_paramIndex = 0;
 
 	std::vector<void *> m_parameters;
 };
