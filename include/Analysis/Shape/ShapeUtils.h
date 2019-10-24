@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+#include <sstream>
 #include <vector>
 
 #include "Analysis/Shape/Shape.h"
@@ -10,6 +12,87 @@ namespace Analysis {
 class ShapeUtils
 {
 public:
+
+static std::string ShapeString(const Shape *shape)
+{
+	std::stringstream string;
+	string << *shape;
+	return string.str();
+}	
+
+static std::string SizeString(const Shape::Size *size)
+{
+	std::stringstream string;
+	string << *size;
+	return string.str();
+}	
+
+static Shape *SymbolicShapeFromType(const HorseIR::Type *type, const std::string& name)
+{
+	switch (type->m_kind)
+	{
+		case HorseIR::Type::Kind::Wildcard:
+		{
+			return new WildcardShape();
+		}
+		case HorseIR::Type::Kind::Basic:
+		{
+			return new VectorShape(new Shape::SymbolSize(name));
+		}
+		case HorseIR::Type::Kind::List:
+		{
+			auto listType = static_cast<const HorseIR::ListType *>(type);
+
+			std::vector<const Shape *> elementShapes;
+			auto index = 0u;
+			for (const auto elementType : listType->GetElementTypes())
+			{
+				auto cellName = name + ".cell" + std::to_string(index++);
+				elementShapes.push_back(SymbolicShapeFromType(elementType, cellName));
+			}
+
+			if (elementShapes.size() == 1)
+			{
+				return new ListShape(new Shape::SymbolSize(name + ".cells"), elementShapes);
+			}
+			return new ListShape(new Shape::ConstantSize(elementShapes.size()), elementShapes);
+		}
+		case HorseIR::Type::Kind::Table:
+		{
+			return new TableShape(new Shape::SymbolSize(name + ".cols"), new Shape::SymbolSize(name + ".rows"));
+		}
+		case HorseIR::Type::Kind::Dictionary:
+		{
+			auto dictionaryType = static_cast<const HorseIR::DictionaryType *>(type);
+			return new DictionaryShape(
+				SymbolicShapeFromType(dictionaryType->GetKeyType(), name + ".key"),
+				SymbolicShapeFromType(dictionaryType->GetValueType(), name + ".value")
+			);
+		}
+		case HorseIR::Type::Kind::Enumeration:
+		{
+			auto enumType = static_cast<const HorseIR::EnumerationType *>(type);
+			return new EnumerationShape(
+				SymbolicShapeFromType(enumType->GetElementType(), name + ".key"),
+				SymbolicShapeFromType(enumType->GetElementType(), name + ".value")
+			);
+		}
+		case HorseIR::Type::Kind::KeyedTable:
+		{
+			auto tableType = static_cast<const HorseIR::KeyedTableType *>(type);
+
+			auto keyTableType = SymbolicShapeFromType(tableType->GetKeyType(), name + ".key");
+			auto valueTableType = SymbolicShapeFromType(tableType->GetValueType(), name + ".value");
+
+			return new KeyedTableShape(
+				GetShape<TableShape>(keyTableType),
+				GetShape<TableShape>(valueTableType)
+			);
+		}
+	}
+
+	Utils::Logger::LogError("Unknown symbolic shape for type " + HorseIR::TypeUtils::TypeString(type));
+}
 
 static Shape *InitialShapeFromType(const HorseIR::Type *type)
 {

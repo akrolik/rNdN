@@ -17,8 +17,10 @@ void ShapeAnalysis::Visit(const HorseIR::Parameter *parameter)
 	auto symbol = parameter->GetSymbol();
 	if (m_currentOutSet.find(symbol) == m_currentOutSet.end())
 	{
-		m_currentOutSet[parameter->GetSymbol()] = ShapeUtils::ShapeFromType(parameter->GetType());
+		m_currentOutSet[parameter->GetSymbol()] = ShapeUtils::SymbolicShapeFromType(parameter->GetType(), "param." + parameter->GetName());
 	}
+
+	m_parameterShapes[parameter] = m_currentOutSet.at(parameter->GetSymbol());
 }
 
 void ShapeAnalysis::Visit(const HorseIR::DeclarationStatement *declarationS)

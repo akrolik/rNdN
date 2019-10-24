@@ -1218,7 +1218,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 			if (HasConstantArgument(arguments, 0))
 			{
 				auto tableName = ValueAnalysisHelper::GetScalar<const HorseIR::SymbolValue *>(arguments.at(0))->GetName();
-				return {new TableShape(new Shape::SymbolSize(tableName + ".cols"), new Shape::SymbolSize(tableName + ".rows"))};
+				return {new TableShape(new Shape::SymbolSize("data." + tableName + ".cols"), new Shape::SymbolSize("data." + tableName + ".rows"))};
 			}
 			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};
 		}
