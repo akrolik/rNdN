@@ -1104,7 +1104,7 @@ void TypeChecker::VisitOut(Identifier *identifier)
 			identifier->SetTypes(dynamic_cast<const VariableDeclaration *>(symbol->node)->GetTypes());
 			break;
 		case SymbolTable::Symbol::Kind::Module:
-			Utils::Logger::LogError("Module '" + PrettyPrinter::PrettyString(dynamic_cast<Operand *>(identifier)) + "' used as a variable or function");
+			Utils::Logger::LogError("Module '" + PrettyPrinter::PrettyString(identifier) + "' used as a variable or function");
 	}
 }
 

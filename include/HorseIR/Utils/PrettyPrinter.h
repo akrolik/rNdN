@@ -12,6 +12,7 @@ class PrettyPrinter : public ConstVisitor
 {
 public:
 	static std::string PrettyString(const Node *node, bool quick = false);
+	static std::string PrettyString(const Identifier *identifier, bool quick = false);
 
 	// Modules
 

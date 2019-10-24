@@ -100,7 +100,7 @@ std::string UDDUChainsBuilder::DebugString(unsigned int indent) const
 	for (const auto& ud : m_useDefChains)
 	{
 		string += "\n" + Indent(indent + 1);
-		string += HorseIR::PrettyPrinter::PrettyString(dynamic_cast<const HorseIR::Operand *>(ud.first));
+		string += HorseIR::PrettyPrinter::PrettyString(ud.first);
 		string += "->[";
 
 		bool first = true;
@@ -131,7 +131,7 @@ std::string UDDUChainsBuilder::DebugString(unsigned int indent) const
 				string += ", ";
 			}
 			first = false;
-			string += HorseIR::PrettyPrinter::PrettyString(dynamic_cast<const HorseIR::Operand *>(use));
+			string += HorseIR::PrettyPrinter::PrettyString(use);
 		}
 		string += "]";
 	}

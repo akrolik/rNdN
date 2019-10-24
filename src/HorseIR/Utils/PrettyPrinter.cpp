@@ -12,7 +12,16 @@ std::string PrettyPrinter::PrettyString(const Node *node, bool quick)
 	node->Accept(printer);
 	return printer.m_string.str();
 }
-
+ 
+std::string PrettyPrinter::PrettyString(const Identifier *identifier, bool quick)
+{
+	PrettyPrinter printer;
+	printer.m_string.str("");
+	printer.m_quick = quick;
+	identifier->Accept(printer);
+	return printer.m_string.str();
+}
+ 
 void PrettyPrinter::Indent()
 {
 	for (unsigned int i = 0; i < m_indent; ++i)

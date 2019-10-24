@@ -145,7 +145,7 @@ bool DefinitelyAssigned::VisitIn(const Identifier *identifier)
 
 	if (m_definitions.find(identifier->GetSymbol()) == m_definitions.end())
 	{
-		Utils::Logger::LogError("Variable '" + PrettyPrinter::PrettyString(dynamic_cast<const Operand *>(identifier)) + "' is not defined on all paths.");
+		Utils::Logger::LogError("Variable '" + PrettyPrinter::PrettyString(identifier) + "' is not defined on all paths.");
 	}
 	return true;
 }
