@@ -4,6 +4,7 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Runtime/DataBuffers/ListBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
 namespace Runtime {
@@ -18,6 +19,15 @@ DataBuffer *DataBuffer::Create(const HorseIR::Type *type, const Analysis::Shape 
 			{
 				auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape);
 				return VectorBuffer::Create(vectorType, vectorShape);
+			}
+			Utils::Logger::LogError("Vector shape requires basic type");
+		}
+		case Analysis::Shape::Kind::List:
+		{
+			if (const auto listType = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type))
+			{
+				auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape);
+				return ListBuffer::Create(listType, listShape);
 			}
 			Utils::Logger::LogError("Vector shape requires basic type");
 		}

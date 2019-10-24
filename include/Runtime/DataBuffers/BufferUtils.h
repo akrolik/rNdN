@@ -41,7 +41,7 @@ static TypedVectorBuffer<T> *GetVectorBuffer(DataBuffer *buffer, bool assert = t
 
 	if (assert)
 	{
-		// Utils::Logger::LogError("Cannot convert buffer " + buffer->Description() + " to kind " + DataBuffer::KindString(T::BufferKind));
+		Utils::Logger::LogError("Cannot convert buffer " + buffer->Description() + " to TypedVector");
 	}
 	return nullptr;
 }

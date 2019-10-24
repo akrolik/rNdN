@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "Runtime/DataBuffers/VectorBuffer.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 namespace Runtime {
@@ -13,6 +15,8 @@ class ListBuffer : public DataBuffer
 {
 public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::List;
+
+	static ListBuffer *Create(const HorseIR::ListType *type, const Analysis::ListShape *shape);
 
 	ListBuffer(DataBuffer *cell) : ListBuffer(std::vector<DataBuffer *>({cell})) {}
 	ListBuffer(const std::vector<DataBuffer *>& cells) : DataBuffer(DataBuffer::Kind::List), m_cells(cells)
@@ -38,8 +42,15 @@ public:
 
 	// CPU/GPU management
 
-	CUDA::Buffer *GetGPUWriteBuffer() override { Utils::Logger::LogError("Unable to allocate list GPU buffer"); }
-	CUDA::Buffer *GetGPUReadBuffer() const override { Utils::Logger::LogError("Unable to allocate list GPU buffer"); }
+	//TODO: Harmonize with the vector buffer
+	CUDA::Buffer *GetGPUWriteBuffer() override
+	{
+		return GetGPUBuffer(true);
+	}
+	CUDA::Buffer *GetGPUReadBuffer() const override
+	{
+		return GetGPUBuffer(false);
+	}
 
 	// Printers
 
@@ -47,6 +58,33 @@ public:
 	std::string DebugDump() const override;
 
 private:
+	CUDA::Buffer *GetGPUBuffer(bool write) const
+	{
+		auto cellCount = m_cells.size();
+		size_t bufferSize = cellCount * sizeof(CUdeviceptr);
+
+		void *cpuBuffer = malloc(bufferSize);
+		CUdeviceptr *data = reinterpret_cast<CUdeviceptr *>(cpuBuffer);
+
+		for (auto i = 0u; i < cellCount; ++i)
+		{
+			auto buffer = static_cast<VectorBuffer *>(m_cells.at(i));
+			if (write)
+			{
+				data[i] = buffer->GetGPUWriteBuffer()->GetGPUBuffer();
+			}
+			else
+			{
+				data[i] = buffer->GetGPUReadBuffer()->GetGPUBuffer();
+			}
+		}
+
+		auto gpuBuffer = new CUDA::Buffer(cpuBuffer, bufferSize);
+		gpuBuffer->AllocateOnGPU();
+		gpuBuffer->TransferToGPU();
+		return gpuBuffer;
+	}
+
 	HorseIR::ListType *m_type = nullptr;
 	Analysis::ListShape *m_shape = nullptr;
 
