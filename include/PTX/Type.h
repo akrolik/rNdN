@@ -185,7 +185,7 @@ template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
 template<> struct BitType<Bits::Bits1, 1> : BitTypeBase<Bits::Bits1>
 {
 	using SystemType = int64_t;
-	 static std::string TypePrefix() { return "p"; }
+	static std::string TypePrefix() { return "p"; }
 };
 template<> struct BitType<Bits::Bits8, 1> : BitTypeBase<Bits::Bits8>
 {
@@ -772,12 +772,18 @@ template <class T, typename E = void>
 struct is_float_type : std::false_type {};
 
 template <class T>
-struct is_float_type<T, std::enable_if_t<is_type_specialization<T, FloatType>::value>> : std::true_type {};
+struct is_float_type<T, std::enable_if_t<
+	is_type_specialization<T, FloatType>::value
+>> : std::true_type {};
 
 enum class VectorSize : int {
 	Vector2 = 2,
 	Vector4 = 4
 };
+
+// @struct VectorType
+//
+// Type for representing pairs of data
 
 template<VectorSize V>
 struct VectorProperties
@@ -906,6 +912,24 @@ template<class T, class S = AddressableSpace>
 using Pointer32Type = PointerType<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>
 using Pointer64Type = PointerType<Bits::Bits64, T, S>;
+
+// @struct is_pointer_type
+//
+// Type trait for determining if a PTX::Type is a pointer
+
+template <class T, template <Bits, class, class> class Template>
+struct is_pointer_specialization : std::false_type {};
+
+template <template <Bits, class, class> class Template, Bits B, class T, class S>
+struct is_pointer_specialization<Template<B, T, S>, Template> : std::true_type {};
+ 
+template <class T, typename E = void>
+struct is_pointer_type : std::false_type {};
+
+template <class T>
+struct is_pointer_type<T, std::enable_if_t<
+	is_pointer_specialization<T, PointerType>::value
+>> : std::true_type {};
 
 // @struct is_comparable_type
 //
