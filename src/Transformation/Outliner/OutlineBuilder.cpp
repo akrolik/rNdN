@@ -104,6 +104,31 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 		);
 	});
 
+	// Collect the incoming and outgoing symbols
+
+	std::unordered_set<const HorseIR::SymbolTable::Symbol *> inSet;
+	std::unordered_set<const HorseIR::SymbolTable::Symbol *> outSet;
+
+	const auto containerGraph = overlay->GetParent()->GetSubgraph();
+	for (const auto& predecessor : containerGraph->GetPredecessors(overlay))
+	{
+		const auto& symbols = containerGraph->GetEdgeData(predecessor, overlay);
+		inSet.insert(std::begin(symbols), std::end(symbols));
+	}
+
+	for (const auto& successor : containerGraph->GetSuccessors(overlay))
+	{
+		const auto& symbols = containerGraph->GetEdgeData(overlay, successor);
+		outSet.insert(std::begin(symbols), std::end(symbols));
+	}
+
+	// Remove incoming symbols from the local declaration set (handles outside declarations)
+
+	for (auto symbol : inSet)
+	{
+		m_symbols.top().erase(symbol);
+	}
+
 	// Add all variable declarations to the top of the block
 
 	BuildDeclarations();
@@ -111,28 +136,10 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 
 	if (isKernel)
 	{
-		// Collect the incoming and outgoing symbols
-
-		std::unordered_set<const HorseIR::SymbolTable::Symbol *> inSet;
-		std::unordered_set<const HorseIR::SymbolTable::Symbol *> outSet;
-
-		const auto containerGraph = overlay->GetParent()->GetSubgraph();
-		for (const auto& predecessor : containerGraph->GetPredecessors(overlay))
-		{
-			const auto& symbols = containerGraph->GetEdgeData(predecessor, overlay);
-			inSet.insert(std::begin(symbols), std::end(symbols));
-		}
-
-		for (const auto& successor : containerGraph->GetSuccessors(overlay))
-		{
-			const auto& symbols = containerGraph->GetEdgeData(overlay, successor);
-			outSet.insert(std::begin(symbols), std::end(symbols));
-		}
+		// Collect the input paramters (name+type) and return types
 
 		std::vector<const HorseIR::SymbolTable::Symbol *> inSymbols(std::begin(inSet), std::end(inSet));
 		std::vector<const HorseIR::SymbolTable::Symbol *> outSymbols(std::begin(outSet), std::end(outSet));
-
-		// Collect the input paramters (name+type) and return types
 
 		std::vector<HorseIR::Parameter *> parameters;
 		std::vector<HorseIR::Type *> returnTypes;
