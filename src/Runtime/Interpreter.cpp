@@ -1,5 +1,7 @@
 #include "Runtime/Interpreter.h"
 
+#include "CUDA/Vector.h"
+
 #include "HorseIR/Utils/TypeUtils.h"
 
 #include "Runtime/DataBuffers/VectorBuffer.h"
@@ -222,8 +224,11 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 		Utils::Logger::LogError("Invalid type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' for vector literal");
 	}
 
+	CUDA::Vector<T> values;
+	values.insert(std::begin(values), std::begin(literal->GetValues()), std::end(literal->GetValues()));
+
 	auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type);
-	auto vector = new TypedVectorData<T>(basicType, literal->GetValues());
+	auto vector = new TypedVectorData<T>(basicType, values);
 	m_environment.Insert(literal, new TypedVectorBuffer<T>(vector));
 }
 

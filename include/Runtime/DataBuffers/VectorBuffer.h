@@ -4,12 +4,11 @@
 #include <typeinfo>
 
 #include "Runtime/DataBuffers/DataBuffer.h"
+#include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
 #include "Analysis/Shape/Shape.h"
 
 #include "HorseIR/Tree/Tree.h"
-
-#include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
 namespace Runtime {
 

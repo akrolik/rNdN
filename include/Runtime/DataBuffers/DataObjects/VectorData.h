@@ -1,9 +1,10 @@
 #pragma once
 
+#include <string>
+
 #include "Runtime/DataBuffers/DataObjects/DataObject.h"
 
-#include <string>
-#include <vector>
+#include "CUDA/Vector.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -25,7 +26,7 @@ template<typename T>
 class TypedVectorData : public VectorData
 {
 public:
-	TypedVectorData(const HorseIR::BasicType *elementType, const std::vector<T>& data) : m_type(elementType), m_data(data) {}
+	TypedVectorData(const HorseIR::BasicType *elementType, const CUDA::Vector<T>& data) : m_type(elementType), m_data(data) {}
 	TypedVectorData(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType)
 	{
 		m_data.resize(size);
@@ -34,8 +35,7 @@ public:
 	const HorseIR::BasicType *GetType() const { return m_type; }
 
 	const T& GetValue(unsigned int i) const { return m_data.at(i); }
-	const std::vector<T>& GetValues() const { return m_data; }
-
+	const CUDA::Vector<T>& GetValues() const { return m_data; }
 
         void *GetData() override { return m_data.data(); }
 	size_t GetDataSize() const override { return m_data.size() * sizeof(T); }
@@ -99,7 +99,7 @@ public:
 private:
 	const HorseIR::BasicType *m_type = nullptr;
 
-	std::vector<T> m_data;
+	CUDA::Vector<T> m_data;
 };
 
 }

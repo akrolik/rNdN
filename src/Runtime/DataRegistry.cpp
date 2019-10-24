@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 
+#include "CUDA/Vector.h"
+
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Libraries/csv.h"
@@ -13,21 +15,24 @@ namespace Runtime {
 template<typename T>
 void DataRegistry::LoadDebugData(std::unordered_map<std::string, VectorBuffer *>& columns, const HorseIR::BasicType *type, unsigned long size)
 {
-	std::vector<T> zeros(size);
-	std::vector<T> ones(size);
-	std::vector<T> inc(size);
+	CUDA::Vector<T> zeros(size);
+	CUDA::Vector<T> ones(size);
+	CUDA::Vector<T> asc(size);
+	CUDA::Vector<T> desc(size);
 	
 	for (unsigned long i = 0; i < size; ++i)
 	{
 		zeros.at(i) = 0;
 		ones.at(i) = 1;
-		inc.at(i) = i;
+		asc.at(i) = i;
+		desc.at(i) = size - i - 1;
 	}
 
 	auto name = HorseIR::PrettyPrinter::PrettyString(type);
 	columns["zeros_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, zeros));
 	columns["ones_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, ones));
-	columns["inc_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, inc));
+	columns["asc_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, asc));
+	columns["desc_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, desc));
 }
 
 void DataRegistry::LoadDebugData()
@@ -54,10 +59,10 @@ void DataRegistry::LoadTPCHData()
 {
 	Utils::Logger::LogSection("Loading TPC-H data");
 
-	std::vector<double> quantity;
-	std::vector<double> extPrice;
-	std::vector<double> discount;
-	std::vector<std::int32_t> shipDate;
+	CUDA::Vector<double> quantity;
+	CUDA::Vector<double> extPrice;
+	CUDA::Vector<double> discount;
+	CUDA::Vector<std::int32_t> shipDate;
 
 	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> reader("../data/tpc-h/lineitem.tbl");
 
