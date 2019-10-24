@@ -49,14 +49,19 @@ static const Shape *MaxGeometry(const Shape *geometry1, const Shape *geometry2)
 				auto elementShapes1 = listShape1->GetElementShapes();
 				auto elementShapes2 = listShape2->GetElementShapes();
 
+				auto elementCount1 = elementShapes1.size();
+				auto elementCount2 = elementShapes2.size();
+
 				std::vector<const Shape *> maxElementShapes;
-				if (elementShapes1.size() == elementShapes2.size())
+				if (elementCount1 == elementCount2 || elementCount1 == 1 || elementCount2 == 1)
 				{
-					unsigned int i = 0;
-					for (const auto elementShape1 : elementShapes1)
+					auto count = std::max({elementCount1, elementCount2});
+					for (auto i = 0u; i < count; ++i)
 					{
-						const auto elementShape2 = elementShapes2.at(i++);
-						auto maxShape = MaxGeometry(elementShape1, elementShape2);
+						const auto l_elementShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
+						const auto l_elementShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
+
+						const auto maxShape = MaxGeometry(l_elementShape1, l_elementShape2);
 						maxElementShapes.push_back(maxShape);
 					}
 				}

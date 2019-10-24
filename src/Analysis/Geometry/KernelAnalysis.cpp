@@ -1,52 +1,32 @@
 #include "Analysis/Geometry/KernelAnalysis.h"
 
 #include "Analysis/Geometry/GeometryUtils.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Analysis {
 
 void KernelAnalysis::Analyze(const HorseIR::Function *function)
 {
+	auto timeKernel_start = Utils::Chrono::Start();
 	function->Accept(*this);
+	auto timeKernel = Utils::Chrono::End(timeKernel_start);
 
-	switch (m_maxShape->GetKind())
+	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
 	{
-		case Shape::Kind::Vector:
-		{
-			const auto shape = ShapeUtils::GetShape<VectorShape>(m_maxShape);
-			if (const auto size = ShapeUtils::GetSize<Shape::ConstantSize>(shape->GetSize()))
-			{
-				m_threadGeometry = new ThreadGeometry(ThreadGeometry::Kind::Vector, size->GetValue());
-			}
-			else
-			{
-				Utils::Logger::LogError("Vector geometry must have constant size for kernel execution");
-			}
-			break;
-		}
-		case Shape::Kind::List:
-		{
-			const auto shape = ShapeUtils::GetShape<ListShape>(m_maxShape);
-			if (const auto size = ShapeUtils::GetSize<Shape::ConstantSize>(shape->GetListSize()))
-			{
-				m_threadGeometry = new ThreadGeometry(ThreadGeometry::Kind::List, size->GetValue());
-			}
-			else
-			{
-				Utils::Logger::LogError("List geometry must have constant cell count for kernel execution");
-			}
-			break;
-		}
-		default:
-		{
-			Utils::Logger::LogError("Unsupport thread geometry kind");
-		}
+		auto string = "Kernel geometry: " + ShapeUtils::ShapeString(m_operatingGeometry);
+		Utils::Logger::LogInfo(string);
 	}
+	Utils::Logger::LogTiming("Kernel analysis", timeKernel);
 }
 
 bool KernelAnalysis::VisitIn(const HorseIR::Statement *statement)
 {
 	auto statementGeometry = m_geometryAnalysis.GetGeometry(statement);
-	m_maxShape = GeometryUtils::MaxGeometry(m_maxShape, statementGeometry);
+	m_operatingGeometry = GeometryUtils::MaxGeometry(m_operatingGeometry, statementGeometry);
 	return false;
 }
 
