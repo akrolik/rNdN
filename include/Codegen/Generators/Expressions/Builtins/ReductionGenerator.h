@@ -7,6 +7,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Generators/BarrierGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
@@ -290,7 +291,8 @@ public:
 
 		// Synchronize all values in shared memory from across warps
 
-		GenerateBarrierInstruction();
+		BarrierGenerator barrierGenerator(this->m_builder);
+		barrierGenerator.Generate();
 
 		// Load the values back from the shared memory into the individual threads
 
@@ -375,7 +377,8 @@ public:
 
 		// Synchronize the thread group for a consistent view of shared memory
 
-		GenerateBarrierInstruction();
+		BarrierGenerator barrierGenerator(this->m_builder);
+		barrierGenerator.Generate();
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
 
@@ -418,7 +421,7 @@ public:
 			{
 				// If we still have >1 warps running, synchronize the group since they may not be in lock-step
 
-				GenerateBarrierInstruction();
+				barrierGenerator.Generate();
 			}
 		}
 
@@ -578,31 +581,6 @@ private:
 			{
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(m_reductionOp));
 			}
-		}
-	}
-
-	void GenerateBarrierInstruction()
-	{
-		auto& inputOptions = this->m_builder.GetInputOptions();
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
-		{
-			// All threads in the group participate in the barrier
-
-			this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
-		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
-		{
-			// The special barrier instruction requires threads be in multiples of the warp size
-
-			auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
-			auto& kernelOptions = this->m_builder.GetKernelOptions();
-			kernelOptions.SetThreadMultiple(warpSize);
-			
-			// Since some threads may have exited (cells out of range), count the number of active threads
-
-			GeometryGenerator geometryGenerator(this->m_builder);
-			auto activeThreads = geometryGenerator.GenerateActiveThreads();
-			this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), activeThreads, true, true));
 		}
 	}
 
