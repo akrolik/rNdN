@@ -14,6 +14,7 @@
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalBinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
@@ -222,6 +223,10 @@ public:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Minimum);
 			case HorseIR::BuiltinFunction::Primitive::Maximum:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Maximum);
+
+			// Indexing
+			case HorseIR::BuiltinFunction::Primitive::Index:
+				return new IndexedReadGenerator<B, T>(this->m_builder);
 		}
 		return nullptr;
 	}

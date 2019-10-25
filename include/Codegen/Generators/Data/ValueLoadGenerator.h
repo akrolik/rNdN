@@ -31,41 +31,41 @@ public:
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
-		// Predicate (1-bit) values are stored as signed 8-bit integers on the CPU side. Loading thus requires conversion
+		// Allocate a register and load the value according to the index
 
-		if constexpr(std::is_same<T, PTX::PredicateType>::value)
-		{
-			auto value = resources->AllocateTemporary<PTX::Int8Type>();
-			GeneratePointer(name, value, index);
-
-			auto converted = resources->AllocateRegister<PTX::PredicateType>(destinationName);
-			ConversionGenerator::ConvertSource(this->m_builder, converted, value);
-			return converted;
-		}
-		else
-		{
-			auto destination = resources->AllocateRegister<T>(destinationName);
-			GeneratePointer(name, destination, index);
-			return destination;
-		}
+		auto destination = resources->AllocateRegister<T>(destinationName);
+		GeneratePointer(name, destination, index);
+		return destination;
 	}
 
 	template<class T>
 	void GeneratePointer(const std::string& name, const PTX::Register<T> *destination, const PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
-		// Get the address register for the parameter
-
 		auto resources = this->m_builder.GetLocalResources();
-		auto addressRegister = resources->GetRegister<PTX::UIntType<B>>(NameUtils::DataAddressName(name));
 
-		// Generate the address for the correct index
+		// Predicate (1-bit) values are stored as signed 8-bit integers on the CPU side. Loading thus requires conversion
 
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto address = addressGenerator.template GenerateAddress<T, PTX::GlobalSpace>(addressRegister, index);
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			auto temp = resources->AllocateTemporary<PTX::Int8Type>();
+			GeneratePointer(name, temp, index);
+			ConversionGenerator::ConvertSource(this->m_builder, destination, temp);
+		}
+		else
+		{
+			// Get the address register for the parameter
 
-		// Load the value from the fetched address
+			auto addressRegister = resources->GetRegister<PTX::UIntType<B>>(NameUtils::DataAddressName(name));
 
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
+			// Generate the address for the correct index
+
+			AddressGenerator<B> addressGenerator(this->m_builder);
+			auto address = addressGenerator.template GenerateAddress<T, PTX::GlobalSpace>(addressRegister, index);
+
+			// Load the value from the fetched address
+
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
+		}
 	}
 
 	template<class T>
