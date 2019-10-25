@@ -66,23 +66,18 @@ public:
 				if (Analysis::ShapeUtils::IsScalarSize(vectorShape->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(vectorGeometry->GetSize()))
 				{
 					GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, IndexGenerator::Kind::Null, returnIndex);
+					return;
 				}
 				else if (*vectorGeometry == *vectorShape)
 				{
 					GenerateWriteVector<T>(operand, IndexGenerator::Kind::Global, returnIndex);
+					return;
 				}
 				else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
 				{
 					GenerateWriteCompressed<T>(operand, returnIndex);
+					return;
 				}
-				else
-				{
-					Utils::Logger::LogError("Unable to generate vector geometry store for shape " + Analysis::ShapeUtils::ShapeString(shape));
-				}
-			}
-			else
-			{
-				Utils::Logger::LogError("Unable to generate vector geometry store for shape " + Analysis::ShapeUtils::ShapeString(shape));
 			}
 		}
 		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
@@ -92,6 +87,7 @@ public:
 				// Special horizontal write for @raze function
 
 				GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::ListCell, IndexGenerator::Kind::Cell, returnIndex);
+				return;
 			}
 			else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 			{
@@ -108,21 +104,16 @@ public:
 				if (cellVector && cellVectorGeometry && Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
 				{
 					GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, IndexGenerator::Kind::Null, returnIndex);
+					return;
 				}
 				else if (*listGeometry == *listShape)
 				{
 					GenerateWriteVector<T>(operand, IndexGenerator::Kind::CellData, returnIndex);
+					return;
 				}
-				else
-				{
-					Utils::Logger::LogError("Unable to generate list geometry store for shape " + Analysis::ShapeUtils::ShapeString(shape));
-				}
-			}
-			else
-			{
-				Utils::Logger::LogError("Unable to generate list geometry store for shape " + Analysis::ShapeUtils::ShapeString(shape));
 			}
 		}
+		Utils::Logger::LogError("Unable to generate store for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 	}
 
 	template<class T>

@@ -171,6 +171,10 @@ public:
 			ListFunctionGenerator<B> functionGenerator(m_builder);
 			functionGenerator.Generate(function);
 		}
+		else
+		{
+			Utils::Logger::LogError("Unsupported thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+		}
 
 		// Complete the codegen for the function by setting up the options and closing the scope
 

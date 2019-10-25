@@ -93,6 +93,11 @@ public:
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, dataIndex, cellSize, PTX::UInt32Type::ComparisonOperator::Less));
 		}
 
+		else
+		{
+			BuiltinGenerator<B, T>::Unimplemented("reduction for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+		}
+
 		// Get the initial value for reduction
 
 		OperandGenerator<B, T> opGen(this->m_builder);
@@ -455,6 +460,10 @@ private:
 			// {
 			// 	blockSize = size;
 			// }
+		}
+		else
+		{
+			BuiltinGenerator<B, T>::Unimplemented("reduction block size for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 		}
 		return blockSize;
 	}
