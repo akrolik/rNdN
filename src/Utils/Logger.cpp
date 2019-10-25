@@ -60,12 +60,12 @@ void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 
 void Logger::LogTiming(const std::string& name, long time)
 {
-	std::cout << "[TIME] " << name << ": " << time << " mus" << std::endl;
+	std::cout << "[TIME] " << name << ": " << time << " us" << std::endl;
 }
 
 void Logger::LogTimingComponent(const std::string& name, long time)
 {
-	std::cout << "[TIME]  - " << name << ": " << time << " mus" << std::endl;
+	std::cout << "[TIME]  - " << name << ": " << time << " us" << std::endl;
 }
 
 void Logger::LogBlank(const std::string& prefix)
