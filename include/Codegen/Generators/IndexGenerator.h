@@ -76,7 +76,7 @@ public:
 		return nullptr;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateLaneIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateLaneIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -93,7 +93,7 @@ public:
 		return laneid;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateWarpIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateWarpIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -110,7 +110,7 @@ public:
 		return warpid;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateLocalIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateLocalIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -124,7 +124,7 @@ public:
 		return tidx;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateBlockIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateBlockIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -138,7 +138,7 @@ public:
 		return ctaidx;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateGlobalIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -183,7 +183,7 @@ public:
 		return index;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateCellDataIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateCellDataIndex()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -192,7 +192,7 @@ public:
 		return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryThreadIndex);
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateCellIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateCellIndex()
 	{
 		// Cell index = globalIndex / cellThreads
 

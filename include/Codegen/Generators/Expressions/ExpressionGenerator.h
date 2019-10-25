@@ -19,6 +19,7 @@
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/VectorGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -205,6 +206,10 @@ public:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Nor);
 			case HorseIR::BuiltinFunction::Primitive::Xor:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Xor);
+
+			// Algebraic Unary
+			case HorseIR::BuiltinFunction::Primitive::Where:
+				return new WhereGenerator<B, T>(this->m_builder);
 
 			// Algebraic Binary
 			case HorseIR::BuiltinFunction::Primitive::Compress:
