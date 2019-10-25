@@ -6,6 +6,8 @@
 #include "Analysis/Dependency/DependencyGraph.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 
+#include "Analysis/Helpers/GPUAnalysisHelper.h"
+
 namespace Analysis {
 
 class DependencyAnalysis : public HorseIR::ConstHierarchicalVisitor
@@ -48,7 +50,11 @@ public:
 
 	// Expressions
 
+	void VisitOut(const HorseIR::Expression *expression) override;
+
 	bool VisitIn(const HorseIR::FunctionLiteral *literal) override;
+	void VisitOut(const HorseIR::FunctionLiteral *literal) override;
+
 	bool VisitIn(const HorseIR::Identifier *identifier) override;
 
 private:
@@ -58,7 +64,9 @@ private:
 	DependencyGraph *m_graph = new DependencyGraph();
 	DependencyOverlay *m_graphOverlay = nullptr;
 
+	GPUAnalysisHelper m_gpuHelper;
 	bool m_isTarget = false;
+	unsigned int m_index = 0;
 };
 
 }

@@ -46,13 +46,6 @@ DependencyOverlay *CompatibilityAnalysis::GetKernelOverlay(const DependencySubgr
 
 DependencyOverlay *CompatibilityAnalysis::GetSuccessorsKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node) const
 {
-	// Synchronized statements create a new kernel
-
-	if (IsSynchronized(node))
-	{
-		return nullptr;
-	}
-
 	// Check all successors for compatibility, and that they reside in the same kernel
 
 	DependencyOverlay *kernelOverlay = nullptr;
@@ -64,6 +57,13 @@ DependencyOverlay *CompatibilityAnalysis::GetSuccessorsKernelOverlay(const Depen
 		if (subgraph->IsBackEdge(node, successor))
 		{
 			continue;
+		}
+
+		// Check the sucessor for incoming or outgoing synchronization which prevents merge
+
+		if (subgraph->IsSynchronizedEdge(node, successor))
+		{
+			return nullptr;
 		}
 
 		// Check all successors reside in the same kernel
@@ -96,48 +96,6 @@ DependencyOverlay *CompatibilityAnalysis::GetSuccessorsKernelOverlay(const Depen
 	}
 
 	return kernelOverlay;
-}
-
-bool CompatibilityAnalysis::IsSynchronized(const DependencySubgraphNode& node) const
-{
-	bool synchronized = false;
-	std::visit(overloaded
-	{
-		[&](const HorseIR::Statement *statement)
-		{
-			m_gpuHelper.Analyze(statement);
-			synchronized = m_gpuHelper.IsSynchronizedOut();
-		},
-		[&](const DependencyOverlay *overlay)
-		{
-			synchronized = overlay->IsSynchronized();
-		}},
-		node
-	);
-	return synchronized;
-}
-
-bool CompatibilityAnalysis::BuildSynchronized(const DependencyOverlay *overlay) const
-{
-	if (overlay->IsGPU())
-	{
-		for (const auto& statement : overlay->GetStatements())
-		{
-			m_gpuHelper.Analyze(statement);
-			if (m_gpuHelper.IsSynchronizedOut())
-			{
-				return true;
-			}
-		}
-		for (const auto& childOverlay : overlay->GetChildren())
-		{
-			if (childOverlay->IsSynchronized())
-			{
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 const Shape *CompatibilityAnalysis::GetGeometry(const DependencySubgraphNode& node) const
@@ -243,7 +201,8 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 
 	// Perform the topological sort and construct the new overlay
 
-	auto newOverlay = new DependencyOverlay(overlay->GetGraph());
+	auto graph = overlay->GetGraph();
+	auto newOverlay = new DependencyOverlay(graph);
 
 	const auto subgraph = overlay->GetSubgraph();
 	subgraph->TopologicalOrdering([&](const DependencySubgraphNode& node)
@@ -255,8 +214,7 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 				// If the node is a statement, check if it is GPU compatible - in which case
 				// find the appropriate kernel (new if needed). If not, add it to the CPU overlay
 
-				m_gpuHelper.Analyze(statement);
-				if (m_gpuHelper.IsCapable())
+				if (graph->IsGPUNode(statement))
 				{
 					// Find or construct the overlay for the statement and add the statement
 
@@ -306,7 +264,6 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 		{
 			m_overlayGeometries[childOverlay] = BuildGeometry(childOverlay);
 		}
-		childOverlay->SetSynchronized(BuildSynchronized(childOverlay));
 	}
 
 	// Finalize the new overlay and compute the geometry if needed
@@ -321,7 +278,6 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 	else
 	{
 		m_overlayGeometries[newOverlay] = BuildGeometry(newOverlay);
-		newOverlay->SetSynchronized(BuildSynchronized(newOverlay));
 		m_currentOverlays.push_back(newOverlay);
 	}
 }
@@ -450,6 +406,8 @@ void CompatibilityAnalysis::Visit(const IfDependencyOverlay *overlay)
 
 bool CompatibilityAnalysis::IsIterable(const DependencyOverlay *overlay) const
 {
+	// For each back edge, make sure it is iterable (not synchronized, and geometry compatible)
+
 	auto subgraph = overlay->GetSubgraph();
 	for (const auto& node : subgraph->GetNodes())
 	{
@@ -457,6 +415,15 @@ bool CompatibilityAnalysis::IsIterable(const DependencyOverlay *overlay) const
 		{
 			if (subgraph->IsBackEdge(node, successor))
 			{
+				// Check synchronization
+
+				if (subgraph->IsSynchronizedEdge(node, successor))
+				{
+					return false;
+				}
+
+				// Check geometry compatibility
+
 				auto outGeometry = GetGeometry(node);
 				auto inGeometry = GetGeometry(successor);
 
@@ -488,7 +455,7 @@ void CompatibilityAnalysis::VisitLoop(const T *overlay)
 	// Check that the body overlay is GPU capable and has no synchronized statements
 	
 	bool kernel = false;
-	if (bodyOverlay->IsGPU() && !bodyOverlay->IsSynchronized())
+	if (bodyOverlay->IsGPU())
 	{
 		kernel = IsIterable(overlay->GetBody());
 	}

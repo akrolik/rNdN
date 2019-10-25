@@ -5,7 +5,6 @@
 #include "Analysis/Dependency/Overlay/DependencyOverlayVisitor.h"
 
 #include "Analysis/Dependency/DependencyGraph.h"
-#include "Analysis/Dependency/DependencySubgraph.h"
 
 namespace Analysis {
 
@@ -22,9 +21,7 @@ public:
 
 private:
 	const DependencyOverlay *GetScopedOverlay(const DependencyOverlay *containerOverlay, const HorseIR::Statement *statement) const;
-
 	void ProcessOverlay(const DependencyOverlay *overlay, const DependencyOverlay *containerOverlay);
-	static void InsertEdge(DependencySubgraph *subgraph, const DependencySubgraphNode& source, const DependencySubgraphNode& destination, bool isBackEdge, const std::unordered_set<const HorseIR::SymbolTable::Symbol *>& symbols);
 };
 
 }

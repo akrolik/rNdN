@@ -4,29 +4,49 @@
 
 namespace Analysis {
 
-void GPUAnalysisHelper::Analyze(const HorseIR::Expression *expression)
+bool GPUAnalysisHelper::IsGPU(const HorseIR::Statement *statement)
 {
 	// Reset the analysis and traverse
 
-	m_capable = false;
-	m_synchronizedOut = false;
-
-	expression->Accept(*this);
+	m_gpu = false;
+	statement->Accept(*this);
+	return m_gpu;
 }
 
-void GPUAnalysisHelper::Analyze(const HorseIR::Statement *statement)
+bool GPUAnalysisHelper::IsSynchronized(const HorseIR::Statement *source, const HorseIR::Statement *destination, unsigned int index)
 {
-	// Reset the analysis and traverse
+	// Check for outgoing synchronization on the source statment
 
-	m_capable = false;
+	m_gpu = false;
 	m_synchronizedOut = false;
+	source->Accept(*this);
 
-	statement->Accept(*this);
+	if (!m_gpu)
+	{
+		// Non-GPU links are never marked as synchronized
+
+		return false;
+	}
+
+	if (m_synchronizedOut)
+	{
+		return true;
+	}
+
+	// Check for incoming synchronization on the destination statement at the index
+
+	m_gpu = false;
+	m_synchronizedIn = false;
+	m_index = index;
+	destination->Accept(*this);
+
+	return (m_gpu && m_synchronizedIn);
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::DeclarationStatement *declarationS)
 {
-	m_capable = true;
+	m_gpu = true;
+	m_synchronizedIn = false;
 	m_synchronizedOut = false;
 }
 
@@ -44,36 +64,39 @@ void GPUAnalysisHelper::Visit(const HorseIR::ReturnStatement *returnS)
 {
 	// Explicitly disallow return from kernels, we will insert as needed
 
-	m_capable = false;
+	m_gpu = false;
+	m_synchronizedIn = false;
 	m_synchronizedOut = false;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::CallExpression *call)
 {
-	auto [capable, synchronized] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments());
-	m_capable = capable;
-	m_synchronizedOut = synchronized;
+	auto [gpu, synchronizedIn, synchronizedOut] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments(), m_index);
+
+	m_gpu = gpu;
+	m_synchronizedIn = synchronizedIn;
+	m_synchronizedOut = synchronizedOut;
 }
 
-std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments)
+std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
 {
 	switch (function->GetKind())
 	{
 		case HorseIR::FunctionDeclaration::Kind::Builtin:
-			return AnalyzeCall(static_cast<const HorseIR::BuiltinFunction *>(function), arguments);
+			return AnalyzeCall(static_cast<const HorseIR::BuiltinFunction *>(function), arguments, index);
 		case HorseIR::FunctionDeclaration::Kind::Definition:
-			return AnalyzeCall(static_cast<const HorseIR::Function *>(function), arguments);
+			return AnalyzeCall(static_cast<const HorseIR::Function *>(function), arguments, index);
 		default:
 			Utils::Logger::LogError("Unsupported function kind");
 	}
 }
 
-std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments)
+std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
 {
-	return {false, false}; // CPU, unsynchronized
+	return {false, false, false}; // CPU, unsynchronized
 }
 
-std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
+std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
 {
 	switch (function->GetPrimitive())
 	{
@@ -165,19 +188,18 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
-			return {true, false}; // GPU, unsynchronized
+			return {true, false, false}; // GPU, unsynchronized
 		}
 
 		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::Index:
 		{
-			//TODO: Data synchronized in
-			return {true, false}; // GPU, unsynchronized out, synchronized in
+			return {true, (index == 0), false}; // GPU, unsynchronized out, synchronized in
 
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
-			return {true, true}; // GPU, synchronized out
+			return {true, false, true}; // GPU, synchronized out
 		}
 
 		// --------------------
@@ -190,7 +212,7 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Compress:
 		{
-			return {true, false}; // GPU, unsynchronized
+			return {true, false, false}; // GPU, unsynchronized
 		}
 
 		// ----------------------
@@ -204,8 +226,7 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
-			//TODO: Data synchronization in
-			return {true, true}; // GPU, synchronized in & out
+			return {true, true, true}; // GPU, synchronized in & out
 		}
 
 		// --------------------
@@ -219,7 +240,7 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::Minimum:
 		case HorseIR::BuiltinFunction::Primitive::Maximum:
 		{
-			return {true, true}; // GPU, synchronized out
+			return {true, false, true}; // GPU, synchronized out
 		}
 
 		// ---------------
@@ -234,7 +255,7 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		{
 			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
-			return AnalyzeCall(function, {}); // Nested function properties
+			return AnalyzeCall(function, {}, index - 1); // Nested function properties
 		}
 
 		// ---------------
@@ -244,7 +265,7 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		// List
 		case HorseIR::BuiltinFunction::Primitive::Raze:
 		{
-			return {true, false}; // GPU, unsynchronized
+			return {true, false, false}; // GPU, unsynchronized
 		}
 
 		// --------------
@@ -282,18 +303,13 @@ std::pair<bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunct
 		case HorseIR::BuiltinFunction::Primitive::String:
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			return {false, false}; // CPU, unsynchronized
-		}
-		default:
-		{
-			Utils::Logger::LogError("GPU analysis helper does not support builtin function '" + function->GetName() + "'");
+			return {false, false, false}; // CPU, unsynchronized
 		}
 	}
 	
-	// Default to CPU, unsynchronized
-
-	return {false, false};
+	Utils::Logger::LogError("GPU analysis helper does not support builtin function '" + function->GetName() + "'");
 }
+
 void GPUAnalysisHelper::Visit(const HorseIR::CastExpression *cast)
 {
 	cast->GetExpression()->Accept(*this);
@@ -301,13 +317,15 @@ void GPUAnalysisHelper::Visit(const HorseIR::CastExpression *cast)
 
 void GPUAnalysisHelper::Visit(const HorseIR::Literal *literal)
 {
-	m_capable = false;
+	m_gpu = false;
+	m_synchronizedIn = false;
 	m_synchronizedOut = false;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::Identifier *identifier)
 {
-	m_capable = true;
+	m_gpu = true;
+	m_synchronizedIn = false;
 	m_synchronizedOut = false;
 }
 

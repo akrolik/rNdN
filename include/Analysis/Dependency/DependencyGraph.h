@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 
 #include "Analysis/Utils/Graph.h"
 
@@ -10,27 +11,46 @@
 
 namespace Analysis {
 
-class DependencyGraph : public Graph<const HorseIR::Statement *>
+template<typename N>
+class DependencyGraphBase : public Graph<N>
 {
 public:
-	using NodeType = const HorseIR::Statement *;
+	using Graph<N>::Graph;
 
-	using Graph<const HorseIR::Statement *>::Graph;
-
-	void InsertEdge(const NodeType& source, const NodeType& destination, const HorseIR::SymbolTable::Symbol *symbol, bool isBackEdge)
+	void InsertNode(const N& node, bool isGPU)
 	{
-		Graph<const HorseIR::Statement *>::InsertEdge(source, destination);
+		Graph<N>::InsertNode(node);
+
+		if (isGPU)
+		{
+			m_gpuNodes.insert(node);
+		}
+	}
+
+	bool IsGPUNode(const N& node) const
+	{
+		return (m_gpuNodes.find(node) != m_gpuNodes.end());
+	}
+
+	void InsertEdge(const N& source, const N& destination, const HorseIR::SymbolTable::Symbol *symbol, bool isBackEdge, bool isSynchronized)
+	{
+		InsertEdge(source, destination, std::unordered_set<const HorseIR::SymbolTable::Symbol *>({symbol}), isBackEdge, isSynchronized);
+	}
+
+	void InsertEdge(const N& source, const N& destination, const std::unordered_set<const HorseIR::SymbolTable::Symbol *>& symbols, bool isBackEdge, bool isSynchronized)
+	{
+		Graph<N>::InsertEdge(source, destination);
 
 		// Add symbol to edge, extending the set if it already exists
 
 		auto edge = std::make_pair(source, destination);
 		if (m_edgeData.find(edge) == m_edgeData.end())
 		{
-			m_edgeData[edge] = {symbol};
+			m_edgeData[edge] = symbols;
 		}
 		else
 		{
-			m_edgeData.at(edge).insert(symbol);
+			m_edgeData.at(edge).insert(std::begin(symbols), std::end(symbols));
 		}
 
 		// Add to set of back edges if needed
@@ -39,23 +59,35 @@ public:
 		{
 			m_backEdges.insert({source, destination});
 		}
+
+		// Add to set of synchronized edges if needed
+
+		if (isSynchronized)
+		{
+			m_synchronizedEdges.insert({source, destination});
+		}
 	}
 
-	const std::unordered_set<const HorseIR::SymbolTable::Symbol *>& GetEdgeData(const NodeType& source, const NodeType& destination) const
+	const std::unordered_set<const HorseIR::SymbolTable::Symbol *>& GetEdgeData(const N& source, const N& destination) const
 	{
 		return (m_edgeData.at({source, destination}));
 	}
 
-	bool IsBackEdge(const NodeType& source, const NodeType& destination) const
+	bool IsBackEdge(const N& source, const N& destination) const
 	{
 		return (m_backEdges.find({source, destination}) != m_backEdges.end());
 	}
 
+	bool IsSynchronizedEdge(const N& source, const N& destination) const
+	{
+		return (m_synchronizedEdges.find({source, destination}) != m_synchronizedEdges.end());
+	}
+
 private:
-	unsigned int GetLinearOutDegree(const NodeType& node) const override
+	unsigned int GetLinearOutDegree(const N& node) const override
 	{
 		auto edges = 0u;
-		for (const auto& successor : GetSuccessors(node))
+		for (const auto& successor : this->GetSuccessors(node))
 		{
 			// Exclude back edges for linear orderings
 
@@ -68,18 +100,28 @@ private:
 		return edges;
 	}
 
-	using EdgeType = std::pair<const HorseIR::Statement *, const HorseIR::Statement *>;
+	std::unordered_set<N> m_gpuNodes;
 
+	using EdgeType = std::pair<N, N>;
 	struct EdgeHash
 	{
 		inline std::size_t operator()(const EdgeType& pair) const
 		{
-			return (std::hash<const HorseIR::Statement *>()(pair.first) * 31 + std::hash<const HorseIR::Statement *>()(pair.second));
+			return (std::hash<N>()(pair.first) * 31 + std::hash<N>()(pair.second));
 		}
 	};
 
 	std::unordered_set<EdgeType, EdgeHash> m_backEdges;
+	std::unordered_set<EdgeType, EdgeHash> m_synchronizedEdges;
 	std::unordered_map<EdgeType, std::unordered_set<const HorseIR::SymbolTable::Symbol *>, EdgeHash> m_edgeData;
 };
+
+using DependencyGraphNode = const HorseIR::Statement *;
+using DependencyGraph = DependencyGraphBase<DependencyGraphNode>;
+
+class DependencyOverlay;
+
+using DependencySubgraphNode = std::variant<const HorseIR::Statement *, const DependencyOverlay *>;
+using DependencySubgraph = DependencyGraphBase<DependencySubgraphNode>;
 
 }

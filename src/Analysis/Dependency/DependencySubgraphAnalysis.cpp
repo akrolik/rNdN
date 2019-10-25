@@ -33,11 +33,6 @@ const DependencyOverlay *DependencySubgraphAnalysis::GetScopedOverlay(const Depe
 	return nullptr;
 }
 
-void DependencySubgraphAnalysis::InsertEdge(DependencySubgraph *subgraph, const DependencySubgraphNode& source, const DependencySubgraphNode& destination, bool isBackEdge, const std::unordered_set<const HorseIR::SymbolTable::Symbol *>& symbols)
-{
-	subgraph->InsertEdge(source, destination, symbols, isBackEdge);
-}
-
 void DependencySubgraphAnalysis::ProcessOverlay(const DependencyOverlay *overlay, const DependencyOverlay *containerOverlay)
 {
 	// Convenience variables for setting up the graphs
@@ -62,10 +57,11 @@ void DependencySubgraphAnalysis::ProcessOverlay(const DependencyOverlay *overlay
 			}
 
 
-			// Add edge to the subgraph with the symbol data
+			// Add edge to the subgraph with the symbol data and properties
 
-			auto isBackEdge = graph->IsBackEdge(statement, successor);
 			auto symbols = graph->GetEdgeData(statement, successor);
+			auto isBackEdge = graph->IsBackEdge(statement, successor);
+			auto isSynchronized = graph->IsSynchronizedEdge(statement, successor);
 
 			if (statementOverlay == containerOverlay)
 			{
@@ -73,13 +69,13 @@ void DependencySubgraphAnalysis::ProcessOverlay(const DependencyOverlay *overlay
 				{
 					// Both statement in the container overlay
 
-					InsertEdge(subgraph, statement, successor, isBackEdge, symbols);
+					subgraph->InsertEdge(statement, successor, symbols, isBackEdge, isSynchronized);
 				}
 				else
 				{
 					// Statement in container, successor in an overlay
 
-					InsertEdge(subgraph, statement, successorOverlay, isBackEdge, symbols);
+					subgraph->InsertEdge(statement, successorOverlay, symbols, isBackEdge, isSynchronized);
 				}
 			}
 			else
@@ -88,13 +84,13 @@ void DependencySubgraphAnalysis::ProcessOverlay(const DependencyOverlay *overlay
 				{
 					// Statement in overlay, successor in container overlay
 
-					InsertEdge(subgraph, statementOverlay, successor, isBackEdge, symbols);
+					subgraph->InsertEdge(statementOverlay, successor, symbols, isBackEdge, isSynchronized);
 				}
 				else if (statementOverlay != successorOverlay)
 				{
 					// Connect two separate overlays
 
-					InsertEdge(subgraph, statementOverlay, successorOverlay, isBackEdge, symbols);
+					subgraph->InsertEdge(statementOverlay, successorOverlay, symbols, isBackEdge, isSynchronized);
 				}
 			}
 		}
@@ -115,15 +111,16 @@ void DependencySubgraphAnalysis::Visit(DependencyOverlay *overlay)
 
 	for (auto& childOverlay : overlay->GetChildren())
 	{
-		subgraph->InsertNode(childOverlay);
+		subgraph->InsertNode(childOverlay, false);
 		childOverlay->Accept(*this);
 	}
 
 	// Add all statements to the subgraph
 
+	auto graph = overlay->GetGraph();
 	for (const auto& statement : overlay->GetStatements())
 	{
-		subgraph->InsertNode(statement);
+		subgraph->InsertNode(statement, graph->IsGPUNode(statement));
 	}
 
 	// Add edges connecting statements and top-level overlays

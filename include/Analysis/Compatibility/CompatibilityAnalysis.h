@@ -5,13 +5,9 @@
 
 #include "Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 
+#include "Analysis/Dependency/DependencyGraph.h"
 #include "Analysis/Geometry/GeometryAnalysis.h"
 #include "Analysis/Shape/Shape.h"
-
-#include "Analysis/Dependency/DependencyGraph.h"
-#include "Analysis/Dependency/DependencySubgraph.h"
-
-#include "Analysis/Helpers/GPUAnalysisHelper.h"
 
 #include "Utils/Variant.h"
 
@@ -46,14 +42,9 @@ private:
 	DependencyOverlay *GetKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node, DependencyOverlay *parentOverlay) const;
 	DependencyOverlay *GetSuccessorsKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node) const;
 
-	bool IsSynchronized(const DependencySubgraphNode& node) const;
-	bool BuildSynchronized(const DependencyOverlay *overlay) const;
-
 	bool IsIterable(const DependencyOverlay *overlay) const;
 
-	// Utility for handling overlay construction
-
-	mutable GPUAnalysisHelper m_gpuHelper;
+	// Utilities for handling overlay construction
 
 	std::vector<DependencyOverlay *> m_currentOverlays;
 	std::unordered_map<DependencySubgraphNode, DependencyOverlay *> m_kernelMap;

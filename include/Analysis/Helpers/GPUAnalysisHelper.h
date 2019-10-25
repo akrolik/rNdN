@@ -1,7 +1,6 @@
 #pragma once
 
-#include <utility>
-#include <vector>
+#include <tuple>
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 
@@ -12,12 +11,8 @@ namespace Analysis {
 class GPUAnalysisHelper : public HorseIR::ConstVisitor
 {
 public:
-	void Analyze(const HorseIR::Expression *expression);
-	void Analyze(const HorseIR::Statement *statement);
-
-	bool IsCapable() const { return m_capable; }
-	bool IsSynchronizedIn(unsigned int index) const { return m_synchronizedIn.at(index); }
-	bool IsSynchronizedOut() const { return m_synchronizedOut; }
+	bool IsGPU(const HorseIR::Statement *statement);
+	bool IsSynchronized(const HorseIR::Statement *source, const HorseIR::Statement *destination, unsigned int index);
 
 	void Visit(const HorseIR::DeclarationStatement *declarationS) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
@@ -30,13 +25,14 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override;
 
 private:
-	std::pair<bool, bool> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments);
-	std::pair<bool, bool> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments);
-	std::pair<bool, bool> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments);
+	std::tuple<bool, bool, bool> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::tuple<bool, bool, bool> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::tuple<bool, bool, bool> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
 
-	bool m_capable = false;
-	std::vector<bool> m_synchronizedIn;
+	bool m_gpu = false;
+	bool m_synchronizedIn = false;
 	bool m_synchronizedOut = false;
+	unsigned int m_index = 0;
 };
 
 }

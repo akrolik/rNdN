@@ -37,28 +37,17 @@ void DependencyOverlayPrinter::Visit(const DependencyOverlay *overlay)
 		// Bold GPU capable statements
 
 		auto graph = overlay->GetGraph();
-
-		//TODO: Add GPU/synchronized data to printing
-		// if (graph->IsGPUNode(node))
-		// {
-		// 	// Add diagonal marks on the corner if the node is synchronized
-
-		// 	if (graph->IsSynchronizedNode(node))
-		// 	{
-		// 		m_string << ", style=\"bold, diagonals\"";
-		// 	}
-		// 	else
-		// 	{
-		// 		m_string << ", style=bold";
-		// 	}
-		// }
+		if (graph->IsGPUNode(node))
+		{
+			m_string << ", style=bold";
+		}
 			
 		m_string << "];" << std::endl;
 	}
 
 	// Traverse all child overlays
 
-	for (auto& child : overlay->GetChildren())
+	for (const auto& child : overlay->GetChildren())
 	{
 		Indent();
 		m_string << "subgraph cluster_" << std::to_string(++m_nameIndex) << "{" << std::endl;
@@ -115,11 +104,10 @@ void DependencyOverlayPrinter::Visit(const FunctionDependencyOverlay *overlay)
 
 			// Label compatible edges with an asterisk
 
-			//TODO: Add compatibility edges to printing
-			// if (graph->IsCompatibleEdge(node, dependency))
-			// {	
-			// 	m_string << " [label=\"*\"]";
-			// }
+			if (graph->IsSynchronizedEdge(node, dependency))
+			{	
+				m_string << " [style=bold, label=\"*\"]";
+			}
 			m_string << ";" << std::endl;
 		}
 	}

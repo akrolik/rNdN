@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Analysis/Dependency/DependencyGraph.h"
-#include "Analysis/Dependency/DependencySubgraph.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlayVisitor.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 
@@ -78,8 +77,8 @@ public:
 	bool IsGPU() const { return m_gpu; }
 	void SetGPU(bool gpu) { m_gpu = gpu; }
 
-	bool IsSynchronized() const { return m_synchronized; }
-	void SetSynchronized(bool synchronized) { m_synchronized = synchronized; }
+	bool IsSynchronizedOut() const { return m_synchronizedOut; }
+	void SetSynchronizedOut(bool synchronizedOut) { m_synchronizedOut = synchronizedOut; }
 
 	virtual void Accept(DependencyOverlayVisitor& visitor) { visitor.Visit(this); }
 	virtual void Accept(DependencyOverlayConstVisitor& visitor) const { visitor.Visit(this); }
@@ -94,7 +93,7 @@ protected:
 	std::unordered_set<const HorseIR::Statement *> m_statements;
 
 	bool m_gpu = false;
-	bool m_synchronized = false;
+	bool m_synchronizedOut = false;
 };
 
 template<typename T>
