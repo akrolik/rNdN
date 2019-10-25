@@ -14,10 +14,10 @@
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalBinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
-// #include "Codegen/Generators/Expressions/Builtins/FillGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/VectorGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -208,9 +208,8 @@ public:
 			// Algebraic Binary
 			case HorseIR::BuiltinFunction::Primitive::Compress:
 				return new CompressionGenerator<B, T>(this->m_builder);
-			//TODO: Vector
-			// case HorseIR::BuiltinFunction::Primitive::Vector:
-				// return new FillGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::Vector:
+				return new VectorGenerator<B, T>(this->m_builder);
 
 			// Reduction
 			case HorseIR::BuiltinFunction::Primitive::Length:

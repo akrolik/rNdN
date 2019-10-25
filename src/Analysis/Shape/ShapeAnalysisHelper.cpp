@@ -757,7 +757,7 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		}
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 		{
-			// -- Static scalar constant
+			// -- Static scalar constant for size
 			// Input: Vector<1> (value k), Vector<Size*>
 			// Output: Vector<k>
 			//
