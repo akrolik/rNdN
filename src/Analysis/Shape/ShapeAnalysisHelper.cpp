@@ -845,6 +845,22 @@ std::vector<const Shape *> ShapeAnalysisHelper::AnalyzeCall(const HorseIR::Built
 					return {new VectorShape(new Shape::ConstantSize(count))};
 				}
 			}
+			else
+			{
+				// Special case for razing a reduction
+
+				const auto mergedCellShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(mergedCellShape));
+
+				const auto vectorShape = ShapeUtils::GetShape<VectorShape>(mergedCellShape);
+				if (const auto vectorSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
+				{
+					if (vectorSize->GetValue() == 1)
+					{
+						return {new VectorShape(listShape->GetListSize())};
+					}
+				}
+			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:

@@ -12,7 +12,8 @@ public:
 	static constexpr char const *Opt_Print_hir = "print-hir";
 	static constexpr char const *Opt_Print_symbol = "print-symbol";
 	static constexpr char const *Opt_Print_analysis = "print-analysis";
-	static constexpr char const *Opt_Print_outline = "print-hir-outline";
+	static constexpr char const *Opt_Print_outline = "print-outline";
+	static constexpr char const *Opt_Print_outline_graph = "print-outline-graph";
 	static constexpr char const *Opt_Print_ptx = "print-ptx";
 	static constexpr char const *Opt_Print_json = "print-json";
 
@@ -50,12 +51,13 @@ private:
 			("O,optimize", "Enable PTX optimizer")
 		;
 		m_options.add_options("Debug Printing (stdout)")
-			("print-hir", "Pretty print input HorseIR program")
-			("print-symbol", "Print symbol table")
-			("print-analysis", "Print analyses")
-			("print-hir-outline", "Pretty print outlined HorseIR program")
-			("print-ptx", "Print generated PTX code")
-			("print-json", "Print generated PTX JSON")
+			(Opt_Print_hir, "Pretty print input HorseIR program")
+			(Opt_Print_symbol, "Print symbol table")
+			(Opt_Print_analysis, "Print analyses")
+			(Opt_Print_outline, "Pretty print outlined HorseIR program")
+			(Opt_Print_outline_graph, "Pretty print outliner graphs")
+			(Opt_Print_ptx, "Print generated PTX code")
+			(Opt_Print_json, "Print generated PTX JSON")
 		;
 	}
 

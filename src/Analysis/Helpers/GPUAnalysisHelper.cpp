@@ -9,45 +9,55 @@ bool GPUAnalysisHelper::IsGPU(const HorseIR::Statement *statement)
 	// Reset the analysis and traverse
 
 	m_gpu = false;
+	m_synchronization = Synchronization::None;
 	statement->Accept(*this);
 	return m_gpu;
 }
 
 bool GPUAnalysisHelper::IsSynchronized(const HorseIR::Statement *source, const HorseIR::Statement *destination, unsigned int index)
 {
-	// Check for outgoing synchronization on the source statment
+	// Check for synchronization between the two statements. Non-GPU links are never marked as synchronized
+
+	// Check for synchronization on the source statement
 
 	m_gpu = false;
-	m_synchronizedOut = false;
-	source->Accept(*this);
+	m_synchronization = Synchronization::None;
 
+	source->Accept(*this);
 	if (!m_gpu)
 	{
-		// Non-GPU links are never marked as synchronized
-
 		return false;
 	}
 
-	if (m_synchronizedOut)
+	auto sourceSynchronization = m_synchronization;
+
+	// Check for synchronization on the destination statement at the index
+
+	m_index = index;
+	m_gpu = false;
+	m_synchronization = Synchronization::None;
+
+	destination->Accept(*this);
+	if (!m_gpu)
 	{
-		return true;
+		return false;
 	}
 
-	// Check for incoming synchronization on the destination statement at the index
+	auto destinationSynchronization = m_synchronization;
 
-	m_gpu = false;
-	m_synchronizedIn = false;
-	m_index = index;
-	destination->Accept(*this);
+	// Special case: reduction followed by raze. The synchronization barrier gets pushed by 1 statement
 
-	return (m_gpu && m_synchronizedIn);
+	if (sourceSynchronization & Synchronization::Reduction && destinationSynchronization & Synchronization::Raze)
+	{
+		return false;
+	}
+	return (sourceSynchronization & Synchronization::Out || destinationSynchronization & Synchronization::In);
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::DeclarationStatement *declarationS)
 {
 	m_gpu = true;
-	m_synchronizedIn = false;
-	m_synchronizedOut = false;
+	m_synchronization = Synchronization::None;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::AssignStatement *assignS)
@@ -65,20 +75,18 @@ void GPUAnalysisHelper::Visit(const HorseIR::ReturnStatement *returnS)
 	// Explicitly disallow return from kernels, we will insert as needed
 
 	m_gpu = false;
-	m_synchronizedIn = false;
-	m_synchronizedOut = false;
+	m_synchronization = Synchronization::None;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::CallExpression *call)
 {
-	auto [gpu, synchronizedIn, synchronizedOut] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments(), m_index);
+	auto [gpu, synchronization] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments(), m_index);
 
 	m_gpu = gpu;
-	m_synchronizedIn = synchronizedIn;
-	m_synchronizedOut = synchronizedOut;
+	m_synchronization = synchronization;
 }
 
-std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
+std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
 {
 	switch (function->GetKind())
 	{
@@ -91,12 +99,12 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Funct
 	}
 }
 
-std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
+std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
 {
-	return {false, false, false}; // CPU, unsynchronized
+	return {false, Synchronization::None};
 }
 
-std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
+std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index)
 {
 	switch (function->GetPrimitive())
 	{
@@ -188,18 +196,22 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
-			return {true, false, false}; // GPU, unsynchronized
+			return {true, Synchronization::None};
 		}
 
 		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::Index:
 		{
-			return {true, (index == 0), false}; // GPU, unsynchronized out, synchronized in
+			if (index == 0)
+			{
+				return {true, Synchronization::In};
+			}
+			return {true, Synchronization::None};
 
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
-			return {true, false, true}; // GPU, synchronized out
+			return {true, Synchronization::Out};
 		}
 
 		// --------------------
@@ -212,7 +224,7 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Compress:
 		{
-			return {true, false, false}; // GPU, unsynchronized
+			return {true, Synchronization::None};
 		}
 
 		// ----------------------
@@ -226,7 +238,7 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
-			return {true, true, true}; // GPU, synchronized in & out
+			return {true, (Synchronization::In | Synchronization::Out)};
 		}
 
 		// --------------------
@@ -240,7 +252,7 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::Minimum:
 		case HorseIR::BuiltinFunction::Primitive::Maximum:
 		{
-			return {true, false, true}; // GPU, synchronized out
+			return {true, (Synchronization::Out | Synchronization::Reduction)};
 		}
 
 		// ---------------
@@ -265,7 +277,7 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		// List
 		case HorseIR::BuiltinFunction::Primitive::Raze:
 		{
-			return {true, false, false}; // GPU, unsynchronized
+			return {true, (Synchronization::Out | Synchronization::Raze)};
 		}
 
 		// --------------
@@ -303,7 +315,7 @@ std::tuple<bool, bool, bool> GPUAnalysisHelper::AnalyzeCall(const HorseIR::Built
 		case HorseIR::BuiltinFunction::Primitive::String:
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			return {false, false, false}; // CPU, unsynchronized
+			return {false, Synchronization::None};
 		}
 	}
 	
@@ -318,15 +330,13 @@ void GPUAnalysisHelper::Visit(const HorseIR::CastExpression *cast)
 void GPUAnalysisHelper::Visit(const HorseIR::Literal *literal)
 {
 	m_gpu = false;
-	m_synchronizedIn = false;
-	m_synchronizedOut = false;
+	m_synchronization = Synchronization::None;
 }
 
 void GPUAnalysisHelper::Visit(const HorseIR::Identifier *identifier)
 {
 	m_gpu = true;
-	m_synchronizedIn = false;
-	m_synchronizedOut = false;
+	m_synchronization = Synchronization::None;
 }
 
 }

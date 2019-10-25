@@ -17,7 +17,7 @@ void CompatibilityAnalysis::Analyze(const DependencyOverlay *overlay)
 	overlay->Accept(*this);
 	auto timeCompatibility = Utils::Chrono::End(timeCompatibility_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::Present(Utils::Options::Opt_Print_outline_graph))
 	{
 		Utils::Logger::LogInfo("Compatibility graph");
 
@@ -165,7 +165,18 @@ bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *desti
 		}
 		case Shape::Kind::List:
 		{
-			//TODO: Add support for list compression
+			auto sourceList = ShapeUtils::GetShape<ListShape>(source);
+			auto destinationList = ShapeUtils::GetShape<ListShape>(destination);
+
+			if (sourceList->GetListSize() != destinationList->GetListSize())
+			{
+				return false;
+			}
+
+			auto sourceCell = ShapeUtils::MergeShapes(sourceList->GetElementShapes());
+			auto destinationCell = ShapeUtils::MergeShapes(destinationList->GetElementShapes());
+
+			return IsCompatible(sourceCell, destinationCell);
 		}
 	}
 
@@ -177,6 +188,13 @@ bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape:
 	// Check for initialization compatibility
 
 	if (ShapeUtils::IsSize<Shape::InitSize>(source))
+	{
+		return true;
+	}
+
+	// Allow scalars to be merged anywhere
+
+	if (ShapeUtils::IsScalarSize(source) || ShapeUtils::IsScalarSize(destination))
 	{
 		return true;
 	}

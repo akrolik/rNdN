@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tuple>
+#include <utility>
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 
@@ -25,14 +25,28 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override;
 
 private:
-	std::tuple<bool, bool, bool> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
-	std::tuple<bool, bool, bool> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
-	std::tuple<bool, bool, bool> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	enum Synchronization {
+		None       = 0,
+		In         = (1 << 0),
+		Out        = (1 << 1),
+		Reduction  = (1 << 2),
+		Raze       = (1 << 3)
+	};
 
-	bool m_gpu = false;
-	bool m_synchronizedIn = false;
-	bool m_synchronizedOut = false;
+	friend Synchronization operator|(Synchronization a, Synchronization b);
+
+	std::pair<bool, Synchronization> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::pair<bool, Synchronization> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::pair<bool, Synchronization> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+
 	unsigned int m_index = 0;
+	bool m_gpu = false;
+	Synchronization m_synchronization = Synchronization::None;
 };
+
+inline GPUAnalysisHelper::Synchronization operator|(GPUAnalysisHelper::Synchronization a, GPUAnalysisHelper::Synchronization b)
+{
+	return static_cast<GPUAnalysisHelper::Synchronization>(static_cast<int>(a) | static_cast<int>(b));
+}
 
 }

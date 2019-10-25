@@ -62,8 +62,14 @@ void PrettyPrinter::CommaSeparated<std::string>(const std::vector<std::string>& 
 
 void PrettyPrinter::Visit(const Program *program)
 {
+	bool first = true;
 	for (const auto& module : program->GetModules())
 	{
+		if (!first)
+		{
+			m_string << std::endl;
+		}
+		first = false;
 		module->Accept(*this);
 	}
 }
@@ -79,7 +85,7 @@ void PrettyPrinter::Visit(const Module *module)
 	}
 
 	m_indent--;
-	m_string << "}" << std::endl;
+	m_string << "}";
 }
 
 void PrettyPrinter::Visit(const ImportDirective *import)

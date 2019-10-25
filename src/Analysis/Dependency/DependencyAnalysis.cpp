@@ -12,7 +12,7 @@ void DependencyAnalysis::Build(const HorseIR::Function *function)
 	function->Accept(*this);
 	auto timeDependencies = Utils::Chrono::End(timeDependencies_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::Present(Utils::Options::Opt_Print_outline_graph))
 	{
 		Utils::Logger::LogInfo("Dependency graph analysis");
 
