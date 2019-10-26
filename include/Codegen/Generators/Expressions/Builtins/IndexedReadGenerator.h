@@ -19,6 +19,11 @@ class IndexedReadGenerator : public BuiltinGenerator<B, T>, public HorseIR::Cons
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	{
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
+	}
+
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		// Value in argument 0, index in argument 1
@@ -39,9 +44,26 @@ public:
 
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
-		//GLOBAL: Load from global variables
-		ValueLoadGenerator<B> loadGenerator(this->m_builder);
-		loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_targetRegister, m_index);
+		auto resources = this->m_builder.GetLocalResources();
+		if (auto predicate = resources->template GetCompressedRegister<T>(m_targetRegister))
+		{
+			auto label = this->m_builder.CreateLabel("END");
+			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+
+			//GLOBAL: Load from global variables
+			ValueLoadGenerator<B> loadGenerator(this->m_builder);
+			loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_targetRegister, m_index);
+
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+			this->m_builder.AddStatement(label);
+		}
+		else
+		{
+			//GLOBAL: Load from global variables
+			ValueLoadGenerator<B> loadGenerator(this->m_builder);
+			loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_targetRegister, m_index);
+		}
 	}
 
 private:

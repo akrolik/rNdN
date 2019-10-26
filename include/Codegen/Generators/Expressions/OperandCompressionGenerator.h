@@ -29,26 +29,21 @@ public:
 
 	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		// Ensure either both paths are compressed with the same mask, or that we only mask on one path
-		// (and therefore are shrinking one variable to use with another)
+		// Propagate the compression mask forward - we assume the shape analysis guarantees equality
 
 		OperandCompressionGenerator compGen(builder);
 		auto compression1 = compGen.GetCompressionRegister(arguments.at(0));
 		auto compression2 = compGen.GetCompressionRegister(arguments.at(1));
 
-		if (compression1 == compression2)
+		if (compression1)
 		{
 			return compression1;
 		}
-		else if (compression1 == nullptr)
+		else if (compression2)
 		{
 			return compression2;
 		}
-		else if (compression2 == nullptr)
-		{
-			return compression1;
-		}
-		Utils::Logger::LogError("Compression registers differ and are non-null");
+		return nullptr;
 	}
 
 	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const HorseIR::Expression *expression)
@@ -71,9 +66,10 @@ public:
 		// Only fetch compression for registers which already exist (this handles non-reassigned parameters which do ont have compression)
 
 		auto resources = this->m_builder.GetLocalResources();
-		if (resources->ContainsRegister<S>(identifier->GetName()))
+		if (resources->template ContainsRegister<S>(identifier->GetName()))
 		{
-			m_compression = resources->GetCompressionRegister<S>(identifier->GetName());
+			auto data = resources->template GetRegister<S>(identifier->GetName());
+			m_compression = resources->template GetCompressedRegister<S>(data);
 		}
 	}
 

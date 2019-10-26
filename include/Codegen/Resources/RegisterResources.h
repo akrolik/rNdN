@@ -10,47 +10,18 @@ template<class T>
 class RegisterResources : public Resources
 {
 public:
-	using ResourceType = std::pair<const PTX::Register<T> *, const PTX::Register<PTX::PredicateType> *>;
-
 	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const override
 	{
 		return { m_declaration };
 	}
 
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate = nullptr)
+	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
 		auto name = "%" + T::TypePrefix() + "_" + identifier;
 		m_declaration->AddNames(name);
 		const auto resource = m_declaration->GetVariable(name);
-		m_registersMap.insert_or_assign(identifier, std::make_pair(resource, predicate));
+		m_registersMap.insert({identifier, resource});
 		return resource;
-	}
-
-	const PTX::Register<T> *CompressRegister(const std::string& identifier, const PTX::Register<PTX::PredicateType> *predicate)
-	{
-		auto resource = GetRegister(identifier);
-		m_registersMap.insert_or_assign(identifier, std::make_pair(resource, predicate));
-		return resource;
-	}
-
-	void AddCompressedRegister(const std::string& identifier, const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
-	{
-		m_registersMap.insert_or_assign(identifier, std::make_pair(value, predicate));
-	}
-
-	bool ContainsKey(const std::string& identifier) const override
-	{
-		return m_registersMap.find(identifier) != m_registersMap.end();
-	}
-
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
-	{
-		return std::get<0>(m_registersMap.at(identifier));
-	}
-
-	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const std::string& identifier) const
-	{
-		return std::get<1>(m_registersMap.at(identifier));
 	}
 
 	const PTX::Register<T> *AllocateTemporary()
@@ -61,6 +32,52 @@ public:
 		const auto resource = m_declaration->GetVariable(name, temp);
 		return resource;
 	}
+
+	bool ContainsKey(const std::string& identifier) const override
+	{
+		return m_registersMap.find(identifier) != m_registersMap.end();
+	}
+
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
+	{
+		return m_registersMap.at(identifier);
+	}
+
+	// Compresed register flag
+
+	void SetCompressedRegister(const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
+	{
+		m_compressedMap[value] = predicate;
+	}
+
+	bool IsCompressedRegister(const PTX::Register<T> *value) const
+	{
+		return m_compressedMap.find(value) != m_compressedMap.end();
+	}
+
+	const PTX::Register<PTX::PredicateType> *GetCompressedRegister(const PTX::Register<T> *value) const
+	{
+		return m_compressedMap.at(value);
+	}
+
+	// Indexed register flag
+
+	void SetIndexedRegister(const PTX::Register<T> *value, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	{
+		m_indexedMap[value] = index;
+	}
+
+	bool IsIndexedRegister(const PTX::Register<T> *value) const
+	{
+		return m_indexedMap.find(value) != m_indexedMap.end();
+	}
+
+	const PTX::TypedOperand<PTX::UInt32Type> *GetIndexedRegister(const PTX::Register<T> *value) const
+	{
+		return m_indexedMap.at(value);
+	}
+
+	// Reduction register flag
 
 	enum class ReductionGranularity {
 		Warp,
@@ -91,9 +108,11 @@ public:
 private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
 
-	std::unordered_map<std::string, ResourceType> m_registersMap;
+	std::unordered_map<std::string, const PTX::Register<T> *> m_registersMap;
 	unsigned int m_temporaries = 0;
 
+	std::unordered_map<const PTX::Register<T> *, const PTX::Register<PTX::PredicateType> *> m_compressedMap;
+	std::unordered_map<const PTX::Register<T> *, const PTX::TypedOperand<PTX::UInt32Type> *> m_indexedMap;
 	std::unordered_map<const PTX::Register<T> *, std::pair<ReductionGranularity, ReductionOperation>> m_reductionMap;
 };
 

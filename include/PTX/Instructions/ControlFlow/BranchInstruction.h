@@ -11,7 +11,7 @@ class BranchInstruction : public PredicatedInstruction, public UniformModifier
 {
 public:
 	BranchInstruction(const Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
-	BranchInstruction(const Label *label, const Register<PredicateType> *predicate, bool uniform = false) : PredicatedInstruction(predicate), UniformModifier(uniform), m_label(label) {}
+	BranchInstruction(const Label *label, const Register<PredicateType> *predicate, bool negate = false, bool uniform = false) : PredicatedInstruction(predicate, negate), UniformModifier(uniform), m_label(label) {}
 
 	static std::string Mnemonic() { return "bra"; }
 

@@ -177,7 +177,7 @@ public:
 		auto address = GenerateAddress<T>(returnIndex, writeIndex);
 		this->m_builder.AddStatement(GenerateAtomicInstruction(reductionOp, address, value));
 
-		// End the funfction and return
+		// End the function and return
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(label);
@@ -202,16 +202,45 @@ public:
 	template<class T>
 	void GenerateWriteVector(const HorseIR::Operand *operand, IndexGenerator::Kind indexKind, unsigned int returnIndex)
 	{
-		// Fetch the write address and store the value at the appropriate index (global indexing)
+		// Fetch the write address and store the value at the appropriate index (global indexing, or indexed register)
 
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
-		IndexGenerator indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateIndex(indexKind);
+		auto resources = this->m_builder.GetLocalResources();
+		if (auto indexed = resources->template GetIndexedRegister<T>(value))
+		{
+			// Check for compression - this will mask outputs
 
-		auto address = GenerateAddress<T>(returnIndex, index);
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+			if (auto predicate = resources->template GetCompressedRegister<T>(value))
+			{
+				auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
+
+				this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
+				this->m_builder.AddStatement(new PTX::BlankStatement());
+
+				auto address = GenerateAddress<T>(returnIndex, indexed);
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+
+				this->m_builder.AddStatement(new PTX::BlankStatement());
+				this->m_builder.AddStatement(label);
+			}
+			else
+			{
+				auto address = GenerateAddress<T>(returnIndex, indexed);
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+			}
+		}
+		else
+		{
+			// Global/cell data indexing depending on thread geometry
+
+			IndexGenerator indexGenerator(this->m_builder);
+			auto index = indexGenerator.GenerateIndex(indexKind);
+
+			auto address = GenerateAddress<T>(returnIndex, index);
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+		}
 	}
 
 	template<class T>

@@ -5,6 +5,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -200,6 +201,11 @@ class MemberGenerator<B, PTX::PredicateType>: public BuiltinGenerator<B, PTX::Pr
 {
 public:
 	using BuiltinGenerator<B, PTX::PredicateType>::BuiltinGenerator;
+
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	{
+		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
+	}
 
 	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{

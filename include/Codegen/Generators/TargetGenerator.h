@@ -23,8 +23,15 @@ public:
 
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const PTX::Register<PTX::PredicateType> *predicateRegister)
 	{
-		m_predicateRegister = predicateRegister;
 		target->Accept(*this);
+
+		// Compress the target register if needed
+
+		if (predicateRegister != nullptr)
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			resources->SetCompressedRegister<T>(m_targetRegister, predicateRegister);
+		}
 		return m_targetRegister;
 	}
 
@@ -34,7 +41,8 @@ public:
 
 		auto resources = this->m_builder.GetLocalResources();
 		auto name = NameUtils::VariableName(declaration->GetName());
-		m_targetRegister = resources->template AllocateRegister<T>(name, m_predicateRegister);
+
+		m_targetRegister = resources->template AllocateRegister<T>(name);
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
@@ -48,14 +56,7 @@ public:
 		{
 			// If the variable has already been defined, we either compress the output, or leave as is
 
-			if (m_predicateRegister == nullptr)
-			{
-				m_targetRegister = resources->GetRegister<T>(name);
-			}
-			else
-			{
-				m_targetRegister = resources->CompressRegister<T>(name, m_predicateRegister);
-			}
+			m_targetRegister = resources->GetRegister<T>(name);
 		}
 		else
 		{
@@ -68,7 +69,7 @@ public:
 				// For parameters, we then allocate - this allows us to distinguish between the initial
 				// and re-assigned values for parameters
 
-				m_targetRegister = resources->template AllocateRegister<T>(name, m_predicateRegister);
+				m_targetRegister = resources->template AllocateRegister<T>(name);
 			}
 			else
 			{
@@ -78,7 +79,6 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::PredicateType> *m_predicateRegister = nullptr;
 	const PTX::Register<T> *m_targetRegister = nullptr;
 };
 

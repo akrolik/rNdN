@@ -25,33 +25,32 @@ class WhereGenerator<B, PTX::Int64Type> : public BuiltinGenerator<B, PTX::Int64T
 public:
 	using BuiltinGenerator<B, PTX::Int64Type>::BuiltinGenerator;
 
+	// The output of a where function handles the predicate itself. We therefore do not implement GenerateCompressionPredicate in this subclass
+
 	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		// Where produces a compressed list of indices, creating a mapping to a data register with a predicate.
-		// It it thus similar to compression with system provided values.
+		auto resources = this->m_builder.GetLocalResources();
+
+		// Where produces a compressed list of indices, creating a (data, predicate) pair. It it thus similar
+		// to compression with system provided values.
 		// 
 		// i.e. Given a where call
 		//
 		//         t1:i64 = @where(p);
 		//
-		// the mapping t1 -> (index, p) is created in the resource allocator. Future lookups for the identifier
-		// t1 will produce register index.
-
-		// We cannot produce the indices of compressed data as this would prevent knowing the current index for
-		// each true data item.
-
-		OperandCompressionGenerator compGen(this->m_builder);
-		auto compression = compGen.GetCompressionRegister(arguments.at(0));
-
-		if (compression != nullptr)
-		{
-			BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("where operation on compressed data");
-		}
+		// the pair (index, p) is created in the resource allocator. Future lookups for t1 will produce the index register.
 
 		// Generate the predicate from the input data
 
 		OperandGenerator<B, PTX::PredicateType> opGen(this->m_builder);
 		auto predicate = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::PredicateType>::LoadKind::Vector);
+
+		// We cannot produce the indices of compressed data as this would prevent knowing the current index for each true data item.
+
+		if (resources->template IsCompressedRegister<PTX::PredicateType>(predicate))
+		{
+			BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("where operation on compressed data");
+		}
 
 		// Generate the index for the data item and convert to the right type
 
@@ -74,11 +73,12 @@ public:
 			BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("where operation for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 		}
 
-		// Geneate the compression mask
-		//GLOBAL: Global variables have a module name
+		// Copy the compression mask in case it is reasigned
 
-		auto resources = this->m_builder.GetLocalResources();
-		resources->AddCompressedRegister(target->GetSymbol()->name, dataRegister, predicate);
+		auto predicateTemp = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(predicateTemp, predicate));
+
+		resources->SetCompressedRegister(dataRegister, predicateTemp);
 
 		return dataRegister;
 	}
