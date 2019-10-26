@@ -10,6 +10,7 @@
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
+#include "Codegen/Generators/Expressions/MoveGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -65,32 +66,15 @@ public:
 			return static_cast<const PTX::Register<T> *>(operand);
 		}
 
+		// Move the value into a register
+
 		auto resources = this->m_builder.GetLocalResources();
+		auto destination = resources->template AllocateTemporary<T>();
 
-		if constexpr(std::is_same<T, PTX::Int8Type>::value)
-		{
-			auto destination = resources->template AllocateTemporary<PTX::Int8Type>();
-			auto bracedSource = new PTX::Braced2Operand<PTX::Bit8Type>({
-				new PTX::Bit8Adapter<PTX::IntType>(operand),
-				new PTX::Value<PTX::Bit8Type>(0)
-			});
-			auto bracedTarget = new PTX::Braced2Register<PTX::Bit8Type>({
-				new PTX::Bit8RegisterAdapter<PTX::IntType>(destination),
-				new PTX::SinkRegister<PTX::Bit8Type>
-			});
-			auto temp = resources->template AllocateTemporary<PTX::Bit16Type>();
+		MoveGenerator<T> moveGenerator(this->m_builder);
+		moveGenerator.Generate(destination, operand);
 
-			this->m_builder.AddStatement(new PTX::Pack2Instruction<PTX::Bit16Type>(temp, bracedSource));
-			this->m_builder.AddStatement(new PTX::Unpack2Instruction<PTX::Bit16Type>(bracedTarget, temp));
-
-			return destination;
-		}
-		else
-		{
-			auto destination = resources->template AllocateTemporary<T>();
-			this->m_builder.AddStatement(new PTX::MoveInstruction<T>(destination, operand));
-			return destination;
-		}
+		return destination;
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
