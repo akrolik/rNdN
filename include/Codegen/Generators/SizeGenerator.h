@@ -16,6 +16,7 @@ public:
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateVectorSize(const std::string& name)
 	{
+		//TODO: Statically determined sizes
 		// Get the special size register for the vector (assumed dynamic input)
 
 		auto resources = this->m_builder.GetLocalResources();
@@ -24,6 +25,7 @@ public:
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateCellSize(const std::string& name)
 	{
+		//TODO: Statically determined sizes
 		// Get the special size register for the list (assumes dynamic input)
 
 		auto resources = this->m_builder.GetLocalResources();

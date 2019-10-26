@@ -9,17 +9,23 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
+
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalBinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/VectorGenerator.h"
+
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
+
+#include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/VectorGenerator.h"
+
+#include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
+
+#include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -214,6 +220,8 @@ public:
 			// Algebraic Binary
 			case HorseIR::BuiltinFunction::Primitive::Compress:
 				return new CompressionGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::Member:
+				return new MemberGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Vector:
 				return new VectorGenerator<B, T>(this->m_builder);
 

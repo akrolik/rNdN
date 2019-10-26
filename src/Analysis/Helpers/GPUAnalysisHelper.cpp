@@ -187,7 +187,6 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
-		case HorseIR::BuiltinFunction::Primitive::Member:
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 
 		// Database
@@ -196,6 +195,16 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
+			return {true, Synchronization::None};
+		}
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Member:
+		{
+			if (index == 1)
+			{
+				return {true, Synchronization::In};
+			}
 			return {true, Synchronization::None};
 		}
 
