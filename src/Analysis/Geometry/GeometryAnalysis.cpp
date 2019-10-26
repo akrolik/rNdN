@@ -227,8 +227,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 
 		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::Index:
-		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
-		//TODO: @index_a geometry may be an input parameter?
 
 		// Database
 		case HorseIR::BuiltinFunction::Primitive::Keys:
@@ -240,6 +238,14 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
 			return shapes.at(0);
+		}
+
+		// Indexing
+		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
+		{
+			// We operate on the size of the index set
+
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(1));
 		}
 
 		// --------------------

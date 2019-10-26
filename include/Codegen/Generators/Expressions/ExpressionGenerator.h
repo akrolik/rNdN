@@ -26,6 +26,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -240,6 +241,8 @@ public:
 			// Indexing
 			case HorseIR::BuiltinFunction::Primitive::Index:
 				return new IndexedReadGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
+				return new IndexedWriteGenerator<B, T>(this->m_builder);
 		}
 		return nullptr;
 	}

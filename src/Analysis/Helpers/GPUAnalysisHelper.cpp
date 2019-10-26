@@ -220,6 +220,10 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
+			if (index == 0)
+			{
+				return {true, Synchronization::In | Synchronization::Out};
+			}
 			return {true, Synchronization::Out};
 		}
 
