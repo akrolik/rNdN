@@ -15,7 +15,7 @@ public:
 	};
 
 	PredicateModifier() {}
-	PredicateModifier(const Register<PredicateType> *sourcePredicate, BoolOperator boolOperator, bool negateSourcePredicte = false) : m_boolOperator(boolOperator) {}
+	PredicateModifier(const Register<PredicateType> *sourcePredicate, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_sourcePredicate(sourcePredicate), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
 
 	const Register<PredicateType> *GetSourcePredicate() const { return m_sourcePredicate; }
 	void SetSourcePredicate(const Register<PredicateType> *source) { m_sourcePredicate; }

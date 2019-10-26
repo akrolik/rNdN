@@ -267,12 +267,10 @@ public:
 		// Check if we are the first lane in the warp
 
 		auto predWarp = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto labelWarp = new PTX::Label("RED_WARP");
-		auto branchWarp = new PTX::BranchInstruction(labelWarp);
-		branchWarp->SetPredicate(predWarp);
+		auto labelWarp = this->m_builder.CreateLabel("RED_WARP");
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, laneIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(branchWarp);
+		this->m_builder.AddStatement(new PTX::BranchInstruction(labelWarp, predWarp));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Store the value in shared memory
@@ -311,12 +309,10 @@ public:
 		auto warpid = indexGen.GenerateWarpIndex();
 
 		auto predBlock = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto labelBlock = new PTX::Label("RED_BLOCK");
-		auto branchBlock = new PTX::BranchInstruction(labelBlock);
-		branchBlock->SetPredicate(predBlock);
+		auto labelBlock = this->m_builder.CreateLabel("RED_BLOCK");
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predBlock, warpid, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(branchBlock);
+		this->m_builder.AddStatement(new PTX::BranchInstruction(labelBlock, predBlock));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Reduce the individual values from all warps into 1 final value for the block
@@ -390,14 +386,12 @@ public:
 
 			auto pred = resources->template AllocateTemporary<PTX::PredicateType>();
 			auto guard = new PTX::UInt32Value(i - 1);
-			auto label = new PTX::Label("RED_" + std::to_string(i));
-			auto branch = new PTX::BranchInstruction(label);
-			branch->SetPredicate(pred);
+			auto label = this->m_builder.CreateLabel("RED_" + std::to_string(i));
 
 			// Check to see if we are an active thread
 
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, localIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher));
-			this->m_builder.AddStatement(branch);
+			this->m_builder.AddStatement(new PTX::BranchInstruction(label, pred));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
 			if (i <= warpSize)

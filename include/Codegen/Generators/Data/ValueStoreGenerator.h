@@ -166,12 +166,10 @@ public:
 		auto kernelResources = this->m_builder.GetKernelResources();
 
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto label = new PTX::Label("RET_" + std::to_string(returnIndex));
-		auto branch = new PTX::BranchInstruction(label);
-		branch->SetPredicate(predicate);
+		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, activeIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(branch);
+		this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Get the address of the write location depending on the indexing kind and the reduction operation

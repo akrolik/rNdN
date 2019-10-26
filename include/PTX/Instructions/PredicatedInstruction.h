@@ -10,6 +10,9 @@ namespace PTX {
 class PredicatedInstruction : public InstructionStatement
 {
 public:
+	PredicatedInstruction() {}
+	PredicatedInstruction(const Register<PredicateType> *predicate, bool negate = false) : m_predicate(predicate), m_negatePredicate(negate) {}
+
 	void SetPredicate(const Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
 	std::string ToString(unsigned int indentation = 0) const override

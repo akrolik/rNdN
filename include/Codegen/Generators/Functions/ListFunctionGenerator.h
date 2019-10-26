@@ -125,16 +125,14 @@ public:
 		//
 		//   END:
 
-		auto startLabel = new PTX::Label("START");
-		auto endLabel = new PTX::Label("END");
+		auto startLabel = this->m_builder.CreateLabel("START");
+		auto endLabel = this->m_builder.CreateLabel("END");
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto branch = new PTX::BranchInstruction(endLabel);
-		branch->SetPredicate(predicate);
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(startLabel);
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(branch);
+		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Construct the loop body according to the standard function generator
