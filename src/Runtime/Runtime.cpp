@@ -1,5 +1,7 @@
 #include "Runtime/Runtime.h"
 
+#include "Utils/Options.h"
+
 namespace Runtime {
 
 void Runtime::Initialize()
@@ -12,9 +14,12 @@ void Runtime::Initialize()
 
 	m_dataRegistry.LoadDebugData();
 
-	// TPC-H data for benchmarking
+	if (Utils::Options::Present(Utils::Options::Opt_Load_tpch))
+	{
+		// TPC-H data for benchmarking
 
-	m_dataRegistry.LoadTPCHData();
+		m_dataRegistry.LoadTPCHData();
+	}
 }
 
 }
