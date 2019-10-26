@@ -155,6 +155,16 @@ public:
 		m_register = true;
 	}
 
+	void Visit(const HorseIR::BooleanLiteral *literal) override
+	{
+		Generate<char>(literal);
+	}
+
+	void Visit(const HorseIR::CharLiteral *literal) override
+	{
+		Generate<char>(literal);
+	}
+
 	void Visit(const HorseIR::Int8Literal *literal) override
 	{
 		Generate<std::int8_t>(literal);

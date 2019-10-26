@@ -86,6 +86,7 @@ public:
 	template<class T>
 	void Generate(const PTX::Register<PTX::PredicateType> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 	{
+		//TODO: Support i8 and pred types
 		if constexpr(PTX::is_comparable_type<T>::value)
 		{
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(target, src1, src2, PTXOp<T>(m_comparisonOp)));

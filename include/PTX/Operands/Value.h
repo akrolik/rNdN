@@ -32,6 +32,8 @@ private:
 	typename T::SystemType m_value;
 };
 
+using BoolValue = Value<PredicateType>;
+
 template<Bits B>
 using IntValue = Value<IntType<B>>;
 

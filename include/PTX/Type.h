@@ -184,7 +184,7 @@ struct BitTypeBase<Bits::Bits8, 1> : ScalarType
 template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
 template<> struct BitType<Bits::Bits1, 1> : BitTypeBase<Bits::Bits1>
 {
-	using SystemType = int64_t;
+	using SystemType = bool;
 	static std::string TypePrefix() { return "p"; }
 };
 template<> struct BitType<Bits::Bits8, 1> : BitTypeBase<Bits::Bits8>

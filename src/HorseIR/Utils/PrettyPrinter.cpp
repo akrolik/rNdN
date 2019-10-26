@@ -330,7 +330,7 @@ void PrettyPrinter::Visit(const Identifier *identifier)
 }
 
 template<typename T>
-void PrettyPrinter::VectorLiteral(const std::vector<T>& values)
+void PrettyPrinter::VectorLiteral(const std::vector<T>& values, bool boolean)
 {
 	if (values.size() > 1)
 	{
@@ -351,7 +351,21 @@ void PrettyPrinter::VectorLiteral(const std::vector<T>& values)
 		}
 		else
 		{
-			m_string << value;
+			if (boolean)
+			{
+				if constexpr(std::is_same<T, std::string>::value)
+				{
+					m_string << value;
+				}
+				else
+				{
+					m_string << ((value) ? "1" : "0");
+				}
+			}
+			else
+			{
+				m_string << value;
+			}
 		}
 	}
 
@@ -363,7 +377,7 @@ void PrettyPrinter::VectorLiteral(const std::vector<T>& values)
 
 void PrettyPrinter::Visit(const BooleanLiteral *literal)
 {
-	VectorLiteral(literal->GetValues());
+	VectorLiteral(literal->GetValues(), true);
 	m_string << ":" << BasicType::BasicKindString(BasicType::BasicKind::Boolean);
 }
 

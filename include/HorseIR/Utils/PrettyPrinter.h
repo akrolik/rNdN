@@ -85,7 +85,7 @@ protected:
 	void CommaSeparated(const std::vector<T>& elements);
 
 	template<typename T>
-	void VectorLiteral(const std::vector<T>& values);
+	void VectorLiteral(const std::vector<T>& values, bool boolean = false);
 };
 
 }
