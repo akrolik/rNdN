@@ -19,6 +19,8 @@ public:
 	const Shape *GetOperatingGeometry() const { return m_operatingGeometry; }
 
 	bool VisitIn(const HorseIR::Statement *statement) override;
+	bool VisitIn(const HorseIR::DeclarationStatement *declarationS) override;
+	bool VisitIn(const HorseIR::ReturnStatement *returnS) override;
 
 private:
 	const GeometryAnalysis& m_geometryAnalysis;

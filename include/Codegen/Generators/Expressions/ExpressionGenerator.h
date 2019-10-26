@@ -25,6 +25,8 @@
 
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/RazeGenerator.h"
+
 #include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
 
@@ -237,6 +239,10 @@ public:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Minimum);
 			case HorseIR::BuiltinFunction::Primitive::Maximum:
 				return new ReductionGenerator<B, T>(this->m_builder, ReductionOperation::Maximum);
+
+			// List
+			case HorseIR::BuiltinFunction::Primitive::Raze:
+				return new RazeGenerator<B, T>(this->m_builder);
 
 			// Indexing
 			case HorseIR::BuiltinFunction::Primitive::Index:

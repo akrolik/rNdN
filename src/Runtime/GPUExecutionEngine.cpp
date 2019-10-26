@@ -125,6 +125,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	auto runtimeOptions = GetInputOptions(function, arguments);
 
+	Utils::Logger::LogInfo("Runtime Options");
+	Utils::Logger::LogInfo(runtimeOptions.ToString(), 1);
+
 	auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, targetOptions, kernelOptions);
 	invocation.SetBlockShape(blockSize, 1, 1);
 	invocation.SetGridShape(blockCount, 1, 1);
