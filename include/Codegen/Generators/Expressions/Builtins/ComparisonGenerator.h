@@ -76,17 +76,25 @@ public:
 	template<class T>
 	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		OperandGenerator<B, T> opGen(this->m_builder);
-		auto src1 = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
-		auto src2 = opGen.GenerateOperand(arguments.at(1), OperandGenerator<B, T>::LoadKind::Vector);
-		m_targetRegister = this->GenerateTargetRegister(target, arguments);
-		Generate(m_targetRegister, src1, src2);
+		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		{
+			// Conversions require at least 16 bits
+
+			Generate<PTX::Int16Type>(target, arguments);
+		}
+		else
+		{
+			OperandGenerator<B, T> opGen(this->m_builder);
+			auto src1 = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+			auto src2 = opGen.GenerateOperand(arguments.at(1), OperandGenerator<B, T>::LoadKind::Vector);
+			m_targetRegister = this->GenerateTargetRegister(target, arguments);
+			Generate(m_targetRegister, src1, src2);
+		}
 	}
 
 	template<class T>
 	void Generate(const PTX::Register<PTX::PredicateType> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 	{
-		//TODO: Support i8 and pred types
 		if constexpr(PTX::is_comparable_type<T>::value)
 		{
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(target, src1, src2, PTXOp<T>(m_comparisonOp)));
