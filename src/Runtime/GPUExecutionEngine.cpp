@@ -40,15 +40,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Initialize the geometry information for code generation
 
-	JITCompiler compiler(targetOptions, inputOptions);
-	auto ptxProgram = compiler.Compile({function});
-
-	// Optimize the generated PTX program
-
-	if (Utils::Options::Get<>(Utils::Options::Opt_Optimize))
-	{
-		compiler.Optimize(ptxProgram);
-	}
+	JITCompiler compiler(targetOptions);
+	auto ptxProgram = compiler.Compile({function}, {&inputOptions});
 
 	// Create and load the CUDA module for the program
 

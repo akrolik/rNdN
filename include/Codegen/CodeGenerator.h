@@ -19,7 +19,7 @@ template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ConstVisitor
 {
 public:
-	CodeGenerator(const TargetOptions& targetOptions, const InputOptions& inputOptions) : m_builder(targetOptions, inputOptions) {}
+	CodeGenerator(const TargetOptions& targetOptions) : m_builder(targetOptions) {}
 
 	PTX::Program *Generate(const HorseIR::Program *program)
 	{
@@ -46,7 +46,7 @@ public:
 		return ptxProgram;
 	}
 
-	PTX::Program *Generate(const std::vector<const HorseIR::Function *>& functions)
+	PTX::Program *Generate(const std::vector<const HorseIR::Function *>& functions, const std::vector<const InputOptions *>& inputOptions)
 	{
 		// At the finest granularity, our codegen may compile a single function for the GPU.
 		// All child-functions are expected to be in the vector
@@ -64,8 +64,10 @@ public:
 		// Generate the code for each function in the list. We assume this will produce
 		// a full working PTX program
 
+		auto functionIndex = 0u;
 		for (const auto& function : functions)
 		{
+			m_builder.SetInputOptions(function, inputOptions.at(functionIndex++));
 			function->Accept(*this);
 		}
 

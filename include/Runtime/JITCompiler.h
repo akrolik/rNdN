@@ -14,14 +14,14 @@ namespace Runtime {
 class JITCompiler
 {
 public:
-	JITCompiler(const Codegen::TargetOptions& targetOptions, const Codegen::InputOptions& inputOptions) : m_targetOptions(targetOptions), m_inputOptions(inputOptions) {}
+	JITCompiler(const Codegen::TargetOptions& targetOptions) : m_targetOptions(targetOptions) {}
 
-	PTX::Program *Compile(const std::vector<const HorseIR::Function *>& functions);
+	PTX::Program *Compile(const std::vector<const HorseIR::Function *>& functions, const std::vector<const Codegen::InputOptions *>& inputOptions);
+
 	void Optimize(PTX::Program *program);
 
 private:
 	const Codegen::TargetOptions& m_targetOptions;
-	const Codegen::InputOptions& m_inputOptions;
 };
 
 }

@@ -31,26 +31,40 @@ struct InputOptions
 			output += "List cell threads: " + ((ListCellThreads == DynamicSize) ? "<dynamic>" : std::to_string(ListCellThreads)) + "\n";
 		}
 		output += "Parameter shapes: ";
-		bool first = true;
-		for (const auto& parameter : ParameterShapes)
+		if (ParameterShapes.size() > 0)
 		{
-			if (!first)
+			bool first = true;
+			for (const auto& parameter : ParameterShapes)
 			{
-				output += ", ";
+				if (!first)
+				{
+					output += ", ";
+				}
+				first = false;
+				output += parameter.first->name + " = " + Analysis::ShapeUtils::ShapeString(parameter.second);
 			}
-			first = false;
-			output += parameter.first->name + " = " + Analysis::ShapeUtils::ShapeString(parameter.second);
+		}
+		else
+		{
+			output += "-";
 		}
 		output += "\nReturn shapes: ";
-		first = true;
-		for (const auto& shape : ReturnShapes)
+		if (ReturnShapes.size() > 0)
 		{
-			if (!first)
+			bool first = true;
+			for (const auto& shape : ReturnShapes)
 			{
-				output += ", ";
+				if (!first)
+				{
+					output += ", ";
+				}
+				first = false;
+				output += Analysis::ShapeUtils::ShapeString(shape);
 			}
-			first = false;
-			output += Analysis::ShapeUtils::ShapeString(shape);
+		}
+		else
+		{
+			output += "-";
 		}
 		return output;
 	}

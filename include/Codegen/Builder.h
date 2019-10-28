@@ -18,7 +18,7 @@ namespace Codegen {
 class Builder
 {
 public:
-	Builder(const TargetOptions& targetOptions, const InputOptions& inputOptions) : m_targetOptions(targetOptions), m_inputOptions(inputOptions) {}
+	Builder(const TargetOptions& targetOptions) : m_targetOptions(targetOptions) {}
 
 	std::string GetContextString(std::string string = "") const
 	{
@@ -138,7 +138,12 @@ public:
 	ModuleAllocator *GetGlobalResources() const { return m_globalResources.at(m_currentModule); }
 
 	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
-	const InputOptions& GetInputOptions() const { return m_inputOptions; }
+
+	const InputOptions& GetInputOptions() const { return *m_inputOptions.at(m_currentFunction); }
+	void SetInputOptions(const HorseIR::Function *function, const InputOptions *inputOptions)
+	{
+		m_inputOptions[function] = inputOptions;
+	}
 
 	PTX::FunctionOptions& GetKernelOptions() { return m_currentKernel->GetOptions(); }
 
@@ -149,7 +154,7 @@ private:
 	}
 
 	const TargetOptions& m_targetOptions;
-	const InputOptions& m_inputOptions;
+	std::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;
 
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;
