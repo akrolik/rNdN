@@ -41,4 +41,10 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 	Utils::Logger::LogError("Vector buffer expects constant size");
 }
 
+VectorBuffer::~VectorBuffer()
+{
+	delete m_type;
+	delete m_shape;
+}
+
 }

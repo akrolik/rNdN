@@ -19,8 +19,9 @@ public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Table;
 
 	TableBuffer(const std::unordered_map<std::string, VectorBuffer *>& columns);
+	~TableBuffer() override;
 
-	HorseIR::TableType *GetType() const override { return m_type; }
+	const HorseIR::TableType *GetType() const override { return m_type; }
 	const Analysis::TableShape *GetShape() const override { return m_shape; }
 
 	// Columns
@@ -38,8 +39,8 @@ public:
 	std::string DebugDump() const override;
 
 private:
-	HorseIR::TableType *m_type = new HorseIR::TableType();
-	Analysis::TableShape *m_shape = nullptr;
+	const HorseIR::TableType *m_type = new HorseIR::TableType();
+	const Analysis::TableShape *m_shape = nullptr;
 
 	std::unordered_map<std::string, VectorBuffer *> m_columns;
 	unsigned int m_rows = 0;

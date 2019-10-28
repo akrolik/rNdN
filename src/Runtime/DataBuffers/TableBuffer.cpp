@@ -25,6 +25,13 @@ TableBuffer::TableBuffer(const std::unordered_map<std::string, VectorBuffer *>& 
 	m_shape = new Analysis::TableShape(new Analysis::Shape::ConstantSize(m_columns.size()), new Analysis::Shape::ConstantSize(m_rows));
 }
 
+TableBuffer::~TableBuffer()
+{
+	delete m_type;
+	delete m_shape;
+
+}
+
 VectorBuffer *TableBuffer::GetColumn(const std::string& name) const
 {
 	if (m_columns.find(name) == m_columns.end())

@@ -29,6 +29,27 @@ ListBuffer *ListBuffer::Create(const HorseIR::ListType *type, const Analysis::Li
 	return new ListBuffer(cellBuffers);
 }
 
+ListBuffer::ListBuffer(const std::vector<DataBuffer *>& cells) : DataBuffer(DataBuffer::Kind::List), m_cells(cells)
+{
+	std::vector<HorseIR::Type *> cellTypes;
+	std::vector<const Analysis::Shape *> cellShapes;
+	for (const auto& cell : cells)
+	{
+		cellTypes.push_back(cell->GetType()->Clone());
+		cellShapes.push_back(cell->GetShape());
+	}
+	m_type = new HorseIR::ListType(cellTypes);
+	m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(cells.size()), cellShapes);
+}
+
+ListBuffer::~ListBuffer()
+{
+	delete m_type;
+	delete m_shape;
+	
+	//TODO: Free GPU buffer
+}
+
 std::string ListBuffer::Description() const
 {
 	std::string description = HorseIR::PrettyPrinter::PrettyString(m_type) + "{";

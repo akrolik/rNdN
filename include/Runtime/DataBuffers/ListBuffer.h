@@ -19,24 +19,17 @@ public:
 	static ListBuffer *Create(const HorseIR::ListType *type, const Analysis::ListShape *shape);
 
 	ListBuffer(DataBuffer *cell) : ListBuffer(std::vector<DataBuffer *>({cell})) {}
-	ListBuffer(const std::vector<DataBuffer *>& cells) : DataBuffer(DataBuffer::Kind::List), m_cells(cells)
-	{
-		std::vector<HorseIR::Type *> cellTypes;
-		std::vector<const Analysis::Shape *> cellShapes;
-		for (const auto& cell : cells)
-		{
-			cellTypes.push_back(cell->GetType()->Clone());
-			cellShapes.push_back(cell->GetShape());
-		}
-		m_type = new HorseIR::ListType(cellTypes);
-		m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(cells.size()), cellShapes);
-	}
+	ListBuffer(const std::vector<DataBuffer *>& cells);
+	~ListBuffer() override;
+	
+	// Type/Shape
 
 	const HorseIR::ListType *GetType() const override { return m_type; }
 	const Analysis::ListShape *GetShape() const override { return m_shape; }
 
 	// Cells
 
+	const std::vector<DataBuffer *>& GetCells() { return m_cells; }
 	DataBuffer *GetCell(unsigned int index) { return m_cells.at(index); }
 	size_t GetCellCount() const { return m_cells.size(); }
 

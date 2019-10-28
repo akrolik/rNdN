@@ -20,38 +20,48 @@ public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Vector;
 
 	static VectorBuffer *Create(const HorseIR::BasicType *type, const Analysis::VectorShape *shape);
+	~VectorBuffer() override;
+
+	// Type/Shape
+
+	const HorseIR::BasicType *GetType() const override { return m_type; }
+	const Analysis::VectorShape *GetShape() const override { return m_shape; }
 
 	virtual VectorData *GetCPUWriteBuffer() = 0;
 	virtual VectorData *GetCPUReadBuffer() const = 0;
 
-	virtual size_t GetElementCount() const = 0;
-	virtual size_t GetElementSize() const = 0;
+	unsigned int GetElementCount() const { return m_elementCount; }
+	size_t GetElementSize() const { return m_elementSize; }
 
 protected:
-	VectorBuffer(const std::type_index &tid) : DataBuffer(DataBuffer::Kind::Vector), m_typeid(tid) {}
+	VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount, size_t elementSize) :
+		DataBuffer(DataBuffer::Kind::Vector), m_typeid(tid), m_elementCount(elementCount), m_elementSize(elementSize)
+	{
+		m_type = type->Clone();
+		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
+	}
 
 	std::type_index m_typeid;
+
+	const HorseIR::BasicType *m_type = nullptr;
+	const Analysis::VectorShape *m_shape = nullptr;
+
+	unsigned long m_elementCount = 0;
+	size_t m_elementSize = 0;
 };
 
 template<typename T>
 class TypedVectorBuffer : public VectorBuffer
 {
 public:
-	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T)), m_type(elementType), m_elementCount(elementCount)
+	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T), elementType, elementCount, sizeof(T)) {}
+	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T), buffer->GetType(), buffer->GetElementCount(), sizeof(T)), m_cpuBuffer(buffer) {}
+
+	~TypedVectorBuffer() override
 	{
-		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
+		delete m_cpuBuffer;
+		delete m_gpuBuffer;
 	}
-
-	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T)), m_type(buffer->GetType()), m_elementCount(buffer->GetElementCount()), m_cpuBuffer(buffer)
-	{
-		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
-	}
-
-	const HorseIR::BasicType *GetType() const override { return m_type; }
-	const Analysis::VectorShape *GetShape() const override { return m_shape; }
-
-	size_t GetElementCount() const override { return m_elementCount; }
-	size_t GetElementSize() const override { return sizeof(T); }
 
 	TypedVectorData<T> *GetCPUWriteBuffer() override
 	{
@@ -147,10 +157,6 @@ private:
 			m_gpuConsistent = true;
 		}
 	}
-
-	const HorseIR::BasicType *m_type = nullptr;
-	const Analysis::VectorShape *m_shape = nullptr;
-	unsigned long m_elementCount = 0;
 
 	mutable TypedVectorData<T> *m_cpuBuffer = nullptr;
 	mutable CUDA::Buffer *m_gpuBuffer = nullptr;
