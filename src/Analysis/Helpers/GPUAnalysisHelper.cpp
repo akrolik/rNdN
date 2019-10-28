@@ -251,7 +251,9 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
-			return {true, (Synchronization::In | Synchronization::Out)};
+			// Complex independent operations are controlled on the CPU with GPU sections
+
+			return {false, Synchronization::None};
 		}
 
 		// --------------------

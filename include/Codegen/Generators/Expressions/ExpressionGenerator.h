@@ -21,6 +21,8 @@
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/OrderGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/OrderInitGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/VectorGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
@@ -66,16 +68,39 @@ public:
 		{
 			case HorseIR::FunctionDeclaration::Kind::Builtin:
 			{
-				if (m_targets.size() != 1)
-				{
-					Utils::Logger::LogError("Builtin function generators expect a single target");
-				}
-				DispatchType(*this, HorseIR::TypeUtils::GetSingleType(returnTypes), static_cast<const HorseIR::BuiltinFunction *>(function), returnTypes, arguments);
+				Generate(static_cast<const HorseIR::BuiltinFunction *>(function), returnTypes, arguments);
 				break;
 			}
 			case HorseIR::FunctionDeclaration::Kind::Definition:
 			{
 				Utils::Logger::LogError("Generator for user defined functions not implemented");
+			}
+		}
+	}
+
+	void Generate(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		switch (function->GetPrimitive())
+		{
+			case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
+			{
+				OrderInitGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, returnTypes, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+			{
+				OrderGenerator<B> generator(this->m_builder);
+				generator.Generate(arguments);
+				break;
+			}
+			default:
+			{
+				if (m_targets.size() != 1)
+				{
+					Utils::Logger::LogError("Builtin function generators expect a single target");
+				}
+				DispatchType(*this, HorseIR::TypeUtils::GetSingleType(returnTypes), function, returnTypes, arguments);
 			}
 		}
 	}
@@ -101,15 +126,26 @@ public:
 				Generate(l_function, returnTypes, l_arguments);
 				break;
 			}
+			case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
+			{
+				OrderInitGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, returnTypes, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+			{
+				// OrderGenerator<B> generator(this->m_builder);
+				// generator.Generate(arguments);
+				break;
+			}
 			default:
 			{
 				BuiltinGenerator<B, T> *generator = GetBuiltinGenerator<T>(function);
 				if (generator == nullptr)
 				{
-					Utils::Logger::LogError("Generator for builtin function " + function->GetName() + " not implemented");
+					Utils::Logger::LogError("Generator for builtin function @" + function->GetName() + " not implemented");
 				}
 				generator->Generate(m_targets.at(0), arguments);
-
 				delete generator;
 				break;
 			}

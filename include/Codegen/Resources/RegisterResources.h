@@ -17,11 +17,18 @@ public:
 
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
-		auto name = "%" + T::TypePrefix() + "_" + identifier;
-		m_declaration->AddNames(name);
-		const auto resource = m_declaration->GetVariable(name);
-		m_registersMap.insert({identifier, resource});
-		return resource;
+		if (m_registersMap.find(identifier) != m_registersMap.end())
+		{
+			return m_registersMap.at(identifier);
+		}
+		else
+		{
+			auto name = "%" + T::TypePrefix() + "_" + identifier;
+			m_declaration->AddNames(name);
+			const auto resource = m_declaration->GetVariable(name);
+			m_registersMap.insert({identifier, resource});
+			return resource;
+		}
 	}
 
 	const PTX::Register<T> *AllocateTemporary()

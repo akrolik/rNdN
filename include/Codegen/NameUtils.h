@@ -15,6 +15,8 @@ public:
 
 	constexpr static const char *GeometryDataSize = "$geometry$size";
 
+	constexpr static const char *SortStage = "$sort$stage";
+	constexpr static const char *SortSubstage = "$sort$substage";
 
 	static std::string VariableName(const HorseIR::Identifier *identifier, const std::string& index = "")
 	{

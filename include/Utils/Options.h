@@ -14,6 +14,7 @@ public:
 	static constexpr char const *Opt_Print_analysis = "print-analysis";
 	static constexpr char const *Opt_Print_outline = "print-outline";
 	static constexpr char const *Opt_Print_outline_graph = "print-outline-graph";
+	static constexpr char const *Opt_Print_library = "print-library";
 	static constexpr char const *Opt_Print_ptx = "print-ptx";
 	static constexpr char const *Opt_Print_json = "print-json";
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
@@ -57,6 +58,7 @@ private:
 			(Opt_Print_analysis, "Print analyses")
 			(Opt_Print_outline, "Pretty print outlined HorseIR program")
 			(Opt_Print_outline_graph, "Pretty print outliner graphs")
+			(Opt_Print_library, "Pretty print library HorseIR programs")
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
 		;

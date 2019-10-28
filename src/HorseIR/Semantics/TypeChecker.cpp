@@ -1050,6 +1050,49 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsStringType(inputType0) && TypeUtils::IsIntegerType(inputType1) && TypeUtils::IsIntegerType(inputType2));
 			return {inputType0};
 		}
+
+		// GPU
+		case BuiltinFunction::Primitive::GPUOrderInit:
+		{
+			Require(argumentTypes.size() >= 2);
+
+			std::vector<HorseIR::Type *> returnTypes;
+			returnTypes.push_back(new BasicType(BasicType::BasicKind::Int64));
+
+			auto index = 0u;
+			for (auto type : argumentTypes)
+			{
+				if (index < (argumentTypes.size() - 1))
+				{
+					Require(TypeUtils::IsType<BasicType>(type));
+					returnTypes.push_back(type);
+				}
+				else
+				{
+					Require(TypeUtils::IsBooleanType(type));
+				}
+				index++;
+			}
+			return returnTypes;
+		}
+		case BuiltinFunction::Primitive::GPUOrder:
+		{
+			Require(argumentTypes.size() >= 3);
+			Require(TypeUtils::IsBasicType(argumentTypes.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBooleanType(argumentTypes.at(argumentTypes.size() - 1)));
+
+			bool first = true;
+			for (const auto type : argumentTypes)
+			{
+				if (first)
+				{
+					first = false;
+					continue;
+				}
+				Require(TypeUtils::IsType<BasicType>(type));
+			}
+			return {};
+		}
 		default:
 		{
 			Utils::Logger::LogError("Type analysis does not support builtin function '" + function->GetName() + "'");

@@ -7,6 +7,8 @@
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Runtime/GPULibrary/GPUSortEngine.h"
+
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -19,6 +21,41 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 	switch (function->GetPrimitive())
 	{
+		case HorseIR::BuiltinFunction::Primitive::Order:
+		{
+			// Collect the columns for the sort - decomposing the list into individual vectors
+
+			std::vector<VectorBuffer *> columns;
+			if (auto listSort = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0), false))
+			{
+				for (auto buffer : listSort->GetCells())
+				{
+					columns.push_back(BufferUtils::GetBuffer<VectorBuffer>(buffer));
+				}
+			}
+			else if (auto vectorSort = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(0), false))
+			{
+				columns.push_back(vectorSort);
+			}
+			else
+			{
+				Error("expects either a single vector or a list of vectors");
+			}
+
+			// Get a CPU vector or the orders
+
+			auto orders = BufferUtils::GetVectorBuffer<char>(arguments.at(1))->GetCPUReadBuffer()->GetValues();
+			if (orders.size() != columns.size())
+			{
+				Error("expects equal number of columns as direction specifiers [" + std::to_string(columns.size()) + " != " + std::to_string(orders.size()) + "]");
+			}
+			std::vector<char> _orders(std::begin(orders), std::end(orders));
+
+			// Sort!
+
+			GPUSortEngine sortEngine(m_runtime);
+			return {sortEngine.Sort(columns, _orders)};
+		}
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
 			return {new ListBuffer(arguments)};

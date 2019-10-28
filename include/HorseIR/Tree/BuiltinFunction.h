@@ -143,7 +143,11 @@ public:
 		Print,
 		Format,
 		String,
-		SubString
+		SubString,
+
+		// GPU
+		GPUOrderInit,
+		GPUOrder
 	};
 
 	static const std::string PrimitiveName(Primitive primitive)
@@ -366,6 +370,11 @@ public:
 				return "str";
 			case Primitive::SubString:
 				return "sub_string";
+			case Primitive::GPUOrderInit:
+				return "order_init";
+			case Primitive::GPUOrder:
+				return "order";
+
 		}
 		return "<unknown>";
 	}
@@ -532,6 +541,11 @@ public:
 				return 1;
 			case Primitive::SubString:
 				return 3;
+
+			// GPU
+			case Primitive::GPUOrderInit:
+			case Primitive::GPUOrder:
+				return VariadicParameterCount;
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}
