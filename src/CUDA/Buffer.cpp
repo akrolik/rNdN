@@ -7,6 +7,33 @@
 
 namespace CUDA {
 
+void Buffer::Copy(Buffer *destination, Buffer *source, size_t size)
+{
+	auto start = Chrono::Start();
+
+	checkDriverResult(cuMemcpy(destination->m_GPUBuffer, source->m_GPUBuffer, size));
+
+	auto time = Chrono::End(start);
+	Utils::Logger::LogTiming("CUDA copy (" + std::to_string(size) + " bytes)", time);
+}
+
+Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
+{
+	//TODO: Sort out padding
+	const auto multiple = 1024 * 8;
+	m_paddedSize = (((m_size + multiple - 1) / multiple) * multiple);
+}
+
+Buffer::~Buffer()
+{
+	auto start = Chrono::Start();
+
+	checkDriverResult(cuMemFree(m_GPUBuffer));
+
+	auto time = Chrono::End(start);
+	Utils::Logger::LogTiming("CUDA free (" + std::to_string(m_paddedSize) + " bytes)", time);
+}
+
 void Buffer::AllocateOnGPU()
 {
 	auto start = Chrono::Start();

@@ -8,12 +8,12 @@ namespace CUDA {
 class Buffer
 {
 public:
+	static void Copy(Buffer *destination, Buffer *source, size_t size);
+
 	Buffer(size_t size) : Buffer(nullptr, size) {}
-	Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
-	{
-		const auto multiple = 1024;
-		m_paddedSize = (((m_size + multiple - 1) / multiple) * multiple);
-	}
+	Buffer(void *buffer, size_t size);
+
+	~Buffer();
 
 	void AllocateOnGPU();
 	void Clear();
