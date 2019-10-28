@@ -80,7 +80,7 @@ public:
 
 				GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
 
-				// Determine if we need a size parameter for the argument. List sizes are always stored in gobal space
+				// Determine if we need a size parameter for the argument. List sizes are always stored in global space
 
 				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry))
 				{

@@ -29,7 +29,7 @@ public:
 			}
 
 			auto resources = this->m_builder.GetLocalResources();
-			return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryVectorSize);
+			return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryDataSize);
 		}
 		
 		Utils::Logger::LogError("Unknown vector size for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
@@ -59,7 +59,7 @@ public:
 	{
 		//TODO: Specify the cell sizes as part of the kernel code
 		auto resources = this->m_builder.GetLocalResources();
-		return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryCellSize);
+		return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryDataSize);
 	}
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateWarpCount()

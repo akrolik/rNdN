@@ -51,18 +51,18 @@ public:
 			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
-			//GLOBAL: Load from global variables
+			auto name = NameUtils::VariableName(identifier);
 			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_targetRegister, m_index);
+			loadGenerator.template GeneratePointer<T>(name, m_targetRegister, m_index);
 
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 			this->m_builder.AddStatement(label);
 		}
 		else
 		{
-			//GLOBAL: Load from global variables
+			auto name = NameUtils::VariableName(identifier);
 			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_targetRegister, m_index);
+			loadGenerator.template GeneratePointer<T>(name, m_targetRegister, m_index);
 		}
 	}
 

@@ -58,7 +58,7 @@ public:
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(index, new PTX::UInt32Value(0)));
 
 		SizeGenerator sizeGenerator(this->m_builder);
-		auto size = sizeGenerator.GenerateVectorSize(identifier->GetName());
+		auto size = sizeGenerator.GenerateSize(identifier);
 
 		auto startLabel = this->m_builder.CreateLabel("START");
 		auto endLabel = this->m_builder.CreateLabel("END");
@@ -72,10 +72,10 @@ public:
 		// Construct the loop body for checking the next value
 
 		auto value = resources->template AllocateTemporary<T>();
+		auto name = NameUtils::VariableName(identifier);
 
-		//GLOBAL: Global variables have different naming
 		ValueLoadGenerator<B> loadGenerator(this->m_builder);
-		loadGenerator.template GeneratePointer<T>(identifier->GetName(), value, index);
+		loadGenerator.template GeneratePointer<T>(name, value, index);
 
 		GenerateMerge(value);
 

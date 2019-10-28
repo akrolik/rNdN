@@ -61,14 +61,14 @@ public:
 	template<class S>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		//GLOBAL: Support identifiers which contain a module name
-
 		// Only fetch compression for registers which already exist (this handles non-reassigned parameters which do ont have compression)
 
 		auto resources = this->m_builder.GetLocalResources();
-		if (resources->template ContainsRegister<S>(identifier->GetName()))
+
+		auto name = NameUtils::VariableName(identifier);
+		if (resources->template ContainsRegister<S>(name))
 		{
-			auto data = resources->template GetRegister<S>(identifier->GetName());
+			auto data = resources->template GetRegister<S>(name);
 			m_compression = resources->template GetCompressedRegister<S>(data);
 		}
 	}

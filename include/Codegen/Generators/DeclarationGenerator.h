@@ -29,7 +29,7 @@ public:
 		// Allocate a new variable for each declaration
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto name = NameUtils::VariableName(declaration->GetName());
+		auto name = NameUtils::VariableName(declaration);
 		resources->template AllocateRegister<T>(name);
 	}
 };

@@ -40,7 +40,7 @@ public:
 		// For declarations, allocate a new register
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto name = NameUtils::VariableName(declaration->GetName());
+		auto name = NameUtils::VariableName(declaration);
 
 		m_targetRegister = resources->template AllocateRegister<T>(name);
 	}
@@ -51,7 +51,7 @@ public:
 
 		// Check if the identifier has already been allocated a register
 
-		auto name = NameUtils::VariableName(identifier->GetName());
+		auto name = NameUtils::VariableName(identifier);
 		if (resources->ContainsRegister<T>(name))
 		{
 			// If the variable has already been defined, we either compress the output, or leave as is

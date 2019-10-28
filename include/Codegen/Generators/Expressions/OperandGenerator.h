@@ -88,7 +88,7 @@ public:
 		// Determine if the identifier is a local variable or parameter
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto name = NameUtils::VariableName(identifier->GetName());
+		auto name = NameUtils::VariableName(identifier);
 
 		// Check if the register has been assigned (or re-assigned for parameters)
 
@@ -105,7 +105,7 @@ public:
 			{
 				// Check if we have a cached register for the load kind, or need to generate the load
 
-				auto sourceName = NameUtils::VariableName(identifier->GetName(), LoadKindString(m_loadKind));
+				auto sourceName = NameUtils::VariableName(identifier, LoadKindString(m_loadKind));
 				if (resources->ContainsRegister<S>(sourceName))
 				{
 					GenerateRegister(resources->GetRegister<S>(sourceName));
@@ -115,7 +115,7 @@ public:
 					// Generate the load according to the load kind and data size
 
 					auto shape = parameterShapes.at(identifier->GetSymbol());   
-					auto index = GetIndex(identifier->GetName(), shape, m_loadKind);
+					auto index = GetIndex(identifier, shape, m_loadKind);
 
 					ValueLoadGenerator<B> loadGenerator(this->m_builder);
 					GenerateRegister(loadGenerator.template GeneratePointer<S>(name, index, sourceName));
@@ -127,7 +127,6 @@ public:
 	template<class S>
 	void GenerateRegister(const PTX::Register<S> *source)
 	{
-		//GLOBAL: Identifiers may be global and have a module name
 		if constexpr(std::is_same<T, S>::value)
 		{
 			m_operand = source;
@@ -234,7 +233,7 @@ private:
 		return index;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GetIndex(const std::string& name, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, IndexGenerator::Kind indexKind, bool list)
+	const PTX::TypedOperand<PTX::UInt32Type> *GetIndex(const HorseIR::Identifier *identifier, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, IndexGenerator::Kind indexKind)
 	{
 		IndexGenerator indexGenerator(this->m_builder);
 
@@ -261,22 +260,16 @@ private:
 		{
 			// If no static load type can be detemined, check at runtime
 
-			SizeGenerator sizeGenerator(this->m_builder);
 			auto index = indexGenerator.GenerateIndex(indexKind);
-			if (list)
-			{
-				auto size = sizeGenerator.GenerateVectorSize(name);
-				return GetSizeIndex(size, index);
-			}
-			else
-			{
-				auto size = sizeGenerator.GenerateCellSize(name);
-				return GetSizeIndex(size, index);
-			}
+
+			SizeGenerator sizeGenerator(this->m_builder);
+			auto dynamicSize = sizeGenerator.GenerateSize(identifier, size, geometrySize);
+
+			return GetSizeIndex(dynamicSize, index);
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GetIndex(const std::string& name, const Analysis::Shape *shape, LoadKind loadKind)
+	const PTX::TypedOperand<PTX::UInt32Type> *GetIndex(const HorseIR::Identifier *identifier, const Analysis::Shape *shape, LoadKind loadKind)
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
@@ -287,7 +280,7 @@ private:
 			{
 				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 				{
-					return GetIndex(name, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::Global, false);
+					return GetIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::Global);
 				}
 			}
 		}
@@ -306,14 +299,14 @@ private:
 						{
 							// Vectors loaded in list geometries align with the cell data (vertical vectors)
 
-							return GetIndex(name, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData, false);
+							return GetIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
 						}
 						else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 						{
 							const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
 							if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
 							{
-								return GetIndex(name, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData, true);
+								return GetIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
 							}
 						}
 						break;
@@ -324,7 +317,7 @@ private:
 						{
 							// As a special case, we can load vectors horizontally, with 1 value per cell
 
-							return GetIndex(name, vectorShape->GetSize(), listGeometry->GetListSize(), IndexGenerator::Kind::Cell, false);
+							return GetIndex(identifier, vectorShape->GetSize(), listGeometry->GetListSize(), IndexGenerator::Kind::Cell);
 						}
 						break;
 					}

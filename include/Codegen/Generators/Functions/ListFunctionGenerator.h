@@ -81,11 +81,11 @@ public:
 
 		// Load the geometry cell sizes
 
-		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryCellSize));
+		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryDataSize));
 
-		parameterGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::GeometryCellSize);
-		parameterLoadGenerator.template GenerateVector<PTX::UInt32Type>(NameUtils::GeometryCellSize, false);
-		valueLoadGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::GeometryCellSize, cellIndex);
+		parameterGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::GeometryDataSize);
+		parameterLoadGenerator.template GenerateVector<PTX::UInt32Type>(NameUtils::GeometryDataSize, false);
+		valueLoadGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::GeometryDataSize, cellIndex);
 
 		// Initialize the special local index register
 

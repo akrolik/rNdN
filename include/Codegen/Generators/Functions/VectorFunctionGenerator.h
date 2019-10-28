@@ -40,13 +40,13 @@ public:
 		{
 			// Load the geometry size from the input
 
-			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryVectorSize));
+			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryDataSize));
 
 			ParameterGenerator<B> parameterGenerator(this->m_builder);
-			parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryVectorSize);
+			parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryDataSize);
 
 			ValueLoadGenerator<B> valueLoadGenerator(this->m_builder);
-			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryVectorSize);
+			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryDataSize);
 		}
 
 		for (const auto& statement : function->GetStatements())
