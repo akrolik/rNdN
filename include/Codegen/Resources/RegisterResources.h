@@ -6,6 +6,17 @@
 
 namespace Codegen {
 
+enum class RegisterReductionGranularity {
+	Warp,
+	Block
+};
+
+enum class RegisterReductionOperation {
+	Add,
+	Maximum,
+	Minimum
+};
+
 template<class T>
 class RegisterResources : public Resources
 {
@@ -90,18 +101,7 @@ public:
 
 	// Reduction register flag
 
-	enum class ReductionGranularity {
-		Warp,
-		Block
-	};
-
-	enum class ReductionOperation {
-		Add,
-		Maximum,
-		Minimum
-	};
-
-	void SetReductionRegister(const PTX::Register<T> *value, ReductionGranularity granularity, ReductionOperation op)
+	void SetReductionRegister(const PTX::Register<T> *value, RegisterReductionGranularity granularity, RegisterReductionOperation op)
 	{
 		m_reductionMap[value] = {granularity, op};
 	}
@@ -111,7 +111,7 @@ public:
 		return m_reductionMap.find(value) != m_reductionMap.end();
 	}
 
-	std::pair<ReductionGranularity, ReductionOperation> GetReductionRegister(const PTX::Register<T> *value) const
+	std::pair<RegisterReductionGranularity, RegisterReductionOperation> GetReductionRegister(const PTX::Register<T> *value) const
 	{
 		return m_reductionMap.at(value);
 	}
@@ -124,7 +124,7 @@ private:
 
 	std::unordered_map<const PTX::Register<T> *, const PTX::Register<PTX::PredicateType> *> m_compressedMap;
 	std::unordered_map<const PTX::Register<T> *, const PTX::TypedOperand<PTX::UInt32Type> *> m_indexedMap;
-	std::unordered_map<const PTX::Register<T> *, std::pair<ReductionGranularity, ReductionOperation>> m_reductionMap;
+	std::unordered_map<const PTX::Register<T> *, std::pair<RegisterReductionGranularity, RegisterReductionOperation>> m_reductionMap;
 };
 
 }

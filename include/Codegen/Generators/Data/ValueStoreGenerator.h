@@ -4,6 +4,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Generators/AtomicGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
@@ -119,46 +120,40 @@ public:
 	template<class T>
 	void GenerateWriteReduction(const HorseIR::Operand *operand, typename OperandGenerator<B, T>::LoadKind loadKind, IndexGenerator::Kind indexKind, unsigned int returnIndex)
 	{
-		// Check if the register represents a reduction value
+		auto resources = this->m_builder.GetLocalResources();
 
-		if constexpr(PTX::is_reduction_type<T>::value)
+		// Get the reduction properties for the register and the write index
+
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		auto value = operandGenerator.GenerateRegister(operand, loadKind);
+		auto [granularity, op] = resources->GetReductionRegister(value);
+
+		IndexGenerator indexGenerator(this->m_builder);
+		auto writeIndex = indexGenerator.GenerateIndex(indexKind);
+
+		// Generate the reduction value depending on the reduced granularity
+
+		switch (granularity)
 		{
-			auto resources = this->m_builder.GetLocalResources();
-
-			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto value = operandGenerator.GenerateRegister(operand, loadKind);
-			auto [granularity, op] = resources->GetReductionRegister(value);
-
-			IndexGenerator indexGenerator(this->m_builder);
-			auto writeIndex = indexGenerator.GenerateIndex(indexKind);
-
-			switch (granularity)
+			case RegisterReductionGranularity::Warp:
 			{
-				case RegisterAllocator::ReductionGranularity<T>::Warp:
-				{
-					IndexGenerator indexGenerator(this->m_builder);
-					auto laneid = indexGenerator.GenerateLaneIndex();
-					GenerateAtomicWrite(laneid, value, writeIndex, op, returnIndex);
-					break;
-				}
-				case RegisterAllocator::ReductionGranularity<T>::Block:
-				{
-					IndexGenerator indexGen(this->m_builder);
-					auto localIndex = indexGen.GenerateLocalIndex();
-					GenerateAtomicWrite(localIndex, value, writeIndex, op, returnIndex);
-					break;
-				}
+				IndexGenerator indexGenerator(this->m_builder);
+				auto laneid = indexGenerator.GenerateLaneIndex();
+				GenerateWriteReduction(op, laneid, value, writeIndex, returnIndex);
+				break;
 			}
-		}
-		else
-		{
-			//TODO: Support wave reduction for other types
-			Utils::Logger::LogError(T::Name() + " does not support atomic reduction");
+			case RegisterReductionGranularity::Block:
+			{
+				IndexGenerator indexGen(this->m_builder);
+				auto localIndex = indexGen.GenerateLocalIndex();
+				GenerateWriteReduction(op, localIndex, value, writeIndex, returnIndex);
+				break;
+			}
 		}
 	}
 
 	template<class T>
-	void GenerateAtomicWrite(const PTX::TypedOperand<PTX::UInt32Type> *activeIndex, const PTX::Register<T> *value, const PTX::TypedOperand<PTX::UInt32Type> *writeIndex, RegisterAllocator::ReductionOperation<T> reductionOp, unsigned int returnIndex)
+	void GenerateWriteReduction(RegisterReductionOperation reductionOp, const PTX::TypedOperand<PTX::UInt32Type> *activeIndex, const PTX::Register<T> *value, const PTX::TypedOperand<PTX::UInt32Type> *writeIndex, unsigned int returnIndex)
 	{
 		// At the end of the partial reduction we only have a single active thread. Use it to store the final value
 
@@ -175,7 +170,7 @@ public:
 		// Get the address of the write location depending on the indexing kind and the reduction operation
 
 		auto address = GenerateAddress<T>(returnIndex, writeIndex);
-		this->m_builder.AddStatement(GenerateAtomicInstruction(reductionOp, address, value));
+		GenerateWriteReduction(reductionOp, address, value, returnIndex);
 
 		// End the function and return
 
@@ -184,18 +179,138 @@ public:
 	}
 
 	template<class T>
-	static PTX::InstructionStatement *GenerateAtomicInstruction(RegisterAllocator::ReductionOperation<T> reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value)
+	void GenerateWriteReduction(RegisterReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value, unsigned int returnIndex)
+	{
+		if constexpr(PTX::is_reduction_type<T>::value)
+		{
+			GenerateReductionInstruction(reductionOp, address, value, returnIndex);
+		}
+		else
+		{
+			GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+		}
+	}
+
+	template<class T>
+	void GenerateReductionInstruction(RegisterReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value, unsigned int returnIndex)
 	{
 		switch (reductionOp)
 		{
-			case RegisterAllocator::ReductionOperation<T>::Add:
-				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value);
-			case RegisterAllocator::ReductionOperation<T>::Minimum:
-				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value);
-			case RegisterAllocator::ReductionOperation<T>::Maximum:
-				return new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value);
+			case RegisterReductionOperation::Add:
+			{
+				if constexpr(std::is_same<T, PTX::Int64Type>::value)
+				{
+					GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+				}
+				else
+				{
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value));
+				}
+				break;
+			}
+			case RegisterReductionOperation::Minimum:
+			{
+				this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value));
+				break;
+			}
+			case RegisterReductionOperation::Maximum:
+			{
+				this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value));
+				break;
+			}
 			default:
-				Utils::Logger::LogError("Generator does not support reduction operation");
+			{
+				Utils::Logger::LogError("Store generator does not support reduction operation");
+			}
+		}
+	}
+
+	template<class T>
+	void GenerateCASWriteReduction(RegisterReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value, unsigned int returnIndex)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+
+		// Generate lock variable and lock
+
+		auto globalResources = this->m_builder.GetGlobalResources();
+		auto lock = globalResources->template AllocateGlobalVariable<PTX::Bit32Type>(NameUtils::ReturnName(returnIndex) + "_lock");
+
+		AtomicGenerator<B> atomicGenerator(this->m_builder);
+		atomicGenerator.GenerateWait(lock);
+
+		// Load the existing value
+
+		auto global = resources->template AllocateTemporary<T>();
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(global, address));
+
+		// Generate the reduction
+
+		auto predicate = GenerateCASReductionOperation(reductionOp, global, value);
+
+		if (predicate)
+		{
+			// If we have a predicate, store the new value if needed only
+
+			auto store = new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value);
+			store->SetPredicate(predicate);
+			this->m_builder.AddStatement(store);
+		}
+		else
+		{
+			// If no predicate, we assume the global has been updated with the new value
+
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, global));
+		}
+
+		// Unlock!
+
+		atomicGenerator.GenerateUnlock(lock);
+	}
+
+	template<class T>
+	const PTX::Register<PTX::PredicateType> *GenerateCASReductionOperation(RegisterReductionOperation reductionOp, const PTX::Register<T> *global, const PTX::Register<T> *value)
+	{
+		if constexpr(std::is_same<T, PTX::Int8Type>::value)
+		{
+			auto convertedGlobal = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, global);
+			auto convertedValue = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, value);
+
+			auto predicate = GenerateCASReductionOperation(reductionOp, convertedGlobal, convertedValue);
+			if (predicate)
+			{
+				return predicate;
+			}
+
+			ConversionGenerator::ConvertSource<T, PTX::Int16Type>(this->m_builder, global, convertedGlobal);
+			return nullptr;
+		}
+		else
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			switch (reductionOp)
+			{
+				case RegisterReductionOperation::Add:
+				{
+					this->m_builder.AddStatement(new PTX::AddInstruction<T>(global, global, value));
+					return nullptr;
+				}
+				case RegisterReductionOperation::Minimum:
+				{
+					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, global, value, T::ComparisonOperator::Less));
+					return predicate;
+				}
+				case RegisterReductionOperation::Maximum:
+				{
+					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, global, value, T::ComparisonOperator::Greater));
+					return predicate;
+				}
+				default:
+				{
+					Utils::Logger::LogError("Store generator does not support CAS operation");
+				}
+			}
 		}
 	}
 

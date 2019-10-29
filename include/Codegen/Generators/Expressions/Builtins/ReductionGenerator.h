@@ -326,7 +326,7 @@ public:
 
 		// Write a single value per block to the global atomic value
 
-		resources->SetReductionRegister(target, RegisterAllocator::ReductionGranularity<T>::Block, GetRegisterReductionOperation(m_reductionOp));
+		resources->SetReductionRegister(target, RegisterReductionGranularity::Block, GetRegisterReductionOperation(m_reductionOp));
 	}
 
 	void GenerateShuffleWarp(const PTX::Register<T> *target)
@@ -338,7 +338,7 @@ public:
 		// Write a single value per warp to the global atomic value
 
 		auto resources = this->m_builder.GetLocalResources();
-		resources->SetReductionRegister(target, RegisterAllocator::ReductionGranularity<T>::Warp, GetRegisterReductionOperation(m_reductionOp));
+		resources->SetReductionRegister(target, RegisterReductionGranularity::Warp, GetRegisterReductionOperation(m_reductionOp));
 	}
 
 	void GenerateShared(const PTX::Register<T> *target)
@@ -421,7 +421,7 @@ public:
 
 		// Wrie a single value per block to the global atomic variable
 
-		resources->SetReductionRegister(target, RegisterAllocator::ReductionGranularity<T>::Block, GetRegisterReductionOperation(m_reductionOp));
+		resources->SetReductionRegister(target, RegisterReductionGranularity::Block, GetRegisterReductionOperation(m_reductionOp));
 	}
 
 private:
@@ -465,18 +465,18 @@ private:
 		return blockSize;
 	}
 
-	static RegisterAllocator::ReductionOperation<T> GetRegisterReductionOperation(ReductionOperation reductionOp)
+	static RegisterReductionOperation GetRegisterReductionOperation(ReductionOperation reductionOp)
 	{
 		switch (reductionOp)
 		{
 			case ReductionOperation::Length:
 			case ReductionOperation::Average:
 			case ReductionOperation::Sum:
-				return RegisterAllocator::ReductionOperation<T>::Add;
+				return RegisterReductionOperation::Add;
 			case ReductionOperation::Minimum:
-				return RegisterAllocator::ReductionOperation<T>::Minimum;
+				return RegisterReductionOperation::Minimum;
 			case ReductionOperation::Maximum:
-				return RegisterAllocator::ReductionOperation<T>::Maximum;
+				return RegisterReductionOperation::Maximum;
 			default:
 				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(reductionOp));
 		}

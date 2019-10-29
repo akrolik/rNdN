@@ -143,13 +143,7 @@ public:
 	// Reduction register flag
 
 	template<class T>
-	using ReductionGranularity = typename RegisterResources<T>::ReductionGranularity;
-
-	template<class T>
-	using ReductionOperation = typename RegisterResources<T>::ReductionOperation;
-
-	template<class T>
-	void SetReductionRegister(const PTX::Register<T> *value, ReductionGranularity<T> granularity, ReductionOperation<T> op)
+	void SetReductionRegister(const PTX::Register<T> *value, RegisterReductionGranularity granularity, RegisterReductionOperation op)
 	{
 		this->GetResources<T>()->SetReductionRegister(value, granularity, op);
 	}
@@ -172,7 +166,7 @@ public:
 	}
 
 	template<class T>
-	std::pair<ReductionGranularity<T>, ReductionOperation<T>> GetReductionRegister(const PTX::Register<T> *value) const
+	std::pair<RegisterReductionGranularity, RegisterReductionOperation> GetReductionRegister(const PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{
