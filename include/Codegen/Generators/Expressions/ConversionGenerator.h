@@ -3,6 +3,7 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/MoveGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -54,14 +55,16 @@ public:
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
-			this->m_builder.AddStatement(new PTX::MoveInstruction<T>(destination, source));
+			MoveGenerator<T> moveGenerator(this->m_builder);
+			moveGenerator.Generate(destination, source);
 			return;
 		}
 
 		auto relaxedSource = RelaxSource<T>(source, relaxedInstruction);
 		if (relaxedSource != nullptr)
 		{
-			this->m_builder.AddStatement(new PTX::MoveInstruction<T>(destination, relaxedSource));
+			MoveGenerator<T> moveGenerator(this->m_builder);
+			moveGenerator.Generate(destination, relaxedSource);
 			return;
 		}
 		GenerateConversion(destination, source);
