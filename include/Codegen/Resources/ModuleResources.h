@@ -12,24 +12,39 @@ class ModuleResources : public Resources
 public:
 	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const override
 	{
-		return { m_declaration };
+		return m_globalDeclarations;
 	}
 
-	const PTX::SharedVariable<T> *AllocateSharedMemory()
+	const PTX::GlobalVariable<T> *AllocateGlobalVariable(const std::string& identifier)
 	{
-		auto name = "$sdata$" + T::TypePrefix() + std::to_string(m_count++);
-		m_declaration->AddNames(name);
-		return m_declaration->GetVariable(name);
+		if (m_globalsMap.find(identifier) != m_globalsMap.end())
+		{
+			return m_globalsMap.at(identifier);
+		}
+
+		auto name = "$gdata$" + T::TypePrefix() + "_" + identifier;
+		auto declaration = new PTX::GlobalDeclaration<T>({name});
+		m_globalDeclarations.push_back(declaration);
+		
+		const auto resource = declaration->GetVariable(name);
+		m_globalsMap.insert({identifier, resource});
+
+		return resource;
 	}
 
-	bool ContainsKey(const std::string& name) const override
+	bool ContainsGlobalVariable(const std::string& identifier) const
 	{
-		return false;
+		return (m_globalsMap.find(identifier) != m_globalsMap.end());
+	}
+
+	const PTX::GlobalVariable<T> *GetGlobalVariable(const std::string& identifier) const
+	{
+		return m_globalsMap.at(identifier);
 	}
 
 private:
-	PTX::SharedDeclaration<T> *m_declaration = new PTX::SharedDeclaration<T>(PTX::Declaration::LinkDirective::Weak);
-	unsigned int m_count = 0;
+	std::vector<const PTX::VariableDeclaration *> m_globalDeclarations;
+	std::unordered_map<std::string, const PTX::GlobalVariable<T> *> m_globalsMap;
 };
 
 }

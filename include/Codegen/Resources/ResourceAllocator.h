@@ -27,17 +27,6 @@ public:
 		return declarations;
 	}
 
-	template<class T>
-	bool ContainsKey(const std::string& identifier) const
-	{
-		auto resources = GetResources<T>(false);
-		if (resources != nullptr)
-		{
-			return resources->ContainsKey(identifier);
-		}
-		return false;
-	}
-
 protected:
 	template<class T>
 	R<T> *GetResources(bool alloc = true) const

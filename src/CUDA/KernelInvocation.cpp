@@ -27,14 +27,14 @@ void KernelInvocation::Launch()
 	Utils::Logger::LogInfo("Kernel '" + m_kernel.GetName() + "' launched");
 	Utils::Logger::LogInfo(" - Grid: " + std::to_string(m_gridX) + " x " + std::to_string(m_gridY) + " x " + std::to_string(m_gridZ)); 
 	Utils::Logger::LogInfo(" - Block: " + std::to_string(m_blockX) + " x " + std::to_string(m_blockY) + " x " + std::to_string(m_blockZ)); 
-	Utils::Logger::LogInfo(" - Dynamic shared memory: " + std::to_string(m_sharedMemorySize) + " bytes");
+	Utils::Logger::LogInfo(" - Dynamic shared memory: " + std::to_string(m_dynamicSharedMemorySize) + " bytes");
 
 	auto start = Chrono::Start();
 	checkDriverResult(cuLaunchKernel(
 				m_kernel.GetKernel(),
 				m_gridX, m_gridY, m_gridZ,
 				m_blockX, m_blockY, m_blockZ,
-				m_sharedMemorySize, 0, (void **)m_parameters.data(), 0
+				m_dynamicSharedMemorySize, 0, (void **)m_parameters.data(), 0
 	));
 	auto timeExecution = Chrono::End(start);
 

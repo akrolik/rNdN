@@ -14,6 +14,8 @@ public:
 	{
 		return { m_declaration };
 	}
+	
+	// Register declarations
 
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
@@ -21,15 +23,27 @@ public:
 		{
 			return m_registersMap.at(identifier);
 		}
-		else
-		{
-			auto name = "%" + T::TypePrefix() + "_" + identifier;
-			m_declaration->AddNames(name);
-			const auto resource = m_declaration->GetVariable(name);
-			m_registersMap.insert({identifier, resource});
-			return resource;
-		}
+
+		auto name = "%" + T::TypePrefix() + "_" + identifier;
+		m_declaration->AddNames(name);
+
+		const auto resource = m_declaration->GetVariable(name);
+		m_registersMap.insert({identifier, resource});
+
+		return resource;
 	}
+
+	bool ContainsRegister(const std::string& identifier) const
+	{
+		return m_registersMap.find(identifier) != m_registersMap.end();
+	}
+
+	const PTX::Register<T> *GetRegister(const std::string& identifier) const
+	{
+		return m_registersMap.at(identifier);
+	}
+
+	// Temporary registers
 
 	const PTX::Register<T> *AllocateTemporary()
 	{
@@ -38,16 +52,6 @@ public:
 		m_declaration->UpdateName(name, temp + 1);
 		const auto resource = m_declaration->GetVariable(name, temp);
 		return resource;
-	}
-
-	bool ContainsKey(const std::string& identifier) const override
-	{
-		return m_registersMap.find(identifier) != m_registersMap.end();
-	}
-
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
-	{
-		return m_registersMap.at(identifier);
 	}
 
 	// Compresed register flag

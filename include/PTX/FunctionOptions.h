@@ -74,15 +74,15 @@ public:
 		}
 	}
 
-	unsigned int GetSharedMemorySize() const { return m_sharedMemorySize; }
-	void SetSharedMemorySize(unsigned int sharedMemorySize) { m_sharedMemorySize  = sharedMemorySize; }
+	unsigned int GetDynamicSharedMemorySize() const { return m_dynamicSharedMemorySize; }
+	void SetDynamicSharedMemorySize(unsigned int bytes) { m_dynamicSharedMemorySize = bytes; }
 
 	std::string ToString() const
 	{
 		std::string output;
 		output += "Block size: " + ((m_blockSize == DynamicBlockSize) ? "<dynamic>" : std::to_string(m_blockSize)) + "\n";
 		output += "Thread multiple: " + std::to_string(m_threadMultiple) + "\n";
-		output += "Shared memory size: " + std::to_string(m_sharedMemorySize) + " bytes";
+		output += "Shared memory size: " + std::to_string(m_dynamicSharedMemorySize) + " bytes";
 		return output;
 	}
 
@@ -91,7 +91,7 @@ public:
 		json j;
 		j["block_size"] = (m_blockSize == DynamicBlockSize) ? "<dynamic>" : std::to_string(m_blockSize);
 		j["thread_multiple"] = std::to_string(m_threadMultiple);
-		j["shared_memory"] = m_sharedMemorySize;
+		j["shared_memory"] = m_dynamicSharedMemorySize;
 		return j;
 	}
 
@@ -100,7 +100,7 @@ private:
 
 	unsigned int m_blockSize = DynamicBlockSize;
 	unsigned int m_threadMultiple = 0;
-	unsigned int m_sharedMemorySize = 0;
+	unsigned int m_dynamicSharedMemorySize = 0;
 };
 
 }

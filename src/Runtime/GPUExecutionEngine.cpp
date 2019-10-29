@@ -192,7 +192,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			}
 		}
 
-		invocation.SetSharedMemorySize(kernelOptions.GetSharedMemorySize());
+		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize());
 	}
 	else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(runtimeOptions.ThreadGeometry))
 	{
@@ -223,7 +223,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		AllocateCellSizes(invocation, listShape, "<geometry cell sizes>");
 
 		//TODO: Determine the correct amount of shared memory for cells
-		invocation.SetSharedMemorySize(kernelOptions.GetSharedMemorySize() * 2);
+		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize() * 2);
 	}
 
 	// Launch the kernel!

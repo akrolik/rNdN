@@ -142,7 +142,7 @@ VectorBuffer *GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, co
 		initInvocation.AddParameter(*sortBuffer->GetGPUWriteBuffer());
 	}
 
-	initInvocation.SetSharedMemorySize(initKernelOptions.GetSharedMemorySize());
+	initInvocation.SetDynamicSharedMemorySize(initKernelOptions.GetDynamicSharedMemorySize());
 	initInvocation.Launch();
 
 	// Perform the iterative sort
@@ -178,7 +178,7 @@ VectorBuffer *GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, co
 			auto substageConstant = new CUDA::TypedConstant<std::uint32_t>(substage);
 			sortInvocation.AddParameter(*substageConstant);
 
-			sortInvocation.SetSharedMemorySize(sortKernelOptions.GetSharedMemorySize());
+			sortInvocation.SetDynamicSharedMemorySize(sortKernelOptions.GetDynamicSharedMemorySize());
 			sortInvocation.Launch();
 		}
 	}

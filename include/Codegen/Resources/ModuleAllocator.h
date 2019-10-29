@@ -22,11 +22,38 @@ public:
 	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const
 	{
 		auto declarations = ResourceAllocator<ModuleResources>::GetDeclarations();
-		if (m_sharedMemorySize > 0)
+		if (m_dynamicSharedMemorySize > 0)
 		{
 			declarations.push_back(m_sharedMemoryDeclaration);
 		}
 		return declarations;
+	}
+
+	template<class T>
+	const PTX::GlobalVariable<T> *AllocateGlobalVariable(const std::string& identifier)
+	{
+		return this->GetResources<T>()->AllocateGlobalVariable(identifier);
+	}
+
+	template<class T>
+	bool ContainsGlobalVariable(const std::string& identifier) const
+	{
+		auto resources = this->GetResources<T>(false);
+		if (resources != nullptr)
+		{
+			return resources->ContainsGlobalVariable(identifier);
+		}
+		return false;
+	}
+
+	template<class T>
+	const PTX::GlobalVariable<T> *GetGlobalVariable(const std::string& identifier) const
+	{
+		if (ContainsGlobalVariable<T>(identifier))
+		{
+			return this->GetResources<T>(false)->GetGlobalVariable(identifier);
+		}
+		return false;
 	}
 
 	template<class T>
@@ -42,21 +69,15 @@ public:
 		auto sharedMemoryBits = new PTX::ArrayVariableAdapter<PTX::Bit8Type, PTX::DynamicSize, PTX::SharedSpace>(m_sharedMemoryDeclaration->GetVariable(DynamicVariableName));
 		auto sharedMemory = new PTX::VariableAdapter<T, PTX::Bit8Type, PTX::SharedSpace>(sharedMemoryBits);
 
-		m_sharedMemorySize += sizeof(typename T::SystemType) * size;
+		m_dynamicSharedMemorySize += sizeof(typename T::SystemType) * size;
 
 		return sharedMemory;
 	}
 
-	template<class T>
-	const PTX::SharedVariable<T> *AllocateSharedMemory()
-	{
-		return this->GetResources<T>()->AllocateSharedMemory();
-	}
-
-	unsigned int GetSharedMemorySize() const { return m_sharedMemorySize; }
+	unsigned int GetDynamicSharedMemorySize() const { return m_dynamicSharedMemorySize; }
 
 	template<class R>
-	void AddExternalFunction(PTX::FunctionDeclaration<R> *declaration)
+	void AddExternalFunction(const PTX::FunctionDeclaration<R> *declaration)
 	{
 		if (m_externalDeclarations.find(declaration) == m_externalDeclarations.end())
 		{
@@ -66,9 +87,9 @@ public:
 
 private:
 	PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace> *m_sharedMemoryDeclaration = nullptr;
-	unsigned int m_sharedMemorySize = 0;
+	unsigned int m_dynamicSharedMemorySize = 0;
 
-	std::set<PTX::Declaration *> m_externalDeclarations;
+	std::set<const PTX::Declaration *> m_externalDeclarations;
 };
 
 }

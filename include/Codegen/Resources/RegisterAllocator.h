@@ -15,6 +15,8 @@ class RegisterAllocator : public ResourceAllocator<RegisterResources>
 public:
 	RegisterAllocator(RegisterAllocator *parent = nullptr) : m_parent(parent) {}
 
+	// Registers
+
 	template<class T>
 	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
@@ -22,21 +24,20 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<T> *AllocateTemporary()
-	{
-		return this->GetResources<T>()->AllocateTemporary();
-	}
-
-	template<class T>
 	bool ContainsRegister(const std::string& identifier) const
 	{
-		return ContainsKey<T>(identifier);
+		auto resources = GetResources<T>(false);
+		if (resources != nullptr)
+		{
+			return resources->ContainsRegister(identifier);
+		}
+		return false;
 	}
 
 	template<class T>
 	const PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
-		if (ContainsKey<T>(identifier))
+		if (ContainsRegister<T>(identifier))
 		{
 			return this->GetResources<T>(false)->GetRegister(identifier);
 		}
@@ -45,6 +46,14 @@ public:
 			return m_parent->GetRegister<T>(identifier);
 		}
 		Utils::Logger::LogError("PTX::Register(" + identifier + ", " + T::Name() + ") not found");
+	}
+
+	// Temporary registers
+
+	template<class T>
+	const PTX::Register<T> *AllocateTemporary()
+	{
+		return this->GetResources<T>()->AllocateTemporary();
 	}
 
 	// Compresed register flag

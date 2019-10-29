@@ -34,7 +34,7 @@ public:
 
 	void SetParameter(unsigned int index, Constant &value);
 	void SetParameter(unsigned int index, Buffer &buffer);
-	void SetSharedMemorySize(unsigned int bytes) { m_sharedMemorySize = bytes; }
+	void SetDynamicSharedMemorySize(unsigned int bytes) { m_dynamicSharedMemorySize = bytes; }
 
 	void Launch();
 
@@ -49,7 +49,7 @@ private:
 	unsigned int m_gridY = 0;
 	unsigned int m_gridZ = 0;
 
-	unsigned int m_sharedMemorySize = 0;
+	unsigned int m_dynamicSharedMemorySize = 0;
 	unsigned int m_paramIndex = 0;
 
 	std::vector<void *> m_parameters;

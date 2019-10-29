@@ -180,7 +180,7 @@ public:
 
 		// Complete the codegen for the function by setting up the options and closing the scope
 
-		m_builder.GetKernelOptions().SetSharedMemorySize(m_builder.GetGlobalResources()->GetSharedMemorySize());
+		m_builder.GetKernelOptions().SetDynamicSharedMemorySize(m_builder.GetGlobalResources()->GetDynamicSharedMemorySize());
 		m_builder.CloseScope();
 		m_builder.SetCurrentKernel(nullptr, nullptr);
 	}
