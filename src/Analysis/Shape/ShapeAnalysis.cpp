@@ -186,21 +186,18 @@ ShapeAnalysis::Properties ShapeAnalysis::Merge(const Properties& s1, const Prope
 	// Merge the maps using a shape merge operation on each element
 
 	Properties outSet(s1);
-	for (const auto val : s2)
+	for (const auto& [symbol, shape] : s2)
 	{
-		auto it = outSet.find(val.first);
+		auto it = outSet.find(symbol);
 		if (it != outSet.end())
 		{
-			auto shape1 = val.second;
-			auto shape2 = it->second;
-
 			// Merge shapes according to the rules
 
-			outSet[val.first] = ShapeUtils::MergeShape(shape1, shape2);
+			outSet[symbol] = ShapeUtils::MergeShape(shape, it->second);
 		}
 		else
 		{
-			outSet.insert(val);
+			outSet.insert({symbol, shape});
 		}
 	}
 	return outSet;

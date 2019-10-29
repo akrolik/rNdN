@@ -26,10 +26,10 @@ bool SymbolTablePrinter::VisitIn(const Program *program)
 
 	auto symbolTable = program->GetSymbolTable();
 	m_indent++;
-	for (const auto& symbol : symbolTable->m_table)
+	for (const auto& [name, symbol] : symbolTable->m_table)
 	{
 		Indent();
-		m_string << symbol.first << " " << *symbol.second << std::endl;
+		m_string << name << " " << *symbol << std::endl;
 	}
 
 	m_currentSymbolTable = symbolTable;
@@ -58,20 +58,20 @@ bool SymbolTablePrinter::VisitIn(const Module *module)
 		Indent();
 		m_string << "Imports" << std::endl;
 	}
-	for (const auto& symbol : importTable->m_table)
+	for (const auto& [name, symbol] : importTable->m_table)
 	{
 		Indent();
-		m_string << " * " << symbol.first << " " << *symbol.second << std::endl;
+		m_string << " * " << name << " " << *symbol << std::endl;
 	}
 
 	if (hasImports)
 	{
 		m_string << std::endl;
 	}
-	for (const auto& symbol : symbolTable->m_table)
+	for (const auto& [name, symbol] : symbolTable->m_table)
 	{
 		Indent();
-		m_string << symbol.first << " " << *symbol.second << std::endl;
+		m_string << name << " " << *symbol << std::endl;
 	}
 
 	m_currentSymbolTable = symbolTable;

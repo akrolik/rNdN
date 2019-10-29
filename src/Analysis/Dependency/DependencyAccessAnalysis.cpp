@@ -67,7 +67,7 @@ DependencyAccessAnalysis::Properties DependencyAccessAnalysis::Merge(const Prope
 
 	// Merge the reads from the second properties map
 
-	for (const auto val : s2.first)
+	for (const auto& [symbol, accesses] : s2.first)
 	{
 		// Convenience var for the output set of reads
 
@@ -75,23 +75,23 @@ DependencyAccessAnalysis::Properties DependencyAccessAnalysis::Merge(const Prope
 
 		// Merge the reads or insert the second set
 
-		auto it = reads.find(val.first);
+		auto it = reads.find(symbol);
 		if (it != reads.end())
 		{
 			auto newSet = new DependencyAccessValue::Type();
-			newSet->insert(val.second->begin(), val.second->end());
+			newSet->insert(accesses->begin(), accesses->end());
 			newSet->insert(it->second->begin(), it->second->end());
-			reads[val.first] = newSet;
+			reads[symbol] = newSet;
 		}
 		else
 		{
-			reads.insert(val);
+			reads.insert({symbol, accesses});
 		}
 	}
 
 	// Merge the writes from the second properties map
 
-	for (const auto val : s2.second)
+	for (const auto& [symbol, accesses] : s2.second)
 	{
 		// Convenience var for the output set of writes
 
@@ -99,17 +99,17 @@ DependencyAccessAnalysis::Properties DependencyAccessAnalysis::Merge(const Prope
 
 		// Merge the writes or insert the second set
 
-		auto it = writes.find(val.first);
+		auto it = writes.find(symbol);
 		if (it != writes.end())
 		{
 			auto newSet = new DependencyAccessValue::Type();
-			newSet->insert(val.second->begin(), val.second->end());
+			newSet->insert(accesses->begin(), accesses->end());
 			newSet->insert(it->second->begin(), it->second->end());
-			writes[val.first] = newSet;
+			writes[symbol] = newSet;
 		}
 		else
 		{
-			writes.insert(val);
+			writes.insert({symbol, accesses});
 		}
 	}
 

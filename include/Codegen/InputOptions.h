@@ -34,14 +34,14 @@ struct InputOptions
 		if (ParameterShapes.size() > 0)
 		{
 			bool first = true;
-			for (const auto& parameter : ParameterShapes)
+			for (const auto& [parameter, shape] : ParameterShapes)
 			{
 				if (!first)
 				{
 					output += ", ";
 				}
 				first = false;
-				output += parameter.first->name + " = " + Analysis::ShapeUtils::ShapeString(parameter.second);
+				output += parameter->name + " = " + Analysis::ShapeUtils::ShapeString(shape);
 			}
 		}
 		else

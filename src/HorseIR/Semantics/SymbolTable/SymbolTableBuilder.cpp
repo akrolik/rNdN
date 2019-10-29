@@ -123,9 +123,9 @@ bool SymbolPass_Imports::VisitIn(ImportDirective *import)
 	{
 		if (name == "*")
 		{
-			for (auto& symbol : importedSymbolTable->m_table)
+			for (auto& [symbolName, symbol] : importedSymbolTable->m_table)
 			{
-				m_currentImportTable->AddSymbol(symbol.first, symbol.second, true);
+				m_currentImportTable->AddSymbol(symbolName, symbol, true);
 			}
 		}
 		else

@@ -97,14 +97,14 @@ std::string Indent(unsigned int indent)
 std::string UDDUChainsBuilder::DebugString(unsigned int indent) const
 {
 	std::string string = Indent(indent) + "UD chains";
-	for (const auto& ud : m_useDefChains)
+	for (const auto& [identifier, definitions] : m_useDefChains)
 	{
 		string += "\n" + Indent(indent + 1);
-		string += HorseIR::PrettyPrinter::PrettyString(ud.first);
+		string += HorseIR::PrettyPrinter::PrettyString(identifier);
 		string += "->[";
 
 		bool first = true;
-		for (const auto& definition : ud.second)
+		for (const auto& definition : definitions)
 		{
 			if (!first)
 			{
@@ -117,14 +117,14 @@ std::string UDDUChainsBuilder::DebugString(unsigned int indent) const
 	}
 
 	string += "\n" + Indent(indent) + "DU chains";
-	for (const auto& du : m_defUseChains)
+	for (const auto& [definition, uses] : m_defUseChains)
 	{
 		string += "\n" + Indent(indent + 1);
-		string += HorseIR::PrettyPrinter::PrettyString(du.first, true);
+		string += HorseIR::PrettyPrinter::PrettyString(definition, true);
 		string += "->[";
 
 		bool first = true;
-		for (const auto& use : du.second)
+		for (const auto& use : uses)
 		{
 			if (!first)
 			{

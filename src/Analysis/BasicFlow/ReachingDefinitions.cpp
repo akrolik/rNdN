@@ -56,19 +56,19 @@ ReachingDefinitions::Properties ReachingDefinitions::Merge(const Properties& s1,
 	// statements or copy across the pointers
 
 	Properties outSet(s1);
-	for (const auto val : s2)
+	for (const auto& [symbol, definitions] : s2)
 	{
-		auto it = outSet.find(val.first);
+		auto it = outSet.find(symbol);
 		if (it != outSet.end())
 		{
 			auto newSet = new ReachingDefinitionsValue::Type();
-			newSet->insert(val.second->begin(), val.second->end());
+			newSet->insert(definitions->begin(), definitions->end());
 			newSet->insert(it->second->begin(), it->second->end());
-			outSet[val.first] = newSet;
+			outSet[symbol] = newSet;
 		}
 		else
 		{
-			outSet.insert(val);
+			outSet.insert({symbol, definitions});
 		}
 	}
 	return outSet;
