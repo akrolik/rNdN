@@ -4,6 +4,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "Analysis/Shape/Shape.h"
 
@@ -18,7 +20,7 @@ class TableBuffer : public DataBuffer
 public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Table;
 
-	TableBuffer(const std::unordered_map<std::string, VectorBuffer *>& columns);
+	TableBuffer(const std::vector<std::pair<std::string, VectorBuffer *>>& columns);
 	~TableBuffer() override;
 
 	const HorseIR::TableType *GetType() const override { return m_type; }
@@ -42,7 +44,9 @@ private:
 	const HorseIR::TableType *m_type = new HorseIR::TableType();
 	const Analysis::TableShape *m_shape = nullptr;
 
-	std::unordered_map<std::string, VectorBuffer *> m_columns;
+	std::vector<std::pair<std::string, VectorBuffer *>> m_columns;
+	std::unordered_map<std::string, VectorBuffer *> m_columnMap;
+
 	unsigned int m_rows = 0;
 };
 

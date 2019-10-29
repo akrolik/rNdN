@@ -71,10 +71,10 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 
 			auto i = 0u;
-			std::unordered_map<std::string, VectorBuffer *> columns;
+			std::vector<std::pair<std::string, VectorBuffer *>> columns;
 			for (const auto& columnName : columnNames->GetValues())
 			{
-				columns[columnName->GetName()] = BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++));
+				columns.push_back({columnName->GetName(), BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++))});
 			}
 			return {new TableBuffer(columns)};
 		}

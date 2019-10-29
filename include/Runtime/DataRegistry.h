@@ -2,6 +2,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -13,7 +15,7 @@ class DataRegistry
 {
 public:
 	template<typename T>
-	static void LoadDebugData(std::unordered_map<std::string, VectorBuffer *>& columns, const HorseIR::BasicType *type, unsigned long size);
+	static void LoadDebugData(std::vector<std::pair<std::string, VectorBuffer *>>& columns, const HorseIR::BasicType *type, unsigned long size);
 
 	void LoadDebugData();
 	void LoadTPCHData();

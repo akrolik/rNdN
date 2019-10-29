@@ -13,7 +13,7 @@
 namespace Runtime {
 
 template<typename T>
-void DataRegistry::LoadDebugData(std::unordered_map<std::string, VectorBuffer *>& columns, const HorseIR::BasicType *type, unsigned long size)
+void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, VectorBuffer *>>& columns, const HorseIR::BasicType *type, unsigned long size)
 {
 	CUDA::Vector<T> zeros(size);
 	CUDA::Vector<T> ones(size);
@@ -29,10 +29,10 @@ void DataRegistry::LoadDebugData(std::unordered_map<std::string, VectorBuffer *>
 	}
 
 	auto name = HorseIR::PrettyPrinter::PrettyString(type);
-	columns["zeros_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, zeros));
-	columns["ones_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, ones));
-	columns["asc_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, asc));
-	columns["desc_" + name] = new TypedVectorBuffer(new TypedVectorData<T>(type, desc));
+	columns.push_back({"zeros_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, zeros))});
+	columns.push_back({"ones_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, ones))});
+	columns.push_back({"asc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, asc))});
+	columns.push_back({"desc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, desc))});
 }
 
 void DataRegistry::LoadDebugData()
@@ -41,7 +41,7 @@ void DataRegistry::LoadDebugData()
 
 	for (unsigned long i = 256; i <= 2048; i <<= 1)
 	{
-		std::unordered_map<std::string, VectorBuffer *> columns;
+		std::vector<std::pair<std::string, VectorBuffer *>> columns;
 
 		LoadDebugData<int8_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), i);
 		LoadDebugData<int8_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int8), i);
@@ -88,12 +88,12 @@ void DataRegistry::LoadTPCHData()
 		count++;
 	}
 
-	std::unordered_map<std::string, VectorBuffer *> columns;
+	std::vector<std::pair<std::string, VectorBuffer *>> columns;
 
-	columns["l_quantity"] = new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity));
-	columns["l_extendedprice"] = new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice));
-	columns["l_discount"] = new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount));
-	columns["l_shipdate"] = new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate));
+	columns.push_back({"l_quantity", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity))});
+	columns.push_back({"l_extendedprice", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice))});
+	columns.push_back({"l_discount", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount))});
+	columns.push_back({"l_shipdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate))});
 	
 	AddTable("lineitem", new TableBuffer(columns));
 }
