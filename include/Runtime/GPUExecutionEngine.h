@@ -28,7 +28,7 @@ private:
 	std::vector<std::uint32_t> GetCellSizes(const Analysis::ListShape *shape) const;
 
 	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions& runtimeOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const;
-	Codegen::InputOptions GetInputOptions(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments) const;
+	Codegen::InputOptions GetInputOptions(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments, bool enforce) const;
 
 	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, std::uint32_t value, const std::string& description) const;
 	void AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;

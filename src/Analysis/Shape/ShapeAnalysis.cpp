@@ -38,7 +38,7 @@ void ShapeAnalysis::Visit(const HorseIR::AssignStatement *assignS)
 	// For each target, update the shape with the shape from the expression
 
 	auto expression = assignS->GetExpression();
-	auto expressionShapes = ShapeAnalysisHelper::GetShapes(m_currentInSet, expression);
+	auto expressionShapes = ShapeAnalysisHelper::GetShapes(m_currentInSet, expression, m_enforce);
 
 	m_expressionShapes[expression] = expressionShapes;
 

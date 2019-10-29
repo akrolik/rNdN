@@ -15,9 +15,9 @@ class ShapeAnalysisHelper : public HorseIR::ConstVisitor
 public:
 	// Entry functions for utility
 
-	static std::vector<const Shape *> GetShapes(const ShapeAnalysis::Properties& properties, const HorseIR::Expression *expression);
+	static std::vector<const Shape *> GetShapes(const ShapeAnalysis::Properties& properties, const HorseIR::Expression *expression, bool enforce = false);
 
-	ShapeAnalysisHelper(const ShapeAnalysis::Properties& properties) : m_properties(properties) {}
+	ShapeAnalysisHelper(const ShapeAnalysis::Properties& properties, bool enforce = false) : m_properties(properties), m_enforce(enforce) {}
 
 	// Expressions
 
@@ -35,9 +35,9 @@ private:
 
 	// Static checks for sizes
 
-	bool CheckStaticScalar(const Shape::Size *size, bool enforce = false) const;
-	bool CheckStaticEquality(const Shape::Size *size1, const Shape::Size *size2, bool enforce = false) const;
-	bool CheckStaticTabular(const ListShape *listShape, bool enforce = false) const;
+	bool CheckStaticScalar(const Shape::Size *size) const;
+	bool CheckStaticEquality(const Shape::Size *size1, const Shape::Size *size2) const;
+	bool CheckStaticTabular(const ListShape *listShape) const;
 
 	// Checks for values
 
@@ -59,6 +59,7 @@ private:
 	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_shapes;
 	
 	const ShapeAnalysis::Properties& m_properties;
+	bool m_enforce = false;
 };
 
 }

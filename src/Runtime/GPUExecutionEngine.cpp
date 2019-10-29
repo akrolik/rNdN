@@ -36,7 +36,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
 	targetOptions.WarpSize = device->GetWarpSize();
 
-	auto inputOptions = GetInputOptions(function, {});
+	auto inputOptions = GetInputOptions(function, {}, false);
 
 	// Initialize the geometry information for code generation
 
@@ -116,7 +116,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	CUDA::KernelInvocation invocation(kernel);
 
-	auto runtimeOptions = GetInputOptions(function, arguments);
+	auto runtimeOptions = GetInputOptions(function, arguments, true);
 
 	Utils::Logger::LogInfo("Runtime Options");
 	Utils::Logger::LogInfo(runtimeOptions.ToString(), 1);
@@ -233,7 +233,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	return returnBuffers;
 }
 
-Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments) const
+Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments, bool enforce) const
 {
 	// Collect shape information for input arguments
 
@@ -247,7 +247,7 @@ Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Functio
 
 	// Determine the thread geometry for the kernel
 
-	Analysis::ShapeAnalysis shapeAnalysis(m_program);
+	Analysis::ShapeAnalysis shapeAnalysis(m_program, enforce);
 	shapeAnalysis.Analyze(function, inputShapes);
 
 	Analysis::GeometryAnalysis geometryAnalysis(shapeAnalysis);

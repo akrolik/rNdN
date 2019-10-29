@@ -7,9 +7,9 @@
 
 namespace Analysis {
 
-std::vector<const Shape *> ShapeAnalysisHelper::GetShapes(const ShapeAnalysis::Properties& properties, const HorseIR::Expression *expression)
+std::vector<const Shape *> ShapeAnalysisHelper::GetShapes(const ShapeAnalysis::Properties& properties, const HorseIR::Expression *expression, bool enforce)
 {
-	ShapeAnalysisHelper helper(properties);
+	ShapeAnalysisHelper helper(properties, enforce);
 	expression->Accept(helper);
 	return helper.GetShapes(expression);
 }
@@ -34,7 +34,7 @@ void ShapeAnalysisHelper::Visit(const HorseIR::CallExpression *call)
 	m_call = nullptr;
 }
 
-bool ShapeAnalysisHelper::CheckStaticScalar(const Shape::Size *size, bool enforce) const
+bool ShapeAnalysisHelper::CheckStaticScalar(const Shape::Size *size) const
 {
 	// Check if the size is a static scalar, enforcing if required
 
@@ -42,19 +42,19 @@ bool ShapeAnalysisHelper::CheckStaticScalar(const Shape::Size *size, bool enforc
 	{
 		return ShapeUtils::IsScalarSize(size);
 	}
-	return !enforce;
+	return !m_enforce;
 }
 
-bool ShapeAnalysisHelper::CheckStaticEquality(const Shape::Size *size1, const Shape::Size *size2, bool enforce) const
+bool ShapeAnalysisHelper::CheckStaticEquality(const Shape::Size *size1, const Shape::Size *size2) const
 {
 	if (*size1 == *size2)
 	{
 		return true;
 	}
-	return !enforce;
+	return !m_enforce;
 }
 
-bool ShapeAnalysisHelper::CheckStaticTabular(const ListShape *listShape, bool enforce) const
+bool ShapeAnalysisHelper::CheckStaticTabular(const ListShape *listShape) const
 {
 	const auto& elementShapes = listShape->GetElementShapes();
 	for (const auto& elementShape : elementShapes)
@@ -72,7 +72,7 @@ bool ShapeAnalysisHelper::CheckStaticTabular(const ListShape *listShape, bool en
 			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(elementShape1);
 			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(elementShape2);
 
-			if (!CheckStaticEquality(vectorShape1->GetSize(), vectorShape2->GetSize(), enforce))
+			if (!CheckStaticEquality(vectorShape1->GetSize(), vectorShape2->GetSize()))
 			{
 				return false;
 			}

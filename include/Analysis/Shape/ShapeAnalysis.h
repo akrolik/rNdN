@@ -36,7 +36,7 @@ class ShapeAnalysis : public HorseIR::ForwardAnalysis<ShapeAnalysisProperties>
 public:
 	using Properties = ShapeAnalysisProperties;
 
-	using HorseIR::ForwardAnalysis<Properties>::ForwardAnalysis;
+	ShapeAnalysis(const HorseIR::Program *program, bool enforce = false) : HorseIR::ForwardAnalysis<ShapeAnalysisProperties>(program), m_enforce(enforce) {}
 
 	void Visit(const HorseIR::Parameter *parameter) override;
 	void Visit(const HorseIR::DeclarationStatement *declarations) override;
@@ -66,6 +66,8 @@ private:
 	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_expressionShapes;
 	std::unordered_map<const HorseIR::Parameter *, const Shape *> m_parameterShapes;
 	std::vector<const Shape *> m_returnShapes;
+
+	bool m_enforce = false;
 };
 
 }
