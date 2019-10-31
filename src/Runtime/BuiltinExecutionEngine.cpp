@@ -114,6 +114,18 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 			return {new TableBuffer(columns)};
 		}
+		case HorseIR::BuiltinFunction::Primitive::Keys:
+		{
+			//TODO: Support more types
+			auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0));
+			return {dictionary->GetKeys()};
+		}
+		case HorseIR::BuiltinFunction::Primitive::Values:
+		{
+			//TODO: Support more types
+			auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0));
+			return {dictionary->GetValues()};
+		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
 			auto table = BufferUtils::GetBuffer<TableBuffer>(arguments.at(0));
