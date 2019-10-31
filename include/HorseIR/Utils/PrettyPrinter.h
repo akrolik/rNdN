@@ -66,6 +66,7 @@ public:
 
 	// Types
 
+	void Visit(const WildcardType *type) override;
 	void Visit(const BasicType *type) override;
 	void Visit(const FunctionType *type) override;
 	void Visit(const ListType *type) override;

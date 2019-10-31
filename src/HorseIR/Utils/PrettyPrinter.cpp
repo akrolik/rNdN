@@ -483,6 +483,11 @@ void PrettyPrinter::Visit(const FunctionLiteral *literal)
 	literal->GetIdentifier()->Accept(*this);
 }
 
+void PrettyPrinter::Visit(const WildcardType *type)
+{
+	m_string << "?";
+}
+
 void PrettyPrinter::Visit(const BasicType *type)
 {
 	m_string << BasicType::BasicKindString(type->GetBasicKind());
