@@ -39,7 +39,7 @@ void DataRegistry::LoadDebugData()
 {
 	Utils::Logger::LogSection("Loading debug data");
 
-	for (unsigned long i = 256; i <= 2048; i <<= 1)
+	for (unsigned long i = 32; i <= 2048; i <<= 1)
 	{
 		std::vector<std::pair<std::string, VectorBuffer *>> columns;
 
@@ -62,6 +62,9 @@ void DataRegistry::LoadTPCHData()
 	CUDA::Vector<double> quantity;
 	CUDA::Vector<double> extPrice;
 	CUDA::Vector<double> discount;
+	CUDA::Vector<double> tax;
+	CUDA::Vector<char> returnFlag;
+	CUDA::Vector<char> lineStatus;
 	CUDA::Vector<std::int32_t> shipDate;
 
 	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> reader("../data/tpc-h/lineitem.tbl");
@@ -78,6 +81,10 @@ void DataRegistry::LoadTPCHData()
 		quantity.push_back(atof(l_quantity));
 		extPrice.push_back(atof(l_extPrice));
 		discount.push_back(atof(l_discount));
+		tax.push_back(atof(l_tax));
+
+		returnFlag.push_back(l_returnFlag[0]);
+		lineStatus.push_back(l_lineStatus[0]);
 
 		int year, month, day;
 		sscanf(l_shipDate, "%d-%d-%d", &year, &month, &day);
@@ -93,6 +100,9 @@ void DataRegistry::LoadTPCHData()
 	columns.push_back({"l_quantity", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity))});
 	columns.push_back({"l_extendedprice", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice))});
 	columns.push_back({"l_discount", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount))});
+	columns.push_back({"l_tax", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), tax))});
+	columns.push_back({"l_returnflag", new TypedVectorBuffer<char>(new TypedVectorData<char>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), returnFlag))});
+	columns.push_back({"l_linestatus", new TypedVectorBuffer<char>(new TypedVectorData<char>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), lineStatus))});
 	columns.push_back({"l_shipdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate))});
 	
 	AddTable("lineitem", new TableBuffer(columns));
