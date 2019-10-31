@@ -71,7 +71,7 @@ public:
 		// Construct the loop body for checking the next value
 
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		auto value = operandGenerator.GenerateOperand(identifier, index, "member");
+		auto value = operandGenerator.GenerateOperand(identifier, index, this->m_builder.UniqueIdentifier("member"));
 
 		GenerateMerge(value);
 

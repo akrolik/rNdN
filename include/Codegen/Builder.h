@@ -113,9 +113,14 @@ public:
 		GetCurrentBlock()->InsertStatements(statements, index);
 	}
 
+	std::string UniqueIdentifier(const std::string& name)
+	{
+		return (name + "_" + std::to_string(m_uniqueIndex++));
+	}
+
 	const PTX::Label *CreateLabel(const std::string& name)
 	{
-		return new PTX::Label(name + "_" + std::to_string(m_labelIndex++));
+		return new PTX::Label(UniqueIdentifier(name));
 	}
 
 	RegisterAllocator *OpenScope(PTX::StatementList *block)
@@ -176,7 +181,7 @@ private:
 	std::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, KernelAllocator *> m_kernelResources;
 	std::unordered_map<PTX::Module *, ModuleAllocator *> m_globalResources;
 
-	unsigned int m_labelIndex = 0;
+	unsigned int m_uniqueIndex = 0;
 };
 
 }

@@ -398,7 +398,7 @@ public:
 			{
 				// Once the active thread count fits within a warp, reduce without synchronization
 
-				label->SetName("RED_STORE");
+				label->SetName(this->m_builder.UniqueIdentifier("RED_STORE"));
 				for (unsigned int j = i; j >= 1; j >>= 1)
 				{
 					GenerateSharedReduction(target, sharedThreadAddress, j);

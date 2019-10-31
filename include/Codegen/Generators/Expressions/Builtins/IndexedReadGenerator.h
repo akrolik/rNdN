@@ -52,7 +52,7 @@ public:
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
 			OperandGenerator<B, T> opGen(this->m_builder);
-			auto value = opGen.GenerateOperand(identifier, m_index, "index");
+			auto value = opGen.GenerateOperand(identifier, m_index, this->m_builder.UniqueIdentifier("index"));
 
 			MoveGenerator<T> moveGenerator(this->m_builder);
 			moveGenerator.Generate(m_targetRegister, value);
@@ -63,7 +63,7 @@ public:
 		else
 		{
 			OperandGenerator<B, T> opGen(this->m_builder);
-			auto value = opGen.GenerateOperand(identifier, m_index, "index");
+			auto value = opGen.GenerateOperand(identifier, m_index, this->m_builder.UniqueIdentifier("index"));
 
 			MoveGenerator<T> moveGenerator(this->m_builder);
 			moveGenerator.Generate(m_targetRegister, value);
