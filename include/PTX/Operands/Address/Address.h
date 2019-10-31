@@ -15,7 +15,7 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	virtual Address<B, T, S> *CreateOffsetAddress(unsigned int offset) const = 0;
+	virtual Address<B, T, S> *CreateOffsetAddress(int offset) const = 0;
 };
 
 template<class T, class S>

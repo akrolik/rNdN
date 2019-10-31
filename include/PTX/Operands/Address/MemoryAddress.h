@@ -19,13 +19,9 @@ public:
 
 	std::string ToString() const override
 	{
-		if (m_offset > 0)
+		if (m_offset != 0)
 		{
-			return m_variable->ToString() + "+" + std::to_string(m_offset);
-		}
-		else if (m_offset < 0)
-		{
-			return m_variable->ToString() + std::to_string(m_offset);
+			return m_variable->ToString() + "+" + std::to_string(static_cast<int>(sizeof(typename T::SystemType)) * m_offset);
 		}
 		else
 		{
@@ -48,7 +44,7 @@ public:
 	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
 	int GetOffset() const { return m_offset; }
 
-	virtual MemoryAddress<B, T, S> *CreateOffsetAddress(unsigned int offset) const override
+	MemoryAddress<B, T, S> *CreateOffsetAddress(int offset) const override
 	{
 		return new MemoryAddress(m_variable, m_offset + offset);
 	}
