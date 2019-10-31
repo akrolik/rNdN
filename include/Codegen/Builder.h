@@ -65,10 +65,19 @@ public:
 	{
 		m_currentKernel = kernel;
 		m_currentFunction = function;
-		if (kernel != nullptr && m_kernelResources.find(kernel) == m_kernelResources.end())
+		if (m_kernelResources.find(kernel) == m_kernelResources.end())
 		{
 			m_kernelResources.insert({kernel, new KernelAllocator()});
 		}
+	}
+
+	void CloseKernel()
+	{
+		auto declarations = GetKernelResources()->GetDeclarations();
+		m_currentKernel->InsertStatements(declarations, 0);
+
+		m_currentKernel = nullptr;
+		m_currentFunction = nullptr;
 	}
 
 	template<class T, class S>

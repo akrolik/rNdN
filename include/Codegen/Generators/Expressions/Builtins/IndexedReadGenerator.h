@@ -4,7 +4,6 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -45,24 +44,29 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
+
 		if (auto predicate = resources->template GetCompressedRegister<T>(m_targetRegister))
 		{
 			auto label = this->m_builder.CreateLabel("END");
 			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
-			auto name = NameUtils::VariableName(identifier);
-			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			loadGenerator.template GeneratePointer<T>(name, m_targetRegister, m_index);
+			OperandGenerator<B, T> opGen(this->m_builder);
+			auto value = opGen.GenerateOperand(identifier, m_index, "index");
+
+			MoveGenerator<T> moveGenerator(this->m_builder);
+			moveGenerator.Generate(m_targetRegister, value);
 
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 			this->m_builder.AddStatement(label);
 		}
 		else
 		{
-			auto name = NameUtils::VariableName(identifier);
-			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			loadGenerator.template GeneratePointer<T>(name, m_targetRegister, m_index);
+			OperandGenerator<B, T> opGen(this->m_builder);
+			auto value = opGen.GenerateOperand(identifier, m_index, "index");
+
+			MoveGenerator<T> moveGenerator(this->m_builder);
+			moveGenerator.Generate(m_targetRegister, value);
 		}
 	}
 

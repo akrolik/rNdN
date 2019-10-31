@@ -32,19 +32,21 @@ public:
 		return declaration->GetName();
 	}
 
-	static std::string DataAddressName(const std::string& name)
-	{
-		return "$data$" + name;
-	}
-
 	static std::string ReturnName(unsigned int returnIndex)
 	{
 		return "$return$" + std::to_string(returnIndex);
 	}
 
-	static std::string SizeName(const std::string& name)
+	template<class T>
+	static std::string DataAddressName(const PTX::ParameterVariable<T> *parameter)
 	{
-		return "$size$" + name;
+		return "$data$" + parameter->GetName();
+	}
+
+	template<class T>
+	static std::string SizeName(const PTX::ParameterVariable<T> *parameter)
+	{
+		return "$size$" + parameter->GetName();
 	}
 };
 

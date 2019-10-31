@@ -69,7 +69,7 @@ public:
 		}
 
 		auto name = "$sdata$" + T::TypePrefix() + "_" + identifier;
-		auto declaration = new PTX::GlobalDeclaration<T>({name});
+		auto declaration = new PTX::SharedDeclaration<T>({name});
 		m_sharedDeclarations.push_back(declaration);
 
 		const auto resource = declaration->GetVariable(name);

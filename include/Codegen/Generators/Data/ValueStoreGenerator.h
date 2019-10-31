@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
@@ -102,15 +104,23 @@ public:
 				const auto cellVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape);
 				const auto cellVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry);
 
-				if (cellVector && cellVectorGeometry && Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+				if (cellVector && cellVectorGeometry)
 				{
-					GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, IndexGenerator::Kind::Null, returnIndex);
-					return;
-				}
-				else if (*listGeometry == *listShape)
-				{
-					GenerateWriteVector<T>(operand, IndexGenerator::Kind::CellData, returnIndex);
-					return;
+					if (Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+					{
+						GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, IndexGenerator::Kind::Null, returnIndex);
+						return;
+					}
+					else if (*cellVector == *cellVectorGeometry)
+					{
+						GenerateWriteVector<T>(operand, IndexGenerator::Kind::CellData, returnIndex);
+						return;
+					}
+					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(cellVector->GetSize()))
+					{
+						GenerateWriteCompressed<T>(operand, returnIndex);
+						return;
+					}
 				}
 			}
 		}
@@ -325,26 +335,8 @@ public:
 		auto resources = this->m_builder.GetLocalResources();
 		if (auto indexed = resources->template GetIndexedRegister<T>(value))
 		{
-			// Check for compression - this will mask outputs
-
-			if (auto predicate = resources->template GetCompressedRegister<T>(value))
-			{
-				auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
-
-				this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
-				this->m_builder.AddStatement(new PTX::BlankStatement());
-
-				auto address = GenerateAddress<T>(returnIndex, indexed);
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-
-				this->m_builder.AddStatement(new PTX::BlankStatement());
-				this->m_builder.AddStatement(label);
-			}
-			else
-			{
-				auto address = GenerateAddress<T>(returnIndex, indexed);
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-			}
+			auto address = GenerateAddress<T>(returnIndex, indexed);
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
 		}
 		else
 		{
@@ -361,7 +353,40 @@ public:
 	template<class T>
 	void GenerateWriteCompressed(const HorseIR::Operand *operand, unsigned int returnIndex)
 	{
-		//TODO: Compressed output
+		// Fetch the data and write to the compressed index
+
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
+
+		auto resources = this->m_builder.GetLocalResources();
+		if (auto predicate = resources->template GetCompressedRegister<T>(value))
+		{
+			// If we have a compression mask, the vector can be written directly
+
+			if (auto indexed = resources->template GetIndexedRegister<T>(value))
+			{
+				// Check for compression - this will mask outputs
+
+				auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
+
+				this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
+				this->m_builder.AddStatement(new PTX::BlankStatement());
+
+				auto address = GenerateAddress<T>(returnIndex, indexed);
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+
+				this->m_builder.AddStatement(new PTX::BlankStatement());
+				this->m_builder.AddStatement(label);
+			}
+			else
+			{
+				//TODO: Compressed output
+			}
+		}
+		else
+		{
+			Utils::Logger::LogError("Unable to find compression predicate for return parameter " + NameUtils::ReturnName(returnIndex));
+		}
 	}
 
 	template<class T>
@@ -369,17 +394,28 @@ public:
 	{
 		// Get the address register for the return and offset by the index
 
-		auto resources = this->m_builder.GetLocalResources();
-
-		auto name = NameUtils::DataAddressName(NameUtils::ReturnName(returnIndex));
-		auto addressRegister = resources->GetRegister<PTX::UIntType<B>>(name);
-
-		// Generate the address for the correct index
+		auto kernelResources = this->m_builder.GetKernelResources();
+		auto returnName = NameUtils::ReturnName(returnIndex);
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		return addressGenerator.template GenerateAddress<T, PTX::GlobalSpace>(addressRegister, index);
-	}
 
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		auto shape = inputOptions.ReturnShapes.at(returnIndex);
+		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+		{
+			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(returnName);
+			return addressGenerator.template GenerateAddress<T>(returnParameter, index);
+		}
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+		{
+			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(returnName);
+			return addressGenerator.template GenerateAddress<T>(returnParameter, index);
+		}
+		else
+		{
+			Utils::Logger::LogError("Unable to generate address for return parameter " + NameUtils::ReturnName(returnIndex));
+		}
+	}
 };
 
 }

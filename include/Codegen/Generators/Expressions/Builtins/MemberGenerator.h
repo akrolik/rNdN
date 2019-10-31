@@ -4,7 +4,6 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
@@ -57,7 +56,7 @@ public:
 		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(index, new PTX::UInt32Value(0)));
 
-		SizeGenerator sizeGenerator(this->m_builder);
+		SizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(identifier);
 
 		auto startLabel = this->m_builder.CreateLabel("START");
@@ -71,11 +70,8 @@ public:
 
 		// Construct the loop body for checking the next value
 
-		auto value = resources->template AllocateTemporary<T>();
-		auto name = NameUtils::VariableName(identifier);
-
-		ValueLoadGenerator<B> loadGenerator(this->m_builder);
-		loadGenerator.template GeneratePointer<T>(name, value, index);
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		auto value = operandGenerator.GenerateOperand(identifier, index, "member");
 
 		GenerateMerge(value);
 

@@ -58,70 +58,86 @@ public:
 
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			Generate<PTX::Int8Type>(name, shape);
+			Generate<PTX::Int8Type>(name, shape, returnParameter);
 		}
 		else
 		{
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			bool dynamicSize = (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry) && !returnParameter);
+			auto loadSize = Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry);
 
+			auto kernelResources = this->m_builder.GetKernelResources();
 			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
 			{
-				GenerateVector<T>(name, dynamicSize);
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
+				GenerateVector<T>(parameter, loadSize, returnParameter);
 			}
 			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
 			{
-				GenerateList<T>(name, dynamicSize);
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+				GenerateList<T>(parameter, loadSize, returnParameter);
 			}
 		}
 	}
 
 	template<class T>
-	void GenerateVector(const std::string& name, bool dynamicSize)
+	void GenerateVector(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, bool loadSize = false, bool returnParameter = false)
 	{
 		// Get the variable from the kernel resources, and generate the address
 
-		auto kernelResources = this->m_builder.GetKernelResources();
-		auto variable = kernelResources->template GetParameter<PTX::PointerType<B, T>, PTX::ParameterSpace>(name);
-
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		addressGenerator.template LoadParameterAddress<T>(variable);
+		addressGenerator.template LoadParameterAddress<T>(parameter);
 
 		// Load the dynamic size parameter if needed
 
-		if (dynamicSize)
+		if (loadSize)
 		{
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto sizeName = NameUtils::SizeName(parameter);
+
 			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			loadGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(name));
+			if (returnParameter)
+			{
+				// Return dynamic shapes use pointer types for accumulating size
+
+				auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(sizeName);
+
+				AddressGenerator<B> addressGenerator(this->m_builder);
+				addressGenerator.template LoadParameterAddress<PTX::UInt32Type>(sizeParameter);
+				loadGenerator.template GeneratePointer<PTX::UInt32Type>(sizeParameter);
+			}
+			else
+			{
+				auto sizeParameter = kernelResources->template GetParameter<PTX::UInt32Type>(sizeName);
+				loadGenerator.template GenerateConstant<PTX::UInt32Type>(sizeParameter);
+			}
 		}
 	}
 
 	template<class T>
-	void GenerateList(const std::string& name, bool dynamicSize)
+	void GenerateList(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, bool loadSize = false, bool returnParameter = false)
 	{
 		// Get the variable from the kernel resources, and generate the address. This will load the cell contents in addition to the list structure
-
-		auto kernelResources = this->m_builder.GetKernelResources();
-		auto variable = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>, PTX::ParameterSpace>(name);
 
 		IndexGenerator indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateCellIndex();
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
-		addressGenerator.template LoadParameterAddress<T>(variable, index);
+		addressGenerator.template LoadParameterAddress<T>(parameter, index);
 
 		// Load the dynamic size parameter if needed
 
-		if (dynamicSize)
+		if (loadSize)
 		{
-			auto sizeName = NameUtils::SizeName(name);
-			auto sizeVariable = kernelResources->template GetParameter<PTX::PointerType<B, PTX::UInt32Type>, PTX::ParameterSpace>(sizeName);
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto sizeName = NameUtils::SizeName(parameter);
+
+			auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(sizeName);
 
 			AddressGenerator<B> addressGenerator(this->m_builder);
-			addressGenerator.template LoadParameterAddress<PTX::UInt32Type>(sizeVariable);
+			addressGenerator.template LoadParameterAddress<PTX::UInt32Type>(sizeParameter);
 
 			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			loadGenerator.template GeneratePointer<PTX::UInt32Type>(sizeName, index);
+			loadGenerator.template GeneratePointer<PTX::UInt32Type>(sizeParameter, index);
 		}
 	}
 };

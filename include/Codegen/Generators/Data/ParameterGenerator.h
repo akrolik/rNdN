@@ -56,7 +56,7 @@ public:
 			{
 				// Add vector parameter to the kernel
 
-				GeneratePointer<T>(name);
+				auto parameter = GeneratePointer<T>(name);
 
 				// Determine if we need a size parameter for the argument
 
@@ -66,11 +66,11 @@ public:
 					{
 						// Return dynamic shapes use pointer types for accumulating size
 
-						GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(name));
+						GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 					}
 					else
 					{
-						GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(name));
+						GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 					}
 				}
 			}
@@ -78,32 +78,38 @@ public:
 			{
 				// Add list parameter (pointer of pointers) to the kernel
 
-				GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
+				auto parameter = GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
 
 				// Determine if we need a size parameter for the argument. List sizes are always stored in global space
 
 				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry))
 				{
-					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(name));
+					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}
 			}
 		}
 	}
 
 	template<class T>
-	void GeneratePointer(const std::string& name)
+	const PTX::ParameterVariable<PTX::PointerType<B, T>> *GeneratePointer(const std::string& name)
 	{
 		// Allocate a pointer parameter declaration for the type
 
-		this->m_builder.AddParameter(name, new PTX::PointerDeclaration<B, T>(name));
+		auto declaration = new PTX::PointerDeclaration<B, T>(name);
+		this->m_builder.AddParameter(name, declaration);
+
+		return declaration->GetVariable(name);
 	}
 
 	template<class T>
-	void GenerateConstant(const std::string& name)
+	const PTX::ParameterVariable<T> *GenerateConstant(const std::string& name)
 	{
 		// Allocate a constant parameter declaration for the type
 
-		this->m_builder.AddParameter(name, new PTX::ParameterDeclaration<T>(name));
+		auto declaration = new PTX::ParameterDeclaration<T>(name);
+		this->m_builder.AddParameter(name, declaration);
+
+		return declaration->GetVariable(name);
 	}
 };
 

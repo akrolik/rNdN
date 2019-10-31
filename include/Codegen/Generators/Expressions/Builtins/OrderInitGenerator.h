@@ -96,7 +96,7 @@ public:
 
 		// Compute the number of active data items - the rest will be nulled. We assume all data columns are the same size
 
-		SizeGenerator sizeGenerator(this->m_builder);
+		SizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(arguments.at(0));
 
 		// Generate the if-else structure

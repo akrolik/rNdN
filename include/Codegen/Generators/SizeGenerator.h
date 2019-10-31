@@ -5,11 +5,13 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
+#include "Codegen/Generators/TypeDispatch.h"
 
 #include "PTX/PTX.h"
 
 namespace Codegen {
 
+template<PTX::Bits B>
 class SizeGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
@@ -33,24 +35,50 @@ public:
 	
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
-		auto& inputOptions = this->m_builder.GetInputOptions();
-		auto& parameterShapes = inputOptions.ParameterShapes;
-
-		auto symbol = identifier->GetSymbol();
-		if (parameterShapes.find(symbol) != parameterShapes.end())
+		DispatchType(*this, identifier->GetType(), identifier);
+	}
+	
+	template<class T>
+	void Generate(const HorseIR::Identifier *identifier)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			auto shape = parameterShapes.at(symbol);   
-			m_size = GenerateSize(identifier, shape, inputOptions.ThreadGeometry);
+			Generate<PTX::Int8Type>(identifier);
+		}
+		else
+		{
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto& inputOptions = this->m_builder.GetInputOptions();
+			auto& parameterShapes = inputOptions.ParameterShapes;
+
+			auto find = parameterShapes.find(identifier->GetSymbol());
+			if (find != parameterShapes.end())
+			{
+				auto shape = find->second;
+				auto name = NameUtils::VariableName(identifier);
+
+				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+				{
+					auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
+					m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
+				}
+				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+				{
+					auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+					m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
+				}
+			}
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Identifier *identifier, const Analysis::Shape *shape, const Analysis::Shape *threadGeometry) const
+	template<class T>
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape *shape, const Analysis::Shape *threadGeometry) const
 	{
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
 		{
 			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 			{
-				return GenerateSize(identifier, vectorShape->GetSize(), vectorGeometry->GetSize());
+				return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
 			}
 		}
 		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))
@@ -60,14 +88,14 @@ public:
 			{
 				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 				{
-					return GenerateSize(identifier, vectorShape->GetSize(), vectorGeometry->GetSize());
+					return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
 				}
 				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 				{
 					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
 					if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
 					{
-						return GenerateSize(identifier, vectorShape->GetSize(), vectorGeometry->GetSize());
+						return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
 					}
 				}
 			}
@@ -75,7 +103,8 @@ public:
 		return nullptr;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Identifier *identifier, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize) const
+	template<class T>
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize) const
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -97,10 +126,9 @@ public:
 		}
 		else
 		{
-			// Size is not statically determined, load at runtime
+			// Size is not statically determined, load at runtime from special register
 
-			auto name = NameUtils::SizeName(NameUtils::VariableName(identifier));
-			return resources->GetRegister<PTX::UInt32Type>(name);
+			return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 		}
 	}
 

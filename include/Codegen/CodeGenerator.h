@@ -182,7 +182,7 @@ public:
 
 		m_builder.GetKernelOptions().SetDynamicSharedMemorySize(m_builder.GetGlobalResources()->GetDynamicSharedMemorySize());
 		m_builder.CloseScope();
-		m_builder.SetCurrentKernel(nullptr, nullptr);
+		m_builder.CloseKernel();
 	}
 
 private:

@@ -44,23 +44,49 @@ public:
 		return "unknown";
 	}
 
-	const PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Expression *expression, LoadKind loadKind)
+	const PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Operand *operand, const PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName = "")
 	{
-		m_loadKind = loadKind;
+		m_index = index;
+		m_indexName = indexName;
 
 		m_operand = nullptr;
-		expression->Accept(*this);
+		operand->Accept(*this);
 		if (m_operand != nullptr)
 		{
 			return m_operand;
 		}
 
-		Utils::Logger::LogError("Unable to generate operand '" + HorseIR::PrettyPrinter::PrettyString(expression) + "'");
+		Utils::Logger::LogError("Unable to generate indexed operand '" + HorseIR::PrettyPrinter::PrettyString(operand) + "'");
 	}
 
-	const PTX::Register<T> *GenerateRegister(const HorseIR::Expression *expression, LoadKind loadKind)
+	const PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Operand *operand, LoadKind loadKind)
 	{
-		const PTX::TypedOperand<T> *operand = GenerateOperand(expression, loadKind);
+		m_loadKind = loadKind;
+		m_index = nullptr;
+		m_indexName = "";
+
+		m_operand = nullptr;
+		operand->Accept(*this);
+		if (m_operand != nullptr)
+		{
+			return m_operand;
+		}
+
+		Utils::Logger::LogError("Unable to generate operand '" + HorseIR::PrettyPrinter::PrettyString(operand) + "'");
+	}
+
+	const PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, const PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName = "")
+	{
+		return GenerateRegister(GenerateOperand(operand, index, indexName));
+	}
+
+	const PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, LoadKind loadKind)
+	{
+		return GenerateRegister(GenerateOperand(operand, loadKind));
+	}
+
+	const PTX::Register<T> *GenerateRegister(const PTX::TypedOperand<T> *operand)
+	{
 		if (m_register)
 		{
 			return static_cast<const PTX::Register<T> *>(operand);
@@ -88,7 +114,7 @@ public:
 		// Determine if the identifier is a local variable or parameter
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto name = NameUtils::VariableName(identifier);
+		auto name = NameUtils::VariableName(identifier, m_indexName);
 
 		// Check if the register has been assigned (or re-assigned for parameters)
 
@@ -101,7 +127,9 @@ public:
 			// Check if the register is a parameter
 
 			auto& parameterShapes = this->m_builder.GetInputOptions().ParameterShapes;
-			if (parameterShapes.find(identifier->GetSymbol()) != parameterShapes.end())
+
+			auto find = parameterShapes.find(identifier->GetSymbol());
+			if (find != parameterShapes.end())
 			{
 				// Check if we have a cached register for the load kind, or need to generate the load
 
@@ -112,14 +140,42 @@ public:
 				}
 				else
 				{
-					// Generate the load according to the load kind and data size
+					// Generate the load according to the load kind and data size or absolutely using the supplied index
 
-					auto shape = parameterShapes.at(identifier->GetSymbol());   
-					auto index = GetIndex(identifier, shape, m_loadKind);
-
-					ValueLoadGenerator<B> loadGenerator(this->m_builder);
-					GenerateRegister(loadGenerator.template GeneratePointer<S>(name, index, sourceName));
+					GenerateParameterLoad<S>(identifier, find->second);
 				}
+			}
+		}
+	}
+
+	template<class S>
+	void GenerateParameterLoad(const HorseIR::Identifier *identifier, const Analysis::Shape *shape)
+	{
+		if constexpr(std::is_same<S, PTX::PredicateType>::value)
+		{
+			// Boolean parameters are stored as 8-bit integers
+
+			GenerateParameterLoad<PTX::Int8Type>(identifier, shape);
+		}
+		else
+		{
+			auto kernelResources = this->m_builder.GetKernelResources();
+
+			auto name = NameUtils::VariableName(identifier);
+			auto sourceName = NameUtils::VariableName(identifier, m_indexName);
+
+			auto index = (m_index == nullptr) ? GetIndex(identifier, shape, m_loadKind) : m_index;
+
+			ValueLoadGenerator<B> loadGenerator(this->m_builder);
+			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, S>>(name);
+				GenerateRegister(loadGenerator.template GeneratePointer<S>(parameter, index, sourceName));
+			}
+			else
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, S, PTX::GlobalSpace>>>(name);
+				GenerateRegister(loadGenerator.template GeneratePointer<S>(parameter, index, sourceName));
 			}
 		}
 	}
@@ -180,6 +236,11 @@ public:
 
 	void Visit(const HorseIR::DateLiteral *literal) override
 	{
+		if (m_index != nullptr)
+		{
+			Utils::Logger::LogError("Absolute operand indexing not supported for literals");
+		}
+
 		//TODO: Extend to other date types
 		if (literal->GetCount() == 1)
 		{
@@ -194,6 +255,11 @@ public:
 	template<class L>
 	void Generate(const HorseIR::TypedVectorLiteral<L> *literal)
 	{
+		if (m_index != nullptr)
+		{
+			Utils::Logger::LogError("Absolute operand indexing not supported for literals");
+		}
+
 		if (literal->GetCount() == 1)
 		{
 			if constexpr(std::is_same<typename T::SystemType, L>::value)
@@ -262,8 +328,8 @@ private:
 
 			auto index = indexGenerator.GenerateIndex(indexKind);
 
-			SizeGenerator sizeGenerator(this->m_builder);
-			auto dynamicSize = sizeGenerator.GenerateSize(identifier, size, geometrySize);
+			SizeGenerator<B> sizeGenerator(this->m_builder);
+			auto dynamicSize = sizeGenerator.GenerateSize(identifier);
 
 			return GetSizeIndex(dynamicSize, index);
 		}
@@ -331,6 +397,9 @@ private:
 	bool m_register = false;
 
 	LoadKind m_loadKind;
+
+	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
+	std::string m_indexName = "";
 };
 
 }

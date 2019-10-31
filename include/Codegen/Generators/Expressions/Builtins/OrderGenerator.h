@@ -2,6 +2,7 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/LiteralGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
@@ -41,9 +42,9 @@ public:
 	template<class T>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		ValueLoadGenerator<B> loadGenerator(this->m_builder);
-		loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_leftIndex, identifier->GetName() + "_left");
-		loadGenerator.template GeneratePointer<T>(identifier->GetName(), m_rightIndex, identifier->GetName() + "_right");
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		operandGenerator.GenerateOperand(identifier, m_leftIndex, "left");
+		operandGenerator.GenerateOperand(identifier, m_rightIndex, "right");
 	}
 
 private:
@@ -88,26 +89,21 @@ public:
 	template<class T>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		auto resources = this->m_builder.GetLocalResources();
-
-		auto leftValue = resources->template GetRegister<T>(identifier->GetName() + "_left");
-		auto rightValue = resources->template GetRegister<T>(identifier->GetName() + "_right");
-
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
-			auto convertedLeft = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, leftValue);
-			auto convertedRight = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, rightValue);
-
-			Generate(convertedLeft, convertedRight);
+			Generate<PTX::Int16Type>(identifier);
 		}
 		else
 		{
-			Generate(leftValue, rightValue);
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			auto leftValue = operandGenerator.GenerateOperand(identifier, nullptr, "left");
+			auto rightValue = operandGenerator.GenerateOperand(identifier, nullptr, "right");
+			Generate<T>(leftValue, rightValue);
 		}
 	}
 
 	template<class T>
-	void Generate(const PTX::Register<T> *leftValue, const PTX::Register<T> *rightValue)
+	void Generate(const PTX::TypedOperand<T> *leftValue, const PTX::TypedOperand<T> *rightValue)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto predicateSwap = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -154,33 +150,7 @@ public:
 
 	void Generate(const HorseIR::Operand *index, const std::vector<HorseIR::Operand *>& dataArguments)
 	{
-		auto resources = this->m_builder.GetLocalResources();
-
-		// Swap the index, first computing the address, loading the left/right values, and finally writing back
-
-		auto addressRegister = resources->GetRegister<PTX::UIntType<B>>(NameUtils::DataAddressName("index"));
-
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto leftAddress = addressGenerator.template GenerateAddress<PTX::UInt64Type, PTX::GlobalSpace>(addressRegister, m_leftIndex);
-		auto rightAddress = addressGenerator.template GenerateAddress<PTX::UInt64Type, PTX::GlobalSpace>(addressRegister, m_rightIndex);
-
-		auto leftValue = resources->template AllocateTemporary<PTX::UInt64Type>();
-		auto rightValue = resources->template AllocateTemporary<PTX::UInt64Type>();
-
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(leftValue, leftAddress));
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(rightValue, rightAddress));
-
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(leftAddress, rightValue));
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(rightAddress, leftValue));
-
-		for (const auto argument : dataArguments)
-		{
-			argument->Accept(*this);
-		}
-	}
-
-	void Generate(const std::vector<HorseIR::Operand *>& dataArguments)
-	{
+		index->Accept(*this);
 		for (const auto argument : dataArguments)
 		{
 			argument->Accept(*this);
@@ -200,37 +170,36 @@ public:
 	template<class T>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		auto resources = this->m_builder.GetLocalResources();
-
-		auto addressRegister = resources->GetRegister<PTX::UIntType<B>>(NameUtils::DataAddressName(identifier->GetName()));
-
-		auto leftValue = resources->template GetRegister<T>(identifier->GetName() + "_left");
-		auto rightValue = resources->template GetRegister<T>(identifier->GetName() + "_right");
-
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			// Predicate values are stored as 8-bit integers
-
-			auto convertedLeft = ConversionGenerator::ConvertSource<PTX::Int8Type, T>(this->m_builder, leftValue);
-			auto convertedRight = ConversionGenerator::ConvertSource<PTX::Int8Type, T>(this->m_builder, rightValue);
-
-			Generate(addressRegister, convertedLeft, convertedRight);
+			Generate<PTX::Int8Type>(identifier);
 		}
 		else
 		{
-			Generate(addressRegister, leftValue, rightValue);
+			// Swap the left and right values in global memory
+
+			auto resources = this->m_builder.GetLocalResources();
+			auto kernelResources = this->m_builder.GetKernelResources();
+			
+			// Get the left and right values
+
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			auto leftValue = operandGenerator.GenerateRegister(identifier, m_leftIndex, "left");
+			auto rightValue = operandGenerator.GenerateRegister(identifier, m_rightIndex, "right");
+
+			// Get the addresses of the left and right positions
+
+			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::VariableName(identifier));
+
+			AddressGenerator<B> addressGenerator(this->m_builder);
+			auto leftAddress = addressGenerator.template GenerateAddress<T>(parameter, m_leftIndex);
+			auto rightAddress = addressGenerator.template GenerateAddress<T>(parameter, m_rightIndex);
+
+			// Store the results back
+
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
 		}
-	}
-
-	template<class T>
-	void Generate(const PTX::Register<PTX::UIntType<B>> *addressRegister, const PTX::Register<T> *leftValue, const PTX::Register<T> *rightValue)
-	{
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto leftAddress = addressGenerator.template GenerateAddress<T, PTX::GlobalSpace>(addressRegister, m_leftIndex);
-		auto rightAddress = addressGenerator.template GenerateAddress<T, PTX::GlobalSpace>(addressRegister, m_rightIndex);
-
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
 	}
 
 private:
@@ -251,12 +220,12 @@ public:
 		// Add the special parameters for sorting (stage and substage) and load the values
 
 		ParameterGenerator<B> parameterGenerator(this->m_builder);
-		parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
-		parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
+		auto sortStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
+		auto sortSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
 
 		ValueLoadGenerator<B> valueLoadGenerator(this->m_builder);
-		auto stage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
-		auto substage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
+		auto stage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(sortStageParameter);
+		auto substage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(sortSubstageParameter);
 
 		IndexGenerator indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateGlobalIndex();

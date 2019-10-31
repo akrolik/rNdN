@@ -43,10 +43,10 @@ public:
 			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryDataSize));
 
 			ParameterGenerator<B> parameterGenerator(this->m_builder);
-			parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryDataSize);
+			auto geometryParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryDataSize);
 
 			ValueLoadGenerator<B> valueLoadGenerator(this->m_builder);
-			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryDataSize);
+			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(geometryParameter);
 		}
 
 		for (const auto& statement : function->GetStatements())
