@@ -18,7 +18,7 @@ DataBuffer *DataBuffer::Create(const HorseIR::Type *type, const Analysis::Shape 
 			if (const auto vectorType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type))
 			{
 				auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape);
-				return VectorBuffer::Create(vectorType, vectorShape);
+				return VectorBuffer::Create(vectorType, vectorShape->GetSize());
 			}
 			Utils::Logger::LogError("Vector shape requires basic type");
 		}

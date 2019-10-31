@@ -86,13 +86,12 @@ void Interpreter::Visit(const HorseIR::AssignStatement *assignS)
 	auto expression = assignS->GetExpression();
 	expression->Accept(*this);
 
-
 	// Check the expression return count is the same as the number of targets
 
 	auto& values = m_environment.Get(expression);
 	if (values.size() != assignS->GetTargetCount())
 	{
-		Utils::Logger::LogError("Invalid number of data objects for assignment. Expected " + std::to_string(assignS->GetTargetCount()) + ", received " + std::to_string(values.size()) + "'");
+		Utils::Logger::LogError("Invalid number of data objects for assignment. Expected " + std::to_string(assignS->GetTargetCount()) + ", received " + std::to_string(values.size()));
 	}
 
 	// Update the runtime data map, copying if necessary

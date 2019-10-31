@@ -19,7 +19,7 @@ class VectorBuffer : public DataBuffer
 public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Vector;
 
-	static VectorBuffer *Create(const HorseIR::BasicType *type, const Analysis::VectorShape *shape);
+	static VectorBuffer *Create(const HorseIR::BasicType *type, const Analysis::Shape::Size *size);
 	~VectorBuffer() override;
 
 	// Type/Shape

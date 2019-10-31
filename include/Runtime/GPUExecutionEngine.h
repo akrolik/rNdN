@@ -6,6 +6,7 @@
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
 
+#include "CUDA/Buffer.h"
 #include "CUDA/KernelInvocation.h"
 
 #include "PTX/FunctionOptions.h"
@@ -31,8 +32,8 @@ private:
 	Codegen::InputOptions GetInputOptions(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments, bool enforce) const;
 
 	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, std::uint32_t value, const std::string& description) const;
-	void AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
-	void AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape) const;
+	CUDA::Buffer *AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
+	CUDA::Buffer *AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape) const;
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;

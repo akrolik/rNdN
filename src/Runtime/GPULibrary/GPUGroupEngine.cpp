@@ -123,7 +123,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 		invocation.AddParameter(*dataBuffer->GetGPUReadBuffer());
 	}
 
-	auto keysBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape);
+	auto keysBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
 	Utils::Logger::LogInfo("Initializing keys buffer: [" + keysBuffer->Description() + "]");
 	invocation.AddParameter(*keysBuffer->GetGPUReadBuffer());
 
@@ -137,11 +137,11 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 	keysSizeBuffer->Clear();
 	invocation.AddParameter(*keysSizeBuffer);
 
-	auto valuesBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape);
+	auto valuesBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
 	Utils::Logger::LogInfo("Initializing values buffer: [" + valuesBuffer->Description() + "]");
 	invocation.AddParameter(*valuesBuffer->GetGPUReadBuffer());
 
-	Utils::Logger::LogInfo("Initializing values size buffer: [i32(" + std::to_string(sizeof(std::uint32_t)) + ") x 1]");
+	Utils::Logger::LogInfo("Initializing values size buffer: [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
 
 	auto valuesSizeBuffer = new CUDA::Buffer(&valuesSize, sizeof(std::uint32_t));
 	valuesSizeBuffer->AllocateOnGPU();
@@ -156,17 +156,19 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 
 	if (keysSize != valuesSize)
 	{
-		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary");
+		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary [" + std::to_string(keysSize) + " != " + std::to_string(valuesSize) + "]");
 	}
 
 	auto values = BufferUtils::GetVectorBuffer<std::int64_t>(valuesBuffer)->GetCPUReadBuffer();
 	auto indexes = BufferUtils::GetVectorBuffer<std::int64_t>(indexBuffer)->GetCPUReadBuffer()->GetValues();
 
+	Utils::Logger::LogInfo("Initializing dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
+
 	std::vector<DataBuffer *> entryBuffers;
 	for (auto entryIndex = 0; entryIndex < keysSize; ++entryIndex)
 	{
 		auto offset = values->GetValue(entryIndex);
-		auto end = (entryIndex + 1 == keysSize) ? size : values->GetValue(entryIndex + 1);
+		auto end = ((entryIndex + 1) == keysSize) ? size : values->GetValue(entryIndex + 1);
 		auto entrySize = end - offset;
 
 		CUDA::Vector<std::int64_t> data;
@@ -176,13 +178,14 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 		auto entryData = new TypedVectorData<std::int64_t>(entryType, data);
 		auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryData);
 
+		Utils::Logger::LogInfo("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
+
 		entryBuffers.push_back(entryBuffer);
 	}
 
 	// Collapse the index buffer
 
-	auto collapsedKeysShape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(keysSize));
-	auto collapsedKeysBuffer = VectorBuffer::Create(indexBuffer->GetType(), collapsedKeysShape);
+	auto collapsedKeysBuffer = VectorBuffer::Create(indexBuffer->GetType(), new Analysis::Shape::ConstantSize(keysSize));
 	CUDA::Buffer::Copy(collapsedKeysBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), keysSize * indexBuffer->GetElementSize());
 
 	auto dictionaryValuesBuffer = new ListBuffer(entryBuffers);

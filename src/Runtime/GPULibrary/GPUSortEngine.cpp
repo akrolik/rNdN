@@ -103,7 +103,7 @@ std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const
 
 	// Initialize sort buffers with the padded vector size
 
-	auto indexBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape);
+	auto indexBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
 	Utils::Logger::LogInfo("Initializing sort buffer: [" + indexBuffer->Description() + "]");
 
 	std::vector<VectorBuffer *> sortBuffers;
@@ -111,7 +111,7 @@ std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const
 	{
 		// Create a new buffer for the padded sort value
 
-		auto buffer = VectorBuffer::Create(column->GetType(), vectorShape);
+		auto buffer = VectorBuffer::Create(column->GetType(), vectorShape->GetSize());
 
 		Utils::Logger::LogInfo("Initializing sort buffer: [" + buffer->Description() + "]");
 
@@ -192,14 +192,13 @@ std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const
 		std::vector<VectorBuffer *> collapsedSortBuffers;
 		for (auto sortBuffer : sortBuffers)
 		{
-			auto collapsedShape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(size));
-			auto collapsedBuffer = VectorBuffer::Create(sortBuffer->GetType(), collapsedShape);
+			auto collapsedBuffer = VectorBuffer::Create(sortBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
 			CUDA::Buffer::Copy(collapsedBuffer->GetGPUWriteBuffer(), sortBuffer->GetGPUReadBuffer(), size * sortBuffer->GetElementSize());
+			collapsedSortBuffers.push_back(collapsedBuffer);
 			delete sortBuffer;
 		}
 
-		auto collapsedShape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(size));
-		auto collapsedIndexBuffer = VectorBuffer::Create(indexBuffer->GetType(), collapsedShape);
+		auto collapsedIndexBuffer = VectorBuffer::Create(indexBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
 		CUDA::Buffer::Copy(collapsedIndexBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * indexBuffer->GetElementSize());
 		delete indexBuffer;
 

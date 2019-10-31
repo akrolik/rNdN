@@ -8,9 +8,8 @@
 
 namespace Runtime {
 
-VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysis::VectorShape *shape)
+VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysis::Shape::Size *size)
 {
-	const auto size = shape->GetSize();
 	if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(size))
 	{
 		auto value = constantSize->GetValue();
@@ -18,6 +17,8 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 		{
 			case HorseIR::BasicType::BasicKind::Boolean:
 				return new TypedVectorBuffer<uint8_t>(type, value);
+			case HorseIR::BasicType::BasicKind::Char:
+				return new TypedVectorBuffer<int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int8:
 				return new TypedVectorBuffer<int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int16:
@@ -37,6 +38,10 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 			default:   
 				Utils::Logger::LogError("Unable to create vector of type " + HorseIR::PrettyPrinter::PrettyString(type));
 		}
+	}
+	else if (const auto compressedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(size))
+	{
+		return VectorBuffer::Create(type, compressedSize->GetSize());
 	}
 	Utils::Logger::LogError("Vector buffer expects constant size");
 }
