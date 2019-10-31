@@ -78,7 +78,7 @@ public:
 
 		while (!queue.empty())
 		{
-			const auto& node = queue.front();
+			const auto node = queue.front();
 			queue.pop();
 
 			// Apply the given function
