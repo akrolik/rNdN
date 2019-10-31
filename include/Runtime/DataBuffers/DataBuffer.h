@@ -18,6 +18,7 @@ public:
 	enum class Kind {
 		Vector,
 		List,
+		Dictionary,
 		Table
 	};
 
@@ -29,6 +30,8 @@ public:
 				return "DataBuffer::Vector";
 			case Kind::List:
 				return "DataBuffer::List";
+			case Kind::Dictionary:
+				return "DataBuffer::Dictionary";
 			case Kind::Table:
 				return "DataBuffer::Table";
 		}
