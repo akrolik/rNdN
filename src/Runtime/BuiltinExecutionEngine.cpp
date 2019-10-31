@@ -8,6 +8,7 @@
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "Runtime/GPULibrary/GPUSortEngine.h"
+#include "Runtime/GPULibrary/GPUGroupEngine.h"
 
 #include "Utils/Logger.h"
 
@@ -54,7 +55,42 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			// Sort!
 
 			GPUSortEngine sortEngine(m_runtime);
-			return {sortEngine.Sort(columns, _orders)};
+			auto [indexBuffer, dataBuffers] = sortEngine.Sort(columns, _orders);
+
+			// Free the sort buffers
+
+			for (auto dataBuffer : dataBuffers)
+			{
+				delete dataBuffer->GetGPUWriteBuffer();
+			}
+
+			return {indexBuffer};
+		}
+		case HorseIR::BuiltinFunction::Primitive::Group:
+		{
+			// Collect the columns for the group - decomposing the list into individual vectors
+
+			std::vector<VectorBuffer *> columns;
+			if (auto listSort = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0), false))
+			{
+				for (auto buffer : listSort->GetCells())
+				{
+					columns.push_back(BufferUtils::GetBuffer<VectorBuffer>(buffer));
+				}
+			}
+			else if (auto vectorSort = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(0), false))
+			{
+				columns.push_back(vectorSort);
+			}
+			else
+			{
+				Error("expects either a single vector or a list of vectors");
+			}
+
+			// Group!
+
+			GPUGroupEngine groupEngine(m_runtime);
+			return {groupEngine.Group(columns)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{

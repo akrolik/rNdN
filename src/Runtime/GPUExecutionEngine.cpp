@@ -430,7 +430,7 @@ void GPUExecutionEngine::AllocateSizeBuffer(CUDA::KernelInvocation& invocation, 
 			// Compressed buffers are allowed as input, where they compute the number of elements.
 			// This requires a global memory allocation to output the result
 
-			Utils::Logger::LogInfo("Initializing input argument: <dynamic vector size> [i32(" + std::to_string(sizeof(std::uint32_t)) + ") x 1]");
+			Utils::Logger::LogInfo("Initializing input argument: <dynamic vector size> [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
 
 			auto buffer = new CUDA::Buffer(sizeof(std::uint32_t));
 			buffer->AllocateOnGPU();

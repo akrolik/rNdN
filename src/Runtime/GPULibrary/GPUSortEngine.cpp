@@ -21,7 +21,7 @@
 
 namespace Runtime {
 
-VectorBuffer *GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders)
+std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders)
 {
 	// Generate the program (init and sort functions) for the provided columns
 
@@ -182,28 +182,31 @@ VectorBuffer *GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, co
 			sortInvocation.Launch();
 		}
 	}
-	// Free the sort buffers
-
-	for (auto sortBuffer : sortBuffers)
-	{
-		delete sortBuffer->GetGPUWriteBuffer();
-	}
 
 	// Resize the index buffer to fit the number of indices if needed
 
 	if (activeSize > size)
 	{
-		// Allocate a smaller buffer and copy the data
+		// Allocate a smaller buffer for each column and copy the data
+
+		std::vector<VectorBuffer *> collapsedSortBuffers;
+		for (auto sortBuffer : sortBuffers)
+		{
+			auto collapsedShape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(size));
+			auto collapsedBuffer = VectorBuffer::Create(sortBuffer->GetType(), collapsedShape);
+			CUDA::Buffer::Copy(collapsedBuffer->GetGPUWriteBuffer(), sortBuffer->GetGPUReadBuffer(), size * sortBuffer->GetElementSize());
+			delete sortBuffer;
+		}
 
 		auto collapsedShape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(size));
-		auto collapsedBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), collapsedShape);
-
-		CUDA::Buffer::Copy(collapsedBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * sizeof(std::int64_t));
+		auto collapsedIndexBuffer = VectorBuffer::Create(indexBuffer->GetType(), collapsedShape);
+		CUDA::Buffer::Copy(collapsedIndexBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * indexBuffer->GetElementSize());
 		delete indexBuffer;
-	
-		return collapsedBuffer;
+
+		return {collapsedIndexBuffer, collapsedSortBuffers};
 	}
-	return indexBuffer;
+
+	return {indexBuffer, sortBuffers};
 }
 
 std::pair<Codegen::InputOptions, Codegen::InputOptions> GPUSortEngine::GenerateInputOptions(

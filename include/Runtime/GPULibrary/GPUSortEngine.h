@@ -18,7 +18,7 @@ class GPUSortEngine
 public:
 	GPUSortEngine(Runtime& runtime) : m_runtime(runtime) {}
 
-	VectorBuffer *Sort(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders);
+	std::pair<VectorBuffer *, std::vector<VectorBuffer *>> Sort(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders);
 
 private:
 	std::pair<Codegen::InputOptions, Codegen::InputOptions> GenerateInputOptions(

@@ -18,6 +18,7 @@
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/GroupGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
@@ -94,6 +95,12 @@ public:
 				generator.Generate(arguments);
 				break;
 			}
+			case HorseIR::BuiltinFunction::Primitive::GPUGroup:
+			{
+				GroupGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
+				break;
+			}
 			default:
 			{
 				if (m_targets.size() != 1)
@@ -124,18 +131,6 @@ public:
 				l_arguments.insert(std::begin(l_arguments), std::begin(arguments) + 1, std::end(arguments));
 
 				Generate(l_function, returnTypes, l_arguments);
-				break;
-			}
-			case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
-			{
-				OrderInitGenerator<B> generator(this->m_builder);
-				generator.Generate(m_targets, returnTypes, arguments);
-				break;
-			}
-			case HorseIR::BuiltinFunction::Primitive::GPUOrder:
-			{
-				// OrderGenerator<B> generator(this->m_builder);
-				// generator.Generate(arguments);
 				break;
 			}
 			default:

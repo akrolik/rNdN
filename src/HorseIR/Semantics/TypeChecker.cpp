@@ -1091,7 +1091,25 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				}
 				Require(TypeUtils::IsType<BasicType>(type));
 			}
+			// GPU sort is in place
 			return {};
+		}
+		case BuiltinFunction::Primitive::GPUGroup:
+		{
+			Require(argumentTypes.size() >= 2);
+			Require(TypeUtils::IsBasicType(argumentTypes.at(0), BasicType::BasicKind::Int64));
+
+			bool first = true;
+			for (const auto type : argumentTypes)
+			{
+				if (first)
+				{
+					first = false;
+					continue;
+				}
+				Require(TypeUtils::IsType<BasicType>(type));
+			}
+			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
 		default:
 		{

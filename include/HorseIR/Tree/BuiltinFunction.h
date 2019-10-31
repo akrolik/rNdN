@@ -147,7 +147,8 @@ public:
 
 		// GPU
 		GPUOrderInit,
-		GPUOrder
+		GPUOrder,
+		GPUGroup
 	};
 
 	static const std::string PrimitiveName(Primitive primitive)
@@ -374,6 +375,8 @@ public:
 				return "order_init";
 			case Primitive::GPUOrder:
 				return "order";
+			case Primitive::GPUGroup:
+				return "group";
 
 		}
 		return "<unknown>";
@@ -545,6 +548,7 @@ public:
 			// GPU
 			case Primitive::GPUOrderInit:
 			case Primitive::GPUOrder:
+			case Primitive::GPUGroup:
 				return VariadicParameterCount;
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");

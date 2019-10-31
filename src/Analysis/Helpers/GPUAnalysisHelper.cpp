@@ -190,8 +190,6 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 
 		// Database
-		case HorseIR::BuiltinFunction::Primitive::Keys:
-		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
@@ -319,6 +317,8 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::Dictionary:
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		case HorseIR::BuiltinFunction::Primitive::KeyedTable:
+		case HorseIR::BuiltinFunction::Primitive::Keys:
+		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Meta:
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:

@@ -138,22 +138,17 @@ public:
 		return ctaidx;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
+	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex(const PTX::TypedOperand<PTX::UInt32Type> *blockIndex = nullptr)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// We cannot operate directly on special registers, so they must first be copied to a user defined register
 
-		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+		auto tidx = GenerateLocalIndex();
+		auto ctaidx = (blockIndex == nullptr) ? GenerateBlockIndex() : blockIndex;
+
 		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
-
-		auto tidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		auto ctaidx = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto ntidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
 
 		// Compute the thread index as blockSize * blockIndex + threadIndex
