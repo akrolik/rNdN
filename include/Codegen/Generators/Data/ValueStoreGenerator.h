@@ -8,8 +8,9 @@
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/AtomicGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
-#include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/PrefixSumGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
+#include "Codegen/Generators/Expressions/OperandGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -168,7 +169,6 @@ public:
 		// At the end of the partial reduction we only have a single active thread. Use it to store the final value
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto kernelResources = this->m_builder.GetKernelResources();
 
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
@@ -353,35 +353,62 @@ public:
 	template<class T>
 	void GenerateWriteCompressed(const HorseIR::Operand *operand, unsigned int returnIndex)
 	{
+		auto resources = this->m_builder.GetLocalResources();
+		auto kernelResources = this->m_builder.GetKernelResources();
+
 		// Fetch the data and write to the compressed index
 
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
-		auto resources = this->m_builder.GetLocalResources();
 		if (auto predicate = resources->template GetCompressedRegister<T>(value))
 		{
-			// If we have a compression mask, the vector can be written directly
+			AddressGenerator<B> addressGenerator(this->m_builder);
 
-			if (auto indexed = resources->template GetIndexedRegister<T>(value))
+			// Generate the in-order global prefix sum!
+
+			const PTX::Register<PTX::UInt32Type> *blockIndex = nullptr;
+			if (kernelResources->template ContainsSharedVariable<PTX::UInt32Type>("blockIndex"))
 			{
-				// Check for compression - this will mask outputs
+				// If there is a special block index, use it instead of the special register
 
-				auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
+				auto s_blockIndex = kernelResources->template GetSharedVariable<PTX::UInt32Type>("blockIndex");
+				auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
 
-				this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
-				this->m_builder.AddStatement(new PTX::BlankStatement());
-
-				auto address = GenerateAddress<T>(returnIndex, indexed);
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-
-				this->m_builder.AddStatement(new PTX::BlankStatement());
-				this->m_builder.AddStatement(label);
+				blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(blockIndex, s_blockIndexAddress));
 			}
-			else
-			{
-				//TODO: Compressed output
-			}
+
+			auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
+
+			// Calculate prefix sum
+
+			auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
+
+			auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
+			auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(sizeParameter);
+
+			PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
+			auto prefixSum = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, blockIndex);
+
+			// Check for compression - this will mask outputs
+
+			auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+
+			auto writeIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(writeIndex, prefixSum, new PTX::UInt32Value(1)));
+
+			// Store the value at the place specified by the prefix sum
+
+			auto address = GenerateAddress<T>(returnIndex, writeIndex);
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+			this->m_builder.AddStatement(label);
 		}
 		else
 		{
