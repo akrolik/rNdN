@@ -60,30 +60,26 @@ public:
 		// Generate the index for the data item and convert to the right type
 
 		IndexGenerator indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
+
+		GeometryGenerator geometryGenerator(this->m_builder);
+		auto size = geometryGenerator.GenerateDataSize();
+
+		// Copy the index to the data register
+
+		//TODO: Handle double compression using a prefix sum to compute the index
+
 		auto dataRegister = this->GenerateTargetRegister(target, arguments);
+		ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, dataRegister, index);
 
-		auto& inputOptions = this->m_builder.GetInputOptions();
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
-		{
-			auto index = indexGenerator.GenerateGlobalIndex();
-			ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, dataRegister, index);
-		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
-		{
-			auto index = indexGenerator.GenerateCellDataIndex();
-			ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, dataRegister, index);
-		}
-		else
-		{
-			BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("where operation for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
-		}
+		// Ensure that the predicate is false for out-of-bounds indexes
 
-		// Copy the compression mask in case it is reasigned
+		auto boundedPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			boundedPredicate, nullptr, index, size, PTX::UInt32Type::ComparisonOperator::Less, predicate, PTX::PredicateModifier::BoolOperator::And
+		));
 
-		auto predicateTemp = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(predicateTemp, predicate));
-
-		resources->SetCompressedRegister(dataRegister, predicateTemp);
+		resources->SetCompressedRegister(dataRegister, boundedPredicate);
 
 		return dataRegister;
 	}

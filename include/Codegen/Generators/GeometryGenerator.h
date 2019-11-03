@@ -66,6 +66,23 @@ public:
 		return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryDataSize);
 	}
 
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDataSize()
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		{
+			return GenerateVectorSize();
+		}
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		{
+			return GenerateCellSize();
+		}
+		else
+		{
+			Utils::Logger::LogError("Unable to generate data size for geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+		}
+	}
+
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateWarpCount()
 	{
 		// Warp count = ntidx / warp size

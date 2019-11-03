@@ -88,7 +88,7 @@ public:
 		// Generate the index value for the thread and convert to the right type
 
 		IndexGenerator indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateGlobalIndex();
+		auto index = indexGenerator.GenerateDataIndex();
 
 		TargetGenerator<B, PTX::Int64Type> targetGenerator(this->m_builder);
 		auto indexRegister = targetGenerator.Generate(targets.at(0), nullptr);

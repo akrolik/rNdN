@@ -103,13 +103,13 @@ public:
 		// Check the size is within bounds, if so we will load both values and do a comparison
 
 		IndexGenerator indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateGlobalIndex();
+		auto index = indexGenerator.GenerateDataIndex();
 
 		auto changePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(changePredicate, new PTX::BoolValue(0)));
 
 		GeometryGenerator geometryGenerator(this->m_builder);
-		auto size = geometryGenerator.GenerateVectorSize();
+		auto size = geometryGenerator.GenerateDataSize();
 
 		auto sizeLabel = this->m_builder.CreateLabel("SIZE");
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();

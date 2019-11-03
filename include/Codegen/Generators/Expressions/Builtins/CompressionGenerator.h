@@ -4,6 +4,8 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/GeometryGenerator.h"
+#include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/Expressions/MoveGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
@@ -83,6 +85,21 @@ public:
 
 			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(predicate, m_predicate));
 		}
+
+		// Ensure that the predicate is false for out-of-bounds indexes
+
+		IndexGenerator indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
+
+		GeometryGenerator geometryGenerator(this->m_builder);
+		auto size = geometryGenerator.GenerateDataSize();
+
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			predicate, nullptr, index, size, PTX::UInt32Type::ComparisonOperator::Less, predicate, PTX::PredicateModifier::BoolOperator::And
+		));
+
+		// Set the merged compression mask
+
 		resources->SetCompressedRegister(m_targetRegister, predicate);
 	}
 

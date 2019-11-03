@@ -65,39 +65,13 @@ public:
 
 		auto inputPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
-		{
-			GeometryGenerator geometryGenerator(this->m_builder);
-			auto size = geometryGenerator.GenerateVectorSize();
+		GeometryGenerator geometryGenerator(this->m_builder);
+		auto dataSize = geometryGenerator.GenerateDataSize();
 
-			// Load the the global thread index for checking the data bounds
+		IndexGenerator indexGen(this->m_builder);
+		auto dataIndex = indexGen.GenerateDataIndex();
 
-			IndexGenerator indexGen(this->m_builder);
-			auto globalIndex = indexGen.GenerateGlobalIndex();
-
-			// Check if the thread is in bounds for the input data
-
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, globalIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
-		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
-		{
-			GeometryGenerator geometryGenerator(this->m_builder);
-			auto cellSize = geometryGenerator.GenerateCellSize();
-
-			// Load the the cell thread index for checking the data bounds
-
-			IndexGenerator indexGen(this->m_builder);
-			auto dataIndex = indexGen.GenerateCellDataIndex();
-
-			// Check if the thread is in bounds for the input data
-
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, dataIndex, cellSize, PTX::UInt32Type::ComparisonOperator::Less));
-		}
-
-		else
-		{
-			BuiltinGenerator<B, T>::Unimplemented("reduction for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
-		}
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));
 
 		// Get the initial value for reduction
 

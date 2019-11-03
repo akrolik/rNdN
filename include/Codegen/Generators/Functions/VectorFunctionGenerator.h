@@ -53,7 +53,7 @@ public:
 		{
 			auto resources = this->m_builder.GetLocalResources();
 
-			this->m_builder.AddStatement(new PTX::CommentStatement("g_initBlocks/s_blockIndex");
+			this->m_builder.AddStatement(new PTX::CommentStatement("g_initBlocks/s_blockIndex"));
 
 			// Initialize a global variable for counting the number of initialized blocks
 

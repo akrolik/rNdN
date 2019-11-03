@@ -230,7 +230,7 @@ public:
 		auto substage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(sortSubstageParameter);
 
 		IndexGenerator indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateGlobalIndex();
+		auto index = indexGenerator.GenerateDataIndex();
 
 		// Compute the size of each bitonic sequence in this stage
 		//   sequenceSize = 2^(stage + 1)

@@ -2,11 +2,16 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/SpecialRegisterGenerator.h"
 
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -191,6 +196,23 @@ public:
 		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::UInt32Type>(index, globalIndex, cellThreads));
 
 		return index;
+	}
+
+	const PTX::Register<PTX::UInt32Type> *GenerateDataIndex()
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		{
+			return GenerateGlobalIndex();
+		}
+		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		{
+			return GenerateCellDataIndex();
+		}
+		else
+		{
+			Utils::Logger::LogError("Unable to generate data index for geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+		}
 	}
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateCellThreads()
