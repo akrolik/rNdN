@@ -4,6 +4,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
+#include "Codegen/Generators/SpecialRegisterGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -75,16 +76,12 @@ public:
 
 	const PTX::Register<PTX::UInt32Type> *GenerateLaneIndex()
 	{
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto tidx = specialGenerator.GenerateThreadIndex();
+
 		auto resources = this->m_builder.GetLocalResources();
-
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
-
-		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-
-		auto tidx = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto laneid = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
 		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(laneid, tidx, PTX::SpecialConstant_WARP_SZ));
 
 		return laneid;
@@ -92,16 +89,12 @@ public:
 
 	const PTX::Register<PTX::UInt32Type> *GenerateWarpIndex()
 	{
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto tidx = specialGenerator.GenerateThreadIndex();
+
 		auto resources = this->m_builder.GetLocalResources();
-
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
-
-		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-
-		auto tidx = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto warpid = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
 		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::UInt32Type>(warpid, tidx, PTX::SpecialConstant_WARP_SZ));
 
 		return warpid;
@@ -109,47 +102,49 @@ public:
 
 	const PTX::Register<PTX::UInt32Type> *GenerateLocalIndex()
 	{
-		auto resources = this->m_builder.GetLocalResources();
-
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
-
-		auto srtidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-
-		auto tidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(tidx, srtidx));
-
-		return tidx;
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		return specialGenerator.GenerateThreadIndex();
 	}
 
 	const PTX::Register<PTX::UInt32Type> *GenerateBlockIndex()
 	{
-		auto resources = this->m_builder.GetLocalResources();
+		// Check if we use in order blocks (allocation happens at the beginning of execution), or using the system value
 
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (inputOptions.InOrderBlocks)
+		{
+			// Load the special block index from shard memory
 
-		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto s_blockIndex = kernelResources->template GetSharedVariable<PTX::UInt32Type>("blockIndex");
 
-		auto ctaidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
+			AddressGenerator<PTX::Bits::Bits64> addressGenerator(this->m_builder);
+			auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
 
-		return ctaidx;
+			auto resources = this->m_builder.GetLocalResources();
+			auto blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::LoadInstruction<PTX::Bits::Bits64, PTX::UInt32Type, PTX::SharedSpace>(blockIndex, s_blockIndexAddress));
+
+			return blockIndex;
+		}
+		else
+		{
+			SpecialRegisterGenerator specialGenerator(this->m_builder);
+			return specialGenerator.GenerateBlockIndex();
+		}
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex(const PTX::TypedOperand<PTX::UInt32Type> *blockIndex = nullptr)
+	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
 	{
-		auto resources = this->m_builder.GetLocalResources();
-
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
-
-		auto tidx = GenerateLocalIndex();
-		auto ctaidx = (blockIndex == nullptr) ? GenerateBlockIndex() : blockIndex;
-
-		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
-		auto ntidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
-
 		// Compute the thread index as blockSize * blockIndex + threadIndex
 
+		auto tidx = GenerateLocalIndex();
+		auto ctaidx = GenerateBlockIndex();
+
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto ntidx = specialGenerator.GenerateThreadCount();
+
+		auto resources = this->m_builder.GetLocalResources();
 		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
 
 		auto madInstruction = new PTX::MADInstruction<PTX::UInt32Type>(index, ctaidx, ntidx, tidx);
@@ -164,7 +159,6 @@ public:
 		// Cell index = globalIndex % cellThreads
 
 		auto resources = this->m_builder.GetLocalResources();
-
 		auto index = resources->AllocateRegister<PTX::UInt32Type>(NameUtils::GeometryThreadIndex);
 
 		auto globalIndex = GenerateGlobalIndex();
@@ -188,11 +182,10 @@ public:
 	{
 		// Cell index = globalIndex / cellThreads
 
-		auto resources = this->m_builder.GetLocalResources();
-
 		auto globalIndex = GenerateGlobalIndex();
 		auto cellThreads = GenerateCellThreads();
 
+		auto resources = this->m_builder.GetLocalResources();
 		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
 
 		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::UInt32Type>(index, globalIndex, cellThreads));
@@ -202,8 +195,9 @@ public:
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateCellThreads()
 	{
-		auto& inputOptions = m_builder.GetInputOptions();
+		// Check if the thread count is specified as part of the input options or is dynamic
 
+		auto& inputOptions = m_builder.GetInputOptions();
 		if (inputOptions.ListCellThreads == InputOptions::DynamicSize)
 		{
 			auto resources = this->m_builder.GetLocalResources();

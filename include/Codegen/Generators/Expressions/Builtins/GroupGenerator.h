@@ -3,7 +3,7 @@
 #include "Codegen/Generators/Generator.h"
 #include "HorseIR/Traversal/ConstVisitor.h"
 
-#include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
 
@@ -37,7 +37,8 @@ public:
 	template<class T>
 	void Generate(const HorseIR::Identifier *identifier)
 	{
-		if constexpr(std::is_same<T, PTX::PredicateType>::value|| std::is_same<T, PTX::Int8Type>::value)
+		//TODO: Use comparison generator instead to generate optimized comparison
+		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
 			Generate<PTX::Int16Type>(identifier);
 		}
@@ -56,7 +57,9 @@ public:
 			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexM1, m_index, new PTX::UInt32Value(1)));
 
 			auto previousPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(previousPredicate, m_index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual)); 
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				previousPredicate, m_index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+			)); 
 
 			auto indexPrevious = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(indexPrevious, indexM1, m_index, previousPredicate));
@@ -82,53 +85,14 @@ class GroupGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	void Generate(const std::vector<HorseIR::LValue *>&targets, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Operand *>& arguments)
 	{
+		auto resources = this->m_builder.GetLocalResources();
+
+		// Convenience split of input arguments
+
 		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments) + 1, std::end(arguments));
 		const auto indexArgument = arguments.at(0);
-
-		auto resources = this->m_builder.GetLocalResources();
-		auto kernelResources = this->m_builder.GetKernelResources();
-		auto globalResources = this->m_builder.GetGlobalResources();
-
-		auto& targetOptions = this->m_builder.GetTargetOptions();
-
-		IndexGenerator indexGenerator(this->m_builder);
-		GeometryGenerator geometryGenerator(this->m_builder);
-		AddressGenerator<B> addressGenerator(this->m_builder);
-
-		// Allocate global counters and prefix sum
-
-		auto g_initBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>("initBlocks");
-
-		// Initialize the unique block id
-
-		auto s_blockIndex = kernelResources->template AllocateSharedVariable<PTX::UInt32Type>("blockIndex");
-		auto blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-		auto blockIndexLabel = this->m_builder.CreateLabel("BLOCK_INDEX");
-
-		auto localIndex = indexGenerator.GenerateLocalIndex();
-		auto local0Predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(local0Predicate, localIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(blockIndexLabel, local0Predicate));
-
-		auto g_initBlocksAddress = addressGenerator.GenerateAddress(g_initBlocks);
-		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace, PTX::UInt32Type::AtomicOperation::Add>(
-			blockIndex, g_initBlocksAddress, new PTX::UInt32Value(1)
-		));
-
-		auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(s_blockIndexAddress, blockIndex));
-
-		this->m_builder.AddStatement(new PTX::BlankStatement());
-		this->m_builder.AddStatement(blockIndexLabel);
-		this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0)));
-
-		// Generate the index using the custom block id
-
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(blockIndex, s_blockIndexAddress));
-		auto index = indexGenerator.GenerateGlobalIndex(blockIndex);
 
 		// Initialize the current and previous values, and compute the change
 		//   
@@ -138,13 +102,17 @@ public:
 
 		// Check the size is within bounds, if so we will load both values and do a comparison
 
+		IndexGenerator indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateGlobalIndex();
+
 		auto changePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(changePredicate, new PTX::BoolValue(0)));
 
+		GeometryGenerator geometryGenerator(this->m_builder);
 		auto size = geometryGenerator.GenerateVectorSize();
-		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 		auto sizeLabel = this->m_builder.CreateLabel("SIZE");
+		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));

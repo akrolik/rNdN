@@ -8,6 +8,7 @@
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/IndexGenerator.h"
+#include "Codegen/Generators/SpecialRegisterGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -67,16 +68,14 @@ public:
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateWarpCount()
 	{
+		// Warp count = ntidx / warp size
+
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto ntidx = specialGenerator.GenerateThreadCount();
+
 		auto resources = this->m_builder.GetLocalResources();
-
-		// We cannot operate directly on special registers, so they must first be copied to a user defined register
-
-		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
-
-		auto ntidx = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto count = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
 		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::UInt32Type>(count, ntidx, PTX::SpecialConstant_WARP_SZ));
 
 		return count;
@@ -95,17 +94,10 @@ public:
 		auto cellThreads = indexGenerator.GenerateCellThreads();
 		auto cellCount = GenerateListSize();
 
-		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
-		auto srctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
-		auto srnctaidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_nctaid->GetVariable("%nctaid"), PTX::VectorElement::X);
-
-		auto ntidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		auto ctaidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		auto nctaidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ctaidx, srctaidx));
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(nctaidx, srnctaidx));
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto ntidx = specialGenerator.GenerateThreadCount();
+		auto ctaidx = specialGenerator.GenerateBlockIndex();
+		auto nctaidx = specialGenerator.GenerateBlockCount();
 
 		auto threads = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto roundThreads = resources->template AllocateTemporary<PTX::UInt32Type>();

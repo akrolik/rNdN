@@ -2,10 +2,11 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
+#include "Codegen/Generators/BarrierGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
-
-#include "HorseIR/Tree/Tree.h"
+#include "Codegen/Generators/SpecialRegisterGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -18,7 +19,7 @@ public:
 	using Generator::Generator;
 
 	template<class T>
-	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value, const PTX::TypedOperand<PTX::UInt32Type> *blockIndex = nullptr)
+	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value)
 	{
 		// A global prefix sum is computed in 4 stages:
 		//
@@ -39,15 +40,13 @@ public:
 		auto& targetOptions = this->m_builder.GetTargetOptions();
 
 		AddressGenerator<B> addressGenerator(this->m_builder);
+		BarrierGenerator barrierGenerator(this->m_builder);
 		IndexGenerator indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateGlobalIndex(blockIndex);
 
-		// Completed determining size
+		// Iteratively compute the prefix sum for the warp
 
 		auto prefixSum = resources->template AllocateTemporary<T>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<T>(prefixSum, value));
-
-		// Iteratively compute the prefix sum for the warp
 
 		auto laneIndex = indexGenerator.GenerateLaneIndex();
 		GenerateWarpPrefixSum(laneIndex, prefixSum);
@@ -74,7 +73,8 @@ public:
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(warpStoreLabel);
-		this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0)));
+
+		barrierGenerator.Generate();
 
 		// In the first warp, load the values back into a new register and prefix sum
 
@@ -103,7 +103,8 @@ public:
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(blockSumLabel);
-		this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0)));
+
+		barrierGenerator.Generate();
 
 		// If we are not the first warp, add the summed result from the shared memory - this completes the prefix sum for the block (!predicate)
 
@@ -130,9 +131,8 @@ public:
 
 		// To join loading/storing into a single section, the LAST thread of a block is responsible for loading/storing
 
-		auto ntidx = resources->template AllocateTemporary<PTX::UInt32Type>();
-		auto srntidx = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(ntidx, srntidx));
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto ntidx = specialGenerator.GenerateThreadCount();
 
 		auto localIndex = indexGenerator.GenerateLocalIndex();
 		auto lastLocalIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
@@ -145,63 +145,59 @@ public:
 		));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(propagateLabel, propagatePredicate));
 
-		if (blockIndex == nullptr)
-		{
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, T, PTX::GlobalSpace, T::AtomicOperation::Add>(
-				blockPrefixSum, g_prefixSumAddress, prefixSum
-			));
+		// Atomically check if the previous block has completed by checking a global counter
 
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_blockPrefixSumAddress, blockPrefixSum));
-		}
-		else
-		{
-			// Atomically check if the previous block has completed by checking a global counter
+		auto blockIndex = indexGenerator.GenerateBlockIndex();
 
-			auto atomicStartLabel = this->m_builder.CreateLabel("START");
-			this->m_builder.AddStatement(new PTX::BlankStatement());
-			this->m_builder.AddStatement(atomicStartLabel);
+		auto atomicStartLabel = this->m_builder.CreateLabel("START");
+		this->m_builder.AddStatement(new PTX::BlankStatement());
+		this->m_builder.AddStatement(atomicStartLabel);
 
-			auto completedBlocks = resources->template AllocateTemporary<PTX::UInt32Type>();
-			auto g_completedBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("completedBlocks"));
-			auto g_completedBlocksAddress = addressGenerator.GenerateAddress(g_completedBlocks);
+		auto completedBlocks = resources->template AllocateTemporary<PTX::UInt32Type>();
+		auto g_completedBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("completedBlocks"));
+		auto g_completedBlocksAddress = addressGenerator.GenerateAddress(g_completedBlocks);
 
-			// Get the current value by incrementing by 0
+		// Get the current value by incrementing by 0
 
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace, PTX::UInt32Type::AtomicOperation::Add>(
-				completedBlocks, g_completedBlocksAddress, new PTX::UInt32Value(0)
-			));
+		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace, PTX::UInt32Type::AtomicOperation::Add>(
+			completedBlocks, g_completedBlocksAddress, new PTX::UInt32Value(0)
+		));
 
-			// Check if we are next, or keep looping!
-			
-			auto atomicPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				atomicPredicate, completedBlocks, blockIndex, PTX::UInt32Type::ComparisonOperator::Less
-			));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(atomicStartLabel, atomicPredicate));
+		// Since the kernel may be executed multiple times, keep within range
 
-			// Get the prefix sum up to and including the previous block, and store for all in the block. This is the GLOBAL prefix sum up to this point!
+		auto nctaidx = specialGenerator.GenerateBlockCount();
+		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, nctaidx));
 
-			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(blockPrefixSum, g_prefixSumAddress));
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_blockPrefixSumAddress, blockPrefixSum));
+		// Check if we are next, or keep looping!
 
-			// Update the global prefix sum to include this block
+		auto atomicPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			atomicPredicate, completedBlocks, blockIndex, PTX::UInt32Type::ComparisonOperator::Less
+		));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(atomicStartLabel, atomicPredicate));
 
-			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::AtomicOperation::Add>(
-				g_prefixSumAddress, prefixSum
-			));
+		// Get the prefix sum up to and including the previous block, and store for all in the block. This is the GLOBAL prefix sum up to this point!
 
-			// Proceed to next thread by incrementing the global counter
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(blockPrefixSum, g_prefixSumAddress));
+		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_blockPrefixSumAddress, blockPrefixSum));
 
-			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, new PTX::UInt32Value(1)));
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
-		}
+		// Update the global prefix sum to include this block
+
+		this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::AtomicOperation::Add>(
+			g_prefixSumAddress, prefixSum
+		));
+
+		// Proceed to next thread by incrementing the global counter
+
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, new PTX::UInt32Value(1)));
+		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(propagateLabel);
 
 		// Synchronize the results - every thread now has the previous thread's (inclusive) prefix sum
 
-		this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0)));
+		barrierGenerator.Generate();
 
 		// Load the prefix sum from the shared memory, and add to the current prefix sum. This is the GLOBAL prefix sum!
 

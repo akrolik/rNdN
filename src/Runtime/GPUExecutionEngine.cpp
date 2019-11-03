@@ -311,6 +311,8 @@ Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Functio
 
 	Codegen::InputOptions inputOptions;
 	inputOptions.ThreadGeometry = kernelAnalysis.GetOperatingGeometry();
+	//TODO: Determine order
+	inputOptions.InOrderBlocks = false;
 
 	for (const auto& parameter : function->GetParameters())
 	{

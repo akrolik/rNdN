@@ -359,7 +359,6 @@ public:
 	void GenerateWriteCompressed(const HorseIR::Operand *operand, unsigned int returnIndex)
 	{
 		auto resources = this->m_builder.GetLocalResources();
-		auto kernelResources = this->m_builder.GetKernelResources();
 
 		// Fetch the data and write to the compressed index
 
@@ -370,32 +369,21 @@ public:
 		{
 			AddressGenerator<B> addressGenerator(this->m_builder);
 
-			// Generate the in-order global prefix sum!
-
-			const PTX::Register<PTX::UInt32Type> *blockIndex = nullptr;
-			if (kernelResources->template ContainsSharedVariable<PTX::UInt32Type>("blockIndex"))
-			{
-				// If there is a special block index, use it instead of the special register
-
-				auto s_blockIndex = kernelResources->template GetSharedVariable<PTX::UInt32Type>("blockIndex");
-				auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
-
-				blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-				this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(blockIndex, s_blockIndexAddress));
-			}
+			// Generate the in-order global prefix sum! Convert the predicate to integer values for the sum
 
 			auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
 
 			// Calculate prefix sum
 
+			auto kernelResources = this->m_builder.GetKernelResources();
 			auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
 
 			auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
 			auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(sizeParameter);
 
 			PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
-			auto prefixSum = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, blockIndex);
+			auto prefixSum = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate);
 
 			// Check for compression - this will mask outputs
 

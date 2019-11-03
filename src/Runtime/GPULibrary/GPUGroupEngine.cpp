@@ -159,6 +159,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary [" + std::to_string(keysSize) + " != " + std::to_string(valuesSize) + "]");
 	}
 
+	auto keys = BufferUtils::GetVectorBuffer<std::int64_t>(keysBuffer)->GetCPUReadBuffer();
 	auto values = BufferUtils::GetVectorBuffer<std::int64_t>(valuesBuffer)->GetCPUReadBuffer();
 	auto indexes = BufferUtils::GetVectorBuffer<std::int64_t>(indexBuffer)->GetCPUReadBuffer()->GetValues();
 
@@ -180,13 +181,20 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 
 		Utils::Logger::LogInfo("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
 
+		bool first = true;
+		for (auto dataBuffer : dataBuffers)
+		{
+			std::cout << BufferUtils::GetVectorBuffer<int8_t>(dataBuffer)->GetCPUReadBuffer()->GetValue(keys->GetValue(entryIndex)) << std::endl;
+		}
+
 		entryBuffers.push_back(entryBuffer);
 	}
+	std::exit(1);
 
 	// Collapse the index buffer
 
-	auto collapsedKeysBuffer = VectorBuffer::Create(indexBuffer->GetType(), new Analysis::Shape::ConstantSize(keysSize));
-	CUDA::Buffer::Copy(collapsedKeysBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), keysSize * indexBuffer->GetElementSize());
+	auto collapsedKeysBuffer = VectorBuffer::Create(keysBuffer->GetType(), new Analysis::Shape::ConstantSize(keysSize));
+	CUDA::Buffer::Copy(collapsedKeysBuffer->GetGPUWriteBuffer(), keysBuffer->GetGPUReadBuffer(), keysSize * keysBuffer->GetElementSize());
 
 	auto dictionaryValuesBuffer = new ListBuffer(entryBuffers);
 	auto dictionaryBuffer = new DictionaryBuffer(collapsedKeysBuffer, dictionaryValuesBuffer);
@@ -208,6 +216,7 @@ Codegen::InputOptions GPUGroupEngine::GenerateInputOptions(const Analysis::Vecto
 
 	Codegen::InputOptions groupOptions;
 	groupOptions.ThreadGeometry = vectorShape;
+	groupOptions.InOrderBlocks = true;
 
 	auto predicate = new HorseIR::Identifier("index");
 	groupOptions.ReturnShapes.push_back(new Analysis::VectorShape(new Analysis::Shape::CompressedSize(predicate, vectorShape->GetSize())));

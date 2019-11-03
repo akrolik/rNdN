@@ -16,6 +16,8 @@ struct InputOptions
 {
 	const Analysis::Shape *ThreadGeometry = nullptr;
 
+	bool InOrderBlocks = false;
+
 	constexpr static std::uint32_t DynamicSize = 0;
 	std::uint32_t ListCellThreads = DynamicSize;
 

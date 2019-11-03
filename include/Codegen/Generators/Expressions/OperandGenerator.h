@@ -1,7 +1,10 @@
 #pragma once
 
-#include "HorseIR/Traversal/ConstVisitor.h"
 #include "Codegen/Generators/Generator.h"
+#include "HorseIR/Traversal/ConstVisitor.h"
+
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
@@ -22,7 +25,7 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class OperandGenerator : public HorseIR::ConstVisitor, public Generator
+class OperandGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
 	using Generator::Generator;
@@ -164,7 +167,7 @@ public:
 			auto name = NameUtils::VariableName(identifier);
 			auto sourceName = NameUtils::VariableName(identifier, m_indexName);
 
-			auto index = (m_index == nullptr) ? GetIndex(identifier, shape, m_loadKind) : m_index;
+			auto index = (m_index == nullptr) ? GenerateIndex(identifier, shape, m_loadKind) : m_index;
 
 			ValueLoadGenerator<B> loadGenerator(this->m_builder);
 			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
@@ -278,7 +281,7 @@ public:
 	}
 
 private:
-	const PTX::TypedOperand<PTX::UInt32Type> *GetSizeIndex(const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *indexed)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDynamicIndex(const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *indexed)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -299,7 +302,7 @@ private:
 		return index;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GetIndex(const HorseIR::Identifier *identifier, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, IndexGenerator::Kind indexKind)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Identifier *identifier, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, IndexGenerator::Kind indexKind)
 	{
 		IndexGenerator indexGenerator(this->m_builder);
 
@@ -331,11 +334,11 @@ private:
 			SizeGenerator<B> sizeGenerator(this->m_builder);
 			auto dynamicSize = sizeGenerator.GenerateSize(identifier);
 
-			return GetSizeIndex(dynamicSize, index);
+			return GenerateDynamicIndex(dynamicSize, index);
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GetIndex(const HorseIR::Identifier *identifier, const Analysis::Shape *shape, LoadKind loadKind)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Identifier *identifier, const Analysis::Shape *shape, LoadKind loadKind)
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
@@ -346,7 +349,7 @@ private:
 			{
 				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 				{
-					return GetIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::Global);
+					return GenerateIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::Global);
 				}
 			}
 		}
@@ -365,14 +368,14 @@ private:
 						{
 							// Vectors loaded in list geometries align with the cell data (vertical vectors)
 
-							return GetIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
+							return GenerateIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
 						}
 						else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 						{
 							const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
 							if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
 							{
-								return GetIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
+								return GenerateIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
 							}
 						}
 						break;
@@ -383,7 +386,7 @@ private:
 						{
 							// As a special case, we can load vectors horizontally, with 1 value per cell
 
-							return GetIndex(identifier, vectorShape->GetSize(), listGeometry->GetListSize(), IndexGenerator::Kind::Cell);
+							return GenerateIndex(identifier, vectorShape->GetSize(), listGeometry->GetListSize(), IndexGenerator::Kind::Cell);
 						}
 						break;
 					}
