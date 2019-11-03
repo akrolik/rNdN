@@ -2,7 +2,12 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/IndexGenerator.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 

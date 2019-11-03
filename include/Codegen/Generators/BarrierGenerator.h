@@ -2,10 +2,15 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/GeometryGenerator.h"
 
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -17,6 +22,9 @@ public:
 	void Generate()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
+
+		// Barrier instructions depend on the thread geometry and the number of threads still active
+
 		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			// All threads in the group participate in the barrier

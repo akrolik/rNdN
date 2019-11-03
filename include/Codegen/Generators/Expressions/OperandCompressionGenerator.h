@@ -2,19 +2,17 @@
 
 #include <vector>
 
-#include "HorseIR/Traversal/ConstVisitor.h"
 #include "Codegen/Generators/Generator.h"
+#include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "HorseIR/Tree/Tree.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
-class OperandCompressionGenerator : public HorseIR::ConstVisitor, public Generator
+class OperandCompressionGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
 	using Generator::Generator;

@@ -3,11 +3,19 @@
 #include "Codegen/Generators/Generator.h"
 #include "HorseIR/Traversal/ConstVisitor.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/TypeDispatch.h"
 
+#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
+
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 

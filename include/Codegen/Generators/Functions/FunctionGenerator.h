@@ -9,6 +9,7 @@
 #include "Codegen/Generators/Expressions/ExpressionGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "PTX/PTX.h"
 

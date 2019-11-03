@@ -2,6 +2,9 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 

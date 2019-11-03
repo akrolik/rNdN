@@ -4,6 +4,9 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/AtomicGenerator.h"
@@ -15,6 +18,8 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 

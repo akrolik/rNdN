@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HorseIR/Traversal/ConstVisitor.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "Utils/Logger.h"

@@ -4,6 +4,7 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/SizeGenerator.h"
 #include "Codegen/Generators/TargetGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"

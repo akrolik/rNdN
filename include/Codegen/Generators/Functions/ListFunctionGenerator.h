@@ -3,7 +3,6 @@
 #include "Codegen/Generators/Functions/FunctionGenerator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/InputOptions.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"

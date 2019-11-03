@@ -2,6 +2,7 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
@@ -76,6 +77,8 @@ public:
 	template<class T>
 	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
+		//TODO: Predicate type should sometimes compare using bit operations
+
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
 			// Conversions require at least 16 bits

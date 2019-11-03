@@ -2,6 +2,7 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
+#include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"

@@ -45,6 +45,8 @@ public:
 		MoveGenerator<T> moveGenerator(this->m_builder);
 		moveGenerator.Generate(targetRegister, value);
 
+		// Set indexing used for writing output data
+
 		resources->SetIndexedRegister(targetRegister, writeIndex);
 
 		return targetRegister;

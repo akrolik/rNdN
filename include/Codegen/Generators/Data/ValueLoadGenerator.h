@@ -8,8 +8,6 @@
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 
-#include "HorseIR/Tree/Tree.h"
-
 #include "PTX/PTX.h"
 
 namespace Codegen {

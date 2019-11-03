@@ -2,11 +2,16 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/IndexGenerator.h"
 
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -18,7 +23,6 @@ public:
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateVectorSize()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
-
 		if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			// If the input size is specified, we can use a constant value. Otherwise, use the special parameter
@@ -38,7 +42,6 @@ public:
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateListSize()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
-
 		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			// If the input size is specified, we can use a constant value. Otherwise, use the special parameter

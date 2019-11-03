@@ -2,15 +2,18 @@
 
 #include "Codegen/Generators/Generator.h"
 
+#include "Analysis/Shape/Shape.h"
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
-#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "PTX/PTX.h"
 

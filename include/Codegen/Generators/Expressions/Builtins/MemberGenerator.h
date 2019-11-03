@@ -212,6 +212,7 @@ public:
 	template<typename T>
 	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
+		//TODO: Use comparison generator instead
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
 		{
 			// Comparison can only occur for 16-bits+
