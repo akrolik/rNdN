@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "Analysis/Shape/ShapeAnalysis.h"
+
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Tree/Tree.h"
 
@@ -14,11 +16,12 @@ namespace Runtime {
 class Interpreter : public HorseIR::ConstVisitor
 {
 public:
-	Interpreter(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	Interpreter(Runtime& runtime) : m_runtime(runtime) {}
 
 	// Function execution engine
 
-	std::vector<DataBuffer *> Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataBuffer *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::Program *program);
+
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 	std::vector<DataBuffer *> Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments);
 
@@ -71,6 +74,7 @@ private:
 	ExecutionEnvironment m_environment;
 
 	const HorseIR::Program *m_program = nullptr;
+	const Analysis::ShapeAnalysis *m_shapeAnalysis = nullptr;
 };
 
 }

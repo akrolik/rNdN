@@ -4,6 +4,7 @@
 #include "Analysis/Dependency/DependencyAccessAnalysis.h"
 #include "Analysis/Dependency/DependencyAnalysis.h"
 #include "Analysis/Dependency/DependencySubgraphAnalysis.h"
+#include "Analysis/DataObject/DataObjectAnalysis.h"
 #include "Analysis/Geometry/GeometryAnalysis.h"
 #include "Analysis/Shape/ShapeAnalysis.h"
 
@@ -97,7 +98,10 @@ bool Outliner::VisitIn(const HorseIR::Function *function)
 
 	// Perform a conservative shape analysis
 
-	Analysis::ShapeAnalysis shapeAnalysis(m_currentProgram);
+	Analysis::DataObjectAnalysis dataAnalysis(m_currentProgram);
+	dataAnalysis.Analyze(function);
+
+	Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_currentProgram);
 	shapeAnalysis.Analyze(function);
 
 	// Compatibility analysis from dependency and geometry analyses

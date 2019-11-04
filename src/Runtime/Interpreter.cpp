@@ -1,7 +1,10 @@
 #include "Runtime/Interpreter.h"
 
+#include "Analysis/DataObject/DataObjectAnalysis.h"
+
 #include "CUDA/Vector.h"
 
+#include "HorseIR/Semantics/SemanticAnalysis.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
 #include "Runtime/DataBuffers/VectorBuffer.h"
@@ -14,17 +17,24 @@
 
 namespace Runtime {
 
-std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataBuffer *>& arguments)
+std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Program *program)
 {
-	switch (function->GetKind())
-	{
-		case HorseIR::FunctionDeclaration::Kind::Definition:
-			return Execute(static_cast<const HorseIR::Function *>(function), arguments);
-		case HorseIR::FunctionDeclaration::Kind::Builtin:
-			return Execute(static_cast<const HorseIR::BuiltinFunction *>(function), arguments);
-	}
+	// Get the entry function
 
-	Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
+	auto entry = HorseIR::SemanticAnalysis::GetEntry(program);
+
+	// Collect the shape data interprocedurally - this will allow execution with compressed shapes
+
+	Analysis::DataObjectAnalysis dataAnalysis(program);
+	dataAnalysis.Analyze(entry);
+
+	auto shapeAnalysis = new Analysis::ShapeAnalysis(dataAnalysis, program);
+	shapeAnalysis->Analyze(entry);
+	m_shapeAnalysis = shapeAnalysis;
+
+	// Execute!
+
+	return Execute(entry, {});
 }
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
@@ -36,7 +46,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 		// Pass function execution to the GPU engine
 
 		GPUExecutionEngine engine(m_runtime, m_program);
-		return engine.Execute(function, arguments);
+		return engine.Execute(function, *m_shapeAnalysis, arguments);
 	}
 	else
 	{
@@ -195,8 +205,31 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 
 	// Execute function and store result for the function invocation
 
-	auto result = Execute(call->GetFunctionLiteral()->GetFunction(), argumentsData);
-	m_environment.Insert(call, result);
+	auto function = call->GetFunctionLiteral()->GetFunction();
+	switch (function->GetKind())
+	{
+		case HorseIR::FunctionDeclaration::Kind::Definition:
+		{
+			auto functionDefinition = static_cast<const HorseIR::Function *>(function);
+
+			auto old_shapeAnalysis = m_shapeAnalysis;
+			m_shapeAnalysis = m_shapeAnalysis->GetAnalysis(functionDefinition);
+
+			m_environment.Insert(call, Execute(functionDefinition, argumentsData));
+
+			m_shapeAnalysis = old_shapeAnalysis;
+			break;
+		}
+		case HorseIR::FunctionDeclaration::Kind::Builtin:
+		{
+			m_environment.Insert(call, Execute(static_cast<const HorseIR::BuiltinFunction *>(function), argumentsData));
+			break;
+		}
+		default:
+		{
+			Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
+		}
+	}
 }
 
 void Interpreter::Visit(const HorseIR::Identifier *identifier)

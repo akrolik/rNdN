@@ -8,7 +8,7 @@ class SemanticAnalysis
 {
 public:
 	static void Analyze(Program *program);
-	static Function *GetEntry(Program *program);
+	static const Function *GetEntry(const Program *program);
 };
 
 }

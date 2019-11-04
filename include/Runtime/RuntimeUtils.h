@@ -10,7 +10,7 @@ class RuntimeUtils
 public:
 	static bool IsDynamicDataShape(const Analysis::Shape *dataShape, const Analysis::Shape *threadGeometry)
 	{
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(threadGeometry))
+		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
 		{
 			// Static vectors (constant) are always statically determined
 
@@ -24,6 +24,13 @@ public:
 			if (*dataShape == *threadGeometry)
 			{
 				return false;
+			}
+
+			// Check for compression loading
+
+			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<VectorShape>(dataShape))
+			{
+				return !Analysis::ShapeUtils::IsCompressedSize(vectorShape->GetSize(), vectorGeometry->GetSize());
 			}
 		}
 		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))

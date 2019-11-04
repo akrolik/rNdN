@@ -3,6 +3,8 @@
 #include <vector>
 #include <utility>
 
+#include "Analysis/Shape/ShapeAnalysis.h"
+
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
 
@@ -23,13 +25,13 @@ class GPUExecutionEngine
 public:
 	GPUExecutionEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const Analysis::ShapeAnalysis& shapeAnalysis, const std::vector<DataBuffer *>& arguments);
 
 private:
-	std::vector<std::uint32_t> GetCellSizes(const Analysis::ListShape *shape) const;
-
+	Codegen::InputOptions GetInputOptions(const HorseIR::Function *function, const Analysis::ShapeAnalysis& shapeAnalysis) const;
 	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions& runtimeOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const;
-	Codegen::InputOptions GetInputOptions(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments, bool enforce) const;
+
+	std::vector<std::uint32_t> GetCellSizes(const Analysis::ListShape *shape) const;
 
 	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, std::uint32_t value, const std::string& description) const;
 	CUDA::Buffer *AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;

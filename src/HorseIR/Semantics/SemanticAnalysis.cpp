@@ -67,7 +67,7 @@ void SemanticAnalysis::Analyze(Program *program)
 	Utils::Logger::LogTiming("Definitely asigned", timeAssigned);
 }
 
-Function *SemanticAnalysis::GetEntry(Program *program)
+const Function *SemanticAnalysis::GetEntry(const Program *program)
 {
 	// Find the entry point for the program
 

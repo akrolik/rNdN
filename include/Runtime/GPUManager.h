@@ -16,7 +16,7 @@ public:
 
 	std::unique_ptr<CUDA::Device>& GetCurrentDevice();
 
-	CUDA::Module AssembleProgram(const PTX::Program *program);
+	CUDA::Module AssembleProgram(const PTX::Program *program) const;
 
 private:
 	void InitializeCUDA();

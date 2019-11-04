@@ -62,7 +62,6 @@ int main(int argc, const char *argv[])
 	// Re-run the semantic analysis to build the AST symbol table links
 	
 	HorseIR::SemanticAnalysis::Analyze(outlinedProgram);
-	auto outlinedEntry = HorseIR::SemanticAnalysis::GetEntry(outlinedProgram);
 
 	// Execute the HorseIR entry function in an interpeter, compiling GPU sections as needed
 
@@ -73,8 +72,8 @@ int main(int argc, const char *argv[])
 	Runtime::Runtime runtime;
 	runtime.Initialize();
 
-	Runtime::Interpreter interpreter(runtime, outlinedProgram);
-	auto results = interpreter.Execute(outlinedEntry, {});
+	Runtime::Interpreter interpreter(runtime);
+	auto results = interpreter.Execute(outlinedProgram);
 
 	Utils::Logger::LogSection("Execution result");
 

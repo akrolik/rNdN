@@ -3,6 +3,8 @@
 #include <sstream>
 #include <vector>
 
+#include "Analysis/DataObject/DataObject.h"
+
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
@@ -143,14 +145,14 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Compressed;
 
-		CompressedSize(const HorseIR::Operand *predicate, const Size *size) : Size(Size::Kind::Compressed), m_predicate(predicate), m_size(size) {}
+		CompressedSize(const DataObject *predicate, const Size *size) : Size(Size::Kind::Compressed), m_predicate(predicate), m_size(size) {}
 
-		const HorseIR::Operand *GetPredicate() const { return m_predicate; }
+		const DataObject *GetPredicate() const { return m_predicate; }
 		const Size *GetSize() const { return m_size; }
 
 		void Print(std::ostream& os) const override
 		{
-			os << *m_size << "[" << HorseIR::PrettyPrinter::PrettyString(m_predicate) << "]";
+			os << *m_size << "[" << *m_predicate << "]";
 		}
 
 		bool Equivalent(const CompressedSize& other) const
@@ -169,7 +171,7 @@ public:
 		}
 
 	private:
-		const HorseIR::Operand *m_predicate = nullptr;
+		const DataObject *m_predicate = nullptr;
 		const Size *m_size = nullptr;;
 	};
 

@@ -69,7 +69,7 @@ void GPUManager::InitializeLibraries()
 	auto timeLibrary = Utils::Chrono::End(timeLibrary_start);
 }
 
-CUDA::Module GPUManager::AssembleProgram(const PTX::Program *program)
+CUDA::Module GPUManager::AssembleProgram(const PTX::Program *program) const
 {
 	// Generate the CUDA module for the program with the program
 	// modules and linked external modules (libraries)

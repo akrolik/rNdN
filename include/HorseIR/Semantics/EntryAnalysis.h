@@ -1,21 +1,21 @@
 #pragma once
 
-#include "HorseIR/Traversal/HierarchicalVisitor.h"
+#include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 
 #include "HorseIR/Tree/Tree.h"
 
 namespace HorseIR {
 
-class EntryAnalysis : public HierarchicalVisitor
+class EntryAnalysis : public ConstHierarchicalVisitor
 {
 public:
-	void Analyze(Program *program);
-	Function *GetEntry() const { return m_entry; }
+	void Analyze(const Program *program);
+	const Function *GetEntry() const { return m_entry; }
 
-	bool VisitIn(Function *function) override;
+	bool VisitIn(const Function *function) override;
 
 private:
-	Function *m_entry = nullptr;
+	const Function *m_entry = nullptr;
 };
 
 }

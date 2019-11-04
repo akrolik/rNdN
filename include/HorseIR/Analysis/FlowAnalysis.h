@@ -203,12 +203,12 @@ public:
 		{
 			PrintResults(function);
 		}
-		Utils::Logger::LogTiming(Name(), time);
+		Utils::Logger::LogTiming(Name() + " " + function->GetName(), time);
 	}
 
 	void PrintResults(const Function *function)
 	{
-		Utils::Logger::LogInfo(Name());
+		Utils::Logger::LogInfo(Name() + " " + function->GetName());
 
 		auto string = StatementAnalysisPrinter::PrettyString(*this, function);
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);

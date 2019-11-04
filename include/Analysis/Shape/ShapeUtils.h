@@ -516,6 +516,11 @@ static bool IsSubsize(const Shape::Size *needle, const Shape::Size *haystack)
 		return (needleConstant->GetValue() == 1);
 	}
 
+	return IsCompressedSize(needle, haystack);
+}
+
+static bool IsCompressedSize(const Shape::Size *needle, const Shape::Size *haystack)
+{
 	if (const auto compressedNeedle = GetSize<Shape::CompressedSize>(needle))
 	{
 		auto unmaskedSize = compressedNeedle->GetSize();
