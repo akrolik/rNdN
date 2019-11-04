@@ -8,6 +8,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
+#include "HorseIR/Utils/TypeUtils.h"
 
 namespace Runtime {
 
@@ -92,6 +93,10 @@ public:
 		}
 		else
 		{
+			if (HorseIR::TypeUtils::IsBasicType(m_type, HorseIR::BasicType::BasicKind::Char))
+			{
+				return std::string(1, m_data.at(index));
+			}
 			return std::to_string(m_data.at(index));
 		}
 	}

@@ -1,5 +1,8 @@
 #include "Runtime/DataBuffers/TableBuffer.h"
 
+#include <iomanip>
+#include <iostream>
+
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
@@ -66,21 +69,21 @@ std::string TableBuffer::Description() const
 
 std::string TableBuffer::DebugDump() const
 {
-	std::string string = " ";
+	std::stringstream string;
 	for (const auto& [name, data] : m_columns)
 	{
-		string += name + "\t";
+		string << std::left << std::setw(20) << name;
 	}
-	string += "\n";
+	string << std::endl;
 	for (auto i = 0ul; i < m_rows; ++i)
 	{
 		for (const auto& column : m_columns)
 		{
-			string += column.second->GetCPUReadBuffer()->DebugDump(i) + "\t";
+			string << std::left << std::setw(20) << column.second->GetCPUReadBuffer()->DebugDump(i);
 		}
-		string += "\n";
+		string << std::endl;
 	}
-	return string;
+	return string.str();
 }
 
 }
