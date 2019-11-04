@@ -5,12 +5,19 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/BarrierGenerator.h"
+#include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/SpecialRegisterGenerator.h"
 
 #include "PTX/PTX.h"
 
 namespace Codegen {
+
+enum class PrefixSumMode
+{
+	Inclusive,
+	Exclusive
+};
 
 template<PTX::Bits B>
 class PrefixSumGenerator : public Generator
@@ -19,7 +26,7 @@ public:
 	using Generator::Generator;
 
 	template<class T>
-	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value)
+	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value, PrefixSumMode mode)
 	{
 		// A global prefix sum is computed in 4 stages:
 		//
@@ -42,11 +49,27 @@ public:
 		AddressGenerator<B> addressGenerator(this->m_builder);
 		BarrierGenerator barrierGenerator(this->m_builder);
 		IndexGenerator indexGenerator(this->m_builder);
+		GeometryGenerator geometryGenerator(this->m_builder);
 
 		// Iteratively compute the prefix sum for the warp
 
 		auto prefixSum = resources->template AllocateTemporary<T>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<T>(prefixSum, value));
+		this->m_builder.AddStatement(new PTX::MoveInstruction<T>(prefixSum, new PTX::Value<T>(0)));
+
+		// Ensure the data is within bounds or set to zero
+
+		auto dataIndex = indexGenerator.GenerateDataIndex();
+		auto dataSize = geometryGenerator.GenerateDataSize();
+
+		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));
+
+		auto move = new PTX::MoveInstruction<T>(prefixSum, value);
+		move->SetPredicate(sizePredicate);
+		this->m_builder.AddStatement(move);
+
+		auto initialValue = resources->template AllocateTemporary<T>();
+		this->m_builder.AddStatement(new PTX::MoveInstruction<T>(initialValue, prefixSum));
 
 		auto laneIndex = indexGenerator.GenerateLaneIndex();
 		GenerateWarpPrefixSum(laneIndex, prefixSum);
@@ -204,6 +227,12 @@ public:
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(blockPrefixSum, s_blockPrefixSumAddress));
 		this->m_builder.AddStatement(new PTX::AddInstruction<T>(prefixSum, blockPrefixSum, prefixSum));
 
+		if (mode == PrefixSumMode::Exclusive)
+		{
+			auto exclusiveSum = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(exclusiveSum, prefixSum, initialValue));
+			return exclusiveSum;
+		}
 		return prefixSum;
 	}
 

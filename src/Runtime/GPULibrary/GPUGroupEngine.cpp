@@ -217,7 +217,8 @@ Codegen::InputOptions GPUGroupEngine::GenerateInputOptions(const Analysis::Vecto
 	auto paramIndex = 0u;
 	for (const auto& parameter : groupFunction->GetParameters())
 	{
-		groupOptions.ParameterShapes[parameter->GetSymbol()] = vectorShape;
+		groupOptions.Parameters[parameter->GetSymbol()] = parameter;
+		groupOptions.ParameterShapes[parameter] = vectorShape;
 	}
 
 	return groupOptions;

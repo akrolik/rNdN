@@ -27,9 +27,13 @@ public:
 		return identifier->GetName() + "$" + index;
 	}
 
-	static std::string VariableName(const HorseIR::VariableDeclaration *declaration)
+	static std::string VariableName(const HorseIR::VariableDeclaration *declaration, const std::string& index = "")
 	{
-		return declaration->GetName();
+		if (index == "")
+		{
+			return declaration->GetName();
+		}
+		return declaration->GetName() + "$" + index;
 	}
 
 	static std::string ReturnName(unsigned int returnIndex)

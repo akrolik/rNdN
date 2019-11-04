@@ -19,6 +19,36 @@ public:
 	using Generator::Generator;
 
 	template<class T>
+	const PTX::Register<T> *GenerateParameter(const HorseIR::Parameter *parameter, const PTX::TypedOperand<PTX::UInt32Type> *dataIndex, const std::string& sourceName = "")
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			// Boolean parameters are stored as 8-bit integers
+
+			auto value = GenerateParameter<PTX::Int8Type>(parameter, dataIndex, sourceName);
+			return ConversionGenerator::ConvertSource<T, PTX::Int8Type>(this->m_builder, value);
+		}
+		else
+		{
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto& inputOptions = this->m_builder.GetInputOptions();
+
+			auto shape = inputOptions.ParameterShapes.at(parameter);
+			auto name = NameUtils::VariableName(parameter);
+			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
+				return GeneratePointer<T>(parameter, dataIndex, sourceName);
+			}
+			else
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+				return GeneratePointer<T>(parameter, dataIndex, sourceName);
+			}
+		}
+	}
+
+	template<class T>
 	const PTX::Register<T> *GeneratePointer(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, const std::string& destinationName = "")
 	{
 		// Get the address and destination name, then load the value

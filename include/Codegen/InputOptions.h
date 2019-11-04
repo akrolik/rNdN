@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Analysis/DataObject/DataObject.h"
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
@@ -21,7 +22,10 @@ struct InputOptions
 	constexpr static std::uint32_t DynamicSize = 0;
 	std::uint32_t ListCellThreads = DynamicSize;
 
-	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const Analysis::Shape *> ParameterShapes;
+	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::Parameter *> Parameters;
+	std::unordered_map<const HorseIR::Parameter *, const Analysis::Shape *> ParameterShapes;
+	std::unordered_map<const Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjects;
+
 	std::vector<const Analysis::Shape *> ReturnShapes;
 
 	std::string ToString() const
@@ -43,7 +47,25 @@ struct InputOptions
 					output += ", ";
 				}
 				first = false;
-				output += parameter->name + " = " + Analysis::ShapeUtils::ShapeString(shape);
+				output += parameter->GetName() + " = " + Analysis::ShapeUtils::ShapeString(shape);
+			}
+		}
+		else
+		{
+			output += "-";
+		}
+		output += "\nParameter objects: ";
+		if (ParameterObjects.size() > 0)
+		{
+			bool first = true;
+			for (const auto& [object, parameter] : ParameterObjects)
+			{
+				if (!first)
+				{
+					output += ", ";
+				}
+				first = false;
+				output += parameter->GetName() + " = " + object->ToString();
 			}
 		}
 		else

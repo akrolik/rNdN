@@ -32,7 +32,7 @@ public:
 		this->m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(parameter, true)));
 
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		auto shape = inputOptions.ParameterShapes.at(parameter->GetSymbol());
+		auto shape = inputOptions.ParameterShapes.at(parameter);
 
 		DispatchType(*this, parameter->GetType(), parameter->GetName(), shape);
 	}
@@ -66,7 +66,7 @@ public:
 		else
 		{
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			auto loadSize = Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry);
+			auto loadSize = Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, returnParameter);
 
 			auto kernelResources = this->m_builder.GetKernelResources();
 			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))

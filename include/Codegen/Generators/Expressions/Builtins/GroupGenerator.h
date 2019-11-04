@@ -19,14 +19,14 @@ class GroupChangeGenerator : public Generator, public HorseIR::ConstVisitor
 public:
 	using Generator::Generator;
 
-	void Generate(const std::vector<HorseIR::Operand *>& dataArguments, const PTX::TypedOperand<PTX::UInt32Type> *index, const PTX::Register<PTX::PredicateType> *predicate)
+	const PTX::Register<PTX::PredicateType> *Generate(const std::vector<HorseIR::Operand *>& dataArguments)
 	{
-		m_predicate = predicate;
-		m_index = index;
+		m_predicate = nullptr;
 		for (const auto argument : dataArguments)
 		{
 			argument->Accept(*this);
 		}
+		return m_predicate;
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
@@ -48,34 +48,44 @@ public:
 
 			// Load the current value
 
+			IndexGenerator indexGenerator(this->m_builder);
+			auto index = indexGenerator.GenerateDataIndex();
+
 			OperandGenerator<B, T> opGen(this->m_builder);
-			auto value = opGen.GenerateOperand(identifier, m_index, "val");
+			auto value = opGen.GenerateOperand(identifier, index, "val");
 
 			// Load the previous value, duplicating the first element (as there is no previous element)
 
 			auto indexM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexM1, m_index, new PTX::UInt32Value(1)));
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexM1, index, new PTX::UInt32Value(1)));
 
 			auto previousPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				previousPredicate, m_index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+				previousPredicate, index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
 			)); 
 
 			auto indexPrevious = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(indexPrevious, indexM1, m_index, previousPredicate));
+			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(indexPrevious, indexM1, index, previousPredicate));
 
 			auto previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev");
 
 			// Check if the value is different
 
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
-				m_predicate, nullptr, value, previousValue, T::ComparisonOperator::NotEqual, m_predicate, PTX::PredicateModifier::BoolOperator::Or
-			)); 
+			if (m_predicate == nullptr)
+			{
+				m_predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(m_predicate, value, previousValue, T::ComparisonOperator::NotEqual)); 
+			}
+			else
+			{
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
+					m_predicate, nullptr, value, previousValue, T::ComparisonOperator::NotEqual, m_predicate, PTX::PredicateModifier::BoolOperator::Or
+				)); 
+			}
 		}
 	}
 
 private:
-	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
 	const PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
 };
 
@@ -100,32 +110,22 @@ public:
 		//   2. Load the current value
 		//   3. Load the previous value at index -1 (bounded below by index 0)
 
+		// Check for each column if there has been a change
+
+		GroupChangeGenerator<B> changeGenerator(this->m_builder);
+		auto changePredicate = changeGenerator.Generate(dataArguments);
+
 		// Check the size is within bounds, if so we will load both values and do a comparison
-
-		IndexGenerator indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateDataIndex();
-
-		auto changePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(changePredicate, new PTX::BoolValue(0)));
 
 		GeometryGenerator geometryGenerator(this->m_builder);
 		auto size = geometryGenerator.GenerateDataSize();
 
-		auto sizeLabel = this->m_builder.CreateLabel("SIZE");
-		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		IndexGenerator indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
-
-		// Check for each column if there has been a change
-
-		GroupChangeGenerator<B> changeGenerator(this->m_builder);
-		changeGenerator.Generate(dataArguments, index, changePredicate);
-
-		// Completed determining size
-
-		this->m_builder.AddStatement(new PTX::BlankStatement());
-		this->m_builder.AddStatement(sizeLabel);
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			changePredicate, nullptr, index, size, PTX::UInt32Type::ComparisonOperator::Less, changePredicate, PTX::PredicateModifier::BoolOperator::And
+		));
 
 		// Get the return targets!
 

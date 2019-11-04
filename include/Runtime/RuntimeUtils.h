@@ -8,7 +8,7 @@ namespace Runtime {
 class RuntimeUtils
 {
 public:
-	static bool IsDynamicDataShape(const Analysis::Shape *dataShape, const Analysis::Shape *threadGeometry)
+	static bool IsDynamicDataShape(const Analysis::Shape *dataShape, const Analysis::Shape *threadGeometry, bool isReturn)
 	{
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
 		{
@@ -26,11 +26,14 @@ public:
 				return false;
 			}
 
-			// Check for compression loading
-
-			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<VectorShape>(dataShape))
+			if (!isReturn)
 			{
-				return !Analysis::ShapeUtils::IsCompressedSize(vectorShape->GetSize(), vectorGeometry->GetSize());
+				// Check for compression loading
+
+				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(dataShape))
+				{
+					return !Analysis::ShapeUtils::IsCompressedSize(vectorShape->GetSize(), vectorGeometry->GetSize());
+				}
 			}
 		}
 		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))
@@ -58,7 +61,7 @@ public:
 					const auto cellData = Analysis::ShapeUtils::MergeShapes(listData->GetElementShapes());
 					if (const auto vectorData = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellData))
 					{
-						return IsDynamicDataShape(vectorData, vectorGeometry);
+						return IsDynamicDataShape(vectorData, vectorGeometry, isReturn);
 					}
 				}
 			}

@@ -63,8 +63,8 @@ public:
 			// In the case that it has not, then it *must* be a parameter - all local declarations
 			// must already have a register
 
-			auto& parameterShapes = this->m_builder.GetInputOptions().ParameterShapes;
-			if (parameterShapes.find(identifier->GetSymbol()) != parameterShapes.end())
+			auto& parameters = this->m_builder.GetInputOptions().Parameters;
+			if (parameters.find(identifier->GetSymbol()) != parameters.end())
 			{
 				// For parameters, we then allocate - this allows us to distinguish between the initial
 				// and re-assigned values for parameters

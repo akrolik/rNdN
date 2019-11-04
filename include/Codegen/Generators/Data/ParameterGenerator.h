@@ -28,7 +28,7 @@ public:
 
 		for (const auto& parameter : function->GetParameters())
 		{
-			auto shape = inputOptions.ParameterShapes.at(parameter->GetSymbol());
+			auto shape = inputOptions.ParameterShapes.at(parameter);
 			DispatchType(*this, parameter->GetType(), parameter->GetName(), shape, false);
 		}
 
@@ -63,7 +63,7 @@ public:
 
 				// Determine if we need a size parameter for the argument
 
-				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry))
+				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, returnParameter))
 				{
 					if (returnParameter)
 					{
@@ -85,7 +85,7 @@ public:
 
 				// Determine if we need a size parameter for the argument. List sizes are always stored in global space
 
-				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry))
+				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, returnParameter))
 				{
 					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}

@@ -57,7 +57,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	for (const auto& parameter : inputOptions.ParameterShapes)
 	{
-		if (RuntimeUtils::IsDynamicDataShape(parameter.second, inputOptions.ThreadGeometry))
+		if (RuntimeUtils::IsDynamicDataShape(parameter.second, inputOptions.ThreadGeometry, false))
 		{
 			kernelArgumentCount++;
 		}
@@ -70,7 +70,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		// Any return argument that is not determined by the geometry or statically specified
 		// needs a kernel argument for outputting the real size
 
-		if (RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry))
+		if (RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, true))
 		{
 			kernelArgumentCount++;
 		}
@@ -179,10 +179,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		// Allocate a size parameter if neded
 
-		const auto symbol = parameter->GetSymbol();
-		const auto inputShape = inputOptions.ParameterShapes.at(symbol);
-
-		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry))
+		const auto inputShape = inputOptions.ParameterShapes.at(parameter);
+		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, false))
 		{
 			AllocateSizeBuffer(invocation, inputShape);
 		}
@@ -208,7 +206,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		// Allocate a size parameter if neded
 
 		const auto inputShape = inputOptions.ReturnShapes.at(i);
-		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry))
+		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
 		{
 			sizeBuffers.push_back(AllocateSizeBuffer(invocation, inputShape));
 		}
@@ -277,7 +275,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		// Allocate a size parameter if neded
 
 		const auto inputShape = inputOptions.ReturnShapes.at(returnIndex++);
-		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry))
+		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
 		{
 			if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer))
 			{
@@ -334,11 +332,16 @@ Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Functio
 	Codegen::InputOptions inputOptions;
 	inputOptions.ThreadGeometry = kernelAnalysis.GetOperatingGeometry();
 	//TODO: Determine order
-	inputOptions.InOrderBlocks = false;
+	inputOptions.InOrderBlocks = Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry);
+
+	const auto& dataAnalysis = shapeAnalysis.GetDataAnalysis();
 
 	for (const auto& parameter : function->GetParameters())
 	{
-		inputOptions.ParameterShapes[parameter->GetSymbol()] = shapeAnalysis.GetParameterShape(parameter);
+		inputOptions.Parameters[parameter->GetSymbol()] = parameter;
+
+		inputOptions.ParameterShapes[parameter] = shapeAnalysis.GetParameterShape(parameter);
+		inputOptions.ParameterObjects[dataAnalysis.GetParameterObject(parameter)] = parameter;
 	}
 	inputOptions.ReturnShapes = shapeAnalysis.GetReturnShapes();
 

@@ -25,6 +25,17 @@ class SizeGenerator : public Generator, public HorseIR::ConstVisitor
 public:
 	using Generator::Generator;
 
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter)
+	{
+		m_size = nullptr;
+		DispatchType(*this, parameter->GetType(), parameter);
+		if (m_size == nullptr)
+		{
+			Utils::Logger::LogError("Unable to determine size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter));
+		}
+		return m_size;
+	}
+
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Operand *operand)
 	{
 		m_size = nullptr;
@@ -43,38 +54,42 @@ public:
 	
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
-		DispatchType(*this, identifier->GetType(), identifier);
+		// If the identifier is a parameter, then we can find the size
+
+		auto& parameters = this->m_builder.GetInputOptions().Parameters;
+
+		auto find = parameters.find(identifier->GetSymbol());
+		if (find != parameters.end())
+		{
+			auto parameter = find->second;
+			DispatchType(*this, parameter->GetType(), parameter);
+		}
 	}
 	
 	template<class T>
-	void Generate(const HorseIR::Identifier *identifier)
+	void Generate(const HorseIR::Parameter *parameter)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			Generate<PTX::Int8Type>(identifier);
+			Generate<PTX::Int8Type>(parameter);
 		}
 		else
 		{
 			auto kernelResources = this->m_builder.GetKernelResources();
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			auto& parameterShapes = inputOptions.ParameterShapes;
 
-			auto find = parameterShapes.find(identifier->GetSymbol());
-			if (find != parameterShapes.end())
+			auto shape = inputOptions.ParameterShapes.at(parameter);
+			auto name = NameUtils::VariableName(parameter);
+
+			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
 			{
-				auto shape = find->second;
-				auto name = NameUtils::VariableName(identifier);
-
-				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
-				{
-					auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
-					m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
-				}
-				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
-				{
-					auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
-					m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
-				}
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
+				m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
+			}
+			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+				m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
 			}
 		}
 	}

@@ -80,15 +80,15 @@ public:
 
 	const PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, const PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName = "")
 	{
-		return GenerateRegister(GenerateOperand(operand, index, indexName));
+		return GenerateRegisterFromOperand(GenerateOperand(operand, index, indexName));
 	}
 
 	const PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, LoadKind loadKind)
 	{
-		return GenerateRegister(GenerateOperand(operand, loadKind));
+		return GenerateRegisterFromOperand(GenerateOperand(operand, loadKind));
 	}
 
-	const PTX::Register<T> *GenerateRegister(const PTX::TypedOperand<T> *operand)
+	const PTX::Register<T> *GenerateRegisterFromOperand(const PTX::TypedOperand<T> *operand)
 	{
 		if (m_register)
 		{
@@ -123,76 +123,33 @@ public:
 
 		if (resources->ContainsRegister<S>(name))
 		{
-			GenerateRegister(resources->GetRegister<S>(name));
+			m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, resources->GetRegister<S>(name));
 		}
 		else
 		{
 			// Check if the register is a parameter
 
+			auto& parameters = this->m_builder.GetInputOptions().Parameters;
 			auto& parameterShapes = this->m_builder.GetInputOptions().ParameterShapes;
 
-			auto find = parameterShapes.find(identifier->GetSymbol());
-			if (find != parameterShapes.end())
+			auto find = parameters.find(identifier->GetSymbol());
+			if (find != parameters.end())
 			{
 				// Check if we have a cached register for the load kind, or need to generate the load
 
-				auto sourceName = NameUtils::VariableName(identifier, LoadKindString(m_loadKind));
-				if (resources->ContainsRegister<S>(sourceName))
+				auto parameter = find->second;
+				if (m_index == nullptr)
 				{
-					GenerateRegister(resources->GetRegister<S>(sourceName));
+					auto dataIndex = GenerateIndex(parameter, m_loadKind);
+					auto sourceName = NameUtils::VariableName(parameter, LoadKindString(m_loadKind));
+					m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, GenerateParameterLoad<S>(parameter, dataIndex, sourceName));
 				}
 				else
 				{
-					// Generate the load according to the load kind and data size or absolutely using the supplied index
-
-					GenerateParameterLoad<S>(identifier, find->second);
+					auto sourceName = NameUtils::VariableName(parameter, m_indexName);
+					m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, GenerateParameterLoad<S>(parameter, m_index, sourceName));
 				}
 			}
-		}
-	}
-
-	template<class S>
-	void GenerateParameterLoad(const HorseIR::Identifier *identifier, const Analysis::Shape *shape)
-	{
-		if constexpr(std::is_same<S, PTX::PredicateType>::value)
-		{
-			// Boolean parameters are stored as 8-bit integers
-
-			GenerateParameterLoad<PTX::Int8Type>(identifier, shape);
-		}
-		else
-		{
-			auto kernelResources = this->m_builder.GetKernelResources();
-
-			auto name = NameUtils::VariableName(identifier);
-			auto sourceName = NameUtils::VariableName(identifier, m_indexName);
-
-			auto index = (m_index == nullptr) ? GenerateIndex(identifier, shape, m_loadKind) : m_index;
-
-			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
-			{
-				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, S>>(name);
-				GenerateRegister(loadGenerator.template GeneratePointer<S>(parameter, index, sourceName));
-			}
-			else
-			{
-				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, S, PTX::GlobalSpace>>>(name);
-				GenerateRegister(loadGenerator.template GeneratePointer<S>(parameter, index, sourceName));
-			}
-		}
-	}
-
-	template<class S>
-	void GenerateRegister(const PTX::Register<S> *source)
-	{
-		if constexpr(std::is_same<T, S>::value)
-		{
-			m_operand = source;
-		}
-		else
-		{
-			m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, source);
 		}
 		m_register = true;
 	}
@@ -280,7 +237,77 @@ public:
 		}
 	}
 
+	template<class S>
+	const PTX::Register<S> *GenerateParameterLoad(const HorseIR::Parameter *parameter, const PTX::TypedOperand<PTX::UInt32Type> *dataIndex, const std::string& sourceName)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+		if (resources->ContainsRegister<S>(sourceName))
+		{
+			return resources->GetRegister<S>(sourceName);
+		}
+		else
+		{
+			// Ensure the thread is within bounds for loading data
+
+			IndexGenerator indexGenerator(this->m_builder);
+			auto index = indexGenerator.GenerateDataIndex();
+
+			GeometryGenerator geometryGenerator(this->m_builder);
+			auto size = geometryGenerator.GenerateDataSize();
+
+			auto sizeLabel = this->m_builder.CreateLabel("SIZE");
+			auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
+			
+			// Load the value from the global space
+
+			ValueLoadGenerator<B> loadGenerator(this->m_builder);
+			auto value = loadGenerator.template GenerateParameter<S>(parameter, dataIndex, sourceName);
+
+			// Completed determining size
+
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+			this->m_builder.AddStatement(sizeLabel);
+
+			return value;
+		}
+	}
+
 private:
+	const PTX::Register<PTX::UInt32Type> *GenerateCompressedIndex(const Analysis::Shape::CompressedSize *size)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+		auto& inputOptions = this->m_builder.GetInputOptions();
+
+		auto parameter = inputOptions.ParameterObjects.at(size->GetPredicate());
+
+		auto name = NameUtils::VariableName(parameter);
+		auto sourceName = NameUtils::VariableName(parameter, LoadKindString(LoadKind::Vector));
+
+		// Load the predicate parameter
+
+		auto dataIndex = GenerateIndex(parameter, LoadKind::Vector);
+
+		OperandGenerator<B, PTX::PredicateType> operandGenerator(this->m_builder);
+		auto predicate = operandGenerator.template GenerateParameterLoad<PTX::PredicateType>(parameter, dataIndex, sourceName);
+
+		auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
+		this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
+
+		// Calculate prefix sum to use as index
+
+		auto moduleResources = this->m_builder.GetGlobalResources();
+		auto g_size = moduleResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("size"));
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(g_size);
+
+		PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
+		return prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
+	}
+
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDynamicIndex(const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *indexed)
 	{
 		auto resources = this->m_builder.GetLocalResources();
@@ -302,7 +329,7 @@ private:
 		return index;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Identifier *identifier, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, IndexGenerator::Kind indexKind)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, IndexGenerator::Kind indexKind)
 	{
 		IndexGenerator indexGenerator(this->m_builder);
 
@@ -325,6 +352,12 @@ private:
 
 			return indexGenerator.GenerateIndex(indexKind);                      
 		}
+		else if (Analysis::ShapeUtils::IsCompressedSize(size, geometrySize))
+		{
+			// If the data is compressed, load a special prefix summed index
+
+			return GenerateCompressedIndex(Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(size));
+		}
 		else
 		{
 			// If no static load type can be detemined, check at runtime
@@ -332,15 +365,17 @@ private:
 			auto index = indexGenerator.GenerateIndex(indexKind);
 
 			SizeGenerator<B> sizeGenerator(this->m_builder);
-			auto dynamicSize = sizeGenerator.GenerateSize(identifier);
+			auto dynamicSize = sizeGenerator.GenerateSize(parameter);
 
 			return GenerateDynamicIndex(dynamicSize, index);
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Identifier *identifier, const Analysis::Shape *shape, LoadKind loadKind)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, LoadKind loadKind)
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
+		auto shape = inputOptions.ParameterShapes.at(parameter);
+
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			// Vector geometries require values be loaded into vectors
@@ -349,7 +384,7 @@ private:
 			{
 				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 				{
-					return GenerateIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::Global);
+					return GenerateIndex(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::Global);
 				}
 			}
 		}
@@ -368,14 +403,14 @@ private:
 						{
 							// Vectors loaded in list geometries align with the cell data (vertical vectors)
 
-							return GenerateIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
+							return GenerateIndex(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
 						}
 						else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 						{
 							const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
 							if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
 							{
-								return GenerateIndex(identifier, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
+								return GenerateIndex(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), IndexGenerator::Kind::CellData);
 							}
 						}
 						break;
@@ -386,7 +421,7 @@ private:
 						{
 							// As a special case, we can load vectors horizontally, with 1 value per cell
 
-							return GenerateIndex(identifier, vectorShape->GetSize(), listGeometry->GetListSize(), IndexGenerator::Kind::Cell);
+							return GenerateIndex(parameter, vectorShape->GetSize(), listGeometry->GetListSize(), IndexGenerator::Kind::Cell);
 						}
 						break;
 					}

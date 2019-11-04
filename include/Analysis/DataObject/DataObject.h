@@ -21,6 +21,8 @@ public:
 		return !(*this == other);
 	}
 
+	std::string ToString() const { return "ID_" + std::to_string(m_objectID); }
+
 	friend std::ostream& operator<<(std::ostream& os, const DataObject& object);
 
 private:
@@ -31,7 +33,7 @@ private:
 
 inline std::ostream& operator<<(std::ostream& os, const DataObject& object)
 {
-	os << "ID_" << object.m_objectID;
+	os << object.ToString();
 	return os;
 }
 

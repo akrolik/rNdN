@@ -383,7 +383,7 @@ public:
 			auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(sizeParameter);
 
 			PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
-			auto prefixSum = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate);
+			auto writeIndex = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
 
 			// Check for compression - this will mask outputs
 
@@ -391,9 +391,6 @@ public:
 
 			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
-
-			auto writeIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(writeIndex, prefixSum, new PTX::UInt32Value(1)));
 
 			// Store the value at the place specified by the prefix sum
 
