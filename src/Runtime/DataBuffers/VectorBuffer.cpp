@@ -16,7 +16,7 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 		switch (type->GetBasicKind())
 		{
 			case HorseIR::BasicType::BasicKind::Boolean:
-				return new TypedVectorBuffer<uint8_t>(type, value);
+				return new TypedVectorBuffer<int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Char:
 				return new TypedVectorBuffer<int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int8:
