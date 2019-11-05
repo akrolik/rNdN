@@ -3,7 +3,7 @@
 #include <typeindex>
 #include <typeinfo>
 
-#include "Runtime/DataBuffers/DataBuffer.h"
+#include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
 #include "Analysis/Shape/Shape.h"
@@ -13,7 +13,7 @@
 namespace Runtime {
 
 class BufferUtils;
-class VectorBuffer : public DataBuffer
+class VectorBuffer : public ColumnBuffer
 {
 	friend class BufferUtils;
 public:
@@ -27,15 +27,19 @@ public:
 	const HorseIR::BasicType *GetType() const override { return m_type; }
 	const Analysis::VectorShape *GetShape() const override { return m_shape; }
 
+	// GPU/CPU buffer management
+
 	virtual VectorData *GetCPUWriteBuffer() = 0;
 	virtual VectorData *GetCPUReadBuffer() const = 0;
+
+	// Data size, useful for allocations
 
 	unsigned int GetElementCount() const { return m_elementCount; }
 	size_t GetElementSize() const { return m_elementSize; }
 
 protected:
 	VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount, size_t elementSize) :
-		DataBuffer(DataBuffer::Kind::Vector), m_typeid(tid), m_elementCount(elementCount), m_elementSize(elementSize)
+		ColumnBuffer(DataBuffer::Kind::Vector), m_typeid(tid), m_elementCount(elementCount), m_elementSize(elementSize)
 	{
 		m_type = type->Clone();
 		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
@@ -97,6 +101,11 @@ public:
 	std::string DebugDump() const override
 	{
 		return GetCPUReadBuffer()->DebugDump();
+	}
+
+	std::string DebugDump(unsigned int index) const override
+	{
+		return GetCPUReadBuffer()->DebugDump(index);
 	}
 
 private:

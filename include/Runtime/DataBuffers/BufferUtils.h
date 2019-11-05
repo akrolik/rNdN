@@ -4,6 +4,7 @@
 #include <typeinfo>
 
 #include "Runtime/DataBuffers/DataBuffer.h"
+#include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "Utils/Logger.h"
 

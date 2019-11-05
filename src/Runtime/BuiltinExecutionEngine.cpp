@@ -3,6 +3,8 @@
 #include "HorseIR/Utils/TypeUtils.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
+#include "Runtime/DataBuffers/ColumnBuffer.h"
+#include "Runtime/DataBuffers/EnumerationBuffer.h"
 #include "Runtime/DataBuffers/ListBuffer.h"
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
@@ -107,7 +109,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 
 			auto i = 0u;
-			std::vector<std::pair<std::string, VectorBuffer *>> columns;
+			std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 			for (const auto& columnName : columnNames->GetValues())
 			{
 				columns.push_back({columnName->GetName(), BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++))});
@@ -116,15 +118,27 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Keys:
 		{
-			//TODO: Support more types
-			auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0));
-			return {dictionary->GetKeys()};
+			if (auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0), false))
+			{
+				return {dictionary->GetKeys()};
+			}
+			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(arguments.at(0), false))
+			{
+				return {enumeration->GetKeys()};
+			}
+			Error("unsupported target type");
 		}
 		case HorseIR::BuiltinFunction::Primitive::Values:
 		{
-			//TODO: Support more types
-			auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0));
-			return {dictionary->GetValues()};
+			if (auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0), false))
+			{
+				return {dictionary->GetValues()};
+			}
+			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(arguments.at(0), false))
+			{
+				return {enumeration->GetValues()};
+			}
+			Error("unsupported target type");
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{

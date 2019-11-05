@@ -1394,7 +1394,49 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			Require(CheckStaticScalar(vectorShape2->GetSize()));
 
 			const auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape1);
-			return {new VectorShape(tableShape->GetRowsSize())};
+			const auto rowsSize = tableShape->GetRowsSize();
+
+			if (HasConstantArgument(arguments, 1))
+			{
+				// Foreign keys for TPC-H
+
+				const auto columnName = ValueAnalysisHelper::GetScalar<const HorseIR::SymbolValue *>(arguments.at(1))->GetName();
+				if (columnName == "n_regionkey")
+				{
+					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.region.rows")), new VectorShape(rowsSize))};
+				}
+				else if (columnName == "s_nationkey" || columnName == "c_nationkey")
+				{
+					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.customer.rows")), new VectorShape(rowsSize))};
+				}
+				else if (columnName == "ps_suppkey")
+				{
+					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.supplier.rows")), new VectorShape(rowsSize))};
+				}
+				else if (columnName == "ps_partkey")
+				{
+					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.part.rows")), new VectorShape(rowsSize))};
+				}
+				else if (columnName == "o_custkey")
+				{
+					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.customer.rows")), new VectorShape(rowsSize))};
+				}
+				else if (columnName == "l_orderkey")
+				{
+					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.orders.rows")), new VectorShape(rowsSize))};
+				}
+				// else if (columnName == "l_partkey" || columnName == "l_suppkey")
+				// {
+				// 	return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.partsupp.rows")), new VectorShape(rowsSize))};
+				// }
+				else if (columnName.rfind("enum_", 0) == 0)
+				{
+					// Debug foreign key is in the same table
+
+					return {new EnumerationShape(new VectorShape(rowsSize), new VectorShape(rowsSize))};
+				}
+			}
+			return {new VectorShape(rowsSize)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{

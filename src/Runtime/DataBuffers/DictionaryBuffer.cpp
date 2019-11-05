@@ -50,7 +50,7 @@ std::string DictionaryBuffer::DebugDump() const
 	std::string string = "";
 	for (auto i = 0ul; i < m_size; ++i)
 	{
-		string += m_keys->GetCPUReadBuffer()->DebugDump(i) + " -> ";
+		string += m_keys->DebugDump(i) + " -> ";
 		string += m_values->GetCell(i)->DebugDump();
 		string += "\n";
 	}

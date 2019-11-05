@@ -9,7 +9,7 @@
 
 namespace Runtime {
 
-TableBuffer::TableBuffer(const std::vector<std::pair<std::string, VectorBuffer *>>& columns) : DataBuffer(DataBuffer::Kind::Table), m_columns(columns)
+TableBuffer::TableBuffer(const std::vector<std::pair<std::string, ColumnBuffer *>>& columns) : DataBuffer(DataBuffer::Kind::Table), m_columns(columns)
 {
 	bool first = true;
 	for (const auto& [name, data] : columns)
@@ -42,7 +42,7 @@ TableBuffer::~TableBuffer()
 	delete m_shape;
 }
 
-VectorBuffer *TableBuffer::GetColumn(const std::string& name) const
+ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
 {
 	if (m_columnMap.find(name) == m_columnMap.end())
 	{
@@ -79,7 +79,7 @@ std::string TableBuffer::DebugDump() const
 	{
 		for (const auto& column : m_columns)
 		{
-			string << std::left << std::setw(20) << column.second->GetCPUReadBuffer()->DebugDump(i);
+			string << std::left << std::setw(20) << column.second->DebugDump(i);
 		}
 		string << std::endl;
 	}
