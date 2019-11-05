@@ -130,7 +130,7 @@ public:
 				}
 			}
 		}
-		Utils::Logger::LogError("Unable to generate store for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+		Utils::Logger::LogError("Unable to generate store for shape " + Analysis::ShapeUtils::ShapeString(shape) + " in thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 	}
 
 	template<class T>
@@ -430,7 +430,7 @@ public:
 		}
 		else
 		{
-			Utils::Logger::LogError("Unable to generate address for return parameter " + NameUtils::ReturnName(returnIndex));
+			Utils::Logger::LogError("Unable to generate address for return parameter " + NameUtils::ReturnName(returnIndex) " with shape " + Analysis::ShapeUtils::ShapeString(shape));
 		}
 	}
 };

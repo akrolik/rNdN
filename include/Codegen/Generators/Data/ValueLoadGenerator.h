@@ -8,7 +8,11 @@
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 
+#include "HorseIR/Tree/Tree.h"
+
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -40,11 +44,13 @@ public:
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
 				return GeneratePointer<T>(parameter, dataIndex, sourceName);
 			}
-			else
+			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
 			{
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
 				return GeneratePointer<T>(parameter, dataIndex, sourceName);
 			}
+
+			Utils::Logger::LogError("Unable to generate load for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
 		}
 	}
 

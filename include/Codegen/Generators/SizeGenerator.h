@@ -84,27 +84,32 @@ public:
 			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
 			{
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
-				m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
+				m_size = GenerateSize(parameter, shape);
 			}
 			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
 			{
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
-				m_size = GenerateSize(parameter, shape, inputOptions.ThreadGeometry);
+				m_size = GenerateSize(parameter, shape);
+			}
+			else
+			{
+				Utils::Logger::LogError("Unable to generate size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
 			}
 		}
 	}
 
 	template<class T>
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape *shape, const Analysis::Shape *threadGeometry) const
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape *shape) const
 	{
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 			{
 				return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
 			}
 		}
-		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))
+		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
 			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
@@ -123,7 +128,7 @@ public:
 				}
 			}
 		}
-		return nullptr;
+		Utils::Logger::LogError("Unable to generate size for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry) + " and shape " + Analysis::ShapeUtils::ShapeString(shape));
 	}
 
 	template<class T>

@@ -90,6 +90,10 @@ public:
 					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}
 			}
+			else
+			{
+				Utils::Logger::LogError("Unable to generate parameter for shape " + Analysis::ShapeUtils::ShapeString(shape));
+			}
 		}
 	}
 

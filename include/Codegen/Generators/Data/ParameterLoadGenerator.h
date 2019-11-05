@@ -19,6 +19,8 @@
 
 #include "Runtime/RuntimeUtils.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 template<PTX::Bits B>
@@ -78,6 +80,10 @@ public:
 			{
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
 				GenerateList<T>(parameter, loadSize, returnParameter);
+			}
+			else
+			{
+				Utils::Logger::LogError("Unable to generate parameter load for shape" + Analysis::ShapeUtils::ShapeString(shape));
 			}
 		}
 	}

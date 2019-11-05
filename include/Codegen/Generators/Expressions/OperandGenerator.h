@@ -428,6 +428,10 @@ private:
 				}
 			}
 		}
+		else
+		{
+			Utils::Logger::LogError("Unable to generate load index for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+		}
 		Utils::Logger::LogError("Unable to determine indexing mode for shape " + Analysis::ShapeUtils::ShapeString(shape) + " and load kind " + LoadKindString(loadKind));
 	}
 
