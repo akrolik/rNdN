@@ -332,12 +332,29 @@ public:
 	template<class T>
 	void GenerateWriteVector(const HorseIR::Operand *operand, IndexGenerator::Kind indexKind, unsigned int returnIndex)
 	{
+		auto resources = this->m_builder.GetLocalResources();
+
 		// Fetch the write address and store the value at the appropriate index (global indexing, or indexed register)
 
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
-		auto resources = this->m_builder.GetLocalResources();
+		// Ensure the write is within bounds
+
+		IndexGenerator indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
+
+		GeometryGenerator geometryGenerator(this->m_builder);
+		auto size = geometryGenerator.GenerateDataSize();
+
+		auto sizeLabel = this->m_builder.CreateLabel("SIZE");
+		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
+
+		// Store the value into global space
+
 		if (auto indexed = resources->template GetIndexedRegister<T>(value))
 		{
 			auto address = GenerateAddress<T>(returnIndex, indexed);
@@ -353,6 +370,9 @@ public:
 			auto address = GenerateAddress<T>(returnIndex, index);
 			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
 		}
+
+		this->m_builder.AddStatement(new PTX::BlankStatement());
+		this->m_builder.AddStatement(sizeLabel);
 	}
 
 	template<class T>
@@ -430,7 +450,7 @@ public:
 		}
 		else
 		{
-			Utils::Logger::LogError("Unable to generate address for return parameter " + NameUtils::ReturnName(returnIndex) " with shape " + Analysis::ShapeUtils::ShapeString(shape));
+			Utils::Logger::LogError("Unable to generate address for return parameter " + NameUtils::ReturnName(returnIndex) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
 		}
 	}
 };
