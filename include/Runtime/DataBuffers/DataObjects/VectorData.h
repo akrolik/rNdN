@@ -52,7 +52,7 @@ public:
 	std::string DebugDump() const
 	{
 		std::string string;
-		auto count = std::min(m_data.size(), 10ul);
+		auto count = std::min(m_data.size(), 15ul);
 		if (count > 1)
 		{
 			string += "(";
@@ -67,7 +67,7 @@ public:
 			first = false;
 			string += DebugDump(i);
 		}
-		if (m_data.size() > 10)
+		if (m_data.size() > count)
 		{
 			string += ", ...";
 		}

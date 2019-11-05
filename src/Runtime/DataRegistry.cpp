@@ -26,7 +26,7 @@ void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer
 	CUDA::Vector<T> fkey(size);
 	CUDA::Vector<std::int64_t> indexes(size);
 	
-	for (unsigned long i = 0; i < size; ++i)
+	for (auto i = 0u; i < size; ++i)
 	{
 		zeros.at(i) = 0;
 		ones.at(i) = 1;
@@ -50,6 +50,23 @@ void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer
 	)});
 }
 
+void DataRegistry::LoadStringDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size)
+{
+	CUDA::Vector<std::string> strings(size);
+	CUDA::Vector<std::string> symbols(size);
+
+	for (auto i = 0u; i < size; ++i)
+	{
+		auto numberString = std::to_string(i);
+		auto paddedString = std::string(5 - numberString.length(), '0') + numberString;
+		strings.at(i) = "String#" + paddedString;
+		symbols.at(i) = "Symbol#" + paddedString;
+	}
+
+	columns.push_back({"strings", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), strings))});
+	columns.push_back({"symbols", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), symbols))});
+}
+
 void DataRegistry::LoadDebugData()
 {
 	Utils::Logger::LogSection("Loading debug data");
@@ -65,6 +82,7 @@ void DataRegistry::LoadDebugData()
 		LoadDebugData<int64_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), i);
 		LoadDebugData<float>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float32), i);
 		LoadDebugData<double>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), i);
+		LoadStringDebugData(columns, i);
 
 		AddTable("debug_" + std::to_string(i), new TableBuffer(columns));
 	}

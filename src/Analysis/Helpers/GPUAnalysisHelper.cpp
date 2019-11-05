@@ -153,10 +153,6 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::TimeMillisecond:
 
 		// Binary
-		case HorseIR::BuiltinFunction::Primitive::Less:
-		case HorseIR::BuiltinFunction::Primitive::Greater:
-		case HorseIR::BuiltinFunction::Primitive::LessEqual:
-		case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
 		case HorseIR::BuiltinFunction::Primitive::Equal:
 		case HorseIR::BuiltinFunction::Primitive::NotEqual:
 		case HorseIR::BuiltinFunction::Primitive::Plus:
@@ -193,7 +189,18 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
+			//TODO: Join index should check the nested function for GPU/synchronization
 			return {true, Synchronization::None};
+		}
+
+		// Binary
+		case HorseIR::BuiltinFunction::Primitive::Less:
+		case HorseIR::BuiltinFunction::Primitive::Greater:
+		case HorseIR::BuiltinFunction::Primitive::LessEqual:
+		case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
+		{
+			auto isString = (HorseIR::TypeUtils::IsCharacterType(arguments.at(0)->GetType()) || HorseIR::TypeUtils::IsCharacterType(arguments.at(1)->GetType()));
+			return {!isString, Synchronization:None};
 		}
 
 		// Algebraic Binary
@@ -278,6 +285,7 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		case HorseIR::BuiltinFunction::Primitive::EachLeft:
 		case HorseIR::BuiltinFunction::Primitive::EachRight:
 		{
+			//TODO: Nested arguments
 			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 			return AnalyzeCall(function, {}, index - 1); // Nested function properties

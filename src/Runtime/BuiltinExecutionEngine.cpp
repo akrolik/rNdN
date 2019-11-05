@@ -2,6 +2,8 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Libraries/jpcre2.hpp"
+
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
@@ -28,6 +30,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
 
+			//TODO: Sort on strings should be CPU
 			std::vector<VectorBuffer *> columns;
 			if (auto listSort = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0), false))
 			{
@@ -163,6 +166,118 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 
 			return {dataRegistry.GetTable(tableSymbol->GetValue(0)->GetName())};
+		}
+		case HorseIR::BuiltinFunction::Primitive::Like:
+		{
+			auto stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			auto patternData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer()->GetValue(0);
+
+			// Transform from SQL like to regex
+			//  - Escape: '.', '*', and '\'
+			//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
+
+			const char *likePattern = patternData.c_str();
+			char *regexPattern = (char *)malloc(sizeof(char) * patternData.size() + 2);
+
+			auto j = 0u;
+			for (auto i = 0u; i < patternData.size() ; ++i)
+			{
+				char c = likePattern[i];
+				if (c == '.' || c == '*' || c == '\\')
+				{
+					regexPattern[j++] = '\\';
+					regexPattern[j++] = c;
+				}
+				else if (c == '%')
+				{
+					regexPattern[j++] = '.';
+					regexPattern[j++] = '*';
+				}
+				else if (c == '_')
+				{
+					regexPattern[j++] = '.';
+				}
+				else
+				{
+					regexPattern[j++] = c;
+				}
+			}
+			regexPattern[j++] = '$';
+			regexPattern[j] = '\0';
+			std::string pattern(regexPattern);
+
+			// Compile the regex and match on all data strings
+
+			jpcre2::select<char>::Regex regex(pattern, PCRE2_ANCHORED, jpcre2::JIT_COMPILE);
+			if (!regex)
+			{
+				Error("unable to compile match pattern");
+			}
+
+			const auto size = stringData.size();
+			CUDA::Vector<std::int8_t> likeData(size);
+
+			for (auto i = 0u; i < size; ++i)
+			{
+				likeData.at(i) = regex.match(stringData.at(i));
+			}
+
+			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), likeData))};
+		}
+		case HorseIR::BuiltinFunction::Primitive::SubString:
+		{
+			auto stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			auto rangeVector = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(1));
+
+			size_t position = 0;
+			size_t length = 0;
+			switch (rangeVector->GetType()->GetBasicKind())
+			{
+				case HorseIR::BasicType::BasicKind::Boolean:
+				case HorseIR::BasicType::BasicKind::Char:
+				case HorseIR::BasicType::BasicKind::Int8:
+				{
+					auto range = BufferUtils::GetVectorBuffer<std::int8_t>(rangeVector)->GetCPUReadBuffer();
+					position = range->GetValue(0);
+					length = range->GetValue(1);
+					break;
+				}
+				case HorseIR::BasicType::BasicKind::Int16:
+				{
+					auto range = BufferUtils::GetVectorBuffer<std::int16_t>(rangeVector)->GetCPUReadBuffer();
+					position = range->GetValue(0);
+					length = range->GetValue(1);
+					break;
+				}
+				case HorseIR::BasicType::BasicKind::Int32:
+				{
+					auto range = BufferUtils::GetVectorBuffer<std::int32_t>(rangeVector)->GetCPUReadBuffer();
+					position = range->GetValue(0);
+					length = range->GetValue(1);
+					break;
+				}
+				case HorseIR::BasicType::BasicKind::Int64:
+				{
+					auto range = BufferUtils::GetVectorBuffer<std::int64_t>(rangeVector)->GetCPUReadBuffer();
+					position = range->GetValue(0);
+					length = range->GetValue(1);
+					break;
+				}
+				default:
+				{
+					Error("range type " + HorseIR::TypeUtils::TypeString(rangeVector->GetType()) + " not supported");
+				}
+			}
+
+			const auto size = stringData.size();
+			CUDA::Vector<std::string> substringData(size);
+
+			for (auto i = 0u; i < size; ++i)
+			{
+				substringData.at(i) = stringData.at(i).substr(position, length);
+			}
+
+			return {new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), substringData))};
 		}
 		default:
 		{
