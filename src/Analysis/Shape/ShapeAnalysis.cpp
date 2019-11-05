@@ -1597,20 +1597,13 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
 			// -- Substring of vector
-			// Input: Vector<Size*>, Vector<1>, Vector<1>
+			// Input: Vector<Size*>, Vector<2>
 			// Output: Vector<Size*>
 
 			const auto argumentShape1 = argumentShapes.at(0);
 			const auto argumentShape2 = argumentShapes.at(1);
-			const auto argumentShape3 = argumentShapes.at(2);
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1));
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
-			Require(ShapeUtils::IsShape<VectorShape>(argumentShape3));
-
-			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
-			const auto vectorShape3 = ShapeUtils::GetShape<VectorShape>(argumentShape3);
-			Require(CheckStaticScalar(vectorShape2->GetSize()));
-			Require(CheckStaticScalar(vectorShape3->GetSize()));
 			return {argumentShape1};
 		}
 		default:

@@ -543,7 +543,7 @@ public:
 			case Primitive::String:
 				return 1;
 			case Primitive::SubString:
-				return 3;
+				return 2;
 
 			// GPU
 			case Primitive::GPUOrderInit:

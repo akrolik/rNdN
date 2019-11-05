@@ -1046,8 +1046,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
-			const auto inputType2 = argumentTypes.at(2);
-			Require(TypeUtils::IsStringType(inputType0) && TypeUtils::IsIntegerType(inputType1) && TypeUtils::IsIntegerType(inputType2));
+			Require(TypeUtils::IsStringType(inputType0) && TypeUtils::IsIntegerType(inputType1));
 			return {inputType0};
 		}
 
