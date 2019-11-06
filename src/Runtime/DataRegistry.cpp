@@ -208,7 +208,7 @@ void DataRegistry::LoadTPCHPartTable()
 	CUDA::Vector<std::int64_t> partKey;
 	CUDA::Vector<std::string> brand;
 	CUDA::Vector<std::string> type;
-	CUDA::Vector<std::int32_t> size;
+	CUDA::Vector<std::int64_t> size;
 	CUDA::Vector<std::string> container;
 
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/part.tbl");
@@ -236,7 +236,7 @@ void DataRegistry::LoadTPCHPartTable()
 	columns.push_back({"p_partkey", primaryKey});
 	columns.push_back({"p_brand", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), brand))});
 	columns.push_back({"p_type", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), type))});
-	columns.push_back({"p_size", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), size))});
+	columns.push_back({"p_size", new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), size))});
 	columns.push_back({"p_container", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), container))});
 	
 	auto table = new TableBuffer(columns);
@@ -334,7 +334,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 {
 	std::unordered_map<std::int64_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> supplierKey;
+	CUDA::Vector<std::int64_t> supplierKey;
 	CUDA::Vector<std::string> comment;
 
 	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/supplier.tbl");
@@ -355,7 +355,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-	auto primaryKey = new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), supplierKey));
+	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), supplierKey));
 	columns.push_back({"s_suppkey", primaryKey});
 	columns.push_back({"s_comment", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), comment))});
 	
@@ -368,6 +368,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 {
 	std::unordered_map<std::int64_t, std::int64_t> primaryMap;
 
+	CUDA::Vector<std::int64_t> custKey;
 	CUDA::Vector<std::string> phone;
 	CUDA::Vector<double> accountBalance;
 
@@ -381,6 +382,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	{
 		primaryMap[atoi(c_custkey)] = count;
 
+		custKey.push_back(atoi(c_custkey));
 		phone.push_back(std::string(c_phone));
 		accountBalance.push_back(atof(c_acctbal));
 
@@ -389,8 +391,9 @@ void DataRegistry::LoadTPCHCustomerTable()
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-	auto primaryKey = new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), phone));
-	columns.push_back({"c_phone", primaryKey});
+	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), custKey));
+	columns.push_back({"c_custkey", primaryKey});
+	columns.push_back({"c_phone", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), phone))});
 	columns.push_back({"c_acctbal", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), accountBalance))});
 	
 	auto table = new TableBuffer(columns);
