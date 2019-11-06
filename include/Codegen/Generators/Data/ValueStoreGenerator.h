@@ -215,7 +215,10 @@ public:
 			{
 				if constexpr(std::is_same<T, PTX::Int64Type>::value)
 				{
-					GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace, PTX::UInt64Type::ReductionOperation::Add>(
+						new PTX::AddressAdapter<B, PTX::UInt64Type, PTX::Int64Type, PTX::GlobalSpace>(address),
+						new PTX::Unsigned64RegisterAdapter(value)
+					));
 				}
 				else
 				{

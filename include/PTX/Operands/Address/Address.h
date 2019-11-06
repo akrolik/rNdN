@@ -5,7 +5,7 @@
 namespace PTX {
 
 template<Bits B, class T, class S = AddressableSpace>
-class Address : public TypedOperand<T>
+class Address : public Operand
 {
 public:
 	REQUIRE_TYPE_PARAM(Address,
