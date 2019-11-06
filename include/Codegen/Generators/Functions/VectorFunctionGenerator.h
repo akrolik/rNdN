@@ -109,8 +109,12 @@ public:
 			barrierGenerator.Generate();
 		}
 
+		auto i = 1u;
 		for (const auto& statement : function->GetStatements())
 		{
+			// Include the statement number for debugging
+
+			this->m_builder.AddStatement(new PTX::LocationDirective(this->m_builder.GetCurrentFile(), i++));
 			statement->Accept(*this);
 		}
 	}

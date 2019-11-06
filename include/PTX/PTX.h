@@ -15,6 +15,12 @@
 #include "PTX/Program.h"
 #include "PTX/Module.h"
 
+// Directives
+
+#include "PTX/Directives/Directive.h"
+#include "PTX/Directives/FileDirective.h"
+#include "PTX/Directives/LocationDirective.h"
+
 // Declarations
 
 #include "PTX/Declarations/Declaration.h"

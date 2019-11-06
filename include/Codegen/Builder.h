@@ -159,6 +159,12 @@ public:
 		m_inputOptions[function] = inputOptions;
 	}
 
+	const PTX::FileDirective *GetCurrentFile() const { return m_files.at(m_currentFunction); }
+	void SetFile(const HorseIR::Function *function, const PTX::FileDirective *file)
+	{
+		m_files[function] = file;
+	}
+
 	PTX::FunctionOptions& GetKernelOptions() { return m_currentKernel->GetOptions(); }
 
 private:
@@ -169,6 +175,7 @@ private:
 
 	const TargetOptions& m_targetOptions;
 	std::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;
+	std::unordered_map<const HorseIR::Function*, const PTX::FileDirective *> m_files;
 
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;

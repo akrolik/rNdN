@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "PTX/Declarations/Declaration.h"
+#include "PTX/Directives/Directive.h"
 #include "PTX/Functions/Function.h"
 #include "PTX/Type.h"
 
@@ -31,6 +32,16 @@ public:
 	const Function *GetEntryFunction(const std::string& name) const
 	{
 		return m_entryFunctions.at(name);
+	}
+
+	void AddDirective(const Directive *directive)
+	{
+		m_directives.push_back(directive);
+	}
+	template<class T>
+	void AddDirectives(const std::vector<T>& directives)
+	{
+		m_directives.insert(std::end(m_directives), std::begin(directives), std::end(directives));
 	}
 
 	void AddDeclaration(const Declaration *declaration)
@@ -65,6 +76,11 @@ public:
 		code += ".version " + std::to_string(m_versionMajor) + "." + std::to_string(m_versionMinor) + "\n";
 		code += ".target " + m_target + "\n";
 		code += ".address_size " + std::to_string(DynamicBitSize::GetBits(m_addressSize)) + "\n";
+
+		for (const auto& directive : m_directives)
+		{
+			code += directive->ToString(0) + "\n";
+		}
 		code += "\n";
 
 		bool first = true;
@@ -88,6 +104,10 @@ public:
 		j["version_minor"] = m_versionMinor;
 		j["target"] = m_target;
 		j["address_size"] = DynamicBitSize::GetBits(m_addressSize);
+		for (const auto& directive : m_directives)
+		{
+			j["directive"].push_back(directive->ToJSON());
+		}
 		for (const auto& declaration : m_declarations)
 		{
 			j["declarations"].push_back(declaration->ToJSON());
@@ -100,6 +120,7 @@ private:
 	std::string m_target;
 	Bits m_addressSize = Bits::Bits32;
 
+	std::vector<const Directive *> m_directives;
 	std::vector<const Declaration *> m_declarations;
 
 	std::unordered_map<std::string, const Function *> m_entryFunctions;

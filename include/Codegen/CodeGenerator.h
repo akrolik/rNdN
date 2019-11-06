@@ -67,6 +67,12 @@ public:
 		auto functionIndex = 0u;
 		for (const auto& function : functions)
 		{
+			// Setup the file debug directive
+
+			auto file = new PTX::FileDirective(functionIndex + 1, function->GetName());
+			ptxModule->AddDirective(file);
+
+			m_builder.SetFile(function, file);
 			m_builder.SetInputOptions(function, inputOptions.at(functionIndex++));
 			function->Accept(*this);
 		}
