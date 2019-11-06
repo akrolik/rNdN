@@ -38,6 +38,8 @@ public:
 	const T& GetValue(unsigned int i) const { return m_data.at(i); }
 	const CUDA::Vector<T>& GetValues() const { return m_data; }
 
+	void SetValue(unsigned int i, const T& value) { m_data.at(i) = value; }
+
         void *GetData() override { return m_data.data(); }
 	size_t GetDataSize() const override { return m_data.size() * sizeof(T); }
 

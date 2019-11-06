@@ -5,6 +5,7 @@
 
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
+#include "Runtime/StringBucket.h"
 
 #include "Analysis/Shape/Shape.h"
 
@@ -58,8 +59,22 @@ template<typename T>
 class TypedVectorBuffer : public VectorBuffer
 {
 public:
-	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T), elementType, elementCount, sizeof(T)) {}
-	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T), buffer->GetType(), buffer->GetElementCount(), sizeof(T)), m_cpuBuffer(buffer) {}
+	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T), elementType, elementCount, sizeof(T))
+	{
+		//TODO: Inefficient
+		if constexpr(std::is_same<T, std::string>::value)
+		{
+			m_elementSize = sizeof(std::uint64_t);
+		}
+	}
+
+	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T), buffer->GetType(), buffer->GetElementCount(), sizeof(T)), m_cpuBuffer(buffer)
+	{
+		if constexpr(std::is_same<T, std::string>::value)
+		{
+			m_elementSize = sizeof(std::uint64_t);
+		}
+	}
 
 	~TypedVectorBuffer() override
 	{
@@ -114,7 +129,15 @@ private:
 		m_cpuBuffer = new TypedVectorData<T>(m_type, m_elementCount);
 		if (m_gpuBuffer != nullptr)
 		{
-			m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
+			if constexpr(std::is_same<T, std::string>::value)
+			{
+				std::uint64_t *hashedData = (std::uint64_t *)malloc(sizeof(std::uint64_t) * m_elementCount);
+				m_gpuBuffer->SetCPUBuffer(hashedData);
+			}
+			else
+			{
+				m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
+			}
 		}
 	}
 
@@ -122,11 +145,30 @@ private:
 	{
 		if (m_cpuBuffer != nullptr)
 		{
-			m_gpuBuffer = new CUDA::Buffer(m_cpuBuffer->GetData(), sizeof(T) * m_elementCount);
+			if constexpr(std::is_same<T, std::string>::value)
+			{
+				std::uint64_t *hashedData = (std::uint64_t *)malloc(sizeof(std::uint64_t) * m_elementCount);
+				for (auto i = 0u; i < m_elementCount; ++i)
+				{
+					hashedData[i] = StringBucket::HashString(m_cpuBuffer->GetValue(i));
+				}
+				m_gpuBuffer = new CUDA::Buffer(hashedData, sizeof(std::uint64_t) * m_elementCount);
+			}
+			else
+			{
+				m_gpuBuffer = new CUDA::Buffer(m_cpuBuffer->GetData(), sizeof(T) * m_elementCount);
+			}
 		}
 		else
 		{
-			m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
+			if constexpr(std::is_same<T, std::string>::value)
+			{
+				m_gpuBuffer = new CUDA::Buffer(sizeof(std::uint64_t) * m_elementCount);
+			}
+			else
+			{
+				m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
+			}
 		}
 		m_gpuBuffer->AllocateOnGPU();
 	}
@@ -142,6 +184,14 @@ private:
 			if (m_gpuBuffer != nullptr)
 			{
 				m_gpuBuffer->TransferToCPU();
+				if constexpr(std::is_same<T, std::string>::value)
+				{
+					std::uint64_t *hashedData = (std::uint64_t *)m_gpuBuffer->GetCPUBuffer();
+					for (auto i = 0u; i < m_elementCount; ++i)
+					{
+						m_cpuBuffer->SetValue(i, StringBucket::RecoverString(hashedData[i]));
+					}
+				}
 			}
 			m_cpuConsistent = true;
 		}

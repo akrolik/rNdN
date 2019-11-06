@@ -103,7 +103,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
-			auto columnNames = BufferUtils::GetVectorBuffer<HorseIR::SymbolValue *>(arguments.at(0))->GetCPUReadBuffer();
+			auto columnNames = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer();
 			auto columnValues = BufferUtils::GetBuffer<ListBuffer>(arguments.at(1));
 
 			if (columnNames->GetElementCount() != columnValues->GetCellCount())
@@ -115,7 +115,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 			for (const auto& columnName : columnNames->GetValues())
 			{
-				columns.push_back({columnName->GetName(), BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++))});
+				columns.push_back({columnName, BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++))});
 			}
 			return {new TableBuffer(columns)};
 		}
@@ -146,26 +146,26 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
 			auto table = BufferUtils::GetBuffer<TableBuffer>(arguments.at(0));
-			auto columnSymbol = BufferUtils::GetVectorBuffer<HorseIR::SymbolValue *>(arguments.at(1))->GetCPUReadBuffer();
+			auto columnSymbol = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer();
 
 			if (columnSymbol->GetElementCount() != 1)
 			{
 				Error("expects a single column argument");
 			}
 
-			return {table->GetColumn(columnSymbol->GetValue(0)->GetName())};
+			return {table->GetColumn(columnSymbol->GetValue(0))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{
 			auto& dataRegistry = m_runtime.GetDataRegistry();
-			auto tableSymbol = BufferUtils::GetVectorBuffer<HorseIR::SymbolValue *>(arguments.at(0))->GetCPUReadBuffer();
+			auto tableSymbol = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer();
 
 			if (tableSymbol->GetElementCount() != 1)
 			{
 				Error("expects a single table argument");
 			}
 
-			return {dataRegistry.GetTable(tableSymbol->GetValue(0)->GetName())};
+			return {dataRegistry.GetTable(tableSymbol->GetValue(0))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
@@ -177,7 +177,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
 
 			const char *likePattern = patternData.c_str();
-			char *regexPattern = (char *)malloc(sizeof(char) * patternData.size() + 2);
+			char *regexPattern = (char *)malloc(sizeof(char) * patternData.size() * 2 + 2);
 
 			auto j = 0u;
 			for (auto i = 0u; i < patternData.size() ; ++i)

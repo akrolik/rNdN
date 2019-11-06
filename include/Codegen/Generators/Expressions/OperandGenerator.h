@@ -20,6 +20,8 @@
 
 #include "PTX/PTX.h"
 
+#include "Runtime/StringBucket.h"
+
 #include "Utils/Logger.h"
 
 namespace Codegen {
@@ -194,6 +196,16 @@ public:
 		Generate<double>(literal);
 	}
 
+	void Visit(const HorseIR::SymbolLiteral *literal) override
+	{
+		Generate<HorseIR::SymbolValue *>(literal);
+	}
+
+	void Visit(const HorseIR::StringLiteral *literal) override
+	{
+		Generate<std::string>(literal);
+	}
+
 	void Visit(const HorseIR::DateLiteral *literal) override
 	{
 		if (m_index != nullptr)
@@ -222,7 +234,15 @@ public:
 
 		if (literal->GetCount() == 1)
 		{
-			if constexpr(std::is_same<typename T::SystemType, L>::value)
+			if constexpr(std::is_same<L, std::string>::value)
+			{
+				m_operand = new PTX::Value<T>(Runtime::StringBucket::HashString(literal->GetValue(0)));
+			}
+			else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
+			{
+				m_operand = new PTX::Value<T>(Runtime::StringBucket::HashString(literal->GetValue(0)->GetName()));
+			}
+			else if constexpr(std::is_same<typename T::SystemType, L>::value)
 			{
 				m_operand = new PTX::Value<T>(literal->GetValue(0));
 			}

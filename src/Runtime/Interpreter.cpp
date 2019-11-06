@@ -244,24 +244,29 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 {
 	// Create a vector of values from the literal
 	
-	auto& types = literal->GetTypes();
-	if (!HorseIR::TypeUtils::IsSingleType(types))
-	{
-		Utils::Logger::LogError("Vector literal expected a single type");
-	}
-
-	auto type = HorseIR::TypeUtils::GetSingleType(types);
+	auto type = literal->GetType();
 	if (!HorseIR::TypeUtils::IsType<HorseIR::BasicType>(type))
 	{
 		Utils::Logger::LogError("Invalid type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' for vector literal");
 	}
-
-	CUDA::Vector<T> values;
-	values.insert(std::begin(values), std::begin(literal->GetValues()), std::end(literal->GetValues()));
-
 	auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type);
-	auto vector = new TypedVectorData<T>(basicType, values);
-	m_environment.Insert(literal, new TypedVectorBuffer<T>(vector));
+
+	//TODO: Handle date literals
+	if constexpr(std::is_same<T, HorseIR::SymbolValue *>::value)
+	{
+		CUDA::Vector<std::string> vector;
+		for (const auto symbol : literal->GetValues())
+		{
+			vector.push_back(symbol->GetName());
+		}
+		m_environment.Insert(literal, new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(basicType, vector)));
+	}	
+	else
+	{
+		auto values = literal->GetValues();
+		CUDA::Vector<T> vector(std::begin(values), std::end(values));
+		m_environment.Insert(literal, new TypedVectorBuffer<T>(new TypedVectorData<T>(basicType, vector)));
+	}
 }
 
 void Interpreter::Visit(const HorseIR::BooleanLiteral *literal)

@@ -73,6 +73,10 @@ static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nod
 		case HorseIR::BasicType::BasicKind::Date:
 			generator.template Generate<PTX::Int32Type>(nodes...);
 			break;
+		case HorseIR::BasicType::BasicKind::String:
+		case HorseIR::BasicType::BasicKind::Symbol:
+			generator.template Generate<PTX::UInt64Type>(nodes...);
+			break;
 		default:
 			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
 	}
