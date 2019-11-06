@@ -165,9 +165,6 @@ public:
 				return new RoundingGenerator<B, T>(this->m_builder, RoundingOperation::Nearest);
 			case HorseIR::BuiltinFunction::Primitive::Reciprocal:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Reciprocal);
-			case HorseIR::BuiltinFunction::Primitive::Conjugate:
-				//TODO: Add support for complex numbers
-				Utils::Logger::LogError("Complex number function 'conj' is not supported");
 			case HorseIR::BuiltinFunction::Primitive::Sign:
 				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Sign);
 			case HorseIR::BuiltinFunction::Primitive::Pi:

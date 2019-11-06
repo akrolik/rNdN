@@ -35,7 +35,7 @@ private:
 
 	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, std::uint32_t value, const std::string& description) const;
 	CUDA::Buffer *AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
-	CUDA::Buffer *AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape) const;
+	CUDA::Buffer *AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const;
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;
