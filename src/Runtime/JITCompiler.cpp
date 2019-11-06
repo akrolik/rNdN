@@ -37,19 +37,13 @@ PTX::Program *JITCompiler::Compile(const std::vector<const HorseIR::Function *>&
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
 	{
 		Utils::Logger::LogInfo("Generated PTX program");
-		for (const auto& module : ptxProgram->GetModules())
-		{
-			Utils::Logger::LogInfo(module->ToString(), 0, true, Utils::Logger::NoPrefix);
-		}
+		Utils::Logger::LogInfo(ptxProgram->ToString(0), 0, true, Utils::Logger::NoPrefix);
 	}
 
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_json))
 	{
 		Utils::Logger::LogInfo("Generated PTX program (JSON)");
-		for (const auto& module : ptxProgram->GetModules())
-		{
-			Utils::Logger::LogInfo(module->ToJSON().dump(4), 0, true, Utils::Logger::NoPrefix);
-		}
+		Utils::Logger::LogInfo(ptxProgram->ToJSON().dump(4), 0, true, Utils::Logger::NoPrefix);
 	}
 
 	// Optimize the generated PTX program

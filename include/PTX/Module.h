@@ -1,5 +1,7 @@
 #pragma once
 
+#include "PTX/Node.h"
+
 #include <string>
 #include <sstream>
 #include <vector>
@@ -9,11 +11,9 @@
 #include "PTX/Functions/Function.h"
 #include "PTX/Type.h"
 
-#include "Libraries/json.hpp"
-
 namespace PTX {
 
-class Module
+class Module : public Node
 {
 public:
 	void SetVersion(unsigned int major, unsigned int minor) { m_versionMajor = major; m_versionMinor = minor; }
@@ -53,7 +53,7 @@ public:
 		m_declarations.insert(std::begin(m_declarations) + index, std::begin(declarations), std::end(declarations));
 	}
 
-	std::string ToString() const
+	std::string ToString(unsigned int indentation) const override
 	{
 		std::string code =
 			"//\n"
@@ -81,7 +81,7 @@ public:
 		return code;
 	}
 
-	json ToJSON() const
+	json ToJSON() const override
 	{
 		json j;
 		j["version_major"] = m_versionMajor;

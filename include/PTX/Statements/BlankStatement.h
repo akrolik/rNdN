@@ -9,7 +9,7 @@ class BlankStatement : public Statement
 public:
 	BlankStatement() {}
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		return "";
 	}

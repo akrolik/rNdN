@@ -13,9 +13,13 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 	std::string GetName() const { return m_name; }
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
-		return std::string(indentation-1, '\t') + m_name + ":";
+		if (indentation > 0)
+		{
+			return std::string(indentation-1, '\t') + m_name + ":";
+		}
+		return m_name;
 	}
 
 	std::string ToString() const override

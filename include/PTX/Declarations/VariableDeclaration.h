@@ -108,7 +108,7 @@ public:
 
 	const std::vector<NameSet *>& GetNames() const { return m_names; }
 
-	virtual std::string ToString(unsigned int indentation = 0) const = 0;
+	virtual std::string ToString(unsigned int indentation) const = 0;
 	virtual std::string ToString(unsigned int indentation, bool terminate) const = 0;
 
 	json ToJSON() const override
@@ -202,7 +202,7 @@ public:
 		Utils::Logger::LogError("PTX::Variable(" + name + ") not found in PTX::VariableDeclaration");
 	}
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		return ToString(indentation, true);
 	}

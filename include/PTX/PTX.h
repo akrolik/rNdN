@@ -10,6 +10,8 @@
 
 // Structure
 
+#include "PTX/Node.h"
+
 #include "PTX/Program.h"
 #include "PTX/Module.h"
 
@@ -76,6 +78,7 @@
 // Type/space adapters
 
 #include "PTX/Operands/Adapters/Adapter.h"
+#include "PTX/Operands/Adapters/AddressAdapter.h"
 #include "PTX/Operands/Adapters/BitAdapter.h"
 #include "PTX/Operands/Adapters/ArrayAdapter.h"
 #include "PTX/Operands/Adapters/PointerAdapter.h"

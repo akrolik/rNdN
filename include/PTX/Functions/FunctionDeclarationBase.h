@@ -23,7 +23,7 @@ public:
 
 	void SetReturn(const ReturnDeclarationType *ret) { m_return = ret; }
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		return Function::ToString(indentation) + ";";
 	}
@@ -63,7 +63,7 @@ public:
 	bool GetEntry() const { return m_entry; }
 	void SetEntry(bool entry) { m_entry = entry; }
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		return Function::ToString(indentation) + ";";
 	}

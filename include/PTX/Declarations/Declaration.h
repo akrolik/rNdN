@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Libraries/json.hpp"
+#include "PTX/Node.h"
 
 namespace PTX {
 
-class Declaration
+class Declaration : public Node
 {
 public:
 	enum class LinkDirective {
@@ -37,9 +37,6 @@ public:
 
 	LinkDirective GetLinkDirective() const { return m_linkDirective; }
 	void SetLinkDirective(LinkDirective linkDirective) { m_linkDirective = linkDirective; }
-
-	virtual std::string ToString(unsigned int indentation = 0) const = 0;
-	virtual json ToJSON() const = 0;
 
 protected:
 	LinkDirective m_linkDirective = LinkDirective::None;

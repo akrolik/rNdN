@@ -5,14 +5,12 @@
 #include "PTX/Statements/Statement.h"
 #include "PTX/Operands/Operand.h"
 
-#include "Libraries/json.hpp"
-
 namespace PTX {
 
 class InstructionStatement : public Statement
 {
 public:
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		std::string code = std::string(indentation, '\t') + OpCode();
 		bool first = true;

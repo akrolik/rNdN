@@ -1,5 +1,7 @@
 #pragma once
 
+#include "PTX/Node.h"
+
 #include <vector>
 
 #include "PTX/Module.h"
@@ -9,7 +11,7 @@
 
 namespace PTX {
 
-class Program
+class Program : public Node
 {
 public:
 	void AddModule(const Module *module) { m_modules.push_back(module); }
@@ -26,6 +28,34 @@ public:
 			}
 		}
 		Utils::Logger::LogError("Cannot find entry fuction '" + name);
+	}
+
+	std::string ToString(unsigned int indentation) const override
+	{
+		std::string code = "";
+
+		bool first = true;
+		for (const auto& module : m_modules)
+		{
+			if (!first)
+			{
+				code += "\n\n";
+			}
+			first = false;
+			code += module->ToString(0);
+		}
+
+		return code;
+	}
+
+	json ToJSON() const override
+	{
+		json j;
+		for (const auto& module : m_modules)
+		{
+			j["modules"].push_back(module->ToJSON());
+		}
+		return j;
 	}
 
 private:

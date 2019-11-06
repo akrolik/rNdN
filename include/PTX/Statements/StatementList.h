@@ -1,12 +1,12 @@
 #pragma once
 
-#include "PTX/Statements/Statement.h"
+#include "PTX/Node.h"
 
-#include "Libraries/json.hpp"
+#include "PTX/Statements/Statement.h"
 
 namespace PTX {
 
-class StatementList
+class StatementList : public Node
 {
 public:
 	const std::vector<const Statement *>& GetStatements() const { return m_statements; }
@@ -30,7 +30,7 @@ public:
 		m_statements.insert(std::begin(m_statements) + index, std::begin(statements), std::end(statements));
 	}
 
-	std::string ToString(unsigned int indentation = 0) const
+	std::string ToString(unsigned int indentation) const override
 	{
 		std::string code;
 		code += std::string(indentation, '\t') + "{\n";
@@ -41,7 +41,7 @@ public:
 		return code + std::string(indentation, '\t') + "}";
 	}
 
-	json ToJSON() const
+	json ToJSON() const override
 	{
 		json j;
 		for (const auto& statement : m_statements)

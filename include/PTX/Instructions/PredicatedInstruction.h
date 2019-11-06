@@ -15,7 +15,7 @@ public:
 
 	void SetPredicate(const Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		std::string code = std::string(indentation, '\t');
 		if (m_predicate != nullptr)

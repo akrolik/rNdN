@@ -1,16 +1,19 @@
 #pragma once
 
 #include "PTX/Type.h"
-
-#include "Libraries/json.hpp"
+#include "PTX/Node.h"
 
 namespace PTX {
 
-class Operand
+class Operand : public Node
 {
 public:
+	std::string ToString(unsigned int indentation) const override
+	{
+		return ToString();
+	}
+
 	virtual std::string ToString() const = 0;
-	virtual json ToJSON() const = 0;
 };
 
 template<class T>

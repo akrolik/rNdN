@@ -8,8 +8,6 @@
 #include "PTX/Statements/StatementList.h"
 #include "PTX/Statements/Statement.h"
 
-#include "Libraries/json.hpp"
-
 namespace PTX {
 
 class Function : public Declaration
@@ -24,7 +22,7 @@ public:
 	FunctionOptions& GetOptions() { return m_options; }
 	const FunctionOptions& GetOptions() const { return m_options; }
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		std::string code;
 		if (m_linkDirective != LinkDirective::None)

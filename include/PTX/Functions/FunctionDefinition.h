@@ -18,7 +18,7 @@ public:
 		return j;
 	}
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		return Function::ToString(indentation) + "\n" + StatementList::ToString(0);
 	}

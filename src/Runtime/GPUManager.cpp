@@ -79,7 +79,7 @@ CUDA::Module GPUManager::AssembleProgram(const PTX::Program *program) const
 	CUDA::Module cModule;
 	for (const auto& module : program->GetModules())
 	{
-		cModule.AddPTXModule(module->ToString());
+		cModule.AddPTXModule(module->ToString(0));
 	}
 	for (const auto& module : m_externalModules)
 	{

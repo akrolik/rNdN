@@ -9,7 +9,7 @@ class CommentStatement : public Statement
 public:
 	CommentStatement(const std::string& comment, bool multiline = false) : m_comment(comment), m_multiline(multiline) {}
 
-	std::string ToString(unsigned int indentation = 0) const override
+	std::string ToString(unsigned int indentation) const override
 	{
 		std::string indentString = std::string(indentation, '\t');
 		if (m_multiline)
