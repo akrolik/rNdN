@@ -182,7 +182,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		const auto inputShape = inputOptions.ParameterShapes.at(parameter);
 		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, false))
 		{
-			AllocateSizeBuffer(invocation, inputShape);
+			const auto runtimeShape = runtimeOptions.ParameterShapes.at(parameter);
+			AllocateSizeBuffer(invocation, runtimeShape, false);
 		}
 	}
 
@@ -208,7 +209,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		const auto inputShape = inputOptions.ReturnShapes.at(i);
 		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
 		{
-			sizeBuffers.push_back(AllocateSizeBuffer(invocation, inputShape));
+			const auto runtimeShape = runtimeOptions.ReturnShapes.at(i);
+			sizeBuffers.push_back(AllocateSizeBuffer(invocation, runtimeShape, true));
 		}
 	}
 
@@ -492,33 +494,33 @@ CUDA::Buffer *GPUExecutionEngine::AllocateCellSizes(CUDA::KernelInvocation& invo
 	return buffer;
 }
 
-CUDA::Buffer *GPUExecutionEngine::AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape) const
+CUDA::Buffer *GPUExecutionEngine::AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const
 {
 	// Allocate a size buffer for the shape
 
 	if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 	{
-		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
+		if (!returnParameter)
 		{
-			// Constant size buffers can be directly added to the kernel parameters
+			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
+			{
+				// Constant size buffers can be directly added to the kernel parameters
 
-			AllocateConstantParameter(invocation, constantSize->GetValue(), "<vector size>");
-
-			return nullptr;
+				AllocateConstantParameter(invocation, constantSize->GetValue(), "<vector size>");
+				return nullptr;
+			}
 		}
-		else
-		{
-			// This requires a global memory allocation to output the result
 
-			Utils::Logger::LogInfo("Initializing input argument: <dynamic vector size> [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
+		// This requires a global memory allocation to output the result
 
-			auto buffer = new CUDA::Buffer(sizeof(std::uint32_t));
-			buffer->AllocateOnGPU();
-			buffer->Clear();
-			invocation.AddParameter(*buffer);
+		Utils::Logger::LogInfo("Initializing input argument: <dynamic vector size> [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
 
-			return buffer;
-		}
+		auto buffer = new CUDA::Buffer(sizeof(std::uint32_t));
+		buffer->AllocateOnGPU();
+		buffer->Clear();
+		invocation.AddParameter(*buffer);
+
+		return buffer;
 	}
 	else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 	{
