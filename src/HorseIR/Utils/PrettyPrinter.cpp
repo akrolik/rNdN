@@ -351,20 +351,20 @@ void PrettyPrinter::VectorLiteral(const std::vector<T>& values, bool boolean)
 		}
 		else
 		{
-			if (boolean)
+			if constexpr(std::is_same<T, std::string>::value)
 			{
-				if constexpr(std::is_same<T, std::string>::value)
-				{
-					m_string << value;
-				}
-				else
-				{
-					m_string << ((value) ? "1" : "0");
-				}
+				m_string << "\"" << value << "\"";
 			}
 			else
 			{
-				m_string << value;
+				if (boolean)
+				{
+					m_string << ((value) ? "1" : "0");
+				}
+				else
+				{
+					m_string << value;
+				}
 			}
 		}
 	}

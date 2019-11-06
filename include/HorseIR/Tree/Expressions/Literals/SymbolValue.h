@@ -36,7 +36,7 @@ protected:
 
 inline std::ostream& operator<<(std::ostream& os, const SymbolValue& value)
 {
-	os << "`" << value.m_name;
+	os << "`\"" << value.m_name << "\"";
 	return os;
 }
 
