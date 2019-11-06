@@ -215,7 +215,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::Range:
 		case HorseIR::BuiltinFunction::Primitive::Factorial:
 		case HorseIR::BuiltinFunction::Primitive::Reverse:
-		case HorseIR::BuiltinFunction::Primitive::Where:
 
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
@@ -251,6 +250,9 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// --------------------
 		// Compression Geometry
 		// --------------------
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Where:
 
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Compress:
