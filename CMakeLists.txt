@@ -3,7 +3,8 @@ project(r3d3)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_FLAGS "-O3 -g")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
  
 find_package(CUDA 9.2 REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
@@ -41,4 +42,4 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_executable(r3d3 ${SOURCES} ${BISON_HorseIRParser_OUTPUTS} ${FLEX_HorseIRScanner_OUTPUTS})
-target_link_libraries(r3d3 cuda ${CUDA_LIBRARIES} libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses)
+target_link_libraries(r3d3 cuda ${CUDA_LIBRARIES} libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
