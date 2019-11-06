@@ -19,8 +19,7 @@ void Buffer::Copy(Buffer *destination, Buffer *source, size_t size)
 
 Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
 {
-	//TODO: Sort out padding
-	const auto multiple = 1024 * 8;
+	const auto multiple = 1024;
 	m_paddedSize = (((m_size + multiple - 1) / multiple) * multiple);
 }
 
