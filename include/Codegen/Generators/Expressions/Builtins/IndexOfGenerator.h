@@ -3,6 +3,7 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/InternalFindGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -12,19 +13,19 @@
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-class MemberGenerator : public BuiltinGenerator<B, T>
+class IndexOfGenerator : public BuiltinGenerator<B, T>
 {
 public: 
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 };
 
 template<PTX::Bits B>
-class MemberGenerator<B, PTX::PredicateType>: public BuiltinGenerator<B, PTX::PredicateType>
+class IndexOfGenerator<B, PTX::Int64Type>: public BuiltinGenerator<B, PTX::Int64Type>
 {
 public:
-	using BuiltinGenerator<B, PTX::PredicateType>::BuiltinGenerator;
+	using BuiltinGenerator<B, PTX::Int64Type>::BuiltinGenerator;
 
-	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
 		return m_targetRegister;
@@ -42,13 +43,13 @@ public:
 		}
 		else
 		{
-			InternalFindGenerator<B, T, PTX::PredicateType> findGenerator(this->m_builder);
+			InternalFindGenerator<B, T, PTX::Int64Type> findGenerator(this->m_builder);
 			m_targetRegister = findGenerator.Generate(target, arguments);
 		}
 	}
 
 private:
-	const PTX::Register<PTX::PredicateType> *m_targetRegister = nullptr;
+	const PTX::Register<PTX::Int64Type> *m_targetRegister = nullptr;
 };
 
 }

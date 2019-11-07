@@ -12,7 +12,6 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalBinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
@@ -21,6 +20,8 @@
 #include "Codegen/Generators/Expressions/Builtins/GroupGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/IndexOfGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/OrderGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/OrderInitGenerator.h"
@@ -251,6 +252,8 @@ public:
 			// Algebraic Binary
 			case HorseIR::BuiltinFunction::Primitive::Compress:
 				return new CompressionGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::IndexOf:
+				return new IndexOfGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Member:
 				return new MemberGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Vector:

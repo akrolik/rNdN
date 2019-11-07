@@ -180,7 +180,6 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
-		case HorseIR::BuiltinFunction::Primitive::IndexOf:
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		case HorseIR::BuiltinFunction::Primitive::Vector:
@@ -204,6 +203,7 @@ std::pair<bool, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCa
 		}
 
 		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::IndexOf:
 		case HorseIR::BuiltinFunction::Primitive::Member:
 		{
 			if (index == 1)
