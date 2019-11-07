@@ -112,7 +112,8 @@ private:
 
 	// Checks for values
 
-	bool HasConstantArgument(const std::vector<HorseIR::Operand *>& arguments, unsigned int index) const;
+	template<class T>
+	std::pair<bool, T> GetConstantArgument(const std::vector<HorseIR::Operand *>& arguments, unsigned int index) const;
 
 	// Utility error function
 

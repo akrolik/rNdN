@@ -3,6 +3,9 @@
 #include "Analysis/Helpers/ValueAnalysisHelper.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
+#include "Runtime/DataBuffers/DataBuffer.h"
+#include "Runtime/DataBuffers/BufferUtils.h"
+
 #include "Utils/Logger.h"
 
 namespace Analysis {
@@ -255,13 +258,38 @@ bool ShapeAnalysis::CheckStaticTabular(const ListShape *listShape) const
 	return true;
 }
 
-bool ShapeAnalysis::HasConstantArgument(const std::vector<HorseIR::Operand *>& arguments, unsigned int index) const
+template<class T>
+std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<HorseIR::Operand *>& arguments, unsigned int index) const
 {
-	if (arguments.size() <= index)
+	if (index < arguments.size())
 	{
-		return false;
+		// Get constant literal arguments
+
+		if (ValueAnalysisHelper::IsConstant(arguments.at(index)))
+		{
+			auto value = ValueAnalysisHelper::GetScalar<T>(arguments.at(index));
+			return {true, value};
+		}
+
+		// Get dynamic buffer arguments
+
+		if (const auto buffer = m_dataAnalysis.GetDataObject(arguments.at(index))->GetDataBuffer())
+		{
+			//TODO: This only supports the exact type
+			if (const auto vectorBuffer = Runtime::BufferUtils::GetVectorBuffer<T>(buffer))
+			{
+				return {true, vectorBuffer->GetCPUReadBuffer()->GetValue(0)};
+			}
+		}
 	}
-	return ValueAnalysisHelper::IsConstant(arguments.at(index));
+
+	// Error if the shape is enforced
+
+	if (m_enforce)
+	{
+		Utils::Logger::LogError("Shape analysis expected constant argument");
+	}
+	return {false, 0};
 }
 
 std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments)
@@ -464,9 +492,8 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			const auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
 			Require(CheckStaticScalar(vectorShape->GetSize()));
 
-			if (HasConstantArgument(arguments, 0))
+			if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				auto value = ValueAnalysisHelper::GetScalar<std::int64_t>(arguments.at(0));
 				return {new VectorShape(new Shape::ConstantSize(value))};
 			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
@@ -718,9 +745,8 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 
-			if (HasConstantArgument(arguments, 0))
+			if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				auto value = ValueAnalysisHelper::GetScalar<std::int64_t>(arguments.at(0));
 				if (ShapeUtils::IsShape<VectorShape>(argumentShape2))
 				{
 					return {new ListShape(new Shape::ConstantSize(value), {argumentShape2})};
@@ -814,9 +840,8 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 			Require(CheckStaticScalar(vectorShape2->GetSize()));
 
-			if (HasConstantArgument(arguments, 0))
+			if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				auto value = ValueAnalysisHelper::GetScalar<std::int64_t>(arguments.at(0));
 				return {new VectorShape(new Shape::ConstantSize(value))};
 			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
@@ -851,11 +876,10 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 
-			if (HasConstantArgument(arguments, 0))
+			if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				auto value = ValueAnalysisHelper::GetScalar<std::int64_t>(arguments.at(0));
-				value = (value < 0) ? -value : value;
-				return {new VectorShape(new Shape::ConstantSize(value))};
+				auto absValue = (value < 0) ? -value : value;
+				return {new VectorShape(new Shape::ConstantSize(absValue))};
 			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
@@ -878,20 +902,22 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 
 			const auto vectorSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
-			if (HasConstantArgument(arguments, 0) && ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
+			if (const auto [isConstant, modLength] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				// Compute the modification length
+				if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
+				{
+					// Compute the modification length
 
-				auto modLength = ValueAnalysisHelper::GetScalar<std::int64_t>(arguments.at(0));
-				modLength = (modLength < 0) ? -modLength : modLength;
+					auto absModLength = (modLength < 0) ? -modLength : modLength;
 
-				// Compute the new vector length, ceil at 0
+					// Compute the new vector length, ceil at 0
 
-				auto vectorLength = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize2)->GetValue();
-				auto value = vectorLength - modLength;
-				value = (value < 0) ? 0 : value;
+					auto vectorLength = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize2)->GetValue();
+					auto value = vectorLength - absModLength;
+					value = (value < 0) ? 0 : value;
 
-				return {new VectorShape(new Shape::ConstantSize(value))};
+					return {new VectorShape(new Shape::ConstantSize(value))};
+				}
 			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
 		}
@@ -953,9 +979,8 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 
-			if (HasConstantArgument(arguments, 0))
+			if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				auto value = ValueAnalysisHelper::GetScalar<std::int64_t>(arguments.at(0));
 				return {new VectorShape(new Shape::ConstantSize(value))};
 			}
 			return {new VectorShape(new Shape::DynamicSize(m_call))};
@@ -1396,11 +1421,11 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			const auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape1);
 			const auto rowsSize = tableShape->GetRowsSize();
 
-			if (HasConstantArgument(arguments, 1))
+			if (const auto [isConstant, value] = GetConstantArgument<const HorseIR::SymbolValue *>(arguments, 1); isConstant)
 			{
 				// Foreign keys for TPC-H
 
-				const auto columnName = ValueAnalysisHelper::GetScalar<const HorseIR::SymbolValue *>(arguments.at(1))->GetName();
+				auto columnName = value->GetName();
 				if (columnName == "n_regionkey")
 				{
 					return {new EnumerationShape(new VectorShape(new Shape::SymbolSize("data.region.rows")), new VectorShape(rowsSize))};
@@ -1454,9 +1479,9 @@ std::vector<const Shape *> ShapeAnalysis::AnalyzeCall(const HorseIR::BuiltinFunc
 			const auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
 			Require(CheckStaticScalar(vectorShape->GetSize()));
 
-			if (HasConstantArgument(arguments, 0))
+			if (const auto [isConstant, value] = GetConstantArgument<const HorseIR::SymbolValue *>(arguments, 0); isConstant)
 			{
-				auto tableName = ValueAnalysisHelper::GetScalar<const HorseIR::SymbolValue *>(arguments.at(0))->GetName();
+				auto tableName = value->GetName();
 				return {new TableShape(new Shape::SymbolSize("data." + tableName + ".cols"), new Shape::SymbolSize("data." + tableName + ".rows"))};
 			}
 			return {new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2))};

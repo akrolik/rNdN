@@ -131,7 +131,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		const auto symbol = parameter->GetSymbol();
 
 		const auto object = shapeAnalysis.GetDataAnalysis().GetParameterObject(parameter);
-		inputObjects[symbol] = object;
+		const auto runtimeObject = new Analysis::DataObject(object->GetObjectID(), arguments.at(i));
+		inputObjects[symbol] = runtimeObject;
 
 		// Setup compression constraints
 
@@ -308,6 +309,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			}
 			else
 			{
+				//TODO: Resize list buffers
 				Utils::Logger::LogError("Unable to resize dynamically sized return buffer " + returnBuffer->Description());
 			}
 		}
