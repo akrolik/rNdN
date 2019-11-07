@@ -1,12 +1,16 @@
 #pragma once
 
+#include "HorseIR/Tree/Expressions/Literals/CalendarValue.h"
+
 #include <cstdint>
 #include <ostream>
 #include <iomanip>
 
+#include "Utils/Date.h"
+
 namespace HorseIR {
 
-class MonthValue
+class MonthValue : public CalendarValue
 {
 public:
 	MonthValue(std::uint16_t year, std::uint8_t month) : m_year(year), m_month(month) {}
@@ -21,6 +25,11 @@ public:
 
 	std::uint8_t GetMonth() const { return m_month; }
 	void SetMonth(std::uint8_t month) { m_month = month; }
+
+	std::int32_t GetEpochTime() const override
+	{
+		return Utils::Date::EpochTime_day(m_year, m_month);
+	}
 
 	friend std::ostream& operator<<(std::ostream& os, const MonthValue& value);
 

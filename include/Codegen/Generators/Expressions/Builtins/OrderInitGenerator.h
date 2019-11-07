@@ -115,7 +115,7 @@ public:
 		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments), std::end(arguments) - 1);
 		const auto& orderArgument = arguments.at(arguments.size() - 1);
 
-		auto orderLiteral = LiteralGenerator<char>::GetLiteral(orderArgument);
+		auto orderLiteral = LiteralGenerator<std::int8_t>::GetLiteral(orderArgument);
 
 		// True branch (index < size), load the values into the target registers, skipping the index target
 

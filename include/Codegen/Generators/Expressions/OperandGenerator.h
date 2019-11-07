@@ -158,74 +158,86 @@ public:
 
 	void Visit(const HorseIR::BooleanLiteral *literal) override
 	{
-		Generate<char>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::CharLiteral *literal) override
 	{
-		Generate<char>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int8Literal *literal) override
 	{
-		Generate<std::int8_t>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int16Literal *literal) override
 	{
-		Generate<std::int16_t>(literal);
+		VisitLiteral<std::int16_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int32Literal *literal) override
 	{
-		Generate<std::int32_t>(literal);
+		VisitLiteral<std::int32_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int64Literal *literal) override
 	{
-		Generate<std::int64_t>(literal);
+		VisitLiteral<std::int64_t>(literal);
 	}
 
 	void Visit(const HorseIR::Float32Literal *literal) override
 	{
-		Generate<float>(literal);
+		VisitLiteral<float>(literal);
 	}
 
 	void Visit(const HorseIR::Float64Literal *literal) override
 	{
-		Generate<double>(literal);
-	}
-
-	void Visit(const HorseIR::SymbolLiteral *literal) override
-	{
-		Generate<HorseIR::SymbolValue *>(literal);
+		VisitLiteral<double>(literal);
 	}
 
 	void Visit(const HorseIR::StringLiteral *literal) override
 	{
-		Generate<std::string>(literal);
+		VisitLiteral<std::string>(literal);
+	}
+
+	void Visit(const HorseIR::SymbolLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::SymbolValue *>(literal);
+	}
+
+	void Visit(const HorseIR::DatetimeLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::DatetimeValue *>(literal);
+	}
+
+	void Visit(const HorseIR::MonthLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::MonthValue *>(literal);
 	}
 
 	void Visit(const HorseIR::DateLiteral *literal) override
 	{
-		if (m_index != nullptr)
-		{
-			Utils::Logger::LogError("Absolute operand indexing not supported for literals");
-		}
+		VisitLiteral<HorseIR::DateValue *>(literal);
+	}
 
-		//TODO: Extend to other date types
-		if (literal->GetCount() == 1)
-		{
-			m_operand = new PTX::Value<T>(literal->GetValue(0)->GetEpochTime());
-		}
-		else
-		{
-			Utils::Logger::LogError("Unsupported literal count " + std::to_string(literal->GetCount()));
-		}
+	void Visit(const HorseIR::MinuteLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::MinuteValue *>(literal);
+	}
+
+	void Visit(const HorseIR::SecondLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::SecondValue *>(literal);
+	}
+
+	void Visit(const HorseIR::TimeLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::TimeValue *>(literal);
 	}
 
 	template<class L>
-	void Generate(const HorseIR::TypedVectorLiteral<L> *literal)
+	void VisitLiteral(const HorseIR::TypedVectorLiteral<L> *literal)
 	{
 		if (m_index != nullptr)
 		{
@@ -234,21 +246,26 @@ public:
 
 		if (literal->GetCount() == 1)
 		{
+			auto value = literal->GetValue(0);
 			if constexpr(std::is_same<L, std::string>::value)
 			{
-				m_operand = new PTX::Value<T>(Runtime::StringBucket::HashString(literal->GetValue(0)));
+				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value)));
 			}
 			else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
 			{
-				m_operand = new PTX::Value<T>(Runtime::StringBucket::HashString(literal->GetValue(0)->GetName()));
+				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName())));
 			}
-			else if constexpr(std::is_same<typename T::SystemType, L>::value)
+			else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
 			{
-				m_operand = new PTX::Value<T>(literal->GetValue(0));
+				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime()));
+			}
+			else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
+			{
+				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime()));
 			}
 			else
 			{
-				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(literal->GetValue(0)));
+				m_operand = new PTX::Value<T>(static_cast<typename T::SystemType>(value));
 			}
 		}
 		else

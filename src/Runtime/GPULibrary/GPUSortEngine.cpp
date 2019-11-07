@@ -21,7 +21,7 @@
 
 namespace Runtime {
 
-std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders)
+std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const std::vector<VectorBuffer *>& columns, const std::vector<std::int8_t>& orders)
 {
 	// Generate the program (init and sort functions) for the provided columns
 
@@ -242,7 +242,7 @@ std::pair<Codegen::InputOptions, Codegen::InputOptions> GPUSortEngine::GenerateI
 	return {initOptions, sortOptions};
 }
 
-std::tuple<HorseIR::Program *, HorseIR::Function *, HorseIR::Function *> GPUSortEngine::GenerateProgram(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders) const
+std::tuple<HorseIR::Program *, HorseIR::Function *, HorseIR::Function *> GPUSortEngine::GenerateProgram(const std::vector<VectorBuffer *>& columns, const std::vector<std::int8_t>& orders) const
 {
 	std::vector<const HorseIR::BasicType *> columnTypes;
 	for (auto column : columns)
@@ -273,7 +273,7 @@ std::tuple<HorseIR::Program *, HorseIR::Function *, HorseIR::Function *> GPUSort
 	return {program, initFunction, sortFunction};
 }
 
-HorseIR::Function *GPUSortEngine::GenerateInitFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<char>& orders) const
+HorseIR::Function *GPUSortEngine::GenerateInitFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<std::int8_t>& orders) const
 {
 	std::vector<HorseIR::Parameter *> parameters;
 
@@ -308,7 +308,7 @@ HorseIR::Function *GPUSortEngine::GenerateInitFunction(const std::vector<const H
 	return new HorseIR::Function("order_init", parameters, returnTypes, {initStatement, returnStatement}, true);
 }
 
-HorseIR::Function *GPUSortEngine::GenerateSortFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<char>& orders) const
+HorseIR::Function *GPUSortEngine::GenerateSortFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<std::int8_t>& orders) const
 {
 	std::vector<HorseIR::Parameter *> parameters;
 	std::vector<HorseIR::Operand *> operands;

@@ -251,7 +251,6 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 	}
 	auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type);
 
-	//TODO: Handle date literals
 	if constexpr(std::is_same<T, HorseIR::SymbolValue *>::value)
 	{
 		CUDA::Vector<std::string> vector;
@@ -260,6 +259,24 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 			vector.push_back(symbol->GetName());
 		}
 		m_environment.Insert(literal, new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(basicType, vector)));
+	}	
+	else if constexpr(std::is_convertible<T, HorseIR::CalendarValue *>::value)
+	{
+		CUDA::Vector<std::int32_t> vector;
+		for (const auto value : literal->GetValues())
+		{
+			vector.push_back(value->GetEpochTime());
+		}
+		m_environment.Insert(literal, new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(basicType, vector)));
+	}	
+	else if constexpr(std::is_convertible<T, HorseIR::ExtendedCalendarValue *>::value)
+	{
+		CUDA::Vector<double> vector;
+		for (const auto value : literal->GetValues())
+		{
+			vector.push_back(value->GetExtendedEpochTime());
+		}
+		m_environment.Insert(literal, new TypedVectorBuffer<double>(new TypedVectorData<double>(basicType, vector)));
 	}	
 	else
 	{

@@ -1,13 +1,17 @@
 #pragma once
 
+#include "HorseIR/Tree/Expressions/Literals/ExtendedCalendarValue.h"
+
 #include <ostream>
 
 #include "HorseIR/Tree/Expressions/Literals/DateValue.h"
 #include "HorseIR/Tree/Expressions/Literals/TimeValue.h"
 
+#include "Utils/Date.h"
+
 namespace HorseIR {
 
-class DatetimeValue
+class DatetimeValue : public ExtendedCalendarValue
 {
 public:
 	DatetimeValue(DateValue *date, TimeValue *time) : m_date(date), m_time(time) {}
@@ -22,6 +26,14 @@ public:
 
 	TimeValue *GetTime() const { return m_time; }
 	void SetTime(TimeValue *time) { m_time = time; }
+
+	double GetExtendedEpochTime() const override
+	{
+		return Utils::Date::ExtendedEpochTime(
+			m_date->GetYear(), m_date->GetMonth(), m_date->GetDay(),
+			m_time->GetHour(), m_time->GetMinute(), m_time->GetSecond(), m_time->GetMillisecond()
+		);
+	}
 
 	friend std::ostream& operator<<(std::ostream& os, const DatetimeValue& value);
 

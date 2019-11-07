@@ -28,7 +28,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 {
 	// Run the sort program first before grouping
 
-	std::vector<char> orders;
+	std::vector<std::int8_t> orders;
 	for (auto i = 0u; i < dataBuffers.size(); ++i)
 	{
 		orders.push_back(1);

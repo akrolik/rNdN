@@ -1,12 +1,16 @@
 #pragma once
 
+#include "HorseIR/Tree/Expressions/Literals/ExtendedCalendarValue.h"
+
 #include <cstdint>
 #include <ostream>
 #include <iomanip>
 
+#include "Utils/Date.h"
+
 namespace HorseIR {
 
-class TimeValue
+class TimeValue : public ExtendedCalendarValue
 {
 public:
 	TimeValue(std::uint8_t hour, std::uint8_t minute, std::uint8_t second, std::uint16_t millisecond) : m_hour(hour), m_minute(minute), m_second(second), m_millisecond(millisecond) {}
@@ -27,6 +31,11 @@ public:
 
 	std::uint8_t GetMillisecond() const { return m_millisecond; }
 	void SetMillisecond(std::uint8_t millisecond) { m_millisecond = millisecond; }
+
+	double GetExtendedEpochTime() const override
+	{
+		return Utils::Date::ExtendedEpochTime_time(m_hour, m_minute, m_second, m_millisecond);
+	}
 
 	friend std::ostream& operator<<(std::ostream& os, const TimeValue& value);
 

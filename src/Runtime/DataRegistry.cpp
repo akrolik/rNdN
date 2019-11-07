@@ -11,6 +11,7 @@
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Date.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -104,18 +105,7 @@ std::int32_t DataRegistry::EpochTime(char *date) const
 {
 	int year, month, day;
 	sscanf(date, "%d-%d-%d", &year, &month, &day);
-
-	struct std::tm time;
-	time.tm_sec = 0;
-	time.tm_min = 0;
-	time.tm_hour = 0;
-
-	time.tm_mday = day;
-	time.tm_mon = month - 1;
-	time.tm_year = year - 1900;
-
-	time.tm_isdst = 0;
-	return std::mktime(&time);
+	return Utils::Date::EpochTime_day(year, month, day);
 }
 
 void DataRegistry::LoadTPCHLineItemTable()
@@ -130,8 +120,8 @@ void DataRegistry::LoadTPCHLineItemTable()
 	CUDA::Vector<double> discount;
 	CUDA::Vector<double> tax;
 
-	CUDA::Vector<char> returnFlag;
-	CUDA::Vector<char> lineStatus;
+	CUDA::Vector<std::int8_t> returnFlag;
+	CUDA::Vector<std::int8_t> lineStatus;
 
 	CUDA::Vector<std::int32_t> shipDate;
 	CUDA::Vector<std::int32_t> commitDate;
@@ -188,8 +178,8 @@ void DataRegistry::LoadTPCHLineItemTable()
 	columns.push_back({"l_discount", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount))});
 	columns.push_back({"l_tax", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), tax))});
 
-	columns.push_back({"l_returnflag", new TypedVectorBuffer<char>(new TypedVectorData<char>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), returnFlag))});
-	columns.push_back({"l_linestatus", new TypedVectorBuffer<char>(new TypedVectorData<char>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), lineStatus))});
+	columns.push_back({"l_returnflag", new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), returnFlag))});
+	columns.push_back({"l_linestatus", new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), lineStatus))});
 
 	columns.push_back({"l_shipdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate))});
 	columns.push_back({"l_commitdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), commitDate))});

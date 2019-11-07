@@ -66,7 +66,7 @@ public:
 	OrderComparisonGenerator(Builder& builder, Order sequenceOrder, const PTX::Label *swapLabel, const PTX::Label *endLabel) :
 		Generator(builder), m_sequenceOrder(sequenceOrder), m_swapLabel(swapLabel), m_endLabel(endLabel) {}
 
-	void Generate(const std::vector<HorseIR::Operand *>& dataArguments, const HorseIR::TypedVectorLiteral<char> *orderLiteral)
+	void Generate(const std::vector<HorseIR::Operand *>& dataArguments, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
 	{
 		auto index = 0;
 		for (const auto argument : dataArguments)
@@ -328,7 +328,7 @@ public:
 		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments) + 1, std::end(arguments) - 1);
 		const auto& indexArgument = arguments.at(0);
 		const auto& orderArgument = arguments.at(arguments.size() - 1);
-		auto orderLiteral = LiteralGenerator<char>::GetLiteral(orderArgument);
+		auto orderLiteral = LiteralGenerator<std::int8_t>::GetLiteral(orderArgument);
 
 		// Load the left and right values
 

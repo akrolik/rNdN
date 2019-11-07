@@ -13,11 +13,11 @@
 
 namespace HorseIR {
 
-class CharLiteral : public TypedVectorLiteral<char>
+class CharLiteral : public TypedVectorLiteral<std::int8_t>
 {
 public:
-	CharLiteral(char value) : TypedVectorLiteral<char>(value, BasicType::BasicKind::Char) {}
-	CharLiteral(const std::vector<char>& values) : TypedVectorLiteral<char>(values, BasicType::BasicKind::Char) {}
+	CharLiteral(std::int8_t value) : TypedVectorLiteral<std::int8_t>(value, BasicType::BasicKind::Char) {}
+	CharLiteral(const std::vector<std::int8_t>& values) : TypedVectorLiteral<std::int8_t>(values, BasicType::BasicKind::Char) {}
 
 	CharLiteral *Clone() const override
 	{

@@ -70,12 +70,19 @@ static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nod
 		case HorseIR::BasicType::BasicKind::Float64:
 			generator.template Generate<PTX::Float64Type>(nodes...);
 			break;
-		case HorseIR::BasicType::BasicKind::Date:
-			generator.template Generate<PTX::Int32Type>(nodes...);
-			break;
 		case HorseIR::BasicType::BasicKind::String:
 		case HorseIR::BasicType::BasicKind::Symbol:
 			generator.template Generate<PTX::UInt64Type>(nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Date:
+		case HorseIR::BasicType::BasicKind::Month:
+		case HorseIR::BasicType::BasicKind::Minute:
+		case HorseIR::BasicType::BasicKind::Second:
+			generator.template Generate<PTX::Int32Type>(nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Datetime:
+		case HorseIR::BasicType::BasicKind::Time:
+			generator.template Generate<PTX::Float64Type>(nodes...);
 			break;
 		default:
 			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));

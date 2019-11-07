@@ -1,12 +1,16 @@
 #pragma once
 
+#include "HorseIR/Tree/Expressions/Literals/CalendarValue.h"
+
 #include <cstdint>
 #include <ostream>
 #include <iomanip>
 
+#include "Utils/Date.h"
+
 namespace HorseIR {
 
-class SecondValue
+class SecondValue : public CalendarValue
 {
 public:
 	SecondValue(std::uint8_t hour, std::uint8_t minute, std::uint8_t second) : m_hour(hour), m_minute(minute), m_second(second) {}
@@ -24,6 +28,11 @@ public:
 
 	std::uint8_t GetSecond() const { return m_second; }
 	void SetSecond(std::uint8_t second) { m_second = second; }
+
+	std::int32_t GetEpochTime() const override
+	{
+		return Utils::Date::EpochTime_time(m_hour, m_minute, m_second);
+	}
 
 	friend std::ostream& operator<<(std::ostream& os, const SecondValue& value);
 

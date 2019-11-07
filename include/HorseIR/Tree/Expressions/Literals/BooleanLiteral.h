@@ -13,11 +13,11 @@
 
 namespace HorseIR {
 
-class BooleanLiteral : public TypedVectorLiteral<char>
+class BooleanLiteral : public TypedVectorLiteral<std::int8_t>
 {
 public:
-	BooleanLiteral(char value) : TypedVectorLiteral<char>(value, BasicType::BasicKind::Boolean) {}
-	BooleanLiteral(const std::vector<char>& values) : TypedVectorLiteral<char>(values, BasicType::BasicKind::Boolean) {}
+	BooleanLiteral(std::int8_t value) : TypedVectorLiteral<std::int8_t>(value, BasicType::BasicKind::Boolean) {}
+	BooleanLiteral(const std::vector<std::int8_t>& values) : TypedVectorLiteral<std::int8_t>(values, BasicType::BasicKind::Boolean) {}
 
 	BooleanLiteral *Clone() const override
 	{
@@ -52,10 +52,10 @@ public:
 
 static VectorLiteral *CreateBooleanLiteral(const std::vector<std::int64_t>& values)
 {
-	std::vector<char> converted;
+	std::vector<std::int8_t> converted;
 	for (std::int64_t value : values)
 	{
-		converted.push_back(static_cast<char>(value));
+		converted.push_back(static_cast<std::int8_t>(value));
 	}
 	return new BooleanLiteral(converted);
 }

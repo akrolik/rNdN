@@ -93,65 +93,117 @@ public:
 
 	void Visit(const HorseIR::BooleanLiteral *literal) override
 	{
-		Generate<char>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::CharLiteral *literal) override
 	{
-		Generate<char>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int8Literal *literal) override
 	{
-		Generate<std::int8_t>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int16Literal *literal) override
 	{
-		Generate<std::int16_t>(literal);
+		VisitLiteral<std::int16_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int32Literal *literal) override
 	{
-		Generate<std::int32_t>(literal);
+		VisitLiteral<std::int32_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int64Literal *literal) override
 	{
-		Generate<std::int64_t>(literal);
+		VisitLiteral<std::int64_t>(literal);
 	}
 
 	void Visit(const HorseIR::Float32Literal *literal) override
 	{
-		Generate<float>(literal);
+		VisitLiteral<float>(literal);
 	}
 
 	void Visit(const HorseIR::Float64Literal *literal) override
 	{
-		Generate<double>(literal);
+		VisitLiteral<double>(literal);
+	}
+
+	void Visit(const HorseIR::StringLiteral *literal) override
+	{
+		VisitLiteral<std::string>(literal);
+	}
+
+	void Visit(const HorseIR::SymbolLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::SymbolValue *>(literal);
+	}
+
+	void Visit(const HorseIR::DatetimeLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::DatetimeValue *>(literal);
+	}
+
+	void Visit(const HorseIR::MonthLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::MonthValue *>(literal);
+	}
+
+	void Visit(const HorseIR::DateLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::DateValue *>(literal);
+	}
+
+	void Visit(const HorseIR::MinuteLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::MinuteValue *>(literal);
+	}
+
+	void Visit(const HorseIR::SecondLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::SecondValue *>(literal);
+	}
+
+	void Visit(const HorseIR::TimeLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::TimeValue *>(literal);
 	}
 
 	template<class L>
-	void Generate(const HorseIR::TypedVectorLiteral<L> *literal)
+	void VisitLiteral(const HorseIR::TypedVectorLiteral<L> *literal)
 	{
-		// Generate a zero'd target register
+		// VisitLiteral a zero'd target register
 
 		m_targetRegister = this->GenerateTargetRegister(m_target, m_arguments);
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_targetRegister, new PTX::BoolValue(false)));
 
 		// For each value in the literal, check if it is equal to the data value in this thread. Note, this is an unrolled loop
 
-		for (auto literalValue : literal->GetValues())
+		for (auto value : literal->GetValues())
 		{
 			// Load the value and cast to the appropriate type
 
-			if constexpr(std::is_same<typename T::SystemType, L>::value)
+			if constexpr(std::is_same<L, std::string>::value)
 			{
-				GenerateMerge(new PTX::Value<T>(literalValue));
+				GenerateMerge(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value))));
+			}
+			else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
+			{
+				GenerateMerge(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName()))));
+			}
+			else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
+			{
+				GenerateMerge(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime())));
+			}
+			else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
+			{
+				GenerateMerge(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime())));
 			}
 			else
 			{
-				GenerateMerge(new PTX::Value<T>(static_cast<typename T::SystemType>(literalValue)));
+				GenerateMerge(new PTX::Value<T>(static_cast<typename T::SystemType>(value)));
 			}
 		}
 	}

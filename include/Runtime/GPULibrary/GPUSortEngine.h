@@ -18,7 +18,7 @@ class GPUSortEngine
 public:
 	GPUSortEngine(Runtime& runtime) : m_runtime(runtime) {}
 
-	std::pair<VectorBuffer *, std::vector<VectorBuffer *>> Sort(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders);
+	std::pair<VectorBuffer *, std::vector<VectorBuffer *>> Sort(const std::vector<VectorBuffer *>& columns, const std::vector<std::int8_t>& orders);
 
 private:
 	std::pair<Codegen::InputOptions, Codegen::InputOptions> GenerateInputOptions(
@@ -26,9 +26,9 @@ private:
 		const HorseIR::Function *initFunction, const HorseIR::Function *sortFunction
 	) const;
 
-	std::tuple<HorseIR::Program *, HorseIR::Function *, HorseIR::Function *> GenerateProgram(const std::vector<VectorBuffer *>& columns, const std::vector<char>& orders) const;
-	HorseIR::Function *GenerateInitFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<char>& orders) const;
-	HorseIR::Function *GenerateSortFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<char>& orders) const;
+	std::tuple<HorseIR::Program *, HorseIR::Function *, HorseIR::Function *> GenerateProgram(const std::vector<VectorBuffer *>& columns, const std::vector<std::int8_t>& orders) const;
+	HorseIR::Function *GenerateInitFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<std::int8_t>& orders) const;
+	HorseIR::Function *GenerateSortFunction(const std::vector<const HorseIR::BasicType *>& types, const std::vector<std::int8_t>& orders) const;
 
 	Runtime& m_runtime;
 };

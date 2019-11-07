@@ -16,17 +16,15 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 		switch (type->GetBasicKind())
 		{
 			case HorseIR::BasicType::BasicKind::Boolean:
-				return new TypedVectorBuffer<int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Char:
-				return new TypedVectorBuffer<int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int8:
-				return new TypedVectorBuffer<int8_t>(type, value);
+				return new TypedVectorBuffer<std::int8_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int16:
-				return new TypedVectorBuffer<int16_t>(type, value);
+				return new TypedVectorBuffer<std::int16_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int32:
-				return new TypedVectorBuffer<int32_t>(type, value);
+				return new TypedVectorBuffer<std::int32_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Int64:
-				return new TypedVectorBuffer<int64_t>(type, value);
+				return new TypedVectorBuffer<std::int64_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Float32:
 				return new TypedVectorBuffer<float>(type, value);
 			case HorseIR::BasicType::BasicKind::Float64:
@@ -35,6 +33,14 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 				return new TypedVectorBuffer<std::string>(type, value);
 			case HorseIR::BasicType::BasicKind::String:
 				return new TypedVectorBuffer<std::string>(type, value);
+			case HorseIR::BasicType::BasicKind::Date:
+			case HorseIR::BasicType::BasicKind::Month:
+			case HorseIR::BasicType::BasicKind::Minute:
+			case HorseIR::BasicType::BasicKind::Second:
+				return new TypedVectorBuffer<std::int32_t>(type, value);
+			case HorseIR::BasicType::BasicKind::Time:
+			case HorseIR::BasicType::BasicKind::Datetime:
+				return new TypedVectorBuffer<double>(type, value);
 			default:   
 				Utils::Logger::LogError("Unable to create vector of type " + HorseIR::PrettyPrinter::PrettyString(type));
 		}

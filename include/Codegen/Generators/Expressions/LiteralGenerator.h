@@ -21,12 +21,12 @@ public:
 
 	void Visit(const HorseIR::BooleanLiteral *literal) override
 	{
-		VisitLiteral<char>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::CharLiteral *literal) override
 	{
-		VisitLiteral<char>(literal);
+		VisitLiteral<std::int8_t>(literal);
 	}
 
 	void Visit(const HorseIR::Int8Literal *literal) override
@@ -57,6 +57,46 @@ public:
 	void Visit(const HorseIR::Float64Literal *literal) override
 	{
 		VisitLiteral<double>(literal);
+	}
+
+	void Visit(const HorseIR::StringLiteral *literal) override
+	{
+		VisitLiteral<std::string>(literal);
+	}
+
+	void Visit(const HorseIR::SymbolLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::SymbolValue *>(literal);
+	}
+
+	void Visit(const HorseIR::DatetimeLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::DatetimeValue *>(literal);
+	}
+
+	void Visit(const HorseIR::MonthLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::MonthValue *>(literal);
+	}
+
+	void Visit(const HorseIR::DateLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::DateValue *>(literal);
+	}
+
+	void Visit(const HorseIR::MinuteLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::MinuteValue *>(literal);
+	}
+
+	void Visit(const HorseIR::SecondLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::SecondValue *>(literal);
+	}
+
+	void Visit(const HorseIR::TimeLiteral *literal) override
+	{
+		VisitLiteral<HorseIR::TimeValue *>(literal);
 	}
 
 	template<class L>

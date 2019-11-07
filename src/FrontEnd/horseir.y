@@ -24,7 +24,7 @@ void yyerror(const char *s)
 %error-verbose
 
 %union {
-	char         char_val;
+	std::int8_t  char_val;
 	std::int64_t int_val;
 	double       float_val;
 	std::string  *string_val;
@@ -48,7 +48,7 @@ void yyerror(const char *s)
 	std::vector<HorseIR::Expression *>    *expressions;
 	std::vector<HorseIR::Operand *>       *operands;
 
-	std::vector<char>                     *char_list;
+	std::vector<std::int8_t>              *char_list;
 	std::vector<std::int64_t>             *int_list;
 	std::vector<double>                   *float_list;
 	std::vector<std::string>              *string_list;
@@ -329,7 +329,7 @@ char_literal : tCHARVAL ':' tCHAR                                               
              ;
 
 char_list : char_list ',' tCHARVAL                                              { $1->push_back($3); $$ = $1; }
-	  | tCHARVAL                                                            { $$ = new std::vector<char>({$1}); }
+	  | tCHARVAL                                                            { $$ = new std::vector<std::int8_t>({$1}); }
           ;
 
 int_literal : tINTVAL ':' int_type                                              { $$ = HorseIR::CreateIntLiteral($1, $3); }

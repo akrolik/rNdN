@@ -50,12 +50,12 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			// Get a CPU vector or the orders
 
-			auto orders = BufferUtils::GetVectorBuffer<char>(arguments.at(1))->GetCPUReadBuffer()->GetValues();
+			auto orders = BufferUtils::GetVectorBuffer<std::int8_t>(arguments.at(1))->GetCPUReadBuffer()->GetValues();
 			if (orders.size() != columns.size())
 			{
 				Error("expects equal number of columns as direction specifiers [" + std::to_string(columns.size()) + " != " + std::to_string(orders.size()) + "]");
 			}
-			std::vector<char> _orders(std::begin(orders), std::end(orders));
+			std::vector<std::int8_t> _orders(std::begin(orders), std::end(orders));
 
 			// Sort!
 
