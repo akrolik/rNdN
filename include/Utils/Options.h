@@ -28,7 +28,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			std::cout << instance.m_options.help({"", "Debug"}) << std::endl;
+			std::cout << instance.m_options.help({"", "Debug", "Data"}) << std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -52,7 +52,7 @@ private:
 			("h,help", "Display this help menu")
 			("O,optimize", "Enable PTX optimizer")
 		;
-		m_options.add_options("Debug Printing (stdout)")
+		m_options.add_options("Debug")
 			(Opt_Print_hir, "Pretty print input HorseIR program")
 			(Opt_Print_symbol, "Print symbol table")
 			(Opt_Print_analysis, "Print analyses")
@@ -62,7 +62,7 @@ private:
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
 		;
-		m_options.add_options("Data Loading")
+		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")
 		;
 	}
