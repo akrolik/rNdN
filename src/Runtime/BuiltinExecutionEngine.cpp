@@ -30,7 +30,6 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
 
-			//TODO: Sort on strings should be CPU
 			std::vector<VectorBuffer *> columns;
 			if (auto listSort = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0), false))
 			{
@@ -58,6 +57,8 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			std::vector<std::int8_t> _orders(std::begin(orders), std::end(orders));
 
 			// Sort!
+
+			//TODO: Sort on strings should be CPU
 
 			GPUSortEngine sortEngine(m_runtime);
 			auto [indexBuffer, dataBuffers] = sortEngine.Sort(columns, _orders);
@@ -121,27 +122,29 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Keys:
 		{
-			if (auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0), false))
+			auto argument = arguments.at(0);
+			if (auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(argument, false))
 			{
 				return {dictionary->GetKeys()};
 			}
-			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(arguments.at(0), false))
+			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(argument, false))
 			{
 				return {enumeration->GetKeys()};
 			}
-			Error("unsupported target type");
+			Error("unsupported target type " + HorseIR::TypeUtils::TypeString(argument->GetType()));
 		}
 		case HorseIR::BuiltinFunction::Primitive::Values:
 		{
-			if (auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(arguments.at(0), false))
+			auto argument = arguments.at(0);
+			if (auto dictionary = BufferUtils::GetBuffer<DictionaryBuffer>(argument, false))
 			{
 				return {dictionary->GetValues()};
 			}
-			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(arguments.at(0), false))
+			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(argument, false))
 			{
 				return {enumeration->GetValues()};
 			}
-			Error("unsupported target type");
+			Error("unsupported target type " + HorseIR::TypeUtils::TypeString(argument->GetType()));
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
@@ -150,7 +153,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			if (columnSymbol->GetElementCount() != 1)
 			{
-				Error("expects a single column argument");
+				Error("expects a single column argument, received " + std::to_string(columnSymbol->GetElementCount()));
 			}
 
 			return {table->GetColumn(columnSymbol->GetValue(0))};
@@ -162,7 +165,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			if (tableSymbol->GetElementCount() != 1)
 			{
-				Error("expects a single table argument");
+				Error("expects a single table argument, received " + std::to_string(tableSymbol->GetElementCount()));
 			}
 
 			return {dataRegistry.GetTable(tableSymbol->GetValue(0))};
@@ -170,17 +173,25 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
 			auto stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
-			auto patternData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer()->GetValue(0);
+			auto patternData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer();
+
+			if (patternData->GetElementCount() != 1)
+			{
+				Error("expects a single pattern argument, received " + std::to_string(patternData->GetElementCount()));
+			}
 
 			// Transform from SQL like to regex
 			//  - Escape: '.', '*', and '\'
 			//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
 
-			const char *likePattern = patternData.c_str();
-			char *regexPattern = (char *)malloc(sizeof(char) * patternData.size() * 2 + 2);
+			const auto likePatternString = patternData->GetValue(0);
+			const auto likePatternSize = likePatternString.size();
+
+			const char *likePattern = likePatternString.c_str();
+			char *regexPattern = (char *)malloc(sizeof(char) * likePatternSize * 2 + 2);
 
 			auto j = 0u;
-			for (auto i = 0u; i < patternData.size() ; ++i)
+			for (auto i = 0u; i < likePatternSize; ++i)
 			{
 				char c = likePattern[i];
 				if (c == '.' || c == '*' || c == '\\')
@@ -204,14 +215,14 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 			regexPattern[j++] = '$';
 			regexPattern[j] = '\0';
-			std::string pattern(regexPattern);
+			std::string regexPatternString(regexPattern);
 
 			// Compile the regex and match on all data strings
 
-			jpcre2::select<char>::Regex regex(pattern, PCRE2_ANCHORED, jpcre2::JIT_COMPILE);
+			jpcre2::select<char>::Regex regex(regexPatternString, PCRE2_ANCHORED, jpcre2::JIT_COMPILE);
 			if (!regex)
 			{
-				Error("unable to compile match pattern");
+				Error("unable to compile regex pattern '" + regexPatternString + "' from like pattern '" + likePatternString + "'");
 			}
 
 			const auto size = stringData.size();
@@ -228,6 +239,11 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			auto stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
 			auto rangeVector = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(1));
+
+			if (rangeVector->GetElementCount() != 2)
+			{
+				Error("expects 2 element range vector, received " + std::to_string(rangeVector->GetElementCount()));
+			}
 
 			size_t position = 0;
 			size_t length = 0;
