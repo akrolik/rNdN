@@ -41,7 +41,7 @@ public:
 		return "<unknown>";
 	}
 
-	static DataBuffer *Create(const HorseIR::Type *type, const Analysis::Shape *shape);
+	static DataBuffer *CreateEmpty(const HorseIR::Type *type, const Analysis::Shape *shape);
 	virtual ~DataBuffer() {}
 
 	// Type/Shape
@@ -56,6 +56,8 @@ public:
 
 	virtual CUDA::Buffer *GetGPUWriteBuffer() = 0;
 	virtual CUDA::Buffer *GetGPUReadBuffer() const = 0;
+
+	virtual size_t GetGPUBufferSize() const = 0;
 
 	bool IsGPUConsistent() const { return m_gpuConsistent; }
 	bool IsCPUConsistent() const { return m_cpuConsistent; }

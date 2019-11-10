@@ -103,7 +103,7 @@ std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const
 
 	// Initialize sort buffers with the padded vector size
 
-	auto indexBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
+	auto indexBuffer = VectorBuffer::CreateEmpty(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
 	Utils::Logger::LogInfo("Initializing sort buffer: [" + indexBuffer->Description() + "]");
 
 	std::vector<VectorBuffer *> sortBuffers;
@@ -111,7 +111,7 @@ std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const
 	{
 		// Create a new buffer for the padded sort value
 
-		auto buffer = VectorBuffer::Create(column->GetType(), vectorShape->GetSize());
+		auto buffer = VectorBuffer::CreateEmpty(column->GetType(), vectorShape->GetSize());
 
 		Utils::Logger::LogInfo("Initializing sort buffer: [" + buffer->Description() + "]");
 
@@ -189,20 +189,25 @@ std::pair<VectorBuffer *, std::vector<VectorBuffer *>> GPUSortEngine::Sort(const
 	{
 		// Allocate a smaller buffer for each column and copy the data
 
-		std::vector<VectorBuffer *> collapsedSortBuffers;
+		std::vector<VectorBuffer *> resizedSortBuffers;
 		for (auto sortBuffer : sortBuffers)
 		{
-			auto collapsedBuffer = VectorBuffer::Create(sortBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-			CUDA::Buffer::Copy(collapsedBuffer->GetGPUWriteBuffer(), sortBuffer->GetGPUReadBuffer(), size * sortBuffer->GetElementSize());
-			collapsedSortBuffers.push_back(collapsedBuffer);
+			auto resizedBuffer = VectorBuffer::CreateEmpty(sortBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
+			CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), sortBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
+
+			Utils::Logger::LogInfo("Resized sort buffer [" + sortBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
+
+			resizedSortBuffers.push_back(resizedBuffer);
 			delete sortBuffer;
 		}
 
-		auto collapsedIndexBuffer = VectorBuffer::Create(indexBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-		CUDA::Buffer::Copy(collapsedIndexBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * indexBuffer->GetElementSize());
+		auto resizedIndexBuffer = VectorBuffer::CreateEmpty(indexBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
+		CUDA::Buffer::Copy(resizedIndexBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), resizedIndexBuffer->GetGPUBufferSize());
+
+		Utils::Logger::LogInfo("Resized sort buffer [" + indexBuffer->Description() + "] to [" + resizedIndexBuffer->Description() + "]");
 		delete indexBuffer;
 
-		return {collapsedIndexBuffer, collapsedSortBuffers};
+		return {resizedIndexBuffer, resizedSortBuffers};
 	}
 
 	return {indexBuffer, sortBuffers};

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -16,7 +17,7 @@ class ListBuffer : public DataBuffer
 public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::List;
 
-	static ListBuffer *Create(const HorseIR::ListType *type, const Analysis::ListShape *shape);
+	static ListBuffer *CreateEmpty(const HorseIR::ListType *type, const Analysis::ListShape *shape);
 
 	ListBuffer(DataBuffer *cell) : ListBuffer(std::vector<DataBuffer *>({cell})) {}
 	ListBuffer(const std::vector<DataBuffer *>& cells);
@@ -35,14 +36,29 @@ public:
 
 	// CPU/GPU management
 
-	//TODO: Harmonize with the vector buffer
 	CUDA::Buffer *GetGPUWriteBuffer() override
 	{
-		return GetGPUBuffer(true);
+		ValidateGPU();
+		for (auto i = 0u; i < m_cells.size(); ++i)
+		{
+			m_cells.at(i)->GetGPUWriteBuffer();
+		}
+		return m_gpuBuffer;
 	}
+
 	CUDA::Buffer *GetGPUReadBuffer() const override
 	{
-		return GetGPUBuffer(false);
+		ValidateGPU();
+		for (auto i = 0u; i < m_cells.size(); ++i)
+		{
+			m_cells.at(i)->GetGPUReadBuffer();
+		}
+		return m_gpuBuffer;
+	}
+
+	size_t GetGPUBufferSize() const override
+	{
+		return (sizeof(CUdeviceptr) * m_cells.size());
 	}
 
 	// Printers
@@ -51,37 +67,58 @@ public:
 	std::string DebugDump() const override;
 
 private:
-	CUDA::Buffer *GetGPUBuffer(bool write) const
+	bool IsAllocatedOnCPU() const { return true; }
+	bool IsAllocatedOnGPU() const { return (m_gpuBuffer != nullptr); }
+
+	void AllocateCPUBuffer() const {} // Do nothing
+	void AllocateGPUBuffer() const
 	{
-		auto cellCount = m_cells.size();
-		size_t bufferSize = cellCount * sizeof(CUdeviceptr);
-
-		void *cpuBuffer = malloc(bufferSize);
-		CUdeviceptr *data = reinterpret_cast<CUdeviceptr *>(cpuBuffer);
-
-		for (auto i = 0u; i < cellCount; ++i)
-		{
-			auto buffer = static_cast<VectorBuffer *>(m_cells.at(i));
-			if (write)
-			{
-				data[i] = buffer->GetGPUWriteBuffer()->GetGPUBuffer();
-			}
-			else
-			{
-				data[i] = buffer->GetGPUReadBuffer()->GetGPUBuffer();
-			}
-		}
-
-		auto gpuBuffer = new CUDA::Buffer(cpuBuffer, bufferSize);
-		gpuBuffer->AllocateOnGPU();
-		gpuBuffer->TransferToGPU();
-		return gpuBuffer;
+		m_gpuBuffer = new CUDA::Buffer(sizeof(CUdeviceptr) * m_cells.size());
+		m_gpuBuffer->AllocateOnGPU();
 	}
 
+	void ValidateCPU() const { m_cpuConsistent = true; } // Always consistent
+	void ValidateGPU() const
+	{
+		if (!m_gpuConsistent)
+		{
+			// Only allocate on GPU once - device pointers may never change
+
+			if (!IsAllocatedOnGPU())
+			{
+				AllocateGPUBuffer();
+
+				auto cellCount = m_cells.size();
+				size_t bufferSize = cellCount * sizeof(CUdeviceptr);
+
+				void *devicePointers = malloc(bufferSize);
+				CUdeviceptr *data = reinterpret_cast<CUdeviceptr *>(devicePointers);
+
+				for (auto i = 0u; i < cellCount; ++i)
+				{
+					auto buffer = m_cells.at(i);
+					if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer))
+					{
+						data[i] = buffer->GetGPUReadBuffer()->GetGPUBuffer();
+					}
+					else
+					{
+						Utils::Logger::LogError("GPU list buffers may only have vector cells, received " + buffer->Description());
+					}
+				}
+
+				m_gpuBuffer->SetCPUBuffer(devicePointers);
+				m_gpuBuffer->TransferToGPU();
+			}
+
+			m_gpuConsistent = true;
+		}
+	}
 	HorseIR::ListType *m_type = nullptr;
 	Analysis::ListShape *m_shape = nullptr;
 
 	std::vector<DataBuffer *> m_cells;
+	mutable CUDA::Buffer *m_gpuBuffer = nullptr;
 };
 
 }

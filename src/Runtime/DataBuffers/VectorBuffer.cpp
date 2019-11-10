@@ -8,7 +8,7 @@
 
 namespace Runtime {
 
-VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysis::Shape::Size *size)
+VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::Size *size)
 {
 	if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(size))
 	{
@@ -47,7 +47,7 @@ VectorBuffer *VectorBuffer::Create(const HorseIR::BasicType *type, const Analysi
 	}
 	else if (const auto compressedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(size))
 	{
-		return VectorBuffer::Create(type, compressedSize->GetSize());
+		return VectorBuffer::CreateEmpty(type, compressedSize->GetSize());
 	}
 	Utils::Logger::LogError("Vector buffer expects constant size");
 }

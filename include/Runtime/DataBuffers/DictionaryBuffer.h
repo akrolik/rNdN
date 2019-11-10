@@ -32,6 +32,8 @@ public:
 	CUDA::Buffer *GetGPUWriteBuffer() override { Utils::Logger::LogError("Unable to allocate dictionary GPU buffer"); }
 	CUDA::Buffer *GetGPUReadBuffer() const override { Utils::Logger::LogError("Unable to allocate dictionary GPU buffer"); }
 
+	size_t GetGPUBufferSize() const override { return 0; }
+
 	// Printers
 
 	std::string Description() const override;

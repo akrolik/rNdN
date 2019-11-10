@@ -6,7 +6,7 @@
 
 namespace Runtime {
 
-ListBuffer *ListBuffer::Create(const HorseIR::ListType *type, const Analysis::ListShape *shape)
+ListBuffer *ListBuffer::CreateEmpty(const HorseIR::ListType *type, const Analysis::ListShape *shape)
 {
 	auto elementTypes = type->GetElementTypes();
 	auto elementShapes = shape->GetElementShapes();
@@ -23,7 +23,7 @@ ListBuffer *ListBuffer::Create(const HorseIR::ListType *type, const Analysis::Li
 	for (auto i = 0u; i < shapeCount; ++i)
 	{
 		auto elementType = (typeCount == 1) ? elementTypes.at(0) : elementTypes.at(i);
-		cellBuffers.push_back(DataBuffer::Create(elementType, elementShapes.at(i)));
+		cellBuffers.push_back(DataBuffer::CreateEmpty(elementType, elementShapes.at(i)));
 	}
 
 	return new ListBuffer(cellBuffers);
@@ -40,6 +40,8 @@ ListBuffer::ListBuffer(const std::vector<DataBuffer *>& cells) : DataBuffer(Data
 	}
 	m_type = new HorseIR::ListType(cellTypes);
 	m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(cells.size()), cellShapes);
+
+	m_cpuConsistent = true; // Always CPU consistent
 }
 
 ListBuffer::~ListBuffer()

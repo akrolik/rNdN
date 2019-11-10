@@ -21,9 +21,10 @@ public:
 	void TransferToCPU();
 
 	void *GetCPUBuffer() const { return m_CPUBuffer; }
-	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
-
 	void SetCPUBuffer(void *buffer) { m_CPUBuffer = buffer; }
+	bool HasCPUBuffer () const { return (m_CPUBuffer != nullptr); }
+
+	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
 
 	size_t GetSize() const { return m_size; }
 	size_t GetPaddedSize() const { return m_paddedSize; }

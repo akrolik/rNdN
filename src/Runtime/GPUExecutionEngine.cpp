@@ -167,6 +167,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Initialize the input buffers for the kernel
 
+	std::vector<CUDA::Buffer *> inputSizeBuffers;
 	for (auto i = 0u; i < function->GetParameterCount(); ++i)
 	{
 		const auto parameter = function->GetParameter(i);
@@ -185,34 +186,38 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, false))
 		{
 			const auto runtimeShape = runtimeOptions.ParameterShapes.at(parameter);
-			AllocateSizeBuffer(invocation, runtimeShape, false);
+			inputSizeBuffers.push_back(AllocateSizeBuffer(invocation, runtimeShape, false));
 		}
 	}
 
+	// Initialize the return buffers for the kernel
+
 	std::vector<DataBuffer *> returnBuffers;
-	std::vector<CUDA::Buffer *> sizeBuffers;
+	std::vector<CUDA::Buffer *> returnSizeBuffers;
+
 	for (auto i = 0u; i < function->GetReturnCount(); ++i)
 	{
 		// Create a new buffer for the return value
 
 		const auto type = function->GetReturnType(i);
 		const auto shape = runtimeOptions.ReturnShapes.at(i);
-		auto buffer = DataBuffer::Create(type, shape);
 
-		Utils::Logger::LogInfo("Initializing return argument: " + std::to_string(i) + " [" + buffer->Description() + "]");
+		auto returnBuffer = DataBuffer::CreateEmpty(type, shape);
+		returnBuffers.push_back(returnBuffer);
+
+		Utils::Logger::LogInfo("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
 
 		// Transfer the write buffer to te GPU, we assume all returns write (or else...)
 
-		returnBuffers.push_back(buffer);
-		invocation.AddParameter(*buffer->GetGPUWriteBuffer());
+		invocation.AddParameter(*returnBuffer->GetGPUWriteBuffer());
 
 		// Allocate a size parameter if neded
 
 		const auto inputShape = inputOptions.ReturnShapes.at(i);
 		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
 		{
-			const auto runtimeShape = runtimeOptions.ReturnShapes.at(i);
-			sizeBuffers.push_back(AllocateSizeBuffer(invocation, runtimeShape, true));
+			returnSizeBuffers.push_back(AllocateSizeBuffer(invocation, shape, true));
+		}
 		}
 	}
 
@@ -271,39 +276,34 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	invocation.Launch();
 
-	std::vector<DataBuffer *> resizedBuffers;
-	auto resizeIndex = 0u;
-	auto returnIndex = 0u;
-	for (auto returnBuffer : returnBuffers)
-	{
-		// Allocate a size parameter if neded
+	// Resize return buffers for dynamically sized outputs (compression)
 
-		const auto inputShape = inputOptions.ReturnShapes.at(returnIndex++);
+	std::vector<DataBuffer *> resizedBuffers;
+	for (auto returnIndex = 0u, resizeIndex = 0u; returnIndex < function->GetReturnCount(); ++returnIndex)
+	{
+		// Check if the return buffer was a dynamic allocation
+
+		const auto inputShape = inputOptions.ReturnShapes.at(returnIndex);
+		auto returnBuffer = returnBuffers.at(returnIndex);
 		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
 		{
+			// Get the right buffer kind and resize
+
 			if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer))
 			{
-				auto size = 0u;
-
 				// Transfer the size to the CPU to resize the buffer
 
-				auto sizeBuffer = sizeBuffers.at(resizeIndex++);
+				auto size = 0u;
+				auto sizeBuffer = returnSizeBuffers.at(resizeIndex++);
 				sizeBuffer->SetCPUBuffer(&size);
 				sizeBuffer->TransferToCPU();
 
-				//TODO: Temporary hack
-				if (size == 0)
-				{
-					resizedBuffers.push_back(returnBuffer);
-					continue;
-				}
-
 				// Allocate a new buffer and transfer the contents
 
-				auto resizedBuffer = VectorBuffer::Create(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-				CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), size * vectorBuffer->GetElementSize());
+				auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
+				CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
 
-				Utils::Logger::LogInfo("Resized dynamic buffer " + returnBuffer->Description() + " to " + resizedBuffer->Description());
+				Utils::Logger::LogInfo("Resized dynamic buffer [" + returnBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
 
 				resizedBuffers.push_back(resizedBuffer);
 				delete returnBuffer;
@@ -318,7 +318,17 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		{
 			resizedBuffers.push_back(returnBuffer);
 		}
-		resizeIndex++;
+	}
+
+	// Deallocate dynamic size CUDA buffers
+
+	for (auto buffer : inputSizeBuffers)
+	{
+		delete buffer;
+	}
+	for (auto buffer : returnSizeBuffers)
+	{
+		delete buffer;
 	}
 
 	return resizedBuffers;

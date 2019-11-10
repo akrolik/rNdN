@@ -9,7 +9,7 @@
 
 namespace Runtime {
 
-DataBuffer *DataBuffer::Create(const HorseIR::Type *type, const Analysis::Shape *shape)
+DataBuffer *DataBuffer::CreateEmpty(const HorseIR::Type *type, const Analysis::Shape *shape)
 {
 	switch (shape->GetKind())
 	{
@@ -18,7 +18,7 @@ DataBuffer *DataBuffer::Create(const HorseIR::Type *type, const Analysis::Shape 
 			if (const auto vectorType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type))
 			{
 				auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape);
-				return VectorBuffer::Create(vectorType, vectorShape->GetSize());
+				return VectorBuffer::CreateEmpty(vectorType, vectorShape->GetSize());
 			}
 			Utils::Logger::LogError("Vector shape requires basic type");
 		}
@@ -27,7 +27,7 @@ DataBuffer *DataBuffer::Create(const HorseIR::Type *type, const Analysis::Shape 
 			if (const auto listType = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type))
 			{
 				auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape);
-				return ListBuffer::Create(listType, listShape);
+				return ListBuffer::CreateEmpty(listType, listShape);
 			}
 			Utils::Logger::LogError("Vector shape requires basic type");
 		}

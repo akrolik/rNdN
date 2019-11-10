@@ -123,7 +123,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 		invocation.AddParameter(*dataBuffer->GetGPUReadBuffer());
 	}
 
-	auto keysBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
+	auto keysBuffer = VectorBuffer::CreateEmpty(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
 	Utils::Logger::LogInfo("Initializing keys buffer: [" + keysBuffer->Description() + "]");
 	invocation.AddParameter(*keysBuffer->GetGPUReadBuffer());
 
@@ -137,7 +137,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 	keysSizeBuffer->Clear();
 	invocation.AddParameter(*keysSizeBuffer);
 
-	auto valuesBuffer = VectorBuffer::Create(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
+	auto valuesBuffer = VectorBuffer::CreateEmpty(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), vectorShape->GetSize());
 	Utils::Logger::LogInfo("Initializing values buffer: [" + valuesBuffer->Description() + "]");
 	invocation.AddParameter(*valuesBuffer->GetGPUReadBuffer());
 
@@ -185,14 +185,17 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<VectorBuffer *>& dataB
 
 	// Collapse the index buffer
 
-	auto collapsedKeysBuffer = VectorBuffer::Create(keysBuffer->GetType(), new Analysis::Shape::ConstantSize(keysSize));
-	CUDA::Buffer::Copy(collapsedKeysBuffer->GetGPUWriteBuffer(), keysBuffer->GetGPUReadBuffer(), keysSize * keysBuffer->GetElementSize());
+	auto resizedKeysBuffer = VectorBuffer::CreateEmpty(keysBuffer->GetType(), new Analysis::Shape::ConstantSize(keysSize));
+	CUDA::Buffer::Copy(resizedKeysBuffer->GetGPUWriteBuffer(), keysBuffer->GetGPUReadBuffer(), resizedKeysBuffer->GetGPUBufferSize());
+
+	Utils::Logger::LogInfo("Resized sort buffer [" + keysBuffer->Description() + "] to [" + resizedKeysBuffer->Description() + "]");
 
 	auto dictionaryValuesBuffer = new ListBuffer(entryBuffers);
-	auto dictionaryBuffer = new DictionaryBuffer(collapsedKeysBuffer, dictionaryValuesBuffer);
+	auto dictionaryBuffer = new DictionaryBuffer(resizedKeysBuffer, dictionaryValuesBuffer);
 
 	// Delete all old buffers used to sort
 
+	delete keysBuffer;
 	delete indexBuffer;
 	for (auto buffer : sortedDataBuffers)
 	{
