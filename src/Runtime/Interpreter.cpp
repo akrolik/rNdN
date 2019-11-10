@@ -13,6 +13,7 @@
 #include "Runtime/BuiltinExecutionEngine.h"
 #include "Runtime/GPUExecutionEngine.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -75,6 +76,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
+
 	BuiltinExecutionEngine engine(m_runtime);
 	return engine.Execute(function, arguments);
 }
@@ -206,6 +208,8 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 	// Execute function and store result for the function invocation
 
 	auto function = call->GetFunctionLiteral()->GetFunction();
+
+	auto start = Utils::Chrono::Start();
 	switch (function->GetKind())
 	{
 		case HorseIR::FunctionDeclaration::Kind::Definition:
@@ -230,6 +234,8 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 			Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
 		}
 	}
+	auto time = Utils::Chrono::End(start);
+	Utils::Logger::LogTiming("Function execution time '" + function->GetName() + "'", time);
 }
 
 void Interpreter::Visit(const HorseIR::Identifier *identifier)
