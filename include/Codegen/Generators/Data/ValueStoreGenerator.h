@@ -53,8 +53,6 @@ public:
 		}
 	}
 
-	//TODO: Ensure that when we compress/move registers, we do not lose the compression or reduction flags
-
 	template<class T>
 	void GenerateWrite(const HorseIR::Operand *operand, unsigned int returnIndex)
 	{
@@ -350,32 +348,28 @@ public:
 		GeometryGenerator geometryGenerator(this->m_builder);
 		auto size = geometryGenerator.GenerateDataSize();
 
-		auto sizeLabel = this->m_builder.CreateLabel("SIZE");
+		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(label, sizePredicate));
 
 		// Store the value into global space
 
-		if (auto indexed = resources->template GetIndexedRegister<T>(value))
-		{
-			auto address = GenerateAddress<T>(returnIndex, indexed);
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		}
-		else
+		auto writeIndex = resources->template GetIndexedRegister<T>(value);
+		if (writeIndex == nullptr)
 		{
 			// Global/cell data indexing depending on thread geometry
 
 			IndexGenerator indexGenerator(this->m_builder);
-			auto index = indexGenerator.GenerateIndex(indexKind);
-
-			auto address = GenerateAddress<T>(returnIndex, index);
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+			writeIndex = indexGenerator.GenerateIndex(indexKind);
 		}
 
+		auto address = GenerateAddress<T>(returnIndex, writeIndex);
+		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+
 		this->m_builder.AddStatement(new PTX::BlankStatement());
-		this->m_builder.AddStatement(sizeLabel);
+		this->m_builder.AddStatement(label);
 	}
 
 	template<class T>
@@ -392,21 +386,27 @@ public:
 		{
 			AddressGenerator<B> addressGenerator(this->m_builder);
 
-			// Generate the in-order global prefix sum! Convert the predicate to integer values for the sum
+			// Before generating compressed output, see if the write is indexed - if so, no compressed necessary
 
-			auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
+			auto writeIndex = resources->template GetIndexedRegister<T>(value);
+			if (writeIndex == nullptr)
+			{
+				// Generate the in-order global prefix sum! Convert the predicate to integer values for the sum
 
-			// Calculate prefix sum
+				auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
 
-			auto kernelResources = this->m_builder.GetKernelResources();
-			auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
+				// Calculate prefix sum
 
-			auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
-			auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(sizeParameter);
+				auto kernelResources = this->m_builder.GetKernelResources();
+				auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
 
-			PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
-			auto writeIndex = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
+				auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
+				auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(sizeParameter);
+
+				PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
+				writeIndex = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
+			}
 
 			// Check for compression - this will mask outputs
 
