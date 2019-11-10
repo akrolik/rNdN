@@ -68,7 +68,7 @@ public:
 			case BasicKind::Symbol:
 				return "sym";
 			case BasicKind::String:
-				return "string";
+				return "str";
 			case BasicKind::Datetime:
 				return "dt";
 			case BasicKind::Date:
