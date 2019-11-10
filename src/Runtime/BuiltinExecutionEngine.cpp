@@ -290,7 +290,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				substringData.at(i) = stringData.at(i).substr(position, length);
+				substringData.at(i) = stringData.at(i).substr(position - 1, length);
 			}
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), substringData))};
