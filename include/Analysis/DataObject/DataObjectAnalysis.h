@@ -64,7 +64,9 @@ public:
 	const std::vector<const DataObject *>& GetDataObjects(const HorseIR::Expression *expression) const;
 
 	const DataObject *GetParameterObject(const HorseIR::Parameter *parameter) const { return m_parameterObjects.at(parameter); }
+
 	const std::vector<const DataObject *>& GetReturnObjects() const { return m_returnObjects; }
+	const DataObject *GetReturnObject(unsigned int index) const { return m_returnObjects.at(index); }
 
 	// Interprocedural
 

@@ -10,6 +10,7 @@
 #include "PTX/Program.h"
 
 #include "Analysis/DataObject/DataObjectAnalysis.h"
+#include "Analysis/DataObject/DataCopyAnalysis.h"
 #include "Analysis/Geometry/GeometryAnalysis.h"
 #include "Analysis/Geometry/KernelAnalysis.h"
 #include "Analysis/Shape/Shape.h"
@@ -106,18 +107,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	Utils::Logger::LogInfo("Generated program for function '" + function->GetName() + "' with options");
 	Utils::Logger::LogInfo(kernelOptions.ToString(), 1);
 
-	// Execute the compiled kernel on the GPU
-	//   1. Create the invocation (thread sizes + arguments)
-	//   2. Initialize the arguments
-	//   3. Execute
-	//   4. Initialize return values
-
-	Utils::Logger::LogSection("Continuing program execution");
-
-	// Initialize kernel invocation and configure the runtime thread layout
-
-	CUDA::KernelInvocation invocation(kernel);
-
 	// Collect runtime shape information for determining exact thread geometry and return shapes
 
 	Analysis::DataObjectAnalysis runtimeDataAnalysis(m_program);
@@ -160,6 +149,23 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	Utils::Logger::LogInfo("Runtime Options");
 	Utils::Logger::LogInfo(runtimeOptions.ToString(), 1);
+
+	// Determine any data copies that occur
+
+	Analysis::DataCopyAnalysis runtimeCopyAnalysis(runtimeDataAnalysis);
+	runtimeCopyAnalysis.Analyze(function);
+
+	// Execute the compiled kernel on the GPU
+	//   1. Create the invocation (thread sizes + arguments)
+	//   2. Initialize the arguments
+	//   3. Execute
+	//   4. Initialize return values
+
+	Utils::Logger::LogSection("Continuing program execution");
+
+	// Initialize kernel invocation and configure the runtime thread layout
+
+	CUDA::KernelInvocation invocation(kernel);
 
 	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, targetOptions, kernelOptions);
 	invocation.SetBlockShape(blockSize, 1, 1);
@@ -218,6 +224,18 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		{
 			returnSizeBuffers.push_back(AllocateSizeBuffer(invocation, shape, true));
 		}
+
+		// Copy data if needed from input
+
+		const auto returnObject = runtimeDataAnalysis.GetReturnObject(i);
+		if (runtimeCopyAnalysis.ContainsDataCopy(returnObject))
+		{
+			auto inputObject = runtimeCopyAnalysis.GetDataCopy(returnObject);
+			auto inputBuffer = inputObject->GetDataBuffer();
+
+			Utils::Logger::LogInfo("Initializing return data: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString());
+
+			CUDA::Buffer::Copy(returnBuffer->GetGPUWriteBuffer(), inputBuffer->GetGPUReadBuffer(), inputBuffer->GetGPUBufferSize());
 		}
 	}
 
