@@ -24,6 +24,8 @@ void Module::Compile()
 {
 	// Initialize the JIT options for the compile
 
+	auto timeCreate_start = Utils::Chrono::Start();
+
 	CUjit_option optionKeys[6];
 	void *optionVals[6];
 	unsigned int optionCount = 6;
@@ -55,6 +57,8 @@ void Module::Compile()
 
 	CUlinkState linkerState;
 	checkDriverResult(cuLinkCreate(optionCount, optionKeys, optionVals, &linkerState));
+
+	auto timeCreate = Utils::Chrono::End(timeCreate_start);
 
 	// Add the PTX source code to the linker for compilation. Note that this will invoke the compile
 	// despite the name only pertaining to the linker
@@ -106,19 +110,25 @@ void Module::Compile()
 
 	auto timeLink = Utils::Chrono::End(timeLink_start);
 
-	// Log compilation info to stdout
-
-	Utils::Logger::LogTiming("PTX compiled", timeCompile + timeLibraries + timeLink);
-	Utils::Logger::LogTimingComponent("Assemble", timeCompile);
-	Utils::Logger::LogTimingComponent("Libraries", timeLibraries);
-	Utils::Logger::LogTimingComponent("Link", timeLink);
-
-	Utils::Logger::LogInfo(l_infoLog);
-
 	// Load the binary into the module and cleanup the linker session
+
+	auto timeLoad_start = Utils::Chrono::Start();
 
 	checkDriverResult(cuModuleLoadData(&m_module, m_binary));
 	checkDriverResult(cuLinkDestroy(linkerState));
+
+	auto timeLoad = Utils::Chrono::End(timeLoad_start);
+
+	// Log compilation info to stdout
+
+	Utils::Logger::LogTiming("PTX compiled", timeCreate + timeCompile + timeLibraries + timeLink + timeLoad);
+	Utils::Logger::LogTimingComponent("Create", timeCreate);
+	Utils::Logger::LogTimingComponent("Assemble", timeCompile);
+	Utils::Logger::LogTimingComponent("Libraries", timeLibraries);
+	Utils::Logger::LogTimingComponent("Link", timeLink);
+	Utils::Logger::LogTimingComponent("Load", timeLoad);
+
+	Utils::Logger::LogInfo(l_infoLog);
 }
 
 }
