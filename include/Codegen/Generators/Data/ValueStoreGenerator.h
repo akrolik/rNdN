@@ -62,7 +62,7 @@ public:
 
 		// Select the write kind based on the thread geometry and return shape
 
-		auto shape = inputOptions.ReturnShapes.at(returnIndex);
+		auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
@@ -440,7 +440,7 @@ public:
 		AddressGenerator<B> addressGenerator(this->m_builder);
 
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		auto shape = inputOptions.ReturnShapes.at(returnIndex);
+		auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
 		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
 		{
 			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(returnName);

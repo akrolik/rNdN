@@ -213,6 +213,7 @@ Codegen::InputOptions GPUGroupEngine::GenerateInputOptions(const Analysis::Vecto
 	auto predicateObject = new Analysis::DataObject();
 	groupOptions.ReturnShapes.push_back(new Analysis::VectorShape(new Analysis::Shape::CompressedSize(predicateObject, vectorShape->GetSize())));
 	groupOptions.ReturnShapes.push_back(new Analysis::VectorShape(new Analysis::Shape::CompressedSize(predicateObject, vectorShape->GetSize())));
+	groupOptions.ReturnWriteShapes = groupOptions.ReturnShapes;
 
 	auto paramIndex = 0u;
 	for (const auto& parameter : groupFunction->GetParameters())

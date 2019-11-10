@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <utility>
 
 #include "HorseIR/Analysis/ForwardAnalysis.h"
 
@@ -31,7 +32,10 @@ struct ShapeAnalysisValue
 	}
 };
 
-using ShapeAnalysisProperties = HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>; 
+using ShapeAnalysisProperties = HorseIR::FlowAnalysisPair<
+	HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>, 
+	HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>
+>;
  
 class ShapeAnalysis : public HorseIR::ForwardAnalysis<ShapeAnalysisProperties>
 {
@@ -73,18 +77,30 @@ public:
 
 	// Shape utilities for propagation
 
+	void KillShapes(const HorseIR::SymbolTable *symbolTable, HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& outMap) const;
+	void MergeShapes(HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& outMap, const HorseIR::FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& otherMap) const;
+
 	const Shape *GetShape(const HorseIR::Operand *operand) const;
+	const Shape *GetWriteShape(const HorseIR::Operand *operand) const;
+
 	void SetShape(const HorseIR::Operand *operand, const Shape *shape);
+	void SetWriteShape(const HorseIR::Operand *operand, const Shape *shape);
 
 	const std::vector<const Shape *>& GetShapes(const HorseIR::Expression *expression) const;
+	const std::vector<const Shape *>& GetWriteShapes(const HorseIR::Expression *expression) const;
+
 	void SetShapes(const HorseIR::Expression *expression, const std::vector<const Shape *>& shapes);
+	void SetWriteShapes(const HorseIR::Expression *expression, const std::vector<const Shape *>& shapes);
 
 	// Input and output shapes
 
 	const Shape *GetParameterShape(const HorseIR::Parameter *parameter) const { return m_parameterShapes.at(parameter); }
 
 	const std::vector<const Shape *>& GetReturnShapes() const { return m_returnShapes; }
+	const std::vector<const Shape *>& GetReturnWriteShapes() const { return m_returnWriteShapes; }
+
 	const Shape *GetReturnShape(unsigned int i) const { return m_returnShapes.at(i); }
+	const Shape *GetReturnWriteShape(unsigned int i) const { return m_returnWriteShapes.at(i); }
 
 	// Interprocedural
 
@@ -94,9 +110,9 @@ public:
 private:
 	// Function call visitors
 
-	std::vector<const Shape *> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
-	std::vector<const Shape *> AnalyzeCall(const HorseIR::Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
-	std::vector<const Shape *> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
+	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
+	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const HorseIR::Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
+	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
 
 	// Static checks for sizes
 
@@ -124,8 +140,12 @@ private:
 	const HorseIR::CallExpression *m_call = nullptr;
 
 	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_expressionShapes;
+	std::unordered_map<const HorseIR::Expression *, std::vector<const Shape *>> m_writeShapes;
+
 	std::unordered_map<const HorseIR::Parameter *, const Shape *> m_parameterShapes;
+
 	std::vector<const Shape *> m_returnShapes;
+	std::vector<const Shape *> m_returnWriteShapes;
 
 	// Data objects for compression
 

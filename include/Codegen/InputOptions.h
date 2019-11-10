@@ -27,6 +27,7 @@ struct InputOptions
 	std::unordered_map<const Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjects;
 
 	std::vector<const Analysis::Shape *> ReturnShapes;
+	std::vector<const Analysis::Shape *> ReturnWriteShapes;
 
 	std::string ToString() const
 	{
@@ -77,6 +78,24 @@ struct InputOptions
 		{
 			bool first = true;
 			for (const auto& shape : ReturnShapes)
+			{
+				if (!first)
+				{
+					output += ", ";
+				}
+				first = false;
+				output += Analysis::ShapeUtils::ShapeString(shape);
+			}
+		}
+		else
+		{
+			output += "-";
+		}
+		output += "\nReturn write shapes: ";
+		if (ReturnShapes.size() > 0)
+		{
+			bool first = true;
+			for (const auto& shape : ReturnWriteShapes)
 			{
 				if (!first)
 				{

@@ -17,7 +17,7 @@ void ShapeCollector::Analyze(const HorseIR::Operand *operand)
 
 void ShapeCollector::Visit(const HorseIR::Identifier *identifier)
 {
-	m_shape = m_shapes.at(identifier->GetSymbol());
+	m_shape = m_shapes.first.at(identifier->GetSymbol());
 }
 
 void ShapeCollector::Visit(const HorseIR::VectorLiteral *literal)

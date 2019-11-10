@@ -147,7 +147,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				runtimeShapeAnalysis.AddCompressionConstraint(vectorSize->GetPredicate(), runtimeVector->GetSize());
 			}
 		}
-		inputShapes[symbol] = runtimeShape;
+		inputShapes.first[symbol] = runtimeShape;
+		inputShapes.second[symbol] = runtimeShape;
 	}
 
 	// Determine the thread geometry for the kernel
@@ -347,7 +348,11 @@ Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Functio
 		inputOptions.ParameterShapes[parameter] = shapeAnalysis.GetParameterShape(parameter);
 		inputOptions.ParameterObjects[dataAnalysis.GetParameterObject(parameter)] = parameter;
 	}
+
+	// Use the write shapes as that's what's actually active!
+
 	inputOptions.ReturnShapes = shapeAnalysis.GetReturnShapes();
+	inputOptions.ReturnWriteShapes = shapeAnalysis.GetReturnWriteShapes();
 
 	// Specify the number of threads for each cell computation in list thread geometry
 

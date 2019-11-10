@@ -219,6 +219,7 @@ std::pair<Codegen::InputOptions, Codegen::InputOptions> GPUSortEngine::GenerateI
 	initOptions.ThreadGeometry = vectorShape;
 	initOptions.InOrderBlocks = false;
 	initOptions.ReturnShapes.push_back(vectorShape);
+	initOptions.ReturnWriteShapes.push_back(vectorShape);
 
 	auto paramIndex = 0u;
 	for (const auto& parameter : initFunction->GetParameters())
@@ -227,6 +228,7 @@ std::pair<Codegen::InputOptions, Codegen::InputOptions> GPUSortEngine::GenerateI
 		initOptions.ParameterShapes[parameter] = dataShapes.at(paramIndex++);
 
 		initOptions.ReturnShapes.push_back(vectorShape);
+		initOptions.ReturnWriteShapes.push_back(vectorShape);
 	}
 
 	Codegen::InputOptions sortOptions;
