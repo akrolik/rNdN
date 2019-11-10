@@ -209,7 +209,7 @@ private:
 			{
 				if constexpr(std::is_same<T, std::string>::value)
 				{
-					if (m_gpuBuffer->HasCPUBuffer())
+					if (!m_gpuBuffer->HasCPUBuffer())
 					{
 						auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
 						m_gpuBuffer->SetCPUBuffer(hashedData);
