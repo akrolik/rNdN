@@ -42,12 +42,16 @@ public:
 			auto relaxedSource = RelaxSource<T>(source, relaxedInstruction);
 			if (relaxedSource != nullptr)
 			{
+				CopyProperties(relaxedSource, source);
 				return relaxedSource;
 			}
 			
 			auto resources = this->m_builder.GetLocalResources();
 			auto converted = resources->AllocateTemporary<T>();
+
 			GenerateConversion(converted, source);
+			CopyProperties(converted, source);
+
 			return converted;
 		}
 	}
@@ -59,20 +63,45 @@ public:
 		{
 			MoveGenerator<T> moveGenerator(this->m_builder);
 			moveGenerator.Generate(destination, source);
-			return;
 		}
-
-		auto relaxedSource = RelaxSource<T>(source, relaxedInstruction);
-		if (relaxedSource != nullptr)
+		else
 		{
-			MoveGenerator<T> moveGenerator(this->m_builder);
-			moveGenerator.Generate(destination, relaxedSource);
-			return;
+			auto relaxedSource = RelaxSource<T>(source, relaxedInstruction);
+			if (relaxedSource != nullptr)
+			{
+				MoveGenerator<T> moveGenerator(this->m_builder);
+				moveGenerator.Generate(destination, relaxedSource);
+			}
+			else
+			{
+				GenerateConversion(destination, source);
+			}
 		}
-		GenerateConversion(destination, source);
+		CopyProperties(destination, source);
 	}
 
 private:
+	template<class D, class S>
+	void CopyProperties(const PTX::Register<D> *destination, const PTX::Register<S> *source)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+		if (const auto compressedRegister = resources->template GetCompressedRegister<S>(source))
+		{
+			resources->template SetCompressedRegister<D>(destination, compressedRegister);
+		}
+
+		if (const auto indexedRegister = resources->template GetIndexedRegister<S>(source))
+		{
+			resources->template SetIndexedRegister<D>(destination, indexedRegister);
+		}
+
+		if (resources->template IsReductionRegister<S>(source))
+		{
+			auto [granularity, op] = resources->GetReductionRegister(source);
+			resources->template SetReductionRegister<D>(destination, granularity, op);
+		}
+	}
+
 	template<class D, class S>
 	const PTX::Register<D> *RelaxSource(const PTX::Register<S> *source, bool relaxedInstruction)
 	{
