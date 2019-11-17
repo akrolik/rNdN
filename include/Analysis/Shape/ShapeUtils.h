@@ -7,6 +7,8 @@
 #include "Analysis/Shape/Shape.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Utils/Logger.h"
+
 namespace Analysis {
 
 class ShapeUtils

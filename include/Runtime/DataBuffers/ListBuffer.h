@@ -10,6 +10,8 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Utils/Logger.h"
+
 namespace Runtime {
 
 class ListBuffer : public DataBuffer

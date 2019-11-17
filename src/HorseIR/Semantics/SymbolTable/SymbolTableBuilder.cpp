@@ -3,6 +3,8 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Logger.h"
+
 namespace HorseIR {
 
 void SymbolTableBuilder::Build(Program *program)

@@ -12,7 +12,6 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "Utils/Chrono.h"
-#include "Utils/Logger.h"
 
 namespace Runtime {
 

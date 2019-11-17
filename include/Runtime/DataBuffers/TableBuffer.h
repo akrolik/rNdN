@@ -14,6 +14,8 @@
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Logger.h"
+
 namespace Runtime {
 
 class TableBuffer : public DataBuffer

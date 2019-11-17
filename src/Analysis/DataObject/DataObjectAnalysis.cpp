@@ -1,5 +1,7 @@
 #include "Analysis/DataObject/DataObjectAnalysis.h"
 
+#include "Utils/Logger.h"
+
 namespace Analysis {
 
 void DataObjectAnalysis::Visit(const HorseIR::Parameter *parameter)

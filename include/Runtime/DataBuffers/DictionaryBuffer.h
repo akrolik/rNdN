@@ -9,6 +9,8 @@
 #include "Runtime/DataBuffers/ListBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Logger.h"
+
 namespace Runtime {
 
 class DictionaryBuffer : public DataBuffer

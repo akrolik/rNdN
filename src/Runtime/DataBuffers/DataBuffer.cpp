@@ -7,6 +7,8 @@
 #include "Runtime/DataBuffers/ListBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Logger.h"
+
 namespace Runtime {
 
 DataBuffer *DataBuffer::CreateEmpty(const HorseIR::Type *type, const Analysis::Shape *shape)
