@@ -13,7 +13,7 @@ link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 include_directories(${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include)
 link_directories(${CUDA_TOOLKIT_ROOT_DIR}/nvvm/lib64)
 
-find_package(LLVM 6.0 REQUIRED CONFIG)
+find_package(LLVM 9.0 REQUIRED CONFIG)
 include_directories(${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 

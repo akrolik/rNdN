@@ -2,7 +2,7 @@
 
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
-#include "llvm/CodeGen/CommandFlags.def"
+#include "llvm/CodeGen/CommandFlags.inc"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Linker/Linker.h"
@@ -134,11 +134,10 @@ std::string Generate(const std::string& compute)
 	targetOptions.NoInfsFPMath = true;
 	targetOptions.NoNaNsFPMath = true;
 
-	//TODO: Look into getting the +ptx value from llvm
 	auto machine(target->createTargetMachine(
 		targetString,
 		compute.c_str(),
-		"+ptx50",
+		compute.c_str(), // Allow LLVM to choose the PTX version
 		targetOptions,
 		llvm::Optional<llvm::Reloc::Model>(),
 		llvm::Optional<llvm::CodeModel::Model>(),
