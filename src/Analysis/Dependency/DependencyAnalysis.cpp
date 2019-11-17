@@ -25,8 +25,8 @@ void DependencyAnalysis::Build(const HorseIR::Function *function)
 
 bool DependencyAnalysis::VisitIn(const HorseIR::Function *function)
 {
-	auto functionOverlay = new FunctionDependencyOverlay(function, m_graph);
-	m_graphOverlay = new DependencyOverlay(m_graph, functionOverlay);
+	m_functionOverlay = new FunctionDependencyOverlay(function, m_graph);
+	m_graphOverlay = new DependencyOverlay(m_graph, m_functionOverlay);
 	return true;
 }
 

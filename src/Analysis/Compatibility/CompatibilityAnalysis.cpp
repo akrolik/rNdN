@@ -11,7 +11,7 @@
 
 namespace Analysis {
 
-void CompatibilityAnalysis::Analyze(const DependencyOverlay *overlay)
+void CompatibilityAnalysis::Analyze(const FunctionDependencyOverlay *overlay)
 {
 	auto timeCompatibility_start = Utils::Chrono::Start();
 	overlay->Accept(*this);
@@ -313,11 +313,11 @@ void CompatibilityAnalysis::Visit(const FunctionDependencyOverlay *overlay)
 
 	// Construct a function overlay and propagate the resulting geometry
 
-	auto functionOverlay = new FunctionDependencyOverlay(overlay->GetNode(), overlay->GetGraph());
-	functionOverlay->SetChildren({bodyOverlay});
-	m_currentOverlays.push_back(functionOverlay);
+	m_functionOverlay = new FunctionDependencyOverlay(overlay->GetNode(), overlay->GetGraph());
+	m_functionOverlay->SetChildren({bodyOverlay});
+	m_currentOverlays.push_back(m_functionOverlay);
 
-	m_overlayGeometries[functionOverlay] = m_overlayGeometries.at(bodyOverlay);
+	m_overlayGeometries[m_functionOverlay] = m_overlayGeometries.at(bodyOverlay);
 }
 
 void CompatibilityAnalysis::Visit(const IfDependencyOverlay *overlay)

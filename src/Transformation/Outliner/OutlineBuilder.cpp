@@ -8,7 +8,7 @@
 
 namespace Transformation {
 
-void OutlineBuilder::Build(const Analysis::DependencyOverlay *overlay)
+void OutlineBuilder::Build(const Analysis::FunctionDependencyOverlay *overlay)
 {
 	auto timeBuilder_start = Utils::Chrono::Start();
 	overlay->Accept(*this);

@@ -16,7 +16,7 @@ class OutlineBuilder : public Analysis::DependencyOverlayConstVisitor, public Ho
 public:
 	// Transformation input and output
 
-	void Build(const Analysis::DependencyOverlay *overlay);
+	void Build(const Analysis::FunctionDependencyOverlay *overlay);
 
 	const std::vector<HorseIR::Function *>& GetFunctions() const { return m_functions; }
 

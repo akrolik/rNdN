@@ -20,7 +20,7 @@ public:
 	void Build(const HorseIR::Function *function);
 
 	const DependencyGraph *GetGraph() const { return m_graph; }
-	DependencyOverlay *GetOverlay() const { return m_graphOverlay; }
+	FunctionDependencyOverlay *GetOverlay() const { return m_functionOverlay; }
 
 	// Function
 
@@ -63,6 +63,7 @@ private:
 
 	DependencyGraph *m_graph = new DependencyGraph();
 	DependencyOverlay *m_graphOverlay = nullptr;
+	FunctionDependencyOverlay *m_functionOverlay = nullptr;
 
 	GPUAnalysisHelper m_gpuHelper;
 	bool m_isTarget = false;

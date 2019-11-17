@@ -20,9 +20,9 @@ public:
 
 	// Analysis input/output
 
-	void Analyze(const DependencyOverlay *overlay);
+	void Analyze(const FunctionDependencyOverlay *overlay);
 
-	DependencyOverlay *GetOverlay() const { return m_currentOverlays.at(0); }
+	FunctionDependencyOverlay *GetOverlay() const { return m_functionOverlay; }
 
 	// Overlay visitors
 
@@ -46,6 +46,7 @@ private:
 
 	// Utilities for handling overlay construction
 
+	FunctionDependencyOverlay *m_functionOverlay = nullptr;
 	std::vector<DependencyOverlay *> m_currentOverlays;
 	std::unordered_map<DependencySubgraphNode, DependencyOverlay *> m_kernelMap;
 	std::unordered_map<const DependencyOverlay *, DependencyOverlay *> m_overlayMap;
