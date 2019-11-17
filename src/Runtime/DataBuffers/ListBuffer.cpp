@@ -49,7 +49,7 @@ ListBuffer::~ListBuffer()
 	delete m_type;
 	delete m_shape;
 	
-	//TODO: Free GPU buffer
+	delete m_gpuBuffer;
 }
 
 std::string ListBuffer::Description() const
