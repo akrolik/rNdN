@@ -84,6 +84,22 @@ public:
 	}
 
 private:
+	unsigned int GetLinearInDegree(const N& node) const override
+	{
+		auto edges = 0u;
+		for (const auto& predecessor : this->GetPredecessors(node))
+		{
+			// Exclude back edges for linear orderings
+
+			if (IsBackEdge(predecessor, node))
+			{
+				continue;
+			}
+			edges++;
+		}
+		return edges;
+	}
+
 	unsigned int GetLinearOutDegree(const N& node) const override
 	{
 		auto edges = 0u;

@@ -40,6 +40,7 @@ private:
 	static const HorseIR::Type *GetType(const HorseIR::SymbolTable::Symbol *symbol);
 	void BuildDeclarations();
 	void InsertStatement(HorseIR::Statement *statement);
+	void InsertDeclaration(HorseIR::DeclarationStatement *declaration);
 
 	unsigned int m_kernelIndex = 1;
 	const HorseIR::Function *m_currentFunction = nullptr;

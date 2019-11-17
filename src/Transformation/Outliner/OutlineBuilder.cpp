@@ -42,8 +42,13 @@ void OutlineBuilder::Visit(const HorseIR::AssignStatement *assignS)
 
 void OutlineBuilder::InsertStatement(HorseIR::Statement *statement)
 {
+	m_statements.top().push_back(statement);
+}
+
+void OutlineBuilder::InsertDeclaration(HorseIR::DeclarationStatement *declaration)
+{
 	auto& statements = m_statements.top();
-	statements.insert(std::begin(statements), statement);
+	statements.insert(std::begin(statements), declaration);
 }
 
 const HorseIR::Type *OutlineBuilder::GetType(const HorseIR::SymbolTable::Symbol *symbol)
@@ -63,7 +68,7 @@ void OutlineBuilder::BuildDeclarations()
 	for (const auto& symbol : m_symbols.top())
 	{
 		auto type = GetType(symbol);
-		InsertStatement(new HorseIR::DeclarationStatement(
+		InsertDeclaration(new HorseIR::DeclarationStatement(
 			new HorseIR::VariableDeclaration(symbol->name, type->Clone())
 		));
 	}

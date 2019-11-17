@@ -223,7 +223,7 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 	auto newOverlay = new DependencyOverlay(graph);
 
 	const auto subgraph = overlay->GetSubgraph();
-	subgraph->TopologicalOrdering([&](const DependencySubgraphNode& node)
+	subgraph->ReverseTopologicalOrdering([&](const DependencySubgraphNode& node)
 	{
 		std::visit(overloaded
 		{

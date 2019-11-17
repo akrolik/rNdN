@@ -66,6 +66,47 @@ public:
 
 		for (const auto& node : GetNodes())
 		{
+			auto count = GetLinearInDegree(node);
+			if (count == 0)
+			{
+				queue.push(node);
+			}
+			edges.insert({node, count});
+		}
+
+		// Perform the topological sort
+
+		while (!queue.empty())
+		{
+			const auto node = queue.front();
+			queue.pop();
+
+			// Apply the given function
+
+			function(node);
+
+			// Process all predecessors of the node
+
+			ProcessSuccessors(context, node);
+		}
+	}
+
+	template <typename F> 
+	void ReverseTopologicalOrdering(F function) const
+	{
+		// Construct the topological sorting structure
+		//     Queue: store the current nodes 0 out-degree
+		//     Edges: count the out-degree of each node
+
+		std::queue<T> queue;
+		std::unordered_map<T, unsigned int> edges;
+
+		OrderingContext context(queue, edges);
+
+		// Initialization with root nodes and count for incoming edges of each node
+
+		for (const auto& node : GetNodes())
+		{
 			auto count = GetLinearOutDegree(node);
 			if (count == 0)
 			{
@@ -92,9 +133,32 @@ public:
 	}
 
 protected:
+	virtual unsigned int GetLinearInDegree(const T& node) const
+	{
+		return GetInDegree(node);
+	}
+
 	virtual unsigned int GetLinearOutDegree(const T& node) const
 	{
 		return GetOutDegree(node);
+	}
+
+	void ProcessSuccessors(OrderingContext& context, const T& node) const
+	{
+		auto& queue = context.queue;
+		auto& edges = context.edges;
+
+		// Decrease the degree of all successors, adding them to the queue
+		// if they are at the front of the ordering
+
+		for (const auto& successor : GetSuccessors(node))
+		{
+			edges.at(successor)--;
+			if (edges.at(successor) == 0)
+			{
+				queue.push(successor);
+			}
+		}
 	}
 
 	void ProcessPredecessors(OrderingContext& context, const T& node) const
