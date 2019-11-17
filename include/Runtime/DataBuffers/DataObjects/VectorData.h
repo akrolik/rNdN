@@ -30,7 +30,7 @@ template<typename T>
 class TypedVectorData : public VectorData
 {
 public:
-	TypedVectorData(const HorseIR::BasicType *elementType, const CUDA::Vector<T>& data) : m_type(elementType), m_data(data) {}
+	TypedVectorData(const HorseIR::BasicType *elementType, CUDA::Vector<T>&& data) : m_type(elementType), m_data(std::move(data)) {}
 	TypedVectorData(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType)
 	{
 		m_data.resize(size);

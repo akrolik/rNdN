@@ -29,25 +29,25 @@ void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer
 	
 	for (auto i = 0u; i < size; ++i)
 	{
-		zeros.at(i) = 0;
-		ones.at(i) = 1;
-		asc.at(i) = i;
-		desc.at(i) = size - i - 1;
+		zeros[i] = 0;
+		ones[i] = 1;
+		asc[i] = i;
+		desc[i] = size - i - 1;
 
-		fkey.at(i) = i;
-		indexes.at(i) = (i / 2) * 2;
+		fkey[i] = i;
+		indexes[i] = (i / 2) * 2;
 	}
 
 	auto name = HorseIR::PrettyPrinter::PrettyString(type);
-	columns.push_back({"zeros_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, zeros))});
-	columns.push_back({"ones_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, ones))});
-	columns.push_back({"asc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, asc))});
-	columns.push_back({"desc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, desc))});
+	columns.push_back({"zeros_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, std::move(zeros)))});
+	columns.push_back({"ones_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, std::move(ones)))});
+	columns.push_back({"asc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, std::move(asc)))});
+	columns.push_back({"desc_" + name, new TypedVectorBuffer(new TypedVectorData<T>(type, std::move(desc)))});
 
-	auto foreignBuffer = new TypedVectorBuffer(new TypedVectorData<T>(type, fkey));
+	auto foreignBuffer = new TypedVectorBuffer(new TypedVectorData<T>(type, std::move(fkey)));
 	columns.push_back({"fkey_" + name, foreignBuffer});
 	columns.push_back({"enum_" + name, new EnumerationBuffer(
-		foreignBuffer, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), indexes))
+		foreignBuffer, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(indexes)))
 	)});
 }
 
@@ -60,12 +60,12 @@ void DataRegistry::LoadStringDebugData(std::vector<std::pair<std::string, Column
 	{
 		auto numberString = std::to_string(i);
 		auto paddedString = std::string(5 - numberString.length(), '0') + numberString;
-		strings.at(i) = "String#" + paddedString;
-		symbols.at(i) = "Symbol#" + paddedString;
+		strings[i] = "String#" + paddedString;
+		symbols[i] = "Symbol#" + paddedString;
 	}
 
-	columns.push_back({"strings", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), strings))});
-	columns.push_back({"symbols", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), symbols))});
+	columns.push_back({"strings", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(strings)))});
+	columns.push_back({"symbols", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(symbols)))});
 }
 
 void DataRegistry::LoadDebugData()
@@ -169,24 +169,24 @@ void DataRegistry::LoadTPCHLineItemTable()
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
 	columns.push_back({"l_orderkey", new EnumerationBuffer(
-		orderForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), orderKey))
+		orderForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(orderKey)))
 	)});
-	columns.push_back({"l_partkey", new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), partKey))});
+	columns.push_back({"l_partkey", new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(partKey)))});
 
-	columns.push_back({"l_quantity", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), quantity))});
-	columns.push_back({"l_extendedprice", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), extPrice))});
-	columns.push_back({"l_discount", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), discount))});
-	columns.push_back({"l_tax", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), tax))});
+	columns.push_back({"l_quantity", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(quantity)))});
+	columns.push_back({"l_extendedprice", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(extPrice)))});
+	columns.push_back({"l_discount", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(discount)))});
+	columns.push_back({"l_tax", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(tax)))});
 
-	columns.push_back({"l_returnflag", new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), returnFlag))});
-	columns.push_back({"l_linestatus", new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), lineStatus))});
+	columns.push_back({"l_returnflag", new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), std::move(returnFlag)))});
+	columns.push_back({"l_linestatus", new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Char), std::move(lineStatus)))});
 
-	columns.push_back({"l_shipdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), shipDate))});
-	columns.push_back({"l_commitdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), commitDate))});
-	columns.push_back({"l_receiptdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), receiptDate))});
+	columns.push_back({"l_shipdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(shipDate)))});
+	columns.push_back({"l_commitdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(commitDate)))});
+	columns.push_back({"l_receiptdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(receiptDate)))});
 	
-	columns.push_back({"l_shipinstruct", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), shipInstruct))});
-	columns.push_back({"l_shipmode", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), shipMode))});
+	columns.push_back({"l_shipinstruct", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipInstruct)))});
+	columns.push_back({"l_shipmode", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipMode)))});
 
 	AddTable("lineitem", new TableBuffer(columns));
 }
@@ -222,12 +222,12 @@ void DataRegistry::LoadTPCHPartTable()
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), partKey));
+	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(partKey)));
 	columns.push_back({"p_partkey", primaryKey});
-	columns.push_back({"p_brand", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), brand))});
-	columns.push_back({"p_type", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), type))});
-	columns.push_back({"p_size", new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), size))});
-	columns.push_back({"p_container", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), container))});
+	columns.push_back({"p_brand", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(brand)))});
+	columns.push_back({"p_type", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(type)))});
+	columns.push_back({"p_size", new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(size)))});
+	columns.push_back({"p_container", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(container)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
@@ -265,10 +265,10 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
 	columns.push_back({"ps_partkey", new EnumerationBuffer(
-		partForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), partKey))
+		partForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(partKey)))
 	)});
 	columns.push_back({"ps_suppkey", new EnumerationBuffer(
-		supplierForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), supplierKey))
+		supplierForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(supplierKey)))
 	)});
 	
 	AddTable("partsupp", new TableBuffer(columns));
@@ -307,13 +307,13 @@ void DataRegistry::LoadTPCHOrderTable()
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), orderKey));
+	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(orderKey)));
 	columns.push_back({"o_orderkey", primaryKey});
 	columns.push_back({"o_custkey", new EnumerationBuffer(
-		customerForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), customerKey))
+		customerForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(customerKey)))
 	)});
-	columns.push_back({"o_orderdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), orderDate))});
-	columns.push_back({"o_orderpriority", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), orderPriority))});
+	columns.push_back({"o_orderdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(orderDate)))});
+	columns.push_back({"o_orderpriority", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(orderPriority)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
@@ -345,9 +345,9 @@ void DataRegistry::LoadTPCHSupplierTable()
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), supplierKey));
+	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(supplierKey)));
 	columns.push_back({"s_suppkey", primaryKey});
-	columns.push_back({"s_comment", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), comment))});
+	columns.push_back({"s_comment", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(comment)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
@@ -381,10 +381,10 @@ void DataRegistry::LoadTPCHCustomerTable()
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), custKey));
+	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(custKey)));
 	columns.push_back({"c_custkey", primaryKey});
-	columns.push_back({"c_phone", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), phone))});
-	columns.push_back({"c_acctbal", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), accountBalance))});
+	columns.push_back({"c_phone", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(phone)))});
+	columns.push_back({"c_acctbal", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(accountBalance)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);

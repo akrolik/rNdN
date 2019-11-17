@@ -260,35 +260,35 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 	if constexpr(std::is_same<T, HorseIR::SymbolValue *>::value)
 	{
 		CUDA::Vector<std::string> vector;
-		for (const auto symbol : literal->GetValues())
+		for (const auto& symbol : literal->GetValues())
 		{
 			vector.push_back(symbol->GetName());
 		}
-		m_environment.Insert(literal, new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(basicType, vector)));
+		m_environment.Insert(literal, new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(basicType, std::move(vector))));
 	}	
 	else if constexpr(std::is_convertible<T, HorseIR::CalendarValue *>::value)
 	{
 		CUDA::Vector<std::int32_t> vector;
-		for (const auto value : literal->GetValues())
+		for (const auto& value : literal->GetValues())
 		{
 			vector.push_back(value->GetEpochTime());
 		}
-		m_environment.Insert(literal, new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(basicType, vector)));
+		m_environment.Insert(literal, new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(basicType, std::move(vector))));
 	}	
 	else if constexpr(std::is_convertible<T, HorseIR::ExtendedCalendarValue *>::value)
 	{
 		CUDA::Vector<double> vector;
-		for (const auto value : literal->GetValues())
+		for (const auto& value : literal->GetValues())
 		{
 			vector.push_back(value->GetExtendedEpochTime());
 		}
-		m_environment.Insert(literal, new TypedVectorBuffer<double>(new TypedVectorData<double>(basicType, vector)));
+		m_environment.Insert(literal, new TypedVectorBuffer<double>(new TypedVectorData<double>(basicType, std::move(vector))));
 	}	
 	else
 	{
-		auto values = literal->GetValues();
+		auto& values = literal->GetValues();
 		CUDA::Vector<T> vector(std::begin(values), std::end(values));
-		m_environment.Insert(literal, new TypedVectorBuffer<T>(new TypedVectorData<T>(basicType, vector)));
+		m_environment.Insert(literal, new TypedVectorBuffer<T>(new TypedVectorData<T>(basicType, std::move(vector))));
 	}
 }
 

@@ -236,7 +236,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
-			auto stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			auto& stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
 			auto patternData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer();
 
 			if (patternData->GetElementCount() != 1)
@@ -297,11 +297,11 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				likeData.at(i) = regex.match(stringData.at(i));
 			}
 
-			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), likeData))};
+			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), std::move(likeData)))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			auto stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			auto& stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
 			auto rangeVector = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(1));
 
 			if (rangeVector->GetElementCount() != 2)
@@ -354,10 +354,10 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				substringData.at(i) = stringData.at(i).substr(position - 1, length);
+				substringData[i] = std::move(stringData[i].substr(position - 1, length));
 			}
 
-			return {new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), substringData))};
+			return {new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(substringData)))};
 		}
 		default:
 		{
