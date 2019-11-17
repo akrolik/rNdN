@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "CUDA/Device.h"
@@ -14,7 +15,7 @@ public:
 	void *GetBinary() const { return m_binary; }
 	size_t GetBinarySize() const { return m_binarySize; }
 
-	void GenerateBinary(const Device& device);
+	void GenerateBinary(const std::unique_ptr<Device>& device);
 
 private:
 	const std::string m_name;

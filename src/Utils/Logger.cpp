@@ -33,7 +33,7 @@ void Logger::LogInfo(const std::string& info, unsigned int indentation, bool new
 	}
 	if (indentation)
 	{
-		_prefix += std::string(indentation, ' ') + "- ";
+		_prefix += std::string(indentation * 2, ' ') + "- ";
 	}
 	std::cout << _prefix << ReplaceString(info, "\n", "\n" + _prefix);
 	if (newline)
@@ -58,14 +58,41 @@ void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 	std::cerr << _prefix << ReplaceString(error, "\n", "\n" + _prefix) << std::endl;
 }
 
-void Logger::LogTiming(const std::string& name, long time)
+long Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
 {
-	std::cout << "[TIME] " << name << ": " << time << " us" << std::endl;
-}
+	auto name = timing->GetName();
+	auto time = timing->GetTime();
+	
+	std::string _prefix = "[TIME] ";
+	if (indentation > 0)
+	{
+		_prefix += std::string(indentation * 2, ' ');
+	}
 
-void Logger::LogTimingComponent(const std::string& name, long time)
-{
-	std::cout << "[TIME]  - " << name << ": " << time << " us" << std::endl;
+	if (timing->HasChildren())
+	{
+		std::cout << _prefix << name << std::endl;
+
+		auto childTime = 0l;
+		auto overhead = 0l;
+
+		for (auto child : timing->GetChildren())
+		{
+			childTime += child->GetTime();
+			overhead += LogTiming(child, indentation + 1);
+		}
+
+		auto directOverhead = (time - childTime);
+		overhead += directOverhead;
+
+		std::cout << _prefix << name << ": " << time << " us [direct/total overhead: " << directOverhead << "/" << overhead << " us]" << std::endl;
+		return overhead;
+	}
+	else
+	{
+		std::cout << _prefix << name << ": " << time << " us" << std::endl;
+		return 0;
+	}
 }
 
 void Logger::LogBlank(const std::string& prefix)

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace CUDA {
@@ -20,11 +21,13 @@ std::string ReplaceString(std::string subject, const std::string& search, const 
 	return subject;
 }
 
-void ExternalModule::GenerateBinary(const Device& device)
+void ExternalModule::GenerateBinary(const std::unique_ptr<Device>& device)
 {
+	auto timeGenerate_start = Utils::Chrono::Start("Generate external binary '" + m_name + "'");
+
 	std::string command = "ptxas";
 
-	command += " --gpu-name " + device.GetComputeCapability();
+	command += " --gpu-name " + device->GetComputeCapability();
 	command += " --compile-only";
 	command += " --output-file " + m_name + ".cubin";
 	command += " --input-as-string \"" + ReplaceString(m_code, "\"", "\\\"") + "\"";
@@ -54,6 +57,8 @@ void ExternalModule::GenerateBinary(const Device& device)
 	m_binary = ::operator new(size);
 	std::memcpy(m_binary, buffer.data(), size);
 	m_binarySize = size;
+
+	Utils::Chrono::End(timeGenerate_start);
 }
 
 }

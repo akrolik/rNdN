@@ -11,9 +11,9 @@ namespace Analysis {
 
 void KernelAnalysis::Analyze(const HorseIR::Function *function)
 {
-	auto timeKernel_start = Utils::Chrono::Start();
+	auto timeKernel_start = Utils::Chrono::Start("Kernel analysis '" + function->GetName() + "'");
 	function->Accept(*this);
-	auto timeKernel = Utils::Chrono::End(timeKernel_start);
+	Utils::Chrono::End(timeKernel_start);
 
 	if (m_operatingGeometry == nullptr)
 	{
@@ -22,10 +22,9 @@ void KernelAnalysis::Analyze(const HorseIR::Function *function)
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
 	{
-		auto string = "Kernel geometry: " + ShapeUtils::ShapeString(m_operatingGeometry);
+		auto string = "Kernel geometry '" + function->GetName() + "': " + ShapeUtils::ShapeString(m_operatingGeometry);
 		Utils::Logger::LogInfo(string);
 	}
-	Utils::Logger::LogTiming("Kernel analysis", timeKernel);
 }
 
 bool KernelAnalysis::VisitIn(const HorseIR::Statement *statement)

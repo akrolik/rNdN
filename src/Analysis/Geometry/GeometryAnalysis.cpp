@@ -13,18 +13,17 @@ namespace Analysis {
 
 void GeometryAnalysis::Analyze(const HorseIR::Function *function)
 {
-	auto timeGeometry_start = Utils::Chrono::Start();
+	auto timeGeometry_start = Utils::Chrono::Start("Geometry analysis '" + function->GetName() + "'");
 	function->Accept(*this);
-	auto timeGeometry = Utils::Chrono::End(timeGeometry_start);
+	Utils::Chrono::End(timeGeometry_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
 	{
-		Utils::Logger::LogInfo("Geometry analysis");
+		Utils::Logger::LogInfo("Geometry analysis '" + function->GetName() + "'");
 
 		auto string = HorseIR::StatementAnalysisPrinter::PrettyString(*this, function);
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);
 	}
-	Utils::Logger::LogTiming("Geomery analysis", timeGeometry);
 }
 
 bool GeometryAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)

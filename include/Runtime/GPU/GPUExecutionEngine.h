@@ -3,10 +3,7 @@
 #include <vector>
 #include <utility>
 
-#include "Analysis/Shape/ShapeAnalysis.h"
-
 #include "Codegen/InputOptions.h"
-#include "Codegen/TargetOptions.h"
 
 #include "CUDA/Buffer.h"
 #include "CUDA/KernelInvocation.h"
@@ -25,11 +22,10 @@ class GPUExecutionEngine
 public:
 	GPUExecutionEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const Analysis::ShapeAnalysis& shapeAnalysis, const std::vector<DataBuffer *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 
 private:
-	Codegen::InputOptions GetInputOptions(const HorseIR::Function *function, const Analysis::ShapeAnalysis& shapeAnalysis) const;
-	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions& runtimeOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const;
+	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions &runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
 
 	std::vector<std::uint32_t> GetCellSizes(const Analysis::ListShape *shape) const;
 

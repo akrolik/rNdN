@@ -10,10 +10,9 @@ namespace Transformation {
 
 void OutlineBuilder::Build(const Analysis::FunctionDependencyOverlay *overlay)
 {
-	auto timeBuilder_start = Utils::Chrono::Start();
+	auto timeBuilder_start = Utils::Chrono::Start("Outline builder '" + std::string(overlay->GetName()) + "'");
 	overlay->Accept(*this);
-	auto timeBuilder = Utils::Chrono::End(timeBuilder_start);
-	Utils::Logger::LogTiming("Builder", timeBuilder);
+	Utils::Chrono::End(timeBuilder_start);
 }
 
 void OutlineBuilder::Visit(const HorseIR::Statement *statement)

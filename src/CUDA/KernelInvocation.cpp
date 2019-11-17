@@ -3,6 +3,7 @@
 #include "CUDA/Chrono.h"
 #include "CUDA/Utils.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace CUDA {
@@ -29,16 +30,16 @@ void KernelInvocation::Launch()
 	Utils::Logger::LogInfo(" - Block: " + std::to_string(m_blockX) + " x " + std::to_string(m_blockY) + " x " + std::to_string(m_blockZ)); 
 	Utils::Logger::LogInfo(" - Dynamic shared memory: " + std::to_string(m_dynamicSharedMemorySize) + " bytes");
 
-	auto start = Chrono::Start();
+	auto timeExecution_start = Chrono::Start();
 	checkDriverResult(cuLaunchKernel(
 				m_kernel.GetKernel(),
 				m_gridX, m_gridY, m_gridZ,
 				m_blockX, m_blockY, m_blockZ,
 				m_dynamicSharedMemorySize, 0, (void **)m_parameters.data(), 0
 	));
-	auto timeExecution = Chrono::End(start);
+	auto timeExecution = Chrono::End(timeExecution_start);
 
-	Utils::Logger::LogTiming("CUDA kernel '" + m_kernel.GetName() + "' execution", timeExecution);
+	Utils::Chrono::AddPointTiming("CUDA kernel '" + m_kernel.GetName() + "' execution", timeExecution);
 }
 
 }

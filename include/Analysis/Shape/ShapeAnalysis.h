@@ -104,7 +104,7 @@ public:
 
 	// Interprocedural
 
-	const ShapeAnalysis *GetAnalysis(const HorseIR::Function *function) const { return m_interproceduralMap.at(function); }
+	const ShapeAnalysis& GetAnalysis(const HorseIR::Function *function) const { return *m_interproceduralMap.at(function); }
 	const DataObjectAnalysis& GetDataAnalysis() const { return m_dataAnalysis; }
 
 private:

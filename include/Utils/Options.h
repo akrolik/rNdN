@@ -19,6 +19,8 @@ public:
 	static constexpr char const *Opt_Print_json = "print-json";
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
 
+	static constexpr char const *Opt_File = "file";
+
 	Options(Options const&) = delete;
 	void operator=(Options const&) = delete;
 
@@ -65,6 +67,11 @@ private:
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")
 		;
+		m_options.add_options("Query")
+			(Opt_File, "Query HorseIR file", cxxopts::value<std::string>())
+		;
+		m_options.parse_positional(Opt_File);
+		m_options.positional_help("filename");
 	}
 
 	static Options& GetInstance()

@@ -4,6 +4,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
+#include "Codegen/Generators/AddressGenerator.h"
 #include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/Data/ParameterGenerator.h"
@@ -83,7 +84,10 @@ public:
 		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryDataSize));
 
 		auto geometryDataSizeParameter = parameterGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::GeometryDataSize);
-		parameterLoadGenerator.template GenerateVector<PTX::UInt32Type>(geometryDataSizeParameter);
+
+		AddressGenerator<B> addressGenerator(this->m_builder);
+		addressGenerator.template LoadParameterAddress<PTX::UInt32Type>(geometryDataSizeParameter);
+
 		valueLoadGenerator.template GeneratePointer<PTX::UInt32Type>(geometryDataSizeParameter, cellIndex);
 
 		// Initialize the special local index register

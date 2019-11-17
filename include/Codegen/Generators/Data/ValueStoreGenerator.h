@@ -382,6 +382,7 @@ public:
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
+		//TODO: We need to better link the dynamic output size and prefix sum
 		if (auto predicate = resources->template GetCompressedRegister<T>(value))
 		{
 			AddressGenerator<B> addressGenerator(this->m_builder);
@@ -389,6 +390,7 @@ public:
 			// Before generating compressed output, see if the write is indexed - if so, no compressed necessary
 
 			auto writeIndex = resources->template GetIndexedRegister<T>(value);
+
 			if (writeIndex == nullptr)
 			{
 				// Generate the in-order global prefix sum! Convert the predicate to integer values for the sum

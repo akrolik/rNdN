@@ -4,11 +4,15 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Utils/Chrono.h"
+
 namespace Analysis {
 
 void DependencySubgraphAnalysis::Analyze(DependencyOverlay *overlay)
 {
+	auto timeDependencies_start = Utils::Chrono::Start("Dependency subgraph analysis '" + std::string(overlay->GetName()) + "'");
 	overlay->Accept(*this);
+	Utils::Chrono::End(timeDependencies_start);
 }
 
 const DependencyOverlay *DependencySubgraphAnalysis::GetScopedOverlay(const DependencyOverlay *containerOverlay, const HorseIR::Statement *statement) const

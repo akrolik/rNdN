@@ -188,14 +188,14 @@ public:
 	{
 		// Clear sets and traverse the function, timing results
 
-		auto timeStart = Utils::Chrono::Start();
+		auto timeStart = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
 
 		this->m_currentInSet.clear();
 		this->m_currentOutSet.clear();
 
 		TraverseFunction(function, initialFlow);
 
-		auto time = Utils::Chrono::End(timeStart);
+		Utils::Chrono::End(timeStart);
 
 		// Print results if needed
 
@@ -203,7 +203,6 @@ public:
 		{
 			PrintResults(function);
 		}
-		Utils::Logger::LogTiming(Name() + " " + function->GetName(), time);
 	}
 
 	void PrintResults(const Function *function)

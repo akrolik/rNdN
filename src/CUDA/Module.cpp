@@ -4,6 +4,7 @@
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 #include <cstring>
 #include <functional>
@@ -24,7 +25,7 @@ void Module::Compile()
 {
 	// Initialize the JIT options for the compile
 
-	auto timeCreate_start = Utils::Chrono::Start();
+	auto timeCreate_start = Utils::Chrono::Start("Create");
 
 	CUjit_option optionKeys[6];
 	void *optionVals[6];
@@ -58,12 +59,12 @@ void Module::Compile()
 	CUlinkState linkerState;
 	checkDriverResult(cuLinkCreate(optionCount, optionKeys, optionVals, &linkerState));
 
-	auto timeCreate = Utils::Chrono::End(timeCreate_start);
+	Utils::Chrono::End(timeCreate_start);
 
 	// Add the PTX source code to the linker for compilation. Note that this will invoke the compile
 	// despite the name only pertaining to the linker
 
-	auto timeCompile_start = Utils::Chrono::Start();
+	auto timeAssemble_start = Utils::Chrono::Start("Assemble");
 
 	for (const auto& code : m_code)
 	{
@@ -76,11 +77,11 @@ void Module::Compile()
 		}
 	}
 
-	auto timeCompile = Utils::Chrono::End(timeCompile_start);
+	Utils::Chrono::End(timeAssemble_start);
 
 	// Add the external libraries to the linker (if any)
 
-	auto timeLibraries_start = Utils::Chrono::Start();
+	auto timeLibraries_start = Utils::Chrono::Start("Libraries");
 
 	for (const auto& module : m_linkedModules)
 	{
@@ -93,12 +94,12 @@ void Module::Compile()
 		}
 	}
 
-	auto timeLibraries = Utils::Chrono::End(timeLibraries_start);
+	Utils::Chrono::End(timeLibraries_start);
 
 	// Create the binary for the module, containing all code from the kernels as well as the
 	// exrenral libraries
 
-	auto timeLink_start = Utils::Chrono::Start();
+	auto timeLink_start = Utils::Chrono::Start("Link");
 
 	void *binary = nullptr;
 	size_t binarySize = 0;
@@ -108,27 +109,23 @@ void Module::Compile()
 	m_binarySize = binarySize;
 	std::memcpy(m_binary, binary, binarySize);
 
-	auto timeLink = Utils::Chrono::End(timeLink_start);
+	Utils::Chrono::End(timeLink_start);
 
 	// Load the binary into the module and cleanup the linker session
 
-	auto timeLoad_start = Utils::Chrono::Start();
+	auto timeLoad_start = Utils::Chrono::Start("Load");
 
 	checkDriverResult(cuModuleLoadData(&m_module, m_binary));
 	checkDriverResult(cuLinkDestroy(linkerState));
 
-	auto timeLoad = Utils::Chrono::End(timeLoad_start);
+	Utils::Chrono::End(timeLoad_start);
 
 	// Log compilation info to stdout
 
-	Utils::Logger::LogTiming("PTX compiled", timeCreate + timeCompile + timeLibraries + timeLink + timeLoad);
-	Utils::Logger::LogTimingComponent("Create", timeCreate);
-	Utils::Logger::LogTimingComponent("Assemble", timeCompile);
-	Utils::Logger::LogTimingComponent("Libraries", timeLibraries);
-	Utils::Logger::LogTimingComponent("Link", timeLink);
-	Utils::Logger::LogTimingComponent("Load", timeLoad);
-
-	Utils::Logger::LogInfo(l_infoLog);
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
+	{
+		Utils::Logger::LogInfo(l_infoLog);
+	}
 }
 
 }

@@ -1,116 +1,38 @@
-#include "Runtime/GPUExecutionEngine.h"
-
-#include <cmath>
+#include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "CUDA/Buffer.h"
 #include "CUDA/Kernel.h"
 #include "CUDA/KernelInvocation.h"
-#include "CUDA/Module.h"
-
-#include "PTX/Program.h"
 
 #include "Analysis/DataObject/DataObjectAnalysis.h"
 #include "Analysis/DataObject/DataCopyAnalysis.h"
-#include "Analysis/Geometry/GeometryAnalysis.h"
-#include "Analysis/Geometry/KernelAnalysis.h"
+#include "Analysis/Geometry/KernelOptionsAnalysis.h"
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeAnalysis.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
-#include "Runtime/JITCompiler.h"
 #include "Runtime/RuntimeUtils.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 
 #include "Utils/Logger.h"
-#include "Utils/Math.h"
-#include "Utils/Options.h"
 
 namespace Runtime {
 
-std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *function, const Analysis::ShapeAnalysis& shapeAnalysis, const std::vector<DataBuffer *>& arguments)
+std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
-	// Compile the HorseIR to PTX code using the current device
+	// Get the input options used for codegen
+	
+	const auto program = m_runtime.GetGPUManager().GetProgram();
 
-	auto& gpu = m_runtime.GetGPUManager();
-	auto& device = gpu.GetCurrentDevice();
+	const auto kernelName = function->GetName();
+	const auto& kernelOptions = program->GetKernelOptions(kernelName);
 
-	Codegen::TargetOptions targetOptions;
-	targetOptions.ComputeCapability = device->GetComputeCapability();
-	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
-	targetOptions.WarpSize = device->GetWarpSize();
-
-	const auto inputOptions = GetInputOptions(function, shapeAnalysis);
-
-	// Initialize the geometry information for code generation
-
-	JITCompiler compiler(targetOptions);
-	const auto ptxProgram = compiler.Compile({function}, {&inputOptions});
-
-	// Create and load the CUDA module for the program
-
-	auto cModule = gpu.AssembleProgram(ptxProgram);
-
-	// Compute the number of input arguments: function arguments + return arguments + [dynamic size arguments]
-
-	unsigned int kernelArgumentCount = function->GetParameterCount() + function->GetReturnCount();
-
-	// Dynamically sized kernel input parameter (we use this to select the correct load at runtime)
-
-	for (const auto& parameter : inputOptions.ParameterShapes)
-	{
-		if (RuntimeUtils::IsDynamicDataShape(parameter.second, inputOptions.ThreadGeometry, false))
-		{
-			kernelArgumentCount++;
-		}
-	}
-
-	// Dynamically sized kernel output parameters (we use this to indicate size of output buffers)
-
-	for (const auto& shape : inputOptions.ReturnShapes)
-	{
-		// Any return argument that is not determined by the geometry or statically specified
-		// needs a kernel argument for outputting the real size
-
-		if (RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, true))
-		{
-			kernelArgumentCount++;
-		}
-	}
-
-	// Dynamically specify the thread geometry (vector: length; list: cells + cell lengths)
-
-	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
-	{
-		// [vector size]
-
-		if (Analysis::ShapeUtils::IsDynamicSize(vectorGeometry->GetSize()))
-		{
-			kernelArgumentCount++;
-		}
-	}
-	else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
-	{
-		// [Cell threads] + list size + cell sizes
-
-		if (inputOptions.ListCellThreads == Codegen::InputOptions::DynamicSize)
-		{
-			kernelArgumentCount++;
-		}
-		kernelArgumentCount += 2;
-	}
-
-	// Fetch the handle to the GPU entry function
-
-	CUDA::Kernel kernel(function->GetName(), kernelArgumentCount, cModule);
-	const auto& kernelOptions = ptxProgram->GetEntryFunction(function->GetName())->GetOptions();
-
-	Utils::Logger::LogInfo("Generated program for function '" + function->GetName() + "' with options");
-	Utils::Logger::LogInfo(kernelOptions.ToString(), 1);
+	const auto inputOptions = kernelOptions.GetCodegenOptions();
 
 	// Collect runtime shape information for determining exact thread geometry and return shapes
 
-	Analysis::DataObjectAnalysis runtimeDataAnalysis(m_program);
-	Analysis::ShapeAnalysis runtimeShapeAnalysis(runtimeDataAnalysis, m_program, true);
+	Analysis::DataObjectAnalysis dataAnalysis(m_program);
+	Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_program, true);
 
 	Analysis::DataObjectAnalysis::Properties inputObjects;
 	Analysis::ShapeAnalysis::Properties inputShapes;
@@ -119,13 +41,13 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		const auto parameter = function->GetParameter(i);
 		const auto symbol = parameter->GetSymbol();
 
-		const auto object = shapeAnalysis.GetDataAnalysis().GetParameterObject(parameter);
+		const auto object = inputOptions->ParameterObjects.at(parameter);
 		const auto runtimeObject = new Analysis::DataObject(object->GetObjectID(), arguments.at(i));
 		inputObjects[symbol] = runtimeObject;
 
 		// Setup compression constraints
 
-		const auto symbolShape = shapeAnalysis.GetParameterShape(parameter);
+		const auto symbolShape = inputOptions->ParameterShapes.at(parameter);
 		const auto runtimeShape = arguments.at(i)->GetShape();
 
 		if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(symbolShape))
@@ -133,7 +55,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			if (const auto vectorSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
 			{
 				const auto runtimeVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeShape);
-				runtimeShapeAnalysis.AddCompressionConstraint(vectorSize->GetPredicate(), runtimeVector->GetSize());
+				shapeAnalysis.AddCompressionConstraint(vectorSize->GetPredicate(), runtimeVector->GetSize());
 			}
 		}
 		inputShapes.first[symbol] = runtimeShape;
@@ -142,18 +64,61 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Determine the thread geometry for the kernel
 
-	runtimeDataAnalysis.Analyze(function, inputObjects);
-	runtimeShapeAnalysis.Analyze(function, inputShapes);
+	dataAnalysis.Analyze(function, inputObjects);
+	shapeAnalysis.Analyze(function, inputShapes);
 
-	auto runtimeOptions = GetInputOptions(function, runtimeShapeAnalysis);
+	Analysis::KernelOptionsAnalysis optionsAnalysis;
+	optionsAnalysis.Analyze(function, shapeAnalysis);
 
-	Utils::Logger::LogInfo("Runtime Options");
-	Utils::Logger::LogInfo(runtimeOptions.ToString(), 1);
+	auto runtimeOptions = optionsAnalysis.GetInputOptions();
+
+	// Compute the number of input arguments: (function arguments * 2) + return arguments + [return size arguments]
+
+	unsigned int kernelArgumentCount = (function->GetParameterCount() * 2) + function->GetReturnCount();
+
+	// Dynamically sized kernel output parameters (we use this to indicate size of output buffers)
+
+	for (const auto& shape : inputOptions->ReturnWriteShapes)
+	{
+		// Any return argument that is not determined by the geometry or statically specified
+		// needs a kernel argument for outputting the real size
+
+		if (RuntimeUtils::IsDynamicReturnShape(shape, inputOptions->ThreadGeometry))
+		{
+			kernelArgumentCount++;
+		}
+	}
+
+	// Dynamically specify the thread geometry (vector: length; list: cells + cell lengths)
+
+	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry))
+	{
+		// [vector size]
+
+		if (Analysis::ShapeUtils::IsDynamicSize(vectorGeometry->GetSize()))
+		{
+			kernelArgumentCount++;
+		}
+	}
+	else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions->ThreadGeometry))
+	{
+		// [Cell threads] + list size + cell sizes
+
+		if (inputOptions->ListCellThreads == Codegen::InputOptions::DynamicSize)
+		{
+			kernelArgumentCount++;
+		}
+		kernelArgumentCount += 2;
+	}
+
+	// Fetch the handle to the GPU entry function
+
+	auto kernel = program->GetKernel(kernelName, kernelArgumentCount);
 
 	// Determine any data copies that occur
 
-	Analysis::DataCopyAnalysis runtimeCopyAnalysis(runtimeDataAnalysis);
-	runtimeCopyAnalysis.Analyze(function);
+	Analysis::DataCopyAnalysis copyAnalysis(dataAnalysis);
+	copyAnalysis.Analyze(function);
 
 	// Execute the compiled kernel on the GPU
 	//   1. Create the invocation (thread sizes + arguments)
@@ -161,13 +126,11 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	//   3. Execute
 	//   4. Initialize return values
 
-	Utils::Logger::LogSection("Continuing program execution");
-
 	// Initialize kernel invocation and configure the runtime thread layout
 
 	CUDA::KernelInvocation invocation(kernel);
 
-	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, targetOptions, kernelOptions);
+	const auto [blockSize, blockCount] = GetBlockShape(*runtimeOptions, kernelOptions);
 	invocation.SetBlockShape(blockSize, 1, 1);
 	invocation.SetGridShape(blockCount, 1, 1);
 
@@ -186,14 +149,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		auto buffer = argument->GetGPUReadBuffer();
 		invocation.AddParameter(*buffer);
 
-		// Allocate a size parameter if neded
+		// Allocate a size parameter for all inputs
 
-		const auto inputShape = inputOptions.ParameterShapes.at(parameter);
-		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, false))
-		{
-			const auto runtimeShape = runtimeOptions.ParameterShapes.at(parameter);
-			inputSizeBuffers.push_back(AllocateSizeBuffer(invocation, runtimeShape, false));
-		}
+		const auto runtimeShape = runtimeOptions->ParameterShapes.at(parameter);
+		inputSizeBuffers.push_back(AllocateSizeBuffer(invocation, runtimeShape, false));
 	}
 
 	// Initialize the return buffers for the kernel
@@ -206,7 +165,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		// Create a new buffer for the return value
 
 		const auto type = function->GetReturnType(i);
-		const auto shape = runtimeOptions.ReturnShapes.at(i);
+		const auto shape = runtimeOptions->ReturnShapes.at(i);
 
 		auto returnBuffer = DataBuffer::CreateEmpty(type, shape);
 		returnBuffers.push_back(returnBuffer);
@@ -219,18 +178,18 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		// Allocate a size parameter if neded
 
-		const auto inputShape = inputOptions.ReturnShapes.at(i);
-		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
+		const auto inputShape = inputOptions->ReturnWriteShapes.at(i);
+		if (RuntimeUtils::IsDynamicReturnShape(inputShape, inputOptions->ThreadGeometry))
 		{
 			returnSizeBuffers.push_back(AllocateSizeBuffer(invocation, shape, true));
 		}
 
 		// Copy data if needed from input
 
-		const auto returnObject = runtimeDataAnalysis.GetReturnObject(i);
-		if (runtimeCopyAnalysis.ContainsDataCopy(returnObject))
+		const auto returnObject = dataAnalysis.GetReturnObject(i);
+		if (copyAnalysis.ContainsDataCopy(returnObject))
 		{
-			auto inputObject = runtimeCopyAnalysis.GetDataCopy(returnObject);
+			const auto inputObject = copyAnalysis.GetDataCopy(returnObject);
 			auto inputBuffer = inputObject->GetDataBuffer();
 
 			Utils::Logger::LogInfo("Initializing return data: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString());
@@ -241,9 +200,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Setup constant dynamic size parameters and allocate the dynamic shared memory according to the kernel
 
-	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeOptions.ThreadGeometry))
+	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeOptions->ThreadGeometry))
 	{
-		const auto inputGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry);
+		const auto inputGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry);
 		if (Analysis::ShapeUtils::IsDynamicSize(inputGeometry->GetSize()))
 		{
 			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
@@ -258,18 +217,18 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize());
 	}
-	else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(runtimeOptions.ThreadGeometry))
+	else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(runtimeOptions->ThreadGeometry))
 	{
 		// Add the dynamic thread count to the parameters if needed
 
-		if (inputOptions.ListCellThreads == Codegen::InputOptions::DynamicSize)
+		if (inputOptions->ListCellThreads == Codegen::InputOptions::DynamicSize)
 		{
-			AllocateConstantParameter(invocation, runtimeOptions.ListCellThreads, "<geometry cell threads>");
+			AllocateConstantParameter(invocation, runtimeOptions->ListCellThreads, "<geometry cell threads>");
 		}
 
 		// Allocate a buffer with the cell sizes for the execution geometry
 
-		const auto inputListShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry);
+		const auto inputListShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions->ThreadGeometry);
 		if (Analysis::ShapeUtils::IsDynamicSize(inputListShape->GetListSize()))
 		{
 			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
@@ -301,9 +260,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	{
 		// Check if the return buffer was a dynamic allocation
 
-		const auto inputShape = inputOptions.ReturnShapes.at(returnIndex);
 		auto returnBuffer = returnBuffers.at(returnIndex);
-		if (RuntimeUtils::IsDynamicDataShape(inputShape, inputOptions.ThreadGeometry, true))
+
+		const auto inputShape = inputOptions->ReturnShapes.at(returnIndex);
+		const auto inputWriteShape = inputOptions->ReturnWriteShapes.at(returnIndex);
+
+		if (RuntimeUtils::IsDynamicReturnShape(inputWriteShape, inputOptions->ThreadGeometry))
 		{
 			// Get the right buffer kind and resize
 
@@ -352,55 +314,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	return resizedBuffers;
 }
 
-Codegen::InputOptions GPUExecutionEngine::GetInputOptions(const HorseIR::Function *function, const Analysis::ShapeAnalysis& shapeAnalysis) const
-{
-	Analysis::GeometryAnalysis geometryAnalysis(shapeAnalysis);
-	geometryAnalysis.Analyze(function);
-
-	Analysis::KernelAnalysis kernelAnalysis(geometryAnalysis);
-	kernelAnalysis.Analyze(function);
-
-	// Initialize the geometry information for code generation
-
-	Codegen::InputOptions inputOptions;
-	inputOptions.ThreadGeometry = kernelAnalysis.GetOperatingGeometry();
-	//TODO: Determine order
-	inputOptions.InOrderBlocks = Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry);
-
-	const auto& dataAnalysis = shapeAnalysis.GetDataAnalysis();
-
-	for (const auto& parameter : function->GetParameters())
-	{
-		inputOptions.Parameters[parameter->GetSymbol()] = parameter;
-
-		inputOptions.ParameterShapes[parameter] = shapeAnalysis.GetParameterShape(parameter);
-		inputOptions.ParameterObjects[dataAnalysis.GetParameterObject(parameter)] = parameter;
-	}
-
-	// Use the write shapes as that's what's actually active!
-
-	inputOptions.ReturnShapes = shapeAnalysis.GetReturnShapes();
-	inputOptions.ReturnWriteShapes = shapeAnalysis.GetReturnWriteShapes();
-
-	// Specify the number of threads for each cell computation in list thread geometry
-
-	if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
-	{
-		if (Analysis::ShapeUtils::IsDynamicShape(listShape))
-		{
-			inputOptions.ListCellThreads = Codegen::InputOptions::DynamicSize;
-		}
-		else
-		{
-			const auto cellSizes = GetCellSizes(listShape);
-			const auto averageCellSize = std::accumulate(cellSizes.begin(), cellSizes.end(), 0) / cellSizes.size();
-			inputOptions.ListCellThreads = Utils::Math::Power2(averageCellSize);
-		}
-	}
-
-	return inputOptions;
-}
-
 std::vector<std::uint32_t> GPUExecutionEngine::GetCellSizes(const Analysis::ListShape *shape) const
 {
 	// Form a vector of cell sizes, for lists of constan-sized vectors
@@ -421,10 +334,15 @@ std::vector<std::uint32_t> GPUExecutionEngine::GetCellSizes(const Analysis::List
 	return cellSizes;
 }
 
-std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen::InputOptions& runtimeOptions, const Codegen::TargetOptions& targetOptions, const PTX::FunctionOptions& kernelOptions) const
+std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen::InputOptions& runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
 {
 	// Compute the block size and count based on the kernel, input and target configurations
 	// We assume that all sizes are known at this point
+
+	auto& gpu = m_runtime.GetGPUManager();
+	auto& device = gpu.GetCurrentDevice();
+
+	const auto maxBlockSize = device->GetMaxThreadsDimension(0);
 
 	const auto threadGeometry = runtimeOptions.ThreadGeometry;
 	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
@@ -438,13 +356,13 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 			{
 				// Fill the multiprocessors, but not more than the data size
 
-				if (size < targetOptions.MaxBlockSize)
+				if (size < maxBlockSize)
 				{
 					blockSize = size;
 				}
 				else
 				{
-					blockSize = targetOptions.MaxBlockSize;
+					blockSize = maxBlockSize;
 				}
 
 				if (kernelOptions.GetThreadMultiple() != 0)
@@ -491,7 +409,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 
 			// Compute the block size, capped by the total thread count if smaller
 
-			auto blockSize = targetOptions.MaxBlockSize;
+			auto blockSize = maxBlockSize;
 			if (blockSize > cellSize * cellCount)
 			{
 				blockSize = cellSize * cellCount;

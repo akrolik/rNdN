@@ -33,6 +33,10 @@ public:
 	{
 		return m_entryFunctions.at(name);
 	}
+	const std::unordered_map<std::string, const Function *>& GetEntryFunctions() const
+	{
+		return m_entryFunctions;
+	}
 
 	void AddDirective(const Directive *directive)
 	{

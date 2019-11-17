@@ -1,7 +1,5 @@
 #include "Runtime/Interpreter.h"
 
-#include "Analysis/DataObject/DataObjectAnalysis.h"
-
 #include "CUDA/Vector.h"
 
 #include "HorseIR/Semantics/SemanticAnalysis.h"
@@ -11,7 +9,7 @@
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
 #include "Runtime/BuiltinExecutionEngine.h"
-#include "Runtime/GPUExecutionEngine.h"
+#include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -20,34 +18,23 @@ namespace Runtime {
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Program *program)
 {
-	// Get the entry function
-
-	auto entry = HorseIR::SemanticAnalysis::GetEntry(program);
-
-	// Collect the shape data interprocedurally - this will allow execution with compressed shapes
-
-	Analysis::DataObjectAnalysis dataAnalysis(program);
-	dataAnalysis.Analyze(entry);
-
-	auto shapeAnalysis = new Analysis::ShapeAnalysis(dataAnalysis, program);
-	shapeAnalysis->Analyze(entry);
-	m_shapeAnalysis = shapeAnalysis;
-
 	// Execute!
 
+	auto entry = HorseIR::SemanticAnalysis::GetEntry(program);
 	return Execute(entry, {});
 }
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
 	Utils::Logger::LogInfo("Executing function '" + function->GetName() + "'");
+	Utils::ScopedChrono chrono("Function '" + function->GetName() + "'");
 
 	if (function->IsKernel())
 	{
 		// Pass function execution to the GPU engine
 
 		GPUExecutionEngine engine(m_runtime, m_program);
-		return engine.Execute(function, *m_shapeAnalysis, arguments);
+		return engine.Execute(function, arguments);
 	}
 	else
 	{
@@ -76,6 +63,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
+	Utils::ScopedChrono chrono("Builtin function '" + function->GetName() + "'");
 
 	BuiltinExecutionEngine engine(m_runtime);
 	return engine.Execute(function, arguments);
@@ -184,11 +172,17 @@ void Interpreter::Visit(const HorseIR::CastExpression *cast)
 	auto dataType = data->GetType();
 	auto castType = cast->GetCastType();
 
-	// Check the runtime casting success
-
-	if (!HorseIR::TypeUtils::IsCastable(castType, dataType))
+	if (*castType != *dataType)
 	{
-		Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(dataType) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
+		// Check the runtime casting success
+
+		if (!HorseIR::TypeUtils::IsCastable(castType, dataType))
+		{
+			Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(dataType) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
+		}
+
+		//TODO: Implement data casting
+		Utils::Logger::LogError("Dynamic casting unimplemented");
 	}
 
 	m_environment.Insert(cast, {data});
@@ -209,19 +203,12 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 
 	auto function = call->GetFunctionLiteral()->GetFunction();
 
-	auto start = Utils::Chrono::Start();
 	switch (function->GetKind())
 	{
 		case HorseIR::FunctionDeclaration::Kind::Definition:
 		{
 			auto functionDefinition = static_cast<const HorseIR::Function *>(function);
-
-			auto old_shapeAnalysis = m_shapeAnalysis;
-			m_shapeAnalysis = m_shapeAnalysis->GetAnalysis(functionDefinition);
-
 			m_environment.Insert(call, Execute(functionDefinition, argumentsData));
-
-			m_shapeAnalysis = old_shapeAnalysis;
 			break;
 		}
 		case HorseIR::FunctionDeclaration::Kind::Builtin:
@@ -234,8 +221,6 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 			Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
 		}
 	}
-	auto time = Utils::Chrono::End(start);
-	Utils::Logger::LogTiming("Function execution time '" + function->GetName() + "'", time);
 }
 
 void Interpreter::Visit(const HorseIR::Identifier *identifier)

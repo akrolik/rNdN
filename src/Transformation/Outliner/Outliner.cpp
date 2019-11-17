@@ -8,8 +8,11 @@
 #include "Analysis/Geometry/GeometryAnalysis.h"
 #include "Analysis/Shape/ShapeAnalysis.h"
 
+#include "HorseIR/Semantics/SemanticAnalysis.h"
+
 #include "Transformation/Outliner/OutlineBuilder.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
 
@@ -17,7 +20,7 @@ namespace Transformation {
 
 void Outliner::Outline(const HorseIR::Program *program)
 {
-	Utils::Logger::LogSection("Outlining program");
+	auto timeOutliner_start = Utils::Chrono::Start("Outliner");
 
 	m_currentProgram = program;
 	m_outlinedProgram = nullptr;
@@ -30,6 +33,12 @@ void Outliner::Outline(const HorseIR::Program *program)
 		auto outlinedString = HorseIR::PrettyPrinter::PrettyString(m_outlinedProgram);
 		Utils::Logger::LogInfo(outlinedString, 0, true, Utils::Logger::NoPrefix);
 	}
+
+	// Re-run the semantic analysis to build the AST symbol table links
+	
+	HorseIR::SemanticAnalysis::Analyze(m_outlinedProgram);
+
+	Utils::Chrono::End(timeOutliner_start);
 }
 
 bool Outliner::VisitIn(const HorseIR::Program *program)
@@ -85,6 +94,8 @@ bool Outliner::VisitIn(const HorseIR::Function *function)
 
 	// Dependency analysis (access and builder)
 
+	auto timeOutline_start = Utils::Chrono::Start("Outline function '" + function->GetName() + "'");
+
 	Analysis::DependencyAccessAnalysis accessAnalysis(m_currentProgram);
 	accessAnalysis.Analyze(function);
 
@@ -122,6 +133,8 @@ bool Outliner::VisitIn(const HorseIR::Function *function)
 
 	auto outlinedFunctions = builder.GetFunctions();
 	m_outlinedContents.insert(std::end(m_outlinedContents), std::begin(outlinedFunctions), std::end(outlinedFunctions));
+
+	Utils::Chrono::End(timeOutline_start);
 
 	return false;
 }

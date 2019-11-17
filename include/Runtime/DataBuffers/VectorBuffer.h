@@ -175,7 +175,7 @@ private:
 
 					// Marshal data
 
-					auto timeMarshalling_start = Utils::Chrono::Start();
+					auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
 
 					auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
 					for (auto i = 0u; i < m_elementCount; ++i)
@@ -183,8 +183,7 @@ private:
 						m_cpuBuffer->SetValue(i, StringBucket::RecoverString(hashedData[i]));
 					}
 
-					auto timeMarshalling = Utils::Chrono::End(timeMarshalling_start);
-					Utils::Logger::LogTiming("Data marshalling (string)", timeMarshalling);
+					Utils::Chrono::End(timeMarshalling_start);
 				}
 				else
 				{
@@ -216,7 +215,7 @@ private:
 
 					// Marshal data
 
-					auto timeMarshalling_start = Utils::Chrono::Start();
+					auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
 
 					auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
 					for (auto i = 0u; i < m_elementCount; ++i)
@@ -224,8 +223,7 @@ private:
 						hashedData[i] = StringBucket::HashString(m_cpuBuffer->GetValue(i));
 					}
 
-					auto timeMarshalling = Utils::Chrono::End(timeMarshalling_start);
-					Utils::Logger::LogTiming("Data marshalling (string)", timeMarshalling);
+					Utils::Chrono::End(timeMarshalling_start);
 
 					m_gpuBuffer->TransferToGPU();
 				}

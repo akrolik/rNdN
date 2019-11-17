@@ -24,7 +24,10 @@ struct InputOptions
 
 	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::Parameter *> Parameters;
 	std::unordered_map<const HorseIR::Parameter *, const Analysis::Shape *> ParameterShapes;
-	std::unordered_map<const Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjects;
+	std::unordered_map<const HorseIR::Parameter *, const Analysis::DataObject *> ParameterObjects;
+
+	std::unordered_map<const Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjectMap;
+
 
 	std::vector<const Analysis::Shape *> ReturnShapes;
 	std::vector<const Analysis::Shape *> ReturnWriteShapes;
@@ -59,7 +62,7 @@ struct InputOptions
 		if (ParameterObjects.size() > 0)
 		{
 			bool first = true;
-			for (const auto& [object, parameter] : ParameterObjects)
+			for (const auto& [parameter, object] : ParameterObjects)
 			{
 				if (!first)
 				{

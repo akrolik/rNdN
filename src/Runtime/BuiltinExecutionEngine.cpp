@@ -9,13 +9,14 @@
 
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ColumnBuffer.h"
+#include "Runtime/DataBuffers/DictionaryBuffer.h"
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
 #include "Runtime/DataBuffers/ListBuffer.h"
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
-#include "Runtime/GPULibrary/GPUSortEngine.h"
-#include "Runtime/GPULibrary/GPUGroupEngine.h"
+// #include "Runtime/GPU/Library/GPUSortEngine.h"
+// #include "Runtime/GPU/Library/GPUGroupEngine.h"
 
 #include "Utils/Logger.h"
 
@@ -29,6 +30,8 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 	switch (function->GetPrimitive())
 	{
+		//TODO: Order/Group updates
+		/*
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
@@ -52,7 +55,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			// Get a CPU vector or the orders
 
-			auto orders = BufferUtils::GetVectorBuffer<std::int8_t>(arguments.at(1))->GetCPUReadBuffer()->GetValues();
+			auto& orders = BufferUtils::GetVectorBuffer<std::int8_t>(arguments.at(1))->GetCPUReadBuffer()->GetValues();
 			if (orders.size() != sortBuffers.size())
 			{
 				Error("expects equal number of columns as direction specifiers [" + std::to_string(sortBuffers.size()) + " != " + std::to_string(orders.size()) + "]");
@@ -116,7 +119,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 					return false;
 				});
 
-				auto indexData = new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), indexes);
+				auto indexData = new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(indexes));
 				return {new TypedVectorBuffer<std::uint64_t>(indexData)};
 			}
 			else
@@ -162,6 +165,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			GPUGroupEngine groupEngine(m_runtime);
 			return {groupEngine.Group(columns)};
 		}
+		*/
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
 			return {new ListBuffer(arguments)};

@@ -14,6 +14,8 @@
 
 #include "Runtime/RuntimeUtils.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 template<PTX::Bits B>
@@ -35,7 +37,7 @@ public:
 		auto returnIndex = 0;
 		for (const auto& returnType : function->GetReturnTypes())
 		{
-			auto shape = inputOptions.ReturnShapes.at(returnIndex);
+			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
 			auto name = NameUtils::ReturnName(returnIndex);
 			DispatchType(*this, returnType, name, shape, true);
 
@@ -44,7 +46,7 @@ public:
 	}
 
 	template<class T>
-	void Generate(const std::string& name, const Analysis::Shape *shape, bool returnParameter)
+	void Generate(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -61,20 +63,20 @@ public:
 
 				auto parameter = GeneratePointer<T>(name);
 
-				// Determine if we need a size parameter for the argument
-
-				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, returnParameter))
+				if (returnParameter)
 				{
-					if (returnParameter)
-					{
-						// Return dynamic shapes use pointer types for accumulating size
+					// Return dynamic shapes use pointer types for accumulating size
 
+					if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+					{
 						GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 					}
-					else
-					{
-						GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(parameter));
-					}
+				}
+				else
+				{
+					// Input parameters always have a size argument
+
+					GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}
 			}
 			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
@@ -83,9 +85,9 @@ public:
 
 				auto parameter = GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
 
-				// Determine if we need a size parameter for the argument. List sizes are always stored in global space
+				// Dynamic returns as well as all input parameters require a size argument
 
-				if (Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, returnParameter))
+				if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
 				{
 					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}

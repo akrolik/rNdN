@@ -4,23 +4,25 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
+
 namespace Analysis {
 
 void DependencyAnalysis::Build(const HorseIR::Function *function)
 {
-	auto timeDependencies_start = Utils::Chrono::Start();
+	auto timeDependencies_start = Utils::Chrono::Start("Dependency graph analysis '" + function->GetName() + "'");
 	function->Accept(*this);
-	auto timeDependencies = Utils::Chrono::End(timeDependencies_start);
+	Utils::Chrono::End(timeDependencies_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_outline_graph))
 	{
-		Utils::Logger::LogInfo("Dependency graph analysis");
+		Utils::Logger::LogInfo("Dependency graph analysis '" + function->GetName() + "'");
 
 		auto dependencyString = Analysis::DependencyOverlayPrinter::PrettyString(m_graphOverlay);
 		Utils::Logger::LogInfo(dependencyString, 0, true, Utils::Logger::NoPrefix);
 	}
-
-	Utils::Logger::LogTiming("Dependency graph analysis", timeDependencies);
 }
 
 bool DependencyAnalysis::VisitIn(const HorseIR::Function *function)

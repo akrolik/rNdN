@@ -17,11 +17,11 @@ namespace HorseIR {
 
 void SemanticAnalysis::Analyze(Program *program)
 {
+	auto timeSemantics_start = Utils::Chrono::Start("Semantic analysis");
+
 	// Check the semantic validity of the program
 
-	Utils::Logger::LogSection("Analyzing input program");
-
-	auto timeSymbols_start = Utils::Chrono::Start();
+	auto timeSymbols_start = Utils::Chrono::Start("Symbol table");
 
 	// Connect the builtin module to the program
 
@@ -32,7 +32,7 @@ void SemanticAnalysis::Analyze(Program *program)
 	SymbolTableBuilder symbolTable;
 	symbolTable.Build(program);
 
-	auto timeSymbols = Utils::Chrono::End(timeSymbols_start);
+	Utils::Chrono::End(timeSymbols_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_symbol))
 	{
@@ -44,47 +44,42 @@ void SemanticAnalysis::Analyze(Program *program)
 		Utils::Logger::LogInfo(tableString, 0, true, Utils::Logger::NoPrefix);
 	}
 
-	Utils::Logger::LogTiming("Symbol table", timeSymbols);
-
 	// Run the type checker
 
-	auto timeTypes_start = Utils::Chrono::Start();
+	auto timeTypes_start = Utils::Chrono::Start("Typechecker");
 
 	TypeChecker typeChecker;
 	typeChecker.Analyze(program);
 
-	auto timeTypes = Utils::Chrono::End(timeTypes_start);
-	Utils::Logger::LogTiming("Typechecker", timeTypes);
+	Utils::Chrono::End(timeTypes_start);
 
 	// Check all variables are definitely assigned
 
-	auto timeAssigned_start = Utils::Chrono::Start();
+	auto timeAssigned_start = Utils::Chrono::Start("Definitely assigned");
 
 	DefinitelyAssigned defAssigned;
 	defAssigned.Analyze(program);
 
-	auto timeAssigned = Utils::Chrono::End(timeAssigned_start);
-	Utils::Logger::LogTiming("Definitely asigned", timeAssigned);
+	Utils::Chrono::End(timeAssigned_start);
+	Utils::Chrono::End(timeSemantics_start);
 }
 
 const Function *SemanticAnalysis::GetEntry(const Program *program)
 {
 	// Find the entry point for the program
 
-	auto timeEntry_start = Utils::Chrono::Start();
+	auto timeEntry_start = Utils::Chrono::Start("Entry analysis");
 
 	EntryAnalysis entryAnalysis;
 	entryAnalysis.Analyze(program);
 	auto entry = entryAnalysis.GetEntry();
 
-	auto timeEntry = Utils::Chrono::End(timeEntry_start);
+	Utils::Chrono::End(timeEntry_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
 	{
 		Utils::Logger::LogInfo("Found entry point '" + entry->GetName() + "'");
 	}
-
-	Utils::Logger::LogTiming("Entry analysis", timeEntry);
 
 	return entry;
 }

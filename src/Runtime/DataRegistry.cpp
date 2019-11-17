@@ -11,6 +11,7 @@
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Date.h"
 #include "Utils/Logger.h"
 
@@ -72,6 +73,8 @@ void DataRegistry::LoadDebugData()
 {
 	Utils::Logger::LogSection("Loading debug data");
 
+	auto timeData_start = Utils::Chrono::Start("Load debug data");
+
 	for (unsigned long i = 32; i <= 2048; i <<= 1)
 	{
 		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
@@ -87,11 +90,15 @@ void DataRegistry::LoadDebugData()
 
 		AddTable("debug_" + std::to_string(i), new TableBuffer(columns));
 	}
+
+	Utils::Chrono::End(timeData_start);
 }
 
 void DataRegistry::LoadTPCHData()
 {
 	Utils::Logger::LogSection("Loading TPC-H data");
+
+	auto timeData_start = Utils::Chrono::Start("Load TPC-H data");
 
 	LoadTPCHSupplierTable();
 	LoadTPCHPartTable();
@@ -99,6 +106,8 @@ void DataRegistry::LoadTPCHData()
 	LoadTPCHCustomerTable();
 	LoadTPCHOrderTable();
 	LoadTPCHLineItemTable();
+
+	Utils::Chrono::End(timeData_start);
 }
 
 std::int32_t DataRegistry::EpochTime(char *date) const

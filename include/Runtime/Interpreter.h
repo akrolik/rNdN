@@ -74,7 +74,6 @@ private:
 	ExecutionEnvironment m_environment;
 
 	const HorseIR::Program *m_program = nullptr;
-	const Analysis::ShapeAnalysis *m_shapeAnalysis = nullptr;
 };
 
 }

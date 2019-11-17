@@ -8,17 +8,15 @@ namespace Analysis {
 
 void DataCopyAnalysis::Analyze(const HorseIR::Function *function)
 {
-	auto timeDataCopy_start = Utils::Chrono::Start();
+	auto timeDataCopy_start = Utils::Chrono::Start("Data copy analysis");
 	function->Accept(*this);
-	auto timeDataCopy = Utils::Chrono::End(timeDataCopy_start);
+	Utils::Chrono::End(timeDataCopy_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
 	{
 		Utils::Logger::LogInfo("Data copy analysis");
-
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
 	}
-	Utils::Logger::LogTiming("Data copy analysis", timeDataCopy);
 }
 
 bool DataCopyAnalysis::VisitIn(const HorseIR::AssignStatement *assignS)

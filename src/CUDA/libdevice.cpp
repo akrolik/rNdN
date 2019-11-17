@@ -20,7 +20,8 @@ namespace CUDA {
 
 std::string Generate(const std::string& compute)
 {
-	auto timeDummy_start = Utils::Chrono::Start();
+	auto timeLibrary_start = Utils::Chrono::Start("Generate external library 'libdevice'");
+	auto timeDummy_start = Utils::Chrono::Start("Dummy LLVM library");
 
 	// Initialize dummy LLVM program with definitions of all required math functions.
 	// This will allow us to extract only the needed functions without writing a
@@ -63,12 +64,12 @@ std::string Generate(const std::string& compute)
 	module->setTargetTriple(targetString);
 	module->setDataLayout(dataLayout);
 
-	auto timeDummy = Utils::Chrono::End(timeDummy_start);
+	Utils::Chrono::End(timeDummy_start);
 
 	// Load the libdevice math library from the default CUDA path and parse
 	// into an LLVM module
 
-	auto timeLib_start = Utils::Chrono::Start();
+	auto timeParse_start = Utils::Chrono::Start("Parse LLVM");
 
 	std::string libdevicePath = "/usr/local/cuda/nvvm/libdevice/libdevice.10.bc";
 
@@ -81,12 +82,12 @@ std::string Generate(const std::string& compute)
 	libModule->setTargetTriple(targetString);
 	libModule->setDataLayout(dataLayout);
 
-	auto timeLib = Utils::Chrono::End(timeLib_start);
+	Utils::Chrono::End(timeParse_start);
 
 	// Link the libdevice module into the dummy module, keeping only functions that
 	// are referenced in the dummy
 
-	auto timeLink_start = Utils::Chrono::Start();
+	auto timeLink_start = Utils::Chrono::Start("Link");
 
 	llvm::Linker linker(*module);
 	if (linker.linkInModule(std::move(libModule), llvm::Linker::Flags::LinkOnlyNeeded))
@@ -94,12 +95,11 @@ std::string Generate(const std::string& compute)
 		Utils::Logger::LogError("Error linking dummy and libdevice", "LLVM Error");
 	}
 
-	auto timeLink = Utils::Chrono::End(timeLink_start);
+	Utils::Chrono::End(timeLink_start);
 
 	// Initialize the LLVM NVPTX target for code generation
 
-	auto timeOptimize_start = Utils::Chrono::Start();
-
+	auto timeOptimize_start = Utils::Chrono::Start("Optimize"); 
 	LLVMInitializeNVPTXTarget();
 	LLVMInitializeNVPTXTargetInfo();
 	LLVMInitializeNVPTXTargetMC();
@@ -161,37 +161,33 @@ std::string Generate(const std::string& compute)
 	functionPasses.doFinalization();
 	modulePasses.run(*module);
 
-	auto timeOptimize = Utils::Chrono::End(timeOptimize_start);
+	Utils::Chrono::End(timeOptimize_start);
 
 	// Generate PTX code from the optimized LLVM module. We generate to a string
 	// instead of a file so it links with the next phase of the pipeline
 
-	auto timeCodegen_start = Utils::Chrono::Start();
+	auto timeCodegen_start = Utils::Chrono::Start("Codegen");
 
-	llvm::legacy::PassManager codegenPasses;
+	// Force flush on scope exit
+
 	std::string ptxCode;
-	llvm::raw_string_ostream stream(ptxCode);
-	llvm::buffer_ostream pstream(stream);
-	machine->addPassesToEmitFile(codegenPasses, pstream, llvm::TargetMachine::CGFT_AssemblyFile, true);
-	codegenPasses.run(*module);
+	{
+		llvm::legacy::PassManager codegenPasses;
+		llvm::raw_string_ostream stream(ptxCode);
+		llvm::buffer_ostream pstream(stream);
+		machine->addPassesToEmitFile(codegenPasses, pstream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
+		codegenPasses.run(*module);
+	}
 
-	auto timeCodegen = Utils::Chrono::End(timeCodegen_start);
-
-	// Output timing info for diagnostics
-
-	Utils::Logger::LogTiming("libdevice PTX generated", timeDummy + timeLib + timeLink + timeOptimize + timeCodegen);
-	Utils::Logger::LogTimingComponent("Dummy load", timeDummy);
-	Utils::Logger::LogTimingComponent("libdevice load", timeLib);
-	Utils::Logger::LogTimingComponent("Link", timeLink);
-	Utils::Logger::LogTimingComponent("Optimize", timeOptimize);
-	Utils::Logger::LogTimingComponent("Codegen", timeCodegen);
+	Utils::Chrono::End(timeCodegen_start);
+	Utils::Chrono::End(timeLibrary_start);
 
 	return ptxCode;
 }
 
-ExternalModule libdevice::CreateModule(const Device& device)
+ExternalModule libdevice::CreateModule(const std::unique_ptr<Device>& device)
 {
-	ExternalModule module("libdevice", Generate(device.GetComputeCapability()));
+	ExternalModule module("libdevice", Generate(device->GetComputeCapability()));
 	module.GenerateBinary(device);
 	return module;
 }

@@ -2,6 +2,8 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Utils/Logger.h"
+
 namespace Analysis {
 
 bool GPUAnalysisHelper::IsGPU(const HorseIR::Statement *statement)

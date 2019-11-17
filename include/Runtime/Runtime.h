@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Runtime/DataRegistry.h"
-#include "Runtime/GPUManager.h"
+#include "Runtime/GPU/GPUManager.h"
 
 namespace Runtime {
 
@@ -9,6 +9,7 @@ class Runtime
 {
 public:
 	void Initialize();
+	void LoadData();
 
 	GPUManager& GetGPUManager() { return m_gpu; }
 	DataRegistry& GetDataRegistry() { return m_dataRegistry; }

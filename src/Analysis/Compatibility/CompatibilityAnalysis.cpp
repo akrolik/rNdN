@@ -13,18 +13,17 @@ namespace Analysis {
 
 void CompatibilityAnalysis::Analyze(const FunctionDependencyOverlay *overlay)
 {
-	auto timeCompatibility_start = Utils::Chrono::Start();
+	auto timeCompatibility_start = Utils::Chrono::Start("Compatibility analysis '" + std::string(overlay->GetName()) + "'");
 	overlay->Accept(*this);
-	auto timeCompatibility = Utils::Chrono::End(timeCompatibility_start);
+	Utils::Chrono::End(timeCompatibility_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_outline_graph))
 	{
-		Utils::Logger::LogInfo("Compatibility graph");
+		Utils::Logger::LogInfo("Compatibility graph '" + std::string(overlay->GetName()) + "'");
 
-		auto compatibilityString = Analysis::DependencyOverlayPrinter::PrettyString(m_currentOverlays.at(0));
+		auto compatibilityString = Analysis::DependencyOverlayPrinter::PrettyString(m_functionOverlay);
 		Utils::Logger::LogInfo(compatibilityString, 0, true, Utils::Logger::NoPrefix);
 	}
-	Utils::Logger::LogTiming("Compatibility analysis", timeCompatibility);
 }
 
 DependencyOverlay *CompatibilityAnalysis::GetKernelOverlay(const DependencySubgraph *subgraph, const DependencySubgraphNode& node, DependencyOverlay *parentOverlay) const

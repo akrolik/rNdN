@@ -49,7 +49,7 @@ public:
 			auto name = NameUtils::ReturnName(returnIndex);
 			this->m_builder.AddStatement(new PTX::CommentStatement(name + ":" + HorseIR::PrettyPrinter::PrettyString(returnType, true)));
 
-			auto shape = inputOptions.ReturnShapes.at(returnIndex);
+			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
 			DispatchType(*this, returnType, name, shape, true);
 
 			returnIndex++;
@@ -68,18 +68,17 @@ public:
 		else
 		{
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			auto loadSize = Runtime::RuntimeUtils::IsDynamicDataShape(shape, inputOptions.ThreadGeometry, returnParameter);
-
 			auto kernelResources = this->m_builder.GetKernelResources();
+
 			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
 			{
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
-				GenerateVector<T>(parameter, loadSize, returnParameter);
+				GenerateVector<T>(parameter, shape, returnParameter);
 			}
 			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
 			{
 				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
-				GenerateList<T>(parameter, loadSize, returnParameter);
+				GenerateList<T>(parameter, shape, returnParameter);
 			}
 			else
 			{
@@ -89,7 +88,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, bool loadSize = false, bool returnParameter = false)
+	void GenerateVector(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const Analysis::Shape *shape, bool returnParameter = false)
 	{
 		// Get the variable from the kernel resources, and generate the address
 
@@ -98,32 +97,39 @@ public:
 
 		// Load the dynamic size parameter if needed
 
-		if (loadSize)
+		if (returnParameter)
 		{
-			auto kernelResources = this->m_builder.GetKernelResources();
-			auto sizeName = NameUtils::SizeName(parameter);
+			// Return dynamic shapes use pointer types for accumulating size
 
-			ValueLoadGenerator<B> loadGenerator(this->m_builder);
-			if (returnParameter)
+			auto& inputOptions = this->m_builder.GetInputOptions();
+			if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
 			{
-				// Return dynamic shapes use pointer types for accumulating size
+				auto kernelResources = this->m_builder.GetKernelResources();
 
+				auto sizeName = NameUtils::SizeName(parameter);
 				auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(sizeName);
 
 				AddressGenerator<B> addressGenerator(this->m_builder);
 				addressGenerator.template LoadParameterAddress<PTX::UInt32Type>(sizeParameter);
+
+				ValueLoadGenerator<B> loadGenerator(this->m_builder);
 				loadGenerator.template GeneratePointer<PTX::UInt32Type>(sizeParameter);
 			}
-			else
-			{
-				auto sizeParameter = kernelResources->template GetParameter<PTX::UInt32Type>(sizeName);
-				loadGenerator.template GenerateConstant<PTX::UInt32Type>(sizeParameter);
-			}
+		}
+		else
+		{
+			auto kernelResources = this->m_builder.GetKernelResources();
+
+			auto sizeName = NameUtils::SizeName(parameter);
+			auto sizeParameter = kernelResources->template GetParameter<PTX::UInt32Type>(sizeName);
+
+			ValueLoadGenerator<B> loadGenerator(this->m_builder);
+			loadGenerator.template GenerateConstant<PTX::UInt32Type>(sizeParameter);
 		}
 	}
 
 	template<class T>
-	void GenerateList(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, bool loadSize = false, bool returnParameter = false)
+	void GenerateList(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const Analysis::Shape *shape, bool returnParameter = false)
 	{
 		// Get the variable from the kernel resources, and generate the address. This will load the cell contents in addition to the list structure
 
@@ -135,7 +141,8 @@ public:
 
 		// Load the dynamic size parameter if needed
 
-		if (loadSize)
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
 		{
 			auto kernelResources = this->m_builder.GetKernelResources();
 			auto sizeName = NameUtils::SizeName(parameter);

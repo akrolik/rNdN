@@ -2,10 +2,9 @@
 
 #include "CUDA/Device.h"
 #include "CUDA/ExternalModule.h"
-#include "CUDA/Module.h"
 #include "CUDA/Platform.h"
 
-#include "PTX/Program.h"
+#include "Runtime/GPU/GPUProgram.h"
 
 namespace Runtime {
 
@@ -16,7 +15,10 @@ public:
 
 	std::unique_ptr<CUDA::Device>& GetCurrentDevice();
 
-	CUDA::Module AssembleProgram(const PTX::Program *program) const;
+	const std::vector<CUDA::ExternalModule>& GetExternalModules() const { return m_externalModules; }
+
+	void SetProgram(const GPUProgram *program) { m_program = program; }
+	const GPUProgram *GetProgram() const { return m_program; }
 
 private:
 	void InitializeCUDA();
@@ -24,6 +26,8 @@ private:
 
 	CUDA::Platform m_platform;
 	std::vector<CUDA::ExternalModule> m_externalModules;
+
+	const GPUProgram *m_program = nullptr;
 };
 
 }

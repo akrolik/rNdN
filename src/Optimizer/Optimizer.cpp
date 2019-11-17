@@ -4,19 +4,21 @@
 #include "Analysis/BasicFlow/LiveVariables.h"
 #include "Analysis/BasicFlow/UDDUChainsBuilder.h"
 
-#include "Utils/Logger.h"
+#include "Utils/Chrono.h"
 
 namespace Optimizer {
 
 void Optimizer::Optimize(HorseIR::Program *program)
 {
+	auto timeOptimizer_start = Utils::Chrono::Start("Optimizer");
 	m_program = program;
 	program->Accept(*this);
+	Utils::Chrono::End(timeOptimizer_start);
 }
 
 bool Optimizer::VisitIn(HorseIR::Function *function)
 {
-	Utils::Logger::LogSection("Optimizing function '" + function->GetName() + "'");
+	auto timeOptimizer_start = Utils::Chrono::Start("Optimizer '" + function->GetName() + "'");
 
 	// Reaching definitions
 
@@ -32,6 +34,8 @@ bool Optimizer::VisitIn(HorseIR::Function *function)
 
 	Analysis::LiveVariables liveVariables(m_program);
 	liveVariables.Analyze(function);
+
+	Utils::Chrono::End(timeOptimizer_start);
 
 	return false;
 }

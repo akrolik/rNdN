@@ -11,16 +11,15 @@ namespace Analysis {
 
 void UDDUChainsBuilder::Build(const HorseIR::Function *function)
 {
-	auto timeUDDU_start = Utils::Chrono::Start();
+	auto timeUDDU_start = Utils::Chrono::Start("UD/DU chains '" + function->GetName() + "'");
 	function->Accept(*this);
-	auto timeUDDU = Utils::Chrono::End(timeUDDU_start);
+	Utils::Chrono::End(timeUDDU_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
 	{
-		Utils::Logger::LogInfo("UD/DU chains");
+		Utils::Logger::LogInfo("UD/DU chains '" + function->GetName() + "'");
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
 	}
-	Utils::Logger::LogTiming("UD/DU chains", timeUDDU);
 }
 
 bool UDDUChainsBuilder::VisitIn(const HorseIR::Statement *statement)

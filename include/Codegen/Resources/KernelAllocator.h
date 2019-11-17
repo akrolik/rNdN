@@ -6,6 +6,8 @@
 
 #include "PTX/PTX.h"
 
+#include "Utils/Logger.h"
+
 namespace Codegen {
 
 class KernelAllocator : public ResourceAllocator<KernelResources>

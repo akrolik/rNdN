@@ -318,7 +318,7 @@ private:
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
 
-		auto parameter = inputOptions.ParameterObjects.at(size->GetPredicate());
+		auto parameter = inputOptions.ParameterObjectMap.at(size->GetPredicate());
 
 		auto name = NameUtils::VariableName(parameter);
 		auto sourceName = NameUtils::VariableName(parameter, LoadKindString(LoadKind::Vector));

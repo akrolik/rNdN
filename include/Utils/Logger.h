@@ -1,6 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <string>
+
+#include "Utils/Chrono.h"
 
 namespace Utils {
 
@@ -23,8 +26,7 @@ public:
 	[[noreturn]] static void LogError(const std::string& error, const std::string& prefix = ErrorPrefix);
 	static void LogErrorPart(const std::string& error = "", const std::string& prefix = ErrorPrefix);
 
-	static void LogTiming(const std::string& name, long time);
-	static void LogTimingComponent(const std::string& name, long time);
+	static long LogTiming(const Chrono::Timing *timing, unsigned int indentation = 0);
 
 private:
 	Logger() {}

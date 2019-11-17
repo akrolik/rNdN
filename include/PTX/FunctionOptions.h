@@ -6,6 +6,8 @@
 
 #include "Utils/Logger.h"
 
+namespace Codegen { class InputOptions; }
+
 namespace PTX {
 
 class Function;
@@ -77,6 +79,9 @@ public:
 	unsigned int GetDynamicSharedMemorySize() const { return m_dynamicSharedMemorySize; }
 	void SetDynamicSharedMemorySize(unsigned int bytes) { m_dynamicSharedMemorySize = bytes; }
 
+	void SetCodegenOptions(const Codegen::InputOptions *codegenOptions) { m_codegenOptions = codegenOptions; }
+	const Codegen::InputOptions *GetCodegenOptions() const { return m_codegenOptions; }
+
 	std::string ToString() const
 	{
 		std::string output;
@@ -101,6 +106,8 @@ private:
 	unsigned int m_blockSize = DynamicBlockSize;
 	unsigned int m_threadMultiple = 0;
 	unsigned int m_dynamicSharedMemorySize = 0;
+
+	const Codegen::InputOptions *m_codegenOptions = nullptr;
 };
 
 }

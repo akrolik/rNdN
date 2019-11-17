@@ -40,6 +40,12 @@ public:
 	{
 		m_currentProgram->AddModule(module);
 	}
+
+	void AddDirective(const PTX::Directive *directive)
+	{
+		m_currentModule->AddDirective(directive);
+	}
+
 	void SetCurrentModule(PTX::Module *module)
 	{
 		m_currentModule = module;
@@ -154,6 +160,8 @@ public:
 	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
 
 	const InputOptions& GetInputOptions() const { return *m_inputOptions.at(m_currentFunction); }
+	const InputOptions *GetInputOptions(const HorseIR::Function *function) const { return m_inputOptions.at(function); }
+
 	void SetInputOptions(const HorseIR::Function *function, const InputOptions *inputOptions)
 	{
 		m_inputOptions[function] = inputOptions;

@@ -26,7 +26,7 @@ public:
 		// A HorseIR program consists of a list of named modules. PTX on the other hand
 		// only has the concept of modules. We therefore create a simple container
 		// containing a list of generated modules. If there is any cross-module interaction,
-		// the calling code is responsible for linking.
+		// then the calling code is responsible for linking.
 
 		PTX::Program *ptxProgram = new PTX::Program();
 		m_builder.SetCurrentProgram(ptxProgram);
@@ -34,55 +34,22 @@ public:
 		return ptxProgram;
 	}
 
-	PTX::Program *Generate(const HorseIR::Module *module)
+	void SetInputOptions(const HorseIR::Function *function, const InputOptions *inputOptions)
 	{
-		// In a mixed execution HorseIR program, only some modules will be suitable
-		// for sending to the GPU. We provide this entry point to allow compilation
-		// of individual modules
-
-		PTX::Program *ptxProgram = new PTX::Program();
-		m_builder.SetCurrentProgram(ptxProgram);
-		module->Accept(*this);
-		return ptxProgram;
+		m_builder.SetInputOptions(function, inputOptions);
 	}
 
-	PTX::Program *Generate(const std::vector<const HorseIR::Function *>& functions, const std::vector<const InputOptions *>& inputOptions)
+	void Visit(const HorseIR::Program *program) override
 	{
-		// At the finest granularity, our codegen may compile a single function for the GPU.
-		// All child-functions are expected to be in the vector
-
-		PTX::Program *ptxProgram = new PTX::Program();
-		m_builder.SetCurrentProgram(ptxProgram);
-
-		// When compiling a list of functions we create a single container
-		// module for all
-
-		auto ptxModule = CreateModule();
-		m_builder.AddModule(ptxModule);
-		m_builder.SetCurrentModule(ptxModule);
-
-		// Generate the code for each function in the list. We assume this will produce
-		// a full working PTX program
-
-		auto functionIndex = 0u;
-		for (const auto& function : functions)
+		for (const auto& module : program->GetModules())
 		{
-			// Setup the file debug directive
-
-			auto file = new PTX::FileDirective(functionIndex + 1, function->GetName());
-			ptxModule->AddDirective(file);
-
-			m_builder.SetFile(function, file);
-			m_builder.SetInputOptions(function, inputOptions.at(functionIndex++));
-			function->Accept(*this);
+			module->Accept(*this);
 		}
+	}
 
-		// Finish generating the full module
-
-		m_builder.CloseModule();
-		m_builder.SetCurrentModule(nullptr);
-
-		return ptxProgram;
+	void Visit(const HorseIR::LibraryModule *module) override
+	{
+		// Ignore library modules
 	}
 
 	void Visit(const HorseIR::Module *module) override
@@ -154,8 +121,13 @@ public:
 		kernel->SetName(function->GetName());
 		kernel->SetEntry(true);
 		kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
+		kernel->GetOptions().SetCodegenOptions(m_builder.GetInputOptions(function));
 
 		// Update the state for this function
+
+		auto file = new PTX::FileDirective(m_functionIndex++, function->GetName());
+		m_builder.AddDirective(file);
+		m_builder.SetFile(function, file);
 
 		m_builder.AddKernel(kernel);
 		m_builder.SetCurrentKernel(kernel, function);
@@ -193,6 +165,7 @@ public:
 
 private:
 	Builder m_builder;
+	unsigned int m_functionIndex = 1u;
 };
 
 }
