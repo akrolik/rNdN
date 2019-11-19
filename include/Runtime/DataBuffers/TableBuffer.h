@@ -44,10 +44,29 @@ public:
 
 	// CPU/GPU management
 
-	CUDA::Buffer *GetGPUWriteBuffer() override { Utils::Logger::LogError("Unable to allocate table GPU buffer"); }
-	CUDA::Buffer *GetGPUReadBuffer() const override { Utils::Logger::LogError("Unable to allocate table GPU buffer"); }
+	void ValidateCPU(bool recursive = false) const override
+	{
+		DataBuffer::ValidateCPU(recursive);
+		if (recursive)
+		{
+			for (const auto& [_, buffer] : m_columns)
+			{
+				buffer->ValidateCPU(true);
+			}
+		}
+	}
 
-	size_t GetGPUBufferSize() const override { return 0; }
+	void ValidateGPU(bool recursive = false) const override
+	{
+		DataBuffer::ValidateGPU(recursive);
+		if (recursive)
+		{
+			for (const auto& [_, buffer] : m_columns)
+			{
+				buffer->ValidateGPU(true);
+			}
+		}
+	}
 
 	// Printers
 
@@ -55,6 +74,7 @@ public:
 	std::string DebugDump() const override;
 
 private:
+
 	const HorseIR::TableType *m_type = new HorseIR::TableType();
 	const Analysis::TableShape *m_shape = nullptr;
 

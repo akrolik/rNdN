@@ -38,6 +38,30 @@ public:
 
 	// CPU/GPU management
 
+	void ValidateCPU(bool recursive = false) const override
+	{
+		DataBuffer::ValidateCPU(recursive);
+		if (recursive)
+		{
+			for (const auto buffer : m_cells)
+			{
+				buffer->ValidateCPU(true);
+			}
+		}
+	}
+
+	void ValidateGPU(bool recursive = false) const override
+	{
+		DataBuffer::ValidateGPU(recursive);
+		if (recursive)
+		{
+			for (const auto buffer : m_cells)
+			{
+				buffer->ValidateGPU(true);
+			}
+		}
+	}
+
 	CUDA::Buffer *GetGPUWriteBuffer() override
 	{
 		ValidateGPU();
@@ -69,53 +93,42 @@ public:
 	std::string DebugDump() const override;
 
 private:
-	bool IsAllocatedOnCPU() const { return true; }
-	bool IsAllocatedOnGPU() const { return (m_gpuBuffer != nullptr); }
+	bool IsAllocatedOnCPU() const override { return true; }
+	bool IsAllocatedOnGPU() const override { return (m_gpuBuffer != nullptr); }
 
-	void AllocateCPUBuffer() const {} // Do nothing
-	void AllocateGPUBuffer() const
+	void AllocateCPUBuffer() const override {} // Do nothing
+	void AllocateGPUBuffer() const override
 	{
 		m_gpuBuffer = new CUDA::Buffer(sizeof(CUdeviceptr) * m_cells.size());
 		m_gpuBuffer->AllocateOnGPU();
 	}
 
-	void ValidateCPU() const { m_cpuConsistent = true; } // Always consistent
-	void ValidateGPU() const
+	void TransferToCPU() const override {} // Always consistent
+	void TransferToGPU() const override
 	{
-		if (!m_gpuConsistent)
+		auto cellCount = m_cells.size();
+		size_t bufferSize = cellCount * sizeof(CUdeviceptr);
+
+		void *devicePointers = malloc(bufferSize);
+		CUdeviceptr *data = reinterpret_cast<CUdeviceptr *>(devicePointers);
+
+		for (auto i = 0u; i < cellCount; ++i)
 		{
-			// Only allocate on GPU once - device pointers may never change
-
-			if (!IsAllocatedOnGPU())
+			auto buffer = m_cells.at(i);
+			if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer))
 			{
-				AllocateGPUBuffer();
-
-				auto cellCount = m_cells.size();
-				size_t bufferSize = cellCount * sizeof(CUdeviceptr);
-
-				void *devicePointers = malloc(bufferSize);
-				CUdeviceptr *data = reinterpret_cast<CUdeviceptr *>(devicePointers);
-
-				for (auto i = 0u; i < cellCount; ++i)
-				{
-					auto buffer = m_cells.at(i);
-					if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer))
-					{
-						data[i] = buffer->GetGPUReadBuffer()->GetGPUBuffer();
-					}
-					else
-					{
-						Utils::Logger::LogError("GPU list buffers may only have vector cells, received " + buffer->Description());
-					}
-				}
-
-				m_gpuBuffer->SetCPUBuffer(devicePointers);
-				m_gpuBuffer->TransferToGPU();
+				data[i] = buffer->GetGPUReadBuffer()->GetGPUBuffer();
 			}
-
-			m_gpuConsistent = true;
+			else
+			{
+				Utils::Logger::LogError("GPU list buffers may only have vector cells, received " + buffer->Description());
+			}
 		}
+
+		m_gpuBuffer->SetCPUBuffer(devicePointers);
+		m_gpuBuffer->TransferToGPU();
 	}
+
 	HorseIR::ListType *m_type = nullptr;
 	Analysis::ListShape *m_shape = nullptr;
 

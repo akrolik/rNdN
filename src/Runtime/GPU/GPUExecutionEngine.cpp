@@ -174,7 +174,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		// Transfer the write buffer to te GPU, we assume all returns write (or else...)
 
-		invocation.AddParameter(*returnBuffer->GetGPUWriteBuffer());
+		auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
+		gpuBuffer->Clear();
+		invocation.AddParameter(*gpuBuffer);
 
 		// Allocate a size parameter if neded
 

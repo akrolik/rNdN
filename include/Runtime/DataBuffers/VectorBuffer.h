@@ -75,6 +75,9 @@ public:
 		return m_cpuBuffer;
 	}
 
+	bool IsAllocatedOnCPU() const override { return (m_cpuBuffer != nullptr); }
+	bool IsAllocatedOnGPU() const override { return (m_gpuBuffer != nullptr); }
+
 	const TypedVectorData<T> *GetCPUReadBuffer() const override
 	{
 		ValidateCPU();
@@ -130,16 +133,14 @@ public:
 		return GetCPUReadBuffer()->DebugDump(index);
 	}
 
-private:
-	bool IsAllocatedOnCPU() const { return (m_cpuBuffer != nullptr); }
-	bool IsAllocatedOnGPU() const { return (m_gpuBuffer != nullptr); }
+protected:
 
-	void AllocateCPUBuffer() const
+	void AllocateCPUBuffer() const override
 	{
 		m_cpuBuffer = new TypedVectorData<T>(m_type, m_elementCount);
 	}
 
-	void AllocateGPUBuffer() const
+	void AllocateGPUBuffer() const override
 	{
 		if constexpr(std::is_same<T, std::string>::value)
 		{
@@ -152,92 +153,66 @@ private:
 		m_gpuBuffer->AllocateOnGPU();
 	}
 
-	void ValidateCPU() const
+	void TransferToCPU() const override
 	{
-		if (!m_cpuConsistent)
+		if constexpr(std::is_same<T, std::string>::value)
 		{
-			if (!IsAllocatedOnCPU())
+			// Setup CPU buffer if needed
+
+			if (!m_gpuBuffer->HasCPUBuffer())
 			{
-				AllocateCPUBuffer();
+				auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
+				m_gpuBuffer->SetCPUBuffer(hashedData);
 			}
-			if (IsAllocatedOnGPU())
+			m_gpuBuffer->TransferToCPU();
+
+			// Marshal data
+
+			auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
+
+			auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
+			for (auto i = 0u; i < m_elementCount; ++i)
 			{
-				if constexpr(std::is_same<T, std::string>::value)
-				{
-					// Setup CPU buffer if needed
-
-					if (!m_gpuBuffer->HasCPUBuffer())
-					{
-						auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
-						m_gpuBuffer->SetCPUBuffer(hashedData);
-					}
-					m_gpuBuffer->TransferToCPU();
-
-					// Marshal data
-
-					auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
-
-					auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
-					for (auto i = 0u; i < m_elementCount; ++i)
-					{
-						m_cpuBuffer->SetValue(i, StringBucket::RecoverString(hashedData[i]));
-					}
-
-					Utils::Chrono::End(timeMarshalling_start);
-				}
-				else
-				{
-					m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
-					m_gpuBuffer->TransferToCPU();
-				}
+				m_cpuBuffer->SetValue(i, StringBucket::RecoverString(hashedData[i]));
 			}
-			m_cpuConsistent = true;
+
+			Utils::Chrono::End(timeMarshalling_start);
+		}
+		else
+		{
+			m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
+			m_gpuBuffer->TransferToCPU();
 		}
 	}
 
-	void ValidateGPU() const
+	void TransferToGPU() const override
 	{
-		if (!m_gpuConsistent)
+		if constexpr(std::is_same<T, std::string>::value)
 		{
-			if (!IsAllocatedOnGPU())
+			if (!m_gpuBuffer->HasCPUBuffer())
 			{
-				AllocateGPUBuffer();
+				auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
+				m_gpuBuffer->SetCPUBuffer(hashedData);
 			}
-			if (IsAllocatedOnCPU())
+
+			// Marshal data
+
+			auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
+
+			auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
+			for (auto i = 0u; i < m_elementCount; ++i)
 			{
-				if constexpr(std::is_same<T, std::string>::value)
-				{
-					if (!m_gpuBuffer->HasCPUBuffer())
-					{
-						auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
-						m_gpuBuffer->SetCPUBuffer(hashedData);
-					}
-
-					// Marshal data
-
-					auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
-
-					auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
-					for (auto i = 0u; i < m_elementCount; ++i)
-					{
-						hashedData[i] = StringBucket::HashString(m_cpuBuffer->GetValue(i));
-					}
-
-					Utils::Chrono::End(timeMarshalling_start);
-
-					m_gpuBuffer->TransferToGPU();
-				}
-				else
-				{
-					m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
-					m_gpuBuffer->TransferToGPU();
-				}
+				hashedData[i] = StringBucket::HashString(m_cpuBuffer->GetValue(i));
 			}
-			else
-			{
-				m_gpuBuffer->Clear();
-			}
-			m_gpuConsistent = true;
+
+			Utils::Chrono::End(timeMarshalling_start);
+
+			m_gpuBuffer->TransferToGPU();
+		}
+		else
+		{
+			m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
+			m_gpuBuffer->TransferToGPU();
 		}
 	}
 

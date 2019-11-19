@@ -118,7 +118,10 @@ int main(int argc, const char *argv[])
 	Runtime::Interpreter interpreter(runtime);
 	auto results = interpreter.Execute(outlinedProgram);
 
-	//TODO: Include transfer cost for results in execution
+	for (const auto& result : results)
+	{
+		result->ValidateCPU(true);
+	}
 
 	Utils::Chrono::End(timeExecution_start);
 

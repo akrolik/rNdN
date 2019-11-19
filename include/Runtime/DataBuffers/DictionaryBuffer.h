@@ -31,10 +31,25 @@ public:
 
 	// CPU/GPU management
 
-	CUDA::Buffer *GetGPUWriteBuffer() override { Utils::Logger::LogError("Unable to allocate dictionary GPU buffer"); }
-	CUDA::Buffer *GetGPUReadBuffer() const override { Utils::Logger::LogError("Unable to allocate dictionary GPU buffer"); }
+	void ValidateCPU(bool recursive = false) const override
+	{
+		DataBuffer::ValidateCPU(recursive);
+		if (recursive)
+		{
+			m_keys->ValidateCPU(true);
+			m_values->ValidateCPU(true);
+		}
+	}
 
-	size_t GetGPUBufferSize() const override { return 0; }
+	void ValidateGPU(bool recursive = false) const override
+	{
+		DataBuffer::ValidateGPU(recursive);
+		if (recursive)
+		{
+			m_keys->ValidateGPU(true);
+			m_values->ValidateGPU(true);
+		}
+	}
 
 	// Printers
 

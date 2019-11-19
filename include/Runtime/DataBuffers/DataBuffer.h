@@ -23,6 +23,11 @@ public:
 		Table
 	};
 
+	[[noreturn]] void CPUOnlyBuffer() const
+	{
+		Utils::Logger::LogError(KindString(m_kind) + " is a CPU only buffer");
+	}
+
 	static std::string KindString(Kind kind)
 	{
 		switch (kind)
@@ -51,16 +56,42 @@ public:
 
 	// GPU/CPU management
 
-	// virtual DataObject *GetCPUWriteBuffer() = 0;
-	// virtual DataObject *GetCPUReadBuffer() = 0;
+	virtual void ValidateCPU(bool recursive = false) const
+	{
+		if (!m_cpuConsistent)
+		{
+			if (!IsAllocatedOnCPU())
+			{
+				AllocateCPUBuffer();
+			}
+			if (IsAllocatedOnGPU())
+			{
+				TransferToCPU();
+			}
+			m_cpuConsistent = true;
+		}
+	}
 
-	virtual CUDA::Buffer *GetGPUWriteBuffer() = 0;
-	virtual CUDA::Buffer *GetGPUReadBuffer() const = 0;
+	virtual void ValidateGPU(bool recursive = false) const
+	{
+		if (!m_gpuConsistent)
+		{
+			if (!IsAllocatedOnGPU())
+			{
+				AllocateGPUBuffer();
+			}
+			if (IsAllocatedOnCPU())
+			{
+				TransferToGPU();
+			}
+			m_gpuConsistent = true;
+		}
+	}
+	
+	virtual CUDA::Buffer *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
+	virtual CUDA::Buffer *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
 
-	virtual size_t GetGPUBufferSize() const = 0;
-
-	bool IsGPUConsistent() const { return m_gpuConsistent; }
-	bool IsCPUConsistent() const { return m_cpuConsistent; }
+	virtual size_t GetGPUBufferSize() const { CPUOnlyBuffer(); }
 
 	// Printers
 
@@ -70,6 +101,18 @@ public:
 protected:
 	DataBuffer(Kind kind) : m_kind(kind) {}
 	Kind m_kind;
+
+	bool IsCPUConsistent() const { return m_cpuConsistent; }
+	bool IsGPUConsistent() const { return m_gpuConsistent; }
+
+	virtual bool IsAllocatedOnCPU() const { return true; }
+	virtual bool IsAllocatedOnGPU() const { return false; }
+
+	virtual void TransferToCPU() const { CPUOnlyBuffer(); }
+	virtual void TransferToGPU() const { CPUOnlyBuffer(); }
+	
+	virtual void AllocateCPUBuffer() const { CPUOnlyBuffer(); }
+	virtual void AllocateGPUBuffer() const { CPUOnlyBuffer(); }
 
 	mutable bool m_gpuConsistent = false;
 	mutable bool m_cpuConsistent = false;
