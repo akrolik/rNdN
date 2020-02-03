@@ -5,6 +5,7 @@
 #include "HorseIR/Semantics/SemanticAnalysis.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
@@ -24,9 +25,28 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Program *program)
 	return Execute(entry, {});
 }
 
+std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataBuffer *>& arguments)
+{
+	switch (function->GetKind())
+	{
+		case HorseIR::FunctionDeclaration::Kind::Definition:
+		{
+			return Execute(static_cast<const HorseIR::Function *>(function), arguments);
+		}
+		case HorseIR::FunctionDeclaration::Kind::Builtin:
+		{
+			return Execute(static_cast<const HorseIR::BuiltinFunction *>(function), arguments);
+		}
+		default:
+		{
+			Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
+		}
+	}
+}
+
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
-	Utils::Logger::LogInfo("Executing function '" + function->GetName() + "'");
+	Utils::Logger::LogDebug("Executing function '" + function->GetName() + "'");
 	Utils::ScopedChrono chrono("Function '" + function->GetName() + "'");
 
 	if (function->IsKernel())
@@ -79,6 +99,16 @@ void Interpreter::Visit(const HorseIR::GlobalDeclaration *global)
 	Utils::Logger::LogError("Unimplemented");
 }
 
+void Interpreter::Visit(const HorseIR::Statement *statement)
+{
+	Utils::Logger::LogError("Statement kind unimplemented");
+}
+
+void Interpreter::Visit(const HorseIR::DeclarationStatement *declarationS)
+{
+	// Ignore
+}
+
 void Interpreter::Visit(const HorseIR::AssignStatement *assignS)
 {
 	// Evaluate the RHS of the assignment and update the context map
@@ -123,12 +153,12 @@ void Interpreter::Visit(const HorseIR::WhileStatement *whileS)
 
 void Interpreter::Visit(const HorseIR::RepeatStatement *repeatS)
 {
-	Utils::Logger::LogError("Unimpemented");
+	Utils::Logger::LogError("Repeat statement unimpemented");
 }
 
 void Interpreter::Visit(const HorseIR::BlockStatement *blockS)
 {
-	Utils::Logger::LogError("Unimpemented");
+	Utils::Logger::LogError("Block statement unimpemented");
 }
 
 void Interpreter::Visit(const HorseIR::ReturnStatement *returnS)
@@ -144,12 +174,17 @@ void Interpreter::Visit(const HorseIR::ReturnStatement *returnS)
 
 void Interpreter::Visit(const HorseIR::BreakStatement *breakS)
 {
-	Utils::Logger::LogError("Unimpemented");
+	Utils::Logger::LogError("Break statemenet unimpemented");
 }
 
 void Interpreter::Visit(const HorseIR::ContinueStatement *continueS)
 {
-	Utils::Logger::LogError("Unimpemented");
+	Utils::Logger::LogError("Continue statement unimpemented");
+}
+
+void Interpreter::Visit(const HorseIR::Expression *expression)
+{
+	Utils::Logger::LogError("Expression kind unimplemented");
 }
 
 void Interpreter::Visit(const HorseIR::CastExpression *cast)
@@ -202,25 +237,7 @@ void Interpreter::Visit(const HorseIR::CallExpression *call)
 	// Execute function and store result for the function invocation
 
 	auto function = call->GetFunctionLiteral()->GetFunction();
-
-	switch (function->GetKind())
-	{
-		case HorseIR::FunctionDeclaration::Kind::Definition:
-		{
-			auto functionDefinition = static_cast<const HorseIR::Function *>(function);
-			m_environment.Insert(call, Execute(functionDefinition, argumentsData));
-			break;
-		}
-		case HorseIR::FunctionDeclaration::Kind::Builtin:
-		{
-			m_environment.Insert(call, Execute(static_cast<const HorseIR::BuiltinFunction *>(function), argumentsData));
-			break;
-		}
-		default:
-		{
-			Utils::Logger::LogError("Cannot execute function '" + function->GetName() + "'");
-		}
-	}
+	m_environment.Insert(call, Execute(function, argumentsData));
 }
 
 void Interpreter::Visit(const HorseIR::Identifier *identifier)
@@ -228,6 +245,13 @@ void Interpreter::Visit(const HorseIR::Identifier *identifier)
 	// Get the evaluated expression for the identifier
 
 	m_environment.Insert(identifier, m_environment.Get(identifier->GetSymbol()));
+}
+
+void Interpreter::Visit(const HorseIR::FunctionLiteral *literal)
+{
+	// Store the function pointer in a buffer
+
+	m_environment.Insert(literal, new FunctionBuffer(literal->GetFunction()));
 }
 
 template<typename T>

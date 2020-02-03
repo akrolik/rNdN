@@ -2,9 +2,9 @@
 
 namespace Runtime {
 
-CUDA::Kernel GPUProgram::GetKernel(const std::string& name, unsigned int argumentCount) const
+CUDA::Kernel GPUProgram::GetKernel(const std::string& name) const
 {
-	return CUDA::Kernel(name, argumentCount, m_binary);
+	return CUDA::Kernel(name, m_binary);
 }
 
 const PTX::FunctionOptions& GPUProgram::GetKernelOptions(const std::string& name) const

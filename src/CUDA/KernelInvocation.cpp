@@ -7,19 +7,9 @@
 
 namespace CUDA {
 
-KernelInvocation::KernelInvocation(Kernel& kernel) : m_kernel(kernel)
+void KernelInvocation::AddParameter(Data &data)
 {
-	m_parameters.resize(m_kernel.GetParametersCount());
-}
-
-void KernelInvocation::SetParameter(unsigned int index, Constant &value)
-{
-	m_parameters.at(index) = value.GetAddress();
-}
-
-void KernelInvocation::SetParameter(unsigned int index, Buffer &buffer)
-{
-	m_parameters.at(index) = &buffer.GetGPUBuffer();
+	m_parameters.push_back(data.GetAddress());
 }
 
 void KernelInvocation::Launch()

@@ -54,4 +54,9 @@ static void _checkNVVMResult(nvvmResult result, const char *file, int line)
 	Utils::Logger::LogErrorPart(std::string(nvvmGetErrorString(result)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "NVVM ERROR");
 }
 
+static void Synchronize()
+{
+	checkRuntimeError(cudaDeviceSynchronize());
+}
+
 }

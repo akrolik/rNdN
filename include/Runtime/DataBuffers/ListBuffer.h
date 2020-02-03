@@ -32,8 +32,8 @@ public:
 
 	// Cells
 
-	const std::vector<DataBuffer *>& GetCells() { return m_cells; }
-	DataBuffer *GetCell(unsigned int index) { return m_cells.at(index); }
+	const std::vector<DataBuffer *>& GetCells() const { return m_cells; }
+	DataBuffer *GetCell(unsigned int index) const { return m_cells.at(index); }
 	size_t GetCellCount() const { return m_cells.size(); }
 
 	// CPU/GPU management
@@ -115,9 +115,9 @@ private:
 		for (auto i = 0u; i < cellCount; ++i)
 		{
 			auto buffer = m_cells.at(i);
-			if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer))
+			if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer, false))
 			{
-				data[i] = buffer->GetGPUReadBuffer()->GetGPUBuffer();
+				data[i] = vectorBuffer->GetGPUReadBuffer()->GetGPUBuffer();
 			}
 			else
 			{

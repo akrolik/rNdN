@@ -48,6 +48,19 @@ public:
 		return (m_data.at(i1) < m_data.at(i2));
 	}
 
+	template<typename C>
+	const C GetValue(unsigned int i) const
+	{
+		if constexpr(std::is_convertible<T, C>::value)
+		{
+			return static_cast<C>(m_data.at(i));
+		}
+		else
+		{
+			Utils::Logger::LogError("Unable to convert typed vector data to requested type");
+		}
+	}
+
 	const T& GetValue(unsigned int i) const { return m_data.at(i); }
 	const CUDA::Vector<T>& GetValues() const { return m_data; }
 

@@ -12,6 +12,8 @@
 
 #include "Runtime/Runtime.h"
 #include "Runtime/DataBuffers/DataBuffer.h"
+#include "Runtime/DataBuffers/ListBuffer.h"
+#include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -26,10 +28,14 @@ public:
 
 private:
 	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions &runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
-
 	std::vector<std::uint32_t> GetCellSizes(const Analysis::ListShape *shape) const;
 
-	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, std::uint32_t value, const std::string& description) const;
+	VectorBuffer *ResizeBuffer(const VectorBuffer *vectorBuffer, std::uint32_t size) const;
+	ListBuffer *ResizeBuffer(const ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const;
+	DataBuffer *ResizeBuffer(const DataBuffer *dataBuffer, CUDA::Buffer *sizeBuffer) const;
+
+	template<typename T>
+	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;
 	CUDA::Buffer *AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
 	CUDA::Buffer *AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const;
 

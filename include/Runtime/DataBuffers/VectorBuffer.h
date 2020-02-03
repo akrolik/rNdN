@@ -32,6 +32,9 @@ public:
 
 	// GPU/CPU buffer management
 
+	virtual CUDA::Buffer *GetGPUWriteBuffer() override = 0;
+	virtual CUDA::Buffer *GetGPUReadBuffer() const override = 0;
+
 	virtual VectorData *GetCPUWriteBuffer() = 0;
 	virtual const VectorData *GetCPUReadBuffer() const = 0;
 

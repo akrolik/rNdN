@@ -22,6 +22,7 @@ public:
 
 	std::vector<DataBuffer *> Execute(const HorseIR::Program *program);
 
+	std::vector<DataBuffer *> Execute(const HorseIR::FunctionDeclaration *function, const std::vector<DataBuffer *>& arguments);
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 	std::vector<DataBuffer *> Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments);
 
@@ -32,6 +33,8 @@ public:
 
 	// Statements
 
+	void Visit(const HorseIR::Statement *statement) override;
+	void Visit(const HorseIR::DeclarationStatement *declarationS) override;
 	void Visit(const HorseIR::AssignStatement *assignS) override;
 	void Visit(const HorseIR::ExpressionStatement *expressionS) override;
 	void Visit(const HorseIR::IfStatement *ifS) override;
@@ -44,9 +47,11 @@ public:
 
 	// Expressions
 
+	void Visit(const HorseIR::Expression *expression) override;
 	void Visit(const HorseIR::CastExpression *cast) override;
 	void Visit(const HorseIR::CallExpression *call) override;
 	void Visit(const HorseIR::Identifier *identifier) override;
+	void Visit(const HorseIR::FunctionLiteral *literal) override;
 
 	template<typename T>
 	void VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *literal);

@@ -4,8 +4,7 @@
 #include <cuda_runtime.h>
 #include <vector>
 
-#include "CUDA/Buffer.h"
-#include "CUDA/Constant.h"
+#include "CUDA/Data.h"
 #include "CUDA/Kernel.h"
 
 namespace CUDA {
@@ -13,7 +12,7 @@ namespace CUDA {
 class KernelInvocation
 {
 public:
-	KernelInvocation(Kernel& kernel);
+	KernelInvocation(Kernel& kernel) : m_kernel(kernel) {}
 
 	void SetBlockShape(unsigned int x, unsigned int y, unsigned int z)
 	{
@@ -29,11 +28,8 @@ public:
 		m_gridZ = z;
 	}
 
-	void AddParameter(Constant &value) { SetParameter(m_paramIndex++, value); }
-	void AddParameter(Buffer &buffer) { SetParameter(m_paramIndex++, buffer); }
+	void AddParameter(Data &value);
 
-	void SetParameter(unsigned int index, Constant &value);
-	void SetParameter(unsigned int index, Buffer &buffer);
 	void SetDynamicSharedMemorySize(unsigned int bytes) { m_dynamicSharedMemorySize = bytes; }
 
 	void Launch();

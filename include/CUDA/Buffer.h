@@ -2,10 +2,12 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+
+#include "CUDA/Data.h"
  
 namespace CUDA {
 
-class Buffer
+class Buffer : public Data
 {
 public:
 	static void Copy(Buffer *destination, Buffer *source, size_t size);
@@ -25,6 +27,7 @@ public:
 	bool HasCPUBuffer () const { return (m_CPUBuffer != nullptr); }
 
 	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
+	void *GetAddress() override { return &m_GPUBuffer; }
 
 	size_t GetSize() const { return m_size; }
 	size_t GetPaddedSize() const { return m_paddedSize; }

@@ -28,7 +28,16 @@ public:
 
 	FunctionType() : Type(TypeKind), m_functionKind(FunctionKind::Undefined) {}
 	FunctionType(const BuiltinFunction *function) : Type(TypeKind), m_functionKind(FunctionKind::Builtin), m_function(function) {}
-	FunctionType(const Function *function, const std::vector<Type *>& returnTypes, const std::vector<Type *>& parameterTypes) : Type(TypeKind), m_functionKind(FunctionKind::Definition), m_function(function), m_returnTypes(returnTypes), m_parameterTypes(parameterTypes) {}
+	FunctionType(const Function *function) : Type(TypeKind), m_functionKind(FunctionKind::Definition), m_function(function)
+	{
+		// Assemble parameter types
+
+		for (const auto parameter : function->GetParameters())
+		{
+			m_parameterTypes.push_back(parameter->GetType());
+		}
+		m_returnTypes = function->GetReturnTypes();
+	}
 
 	FunctionType *Clone() const override
 	{

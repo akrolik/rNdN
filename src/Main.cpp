@@ -73,8 +73,6 @@ int main(int argc, const char *argv[])
 
 	Utils::Chrono::End(timeFrontend_start);
 
-	//TODO: Replace non-GPU functions with library calls
-
 	// Execute the fixed point optimizer
 
 	Optimizer::Optimizer optimizer;

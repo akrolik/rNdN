@@ -1,8 +1,10 @@
 #include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "CUDA/Buffer.h"
+#include "CUDA/Constant.h"
 #include "CUDA/Kernel.h"
 #include "CUDA/KernelInvocation.h"
+#include "CUDA/Utils.h"
 
 #include "Analysis/DataObject/DataObjectAnalysis.h"
 #include "Analysis/DataObject/DataCopyAnalysis.h"
@@ -77,63 +79,20 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	auto runtimeOptions = optionsAnalysis.GetInputOptions();
 
-	// Compute the number of input arguments: (function arguments * 2) + return arguments + [return size arguments]
-
-	unsigned int kernelArgumentCount = (function->GetParameterCount() * 2) + function->GetReturnCount();
-
-	// Dynamically sized kernel output parameters (we use this to indicate size of output buffers)
-
-	for (const auto& shape : inputOptions->ReturnWriteShapes)
-	{
-		// Any return argument that is not determined by the geometry or statically specified
-		// needs a kernel argument for outputting the real size
-
-		if (RuntimeUtils::IsDynamicReturnShape(shape, inputOptions->ThreadGeometry))
-		{
-			kernelArgumentCount++;
-		}
-	}
-
-	// Dynamically specify the thread geometry (vector: length; list: cells + cell lengths)
-
-	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry))
-	{
-		// [vector size]
-
-		if (Analysis::ShapeUtils::IsDynamicSize(vectorGeometry->GetSize()))
-		{
-			kernelArgumentCount++;
-		}
-	}
-	else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions->ThreadGeometry))
-	{
-		// [Cell threads] + list size + cell sizes
-
-		if (inputOptions->ListCellThreads == Codegen::InputOptions::DynamicSize)
-		{
-			kernelArgumentCount++;
-		}
-		kernelArgumentCount += 2;
-	}
-
-	// Fetch the handle to the GPU entry function
-
-	auto kernel = program->GetKernel(kernelName, kernelArgumentCount);
-
-	// Determine any data copies that occur
-
-	Analysis::DataCopyAnalysis copyAnalysis(dataAnalysis);
-	copyAnalysis.Analyze(function);
-
 	// Execute the compiled kernel on the GPU
 	//   1. Create the invocation (thread sizes + arguments)
 	//   2. Initialize the arguments
 	//   3. Execute
-	//   4. Initialize return values
+	//   4. Resize return values
 
-	// Initialize kernel invocation and configure the runtime thread layout
+	auto timeInvocationInit_start = Utils::Chrono::Start("Invocation initialization");
 
+	// Fetch the handle to the GPU entry function and create the invocation
+
+	auto kernel = program->GetKernel(kernelName);
 	CUDA::KernelInvocation invocation(kernel);
+
+	// Configure the runtime thread layout
 
 	const auto [blockSize, blockCount] = GetBlockShape(*runtimeOptions, kernelOptions);
 	invocation.SetBlockShape(blockSize, 1, 1);
@@ -142,12 +101,14 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	// Initialize the input buffers for the kernel
 
 	std::vector<CUDA::Buffer *> inputSizeBuffers;
-	for (auto i = 0u; i < function->GetParameterCount(); ++i)
+	auto parameterCount = function->GetParameterCount();
+
+	for (auto i = 0u; i < parameterCount; ++i)
 	{
 		const auto parameter = function->GetParameter(i);
 		const auto argument = arguments.at(i);
 
-		Utils::Logger::LogInfo("Initializing input argument: " + parameter->GetName() + " [" + argument->Description() + "]");
+		Utils::Logger::LogDebug("Initializing input argument: " + parameter->GetName() + " [" + argument->Description() + "]");
 
 		// Transfer the buffer to the GPU, for input parameters we assume read only
 
@@ -165,43 +126,81 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	std::vector<DataBuffer *> returnBuffers;
 	std::vector<CUDA::Buffer *> returnSizeBuffers;
 
-	for (auto i = 0u; i < function->GetReturnCount(); ++i)
+	if (function->GetReturnCount() > 0)
 	{
-		// Create a new buffer for the return value
+		// Determine any data copies that occur
 
-		const auto type = function->GetReturnType(i);
-		const auto shape = runtimeOptions->ReturnShapes.at(i);
 
-		auto returnBuffer = DataBuffer::CreateEmpty(type, shape);
-		returnBuffers.push_back(returnBuffer);
+		Analysis::DataCopyAnalysis copyAnalysis(dataAnalysis);
+		copyAnalysis.Analyze(function);
 
-		Utils::Logger::LogInfo("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
-
-		// Transfer the write buffer to te GPU, we assume all returns write (or else...)
-
-		auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
-		gpuBuffer->Clear();
-		invocation.AddParameter(*gpuBuffer);
-
-		// Allocate a size parameter if neded
-
-		const auto inputShape = inputOptions->ReturnWriteShapes.at(i);
-		if (RuntimeUtils::IsDynamicReturnShape(inputShape, inputOptions->ThreadGeometry))
+		for (auto i = 0u; i < function->GetReturnCount(); ++i)
 		{
-			returnSizeBuffers.push_back(AllocateSizeBuffer(invocation, shape, true));
-		}
+			// Create a new buffer for the return value
 
-		// Copy data if needed from input
+			const auto type = function->GetReturnType(i);
+			const auto shape = runtimeOptions->ReturnShapes.at(i);
 
-		const auto returnObject = dataAnalysis.GetReturnObject(i);
-		if (copyAnalysis.ContainsDataCopy(returnObject))
-		{
-			const auto inputObject = copyAnalysis.GetDataCopy(returnObject);
-			auto inputBuffer = inputObject->GetDataBuffer();
+			auto returnBuffer = DataBuffer::CreateEmpty(type, shape);
+			returnBuffers.push_back(returnBuffer);
 
-			Utils::Logger::LogInfo("Initializing return data: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString());
+			Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
 
-			CUDA::Buffer::Copy(returnBuffer->GetGPUWriteBuffer(), inputBuffer->GetGPUReadBuffer(), inputBuffer->GetGPUBufferSize());
+			// Transfer the write buffer to te GPU, we assume all returns write (or else...)
+
+			auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
+			invocation.AddParameter(*gpuBuffer);
+
+			// Allocate a size parameter if neded
+
+			const auto inputShape = inputOptions->ReturnWriteShapes.at(i);
+			if (RuntimeUtils::IsDynamicReturnShape(inputShape, inputOptions->ThreadGeometry))
+			{
+				returnSizeBuffers.push_back(AllocateSizeBuffer(invocation, shape, true));
+			}
+
+			// Copy data if needed from input
+
+			const auto returnObject = dataAnalysis.GetReturnObject(i);
+			if (copyAnalysis.ContainsDataCopy(returnObject))
+			{
+				const auto inputObject = copyAnalysis.GetDataCopy(returnObject);
+				auto inputBuffer = inputObject->GetDataBuffer();
+
+				Utils::Logger::LogDebug("Initializing return data: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString());
+
+				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+				{
+					auto vectorInput = BufferUtils::GetBuffer<VectorBuffer>(inputBuffer);
+					auto vectorReturn = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer);
+
+					CUDA::Buffer::Copy(vectorReturn->GetGPUWriteBuffer(), vectorInput->GetGPUReadBuffer(), vectorInput->GetGPUBufferSize());
+				}
+				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+				{
+					//TODO: Initialize list return buffer
+				}
+				else
+				{
+					Utils::Logger::LogError("Unable to initalize return buffer shape " + Analysis::ShapeUtils::ShapeString(shape));
+				}
+			}
+			else
+			{
+				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+				{
+					auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer);
+					vectorBuffer->GetGPUWriteBuffer()->Clear();
+				}
+				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+				{
+					//TODO: Clear list return buffer
+				}
+				else
+				{
+					Utils::Logger::LogError("Unable to clear return buffer shape " + Analysis::ShapeUtils::ShapeString(shape));
+				}
+			}
 		}
 	}
 
@@ -256,69 +255,136 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize() * 2);
 	}
 
+	// Load extra parameters for the kernel
+
+	for (auto i = function->GetParameterCount(); i < arguments.size(); ++i)
+	{
+		const auto argument = arguments.at(i);
+
+		Utils::Logger::LogDebug("Initializing extra input argument: " + std::to_string(i) + " [" + argument->Description() + "]");
+
+		// Transfer the buffer to the GPU, for input parameters we assume read only. Extra parameters have no shape
+
+		auto buffer = argument->GetGPUReadBuffer();
+		invocation.AddParameter(*buffer);
+	}
+
+	Utils::Chrono::End(timeInvocationInit_start);
+	Utils::Chrono::End(timeKernelInit_start);
+
 	// Launch the kernel!
 
 	invocation.Launch();
 
+	CUDA::Synchronize();
+
+	// Deallocate input size buffers
+
+	for (auto buffer : inputSizeBuffers)
+	{
+		delete buffer;
+	}
+
 	// Resize return buffers for dynamically sized outputs (compression)
 
-	std::vector<DataBuffer *> resizedBuffers;
-	for (auto returnIndex = 0u, resizeIndex = 0u; returnIndex < function->GetReturnCount(); ++returnIndex)
+	if (function->GetReturnCount() > 0)
 	{
-		// Check if the return buffer was a dynamic allocation
+		auto timeResize_start = Utils::Chrono::Start("Resize buffers");
 
-		auto returnBuffer = returnBuffers.at(returnIndex);
-
-		const auto inputShape = inputOptions->ReturnShapes.at(returnIndex);
-		const auto inputWriteShape = inputOptions->ReturnWriteShapes.at(returnIndex);
-
-		if (RuntimeUtils::IsDynamicReturnShape(inputWriteShape, inputOptions->ThreadGeometry))
+		std::vector<DataBuffer *> resizedBuffers;
+		for (auto returnIndex = 0u, resizeIndex = 0u; returnIndex < function->GetReturnCount(); ++returnIndex)
 		{
-			// Get the right buffer kind and resize
+			// Check if the return buffer was a dynamic allocation
 
-			if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer))
+			auto returnBuffer = returnBuffers.at(returnIndex);
+
+			const auto inputShape = inputOptions->ReturnShapes.at(returnIndex);
+			const auto inputWriteShape = inputOptions->ReturnWriteShapes.at(returnIndex);
+
+			if (RuntimeUtils::IsDynamicReturnShape(inputWriteShape, inputOptions->ThreadGeometry))
 			{
-				// Transfer the size to the CPU to resize the buffer
+				// Resize the buffer according to the dynamic size
 
-				auto size = 0u;
 				auto sizeBuffer = returnSizeBuffers.at(resizeIndex++);
-				sizeBuffer->SetCPUBuffer(&size);
-				sizeBuffer->TransferToCPU();
-
-				// Allocate a new buffer and transfer the contents
-
-				auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-				CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
-
-				Utils::Logger::LogInfo("Resized dynamic buffer [" + returnBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
+				auto resizedBuffer = ResizeBuffer(returnBuffer, sizeBuffer);
 
 				resizedBuffers.push_back(resizedBuffer);
 				delete returnBuffer;
 			}
 			else
 			{
-				//TODO: Resize list buffers
-				Utils::Logger::LogError("Unable to resize dynamically sized return buffer " + returnBuffer->Description());
+				resizedBuffers.push_back(returnBuffer);
 			}
 		}
-		else
+
+		// Deallocate return size CUDA buffers
+
+		for (auto buffer : returnSizeBuffers)
 		{
-			resizedBuffers.push_back(returnBuffer);
+			delete buffer;
 		}
+
+		Utils::Chrono::End(timeResize_start);
+
+		return resizedBuffers;
 	}
 
-	// Deallocate dynamic size CUDA buffers
+	return returnBuffers;
+}
 
-	for (auto buffer : inputSizeBuffers)
+VectorBuffer *GPUExecutionEngine::ResizeBuffer(const VectorBuffer *vectorBuffer, std::uint32_t size) const
+{
+	// Allocate a new buffer and transfer the contents
+
+	auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
+	CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
+
+	Utils::Logger::LogDebug("Resized vector buffer [" + vectorBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
+
+	return resizedBuffer;
+}
+
+ListBuffer *GPUExecutionEngine::ResizeBuffer(const ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const
+{
+	// For each cell, allocate a new buffer and transfer the contents
+
+	std::vector<DataBuffer *> resizedCells;
+	for (auto i = 0u; i < sizes.size(); ++i)
 	{
-		delete buffer;
-	}
-	for (auto buffer : returnSizeBuffers)
-	{
-		delete buffer;
-	}
+		const auto& size = sizes.at(i);
+		const auto& cellBuffer = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(i));
 
-	return resizedBuffers;
+		resizedCells.push_back(ResizeBuffer(cellBuffer, size));
+	}
+	auto resizedBuffer = new ListBuffer(resizedCells);
+
+	Utils::Logger::LogDebug("Resized list buffer [" + listBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
+
+	return resizedBuffer;
+}
+
+DataBuffer *GPUExecutionEngine::ResizeBuffer(const DataBuffer *dataBuffer, CUDA::Buffer *sizeBuffer) const
+{
+	// Transfer the size to the CPU to resize the buffer
+
+	if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(dataBuffer))
+	{
+		auto size = 0u;
+		sizeBuffer->SetCPUBuffer(&size);
+		sizeBuffer->TransferToCPU();
+		return ResizeBuffer(vectorBuffer, size);
+	}
+	else if (const auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(dataBuffer))
+	{
+		std::vector<std::uint32_t> cellSizes;
+		sizeBuffer->SetCPUBuffer(cellSizes.data());
+		sizeBuffer->TransferToCPU();
+		return ResizeBuffer(listBuffer, cellSizes);
+	}
+	else
+	{
+		Utils::Logger::LogError("Unable to resize data buffer " + dataBuffer->Description());
+	}
 }
 
 std::vector<std::uint32_t> GPUExecutionEngine::GetCellSizes(const Analysis::ListShape *shape) const
@@ -429,11 +495,12 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 	Utils::Logger::LogError("Unknown block shape for thread geometry " + Analysis::ShapeUtils::ShapeString(threadGeometry));
 }
 
-void GPUExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, std::uint32_t value, const std::string& description) const
+template<typename T>
+void GPUExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
 {
-	Utils::Logger::LogInfo("Initializing constant input argument: " + description + " [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) = " + std::to_string(value) + "]");
+	Utils::Logger::LogDebug("Initializing constant input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes = " + std::to_string(value) + "]");
 
-	auto sizeConstant = new CUDA::TypedConstant<std::uint32_t>(value);
+	auto sizeConstant = new CUDA::TypedConstant<T>(value);
 	invocation.AddParameter(*sizeConstant);
 }
 
@@ -443,7 +510,7 @@ CUDA::Buffer *GPUExecutionEngine::AllocateCellSizes(CUDA::KernelInvocation& invo
 
 	auto cellSizes = GetCellSizes(shape);
 
-	Utils::Logger::LogInfo("Initializing input argument: " + description + " [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x " + std::to_string(cellSizes.size()) + "]");
+	Utils::Logger::LogDebug("Initializing input argument: " + description + " [u32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x " + std::to_string(cellSizes.size()) + "]");
 
 	// Transfer to the GPU
 
@@ -473,7 +540,7 @@ CUDA::Buffer *GPUExecutionEngine::AllocateSizeBuffer(CUDA::KernelInvocation& inv
 
 		// This requires a global memory allocation to output the result
 
-		Utils::Logger::LogInfo("Initializing input argument: <dynamic vector size> [i32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
+		Utils::Logger::LogDebug("Initializing input argument: <dynamic vector size> [u32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
 
 		auto buffer = new CUDA::Buffer(sizeof(std::uint32_t));
 		buffer->AllocateOnGPU();

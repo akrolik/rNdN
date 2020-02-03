@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CUDA/Data.h"
+
 namespace CUDA {
 
-class Constant
+class Constant : public Data
 {
-public:
-	virtual void *GetAddress() = 0;
+
 };
 
 template<class T>

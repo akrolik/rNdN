@@ -7,7 +7,7 @@
 
 namespace CUDA {
 
-Kernel::Kernel(const std::string& name, unsigned int parametersCount, const Module& module) : m_name(name), m_parametersCount(parametersCount), m_module(module)
+Kernel::Kernel(const std::string& name, const Module& module) : m_name(name), m_module(module)
 {
 	checkDriverResult(cuModuleGetFunction(&m_kernel, module.GetModule(), m_name.c_str()));
 }

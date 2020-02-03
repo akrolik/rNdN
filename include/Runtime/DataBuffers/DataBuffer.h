@@ -20,7 +20,9 @@ public:
 		List,
 		Enumeration,
 		Dictionary,
-		Table
+		Table,
+		Function,
+		Constant
 	};
 
 	[[noreturn]] void CPUOnlyBuffer() const
@@ -42,6 +44,10 @@ public:
 				return "DataBuffer::Dictionary";
 			case Kind::Table:
 				return "DataBuffer::Table";
+			case Kind::Function:
+				return "DataBuffer::Function";
+			case Kind::Constant:
+				return "DataBuffer::Constant";
 		}
 		return "<unknown>";
 	}
@@ -88,8 +94,8 @@ public:
 		}
 	}
 	
-	virtual CUDA::Buffer *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
-	virtual CUDA::Buffer *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
+	virtual CUDA::Data *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
+	virtual CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
 
 	virtual size_t GetGPUBufferSize() const { CPUOnlyBuffer(); }
 
