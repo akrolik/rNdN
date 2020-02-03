@@ -22,11 +22,14 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 {
 	// Get the input options used for codegen
 	
+	auto timeKernelInit_start = Utils::Chrono::Start("Kernel '" + function->GetName() + "' initialization");
+
 	const auto program = m_runtime.GetGPUManager().GetProgram();
-
 	const auto kernelName = function->GetName();
-	const auto& kernelOptions = program->GetKernelOptions(kernelName);
 
+	auto timeAnalysisInit_start = Utils::Chrono::Start("Analysis initialziation");
+
+	const auto& kernelOptions = program->GetKernelOptions(kernelName);
 	const auto inputOptions = kernelOptions.GetCodegenOptions();
 
 	// Collect runtime shape information for determining exact thread geometry and return shapes
@@ -61,6 +64,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		inputShapes.first[symbol] = runtimeShape;
 		inputShapes.second[symbol] = runtimeShape;
 	}
+
+	Utils::Chrono::End(timeAnalysisInit_start);
 
 	// Determine the thread geometry for the kernel
 

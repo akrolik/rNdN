@@ -1,6 +1,9 @@
 #include "Utils/Logger.h"
 
 #include <iostream>
+#include <iomanip>
+
+#include "Utils/Options.h"
 
 namespace Utils {
 
@@ -42,6 +45,14 @@ void Logger::LogInfo(const std::string& info, unsigned int indentation, bool new
 	}
 }
 
+void Logger::LogDebug(const std::string& info, unsigned int indentation, bool newline, const std::string& prefix)
+{
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		LogInfo(info, indentation, newline, prefix);
+	}
+}
+
 void Logger::LogError(const std::string& error, const std::string& prefix)
 {
 	LogErrorPart(error, prefix);
@@ -58,10 +69,10 @@ void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 	std::cerr << _prefix << ReplaceString(error, "\n", "\n" + _prefix) << std::endl;
 }
 
-long Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
+void Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
 {
 	auto name = timing->GetName();
-	auto time = timing->GetTime();
+	auto time = double(timing->GetTime()) / 1000;
 	
 	std::string _prefix = "[TIME] ";
 	if (indentation > 0)
@@ -73,25 +84,19 @@ long Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
 	{
 		std::cout << _prefix << name << std::endl;
 
-		auto childTime = 0l;
-		auto overhead = 0l;
-
+		auto childTime = 0.0;
 		for (auto child : timing->GetChildren())
 		{
-			childTime += child->GetTime();
-			overhead += LogTiming(child, indentation + 1);
+			childTime += double(child->GetTime()) / 1000;
+			LogTiming(child, indentation + 1);
 		}
+		auto overhead = (time - childTime);
 
-		auto directOverhead = (time - childTime);
-		overhead += directOverhead;
-
-		std::cout << _prefix << name << ": " << time << " us [direct/total overhead: " << directOverhead << "/" << overhead << " us]" << std::endl;
-		return overhead;
+		std::cout << std::fixed << std::setprecision(1) << _prefix << name << ": " << time << " us [overhead: " << overhead << " us]" << std::endl;
 	}
 	else
 	{
 		std::cout << _prefix << name << ": " << time << " us" << std::endl;
-		return 0;
 	}
 }
 

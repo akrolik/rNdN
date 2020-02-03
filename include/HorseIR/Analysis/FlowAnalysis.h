@@ -181,21 +181,30 @@ public:
 
 	void Analyze(const Function *function)
 	{
-		Analyze(function, InitialFlow());
+		m_analysisTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+
+		auto timeInit_start = Utils::Chrono::Start(Name() + " initial flow");
+		auto initialFlow = InitialFlow();
+		Utils::Chrono::End(timeInit_start);
+
+		Analyze(function, initialFlow);
 	}
 
 	void Analyze(const Function *function, const F& initialFlow)
 	{
 		// Clear sets and traverse the function, timing results
 
-		auto timeStart = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+		if (m_analysisTime == nullptr)
+		{
+			m_analysisTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+		}
+
+		m_functionTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "' body");
 
 		this->m_currentInSet.clear();
 		this->m_currentOutSet.clear();
 
 		TraverseFunction(function, initialFlow);
-
-		Utils::Chrono::End(timeStart);
 
 		// Print results if needed
 
@@ -203,6 +212,9 @@ public:
 		{
 			PrintResults(function);
 		}
+
+		Utils::Chrono::End(m_functionTime);
+		Utils::Chrono::End(m_analysisTime);
 	}
 
 	void PrintResults(const Function *function)
@@ -355,6 +367,9 @@ protected:
 
 	F m_currentInSet;
 	F m_currentOutSet;
+
+	const Utils::Chrono::SpanTiming *m_analysisTime = nullptr;
+	const Utils::Chrono::SpanTiming *m_functionTime = nullptr;
 };
 
 }

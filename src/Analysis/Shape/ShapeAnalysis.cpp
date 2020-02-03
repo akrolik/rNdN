@@ -349,9 +349,11 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	// Interprocedural analysis
 
 	const auto& dataAnalysis = m_dataAnalysis.GetAnalysis(function);
-
 	auto shapeAnalysis = new ShapeAnalysis(dataAnalysis, m_program, m_enforce);
+
+	Utils::Chrono::Pause(m_functionTime);
 	shapeAnalysis->Analyze(function, inputShapes);
+	Utils::Chrono::Continue(m_functionTime);
 
 	m_interproceduralMap.insert({function, shapeAnalysis});
 

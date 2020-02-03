@@ -44,7 +44,7 @@ int main(int argc, const char *argv[])
 
 	if (!Utils::Options::Present(Utils::Options::Opt_File))
 	{
-		Utils::Logger::LogError("Missing filename, see --help");
+		Utils::Logger::LogError("Missing filename (./r3d3 [options] filename), see --help");
 	}
 	auto filename = Utils::Options::Get<std::string>(Utils::Options::Opt_File);
 

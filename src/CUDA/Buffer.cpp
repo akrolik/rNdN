@@ -1,6 +1,5 @@
 #include "CUDA/Buffer.h"
 
-#include "CUDA/Chrono.h"
 #include "CUDA/Utils.h"
 
 #include "Utils/Chrono.h"
@@ -9,12 +8,11 @@ namespace CUDA {
 
 void Buffer::Copy(Buffer *destination, Buffer *source, size_t size)
 {
-	auto start = Chrono::Start();
+	auto start = Utils::Chrono::StartCUDA("CUDA copy (" + std::to_string(size) + " bytes)");
 
 	checkDriverResult(cuMemcpy(destination->m_GPUBuffer, source->m_GPUBuffer, size));
 
-	auto time = Chrono::End(start);
-	Utils::Chrono::AddPointTiming("CUDA copy (" + std::to_string(size) + " bytes)", time);
+	Utils::Chrono::End(start);
 }
 
 Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
@@ -32,52 +30,47 @@ Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
 
 Buffer::~Buffer()
 {
-	auto start = Chrono::Start();
+	auto start = Utils::Chrono::StartCUDA("CUDA free (" + std::to_string(m_paddedSize) + " bytes)");
 
 	checkDriverResult(cuMemFree(m_GPUBuffer));
 
-	auto time = Chrono::End(start);
-	Utils::Chrono::AddPointTiming("CUDA free (" + std::to_string(m_paddedSize) + " bytes)", time);
+	Utils::Chrono::End(start);
 }
 
 void Buffer::AllocateOnGPU()
 {
-	auto start = Chrono::Start();
+	auto start = Utils::Chrono::StartCUDA("CUDA allocation (" + std::to_string(m_paddedSize) + " bytes)");
 
 	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_paddedSize));
 
-	auto time = Chrono::End(start);
-	Utils::Chrono::AddPointTiming("CUDA allocation (" + std::to_string(m_paddedSize) + " bytes)", time);
+	Utils::Chrono::End(start);
 }
 
 void Buffer::Clear()
 {
-	auto start = Chrono::Start();
+	auto start = Utils::Chrono::StartCUDA("CUDA clear (" + std::to_string(m_paddedSize) + " bytes)");
 
 	checkDriverResult(cuMemsetD8(m_GPUBuffer, 0, m_paddedSize));
 
-	auto time = Chrono::End(start);
-	Utils::Chrono::AddPointTiming("CUDA clear (" + std::to_string(m_paddedSize) + " bytes)", time);
+	Utils::Chrono::End(start);
 }
 
 void Buffer::TransferToGPU()
 {
-	auto start = Chrono::Start();
+	auto start = Utils::Chrono::StartCUDA("CUDA transfer (" + std::to_string(m_size) + " bytes) ->");
 
 	checkDriverResult(cuMemcpyHtoD(m_GPUBuffer, m_CPUBuffer, m_size));
 
-	auto time = Chrono::End(start);
-	Utils::Chrono::AddPointTiming("CUDA transfer (" + std::to_string(m_size) + " bytes) ->", time);
+	Utils::Chrono::End(start);
 }
 
 void Buffer::TransferToCPU()
 {
-	auto start = Chrono::Start();
+	auto start = Utils::Chrono::StartCUDA("CUDA transfer (" + std::to_string(m_size) + " bytes) <-");
 
 	checkDriverResult(cuMemcpyDtoH(m_CPUBuffer, m_GPUBuffer, m_size));
 
-	auto time = Chrono::End(start);
-	Utils::Chrono::AddPointTiming("CUDA transfer (" + std::to_string(m_size) + " bytes) <-", time);
+	Utils::Chrono::End(start);
 }
 
 }

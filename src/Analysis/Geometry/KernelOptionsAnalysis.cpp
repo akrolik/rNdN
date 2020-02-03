@@ -21,6 +21,8 @@ void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function, const Sha
 	KernelAnalysis kernelAnalysis(geometryAnalysis);
 	kernelAnalysis.Analyze(function);
 
+	auto timeCreateOptions_start = Utils::Chrono::Start("Create options");
+
 	const auto& dataAnalysis = shapeAnalysis.GetDataAnalysis();
 
 	// Construct the input options
@@ -59,12 +61,13 @@ void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function, const Sha
 		}
 	}
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_analysis))
 	{
 		Utils::Logger::LogInfo("Input Options: " + function->GetName());
 		Utils::Logger::LogInfo(m_inputOptions->ToString(), 1);
 	}
 
+	Utils::Chrono::End(timeCreateOptions_start);
 	Utils::Chrono::End(timeKernelOptions_start);
 }
 

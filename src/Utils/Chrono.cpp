@@ -23,35 +23,39 @@ void Chrono::Complete()
 	Utils::Logger::LogTiming(overall);
 }
 
-const Chrono::SpanTiming *Chrono::Start(const std::string& name)
-{
-	auto& instance = GetInstance();
-
-	auto timing = new Chrono::SpanTiming(name);
-	instance.m_timings.top()->AddChild(timing);
-	instance.m_timings.push(timing);
-
-	timing->Start();
-	return timing;
-}
-
-void Chrono::End(const SpanTiming *start)
+void Chrono::Pause(const SpanTiming *timing)
 {
 	auto& instance = GetInstance();
 	auto stackStart = instance.m_timings.top();
-	if (stackStart != start)
+	if (stackStart != timing)
 	{
-		Utils::Logger::LogError("Received end time '" + start->GetName() + "' but expected '" + stackStart->GetName() + "'");
+		Error(timing, stackStart);
 	}
+
 	stackStart->End();
 	instance.m_timings.pop();
+	instance.m_pausedTimings.insert(static_cast<SpanTiming *>(stackStart));
 }
 
-void Chrono::AddPointTiming(const std::string& name, long time)
+void Chrono::Continue(const SpanTiming *timing)
 {
 	auto& instance = GetInstance();
-	auto timing = new Chrono::PointTiming(name, time);
-	instance.m_timings.top()->AddChild(timing);
+	auto search = instance.m_pausedTimings.find(const_cast<SpanTiming *>(timing));
+	if (search == instance.m_pausedTimings.end())
+	{
+		Utils::Logger::LogError("Timing '" + timing->GetName() + "' not paused");
+	}
+	auto pausedTiming = (*search);
+
+	auto stackStart = instance.m_timings.top();
+	if (stackStart != timing->GetParent())
+	{
+		Error(timing->GetParent(), stackStart);
+	}
+
+	pausedTiming->Start();
+	instance.m_pausedTimings.erase(search);
+	instance.m_timings.push(pausedTiming);
 }
 
 void Chrono::SpanTiming::Start()
@@ -61,12 +65,33 @@ void Chrono::SpanTiming::Start()
 
 void Chrono::SpanTiming::End()
 {
-	m_end = std::chrono::steady_clock::now();
+	auto end = std::chrono::steady_clock::now();
+	m_elapsed += std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
 }
 
-long Chrono::SpanTiming::GetTime() const
+long long Chrono::SpanTiming::GetTime() const
 {
-	return std::chrono::duration_cast<std::chrono::microseconds>(m_end - m_start).count();
+	return m_elapsed;
+}
+
+void Chrono::CUDATiming::Start()
+{
+	m_start.Record();
+}
+
+void Chrono::CUDATiming::End()
+{
+	m_end.Record();
+}
+
+long long Chrono::CUDATiming::GetTime() const
+{
+	return CUDA::Event::Time(m_start, m_end);
+}
+
+void Chrono::Error(const Timing *start, const Timing *stack)
+{
+	Utils::Logger::LogError("Received end time '" + start->GetName() + "' but expected '" + stack->GetName() + "'");
 }
 
 }

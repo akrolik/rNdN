@@ -5,16 +5,16 @@
 
 namespace CUDA {
 
-class Chrono;
 class Event
 {
-	friend class Chrono;
 public:
 	Event();
 	~Event();
 
 	void Record();
 	void Synchronize();
+
+	static long long Time(const Event& start, const Event& end);
 
 private:
 	cudaEvent_t m_event;

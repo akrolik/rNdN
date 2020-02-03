@@ -21,12 +21,13 @@ public:
 	static void LogSection(const std::string& name, bool separate = true);
 
 	static void LogInfo(const std::string& info = "", unsigned int indentation = 0, bool newline = true, const std::string& prefix = InfoPrefix);
+	static void LogDebug(const std::string& info = "", unsigned int indentation = 0, bool newline = true, const std::string& prefix = InfoPrefix);
 	static void LogBlank(const std::string& prefix = InfoPrefix);
 
 	[[noreturn]] static void LogError(const std::string& error, const std::string& prefix = ErrorPrefix);
 	static void LogErrorPart(const std::string& error = "", const std::string& prefix = ErrorPrefix);
 
-	static long LogTiming(const Chrono::Timing *timing, unsigned int indentation = 0);
+	static void LogTiming(const Chrono::Timing *timing, unsigned int indentation = 0);
 
 private:
 	Logger() {}
