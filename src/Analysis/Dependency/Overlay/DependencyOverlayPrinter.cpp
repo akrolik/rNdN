@@ -41,6 +41,10 @@ void DependencyOverlayPrinter::Visit(const DependencyOverlay *overlay)
 		{
 			m_string << ", style=bold";
 		}
+		else if (graph->IsGPULibraryNode(node))
+		{
+			m_string << ", style=\"bold,diagonals,filled\"";
+		}
 			
 		m_string << "];" << std::endl;
 	}

@@ -115,7 +115,7 @@ void DependencySubgraphAnalysis::Visit(DependencyOverlay *overlay)
 
 	for (auto& childOverlay : overlay->GetChildren())
 	{
-		subgraph->InsertNode(childOverlay, false);
+		subgraph->InsertNode(childOverlay, false, false);
 		childOverlay->Accept(*this);
 	}
 
@@ -124,7 +124,7 @@ void DependencySubgraphAnalysis::Visit(DependencyOverlay *overlay)
 	auto graph = overlay->GetGraph();
 	for (const auto& statement : overlay->GetStatements())
 	{
-		subgraph->InsertNode(statement, graph->IsGPUNode(statement));
+		subgraph->InsertNode(statement, graph->IsGPUNode(statement), graph->IsGPULibraryNode(statement));
 	}
 
 	// Add edges connecting statements and top-level overlays

@@ -41,8 +41,8 @@ bool DependencyAnalysis::VisitIn(const HorseIR::Statement *statement)
 {
 	m_currentStatement = statement;
 
-	auto isGPU = m_gpuHelper.IsGPU(statement);
-	m_graph->InsertNode(statement, isGPU);
+	auto [isGPU, isLibrary] = m_gpuHelper.IsGPU(statement);
+	m_graph->InsertNode(statement, isGPU, isLibrary);
 	m_graphOverlay->InsertStatement(statement);
 
 	// Reset operand counter
@@ -63,7 +63,7 @@ void DependencyAnalysis::VisitCompoundStatement(const typename T::NodeType *stat
 
 	// Add the statement to the dependency graph
 
-	m_graph->InsertNode(statement, false);
+	m_graph->InsertNode(statement, false, false);
 
 	// Organize its contents in an overlay
 
@@ -131,8 +131,8 @@ bool DependencyAnalysis::VisitIn(const HorseIR::AssignStatement *assignS)
 
 	m_currentStatement = assignS;
 
-	auto isGPU = m_gpuHelper.IsGPU(assignS);
-	m_graph->InsertNode(assignS, isGPU);
+	auto [isGPU, isLibrary] = m_gpuHelper.IsGPU(assignS);
+	m_graph->InsertNode(assignS, isGPU, isLibrary);
 	m_graphOverlay->InsertStatement(assignS);
 	
 	m_isTarget = true;

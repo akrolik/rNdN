@@ -11,7 +11,7 @@ namespace Analysis {
 class GPUAnalysisHelper : public HorseIR::ConstVisitor
 {
 public:
-	bool IsGPU(const HorseIR::Statement *statement);
+	std::pair<bool, bool> IsGPU(const HorseIR::Statement *statement);
 	bool IsSynchronized(const HorseIR::Statement *source, const HorseIR::Statement *destination, unsigned int index);
 
 	void Visit(const HorseIR::DeclarationStatement *declarationS) override;
@@ -25,6 +25,12 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override;
 
 private:
+	enum Device {
+		CPU,
+		GPU,
+		GPULibrary
+	};
+
 	enum Synchronization {
 		None       = 0,
 		In         = (1 << 0),
@@ -35,12 +41,12 @@ private:
 
 	friend Synchronization operator|(Synchronization a, Synchronization b);
 
-	std::pair<bool, Synchronization> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
-	std::pair<bool, Synchronization> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
-	std::pair<bool, Synchronization> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::pair<Device, Synchronization> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::pair<Device, Synchronization> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
+	std::pair<Device, Synchronization> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, unsigned int index);
 
 	unsigned int m_index = 0;
-	bool m_gpu = false;
+	Device m_device = Device::CPU;
 	Synchronization m_synchronization = Synchronization::None;
 };
 

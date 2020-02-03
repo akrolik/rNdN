@@ -17,7 +17,7 @@ class DependencyGraphBase : public Graph<N>
 public:
 	using Graph<N>::Graph;
 
-	void InsertNode(const N& node, bool isGPU)
+	void InsertNode(const N& node, bool isGPU, bool isLibrary)
 	{
 		Graph<N>::InsertNode(node);
 
@@ -25,11 +25,20 @@ public:
 		{
 			m_gpuNodes.insert(node);
 		}
+		if (isLibrary)
+		{
+			m_libraryNodes.insert(node);
+		}
 	}
 
 	bool IsGPUNode(const N& node) const
 	{
 		return (m_gpuNodes.find(node) != m_gpuNodes.end());
+	}
+
+	bool IsGPULibraryNode(const N& node) const
+	{
+		return (m_libraryNodes.find(node) != m_libraryNodes.end());
 	}
 
 	void InsertEdge(const N& source, const N& destination, const HorseIR::SymbolTable::Symbol *symbol, bool isBackEdge, bool isSynchronized)
@@ -117,6 +126,7 @@ private:
 	}
 
 	std::unordered_set<N> m_gpuNodes;
+	std::unordered_set<N> m_libraryNodes;
 
 	using EdgeType = std::pair<N, N>;
 	struct EdgeHash
