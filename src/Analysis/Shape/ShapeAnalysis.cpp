@@ -7,6 +7,7 @@
 #include "Runtime/DataBuffers/BufferUtils.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Math.h"
 
 namespace Analysis {
 
@@ -289,24 +290,91 @@ bool ShapeAnalysis::CheckStaticTabular(const ListShape *listShape) const
 template<class T>
 std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<HorseIR::Operand *>& arguments, unsigned int index) const
 {
+	// Return {found, value}
+
 	if (index < arguments.size())
 	{
 		// Get constant literal arguments
 
 		if (ValueAnalysisHelper::IsConstant(arguments.at(index)))
 		{
-			auto value = ValueAnalysisHelper::GetScalar<T>(arguments.at(index));
-			return {true, value};
+			return {true, ValueAnalysisHelper::GetScalar<T>(arguments.at(index))};
 		}
 
 		// Get dynamic buffer arguments
 
 		if (const auto buffer = m_dataAnalysis.GetDataObject(arguments.at(index))->GetDataBuffer())
 		{
-			//TODO: This only supports the exact type
-			if (const auto vectorBuffer = Runtime::BufferUtils::GetVectorBuffer<T>(buffer))
+			if (const auto vectorBuffer = Runtime::BufferUtils::GetBuffer<Runtime::VectorBuffer>(buffer))
 			{
-				return {true, vectorBuffer->GetCPUReadBuffer()->GetValue(0)};
+				if (vectorBuffer->GetElementCount() == 1)
+				{
+					switch (vectorBuffer->GetType()->GetBasicKind())
+					{
+						case HorseIR::BasicType::BasicKind::Boolean:
+						case HorseIR::BasicType::BasicKind::Char:
+						case HorseIR::BasicType::BasicKind::Int8:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int8_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Int16:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int16_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Int32:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int32_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Int64:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int64_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Float32:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<float>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Float64:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<double>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Complex:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::ComplexValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Symbol:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::SymbolValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::String:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<std::string>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Datetime:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::DatetimeValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Date:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::DateValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Month:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::MonthValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Minute:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::MinuteValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Second:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::SecondValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+						case HorseIR::BasicType::BasicKind::Time:
+						{
+							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::TimeValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+						}
+					}
+				}
 			}
 		}
 	}
@@ -338,7 +406,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	// Collect the input shapes for the function
 
 	Properties inputShapes;
-	for (auto i = 0u; i < arguments.size(); ++i)
+	for (auto i = 0u; i < argumentShapes.size(); ++i)
 	{
 		const auto symbol = function->GetParameter(i)->GetSymbol();
 		const auto shape = argumentShapes.at(i);
@@ -366,7 +434,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	switch (function->GetPrimitive())
 	{
 #define Require(x) if (!(x)) break
-#define Return(x) { auto shapes = std::vector<const Shape *>({x}); return {shapes, shapes}; }
+#define Return(x) { std::vector<const Shape *> shapes({x}); return {shapes, shapes}; }
 
 		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
@@ -1682,6 +1750,229 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
 			Return(argumentShape1);
 		}
+
+		// GPU
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
+		{
+			// -- Vector input
+			// Input: *, *, Vector<Size*>, Vector<1>
+			// Output: Vector<Size*>
+			//
+			// -- List input
+			// Input: *, *, List<k, {Vector<Size*>}>, Vector<k>
+			// Output: Vector<Size*>
+
+			const auto initType = arguments.at(0)->GetType();
+			const auto sortType = arguments.at(1)->GetType();
+
+			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
+			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
+
+			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {argumentShapes.at(2), argumentShapes.at(3)}, {});
+			Require(initShapes.size() == 2);
+			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
+
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), argumentShapes.at(3)}, {});
+			Require(sortShapes.size() == 0);
+
+			const auto argumentShape3 = argumentShapes.at(2);
+			const auto argumentShape4 = argumentShapes.at(3);
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape4));
+			const auto vectorShape4 = ShapeUtils::GetShape<VectorShape>(argumentShape4);
+
+			if (ShapeUtils::IsShape<VectorShape>(argumentShape3))
+			{
+				Require(CheckStaticScalar(vectorShape4->GetSize()));
+				Return(argumentShape3);
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape3))
+			{
+				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape4->GetSize()));
+				Require(CheckStaticTabular(listShape));
+				Return(ShapeUtils::MergeShapes(listShape->GetElementShapes()));
+			}
+			break;
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
+		{
+			// -- Vector input
+			// Input: Vector<Size*>, Vector<1>
+			// Output: Vector<Power2(Size*)>, Vector<Power2(Size*)>
+			//
+			// -- List input
+			// Input: List<k, {Vector<Size*>}>, Vector<k>
+			// Output: Vector<Power2(Size*)>, List<k, {Vector<Power2(Size*)>}>
+
+			const auto argumentShape0 = argumentShapes.at(0);
+			const auto argumentShape1 = argumentShapes.at(1);
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1));
+			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
+
+			if (const auto vectorShape0 = ShapeUtils::GetShape<VectorShape>(argumentShape0))
+			{
+				Require(CheckStaticScalar(vectorShape1->GetSize()));
+				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape0->GetSize()))
+				{
+					const auto indexShape = new VectorShape(new Shape::ConstantSize(Utils::Math::Power2(constantSize->GetValue())));
+					std::vector<const Shape *> outShapes({indexShape, indexShape});
+					return {outShapes, outShapes};
+				}
+				
+				const auto indexShape = new VectorShape(new Shape::DynamicSize(m_call));
+				std::vector<const Shape *> outShapes({indexShape, indexShape});
+				return {outShapes, outShapes};
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
+			{
+				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape1->GetSize()));
+				Require(CheckStaticTabular(listShape));
+
+				auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(mergedShape))
+				{
+					if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
+					{
+						const auto indexShape = new VectorShape(new Shape::ConstantSize(Utils::Math::Power2(constantSize->GetValue())));
+						std::vector<const Shape *> outShapes({indexShape, new ListShape(listShape->GetListSize(), {indexShape})});
+						return {outShapes, outShapes};
+					}
+
+					const auto indexShape = new VectorShape(new Shape::DynamicSize(m_call));
+					std::vector<const Shape *> outShapes({indexShape, new ListShape(listShape->GetListSize(), {indexShape})});
+					return {outShapes, outShapes};
+				}
+			}
+			break;
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		{
+			// -- Vector input
+			// Input: Vector<Power2(Size*)>, Vector<Power2(Size*)>, Vector<1>
+			// Output: -
+			//
+			// -- List input
+			// Input: Vector<Power2(Size*)>, List<k, {Vector<Power2(Size*)>}>, Vector<k>
+			// Output: -
+
+			const auto argumentShape0 = argumentShapes.at(0);
+			const auto argumentShape1 = argumentShapes.at(1);
+			const auto argumentShape2 = argumentShapes.at(2);
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape0));
+			const auto vectorShape0 = ShapeUtils::GetShape<VectorShape>(argumentShape0);
+
+			if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape0->GetSize()))
+			{
+				auto value = constantSize->GetValue();
+				Require(value == Utils::Math::Power2(value));
+			}
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
+			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
+
+			if (const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1))
+			{
+				Require(CheckStaticScalar(vectorShape2->GetSize()));
+				Require(CheckStaticEquality(vectorShape0->GetSize(), vectorShape1->GetSize()));
+				Return();
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
+			{
+				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape2->GetSize()));
+				Require(CheckStaticTabular(listShape));
+
+				auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(mergedShape))
+				{
+					Require(CheckStaticEquality(vectorShape0->GetSize(), vectorShape->GetSize()));
+					Return();
+				}
+			}
+			break;
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		{
+			// -- Vector/list group
+			// Input: *, *, *, {Vector<Size*> | List<Size*, {Shape*}>}
+			// Output: Dictionary<Vector<SizeDynamic1>, Vector<SizeDynamic2>>
+			//
+			// For lists, ensure all shapes are vectors of the same length
+
+			const auto initType = arguments.at(0)->GetType();
+			const auto sortType = arguments.at(1)->GetType();
+			const auto groupType = arguments.at(2)->GetType();
+
+			const auto dataShape = argumentShapes.at(3);
+			Require(ShapeUtils::IsShape<VectorShape>(dataShape) || ShapeUtils::IsShape<ListShape>(dataShape));
+
+			if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
+			{
+				Require(CheckStaticTabular(listShape));
+			}
+
+			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
+			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
+			const auto groupFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(groupType)->GetFunctionDeclaration();
+
+			const auto orderShape = new VectorShape(new Shape::ConstantSize(2));
+
+			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape, orderShape}, {});
+			Require(initShapes.size() == 2);
+			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
+
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), orderShape}, {});
+			Require(sortShapes.size() == 0);
+
+			const auto [groupShapes, groupWriteShapes] = AnalyzeCall(groupFunction, {initShapes.at(0), initShapes.at(1)}, {});
+			Require(groupShapes.size() == 2);
+			Require(ShapeUtils::IsShape<VectorShape>(groupShapes.at(0)));
+			Require(ShapeUtils::IsShape<VectorShape>(groupShapes.at(1)));
+
+			delete orderShape;
+
+			Return(new DictionaryShape(
+				new VectorShape(new Shape::DynamicSize(m_call, 1)),
+				new VectorShape(new Shape::DynamicSize(m_call, 2))
+			));
+
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
+		{
+			// -- Vector/list group
+			// Input: Vector<Size*>, {Vector<Size*> | List<Size2*, {Vector<Size*>}>} 
+			// Output: Vector<DynamicSize1>, Vector<DynamicSize2>
+			//
+			// For lists, ensure all shapes are vectors of the same length
+
+			const auto argumentShape0 = argumentShapes.at(0);
+			const auto argumentShape1 = argumentShapes.at(1);
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape0));
+			const auto vectorShape0 = ShapeUtils::GetShape<VectorShape>(argumentShape0);
+
+			if (const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1))
+			{
+				Require(CheckStaticEquality(vectorShape0->GetSize(), vectorShape1->GetSize()));
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
+			{
+				Require(CheckStaticTabular(listShape));
+
+				auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(mergedShape))
+				{
+					Require(CheckStaticEquality(vectorShape0->GetSize(), vectorShape->GetSize()));
+				}
+			}
+
+			const auto returnShape1 = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize()));
+			const auto returnShape2 = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize()));
+
+			std::vector<const Shape *> outShapes({returnShape1, returnShape2});
+			return {outShapes, outShapes};
+		}
 		default:
 		{
 			Utils::Logger::LogError("Shape analysis is not supported for builtin function '" + function->GetName() + "'");
@@ -1704,7 +1995,14 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			message << ", ";
 		}
 		first = false;
-		message << *argumentShape;
+		if (argumentShape)
+		{
+			message << *argumentShape;
+		}
+		else
+		{
+			message << "null";
+		}
 	}
 
 	message << "] to function '" << function->GetName() << "'";

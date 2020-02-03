@@ -46,7 +46,7 @@ public:
 	bool ContainsSymbol(const std::string& name) const;
 	bool ContainsSymbol(const Symbol *symbol) const;
 
-	Symbol *GetSymbol(const std::string& name) const;
+	Symbol *GetSymbol(const std::string& name, bool assert = true) const;
 	void AddSymbol(const std::string& name, Symbol *symbol, bool replace = false);
 
 	const Module *GetModule(const std::string& name) const;

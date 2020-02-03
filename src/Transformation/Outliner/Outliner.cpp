@@ -132,6 +132,7 @@ bool Outliner::VisitIn(const HorseIR::Function *function)
 	builder.Build(compatibilityOverlay);
 
 	auto outlinedFunctions = builder.GetFunctions();
+	m_outlinedContents.insert(std::end(m_outlinedContents), new HorseIR::ImportDirective("GPU", "*"));
 	m_outlinedContents.insert(std::end(m_outlinedContents), std::begin(outlinedFunctions), std::end(outlinedFunctions));
 
 	Utils::Chrono::End(timeOutline_start);

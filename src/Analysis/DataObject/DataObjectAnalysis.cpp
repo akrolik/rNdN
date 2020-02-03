@@ -1,5 +1,7 @@
 #include "Analysis/DataObject/DataObjectAnalysis.h"
 
+#include "HorseIR/Utils/TypeUtils.h"
+
 #include "Utils/Logger.h"
 
 namespace Analysis {
@@ -110,23 +112,23 @@ void DataObjectAnalysis::Visit(const HorseIR::CallExpression *call)
 		argument->Accept(*this);
 		argumentObjects.push_back(GetDataObject(argument));
 	}
-	m_expressionObjects[call] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), argumentObjects);
+	m_expressionObjects[call] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments(), argumentObjects);
 }
 
-std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<const DataObject *>& argumentObjects)
+std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
 {
 	switch (function->GetKind())
 	{
 		case HorseIR::FunctionDeclaration::Kind::Builtin:
-			return AnalyzeCall(static_cast<const HorseIR::BuiltinFunction *>(function), argumentObjects);
+			return AnalyzeCall(static_cast<const HorseIR::BuiltinFunction *>(function), arguments, argumentObjects);
 		case HorseIR::FunctionDeclaration::Kind::Definition:
-			return AnalyzeCall(static_cast<const HorseIR::Function *>(function), argumentObjects);
+			return AnalyzeCall(static_cast<const HorseIR::Function *>(function), arguments, argumentObjects);
 		default:
 			Utils::Logger::LogError("Unsupported function kind");
 	}
 }
 
-std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::Function *function, const std::vector<const DataObject *>& argumentObjects)
+std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
 {
 	// Collect the input data objects for the function
 
@@ -141,15 +143,62 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::F
 	// Interprocedural analysis
 
 	auto dataAnalysis = new DataObjectAnalysis(m_program);
+
+	Utils::Chrono::Pause(m_functionTime);
 	dataAnalysis->Analyze(function, inputObjects);
+	Utils::Chrono::Continue(m_functionTime);
 
 	m_interproceduralMap.insert({function, dataAnalysis});
 
 	return dataAnalysis->GetReturnObjects();
 }
 
-std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<const DataObject *>& argumentObjects)
+std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
 {
+	switch (function->GetPrimitive())
+	{
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
+		{
+			const auto initType = arguments.at(0)->GetType();
+			const auto sortType = arguments.at(1)->GetType();
+
+			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
+			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
+
+			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(2), argumentObjects.at(3)});
+			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1), argumentObjects.at(3)});
+
+			return {initObjects.at(0)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
+		{
+			return {new DataObject(), new DataObject()};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		{
+			return {};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		{
+			const auto initType = arguments.at(0)->GetType();
+			const auto sortType = arguments.at(1)->GetType();
+			const auto groupType = arguments.at(2)->GetType();
+
+			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
+			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
+			const auto groupFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(groupType)->GetFunctionDeclaration();
+
+			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3), new DataObject()});
+			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1), new DataObject()});
+			const auto groupObjects = AnalyzeCall(groupFunction, {}, {initObjects.at(0), initObjects.at(1)});
+
+			return {new DataObject()};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
+		{
+			return {new DataObject(), new DataObject()};
+		}
+	}
 	return {new DataObject()};
 }
 

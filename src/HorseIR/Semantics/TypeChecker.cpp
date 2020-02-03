@@ -1051,63 +1051,147 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 
 		// GPU
+		case BuiltinFunction::Primitive::GPUOrderLib:
+		{
+			// @GPU.order_lib(@init, @sort, data, order)
+
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
+			const auto inputType3 = argumentTypes.at(3);
+
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<FunctionType>(inputType1));
+
+			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
+			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+
+			Require(TypeUtils::IsOrderableType(inputType2) || TypeUtils::IsType<ListType>(inputType2));
+
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType2))
+			{
+				// List elements need to be comparable. Same return type as vector alternative
+
+				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
+			}
+
+			Require(TypeUtils::IsBooleanType(inputType3));
+
+			auto booleanType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean);
+			auto intType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType2, booleanType});
+			const auto callTypes1 = AnalyzeCall(functionType1, {intType, inputType2, booleanType});
+
+			Require(callTypes0.size() == 2);
+			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
+			Require(*callTypes0.at(1) == *inputType2);
+
+			Require(TypeUtils::IsEmptyType(callTypes1));
+
+			delete intType;
+			delete booleanType;
+
+			return {new BasicType(BasicType::BasicKind::Int64)};
+		}
 		case BuiltinFunction::Primitive::GPUOrderInit:
 		{
-			Require(argumentTypes.size() >= 2);
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			Require(TypeUtils::IsOrderableType(inputType0) || TypeUtils::IsType<ListType>(inputType0));
 
-			std::vector<HorseIR::Type *> returnTypes;
-			returnTypes.push_back(new BasicType(BasicType::BasicKind::Int64));
-
-			auto index = 0u;
-			for (auto type : argumentTypes)
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType0))
 			{
-				if (index < (argumentTypes.size() - 1))
-				{
-					Require(TypeUtils::IsType<BasicType>(type));
-					returnTypes.push_back(type);
-				}
-				else
-				{
-					Require(TypeUtils::IsBooleanType(type));
-				}
-				index++;
+				// List elements need to be comparable
+
+				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
 			}
-			return returnTypes;
+
+			Require(TypeUtils::IsBooleanType(inputType1));
+			return {new BasicType(BasicType::BasicKind::Int64), inputType0};
 		}
 		case BuiltinFunction::Primitive::GPUOrder:
 		{
-			Require(argumentTypes.size() >= 3);
-			Require(TypeUtils::IsBasicType(argumentTypes.at(0), BasicType::BasicKind::Int64));
-			Require(TypeUtils::IsBooleanType(argumentTypes.at(argumentTypes.size() - 1)));
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
 
-			bool first = true;
-			for (const auto type : argumentTypes)
+			Require(TypeUtils::IsBasicType(inputType0, BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsOrderableType(inputType1) || TypeUtils::IsType<ListType>(inputType1));
+
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType1))
 			{
-				if (first)
-				{
-					first = false;
-					continue;
-				}
-				Require(TypeUtils::IsType<BasicType>(type));
+				// List elements need to be comparable
+
+				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
 			}
+			Require(TypeUtils::IsBooleanType(inputType2));
+
 			// GPU sort is in place
 			return {};
 		}
+		case BuiltinFunction::Primitive::GPUGroupLib:
+		{
+			// @GPU.group_lib(@init, @sort, @group, data)
+
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
+			const auto inputType3 = argumentTypes.at(3);
+
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<FunctionType>(inputType1));
+			Require(TypeUtils::IsType<FunctionType>(inputType2));
+
+			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
+			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+			auto functionType2 = TypeUtils::GetType<FunctionType>(inputType2);
+
+			Require(TypeUtils::IsOrderableType(inputType3) || TypeUtils::IsType<ListType>(inputType3));
+
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType3))
+			{
+				// List elements need to be comparable. Same return type as vector alternative
+
+				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
+			}
+
+			auto booleanType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean);
+			auto intType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3, booleanType});
+			const auto callTypes1 = AnalyzeCall(functionType1, {intType, inputType3, booleanType});
+			const auto callTypes2 = AnalyzeCall(functionType2, {intType, inputType3});
+
+			Require(callTypes0.size() == 2);
+			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
+			Require(*callTypes0.at(1) == *inputType3);
+
+			Require(TypeUtils::IsEmptyType(callTypes1));
+
+			Require(callTypes2.size() == 2);
+			Require(TypeUtils::IsBasicType(callTypes2.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBasicType(callTypes2.at(1), BasicType::BasicKind::Int64));
+
+			delete intType;
+			delete booleanType;
+
+			return {new DictionaryType(new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64))};
+		}
 		case BuiltinFunction::Primitive::GPUGroup:
 		{
-			Require(argumentTypes.size() >= 2);
-			Require(TypeUtils::IsBasicType(argumentTypes.at(0), BasicType::BasicKind::Int64));
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
 
-			bool first = true;
-			for (const auto type : argumentTypes)
+			Require(TypeUtils::IsBasicType(inputType0, BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsOrderableType(inputType1) || TypeUtils::IsType<ListType>(inputType1));
+
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType1))
 			{
-				if (first)
-				{
-					first = false;
-					continue;
-				}
-				Require(TypeUtils::IsType<BasicType>(type));
+				// List elements need to be comparable. Same return type as vector alternative
+
+				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
 			}
+
 			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
 		default:
@@ -1144,15 +1228,7 @@ void TypeChecker::VisitOut(Identifier *identifier)
 				case FunctionDeclaration::Kind::Definition:
 				{
 					const auto function = static_cast<const Function *>(functionDeclaration);
-
-					// Assemble parameter types
-
-					std::vector<Type *> parameterTypes;
-					for (const auto parameter : function->GetParameters())
-					{
-						parameterTypes.push_back(parameter->GetType());
-					}
-					identifier->SetTypes(new FunctionType(function, function->GetReturnTypes(), parameterTypes));
+					identifier->SetTypes(new FunctionType(function));
 					break;
 				}
 				default:

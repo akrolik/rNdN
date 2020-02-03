@@ -363,6 +363,38 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			CPU();
 		}
 
+		// GPU
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		{
+			CPU();
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
+		{
+			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
+			Require(shapes.size() == 2);
+			return shapes.at(0);
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		{
+			auto shape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
+			Require(ShapeUtils::IsShape<VectorShape>(shape));
+
+			// Divide by 2 if constant, otherwise return a new dynamic size
+
+			auto vectorShape = ShapeUtils::GetShape<VectorShape>(shape);
+			if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
+			{
+				return new VectorShape(new Shape::ConstantSize(constantSize->GetValue() / 2));
+			}
+			return new VectorShape(new Shape::DynamicSize(m_call));
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
+		{
+			auto shape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
+			Require(ShapeUtils::IsShape<VectorShape>(shape));
+			return shape;
+		}
 		default:
 		{
 			Utils::Logger::LogError("Geometry analysis is not supported for builtin function '" + function->GetName() + "'");

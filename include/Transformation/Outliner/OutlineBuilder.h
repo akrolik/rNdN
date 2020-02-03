@@ -9,11 +9,15 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Tree/Tree.h"
 
+#include "Transformation/Outliner/OutlineLibrary.h"
+
 namespace Transformation {
 
 class OutlineBuilder : public Analysis::DependencyOverlayConstVisitor, public HorseIR::ConstVisitor
 {
 public:
+	OutlineBuilder() : m_libraryOutliner(m_functions, m_symbols) {}
+
 	// Transformation input and output
 
 	void Build(const Analysis::FunctionDependencyOverlay *overlay);
@@ -36,6 +40,8 @@ private:
 	std::vector<HorseIR::Function *> m_functions;
 	std::stack<std::vector<HorseIR::Statement *>> m_statements;
 	std::stack<std::unordered_set<const HorseIR::SymbolTable::Symbol *>> m_symbols;
+
+	OutlineLibrary m_libraryOutliner;
 
 	static const HorseIR::Type *GetType(const HorseIR::SymbolTable::Symbol *symbol);
 	void BuildDeclarations();

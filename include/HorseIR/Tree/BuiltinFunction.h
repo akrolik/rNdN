@@ -146,8 +146,11 @@ public:
 		SubString,
 
 		// GPU
+		GPUOrderLib,
 		GPUOrderInit,
 		GPUOrder,
+
+		GPUGroupLib,
 		GPUGroup
 	};
 
@@ -371,10 +374,14 @@ public:
 				return "str";
 			case Primitive::SubString:
 				return "sub_string";
+			case Primitive::GPUOrderLib:
+				return "order_lib";
 			case Primitive::GPUOrderInit:
 				return "order_init";
 			case Primitive::GPUOrder:
 				return "order";
+			case Primitive::GPUGroupLib:
+				return "group_lib";
 			case Primitive::GPUGroup:
 				return "group";
 
@@ -546,10 +553,16 @@ public:
 				return 2;
 
 			// GPU
+			case Primitive::GPUOrderLib:
+				return 4;
 			case Primitive::GPUOrderInit:
+				return 2;
 			case Primitive::GPUOrder:
+				return 3;
+			case Primitive::GPUGroupLib:
+				return 4;
 			case Primitive::GPUGroup:
-				return VariadicParameterCount;
+				return 2;
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

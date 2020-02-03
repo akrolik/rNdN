@@ -15,8 +15,8 @@
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
-// #include "Runtime/GPU/Library/GPUSortEngine.h"
-// #include "Runtime/GPU/Library/GPUGroupEngine.h"
+#include "Runtime/GPU/Library/GPUSortEngine.h"
+#include "Runtime/GPU/Library/GPUGroupEngine.h"
 
 #include "Utils/Logger.h"
 
@@ -24,14 +24,12 @@ namespace Runtime {
 
 std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
-	Utils::Logger::LogInfo("Executing builtin function '" + function->GetName() + "'");
+	Utils::Logger::LogDebug("Executing builtin function '" + function->GetName() + "'");
 
 #define Error(m) Utils::Logger::LogError("Builtin function '" + function->GetName() + "' " + m);
 
 	switch (function->GetPrimitive())
 	{
-		//TODO: Order/Group updates
-		/*
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
@@ -62,110 +60,70 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 			std::vector<std::int8_t> _orders(std::begin(orders), std::end(orders));
 
-			// Determine if this is a GPU (numeric types) or CPU sort (character types)
+			// Sort!
 
-			bool isCPU = false;
+			auto sortSize = 0;
+			std::vector<const VectorData *> sortData;
+
+			// Collect sort size and CPU data objects
+
+			bool first = true;
 			for (auto buffer : sortBuffers)
 			{
-				if (HorseIR::TypeUtils::IsCharacterType(buffer->GetType()))
+				auto bufferSize = buffer->GetElementCount();
+				if (first)
 				{
-					isCPU = true;
+					sortSize = bufferSize;
+					first = false;
 				}
+				else if (sortSize != bufferSize)
+				{
+					Utils::Logger::LogError("Sort requires all columns have equal size [" + std::to_string(sortSize) + " != " + std::to_string(bufferSize) + "]");
+				}
+				sortData.push_back(buffer->GetCPUReadBuffer());
 			}
 
-			if (isCPU)
+			CUDA::Vector<std::int64_t> indexes(sortSize);
+			std::iota(indexes.begin(), indexes.end(), 0);
+
+			// Sort indexes using the values in sort buffers
+
+			std::sort(indexes.begin(), indexes.end(), [&sortData,&orders](std::int64_t i1, std::int64_t i2)
 			{
-				// CPU sort!
+				// Return true if first element ordered before the second
 
-				auto sortSize = 0;
-				std::vector<const VectorData *> sortData;
-
-				// Collect sort size and CPU data objects
-
-				bool first = true;
-				for (auto buffer : sortBuffers)
+				auto dataIndex = 0;
+				for (const auto data : sortData)
 				{
-					auto bufferSize = buffer->GetElementCount();
-					if (first)
+					if (!data->IsEqual(i1, i2))
 					{
-						sortSize = bufferSize;
-						first = false;
+						return (data->IsSorted(i1, i2) == orders.at(dataIndex));
 					}
-					else if (sortSize != bufferSize)
-					{
-						Utils::Logger::LogError("Sort requires all columns have equal size [" + std::to_string(sortSize) + " != " + std::to_string(bufferSize) + "]");
-					}
-					sortData.push_back(buffer->GetCPUReadBuffer());
+					dataIndex++;
 				}
+				return false;
+			});
 
-				CUDA::Vector<std::uint64_t> indexes(sortSize);
-				std::iota(indexes.begin(), indexes.end(), 0);
-
-				// Sort indexes using the values in sort buffers
-
-				std::sort(indexes.begin(), indexes.end(), [&sortData,&orders](std::uint64_t i1, std::uint64_t i2)
-				{
-					// Return true if first element ordered before the second
-
-					auto dataIndex = 0;
-					for (const auto data : sortData)
-					{
-						if (!data->IsEqual(i1, i2))
-						{
-							return (data->IsSorted(i1, i2) == orders.at(dataIndex));
-						}
-						dataIndex++;
-					}
-					return false;
-				});
-
-				auto indexData = new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(indexes));
-				return {new TypedVectorBuffer<std::uint64_t>(indexData)};
-			}
-			else
-			{
-				// GPU sort!
-
-				GPUSortEngine sortEngine(m_runtime);
-				auto [indexBuffer, dataBuffers] = sortEngine.Sort(sortBuffers, _orders);
-
-				// Free the sort buffers
-
-				for (auto dataBuffer : dataBuffers)
-				{
-					delete dataBuffer->GetGPUWriteBuffer();
-				}
-
-				return {indexBuffer};
-			}
+			auto indexData = new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(indexes));
+			return {new TypedVectorBuffer<std::int64_t>(indexData)};
 		}
-		case HorseIR::BuiltinFunction::Primitive::Group:
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		{
-			// Collect the columns for the group - decomposing the list into individual vectors
+			// GPU sort!
 
-			std::vector<VectorBuffer *> columns;
-			if (auto listSort = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0), false))
-			{
-				for (auto buffer : listSort->GetCells())
-				{
-					columns.push_back(BufferUtils::GetBuffer<VectorBuffer>(buffer));
-				}
-			}
-			else if (auto vectorSort = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(0), false))
-			{
-				columns.push_back(vectorSort);
-			}
-			else
-			{
-				Error("expects either a single vector or a list of vectors");
-			}
+			GPUSortEngine sortEngine(m_runtime);
+			auto [indexBuffer, dataBuffer] = sortEngine.Sort(arguments);
 
-			// Group!
+			delete dataBuffer;
+			return {indexBuffer};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		{
+			// GPU group!
 
 			GPUGroupEngine groupEngine(m_runtime);
-			return {groupEngine.Group(columns)};
+			return {groupEngine.Group(arguments)};
 		}
-		*/
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
 			return {new ListBuffer(arguments)};

@@ -75,9 +75,9 @@ public:
 private:
 	// Function call visitors
 
-	std::vector<const DataObject *> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<const DataObject *>& argumentObjects);
-	std::vector<const DataObject *> AnalyzeCall(const HorseIR::Function *function, const std::vector<const DataObject *>& argumentObjects);
-	std::vector<const DataObject *> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<const DataObject *>& argumentObjects);
+	std::vector<const DataObject *> AnalyzeCall(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
+	std::vector<const DataObject *> AnalyzeCall(const HorseIR::Function *function, const std::vector<HorseIR::Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
+	std::vector<const DataObject *> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
 
 	std::unordered_map<const HorseIR::Expression *, std::vector<const DataObject *>> m_expressionObjects;
 	std::unordered_map<const HorseIR::Parameter *, const DataObject *> m_parameterObjects;

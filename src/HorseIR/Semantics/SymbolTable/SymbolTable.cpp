@@ -41,7 +41,7 @@ bool SymbolTable::ContainsSymbol(const Symbol *symbol) const
 	return false;
 }
 
-SymbolTable::Symbol *SymbolTable::GetSymbol(const std::string& name) const
+SymbolTable::Symbol *SymbolTable::GetSymbol(const std::string& name, bool assert) const
 {
 	// Get symbol from the table, recursively traversing to parent
 
@@ -51,19 +51,22 @@ SymbolTable::Symbol *SymbolTable::GetSymbol(const std::string& name) const
 	}
 	if (m_importTable != nullptr && m_importTable->ContainsSymbol(name))
 	{
-		return m_importTable->GetSymbol(name);
+		return m_importTable->GetSymbol(name, assert);
 	}
 	if (m_parent != nullptr)
 	{
-		return m_parent->GetSymbol(name);
+		return m_parent->GetSymbol(name, assert);
 	}
-	Utils::Logger::LogError("'" + name + "' is not defined in current program");
+	if (assert)
+	{
+		Utils::Logger::LogError("Symbol '" + name + "' is not defined in current program");
+	}
 	return nullptr;
 }
 
 const Module *SymbolTable::GetModule(const std::string& name) const
 {
-	auto symbol = GetSymbol(name);
+	auto symbol = GetSymbol(name, false);
 	if (symbol == nullptr)
 	{
 		Utils::Logger::LogError("Module " + name + " is not defined in current program");
@@ -77,7 +80,7 @@ const Module *SymbolTable::GetModule(const std::string& name) const
 
 const FunctionDeclaration *SymbolTable::GetFunction(const std::string& name) const
 {
-	auto symbol = GetSymbol(name);
+	auto symbol = GetSymbol(name, false);
 	if (symbol == nullptr)
 	{
 		Utils::Logger::LogError("Function '" + name + "' cannot be found in the current module scope");
@@ -91,7 +94,7 @@ const FunctionDeclaration *SymbolTable::GetFunction(const std::string& name) con
 
 const VariableDeclaration *SymbolTable::GetVariable(const std::string& name) const
 {
-	auto symbol = GetSymbol(name);
+	auto symbol = GetSymbol(name, false);
 	if (symbol == nullptr)
 	{
 		Utils::Logger::LogError("Variable '" + name + "' cannot be found in the current function scope");

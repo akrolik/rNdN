@@ -98,7 +98,14 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 			{
 				// Insert the statement into the statement list
 
-				statement->Accept(*this);
+				if (subgraph->IsGPULibraryNode(statement))
+				{
+					InsertStatement(m_libraryOutliner.Outline(statement));
+				}
+				else
+				{
+					statement->Accept(*this);
+				}
 			},
 			[&](const Analysis::DependencyOverlay *childOverlay)
 			{

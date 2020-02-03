@@ -1,6 +1,7 @@
 #include "HorseIR/Semantics/SemanticAnalysis.h"
 
 #include "HorseIR/Modules/BuiltinModule.h"
+#include "HorseIR/Modules/GPUModule.h"
 
 #include "HorseIR/Semantics/DefinitelyAssigned.h"
 #include "HorseIR/Semantics/EntryAnalysis.h"
@@ -23,9 +24,10 @@ void SemanticAnalysis::Analyze(Program *program)
 
 	auto timeSymbols_start = Utils::Chrono::Start("Symbol table");
 
-	// Connect the builtin module to the program
+	// Connect the builtin and GPU modules to the program
 
 	program->AddModule(BuiltinModule);
+	program->AddModule(GPUModule);
 
 	// Construct the symbol table
 

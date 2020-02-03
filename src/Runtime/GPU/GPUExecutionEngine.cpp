@@ -41,7 +41,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	Analysis::DataObjectAnalysis::Properties inputObjects;
 	Analysis::ShapeAnalysis::Properties inputShapes;
-	for (auto i = 0u; i < arguments.size(); ++i)
+	for (auto i = 0u; i < function->GetParameterCount(); ++i)
 	{
 		const auto parameter = function->GetParameter(i);
 		const auto symbol = parameter->GetSymbol();

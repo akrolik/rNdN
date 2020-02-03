@@ -75,7 +75,7 @@ void DataRegistry::LoadDebugData()
 
 	auto timeData_start = Utils::Chrono::Start("Load debug data");
 
-	for (unsigned long i = 32; i <= 2048; i <<= 1)
+	for (unsigned long i = 1; i <= 2048; i <<= 1)
 	{
 		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
