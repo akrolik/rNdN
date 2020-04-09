@@ -6,7 +6,7 @@
 
 namespace Analysis {
 
-std::pair<bool, bool> GPUAnalysisHelper::IsGPU(const HorseIR::Statement *statement)
+GPUAnalysisHelper::Device GPUAnalysisHelper::IsGPU(const HorseIR::Statement *statement)
 {
 	// Reset the analysis and traverse
 
@@ -14,9 +14,7 @@ std::pair<bool, bool> GPUAnalysisHelper::IsGPU(const HorseIR::Statement *stateme
 	m_synchronization = Synchronization::None;
 	statement->Accept(*this);
 
-	auto isGPU = (m_device == Device::GPU);
-	auto isLibrary = (m_device == Device::GPULibrary);
-	return {isGPU, isLibrary};
+	return m_device;
 }
 
 bool GPUAnalysisHelper::IsSynchronized(const HorseIR::Statement *source, const HorseIR::Statement *destination, unsigned int index)

@@ -41,8 +41,8 @@ bool DependencyAnalysis::VisitIn(const HorseIR::Statement *statement)
 {
 	m_currentStatement = statement;
 
-	auto [isGPU, isLibrary] = m_gpuHelper.IsGPU(statement);
-	m_graph->InsertNode(statement, isGPU, isLibrary);
+	auto device = m_gpuHelper.IsGPU(statement);
+	m_graph->InsertNode(statement, device == GPUAnalysisHelper::Device::GPU, device == GPUAnalysisHelper::Device::GPULibrary);
 	m_graphOverlay->InsertStatement(statement);
 
 	// Reset operand counter
@@ -131,8 +131,8 @@ bool DependencyAnalysis::VisitIn(const HorseIR::AssignStatement *assignS)
 
 	m_currentStatement = assignS;
 
-	auto [isGPU, isLibrary] = m_gpuHelper.IsGPU(assignS);
-	m_graph->InsertNode(assignS, isGPU, isLibrary);
+	auto device = m_gpuHelper.IsGPU(assignS);
+	m_graph->InsertNode(assignS, device == GPUAnalysisHelper::Device::GPU, device == GPUAnalysisHelper::Device::GPULibrary);
 	m_graphOverlay->InsertStatement(assignS);
 	
 	m_isTarget = true;

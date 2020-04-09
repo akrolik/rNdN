@@ -11,7 +11,13 @@ namespace Analysis {
 class GPUAnalysisHelper : public HorseIR::ConstVisitor
 {
 public:
-	std::pair<bool, bool> IsGPU(const HorseIR::Statement *statement);
+	enum Device {
+		CPU,
+		GPU,
+		GPULibrary
+	};
+
+	Device IsGPU(const HorseIR::Statement *statement);
 	bool IsSynchronized(const HorseIR::Statement *source, const HorseIR::Statement *destination, unsigned int index);
 
 	void Visit(const HorseIR::DeclarationStatement *declarationS) override;
@@ -25,12 +31,6 @@ public:
 	void Visit(const HorseIR::Identifier *identifier) override;
 
 private:
-	enum Device {
-		CPU,
-		GPU,
-		GPULibrary
-	};
-
 	enum Synchronization {
 		None       = 0,
 		In         = (1 << 0),
