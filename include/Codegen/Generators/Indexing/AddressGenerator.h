@@ -70,7 +70,7 @@ public:
 
 		if (index == nullptr)
 		{
-			return new PTX::RegisterAddress(new PTX::PointerRegisterAdapter<B, T, S>(base), offset);
+			return new PTX::RegisterAddress<B, T, S>(new PTX::PointerRegisterAdapter<B, T, S>(base), offset);
 		}
 		else
 		{
@@ -79,7 +79,7 @@ public:
 
 			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(address, base, indexOffset));
 
-			return new PTX::RegisterAddress(new PTX::PointerRegisterAdapter<B, T, S>(address), offset);
+			return new PTX::RegisterAddress<B, T, S>(new PTX::PointerRegisterAdapter<B, T, S>(address), offset);
 		}
 	}
 
