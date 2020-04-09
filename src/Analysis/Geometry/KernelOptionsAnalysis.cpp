@@ -1,7 +1,7 @@
 #include "Analysis/Geometry/KernelOptionsAnalysis.h"
 
 #include "Analysis/Geometry/GeometryAnalysis.h"
-#include "Analysis/Geometry/KernelAnalysis.h"
+#include "Analysis/Geometry/KernelGeometryAnalysis.h"
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
@@ -11,41 +11,47 @@
 
 namespace Analysis {
 
-void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function, const ShapeAnalysis& shapeAnalysis)
+void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function)
 {
 	auto timeKernelOptions_start = Utils::Chrono::Start("Kernel options '" + function->GetName() + "'");
 
-	GeometryAnalysis geometryAnalysis(shapeAnalysis);
+	GeometryAnalysis geometryAnalysis(m_shapeAnalysis);
 	geometryAnalysis.Analyze(function);
 
-	KernelAnalysis kernelAnalysis(geometryAnalysis);
+	KernelGeometryAnalysis kernelAnalysis(geometryAnalysis);
 	kernelAnalysis.Analyze(function);
 
 	auto timeCreateOptions_start = Utils::Chrono::Start("Create options");
 
-	const auto& dataAnalysis = shapeAnalysis.GetDataAnalysis();
+	const auto& dataAnalysis = m_shapeAnalysis.GetDataAnalysis();
 
 	// Construct the input options
 
-	//TODO: Determine order
 	m_inputOptions = new Codegen::InputOptions();
 	m_inputOptions->ThreadGeometry = kernelAnalysis.GetOperatingGeometry();
-	m_inputOptions->InOrderBlocks = ShapeUtils::IsShape<VectorShape>(m_inputOptions->ThreadGeometry);
 
-	for (const auto& parameter : function->GetParameters())
+	for (const auto parameter : function->GetParameters())
 	{
 		m_inputOptions->Parameters[parameter->GetSymbol()] = parameter;
 
-		m_inputOptions->ParameterShapes[parameter] = shapeAnalysis.GetParameterShape(parameter);
+		m_inputOptions->ParameterShapes[parameter] = m_shapeAnalysis.GetParameterShape(parameter);
 		m_inputOptions->ParameterObjects[parameter] = dataAnalysis.GetParameterObject(parameter);
 
 		m_inputOptions->ParameterObjectMap[dataAnalysis.GetParameterObject(parameter)] = parameter;
 	}
 
+	// Collect declaration shapes
+
+	function->Accept(*this);
+
 	// Use the write shapes as that's what's actually active!
 
-	m_inputOptions->ReturnShapes = shapeAnalysis.GetReturnShapes();
-	m_inputOptions->ReturnWriteShapes = shapeAnalysis.GetReturnWriteShapes();
+	m_inputOptions->ReturnShapes = m_shapeAnalysis.GetReturnShapes();
+	m_inputOptions->ReturnWriteShapes = m_shapeAnalysis.GetReturnWriteShapes();
+
+	// Check if the blocks should be in-order
+
+	m_inputOptions->InOrderBlocks = IsInOrder(function);
 
 	// Specify the number of threads for each cell computation in list thread geometry
 
@@ -69,6 +75,57 @@ void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function, const Sha
 
 	Utils::Chrono::End(timeCreateOptions_start);
 	Utils::Chrono::End(timeKernelOptions_start);
+}
+
+bool KernelOptionsAnalysis::IsInOrder(const HorseIR::Function *function) const
+{
+	if (const auto vectorGeometry = ShapeUtils::GetShape<VectorShape>(m_inputOptions->ThreadGeometry))
+	{
+		// Input load compression
+
+		for (const auto parameter : function->GetParameters())
+		{
+			const auto shape = m_inputOptions->ParameterShapes[parameter];
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(shape))
+			{
+				if (ShapeUtils::IsCompressedSize(vectorShape->GetSize(), vectorGeometry->GetSize()))
+				{
+					return true;
+				}
+			}
+		}
+
+		// Output write compression
+
+		for (const auto returnShape : m_inputOptions->ReturnShapes)
+		{
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(returnShape))
+			{
+				if (ShapeUtils::IsCompressedSize(vectorShape->GetSize(), vectorGeometry->GetSize()))
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool KernelOptionsAnalysis::VisitIn(const HorseIR::Parameter *parameter)
+{
+	// Do nothing
+
+	return true;
+}
+
+bool KernelOptionsAnalysis::VisitIn(const HorseIR::VariableDeclaration *declaration)
+{
+	const auto& endSet = m_shapeAnalysis.GetEndSet();
+
+	m_inputOptions->Declarations[declaration->GetSymbol()] = declaration;
+	m_inputOptions->DeclarationShapes[declaration] = endSet.first.at(declaration->GetSymbol());
+
+	return true;
 }
 
 std::uint32_t KernelOptionsAnalysis::GetAverageCellSize(const Analysis::ListShape *shape) const

@@ -10,10 +10,10 @@
 
 namespace Analysis {
 
-class KernelAnalysis : public HorseIR::ConstHierarchicalVisitor
+class KernelGeometryAnalysis : public HorseIR::ConstHierarchicalVisitor
 {
 public:
-	KernelAnalysis(const GeometryAnalysis& geometryAnalysis) : m_geometryAnalysis(geometryAnalysis) {}
+	KernelGeometryAnalysis(const GeometryAnalysis& geometryAnalysis) : m_geometryAnalysis(geometryAnalysis) {}
 
 	void Analyze(const HorseIR::Function *function);
 	const Shape *GetOperatingGeometry() const { return m_operatingGeometry; }

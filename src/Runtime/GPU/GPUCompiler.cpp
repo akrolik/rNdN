@@ -85,11 +85,10 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 
 			const auto& localShapeAnalysis = shapeAnalysis.GetAnalysis(function);
 
-			Analysis::KernelOptionsAnalysis optionsAnalysis;
-			optionsAnalysis.Analyze(function, localShapeAnalysis);
+			Analysis::KernelOptionsAnalysis optionsAnalysis(localShapeAnalysis);
+			optionsAnalysis.Analyze(function);
 
-			auto inputOptions = optionsAnalysis.GetInputOptions();
-			codegen.SetInputOptions(function, inputOptions);
+			codegen.SetInputOptions(function, optionsAnalysis.GetInputOptions());
 		}
 	}
 

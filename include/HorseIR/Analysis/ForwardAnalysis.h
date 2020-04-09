@@ -89,6 +89,8 @@ public:
 			PropagateNext();
 		}
 		this->m_currentStatement = nullptr;
+
+		this->m_endSet = this->m_currentInSet;
 	}
 
 	void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *elseBlock) override
@@ -218,8 +220,12 @@ public:
 		context.AddContinueSet(this->m_currentInSet);
 	}
 
+	const F& GetEndSet() const { return m_endSet; }
+
 protected:
 	std::stack<LoopContext> m_loopContexts;
+
+	F m_endSet;
 };
 
 }

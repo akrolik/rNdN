@@ -1,4 +1,4 @@
-#include "Analysis/Geometry/KernelAnalysis.h"
+#include "Analysis/Geometry/KernelGeometryAnalysis.h"
 
 #include "Analysis/Geometry/GeometryUtils.h"
 #include "Analysis/Shape/ShapeUtils.h"
@@ -9,7 +9,7 @@
 
 namespace Analysis {
 
-void KernelAnalysis::Analyze(const HorseIR::Function *function)
+void KernelGeometryAnalysis::Analyze(const HorseIR::Function *function)
 {
 	auto timeKernel_start = Utils::Chrono::Start("Kernel analysis '" + function->GetName() + "'");
 	function->Accept(*this);
@@ -27,21 +27,21 @@ void KernelAnalysis::Analyze(const HorseIR::Function *function)
 	}
 }
 
-bool KernelAnalysis::VisitIn(const HorseIR::Statement *statement)
+bool KernelGeometryAnalysis::VisitIn(const HorseIR::Statement *statement)
 {
 	auto statementGeometry = m_geometryAnalysis.GetGeometry(statement);
 	m_operatingGeometry = GeometryUtils::MaxGeometry(m_operatingGeometry, statementGeometry);
 	return false;
 }
 
-bool KernelAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)
+bool KernelGeometryAnalysis::VisitIn(const HorseIR::DeclarationStatement *declarationS)
 {
 	// Exclude declaration statements from geometry
 
 	return false;
 }
 
-bool KernelAnalysis::VisitIn(const HorseIR::ReturnStatement *returnS)
+bool KernelGeometryAnalysis::VisitIn(const HorseIR::ReturnStatement *returnS)
 {
 	// Exclude return statements from geometry
 
