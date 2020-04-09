@@ -80,7 +80,7 @@ public:
 	std::string DebugDump() const
 	{
 		std::string string;
-		auto count = std::min(m_data.size(), 15ul);
+		auto count = std::min(m_data.size(), 32ul);
 		if (count > 1)
 		{
 			string += "(";
