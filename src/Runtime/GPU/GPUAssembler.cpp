@@ -27,9 +27,11 @@ const GPUProgram *GPUAssembler::Assemble(const PTX::Program *program) const
 
 	cModule.Compile();
 
+	auto gpuProgram = new GPUProgram(program, cModule);
+
 	Utils::Chrono::End(timeAssembly_start);
 
-	return new GPUProgram(program, cModule);
+	return gpuProgram;
 }
 
 }
