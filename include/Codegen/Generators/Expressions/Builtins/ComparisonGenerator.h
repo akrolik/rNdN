@@ -52,6 +52,8 @@ class ComparisonGenerator : public BuiltinGenerator<B, T>
 public:
 	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, T>(builder), m_comparisonOp(comparisonOp) {}
 
+	std::string Name() const override { return "ComparisonGenerator"; }
+
 private:
 	ComparisonOperator m_comparisonOp;
 };
@@ -61,6 +63,8 @@ class ComparisonGenerator<B, PTX::PredicateType> : public BuiltinGenerator<B, PT
 {
 public:
 	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::PredicateType>(builder), m_comparisonOp(comparisonOp) {}
+
+	std::string Name() const override { return "ComparisonGenerator"; }
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
@@ -75,7 +79,7 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		//TODO: Predicate type should sometimes compare using bit operations
 
@@ -83,7 +87,7 @@ public:
 		{
 			// Conversions require at least 16 bits
 
-			Generate<PTX::Int16Type>(target, arguments);
+			GenerateVector<PTX::Int16Type>(target, arguments);
 		}
 		else
 		{
@@ -96,6 +100,25 @@ public:
 	}
 
 	template<class T>
+	void GenerateList(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		if (this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("list-in-vector");
+		}
+
+		// Lists are handled by the vector code through a projection
+
+		GenerateVector<T>(target, arguments);
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("list-in-vector");
+	}
+
+	template<class T>
 	void Generate(const PTX::Register<PTX::PredicateType> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 	{
 		if constexpr(PTX::is_comparable_type<T>::value)
@@ -104,13 +127,13 @@ public:
 		}
 		else
 		{
-			BuiltinGenerator<B, T>::Unimplemented("comparison operator " + ComparisonOperatorString(m_comparisonOp));
+			BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("comparison operator " + ComparisonOperatorString(m_comparisonOp));
 		}
 	}
 
 private:
 	template<class T>
-	static typename T::ComparisonOperator PTXOp(ComparisonOperator comparisonOp)
+	typename T::ComparisonOperator PTXOp(ComparisonOperator comparisonOp) const
 	{
 		switch (comparisonOp)
 		{
@@ -127,7 +150,7 @@ private:
 			case ComparisonOperator::NotEqual:
 				return T::ComparisonOperator::NotEqual;
 			default:
-				BuiltinGenerator<B, T>::Unimplemented("comparison operator " + ComparisonOperatorString(comparisonOp));
+				BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("comparison operator " + ComparisonOperatorString(comparisonOp));
 		}
 
 	}
@@ -141,6 +164,8 @@ class ComparisonGenerator<B, PTX::IntType<S>, std::enable_if_t<S == PTX::Bits::B
 {
 public:
 	ComparisonGenerator(Builder& builder, ComparisonOperator comparisonOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_comparisonOp(comparisonOp) {}
+
+	std::string Name() const override { return "ComparisonGenerator"; }
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
@@ -161,7 +186,7 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder.AddStatement(block);
@@ -189,6 +214,25 @@ public:
 		this->m_builder.AddStatement(select);
 
 		this->m_builder.CloseScope();
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		if (this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("list-in-vector");
+		}
+
+		// Lists are handled by the vector code through a projection
+
+		GenerateVector<T>(target, arguments);
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("list-in-vector");
 	}
 
 private:

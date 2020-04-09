@@ -6,6 +6,7 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -18,6 +19,8 @@ class InternalFindGenerator : public BuiltinGenerator<B, D>, public HorseIR::Con
 {
 public:
 	using BuiltinGenerator<B, D>::BuiltinGenerator;
+
+	std::string Name() const override { return "InternalFindGenerator"; }
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
@@ -66,7 +69,7 @@ public:
 		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(index, new PTX::UInt32Value(0)));
 
-		SizeGenerator<B> sizeGenerator(this->m_builder);
+		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(identifier);
 
 		auto startLabel = this->m_builder.CreateLabel("START");
@@ -119,7 +122,7 @@ public:
 
 	void Visit(const HorseIR::Literal *literal) override
 	{
-		BuiltinGenerator<B, PTX::PredicateType>::Unimplemented("literal kind");
+		BuiltinGenerator<B, D>::Unimplemented("literal kind");
 	}
 
 	void Visit(const HorseIR::BooleanLiteral *literal) override
@@ -207,7 +210,7 @@ public:
 	{
 		// For each value in the literal, check if it is equal to the data value in this thread. Note, this is an unrolled loop
 
-		for (auto value : literal->GetValues())
+		for (const auto& value : literal->GetValues())
 		{
 			// Load the value and cast to the appropriate type
 

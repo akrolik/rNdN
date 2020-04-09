@@ -6,17 +6,17 @@
 
 #include "Utils/Logger.h"
 
-namespace Codegen {
+namespace HorseIR {
 
 template<class T>
-class LiteralGenerator : public HorseIR::ConstVisitor
+class LiteralUtils : public HorseIR::ConstVisitor
 {
 public:
 	static const HorseIR::TypedVectorLiteral<T> *GetLiteral(const HorseIR::Operand *operand)
 	{
-		LiteralGenerator generator;
-		operand->Accept(generator);
-		return generator.m_literal;
+		LiteralUtils utils;
+		operand->Accept(utils);
+		return utils.m_literal;
 	}
 
 	void Visit(const HorseIR::BooleanLiteral *literal) override

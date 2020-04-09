@@ -5,14 +5,16 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/SizeGenerator.h"
-#include "Codegen/Generators/TargetGenerator.h"
+#include "Codegen/Generators/Data/TargetGenerator.h"
+#include "Codegen/Generators/Data/TargetCellGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
-#include "Codegen/Generators/Expressions/LiteralGenerator.h"
 #include "Codegen/Generators/Expressions/MoveGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/LiteralUtils.h"
 
 #include "PTX/PTX.h"
 
@@ -24,18 +26,65 @@ class OrderInitValueGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	std::string Name() const override { return "OrderInitValueGenerator"; }
+
+	void Generate(const HorseIR::LValue *target, const HorseIR::Operand *dataArgument)
+	{
+		DispatchType(*this, dataArgument->GetType(), target, dataArgument);
+	}
+
 	template<class T>
-	void Generate(const HorseIR::LValue *target, const HorseIR::Operand *operand)
+	void GenerateVector(const HorseIR::LValue *target, const HorseIR::Operand *dataArgument)
 	{
 		// Load the sort data into registers
 
 		OperandGenerator<B, T> opGen(this->m_builder);
-		auto value = opGen.GenerateOperand(operand, OperandGenerator<B, T>::LoadKind::Vector);
+		auto value = opGen.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector);
 
 		// Get the target register
 
 		TargetGenerator<B, T> targetGenerator(this->m_builder);
 		auto targetRegister = targetGenerator.Generate(target, nullptr);
+		
+		// Move the actual value into the target
+
+		MoveGenerator<T> moveGenerator(this->m_builder);
+		moveGenerator.Generate(targetRegister, value);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::LValue *target, const HorseIR::Operand *dataArgument)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto declaration = inputOptions.Declarations.at(target->GetSymbol());
+		const auto shape = inputOptions.DeclarationShapes.at(declaration);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateTuple<T>(index, target, dataArgument);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const HorseIR::Operand *dataArgument)
+	{
+		// Load the sort data into registers
+
+		OperandGenerator<B, T> opGen(this->m_builder);
+		auto value = opGen.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector, index);
+
+		// Get the target register
+
+		TargetCellGenerator<B, T> targetGenerator(this->m_builder);
+		auto targetRegister = targetGenerator.Generate(target, index);
 		
 		// Move the actual value into the target
 
@@ -50,18 +99,25 @@ class OrderInitNullGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	std::string Name() const override { return "OrderInitNullGenerator"; }
+
 	enum class Order {
 		Ascending,
 		Descending
 	};
 
+	void Generate(const HorseIR::LValue *target, const HorseIR::Operand *dataArgument, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
+	{
+		DispatchType(*this, dataArgument->GetType(), target, dataArgument, orderLiteral);
+	}
+
 	template<class T>
-	void Generate(const HorseIR::LValue *target, const HorseIR::Operand *operand, Order order)
+	void GenerateVector(const HorseIR::LValue *target, const HorseIR::Operand *dataArgument, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
 	{
 		// Compute the null value depending on the sort order
 
-		auto null = ((order == Order::Ascending) ? std::numeric_limits<typename T::SystemType>::max() : std::numeric_limits<typename T::SystemType>::min());
-		auto value = new PTX::Value<T>(null);
+		auto order = GenerateOrder(orderLiteral->GetValue(0));
+		auto value = GenerateNull<T>(order);
 
 		// Get the target register
 
@@ -73,6 +129,64 @@ public:
 		MoveGenerator<T> moveGenerator(this->m_builder);
 		moveGenerator.Generate(targetRegister, value);
 	}
+
+	template<class T>
+	void GenerateList(const HorseIR::LValue *target, const HorseIR::Operand *dataArgument, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto declaration = inputOptions.Declarations.at(target->GetSymbol());
+		const auto shape = inputOptions.DeclarationShapes.at(declaration);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateTuple<T>(index, target, dataArgument, orderLiteral);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const HorseIR::Operand *dataArgument, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
+	{
+		auto order = GenerateOrder(orderLiteral->GetValue((orderLiteral->GetCount() == 1 ? 0 : index)));
+		auto value = GenerateNull<T>(order);
+
+		// Get the target register
+
+		TargetCellGenerator<B, T> targetGenerator(this->m_builder);
+		auto targetRegister = targetGenerator.Generate(target, index);
+		
+		// Move the null value into the target
+
+		MoveGenerator<T> moveGenerator(this->m_builder);
+		moveGenerator.Generate(targetRegister, value);
+	}
+
+private:
+	Order GenerateOrder(bool order) const
+	{
+		if (order)
+		{
+			return OrderInitNullGenerator<B>::Order::Ascending;
+		}
+		return OrderInitNullGenerator<B>::Order::Descending;      
+	}
+
+	template<class T>
+	const PTX::Value<T> *GenerateNull(Order order) const
+	{
+		if (order == Order::Ascending)
+		{
+			return new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
+		}
+		return new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::min());
+	}
 };
 
 template<PTX::Bits B>
@@ -81,13 +195,15 @@ class OrderInitGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	std::string Name() const override { return "OrderInitGenerator"; }
+
+	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// Generate the index value for the thread and convert to the right type
 
-		IndexGenerator indexGenerator(this->m_builder);
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
 		TargetGenerator<B, PTX::Int64Type> targetGenerator(this->m_builder);
@@ -97,8 +213,9 @@ public:
 
 		// Compute the number of active data items - the rest will be nulled. We assume all data columns are the same size
 
-		SizeGenerator<B> sizeGenerator(this->m_builder);
+		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(arguments.at(0));
+
 
 		// Generate the if-else structure
 
@@ -112,20 +229,15 @@ public:
 
 		// Decompose the arguments into data and order
 
-		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments), std::end(arguments) - 1);
-		const auto& orderArgument = arguments.at(arguments.size() - 1);
+		const auto& dataArgument = arguments.at(0);
+		const auto& orderArgument = arguments.at(1);
 
-		auto orderLiteral = LiteralGenerator<std::int8_t>::GetLiteral(orderArgument);
+		auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(orderArgument);
 
 		// True branch (index < size), load the values into the target registers, skipping the index target
 
-		auto targetIndex = 1;
 		OrderInitValueGenerator<B> valueGenerator(this->m_builder);
-		for (const auto operand : dataArguments)
-		{
-			DispatchType(valueGenerator, operand->GetType(), targets.at(targetIndex), operand);
-			targetIndex++;
-		}
+		valueGenerator.Generate(targets.at(1), dataArgument);
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
 
@@ -134,14 +246,8 @@ public:
 		this->m_builder.AddStatement(elseLabel);
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
-		targetIndex = 1;
 		OrderInitNullGenerator<B> nullGenerator(this->m_builder);
-		for (const auto operand : dataArguments)
-		{
-			auto order = (orderLiteral->GetValue(targetIndex - 1)) ? OrderInitNullGenerator<B>::Order::Ascending : OrderInitNullGenerator<B>::Order::Descending;
-			DispatchType(nullGenerator, operand->GetType(), targets.at(targetIndex), operand, order);
-			targetIndex++;
-		}
+		nullGenerator.Generate(targets.at(1), dataArgument, orderLiteral);
 
 		this->m_builder.AddStatement(endLabel);
 	}

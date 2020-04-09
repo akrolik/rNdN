@@ -4,12 +4,11 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
-#include "Codegen/Generators/AddressGenerator.h"
-#include "Codegen/Generators/GeometryGenerator.h"
-#include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/Data/ParameterGenerator.h"
 #include "Codegen/Generators/Data/ParameterLoadGenerator.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -23,15 +22,20 @@ class ListFunctionGenerator : public FunctionGenerator<B>
 public:
 	using FunctionGenerator<B>::FunctionGenerator;
 
+	std::string Name() const override { return "ListFunctionGenerator"; }
+
 	void Generate(const HorseIR::Function *function)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
+		// Setup the parameter (in/out) declarations in the kernel
+
 		ParameterGenerator<B> parameterGenerator(this->m_builder);
+		parameterGenerator.Generate(function);
+
 		ParameterLoadGenerator<B> parameterLoadGenerator(this->m_builder);
-		ValueLoadGenerator<B> valueLoadGenerator(this->m_builder);
 
 		// Setup the thread count for each cell
 
@@ -39,10 +43,12 @@ public:
 		{
 			// Load the dynamic thread allocation parameter
 
-			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryCellThreads));
+			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::ThreadGeometryListThreads));
 
-			auto parameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryCellThreads);
-			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(parameter);
+			auto parameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::ThreadGeometryListThreads);
+
+			ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+			valueLoadGenerator.GenerateConstant(parameter);
 		}
 		else
 		{
@@ -56,24 +62,26 @@ public:
 		const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry);
 		if (Analysis::ShapeUtils::IsDynamicSize(listGeometry->GetListSize()))
 		{
-			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryListSize));
+			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::ThreadGeometryListSize));
 
-			auto parameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryListSize);
-			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(parameter);
+			auto parameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::ThreadGeometryListSize);
+
+			ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+			valueLoadGenerator.GenerateConstant(parameter);
 		}
 
 		// Check of the cell is within bounds
 
 		this->m_builder.AddStatement(new PTX::CommentStatement("bounds check"));
 
-		IndexGenerator indexGenerator(this->m_builder);
-		auto cellIndex = indexGenerator.GenerateCellIndex();
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
+		auto listIndex = indexGenerator.GenerateListIndex();
 
-		GeometryGenerator geometryGenerator(this->m_builder);
-		auto cellCount = geometryGenerator.GenerateListSize();
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto listSize = geometryGenerator.GenerateListGeometry();
 
 		auto exitPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(exitPredicate, cellIndex, cellCount, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(exitPredicate, listIndex, listSize, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 
 		auto exitInstruction = new PTX::ReturnInstruction();
 		exitInstruction->SetPredicate(exitPredicate);
@@ -81,28 +89,23 @@ public:
 
 		// Load the geometry cell sizes
 
-		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryDataSize));
+		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::ThreadGeometryDataSize));
 
-		auto geometryDataSizeParameter = parameterGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::GeometryDataSize);
+		auto geometryDataSizeParameter = parameterGenerator.template GeneratePointer<PTX::UInt32Type>(NameUtils::ThreadGeometryDataSize);
+		parameterLoadGenerator.template GenerateParameterAddress<PTX::UInt32Type>(geometryDataSizeParameter);
 
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		addressGenerator.template LoadParameterAddress<PTX::UInt32Type>(geometryDataSizeParameter);
-
-		valueLoadGenerator.template GeneratePointer<PTX::UInt32Type>(geometryDataSizeParameter, cellIndex);
+		ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+		valueLoadGenerator.GeneratePointer(geometryDataSizeParameter, listIndex);
 
 		// Initialize the special local index register
 
-		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryThreadIndex));
+		this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::ThreadGeometryListDataIndex));
 
-		auto index = indexGenerator.GenerateInitialCellDataIndex();
+		auto index = indexGenerator.GenerateListDataIndex();
 
 		// Fetch the arguments from the .param address space
 
-		for (const auto& parameter : function->GetParameters())
-		{
-			parameterLoadGenerator.Generate(parameter);
-		}
-		parameterLoadGenerator.Generate(function->GetReturnTypes());
+		parameterLoadGenerator.Generate(function);
 
 		// Generate the starting index for the loop
 
@@ -110,19 +113,19 @@ public:
 
 		// Generate the loop bound
 
-		auto cellSize = geometryGenerator.GenerateCellSize();
+		auto listDataSize = geometryGenerator.GenerateListDataGeometry();
 		auto bound = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(bound, index, cellSize));
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(bound, index, listDataSize));
 
 		// Construct the standard loop structure
 		//
+		//   <init>
 		//   START:
 		//      setp %p, ...
 		//      @%p br END
 		//
-		//      <load>
 		//      <body>
-		//      <increment>
+		//      <post>
 		//
 		//      br START
 		//
@@ -140,17 +143,14 @@ public:
 
 		// Construct the loop body according to the standard function generator
 
-		for (const auto& statement : function->GetStatements())
-		{
-			statement->Accept(*this);
-		}
+		FunctionGenerator<B>::Visit(function);
 
 		// Increment the thread index by the number of threads per cell
 
 		this->m_builder.AddStatement(new PTX::CommentStatement("loop post"));
 
-		auto cellThreads = indexGenerator.GenerateCellThreads();
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, cellThreads));
+		auto listThreads = geometryGenerator.GenerateListThreads();
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, listThreads));
 
 		// Complete the loop structure
 

@@ -18,6 +18,8 @@ class RazeGenerator : public BuiltinGenerator<B, T>
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
+	std::string Name() const override { return "RazeGenerator"; }
+
 	// The output of the raze function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override

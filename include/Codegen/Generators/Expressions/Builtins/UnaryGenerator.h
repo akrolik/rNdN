@@ -49,6 +49,8 @@ class UnaryGenerator : public BuiltinGenerator<B, T>
 public:
 	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
+	std::string Name() const override { return "UnaryGenerator"; }
+
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
@@ -113,6 +115,8 @@ class UnaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Typ
 {
 public:
 	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_unaryOp(unaryOp) {}
+
+	std::string Name() const override { return "UnaryGenerator"; }
 
 	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{

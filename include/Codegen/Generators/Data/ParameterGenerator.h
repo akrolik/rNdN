@@ -14,8 +14,6 @@
 
 #include "Runtime/RuntimeUtils.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
 template<PTX::Bits B>
@@ -23,6 +21,8 @@ class ParameterGenerator : public Generator
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "ParameterGenerator"; }
 
 	void Generate(const HorseIR::Function *function)
 	{
@@ -37,7 +37,7 @@ public:
 		auto returnIndex = 0;
 		for (const auto& returnType : function->GetReturnTypes())
 		{
-			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
+			auto shape = inputOptions.ReturnShapes.at(returnIndex);
 			auto name = NameUtils::ReturnName(returnIndex);
 			DispatchType(*this, returnType, name, shape, true);
 
@@ -46,66 +46,103 @@ public:
 	}
 
 	template<class T>
-	void Generate(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateVector(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			// Predicate values are stored as 8-bit integers on the CPU
 
-			Generate<PTX::Int8Type>(name, shape, returnParameter);
+			GenerateVector<PTX::Int8Type>(name, shape, returnParameter);
 		}
 		else
 		{
-			auto& inputOptions = this->m_builder.GetInputOptions();
-			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+			// Add vector parameter to the kernel
+
+			auto parameter = GeneratePointer<T>(name);
+			if (returnParameter)
 			{
-				// Add vector parameter to the kernel
+				// Return dynamic shapes use a pointer parameter for accumulating size
 
-				auto parameter = GeneratePointer<T>(name);
-
-				if (returnParameter)
-				{
-					// Return dynamic shapes use pointer types for accumulating size
-
-					if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
-					{
-						GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
-					}
-				}
-				else
-				{
-					// Input parameters always have a size argument
-
-					GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(parameter));
-				}
-			}
-			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
-			{
-				// Add list parameter (pointer of pointers) to the kernel
-
-				auto parameter = GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
-
-				// Dynamic returns as well as all input parameters require a size argument
-
-				if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+				auto& inputOptions = this->m_builder.GetInputOptions();
+				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
 				{
 					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}
 			}
 			else
 			{
-				Utils::Logger::LogError("Unable to generate parameter for shape " + Analysis::ShapeUtils::ShapeString(shape));
+				// Input parameters always have a size argument
+
+				GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 			}
 		}
 	}
 
 	template<class T>
-	const PTX::ParameterVariable<PTX::PointerType<B, T>> *GeneratePointer(const std::string& name)
+	void GenerateList(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			// Predicate values are stored as 8-bit integers on the CPU
+
+			GenerateList<PTX::Int8Type>(name, shape, returnParameter);
+		}
+		else
+		{
+			// Add list parameter (pointer of pointers) to the kernel
+
+			auto parameter = GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
+
+			// Dynamic returns as well as all input parameters require a size argument
+
+			auto& inputOptions = this->m_builder.GetInputOptions();
+			if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+			{
+				GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
+			}
+		}
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			// Predicate values are stored as 8-bit integers on the CPU
+
+			GenerateTuple<PTX::Int8Type>(index, name, shape, returnParameter);
+		}
+		else
+		{
+			if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+			{
+				Error(name, shape, returnParameter);
+			}
+
+			// Add list parameter to the kernel, aliasing all later types
+
+			auto parameter = GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name, index > 0);
+
+			if (index == 0)
+			{
+				// Dynamic returns as well as all input parameters require a size argument
+
+				auto& inputOptions = this->m_builder.GetInputOptions();
+				if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+				{
+					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
+				}
+			}
+		}
+	}
+
+	template<class T>
+	const PTX::ParameterVariable<PTX::PointerType<B, T>> *GeneratePointer(const std::string& name, bool alias = false)
 	{
 		// Allocate a pointer parameter declaration for the type
 
 		auto declaration = new PTX::PointerDeclaration<B, T>(name);
-		this->m_builder.AddParameter(name, declaration);
+		this->m_builder.AddParameter(name, declaration, alias);
 
 		return declaration->GetVariable(name);
 	}
@@ -119,6 +156,15 @@ public:
 		this->m_builder.AddParameter(name, declaration);
 
 		return declaration->GetVariable(name);
+	}
+
+	[[noreturn]] void Error(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false) const
+	{
+		if (returnParameter)
+		{
+			Generator::Error("return parameter '" + name + "' for shape " + Analysis::ShapeUtils::ShapeString(shape));
+		}
+		Generator::Error("parameter '" + name + "' for shape " + Analysis::ShapeUtils::ShapeString(shape));
 	}
 };
 

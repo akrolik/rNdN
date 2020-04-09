@@ -3,11 +3,12 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/AddressGenerator.h"
-#include "Codegen/Generators/BarrierGenerator.h"
-#include "Codegen/Generators/GeometryGenerator.h"
-#include "Codegen/Generators/IndexGenerator.h"
-#include "Codegen/Generators/SpecialRegisterGenerator.h"
+#include "Codegen/Generators/Indexing/AddressGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/SpecialRegisterGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
+#include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -24,6 +25,8 @@ class PrefixSumGenerator : public Generator
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "PrefixSumGenerator"; }
 
 	template<class T>
 	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value, PrefixSumMode mode)
@@ -46,10 +49,13 @@ public:
 
 		auto& targetOptions = this->m_builder.GetTargetOptions();
 
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		BarrierGenerator barrierGenerator(this->m_builder);
-		IndexGenerator indexGenerator(this->m_builder);
-		GeometryGenerator geometryGenerator(this->m_builder);
+		AddressGenerator<B, T> addressGenerator(this->m_builder);
+		BarrierGenerator<B> barrierGenerator(this->m_builder);
+
+		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+
+		DataIndexGenerator<B> dataIndexGenerator(this->m_builder);
 
 		// Iteratively compute the prefix sum for the warp
 
@@ -58,8 +64,8 @@ public:
 
 		// Ensure the data is within bounds or set to zero
 
-		auto dataIndex = indexGenerator.GenerateDataIndex();
-		auto dataSize = geometryGenerator.GenerateDataSize();
+		auto dataIndex = dataIndexGenerator.GenerateDataIndex();
+		auto dataSize = geometryGenerator.GenerateDataGeometry();
 
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));

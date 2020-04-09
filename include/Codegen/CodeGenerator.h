@@ -5,13 +5,14 @@
 #include "Codegen/Builder.h"
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
-#include "Codegen/Generators/Data/ParameterGenerator.h"
 #include "Codegen/Generators/Functions/ListFunctionGenerator.h"
 #include "Codegen/Generators/Functions/VectorFunctionGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
+
+#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -133,20 +134,15 @@ public:
 		m_builder.SetCurrentKernel(kernel, function);
 		m_builder.OpenScope(kernel);
 
-		// Setup the parameter (in/out) declarations in the kernel
-
-		ParameterGenerator<B> parameterGenerator(this->m_builder);
-		parameterGenerator.Generate(function);
-
 		// Generate the function body
 
 		auto& inputOptions = m_builder.GetInputOptions();
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		if (inputOptions.IsVectorGeometry())
 		{
 			VectorFunctionGenerator<B> functionGenerator(m_builder);
 			functionGenerator.Generate(function);
 		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		else if (inputOptions.IsListGeometry())
 		{
 			ListFunctionGenerator<B> functionGenerator(m_builder);
 			functionGenerator.Generate(function);

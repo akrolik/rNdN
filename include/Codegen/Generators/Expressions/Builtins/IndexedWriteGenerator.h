@@ -18,6 +18,8 @@ class IndexedWriteGenerator : public BuiltinGenerator<B, T>
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
+	std::string Name() const override { return "IndexedWriteGenerator"; }
+
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		std::vector<HorseIR::Operand *> l_arguments;

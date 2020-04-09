@@ -11,6 +11,8 @@ class SpecialRegisterGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	std::string Name() const { return "SpecialRegisterGenerator"; }
+
 	const PTX::Register<PTX::UInt32Type> *GenerateThreadIndex(PTX::VectorElement element = PTX::VectorElement::X)
 	{
 		return GenerateSpecialRegister(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), element);

@@ -7,6 +7,8 @@
 #include "Codegen/Generators/Data/ParameterGenerator.h"
 #include "Codegen/Generators/Data/ParameterLoadGenerator.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
+#include "Codegen/Generators/Indexing/AddressGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -20,42 +22,41 @@ class VectorFunctionGenerator : public FunctionGenerator<B>
 public:
 	using FunctionGenerator<B>::FunctionGenerator;
 
+	std::string Name() const override { return "VectorFunctionGenerator"; }
+
 	void Generate(const HorseIR::Function *function)
 	{
-		// Initialize the parameters from the address space
+		// Setup the parameter (in/out) declarations in the kernel
 
-		ParameterLoadGenerator<B> parameterLoadGenerator(this->m_builder);
-		for (const auto& parameter : function->GetParameters())
-		{
-			parameterLoadGenerator.Generate(parameter);
-		}
-		parameterLoadGenerator.Generate(function->GetReturnTypes());
-
-		auto& inputOptions = this->m_builder.GetInputOptions();
+		ParameterGenerator<B> parameterGenerator(this->m_builder);
+		parameterGenerator.Generate(function);
 
 		// Check if the geometry size is dynamically specified
 		
+		auto& inputOptions = this->m_builder.GetInputOptions();
 		const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry);
+
 		if (Analysis::ShapeUtils::IsDynamicSize(vectorGeometry->GetSize()))
 		{
 			// Load the geometry size from the input
 
-			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::GeometryDataSize));
+			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::ThreadGeometryDataSize));
 
-			ParameterGenerator<B> parameterGenerator(this->m_builder);
-			auto geometryParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::GeometryDataSize);
+			auto geometryParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::ThreadGeometryDataSize);
 
-			ValueLoadGenerator<B> valueLoadGenerator(this->m_builder);
-			valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(geometryParameter);
+			ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+			valueLoadGenerator.GenerateConstant(geometryParameter);
 		}
+
+		// Determine the block index
 
 		if (inputOptions.InOrderBlocks)
 		{
 			auto resources = this->m_builder.GetLocalResources();
 
-			this->m_builder.AddStatement(new PTX::CommentStatement("g_initBlocks/s_blockIndex"));
-
 			// Initialize a global variable for counting the number of initialized blocks
+
+			this->m_builder.AddStatement(new PTX::CommentStatement("g_initBlocks/s_blockIndex"));
 
 			auto globalResources = this->m_builder.GetGlobalResources();
 			auto g_initBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("initBlocks"));
@@ -67,7 +68,7 @@ public:
 
 			// Only load/increment the global counter once per block (local index 0)
 
-			IndexGenerator indexGenerator(this->m_builder);
+			ThreadIndexGenerator<B> indexGenerator(this->m_builder);
 			auto localIndex = indexGenerator.GenerateLocalIndex();
 
 			auto local0Predicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -80,7 +81,7 @@ public:
 
 			// Atomically increment the global block index
 
-			AddressGenerator<B> addressGenerator(this->m_builder);
+			AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
 			auto g_initBlocksAddress = addressGenerator.GenerateAddress(g_initBlocks);
 
 			auto blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
@@ -105,18 +106,18 @@ public:
 
 			// Synchronize the block index across all threads in the block
 			
-			BarrierGenerator barrierGenerator(this->m_builder);
+			BarrierGenerator<B> barrierGenerator(this->m_builder);
 			barrierGenerator.Generate();
 		}
 
-		auto i = 1u;
-		for (const auto& statement : function->GetStatements())
-		{
-			// Include the statement number for debugging
+		// Initialize the parameters from the address space
 
-			this->m_builder.AddStatement(new PTX::LocationDirective(this->m_builder.GetCurrentFile(), i++));
-			statement->Accept(*this);
-		}
+		ParameterLoadGenerator<B> parameterLoadGenerator(this->m_builder);
+		parameterLoadGenerator.Generate(function);
+
+		// Generate the function body
+
+		FunctionGenerator<B>::Visit(function);
 	}
 
 	void Visit(const HorseIR::ReturnStatement *returnS) override

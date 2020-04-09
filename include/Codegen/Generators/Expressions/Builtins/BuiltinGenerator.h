@@ -5,14 +5,12 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/TargetGenerator.h"
+#include "Codegen/Generators/Data/TargetGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "PTX/PTX.h"
-
-#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -43,14 +41,14 @@ public:
 		return nullptr;
 	}
 
-	[[noreturn]] static void Unimplemented()
+	[[noreturn]] void Unimplemented() const
 	{
-		Utils::Logger::LogError("Generator does not support type " + T::Name());
+		Error("type " + T::Name());
 	}
 
-	[[noreturn]] static void Unimplemented(const std::string& context)
+	[[noreturn]] void Unimplemented(const std::string& context) const
 	{
-		Utils::Logger::LogError("Generator does not support type " + T::Name() + " for " + context);
+		Error("type " + T::Name() + " for " + context);
 	}
 
 };

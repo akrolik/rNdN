@@ -40,6 +40,8 @@ class ExternalBinaryGenerator : public BuiltinGenerator<B, T>
 public:
 	ExternalBinaryGenerator(Builder& builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
+	std::string Name() const override { return "ExternalBinaryGenerator"; }
+
 private:
 	ExternalBinaryOperation m_binaryOp;
 };
@@ -49,6 +51,8 @@ class ExternalBinaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::B
 {
 public:
 	ExternalBinaryGenerator(Builder& builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_binaryOp(binaryOp) {}
+
+	std::string Name() const override { return "ExternalBinaryGenerator"; }
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
@@ -114,7 +118,7 @@ public:
 	}
 
 private:
-	static PTX::ExternalMathFunctions::BinaryFunction<S> *GetFunction(ExternalBinaryOperation binaryOp)
+	PTX::ExternalMathFunctions::BinaryFunction<S> *GetFunction(ExternalBinaryOperation binaryOp) const
 	{
 		switch (binaryOp)
 		{
@@ -123,7 +127,7 @@ private:
 			case ExternalBinaryOperation::Modulo:
 				return PTX::ExternalMathFunctions::mod<S>;
 			default:
-				BuiltinGenerator<B, PTX::Float32Type>::Unimplemented("external function " + ExternalBinaryOperationString(binaryOp));
+				BuiltinGenerator<B, PTX::FloatType<S>>::Unimplemented("external function " + ExternalBinaryOperationString(binaryOp));
 		}
 	}
 

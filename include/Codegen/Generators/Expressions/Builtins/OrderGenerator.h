@@ -4,15 +4,16 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Data/ParameterGenerator.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
-#include "Codegen/Generators/Expressions/LiteralGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/AddressGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/LiteralUtils.h"
 
 #include "PTX/PTX.h"
-
-#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -23,12 +24,11 @@ public:
 	OrderLoadGenerator(Builder& builder, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex) :
 		Generator(builder), m_leftIndex(leftIndex), m_rightIndex(rightIndex) {}
 
-	void Generate(const std::vector<HorseIR::Operand *>& dataArguments)
+	std::string Name() const override { return "OrderLoadGenerator"; }
+
+	void Generate(const HorseIR::Operand *dataArgument)
 	{
-		for (const auto argument : dataArguments)
-		{
-			argument->Accept(*this);
-		}
+		dataArgument->Accept(*this);
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
@@ -38,15 +38,44 @@ public:
 
 	void Visit(const HorseIR::Literal *literal) override
 	{
-		Utils::Logger::LogError("Unsupported literal operand for order function");
+		Error("literal data for @order");
 	}
 
 	template<class T>
-	void Generate(const HorseIR::Identifier *identifier)
+	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		operandGenerator.GenerateOperand(identifier, m_leftIndex, "left");
 		operandGenerator.GenerateOperand(identifier, m_rightIndex, "right");
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Identifier *identifier)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(identifier->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateTuple<T>(index, identifier);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
+	{
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		operandGenerator.GenerateOperand(identifier, m_leftIndex, "left", index);
+		operandGenerator.GenerateOperand(identifier, m_rightIndex, "right", index);
 	}
 
 private:
@@ -66,16 +95,12 @@ public:
 	OrderComparisonGenerator(Builder& builder, Order sequenceOrder, const PTX::Label *swapLabel, const PTX::Label *endLabel) :
 		Generator(builder), m_sequenceOrder(sequenceOrder), m_swapLabel(swapLabel), m_endLabel(endLabel) {}
 
-	void Generate(const std::vector<HorseIR::Operand *>& dataArguments, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
+	std::string Name() const override { return "OrderComparisonGenerator"; }
+
+	void Generate(const HorseIR::Operand *dataArgument, const HorseIR::TypedVectorLiteral<std::int8_t> *orderLiteral)
 	{
-		auto index = 0;
-		for (const auto argument : dataArguments)
-		{
-			m_dataOrder = (orderLiteral->GetValue(index)) ? Order::Ascending : Order::Descending;
-			m_hasNext = (index + 1 < dataArguments.size());
-			argument->Accept(*this);
-			index++;
-		}
+		m_orderLiteral = orderLiteral;
+		dataArgument->Accept(*this);
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
@@ -85,32 +110,70 @@ public:
 
 	void Visit(const HorseIR::Literal *literal) override
 	{
-		Utils::Logger::LogError("Unsupported literal operand for order function");
+		Error("literal data for @order");
 	}
 
 	template<class T>
-	void Generate(const HorseIR::Identifier *identifier)
+	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
-			Generate<PTX::Int16Type>(identifier);
+			GenerateVector<PTX::Int16Type>(identifier);
 		}
 		else
 		{
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
 			auto leftValue = operandGenerator.GenerateOperand(identifier, nullptr, "left");
 			auto rightValue = operandGenerator.GenerateOperand(identifier, nullptr, "right");
-			Generate<T>(leftValue, rightValue);
+			Generate<T>(leftValue, rightValue, 0);
 		}
 	}
 
 	template<class T>
-	void Generate(const PTX::TypedOperand<T> *leftValue, const PTX::TypedOperand<T> *rightValue)
+	void GenerateList(const HorseIR::Identifier *identifier)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(identifier->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateTuple<T>(index, identifier);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		{
+			GenerateTuple<PTX::Int16Type>(index, identifier);
+		}
+		else
+		{
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			auto leftValue = operandGenerator.GenerateOperand(identifier, nullptr, "left", index);
+			auto rightValue = operandGenerator.GenerateOperand(identifier, nullptr, "right", index);
+			Generate<T>(leftValue, rightValue, index);
+		}
+	}
+
+	template<class T>
+	void Generate(const PTX::TypedOperand<T> *leftValue, const PTX::TypedOperand<T> *rightValue, unsigned int index)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto predicateSwap = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		if (m_sequenceOrder == m_dataOrder)
+		auto dataOrder = (m_orderLiteral->GetValue((m_orderLiteral->GetCount() == 1 ? 0 : index))) ? Order::Ascending : Order::Descending;
+		if (m_sequenceOrder == dataOrder)
 		{
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateSwap, leftValue, rightValue, T::ComparisonOperator::Less));
 		}
@@ -123,7 +186,7 @@ public:
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(m_swapLabel, predicateSwap));
 		
-		if (m_hasNext)
+		if (index + 1 < m_orderLiteral->GetCount())
 		{
 			// Check for the next branch
 
@@ -138,8 +201,7 @@ private:
 	const PTX::Label *m_swapLabel = nullptr;
 	const PTX::Label *m_endLabel = nullptr;
 
-	bool m_hasNext = false;
-	Order m_dataOrder;
+	const HorseIR::TypedVectorLiteral<std::int8_t> *m_orderLiteral = nullptr;
 	Order m_sequenceOrder;
 };
 
@@ -150,13 +212,12 @@ public:
 	OrderSwapGenerator(Builder& builder, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex) :
 		Generator(builder), m_leftIndex(leftIndex), m_rightIndex(rightIndex) {}
 
-	void Generate(const HorseIR::Operand *index, const std::vector<HorseIR::Operand *>& dataArguments)
+	std::string Name() const override { return "OrderSwapGenerator"; }
+
+	void Generate(const HorseIR::Operand *index, const HorseIR::Operand *dataArgument)
 	{
 		index->Accept(*this);
-		for (const auto argument : dataArguments)
-		{
-			argument->Accept(*this);
-		}
+		dataArgument->Accept(*this);
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
@@ -166,15 +227,15 @@ public:
 
 	void Visit(const HorseIR::Literal *literal) override
 	{
-		Utils::Logger::LogError("Unsupported literal operand for order function");
+		Error("literal data for @order");
 	}
 
 	template<class T>
-	void Generate(const HorseIR::Identifier *identifier)
+	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			Generate<PTX::Int8Type>(identifier);
+			GenerateVector<PTX::Int8Type>(identifier);
 		}
 		else
 		{
@@ -193,9 +254,9 @@ public:
 
 			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::VariableName(identifier));
 
-			AddressGenerator<B> addressGenerator(this->m_builder);
-			auto leftAddress = addressGenerator.template GenerateAddress<T>(parameter, m_leftIndex);
-			auto rightAddress = addressGenerator.template GenerateAddress<T>(parameter, m_rightIndex);
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			auto leftAddress = addressGenerator.GenerateAddress(parameter, m_leftIndex);
+			auto rightAddress = addressGenerator.GenerateAddress(parameter, m_rightIndex);
 
 			// Store the results back
 
@@ -204,6 +265,61 @@ public:
 		}
 	}
 
+	template<class T>
+	void GenerateList(const HorseIR::Identifier *identifier)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(identifier->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateTuple<T>(index, identifier);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			GenerateTuple<PTX::Int8Type>(index, identifier);
+		}
+		else
+		{
+			// Swap the left and right values in global memory
+
+			auto resources = this->m_builder.GetLocalResources();
+			auto kernelResources = this->m_builder.GetKernelResources();
+			
+			// Get the left and right values
+
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			auto leftValue = operandGenerator.GenerateRegister(identifier, m_leftIndex, "left", index);
+			auto rightValue = operandGenerator.GenerateRegister(identifier, m_rightIndex, "right", index);
+
+			// Get the addresses of the left and right positions
+
+			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::VariableName(identifier));
+
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			auto leftAddress = addressGenerator.GenerateAddress(parameter, index, m_leftIndex);
+			auto rightAddress = addressGenerator.GenerateAddress(parameter, index, m_rightIndex);
+
+			// Store the results back
+
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
+		}
+	}
 private:
 	const PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
 	const PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
@@ -215,6 +331,8 @@ class OrderGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	std::string Name() const override { return "OrderGenerator"; }
+
 	void Generate(const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
@@ -225,11 +343,11 @@ public:
 		auto sortStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
 		auto sortSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
 
-		ValueLoadGenerator<B> valueLoadGenerator(this->m_builder);
-		auto stage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(sortStageParameter);
-		auto substage = valueLoadGenerator.template GenerateConstant<PTX::UInt32Type>(sortSubstageParameter);
+		ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+		auto stage = valueLoadGenerator.GenerateConstant(sortStageParameter);
+		auto substage = valueLoadGenerator.GenerateConstant(sortSubstageParameter);
 
-		IndexGenerator indexGenerator(this->m_builder);
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
 		// Compute the size of each bitonic sequence in this stage
@@ -325,15 +443,15 @@ public:
 
 		// Convenience for separating the data from the index
 
-		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments) + 1, std::end(arguments) - 1);
 		const auto& indexArgument = arguments.at(0);
-		const auto& orderArgument = arguments.at(arguments.size() - 1);
-		auto orderLiteral = LiteralGenerator<std::int8_t>::GetLiteral(orderArgument);
+		const auto& dataArgument = arguments.at(1);
+		const auto& orderArgument = arguments.at(2);
+		auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(orderArgument);
 
 		// Load the left and right values
 
 		OrderLoadGenerator<B> loadGenerator(this->m_builder, leftIndex, rightIndex);
-		loadGenerator.Generate(dataArguments);
+		loadGenerator.Generate(dataArgument);
 
 		// Generate the if-else structure for the sort order
 
@@ -357,7 +475,7 @@ public:
 		// True branch (ascending sequence)
 
 		OrderComparisonGenerator<B> ascendingGenerator(this->m_builder, OrderComparisonGenerator<B>::Order::Ascending, swapLabel, endLabel);
-		ascendingGenerator.Generate(dataArguments, orderLiteral);
+		ascendingGenerator.Generate(dataArgument, orderLiteral);
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
 
@@ -367,7 +485,7 @@ public:
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		OrderComparisonGenerator<B> descendingGenerator(this->m_builder, OrderComparisonGenerator<B>::Order::Descending, swapLabel, endLabel);
-		descendingGenerator.Generate(dataArguments, orderLiteral);
+		descendingGenerator.Generate(dataArgument, orderLiteral);
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
 
@@ -376,7 +494,7 @@ public:
 		this->m_builder.AddStatement(swapLabel);
 
 		OrderSwapGenerator<B> swapGenerator(this->m_builder, leftIndex, rightIndex);
-		swapGenerator.Generate(indexArgument, dataArguments);
+		swapGenerator.Generate(indexArgument, dataArgument);
 
 		// Finally, we end the order
 

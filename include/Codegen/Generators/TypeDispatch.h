@@ -21,6 +21,85 @@
 
 namespace Codegen {
 
+template<typename T>
+class VectorDispatch
+{
+public:
+	template<class G, typename... N>
+	static void Dispatch(G &generator, unsigned int i, N ...nodes)
+	{
+		generator.template GenerateVector<T>(nodes...);
+	}
+};
+
+template<typename T>
+class ListHomogeneousDispatch
+{
+public:
+	template<class G, typename... N>
+	static void Dispatch(G &generator, unsigned int i, N ...nodes)
+	{
+		generator.template GenerateList<T>(nodes...);
+	}
+};
+
+template<typename T>
+class ListHeterogeneousDispatch
+{
+public:
+	template<class G, typename... N>
+	static void Dispatch(G &generator, unsigned int i, N ...nodes)
+	{
+		generator.template GenerateTuple<T>(i, nodes...);
+	}
+};
+
+template<template <typename> typename D, class G, typename... N>
+static void Dispatch(G &generator, const HorseIR::BasicType *type, unsigned int i, N ...nodes)
+{
+	switch (type->GetBasicKind())
+	{
+		case HorseIR::BasicType::BasicKind::Boolean:
+			D<PTX::PredicateType>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Char:
+		case HorseIR::BasicType::BasicKind::Int8:
+			D<PTX::Int8Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Int16:
+			D<PTX::Int16Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Int32:
+			D<PTX::Int32Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Int64:
+			D<PTX::Int64Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Float32:
+			D<PTX::Float32Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Float64:
+			D<PTX::Float64Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::String:
+		case HorseIR::BasicType::BasicKind::Symbol:
+			D<PTX::UInt64Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Date:
+		case HorseIR::BasicType::BasicKind::Month:
+		case HorseIR::BasicType::BasicKind::Minute:
+		case HorseIR::BasicType::BasicKind::Second:
+			D<PTX::Int32Type>::Dispatch(generator, i, nodes...);
+			break;
+		case HorseIR::BasicType::BasicKind::Datetime:
+		case HorseIR::BasicType::BasicKind::Time:
+			D<PTX::Float64Type>::Dispatch(generator, i, nodes...);
+			break;
+		default:
+			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
+	}
+}
+
 template<class G, typename... N>
 static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nodes);
 
@@ -46,47 +125,7 @@ static void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes)
 template<class G, typename... N>
 static void DispatchBasic(G &generator, const HorseIR::BasicType *type, N ...nodes)
 {
-	switch (type->GetBasicKind())
-	{
-		case HorseIR::BasicType::BasicKind::Boolean:
-			generator.template Generate<PTX::PredicateType>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Char:
-		case HorseIR::BasicType::BasicKind::Int8:
-			generator.template Generate<PTX::Int8Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Int16:
-			generator.template Generate<PTX::Int16Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Int32:
-			generator.template Generate<PTX::Int32Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Int64:
-			generator.template Generate<PTX::Int64Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Float32:
-			generator.template Generate<PTX::Float32Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Float64:
-			generator.template Generate<PTX::Float64Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::String:
-		case HorseIR::BasicType::BasicKind::Symbol:
-			generator.template Generate<PTX::UInt64Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Date:
-		case HorseIR::BasicType::BasicKind::Month:
-		case HorseIR::BasicType::BasicKind::Minute:
-		case HorseIR::BasicType::BasicKind::Second:
-			generator.template Generate<PTX::Int32Type>(nodes...);
-			break;
-		case HorseIR::BasicType::BasicKind::Datetime:
-		case HorseIR::BasicType::BasicKind::Time:
-			generator.template Generate<PTX::Float64Type>(nodes...);
-			break;
-		default:
-			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
-	}
+	Dispatch<VectorDispatch, G, N...>(generator, type, 0, nodes...);
 }
 
 template<class G, typename... N>
@@ -96,11 +135,29 @@ static void DispatchList(G &generator, const HorseIR::ListType *type, N ...nodes
 	{
 		if (const auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(elementType))
 		{
-			DispatchBasic(generator, basicType, nodes...);
-			return;
+			Dispatch<ListHomogeneousDispatch, G, N...>(generator, basicType, 0, nodes...);
+		}
+		else
+		{
+			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
 		}
 	}
-	Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
+	else
+	{
+		const auto& elementTypes = type->GetElementTypes();
+		for (auto i = 0u; i < elementTypes.size(); ++i)
+		{
+			const auto elementType = elementTypes.at(i);
+			if (const auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(elementType))
+			{
+				Dispatch<ListHeterogeneousDispatch, G, N...>(generator, basicType, i, nodes...);
+			}
+			else
+			{
+				Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));
+			}
+		}
+	}
 }
 
 }

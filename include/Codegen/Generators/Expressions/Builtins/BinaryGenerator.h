@@ -59,6 +59,8 @@ class BinaryGenerator : public BuiltinGenerator<B, T>
 public:
 	BinaryGenerator(Builder& builder, BinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
+	std::string Name() const override { return "BinaryGenerator"; }
+
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
@@ -150,6 +152,8 @@ class BinaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Ty
 {
 public:
 	BinaryGenerator(Builder& builder, BinaryOperation binaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_binaryOp(binaryOp) {}
+
+	std::string Name() const override { return "BinaryGenerator"; }
 
 	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{

@@ -14,6 +14,8 @@ class MoveGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	std::string Name() const override { return "MoveGenerator"; }
+
 	void Generate(const PTX::Register<T> *destination, const PTX::TypedOperand<T> *value)
 	{
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)

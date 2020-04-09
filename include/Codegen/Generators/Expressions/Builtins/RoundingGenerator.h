@@ -39,6 +39,8 @@ class RoundingGenerator : public BuiltinGenerator<B, T>
 public:
 	RoundingGenerator(Builder& builder, RoundingOperation roundOp) : BuiltinGenerator<B, T>(builder), m_roundOp(roundOp) {}
 
+	std::string Name() const override { return "RoundingGenerator"; }
+
 private:
 	RoundingOperation m_roundOp;
 };
@@ -47,9 +49,9 @@ template<PTX::Bits B, PTX::Bits S>
 class RoundingGenerator<B, PTX::IntType<S>> : public BuiltinGenerator<B, PTX::IntType<S>>
 {
 public:
-	using NodeType = HorseIR::CallExpression;
-
 	RoundingGenerator(Builder& builder, RoundingOperation roundOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_roundOp(roundOp) {}
+
+	std::string Name() const override { return "RoundingGenerator"; }
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
@@ -63,7 +65,7 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		if constexpr(PTX::is_float_type<T>::value)
 		{
@@ -77,13 +79,32 @@ public:
 		}
 		else
 		{
-			BuiltinGenerator<B, T>::Unimplemented("non-float rouding");
+			BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("non-float rouding");
 		}
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		if (this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("list-in-vector");
+		}
+
+		// Lists are handled by the vector code through a projection
+
+		GenerateVector<T>(target, arguments);
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("list-in-vector");
 	}
 
 private:
 	template<class T>
-	static typename PTX::ConvertRoundingModifier<PTX::IntType<S>, T>::RoundingMode PTXOp(RoundingOperation roundOp)
+	typename PTX::ConvertRoundingModifier<PTX::IntType<S>, T>::RoundingMode PTXOp(RoundingOperation roundOp) const
 	{
 		switch (roundOp)
 		{
@@ -94,7 +115,7 @@ private:
 			case RoundingOperation::Nearest:
 				return PTX::ConvertRoundingModifier<PTX::IntType<S>, T>::RoundingMode::Nearest;
 			default:
-				BuiltinGenerator<B, T>::Unimplemented("rounding operator " + RoundingOperationString(roundOp));
+				BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("rounding operator " + RoundingOperationString(roundOp));
 		}
 
 	}

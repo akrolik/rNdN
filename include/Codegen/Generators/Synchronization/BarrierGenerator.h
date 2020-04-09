@@ -6,18 +6,19 @@
 #include "Analysis/Shape/ShapeUtils.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/GeometryGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
 #include "PTX/PTX.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
+template<PTX::Bits B>
 class BarrierGenerator : public Generator
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "BarrierGenerator"; }
 
 	void Generate()
 	{
@@ -25,13 +26,13 @@ public:
 
 		// Barrier instructions depend on the thread geometry and the number of threads still active
 
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		if (inputOptions.IsVectorGeometry())
 		{
 			// All threads in the group participate in the barrier
 
 			this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), true));
 		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		else if (inputOptions.IsListGeometry())
 		{
 			// The special barrier instruction requires threads be in multiples of the warp size
 
@@ -41,13 +42,13 @@ public:
 			
 			// Since some threads may have exited (cells out of range), count the number of active threads
 
-			GeometryGenerator geometryGenerator(this->m_builder);
+			ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
 			auto activeThreads = geometryGenerator.GenerateActiveThreads();
 			this->m_builder.AddStatement(new PTX::BarrierInstruction(new PTX::UInt32Value(0), activeThreads, true, true));
 		}
 		else
 		{
-			Utils::Logger::LogError("Unable to generate barrier instruction for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+			Error("barrier instruction");
 		}
 	}
 };

@@ -4,8 +4,8 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/GeometryGenerator.h"
-#include "Codegen/Generators/IndexGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -19,13 +19,12 @@ class GroupChangeGenerator : public Generator, public HorseIR::ConstVisitor
 public:
 	using Generator::Generator;
 
-	const PTX::Register<PTX::PredicateType> *Generate(const std::vector<HorseIR::Operand *>& dataArguments)
+	std::string Name() const override { return "GroupChangeGenerator"; }
+
+	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::Operand *dataArgument)
 	{
 		m_predicate = nullptr;
-		for (const auto argument : dataArguments)
-		{
-			argument->Accept(*this);
-		}
+		dataArgument->Accept(*this);
 		return m_predicate;
 	}
 
@@ -35,26 +34,61 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::Identifier *identifier)
+	void GenerateVector(const HorseIR::Identifier *identifier)
+	{
+		GenerateGroup<T>(identifier);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Identifier *identifier)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(identifier->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateTuple<T>(index, identifier);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+
+		GenerateGroup<T>(identifier, true, index);
+	}
+ 
+	template<class T>
+	void GenerateGroup(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
 	{
 		//TODO: Use comparison generator instead to generate optimized comparison
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
-			Generate<PTX::Int16Type>(identifier);
+			GenerateGroup<PTX::Int16Type>(identifier, isCell, cellIndex);
 		}
 		else
 		{
 			auto resources = this->m_builder.GetLocalResources();
 
-			// Load the current value
+			// Load the current value index
 
-			IndexGenerator indexGenerator(this->m_builder);
+			DataIndexGenerator<B> indexGenerator(this->m_builder);
 			auto index = indexGenerator.GenerateDataIndex();
 
-			OperandGenerator<B, T> opGen(this->m_builder);
-			auto value = opGen.GenerateOperand(identifier, index, "val");
-
-			// Load the previous value, duplicating the first element (as there is no previous element)
+			// Load the previous value index , duplicating the first element (as there is no previous element)
 
 			auto indexM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexM1, index, new PTX::UInt32Value(1)));
@@ -67,7 +101,22 @@ public:
 			auto indexPrevious = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(indexPrevious, indexM1, index, previousPredicate));
 
-			auto previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev");
+			// Get the operand values
+
+			OperandGenerator<B, T> opGen(this->m_builder);
+			const PTX::TypedOperand<T> *value = nullptr;
+			const PTX::TypedOperand<T> *previousValue = nullptr;
+
+			if (isCell)
+			{
+				value = opGen.GenerateOperand(identifier, index, "val", cellIndex);
+				previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev", cellIndex);
+			}
+			else
+			{
+				value = opGen.GenerateOperand(identifier, index, "val");
+				previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev");
+			}
 
 			// Check if the value is different
 
@@ -84,7 +133,7 @@ public:
 			}
 		}
 	}
-
+                                                                                                                  
 private:
 	const PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
 };
@@ -95,36 +144,38 @@ class GroupGenerator : public Generator
 public:
 	using Generator::Generator;
 
+	std::string Name() const override { return "GroupGenerator"; }
+
 	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// Convenience split of input arguments
 
-		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments) + 1, std::end(arguments));
 		const auto indexArgument = arguments.at(0);
+		const auto dataArgument = arguments.at(1);
 
 		// Initialize the current and previous values, and compute the change
 		//   
-		//   1. Check if size is within bounds
+		//   1. Check if geometry is within bounds
 		//   2. Load the current value
 		//   3. Load the previous value at index -1 (bounded below by index 0)
 
 		// Check for each column if there has been a change
 
 		GroupChangeGenerator<B> changeGenerator(this->m_builder);
-		auto changePredicate = changeGenerator.Generate(dataArguments);
+		auto changePredicate = changeGenerator.Generate(dataArgument);
 
-		// Check the size is within bounds, if so we will load both values and do a comparison
+		// Check the geometry is within bounds, if so we will load both values and do a comparison
 
-		GeometryGenerator geometryGenerator(this->m_builder);
-		auto size = geometryGenerator.GenerateDataSize();
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto geometry = geometryGenerator.GenerateDataGeometry();
 
-		IndexGenerator indexGenerator(this->m_builder);
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-			changePredicate, nullptr, index, size, PTX::UInt32Type::ComparisonOperator::Less, changePredicate, PTX::PredicateModifier::BoolOperator::And
+			changePredicate, nullptr, index, geometry, PTX::UInt32Type::ComparisonOperator::Less, changePredicate, PTX::PredicateModifier::BoolOperator::And
 		));
 
 		// Get the return targets!

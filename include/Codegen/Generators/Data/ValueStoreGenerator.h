@@ -8,18 +8,18 @@
 #include "Analysis/Shape/ShapeUtils.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/AddressGenerator.h"
-#include "Codegen/Generators/AtomicGenerator.h"
-#include "Codegen/Generators/IndexGenerator.h"
-#include "Codegen/Generators/PrefixSumGenerator.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/AddressGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/PrefixSumGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
+#include "Codegen/Generators/Synchronization/AtomicGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
-
-#include "Utils/Logger.h"
 
 namespace Codegen {
 
@@ -28,6 +28,8 @@ class ValueStoreGenerator : public Generator
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "ValueStoreGenerator"; }
 
 	void Generate(const HorseIR::ReturnStatement *returnS)
 	{
@@ -39,111 +41,172 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::Operand *operand, unsigned int returnIndex)
+	void GenerateVector(const HorseIR::Operand *operand, unsigned int returnIndex)
+	{
+		m_cellIndex = 0;
+		m_isCell = false;
+		GenerateWrite<T>(operand, returnIndex);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Operand *operand, unsigned int returnIndex)
+	{
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		if (inputOptions.IsVectorGeometry())
+		{
+			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
+			if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+			{
+				if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+				{
+					for (auto index = 0u; index < size->GetValue(); ++index)
+					{
+						m_cellIndex = index;
+						m_isCell = true;
+						GenerateWrite<T>(operand, returnIndex);
+					}
+				}
+				else
+				{
+					Error("non-constant size tuple");
+				}
+			}
+			else
+			{
+				Error("list not a tuple");
+			}
+		}
+		else
+		{
+			// Store the list using a projection
+			
+			GenerateVector<T>(operand, returnIndex);
+		}
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *operand, unsigned int returnIndex)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+
+		m_cellIndex = index;
+		m_isCell = true;
+		GenerateWrite<T>(operand, returnIndex);
+	}
+
+private:
+	template<class T>
+	void GenerateWrite(const HorseIR::Operand *operand, unsigned int returnIndex)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			// Predicate (1-bit) values are stored as 8 bit integers on the CPU side so a conversion must first be run
 
-			Generate<PTX::Int8Type>(operand, returnIndex);
+			GenerateWrite<PTX::Int8Type>(operand, returnIndex);
 		}
 		else
 		{
-			GenerateWrite<T>(operand, returnIndex);
-		}
-	}
+			auto& inputOptions = this->m_builder.GetInputOptions();
 
-	template<class T>
-	void GenerateWrite(const HorseIR::Operand *operand, unsigned int returnIndex)
-	{
-		auto& inputOptions = this->m_builder.GetInputOptions();
+			// Select the write kind based on the thread geometry and return shape
 
-		// Select the write kind based on the thread geometry and return shape
-
-		auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
-		{
-			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
+			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 			{
-				// Check for the style of write:
-				//  (1) Reduction (we assume this corresponds to scalar output in a non-scalar kernel)
-				//  (2) Vector
-				//  (3) Compression
-
-				if (Analysis::ShapeUtils::IsScalarSize(vectorShape->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(vectorGeometry->GetSize()))
+				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 				{
-					GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, IndexGenerator::Kind::Null, returnIndex);
-					return;
-				}
-				else if (*vectorGeometry == *vectorShape)
-				{
-					GenerateWriteVector<T>(operand, IndexGenerator::Kind::Global, returnIndex);
-					return;
-				}
-				else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
-				{
-					GenerateWriteCompressed<T>(operand, returnIndex);
-					return;
-				}
-			}
-		}
-		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
-		{
-			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
-			{
-				// Special horizontal write for @raze function
+					// Check for the style of write:
+					//  (1) Reduction (we assume this corresponds to scalar output in a non-scalar kernel)
+					//  (2) Vector
+					//  (3) Compression
 
-				GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::ListCell, IndexGenerator::Kind::Cell, returnIndex);
-				return;
-			}
-			else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
-			{
-				// Check for the style of write:
-				//  (1) Reduction (we assume this corresponds to scalar output in a non-scalar cell)
-				//  (2) List
-
-				const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-				const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
-
-				const auto cellVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape);
-				const auto cellVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry);
-
-				if (cellVector && cellVectorGeometry)
-				{
-					if (Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+					if (Analysis::ShapeUtils::IsScalarSize(vectorShape->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(vectorGeometry->GetSize()))
 					{
-						GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, IndexGenerator::Kind::Null, returnIndex);
+						GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
 						return;
 					}
-					else if (*cellVector == *cellVectorGeometry)
+					else if (*vectorGeometry == *vectorShape)
 					{
-						GenerateWriteVector<T>(operand, IndexGenerator::Kind::CellData, returnIndex);
+						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
 						return;
 					}
-					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(cellVector->GetSize()))
+					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
 					{
 						GenerateWriteCompressed<T>(operand, returnIndex);
 						return;
 					}
 				}
+				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+				{
+					GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
+					return;
+
+					//TODO: Implement other kinds of writes
+					// Error("");
+				}
 			}
+			else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+			{
+				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+				{
+					// Special horizontal write for @raze function
+
+					GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::ListData, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
+					return;
+				}
+				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+				{
+					// Check for the style of write:
+					//  (1) Reduction (we assume this corresponds to scalar output in a non-scalar cell)
+					//  (2) List
+
+					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+					const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+
+					const auto cellVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape);
+					const auto cellVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry);
+
+					if (cellVector && cellVectorGeometry)
+					{
+						if (Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+						{
+							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
+							return;
+						}
+						else if (*cellVector == *cellVectorGeometry)
+						{
+							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex);
+							return;
+						}
+						else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(cellVector->GetSize()))
+						{
+							GenerateWriteCompressed<T>(operand, returnIndex);
+							return;
+						}
+					}
+				}
+			}
+			
+			Error("store for shape " + Analysis::ShapeUtils::ShapeString(shape));
 		}
-		Utils::Logger::LogError("Unable to generate store for shape " + Analysis::ShapeUtils::ShapeString(shape) + " in thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 	}
 
 	template<class T>
-	void GenerateWriteReduction(const HorseIR::Operand *operand, typename OperandGenerator<B, T>::LoadKind loadKind, IndexGenerator::Kind indexKind, unsigned int returnIndex)
+	void GenerateWriteReduction(const HorseIR::Operand *operand, typename OperandGenerator<B, T>::LoadKind loadKind, typename DataIndexGenerator<B>::Kind indexKind, unsigned int returnIndex)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// Get the reduction properties for the register and the write index
 
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		auto value = operandGenerator.GenerateRegister(operand, loadKind);
+		auto value = GenerateWriteValue<T>(operand, loadKind);
 		auto [granularity, op] = resources->GetReductionRegister(value);
 
-		IndexGenerator indexGenerator(this->m_builder);
-		auto writeIndex = indexGenerator.GenerateIndex(indexKind);
+		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+		DataIndexGenerator<B> dataIndexGenerator(this->m_builder);
+		auto writeIndex = dataIndexGenerator.GenerateIndex(indexKind);
 
 		// Generate the reduction value depending on the reduced granularity
 
@@ -151,15 +214,13 @@ public:
 		{
 			case RegisterReductionGranularity::Warp:
 			{
-				IndexGenerator indexGenerator(this->m_builder);
 				auto laneid = indexGenerator.GenerateLaneIndex();
 				GenerateWriteReduction(op, laneid, value, writeIndex, returnIndex);
 				break;
 			}
 			case RegisterReductionGranularity::Block:
 			{
-				IndexGenerator indexGen(this->m_builder);
-				auto localIndex = indexGen.GenerateLocalIndex();
+				auto localIndex = indexGenerator.GenerateLocalIndex();
 				GenerateWriteReduction(op, localIndex, value, writeIndex, returnIndex);
 				break;
 			}
@@ -236,7 +297,7 @@ public:
 			}
 			default:
 			{
-				Utils::Logger::LogError("Store generator does not support reduction operation");
+				Error("store reduction operation");
 			}
 		}
 	}
@@ -324,29 +385,28 @@ public:
 				}
 				default:
 				{
-					Utils::Logger::LogError("Store generator does not support CAS operation");
+					Error("store CAS reduction operation");
 				}
 			}
 		}
 	}
 
 	template<class T>
-	void GenerateWriteVector(const HorseIR::Operand *operand, IndexGenerator::Kind indexKind, unsigned int returnIndex)
+	void GenerateWriteVector(const HorseIR::Operand *operand, typename DataIndexGenerator<B>::Kind indexKind, unsigned int returnIndex)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// Fetch the write address and store the value at the appropriate index (global indexing, or indexed register)
 
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
+		auto value = GenerateWriteValue<T>(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
 		// Ensure the write is within bounds
 
-		IndexGenerator indexGenerator(this->m_builder);
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
-		GeometryGenerator geometryGenerator(this->m_builder);
-		auto size = geometryGenerator.GenerateDataSize();
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto size = geometryGenerator.GenerateDataGeometry();
 
 		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -361,7 +421,6 @@ public:
 		{
 			// Global/cell data indexing depending on thread geometry
 
-			IndexGenerator indexGenerator(this->m_builder);
 			writeIndex = indexGenerator.GenerateIndex(indexKind);
 		}
 
@@ -379,14 +438,11 @@ public:
 
 		// Fetch the data and write to the compressed index
 
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		auto value = operandGenerator.GenerateRegister(operand, OperandGenerator<B, T>::LoadKind::Vector);
+		auto value = GenerateWriteValue<T>(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
 		//TODO: We need to better link the dynamic output size and prefix sum
 		if (auto predicate = resources->template GetCompressedRegister<T>(value))
 		{
-			AddressGenerator<B> addressGenerator(this->m_builder);
-
 			// Before generating compressed output, see if the write is indexed - if so, no compressed necessary
 
 			auto writeIndex = resources->template GetIndexedRegister<T>(value);
@@ -402,9 +458,10 @@ public:
 
 				auto kernelResources = this->m_builder.GetKernelResources();
 				auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
-
 				auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
-				auto sizeAddress = addressGenerator.template GenerateAddress<PTX::UInt32Type>(sizeParameter);
+
+				AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
+				auto sizeAddress = addressGenerator.GenerateAddress(sizeParameter);
 
 				PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
 				writeIndex = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
@@ -427,7 +484,7 @@ public:
 		}
 		else
 		{
-			Utils::Logger::LogError("Unable to find compression predicate for return parameter " + NameUtils::ReturnName(returnIndex));
+			Error("compression predicate for return parameter " + NameUtils::ReturnName(returnIndex));
 		}
 	}
 
@@ -439,25 +496,41 @@ public:
 		auto kernelResources = this->m_builder.GetKernelResources();
 		auto returnName = NameUtils::ReturnName(returnIndex);
 
-		AddressGenerator<B> addressGenerator(this->m_builder);
-
-		auto& inputOptions = this->m_builder.GetInputOptions();
-		auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
+		auto shape = this->m_builder.GetInputOptions().ReturnWriteShapes.at(returnIndex);
 		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
 		{
 			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(returnName);
-			return addressGenerator.template GenerateAddress<T>(returnParameter, index);
+
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			return addressGenerator.GenerateAddress(returnParameter, index);
 		}
 		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
 		{
 			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(returnName);
-			return addressGenerator.template GenerateAddress<T>(returnParameter, index);
+
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			if (m_isCell)
+			{
+				return addressGenerator.GenerateAddress(returnParameter, m_cellIndex, index);
+			}
+			return addressGenerator.GenerateAddress(returnParameter, index);
 		}
-		else
-		{
-			Utils::Logger::LogError("Unable to generate address for return parameter " + NameUtils::ReturnName(returnIndex) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
-		}
+		Error("address for return parameter " + NameUtils::ReturnName(returnIndex) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
 	}
+
+	template<class T>
+	const PTX::Register<T> *GenerateWriteValue(const HorseIR::Operand *operand, typename OperandGenerator<B, T>::LoadKind loadKind)
+	{
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		if (m_isCell)
+		{
+			return operandGenerator.GenerateRegister(operand, loadKind, m_cellIndex);
+		}
+		return operandGenerator.GenerateRegister(operand, loadKind);
+	}
+
+	unsigned int m_cellIndex = 0;
+	bool m_isCell = false;
 };
 
 }

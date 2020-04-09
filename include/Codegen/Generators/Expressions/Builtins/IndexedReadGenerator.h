@@ -18,6 +18,8 @@ class IndexedReadGenerator : public BuiltinGenerator<B, T>, public HorseIR::Cons
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
 
+	std::string Name() const override { return "IndexedReadGenerator"; }
+
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);

@@ -15,19 +15,35 @@ namespace Codegen {
 
 struct InputOptions
 {
-	const Analysis::Shape *ThreadGeometry = nullptr;
+	// Prefix sum ordered thread groups
 
 	bool InOrderBlocks = false;
+
+	// Thread geometry and list cell count
+
+	const Analysis::Shape *ThreadGeometry = nullptr;
+
+	bool IsVectorGeometry() const { return Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(ThreadGeometry); }
+	bool IsListGeometry() const { return Analysis::ShapeUtils::IsShape<Analysis::ListShape>(ThreadGeometry); }
 
 	constexpr static std::uint32_t DynamicSize = 0;
 	std::uint32_t ListCellThreads = DynamicSize;
 
-	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::Parameter *> Parameters;
-	std::unordered_map<const HorseIR::Parameter *, const Analysis::Shape *> ParameterShapes;
-	std::unordered_map<const HorseIR::Parameter *, const Analysis::DataObject *> ParameterObjects;
+	// Parameter data
 
+	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::Parameter *> Parameters;
+
+	std::unordered_map<const HorseIR::Parameter *, const Analysis::Shape *> ParameterShapes;
+
+	std::unordered_map<const HorseIR::Parameter *, const Analysis::DataObject *> ParameterObjects;
 	std::unordered_map<const Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjectMap;
 
+	// Declaration data
+
+	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::VariableDeclaration *> Declarations;
+	std::unordered_map<const HorseIR::VariableDeclaration *, const Analysis::Shape *> DeclarationShapes;
+
+	// Return data
 
 	std::vector<const Analysis::Shape *> ReturnShapes;
 	std::vector<const Analysis::Shape *> ReturnWriteShapes;

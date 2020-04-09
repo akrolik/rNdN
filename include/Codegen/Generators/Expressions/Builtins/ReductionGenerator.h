@@ -6,12 +6,13 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/AddressGenerator.h"
-#include "Codegen/Generators/BarrierGenerator.h"
-#include "Codegen/Generators/IndexGenerator.h"
-#include "Codegen/Generators/GeometryGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/AddressGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
+#include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -51,6 +52,8 @@ class ReductionGenerator : public BuiltinGenerator<B, T>
 public:
 	ReductionGenerator(Builder& builder, ReductionOperation reductionOp) : BuiltinGenerator<B, T>(builder), m_reductionOp(reductionOp) {}
 
+	std::string Name() const override { return "ReductionGenerator"; }
+
 	// The output of a reduction function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
@@ -65,23 +68,23 @@ public:
 
 		auto inputPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		GeometryGenerator geometryGenerator(this->m_builder);
-		auto dataSize = geometryGenerator.GenerateDataSize();
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto dataSize = geometryGenerator.GenerateDataGeometry();
 
-		IndexGenerator indexGen(this->m_builder);
-		auto dataIndex = indexGen.GenerateDataIndex();
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
+		auto dataIndex = indexGenerator.GenerateDataIndex();
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));
 
 		// Get the initial value for reduction
 
-		OperandGenerator<B, T> opGen(this->m_builder);
+		OperandGenerator<B, T> opGenerator(this->m_builder);
 
 		// Check if there is a compression predicate on the input value. If so, mask out the
 		// initial load according to the predicate
 
-		OperandCompressionGenerator compGen(this->m_builder);
-		auto compress = compGen.GetCompressionRegister(arguments.at(0));
+		OperandCompressionGenerator compGenerator(this->m_builder);
+		auto compress = compGenerator.GetCompressionRegister(arguments.at(0));
 
 		const PTX::TypedOperand<T> *src = nullptr;
 		if (m_reductionOp == ReductionOperation::Length)
@@ -94,7 +97,7 @@ public:
 		{
 			// All other reductions use the value for the thread
 
-			src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+			src = opGenerator.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
 		}
 
 		// Select the initial value for the reduction depending on the data size and compression mask
@@ -235,8 +238,8 @@ public:
 
 		// Write a single reduced value to shared memory for each warp
 
-		IndexGenerator indexGen(this->m_builder);
-		auto laneIndex = indexGen.GenerateLaneIndex();
+		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+		auto laneIndex = indexGenerator.GenerateLaneIndex();
 
 		// Check if we are the first lane in the warp
 
@@ -249,10 +252,10 @@ public:
 
 		// Store the value in shared memory
 
-		auto warpIndex = indexGen.GenerateWarpIndex();
+		auto warpIndex = indexGenerator.GenerateWarpIndex();
 
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedWarpAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, warpIndex);
+		AddressGenerator<B, T> addressGenerator(this->m_builder);
+		auto sharedWarpAddress = addressGenerator.GenerateAddress(sharedMemory, warpIndex);
 
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedWarpAddress, target));
 
@@ -271,7 +274,7 @@ public:
 		auto sharedLaneAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, laneIndex);
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedLaneAddress));
 
-		GeometryGenerator geometryGenerator(this->m_builder);
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
 		auto warpCount = geometryGenerator.GenerateWarpCount();
 
 		auto predActive = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -280,7 +283,7 @@ public:
 
 		// Check if we are the first warp in the block for the final part of the reduction
 
-		auto warpid = indexGen.GenerateWarpIndex();
+		auto warpid = indexGenerator.GenerateWarpIndex();
 
 		auto predBlock = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto labelBlock = this->m_builder.CreateLabel("RED_BLOCK");
@@ -335,11 +338,11 @@ public:
 
 		// Load the the local thread index for accessing the shared memory
 
-		IndexGenerator indexGen(this->m_builder);
-		auto localIndex = indexGen.GenerateLocalIndex();
+		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+		auto localIndex = indexGenerator.GenerateLocalIndex();
 
-		AddressGenerator<B> addressGenerator(this->m_builder);
-		auto sharedThreadAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, localIndex);
+		AddressGenerator<B, T> addressGenerator(this->m_builder);
+		auto sharedThreadAddress = addressGenerator.GenerateAddress(sharedMemory, localIndex);
 
 		// Load the initial value into shared memory
 
@@ -439,7 +442,7 @@ private:
 		return blockSize;
 	}
 
-	static RegisterReductionOperation GetRegisterReductionOperation(ReductionOperation reductionOp)
+	RegisterReductionOperation GetRegisterReductionOperation(ReductionOperation reductionOp) const
 	{
 		switch (reductionOp)
 		{
@@ -456,7 +459,7 @@ private:
 		}
 	}
 	
-	static const PTX::Value<T> *GenerateNullValue(ReductionOperation reductionOp)
+	const PTX::Value<T> *GenerateNullValue(ReductionOperation reductionOp) const
 	{
 		switch (reductionOp)
 		{

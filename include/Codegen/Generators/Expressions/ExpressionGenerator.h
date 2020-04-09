@@ -23,8 +23,8 @@
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexOfGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/OrderGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/OrderInitGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/OrderGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/VectorGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
@@ -36,15 +36,15 @@
 
 #include "PTX/PTX.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
 template<PTX::Bits B>
 class ExpressionGenerator : public HorseIR::ConstVisitor, public Generator
 {
 public:
-	ExpressionGenerator(Builder& builder) : Generator(builder) {}
+	using Generator::Generator;
+
+	std::string Name() const override { return "ExpressionGenerator"; }
 
 	void Generate(const std::vector<HorseIR::LValue *>& targets, const HorseIR::Expression *expression)
 	{
@@ -75,7 +75,7 @@ public:
 			}
 			case HorseIR::FunctionDeclaration::Kind::Definition:
 			{
-				Utils::Logger::LogError("Generator for user defined functions not implemented");
+				Error("user defined function @" + function->GetName());
 			}
 		}
 	}
@@ -87,7 +87,7 @@ public:
 			case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
 			{
 				OrderInitGenerator<B> generator(this->m_builder);
-				generator.Generate(m_targets, returnTypes, arguments);
+				generator.Generate(m_targets, arguments);
 				break;
 			}
 			case HorseIR::BuiltinFunction::Primitive::GPUOrder:
@@ -106,7 +106,7 @@ public:
 			{
 				if (m_targets.size() != 1)
 				{
-					Utils::Logger::LogError("Builtin function generators expect a single target");
+					Error("builtin function @" + function->GetName() + " with multiple targets");
 				}
 				DispatchType(*this, HorseIR::TypeUtils::GetSingleType(returnTypes), function, returnTypes, arguments);
 			}
@@ -114,7 +114,7 @@ public:
 	}
 
 	template<class T>
-	void Generate(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		switch (function->GetPrimitive())
 		{
@@ -139,7 +139,7 @@ public:
 				BuiltinGenerator<B, T> *generator = GetBuiltinGenerator<T>(function);
 				if (generator == nullptr)
 				{
-					Utils::Logger::LogError("Generator for builtin function @" + function->GetName() + " not implemented");
+					Error("buitin function @" + function->GetName());
 				}
 				generator->Generate(m_targets.at(0), arguments);
 				delete generator;
@@ -282,6 +282,25 @@ public:
 				return new IndexedWriteGenerator<B, T>(this->m_builder);
 		}
 		return nullptr;
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		if (this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("list-in-vector function @" + function->GetName());
+		}
+
+		// Lists are handled by the vector code through a projection
+
+		GenerateVector<T>(function, returnTypes, arguments);
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	{
+		Error("list-in-vector function @" + function->GetName());
 	}
 
 private:

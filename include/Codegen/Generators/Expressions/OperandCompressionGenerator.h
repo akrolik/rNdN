@@ -6,6 +6,7 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
@@ -16,6 +17,8 @@ class OperandCompressionGenerator : public Generator, public HorseIR::ConstVisit
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "OperandCompressionGenerator"; }
 
 	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments) 
 	{
@@ -57,7 +60,7 @@ public:
 	}
 
 	template<class S>
-	void Generate(const HorseIR::Identifier *identifier)
+	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
 		// Only fetch compression for registers which already exist (this handles non-reassigned parameters which do ont have compression)
 
@@ -69,6 +72,25 @@ public:
 			auto data = resources->template GetRegister<S>(name);
 			m_compression = resources->template GetCompressedRegister<S>(data);
 		}
+	}
+
+	template<class S>
+	void GenerateList(const HorseIR::Identifier *identifier)
+	{
+		if (this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("list-in-vector compression for identifier '" + HorseIR::PrettyPrinter::PrettyString(identifier) + "'");
+		}
+
+		// List geometry handled by vector code with projection
+
+		GenerateVector<S>(identifier);
+	}
+
+	template<class S>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
+	{
+		Error("list-in-vector compression for identifier '" + HorseIR::PrettyPrinter::PrettyString(identifier) + "'");
 	}
 
 private:

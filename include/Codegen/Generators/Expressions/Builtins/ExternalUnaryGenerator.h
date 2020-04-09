@@ -83,6 +83,8 @@ class ExternalUnaryGenerator : public BuiltinGenerator<B, T>
 public:
 	ExternalUnaryGenerator(Builder& builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, T>(builder), m_unaryOp(unaryOp) {}
 
+	std::string Name() const override { return "ExternalUnaryGenerator"; }
+
 private:
 	ExternalUnaryOperation m_unaryOp;
 };
@@ -92,6 +94,8 @@ class ExternalUnaryGenerator<B, PTX::FloatType<S>, std::enable_if_t<S == PTX::Bi
 {
 public:
 	ExternalUnaryGenerator(Builder& builder, ExternalUnaryOperation unaryOp) : BuiltinGenerator<B, PTX::FloatType<S>>(builder), m_unaryOp(unaryOp) {}
+
+	std::string Name() const override { return "ExternalUnaryGenerator"; }
 
 	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
@@ -138,7 +142,7 @@ public:
 	}
 
 private:
-	static PTX::ExternalMathFunctions::UnaryFunction<S> *GetFunction(ExternalUnaryOperation unaryOp)
+	PTX::ExternalMathFunctions::UnaryFunction<S> *GetFunction(ExternalUnaryOperation unaryOp) const
 	{
 		switch (unaryOp)
 		{
@@ -177,7 +181,7 @@ private:
 			case ExternalUnaryOperation::SquareRoot:
 				return PTX::ExternalMathFunctions::sqrt<S>;
 			default:
-				BuiltinGenerator<B, PTX::Float32Type>::Unimplemented("external function " + ExternalUnaryOperationString(unaryOp));
+				BuiltinGenerator<B, PTX::FloatType<S>>::Unimplemented("external function " + ExternalUnaryOperationString(unaryOp));
 		}
 	}
 

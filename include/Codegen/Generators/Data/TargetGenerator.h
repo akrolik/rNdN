@@ -11,8 +11,6 @@
 
 #include "PTX/PTX.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
 template<PTX::Bits B, class T>
@@ -20,6 +18,8 @@ class TargetGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "TargetGenerator"; }
 
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const PTX::Register<PTX::PredicateType> *predicateRegister)
 	{
@@ -37,12 +37,17 @@ public:
 
 	void Visit(const HorseIR::VariableDeclaration *declaration) override
 	{
-		// For declarations, allocate a new register
+		// Allocate the declaration
+
+		DeclarationGenerator<B> generator(this->m_builder);
+		generator.Generate(declaration);
+
+		// Return the allocated register
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto name = NameUtils::VariableName(declaration);
 
-		m_targetRegister = resources->template AllocateRegister<T>(name);
+		auto name = NameUtils::VariableName(declaration);
+		m_targetRegister = resources->GetRegister<T>(name);
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
@@ -73,7 +78,7 @@ public:
 			}
 			else
 			{
-				Utils::Logger::LogError("Unable to find register for target '" + HorseIR::PrettyPrinter::PrettyString(identifier) + "'");
+				Error("target register for target '" + HorseIR::PrettyPrinter::PrettyString(identifier) + "'");
 			}
 		}
 	}

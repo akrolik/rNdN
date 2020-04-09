@@ -15,23 +15,38 @@
 
 #include "PTX/PTX.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
 template<PTX::Bits B>
-class SizeGenerator : public Generator, public HorseIR::ConstVisitor
+class DataSizeGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
 	using Generator::Generator;
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter)
+	std::string Name() const override { return "DataSizeGenerator"; }
+
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter, unsigned int cellIndex)
 	{
+		m_cellIndex = cellIndex;
 		m_size = nullptr;
+
 		DispatchType(*this, parameter->GetType(), parameter);
 		if (m_size == nullptr)
 		{
-			Utils::Logger::LogError("Unable to determine size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter));
+			Error("size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter));
+		}
+		return m_size;
+	}
+
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter)
+	{
+		m_cellIndex = 0;
+		m_size = nullptr;
+
+		DispatchType(*this, parameter->GetType(), parameter);
+		if (m_size == nullptr)
+		{
+			Error("size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter));
 		}
 		return m_size;
 	}
@@ -42,7 +57,7 @@ public:
 		operand->Accept(*this);
 		if (m_size == nullptr)
 		{
-			Utils::Logger::LogError("Unable to determine size for operand " + HorseIR::PrettyPrinter::PrettyString(operand));
+			Error("size for operand " + HorseIR::PrettyPrinter::PrettyString(operand));
 		}
 		return m_size;
 	}
@@ -67,34 +82,61 @@ public:
 	}
 	
 	template<class T>
-	void Generate(const HorseIR::Parameter *parameter)
+	void GenerateVector(const HorseIR::Parameter *parameter)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			Generate<PTX::Int8Type>(parameter);
+			GenerateVector<PTX::Int8Type>(parameter);
 		}
 		else
 		{
-			auto kernelResources = this->m_builder.GetKernelResources();
-			auto& inputOptions = this->m_builder.GetInputOptions();
-
-			auto shape = inputOptions.ParameterShapes.at(parameter);
+			auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
 			auto name = NameUtils::VariableName(parameter);
 
-			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
-			{
-				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
-				m_size = GenerateSize(parameter, shape);
-			}
-			else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
-			{
-				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
-				m_size = GenerateSize(parameter, shape);
-			}
-			else
-			{
-				Utils::Logger::LogError("Unable to generate size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
-			}
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
+
+			m_size = GenerateSize(kernelParameter, shape);
+		}
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Parameter *parameter)
+	{
+		GenerateListSize<T>(parameter);
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Parameter *parameter)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+
+		if (index == m_cellIndex)
+		{
+			GenerateListSize<T>(parameter);
+		}
+	}
+
+private:
+	template<class T>
+	void GenerateListSize(const HorseIR::Parameter *parameter)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			GenerateListSize<PTX::Int8Type>(parameter);
+		}
+		else
+		{
+			auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
+			auto name = NameUtils::VariableName(parameter);
+
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+
+			m_size = GenerateSize(kernelParameter, shape);
 		}
 	}
 
@@ -107,6 +149,14 @@ public:
 			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 			{
 				return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
+			}
+			else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+			{
+				const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
+				{
+					return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), true);
+				}
 			}
 		}
 		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
@@ -128,11 +178,11 @@ public:
 				}
 			}
 		}
-		Utils::Logger::LogError("Unable to generate size for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry) + " and shape " + Analysis::ShapeUtils::ShapeString(shape));
+		Error("size for shape " + Analysis::ShapeUtils::ShapeString(shape));
 	}
 
 	template<class T>
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize) const
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, bool isCell = false) const
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -150,18 +200,21 @@ public:
 			{
 				return new PTX::UInt32Value(constantSize->GetValue());
 			}
-			return resources->GetRegister<PTX::UInt32Type>(NameUtils::GeometryDataSize);
+			return resources->GetRegister<PTX::UInt32Type>(NameUtils::ThreadGeometryDataSize);
 		}
-		else
-		{
-			// Size is not statically determined, load at runtime from special register
 
-			return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
+		// Size is not statically determined, load at runtime from special register
+
+		if (isCell)
+		{
+			return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter, m_cellIndex));
 		}
+		return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 	}
 
-private:
 	const PTX::TypedOperand<PTX::UInt32Type> *m_size = nullptr;
+
+	unsigned int m_cellIndex = 0;
 };
 
 }

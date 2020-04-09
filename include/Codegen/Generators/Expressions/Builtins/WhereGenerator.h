@@ -6,10 +6,11 @@
 #include "Analysis/Shape/ShapeUtils.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/IndexGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -22,6 +23,7 @@ class WhereGenerator : public BuiltinGenerator<B, T>
 {
 public:
 	using BuiltinGenerator<B, T>::BuiltinGenerator;
+	std::string Name() const override { return "WhereGenerator"; }
 };
 
 template<PTX::Bits B>
@@ -29,6 +31,8 @@ class WhereGenerator<B, PTX::Int64Type> : public BuiltinGenerator<B, PTX::Int64T
 {
 public:
 	using BuiltinGenerator<B, PTX::Int64Type>::BuiltinGenerator;
+
+	std::string Name() const override { return "WhereGenerator"; }
 
 	// The output of a where function handles the predicate itself. We therefore do not implement GenerateCompressionPredicate in this subclass
 
@@ -59,11 +63,11 @@ public:
 
 		// Generate the index for the data item and convert to the right type
 
-		IndexGenerator indexGenerator(this->m_builder);
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
-		GeometryGenerator geometryGenerator(this->m_builder);
-		auto size = geometryGenerator.GenerateDataSize();
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto size = geometryGenerator.GenerateDataGeometry();
 
 		// Copy the index to the data register
 

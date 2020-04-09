@@ -88,9 +88,12 @@ public:
 
 	template<class T, class S>
 	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
-	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *parameter)
+	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *parameter, bool alias = false)
 	{
-		m_currentKernel->AddParameter(parameter);
+		if (!alias)
+		{
+			m_currentKernel->AddParameter(parameter);
+		}
 		GetKernelResources()->AddParameter(identifier, parameter);
 	}
 

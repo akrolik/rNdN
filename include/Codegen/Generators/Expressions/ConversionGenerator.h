@@ -7,14 +7,14 @@
 
 #include "PTX/PTX.h"
 
-#include "Utils/Logger.h"
-
 namespace Codegen {
 
 class ConversionGenerator : public Generator
 {
 public:
 	using Generator::Generator;
+
+	std::string Name() const override { return "ConversionGenerator"; }
 
 	template<class T, class S>
 	static const PTX::Register<T> *ConvertSource(Builder& builder, const PTX::Register<S> *source, bool relaxedInstruction = false)
@@ -238,7 +238,7 @@ private:
 		}
 		else
 		{
-			Utils::Logger::LogError("Unable to convert type " + S::Name() + " to type " + D::Name());
+			Error("conversion from type " + S::Name() + " to type " + D::Name());
 		}
 	}
 
