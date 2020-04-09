@@ -305,74 +305,72 @@ std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<HorseIR:
 
 		if (const auto buffer = m_dataAnalysis.GetDataObject(arguments.at(index))->GetDataBuffer())
 		{
-			if (const auto vectorBuffer = Runtime::BufferUtils::GetBuffer<Runtime::VectorBuffer>(buffer))
+			const auto vectorBuffer = Runtime::BufferUtils::GetBuffer<Runtime::VectorBuffer>(buffer);
+			if (vectorBuffer->GetElementCount() == 1)
 			{
-				if (vectorBuffer->GetElementCount() == 1)
+				switch (vectorBuffer->GetType()->GetBasicKind())
 				{
-					switch (vectorBuffer->GetType()->GetBasicKind())
+					case HorseIR::BasicType::BasicKind::Boolean:
+					case HorseIR::BasicType::BasicKind::Char:
+					case HorseIR::BasicType::BasicKind::Int8:
 					{
-						case HorseIR::BasicType::BasicKind::Boolean:
-						case HorseIR::BasicType::BasicKind::Char:
-						case HorseIR::BasicType::BasicKind::Int8:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int8_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Int16:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int16_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Int32:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int32_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Int64:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<std::int64_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Float32:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<float>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Float64:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<double>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Complex:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::ComplexValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Symbol:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::SymbolValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::String:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<std::string>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Datetime:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::DatetimeValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Date:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::DateValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Month:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::MonthValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Minute:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::MinuteValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Second:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::SecondValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
-						case HorseIR::BasicType::BasicKind::Time:
-						{
-							return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::TimeValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
-						}
+						return {true, Runtime::BufferUtils::GetVectorBuffer<std::int8_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Int16:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<std::int16_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Int32:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<std::int32_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Int64:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<std::int64_t>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Float32:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<float>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Float64:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<double>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Complex:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::ComplexValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Symbol:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::SymbolValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::String:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<std::string>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Datetime:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::DatetimeValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Date:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::DateValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Month:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::MonthValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Minute:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::MinuteValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Second:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::SecondValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
+					}
+					case HorseIR::BasicType::BasicKind::Time:
+					{
+						return {true, Runtime::BufferUtils::GetVectorBuffer<const HorseIR::TimeValue *>(buffer)->GetCPUReadBuffer()->GetValue<T>(0)};
 					}
 				}
 			}
