@@ -52,6 +52,50 @@ static Type *GetSingleType(const std::vector<Type *>& types)
 	return nullptr;
 }
 
+static bool IsTypesAssignable(const std::vector<Type *>& types1, const std::vector<Type *>& types2)
+{
+	if (types1.size() != types2.size())
+	{
+		return false;
+	}
+
+	for (unsigned int i = 0; i < types1.size(); ++i)
+	{
+		auto type1 = types1.at(i);
+		auto type2 = types2.at(i);
+		if (type2 == nullptr)
+		{
+			continue;
+		}
+
+		if (IsType<WildcardType>(type1))
+		{
+			//TODO: Wildcard assign
+		}
+
+		if (IsType<ListType>(type1) && IsType<ListType>(type2))
+		{
+			auto listType1 = GetType<ListType>(type1);
+			auto listType2 = GetType<ListType>(type2);
+
+			if (const auto elementType = TypeUtils::GetReducedType(listType2->GetElementTypes()))
+			{
+				if (IsTypesEqual({elementType}, listType1->GetElementTypes()))
+				{
+					continue;
+				}
+				return false;
+			}
+		}
+
+		if (!IsTypesEqual(type1, type2))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool IsTypesEqual(const Type *type1, const Type *type2)
 {
 	return *type1 == *type2;

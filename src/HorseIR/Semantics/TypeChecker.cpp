@@ -54,7 +54,7 @@ void TypeChecker::VisitOut(AssignStatement *assign)
 
 	// Check that the expression and destination types match, allowing for runtime checks
 
-	if (!TypeUtils::IsTypesEqual(targetTypes, expressionTypes, true))
+	if (!TypeUtils::IsTypesAssignable(targetTypes, expressionTypes))
 	{
 		Utils::Logger::LogError("Expression type " + TypeUtils::TypeString(expressionTypes) + " does not match destination type " + TypeUtils::TypeString(targetTypes));
 	}
