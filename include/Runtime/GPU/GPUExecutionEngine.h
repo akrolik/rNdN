@@ -28,7 +28,6 @@ public:
 
 private:
 	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions &runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
-	std::vector<std::uint32_t> GetCellSizes(const Analysis::ListShape *shape) const;
 
 	VectorBuffer *ResizeBuffer(const VectorBuffer *vectorBuffer, std::uint32_t size) const;
 	ListBuffer *ResizeBuffer(const ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const;
@@ -36,8 +35,8 @@ private:
 
 	template<typename T>
 	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;
-	CUDA::Buffer *AllocateCellSizes(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
-	CUDA::Buffer *AllocateSizeBuffer(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const;
+	CUDA::Buffer *AllocateListSizeParameter(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
+	CUDA::Buffer *AllocateSizeParameter(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const;
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;
