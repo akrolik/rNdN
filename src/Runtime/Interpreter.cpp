@@ -85,7 +85,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *f
 {
 	Utils::ScopedChrono chrono("Builtin function '" + function->GetName() + "'");
 
-	BuiltinExecutionEngine engine(m_runtime);
+	BuiltinExecutionEngine engine(m_runtime, m_program);
 	return engine.Execute(function, arguments);
 }
 

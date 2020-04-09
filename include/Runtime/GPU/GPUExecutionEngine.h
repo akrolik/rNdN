@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include <utility>
 
 #include "Codegen/InputOptions.h"
@@ -27,7 +28,7 @@ public:
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 
 private:
-	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions &runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
+	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
 
 	VectorBuffer *ResizeBuffer(const VectorBuffer *vectorBuffer, std::uint32_t size) const;
 	ListBuffer *ResizeBuffer(const ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const;
@@ -40,6 +41,10 @@ private:
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;
+
+	// Cache for GPU execution
+
+	std::unordered_map<const HorseIR::Function *, Codegen::InputOptions *> m_optionsCache;
 };
 
 }

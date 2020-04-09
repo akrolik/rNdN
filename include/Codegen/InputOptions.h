@@ -47,6 +47,11 @@ struct InputOptions
 
 	std::vector<const Analysis::Shape *> ReturnShapes;
 	std::vector<const Analysis::Shape *> ReturnWriteShapes;
+	std::vector<const Analysis::DataObject *> ReturnObjects;
+
+	// Copies
+	
+	std::unordered_map<const Analysis::DataObject *, const Analysis::DataObject *> CopyObjects;
 
 	std::string ToString() const
 	{
@@ -66,7 +71,6 @@ struct InputOptions
 				{
 					output += ", ";
 				}
-				first = false;
 				output += parameter->GetName() + " = " + Analysis::ShapeUtils::ShapeString(shape);
 			}
 		}

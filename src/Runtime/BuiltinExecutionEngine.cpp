@@ -111,8 +111,10 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// GPU sort!
 
-			GPUSortEngine sortEngine(m_runtime);
+			GPUSortEngine sortEngine(m_runtime, m_program);
 			auto [indexBuffer, dataBuffer] = sortEngine.Sort(arguments);
+
+			// Data buffers can be deallocated as they are unused in a simple sort
 
 			delete dataBuffer;
 			return {indexBuffer};
@@ -121,7 +123,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// GPU group!
 
-			GPUGroupEngine groupEngine(m_runtime);
+			GPUGroupEngine groupEngine(m_runtime, m_program);
 			return {groupEngine.Group(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:

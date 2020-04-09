@@ -25,6 +25,7 @@ public:
 		return (m_dataCopies.find(returnObject) != m_dataCopies.end());
 	}
 	const DataObject *GetDataCopy(const DataObject *returnObject) const { return m_dataCopies.at(returnObject); }
+	std::unordered_map<const DataObject *, const DataObject *> GetDataCopies() const { return m_dataCopies; }
 
 	// Copy collection
 

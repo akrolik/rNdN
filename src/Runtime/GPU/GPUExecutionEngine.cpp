@@ -7,7 +7,6 @@
 #include "CUDA/Utils.h"
 
 #include "Analysis/DataObject/DataObjectAnalysis.h"
-#include "Analysis/DataObject/DataCopyAnalysis.h"
 #include "Analysis/Geometry/KernelOptionsAnalysis.h"
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeAnalysis.h"
@@ -29,55 +28,65 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	const auto program = m_runtime.GetGPUManager().GetProgram();
 	const auto kernelName = function->GetName();
 
-	auto timeAnalysisInit_start = Utils::Chrono::Start("Analysis initialziation");
-
 	const auto& kernelOptions = program->GetKernelOptions(kernelName);
 	const auto inputOptions = kernelOptions.GetCodegenOptions();
 
-	// Collect runtime shape information for determining exact thread geometry and return shapes
-
-	Analysis::DataObjectAnalysis dataAnalysis(m_program);
-	Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_program, true);
-
-	Analysis::DataObjectAnalysis::Properties inputObjects;
-	Analysis::ShapeAnalysis::Properties inputShapes;
-	for (auto i = 0u; i < function->GetParameterCount(); ++i)
+	if (m_optionsCache.find(function) == m_optionsCache.end())
 	{
-		const auto parameter = function->GetParameter(i);
-		const auto symbol = parameter->GetSymbol();
+		auto timeAnalysisInit_start = Utils::Chrono::Start("Analysis initialziation");
 
-		const auto object = inputOptions->ParameterObjects.at(parameter);
-		const auto runtimeObject = new Analysis::DataObject(object->GetObjectID(), arguments.at(i));
-		inputObjects[symbol] = runtimeObject;
+		// Collect runtime shape information for determining exact thread geometry and return shapes
 
-		// Setup compression constraints
+		Analysis::DataObjectAnalysis dataAnalysis(m_program);
+		Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_program, true);
 
-		const auto symbolShape = inputOptions->ParameterShapes.at(parameter);
-		const auto runtimeShape = arguments.at(i)->GetShape();
+		Analysis::DataObjectAnalysis::Properties inputObjects;
+		Analysis::ShapeAnalysis::Properties inputShapes;
 
-		if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(symbolShape))
+		for (auto i = 0u; i < function->GetParameterCount(); ++i)
 		{
-			if (const auto vectorSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
+			const auto parameter = function->GetParameter(i);
+			const auto symbol = parameter->GetSymbol();
+
+			const auto object = inputOptions->ParameterObjects.at(parameter);
+			const auto runtimeObject = new Analysis::DataObject(object->GetObjectID(), arguments.at(i));
+			inputObjects[symbol] = runtimeObject;
+
+			// Setup compression constraints
+
+			const auto symbolShape = inputOptions->ParameterShapes.at(parameter);
+			const auto runtimeShape = arguments.at(i)->GetShape();
+
+			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(symbolShape))
 			{
-				const auto runtimeVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeShape);
-				shapeAnalysis.AddCompressionConstraint(vectorSize->GetPredicate(), runtimeVector->GetSize());
+				if (const auto vectorSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
+				{
+					const auto runtimeVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeShape);
+					shapeAnalysis.AddCompressionConstraint(vectorSize->GetPredicate(), runtimeVector->GetSize());
+				}
 			}
+			inputShapes.first[symbol] = runtimeShape;
+			inputShapes.second[symbol] = runtimeShape;
 		}
-		inputShapes.first[symbol] = runtimeShape;
-		inputShapes.second[symbol] = runtimeShape;
+
+		Utils::Chrono::End(timeAnalysisInit_start);
+
+		// Determine the thread geometry for the kernel
+
+		dataAnalysis.Analyze(function, inputObjects);
+		shapeAnalysis.Analyze(function, inputShapes);
+
+		Analysis::KernelOptionsAnalysis optionsAnalysis(shapeAnalysis);
+		optionsAnalysis.Analyze(function);
+
+		m_optionsCache[function] = std::move(optionsAnalysis.GetInputOptions());
+	}
+	else
+	{
+		Utils::Logger::LogDebug("Using cached input options for kernel '" + function->GetName() + "'");
 	}
 
-	Utils::Chrono::End(timeAnalysisInit_start);
-
-	// Determine the thread geometry for the kernel
-
-	dataAnalysis.Analyze(function, inputObjects);
-	shapeAnalysis.Analyze(function, inputShapes);
-
-	Analysis::KernelOptionsAnalysis optionsAnalysis(shapeAnalysis);
-	optionsAnalysis.Analyze(function);
-
-	auto runtimeOptions = optionsAnalysis.GetInputOptions();
+	auto runtimeOptions = m_optionsCache.at(function);
 
 	// Execute the compiled kernel on the GPU
 	//   1. Create the invocation (thread sizes + arguments)
@@ -94,7 +103,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Configure the runtime thread layout
 
-	const auto [blockSize, blockCount] = GetBlockShape(*runtimeOptions, kernelOptions);
+	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, kernelOptions);
 	invocation.SetBlockShape(blockSize, 1, 1);
 	invocation.SetGridShape(blockCount, 1, 1);
 
@@ -128,9 +137,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	{
 		// Determine any data copies that occur
 
-		Analysis::DataCopyAnalysis copyAnalysis(dataAnalysis);
-		copyAnalysis.Analyze(function);
-
 		for (auto i = 0u; i < function->GetReturnCount(); ++i)
 		{
 			// Create a new buffer for the return value
@@ -158,10 +164,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 			// Copy data if needed from input
 
-			const auto returnObject = dataAnalysis.GetReturnObject(i);
-			if (copyAnalysis.ContainsDataCopy(returnObject))
+			const auto& dataCopies = runtimeOptions->CopyObjects;
+			const auto returnObject = runtimeOptions->ReturnObjects.at(i);
+
+			if (dataCopies.find(returnObject) != dataCopies.end())
 			{
-				const auto inputObject = copyAnalysis.GetDataCopy(returnObject);
+				const auto inputObject = dataCopies.at(returnObject);
 				auto inputBuffer = inputObject->GetDataBuffer();
 
 				Utils::Logger::LogDebug("Initializing return data: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString());
@@ -385,7 +393,7 @@ DataBuffer *GPUExecutionEngine::ResizeBuffer(const DataBuffer *dataBuffer, CUDA:
 	}
 }
 
-std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen::InputOptions& runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
+std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
 {
 	// Compute the block size and count based on the kernel, input and target configurations
 	// We assume that all sizes are known at this point
@@ -395,7 +403,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 
 	const auto maxBlockSize = device->GetMaxThreadsDimension(0);
 
-	const auto threadGeometry = runtimeOptions.ThreadGeometry;
+	const auto threadGeometry = runtimeOptions->ThreadGeometry;
 	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
 	{
 		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
@@ -443,7 +451,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 				// The thread number was not specified in the input or kernel properties, but determined
 				// at runtime depending on the cell sizes
 
-				cellSize = runtimeOptions.ListCellThreads;
+				cellSize = runtimeOptions->ListCellThreads;
 
 				if (kernelOptions.GetThreadMultiple() != 0)
 				{
@@ -456,7 +464,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 
 			// Important: Update the number of cells per thread
 
-			runtimeOptions.ListCellThreads = cellSize;
+			runtimeOptions->ListCellThreads = cellSize;
 
 			// Compute the block size, capped by the total thread count if smaller
 

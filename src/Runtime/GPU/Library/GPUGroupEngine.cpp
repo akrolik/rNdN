@@ -24,7 +24,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	sortBuffers.push_back(arguments.at(3)); // Data
 	sortBuffers.push_back(orderBuffer); // Order
 
-	GPUSortEngine sortEngine(m_runtime);
+	GPUSortEngine sortEngine(m_runtime, m_program);
 	auto [indexBuffer, dataBuffer] = sortEngine.Sort(sortBuffers);
 
 	delete orderBuffer;

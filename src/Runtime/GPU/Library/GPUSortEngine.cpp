@@ -3,34 +3,43 @@
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
-#include "Runtime/Interpreter.h"
-
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ConstantBuffer.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/ListBuffer.h"
+#include "Runtime/GPU/GPUExecutionEngine.h"
 
+#include "Utils/Logger.h"
 #include "Utils/Math.h"
 
 namespace Runtime {
+
+const HorseIR::Function *GPUSortEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+{
+	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
+	{
+		return static_cast<const HorseIR::Function *>(function);
+	}
+	Utils::Logger::LogError("GPU sort library cannot execute function '" + function->GetName() + "'");
+}
 
 std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(const std::vector<DataBuffer *>& arguments)
 {
 	// Get the execution engine for the init/sort functions
 
-	Interpreter interpreter(m_runtime);
+	GPUExecutionEngine engine(m_runtime, m_program);
 
 	// Initialize the index buffer and sort buffer padding
 
-	auto initFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction();
-	auto initBuffers = interpreter.Execute(initFunction, {arguments.at(2), arguments.at(3)});
+	auto initFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
+	auto initBuffers = engine.Execute(initFunction, {arguments.at(2), arguments.at(3)});
 
 	auto indexBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(initBuffers.at(0));
 	auto dataBuffer = initBuffers.at(1);
 
 	// Perform the iterative sort
 
-	auto sortFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction();
+	auto sortFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
 
 	// Compute the active size and iterations
 
@@ -53,7 +62,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 
 			// Execute!
 
-			interpreter.Execute(sortFunction, sortBuffers);
+			engine.Execute(sortFunction, sortBuffers);
 
 			delete stageBuffer;
 			delete substageBuffer;
