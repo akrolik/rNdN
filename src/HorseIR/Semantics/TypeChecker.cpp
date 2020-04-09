@@ -1077,26 +1077,25 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			Require(TypeUtils::IsBooleanType(inputType3));
 
-			auto booleanType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean);
-			auto intType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType2, booleanType});
-			const auto callTypes1 = AnalyzeCall(functionType1, {intType, inputType2, booleanType});
+			// Init sort call
 
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType2, inputType3});
 			Require(callTypes0.size() == 2);
 			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
-			Require(*callTypes0.at(1) == *inputType2);
+			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType2));
 
+			// Sort call
+
+			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType2, inputType3});
 			Require(TypeUtils::IsEmptyType(callTypes1));
 
-			delete intType;
-			delete booleanType;
-
-			return {new BasicType(BasicType::BasicKind::Int64)};
+			return {callTypes0.at(0)};
 		}
 		case BuiltinFunction::Primitive::GPUOrderInit:
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
+
 			Require(TypeUtils::IsOrderableType(inputType0) || TypeUtils::IsType<ListType>(inputType0));
 
 			if (const auto listType = TypeUtils::GetType<ListType>(inputType0))
@@ -1107,6 +1106,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 
 			Require(TypeUtils::IsBooleanType(inputType1));
+
 			return {new BasicType(BasicType::BasicKind::Int64), inputType0};
 		}
 		case BuiltinFunction::Primitive::GPUOrder:
@@ -1155,25 +1155,28 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
 			}
 
-			auto booleanType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean);
-			auto intType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+			// Init sort call
 
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3, booleanType});
-			const auto callTypes1 = AnalyzeCall(functionType1, {intType, inputType3, booleanType});
-			const auto callTypes2 = AnalyzeCall(functionType2, {intType, inputType3});
+			auto orderType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean);
 
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3, orderType});
 			Require(callTypes0.size() == 2);
 			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
-			Require(*callTypes0.at(1) == *inputType3);
+			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType3));
 
+			// Sort call
+
+			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType3, orderType});
 			Require(TypeUtils::IsEmptyType(callTypes1));
 
+			delete orderType;
+
+			// Group call
+
+			const auto callTypes2 = AnalyzeCall(functionType2, {callTypes0.at(0), inputType3});
 			Require(callTypes2.size() == 2);
 			Require(TypeUtils::IsBasicType(callTypes2.at(0), BasicType::BasicKind::Int64));
 			Require(TypeUtils::IsBasicType(callTypes2.at(1), BasicType::BasicKind::Int64));
-
-			delete intType;
-			delete booleanType;
 
 			return {new DictionaryType(new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64))};
 		}

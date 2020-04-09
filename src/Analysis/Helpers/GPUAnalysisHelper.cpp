@@ -201,7 +201,25 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::LessEqual:
 		case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
 		{
-			if (HorseIR::TypeUtils::IsCharacterType(arguments.at(0)->GetType()) || HorseIR::TypeUtils::IsCharacterType(arguments.at(1)->GetType()))
+			const auto type0 = arguments.at(0)->GetType();
+			const auto type1 = arguments.at(1)->GetType();
+
+			// List embedding
+			if (const auto listType0 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type0))
+			{
+				if (HorseIR::TypeUtils::ForanyElement(listType0, HorseIR::TypeUtils::IsCharacterType))
+				{
+					return {Device::CPU, Synchronization:None};
+				}
+			}
+			else if (const auto listType1 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type1))
+			{
+				if (HorseIR::TypeUtils::ForanyElement(listType1, HorseIR::TypeUtils::IsCharacterType))
+				{
+					return {Device::CPU, Synchronization:None};
+				}
+			}
+			else if (HorseIR::TypeUtils::IsCharacterType(type0) || HorseIR::TypeUtils::IsCharacterType(type1))
 			{
 				return {Device::CPU, Synchronization:None};
 			}
@@ -255,12 +273,27 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Independent Operations
 		// ----------------------
 
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Order:
+		{
+			auto type0 = arguments.at(0)->GetType();
+			if (const auto listType0 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type0))
+			{
+				if (HorseIR::TypeUtils::ForanyElement(listType0, HorseIR::TypeUtils::IsCharacterType))
+				{
+					return {Device::CPU, Synchronization::None};
+				}
+			}
+			else if (HorseIR::TypeUtils::IsCharacterType(listType0))
+			{
+				return {Device::CPU, Synchronization::None};
+			}
+		}
+
 		// Algebraic Unary
 		case HorseIR::BuiltinFunction::Primitive::Unique:
 		case HorseIR::BuiltinFunction::Primitive::Group:
 
-		// Algebraic Binary
-		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
 			// Complex independent operations are controlled on the CPU with GPU sections
 
@@ -291,10 +324,11 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::EachLeft:
 		case HorseIR::BuiltinFunction::Primitive::EachRight:
 		{
-			//TODO: Nested arguments
 			const auto type = arguments.at(0)->GetType();
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
-			return AnalyzeCall(function, {}, index - 1); // Nested function properties
+
+			std::vector<HorseIR::Operand *> nestedArguments(std::begin(arguments) + 1, std::end(arguments));
+			return AnalyzeCall(function, nestedArguments, index - 1); // Nested function properties
 		}
 
 		// ---------------

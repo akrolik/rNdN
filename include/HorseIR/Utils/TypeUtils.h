@@ -76,7 +76,7 @@ static bool IsTypesEqual(const std::vector<Type *>& types1, const std::vector<Ty
 			return false;
 		}
 
-		if (*type1 != *type2)
+		if (!IsTypesEqual(type1, type2))
 		{
 			return false;
 		}
@@ -198,6 +198,18 @@ static bool ForallElements(const ListType *listType, bool (*f)(const Type *))
 		}
 	}
 	return true;
+}
+
+static bool ForanyElement(const ListType *listType, bool (*f)(const Type *))
+{
+	for (const auto elementType : listType->GetElementTypes())
+	{
+		if ((*f)(elementType))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 template<class T>

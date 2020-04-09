@@ -554,15 +554,15 @@ public:
 
 			// GPU
 			case Primitive::GPUOrderLib:
-				return 4;
+				return 4; // @order_init, @order, data, order
 			case Primitive::GPUOrderInit:
-				return 2;
+				return 2; // data, order
 			case Primitive::GPUOrder:
-				return 3;
+				return 3; // index, data, order
 			case Primitive::GPUGroupLib:
-				return 4;
+				return 4; // @order_init, @order, data
 			case Primitive::GPUGroup:
-				return 2;
+				return 2; // index, data
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

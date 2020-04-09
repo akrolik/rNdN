@@ -435,6 +435,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	{
 #define Require(x) if (!(x)) break
 #define Return(x) { std::vector<const Shape *> shapes({x}); return {shapes, shapes}; }
+#define Return2(x,y) { std::vector<const Shape *> shapes({x,y}); return {shapes, shapes}; }
 
 		// Unary
 		case HorseIR::BuiltinFunction::Primitive::Absolute:
@@ -1044,7 +1045,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			}
 			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
 			{
-				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape2->GetSize()));
+				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape2->GetSize()) || CheckStaticScalar(vectorShape2->GetSize()));
 				Require(CheckStaticTabular(listShape));
 				Return(ShapeUtils::MergeShapes(listShape->GetElementShapes()));
 			}
@@ -1768,18 +1769,26 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 
-			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {argumentShapes.at(2), argumentShapes.at(3)}, {});
-			Require(initShapes.size() == 2);
-			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
-
-			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), argumentShapes.at(3)}, {});
-			Require(sortShapes.size() == 0);
-
 			const auto argumentShape3 = argumentShapes.at(2);
 			const auto argumentShape4 = argumentShapes.at(3);
 
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape3) || ShapeUtils::IsShape<ListShape>(argumentShape3));
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape4));
+
 			const auto vectorShape4 = ShapeUtils::GetShape<VectorShape>(argumentShape4);
+
+			// Init call
+
+			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {argumentShape3, argumentShape4}, {});
+			Require(initShapes.size() == 2);
+			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
+
+			// Sort call
+
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), argumentShape4}, {});
+			Require(sortShapes.size() == 0);
+
+			// Return
 
 			if (ShapeUtils::IsShape<VectorShape>(argumentShape3))
 			{
@@ -1816,17 +1825,15 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape0->GetSize()))
 				{
 					const auto indexShape = new VectorShape(new Shape::ConstantSize(Utils::Math::Power2(constantSize->GetValue())));
-					std::vector<const Shape *> outShapes({indexShape, indexShape});
-					return {outShapes, outShapes};
+					Return2(indexShape, indexShape);
 				}
-				
+
 				const auto indexShape = new VectorShape(new Shape::DynamicSize(m_call));
-				std::vector<const Shape *> outShapes({indexShape, indexShape});
-				return {outShapes, outShapes};
+				Return2(indexShape, indexShape);
 			}
-			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape0))
 			{
-				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape1->GetSize()));
+				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape1->GetSize()) || CheckStaticScalar(vectorShape1->GetSize()));
 				Require(CheckStaticTabular(listShape));
 
 				auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
@@ -1835,13 +1842,11 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 					if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 					{
 						const auto indexShape = new VectorShape(new Shape::ConstantSize(Utils::Math::Power2(constantSize->GetValue())));
-						std::vector<const Shape *> outShapes({indexShape, new ListShape(listShape->GetListSize(), {indexShape})});
-						return {outShapes, outShapes};
+						Return2(indexShape, new ListShape(listShape->GetListSize(), {indexShape}));
 					}
 
 					const auto indexShape = new VectorShape(new Shape::DynamicSize(m_call));
-					std::vector<const Shape *> outShapes({indexShape, new ListShape(listShape->GetListSize(), {indexShape})});
-					return {outShapes, outShapes};
+					Return2(indexShape, new ListShape(listShape->GetListSize(), {indexShape}));
 				}
 			}
 			break;
@@ -1880,7 +1885,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			}
 			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape1))
 			{
-				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape2->GetSize()));
+				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape2->GetSize()) || CheckStaticScalar(vectorShape2->GetSize()));
 				Require(CheckStaticTabular(listShape));
 
 				auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
@@ -1907,41 +1912,52 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto dataShape = argumentShapes.at(3);
 			Require(ShapeUtils::IsShape<VectorShape>(dataShape) || ShapeUtils::IsShape<ListShape>(dataShape));
 
-			if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
+			const Shape::Size *orderSize = nullptr;
+			if (ShapeUtils::IsShape<VectorShape>(dataShape))
+			{
+				orderSize = new Shape::ConstantSize(1);
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
 			{
 				Require(CheckStaticTabular(listShape));
+				orderSize = listShape->GetListSize();
 			}
+
+			const auto orderShape = new VectorShape(orderSize);
+
+			// Fetch functions
 
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 			const auto groupFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(groupType)->GetFunctionDeclaration();
 
-			const auto orderShape = new VectorShape(new Shape::ConstantSize(2));
+			// Init call
 
 			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape, orderShape}, {});
 			Require(initShapes.size() == 2);
 			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
 
+			// Sort call
+
 			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), orderShape}, {});
 			Require(sortShapes.size() == 0);
+
+			// Group call
 
 			const auto [groupShapes, groupWriteShapes] = AnalyzeCall(groupFunction, {initShapes.at(0), initShapes.at(1)}, {});
 			Require(groupShapes.size() == 2);
 			Require(ShapeUtils::IsShape<VectorShape>(groupShapes.at(0)));
 			Require(ShapeUtils::IsShape<VectorShape>(groupShapes.at(1)));
 
-			delete orderShape;
-
 			Return(new DictionaryShape(
 				new VectorShape(new Shape::DynamicSize(m_call, 1)),
 				new VectorShape(new Shape::DynamicSize(m_call, 2))
 			));
-
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
 		{
 			// -- Vector/list group
-			// Input: Vector<Size*>, {Vector<Size*> | List<Size2*, {Vector<Size*>}>} 
+			// Input: Vector<Size*>, {Vector<Size*> | List<Size2*, {Vector<Size*>}>}
 			// Output: Vector<DynamicSize1>, Vector<DynamicSize2>
 			//
 			// For lists, ensure all shapes are vectors of the same length
@@ -1969,9 +1985,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			const auto returnShape1 = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize()));
 			const auto returnShape2 = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize()));
-
-			std::vector<const Shape *> outShapes({returnShape1, returnShape2});
-			return {outShapes, outShapes};
+			Return2(returnShape1, returnShape2);
 		}
 		default:
 		{

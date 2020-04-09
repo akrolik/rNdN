@@ -372,17 +372,18 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
-			Require(shapes.size() == 2);
-			return shapes.at(0);
+			auto indexShape = shapes.at(0);
+			Require(ShapeUtils::IsShape<VectorShape>(indexShape));
+			return indexShape;
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
 		{
-			auto shape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
-			Require(ShapeUtils::IsShape<VectorShape>(shape));
+			auto indexShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
+			Require(ShapeUtils::IsShape<VectorShape>(indexShape));
 
 			// Divide by 2 if constant, otherwise return a new dynamic size
 
-			auto vectorShape = ShapeUtils::GetShape<VectorShape>(shape);
+			auto vectorShape = ShapeUtils::GetShape<VectorShape>(indexShape);
 			if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 			{
 				return new VectorShape(new Shape::ConstantSize(constantSize->GetValue() / 2));
@@ -391,9 +392,9 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
 		{
-			auto shape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
-			Require(ShapeUtils::IsShape<VectorShape>(shape));
-			return shape;
+			auto indexShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
+			Require(ShapeUtils::IsShape<VectorShape>(indexShape));
+			return indexShape;
 		}
 		default:
 		{
