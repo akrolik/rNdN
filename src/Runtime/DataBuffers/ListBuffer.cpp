@@ -1,5 +1,7 @@
 #include "Runtime/DataBuffers/ListBuffer.h"
 
+#include "Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
@@ -14,16 +16,23 @@ ListBuffer *ListBuffer::CreateEmpty(const HorseIR::ListType *type, const Analysi
 	auto typeCount = elementTypes.size();
 	auto shapeCount = elementShapes.size();
 
+	if (const auto listSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(shape->GetListSize()))
+	{
+		shapeCount = listSize->GetValue();
+	}
+
 	if (typeCount != 1 && typeCount != shapeCount)
 	{
-		Utils::Logger::LogError("Mismatch between list type and shape cell count [" + std::to_string(typeCount) + " != " + std::to_string(shapeCount) + "]");
+		Utils::Logger::LogError("Mismatch between list type and shape cell count [" + HorseIR::PrettyPrinter::PrettyString(type) + "; " + Analysis::ShapeUtils::ShapeString(shape) + "]");
 	}
 
 	std::vector<DataBuffer *> cellBuffers;
 	for (auto i = 0u; i < shapeCount; ++i)
 	{
 		auto elementType = (typeCount == 1) ? elementTypes.at(0) : elementTypes.at(i);
-		cellBuffers.push_back(DataBuffer::CreateEmpty(elementType, elementShapes.at(i)));
+		auto elementShape = (elementShapes.size() == 1) ? elementShapes.at(0) : elementShapes.at(i);
+
+		cellBuffers.push_back(DataBuffer::CreateEmpty(elementType, elementShape));
 	}
 
 	return new ListBuffer(cellBuffers);

@@ -24,7 +24,7 @@ DictionaryBuffer::DictionaryBuffer(VectorBuffer *keys, ListBuffer *values) : Dat
 	// Form the type/shape
 
 	auto keysShape = keys->GetShape();
-	auto valuesShape = Analysis::ShapeUtils::MergeShapes(values->GetShape()->GetElementShapes());
+	auto valuesShape = values->GetShape();
 	m_shape = new Analysis::DictionaryShape(keysShape, valuesShape);
 
 	auto keysType = keys->GetType()->Clone();

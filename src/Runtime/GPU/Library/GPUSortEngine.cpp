@@ -69,8 +69,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	}
 	else if (auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(arguments.at(2), false))
 	{
-		auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0));
-		size = vectorBuffer->GetElementCount();
+		size = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0))->GetElementCount();
 	}
 	else
 	{
