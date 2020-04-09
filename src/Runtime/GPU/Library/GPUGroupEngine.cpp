@@ -86,7 +86,6 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	// Delete all intermediate buffers
 
-	delete keysBuffer;
 	delete valuesBuffer;
 	delete indexBuffer;
 	delete dataBuffer;
