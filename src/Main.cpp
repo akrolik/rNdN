@@ -40,8 +40,6 @@ int main(int argc, const char *argv[])
 	auto timeCompilation_start = Utils::Chrono::Start("Compilation");
 	auto timeFrontend_start = Utils::Chrono::Start("Frontend");
 
-	auto timeParse_start = Utils::Chrono::Start("Parse");
-
 	if (!Utils::Options::Present(Utils::Options::Opt_File))
 	{
 		Utils::Logger::LogError("Missing filename (./r3d3 [options] filename), see --help");
@@ -53,10 +51,22 @@ int main(int argc, const char *argv[])
 	{
 		Utils::Logger::LogError("Could not open '" + filename + "'");
 	}
+
+	auto timeDummy_start = Utils::Chrono::Start("Parse dummy initialization");
+
+	yyparse();
+	rewind(yyin);
+
+	Utils::Chrono::End(timeDummy_start);
+
+	// Parse the input HorseIR program from stdin and generate an AST
+
+	auto timeParse_start = Utils::Chrono::Start("Parse");
+
 	yyparse();
 
 	Utils::Chrono::End(timeParse_start);
-	
+
 	if (Utils::Options::Present(Utils::Options::Opt_Print_hir))
 	{
 		// Pretty print the input HorseIR program
