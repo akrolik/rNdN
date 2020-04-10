@@ -186,15 +186,12 @@ public:
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(m_swapLabel, predicateSwap));
 		
-		if (index + 1 < m_orderLiteral->GetCount())
-		{
-			// Check for the next branch
+		// Check for the next branch
 
-			auto predicateEqual = resources->template AllocateTemporary<PTX::PredicateType>();
+		auto predicateEqual = resources->template AllocateTemporary<PTX::PredicateType>();
 
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateEqual, leftValue, rightValue, T::ComparisonOperator::NotEqual));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(m_endLabel, predicateEqual));
-		}
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateEqual, leftValue, rightValue, T::ComparisonOperator::NotEqual));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(m_endLabel, predicateEqual));
 	}
 
 private:
