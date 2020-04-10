@@ -315,7 +315,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				auto resizedBuffer = ResizeBuffer(returnBuffer, sizeBuffer);
 
 				resizedBuffers.push_back(resizedBuffer);
-				delete returnBuffer;
 			}
 			else
 			{
@@ -335,41 +334,50 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		return resizedBuffers;
 	}
 
-	return returnBuffers;
+	return {};
 }
 
-VectorBuffer *GPUExecutionEngine::ResizeBuffer(const VectorBuffer *vectorBuffer, std::uint32_t size) const
+VectorBuffer *GPUExecutionEngine::ResizeBuffer(VectorBuffer *vectorBuffer, std::uint32_t size) const
 {
-	// Allocate a new buffer and transfer the contents
+	// Check if resize necessary
 
-	auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-	CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
+	if (vectorBuffer->GetElementCount() != size)
+	{
+		// Allocate a new buffer and transfer the contents
 
-	Utils::Logger::LogDebug("Resized vector buffer [" + vectorBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
+		auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
+		CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
 
-	return resizedBuffer;
+		Utils::Logger::LogDebug("Resized vector buffer [" + vectorBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
+
+		delete vectorBuffer;
+		return resizedBuffer;
+	}
+	return vectorBuffer;
 }
 
-ListBuffer *GPUExecutionEngine::ResizeBuffer(const ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const
+ListBuffer *GPUExecutionEngine::ResizeBuffer(ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const
 {
 	// For each cell, allocate a new buffer and transfer the contents
 
 	std::vector<DataBuffer *> resizedCells;
-	for (auto i = 0u; i < sizes.size(); ++i)
+	for (auto i = 0u; i < listBuffer->GetCellCount(); ++i)
 	{
-		const auto& size = sizes.at(i);
-		const auto& cellBuffer = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(i));
+		const auto size = sizes.at((sizes.size() == 1) ? 0 : i);
+		const auto cellBuffer = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(i));
 
 		resizedCells.push_back(ResizeBuffer(cellBuffer, size));
 	}
+
 	auto resizedBuffer = new ListBuffer(resizedCells);
 
 	Utils::Logger::LogDebug("Resized list buffer [" + listBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
 
+	delete listBuffer;
 	return resizedBuffer;
 }
 
-DataBuffer *GPUExecutionEngine::ResizeBuffer(const DataBuffer *dataBuffer, CUDA::Buffer *sizeBuffer) const
+DataBuffer *GPUExecutionEngine::ResizeBuffer(DataBuffer *dataBuffer, CUDA::Buffer *sizeBuffer) const
 {
 	// Transfer the size to the CPU to resize the buffer
 

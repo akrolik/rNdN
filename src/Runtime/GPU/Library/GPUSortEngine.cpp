@@ -69,68 +69,30 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 		}
 	}
 
-	// Resize the index buffer to fit the number of indices if needed
-
-	auto size = 0;
 	if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(2), false))
 	{
-		size = vectorBuffer->GetElementCount();
+		auto outputBuffer = BufferUtils::GetBuffer<VectorBuffer>(dataBuffer);
+		auto size = vectorBuffer->GetElementCount();
+
+		auto resizedIndexBuffer = engine.ResizeBuffer(indexBuffer, size);
+		auto resizedDataBuffer = engine.ResizeBuffer(outputBuffer, size);
+
+		return {BufferUtils::GetVectorBuffer<std::int64_t>(resizedIndexBuffer), resizedDataBuffer};
 	}
 	else if (auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(arguments.at(2), false))
 	{
-		size = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0))->GetElementCount();
+		auto outputBuffer = BufferUtils::GetBuffer<ListBuffer>(dataBuffer);
+		auto size = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0))->GetElementCount();
+
+		auto resizedIndexBuffer = engine.ResizeBuffer(indexBuffer, size);
+		auto resizedDataBuffer = engine.ResizeBuffer(outputBuffer, {size});
+
+		return {BufferUtils::GetVectorBuffer<std::int64_t>(resizedIndexBuffer), resizedDataBuffer};
 	}
 	else
 	{
 		Utils::Logger::LogError("GPU sort requires vector or list data, received " + arguments.at(2)->Description());
 	}
-
-	if (activeSize > size)
-	{
-		// Allocate a smaller buffer for each column and copy the data
-
-		auto resizedIndexBuffer = VectorBuffer::CreateEmpty(indexBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-		CUDA::Buffer::Copy(resizedIndexBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), resizedIndexBuffer->GetGPUBufferSize());
-
-		Utils::Logger::LogDebug("Resized buffer [" + indexBuffer->Description() + "] to [" + resizedIndexBuffer->Description() + "]");
-		delete indexBuffer;
-
-		//TODO: Centralize resize code
-		if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(dataBuffer, false))
-		{
-			auto resizedVectorBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-			CUDA::Buffer::Copy(resizedVectorBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedVectorBuffer->GetGPUBufferSize());
-
-			Utils::Logger::LogDebug("Resized buffer [" + vectorBuffer->Description() + "] to [" + resizedVectorBuffer->Description() + "]");
-			delete vectorBuffer;
-
-			return {BufferUtils::GetVectorBuffer<std::int64_t>(resizedIndexBuffer), resizedVectorBuffer};
-		}
-		else if (auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(dataBuffer, false))
-		{
-			std::vector<DataBuffer *> resizedCellBuffers;
-			for (const auto cellBuffer : listBuffer->GetCells())
-			{
-				auto vectorCellBuffer = BufferUtils::GetBuffer<VectorBuffer>(cellBuffer);
-
-				auto resizedCellBuffer = VectorBuffer::CreateEmpty(vectorCellBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-				CUDA::Buffer::Copy(resizedCellBuffer->GetGPUWriteBuffer(), vectorCellBuffer->GetGPUReadBuffer(), resizedCellBuffer->GetGPUBufferSize());
-
-				resizedCellBuffers.push_back(resizedCellBuffer);
-			}
-
-			auto resizedListBuffer = new ListBuffer(resizedCellBuffers);
-			Utils::Logger::LogDebug("Resized buffer [" + listBuffer->Description() + "] to [" + resizedListBuffer->Description() + "]");
-
-			return {BufferUtils::GetVectorBuffer<std::int64_t>(resizedIndexBuffer), resizedListBuffer};
-		}
-		else
-		{
-			Utils::Logger::LogError("Unable to resize buffer " + dataBuffer->Description());
-		}
-	}
-
-	return {indexBuffer, dataBuffer};
 }
 
 }
