@@ -157,7 +157,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			// Allocate a size parameter if neded
 
 			const auto returnShape = inputOptions->ReturnShapes.at(i);
-			if (RuntimeUtils::IsDynamicReturnShape(returnShape, inputOptions->ThreadGeometry))
+			const auto returnWriteShape = inputOptions->ReturnWriteShapes.at(i);
+			if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
 			{
 				returnSizeBuffers.push_back(AllocateSizeParameter(invocation, shape, true));
 			}
@@ -305,9 +306,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 			const auto returnShape = inputOptions->ReturnShapes.at(returnIndex);
 			const auto returnWriteShape = inputOptions->ReturnWriteShapes.at(returnIndex);
-			//TODO: This works, but is hacky
 			
-			if (*returnShape == *returnWriteShape && RuntimeUtils::IsDynamicReturnShape(returnShape, inputOptions->ThreadGeometry))
+			if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
 			{
 				// Resize the buffer according to the dynamic size
 

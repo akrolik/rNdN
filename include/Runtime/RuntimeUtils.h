@@ -8,7 +8,7 @@ namespace Runtime {
 class RuntimeUtils
 {
 public:
-	static bool IsDynamicReturnShape(const Analysis::Shape *dataShape, const Analysis::Shape *threadGeometry)
+	static bool IsDynamicReturnShape(const Analysis::Shape *dataShape, const Analysis::Shape *writeShape, const Analysis::Shape *threadGeometry)
 	{
 		// Statically defined output shapes
 
@@ -20,6 +20,13 @@ public:
 		// Geometry defined output shape
 
 		if (*dataShape == *threadGeometry)
+		{
+			return false;
+		}
+
+		// @index_a special case 
+
+		if (*dataShape != *writeShape)
 		{
 			return false;
 		}

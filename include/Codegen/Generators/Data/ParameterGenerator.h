@@ -31,40 +31,42 @@ public:
 		for (const auto& parameter : function->GetParameters())
 		{
 			auto shape = inputOptions.ParameterShapes.at(parameter);
-			DispatchType(*this, parameter->GetType(), parameter->GetName(), shape, false);
+			DispatchType(*this, parameter->GetType(), parameter->GetName(), shape);
 		}
 
 		auto returnIndex = 0;
 		for (const auto& returnType : function->GetReturnTypes())
 		{
 			auto shape = inputOptions.ReturnShapes.at(returnIndex);
+			auto writeShape = inputOptions.ReturnWriteShapes.at(returnIndex);
+
 			auto name = NameUtils::ReturnName(returnIndex);
-			DispatchType(*this, returnType, name, shape, true);
+			DispatchType(*this, returnType, name, shape, writeShape);
 
 			returnIndex++;
 		}
 	}
 
 	template<class T>
-	void GenerateVector(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateVector(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			// Predicate values are stored as 8-bit integers on the CPU
 
-			GenerateVector<PTX::Int8Type>(name, shape, returnParameter);
+			GenerateVector<PTX::Int8Type>(name, shape, writeShape);
 		}
 		else
 		{
 			// Add vector parameter to the kernel
 
 			auto parameter = GeneratePointer<T>(name);
-			if (returnParameter)
+			if (writeShape != nullptr)
 			{
 				// Return dynamic shapes use a pointer parameter for accumulating size
 
 				auto& inputOptions = this->m_builder.GetInputOptions();
-				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
 					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}
@@ -79,13 +81,13 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateList(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			// Predicate values are stored as 8-bit integers on the CPU
 
-			GenerateList<PTX::Int8Type>(name, shape, returnParameter);
+			GenerateList<PTX::Int8Type>(name, shape, writeShape);
 		}
 		else
 		{
@@ -96,7 +98,7 @@ public:
 			// Dynamic returns as well as all input parameters require a size argument
 
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 			{
 				GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 			}
@@ -104,19 +106,19 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			// Predicate values are stored as 8-bit integers on the CPU
 
-			GenerateTuple<PTX::Int8Type>(index, name, shape, returnParameter);
+			GenerateTuple<PTX::Int8Type>(index, name, shape, writeShape);
 		}
 		else
 		{
 			if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 			{
-				Error(name, shape, returnParameter);
+				Error(name, shape, (writeShape != nullptr));
 			}
 
 			// Add list parameter to the kernel, aliasing all later types
@@ -128,7 +130,7 @@ public:
 				// Dynamic returns as well as all input parameters require a size argument
 
 				auto& inputOptions = this->m_builder.GetInputOptions();
-				if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
 					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 				}

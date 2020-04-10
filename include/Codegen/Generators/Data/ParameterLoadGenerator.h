@@ -35,34 +35,36 @@ public:
 
 		for (const auto& parameter : function->GetParameters())
 		{
+			auto shape = inputOptions.ParameterShapes.at(parameter);
+
 			this->m_builder.AddStatement(new PTX::CommentStatement(HorseIR::PrettyPrinter::PrettyString(parameter, true)));
 
-			auto shape = inputOptions.ParameterShapes.at(parameter);
 			DispatchType(*this, parameter->GetType(), parameter->GetName(), shape);
 		}
 
 		auto returnIndex = 0u;
 		for (const auto& returnType : function->GetReturnTypes())
 		{
+			auto shape = inputOptions.ReturnShapes.at(returnIndex);
+			auto writeShape = inputOptions.ReturnWriteShapes.at(returnIndex);
 			auto name = NameUtils::ReturnName(returnIndex);
 
 			this->m_builder.AddStatement(new PTX::CommentStatement(name + ":" + HorseIR::PrettyPrinter::PrettyString(returnType, true)));
 
-			auto shape = inputOptions.ReturnShapes.at(returnIndex);
-			DispatchType(*this, returnType, name, shape, true);
+			DispatchType(*this, returnType, name, shape, writeShape);
 
 			returnIndex++;
 		}
 	}
 
 	template<class T>
-	void GenerateVector(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateVector(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
 	{
 		// Predicate (1-bit) values are stored as signed 8-bit integers on the CPU side. Loading thus requires conversion
 
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			GenerateVector<PTX::Int8Type>(name, shape, returnParameter);
+			GenerateVector<PTX::Int8Type>(name, shape, writeShape);
 		}
 		else
 		{
@@ -75,12 +77,12 @@ public:
 
 			// Load the dynamic size parameter if needed
 						
-			if (returnParameter)
+			if (writeShape != nullptr)
 			{
 				// Return dynamic shapes use pointer types for accumulating size
 
 				auto& inputOptions = this->m_builder.GetInputOptions();
-				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
 					GeneratePointerSize(parameter);
 				}
@@ -93,13 +95,13 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateList(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
 	{
 		// Predicate (1-bit) values are stored as signed 8-bit integers on the CPU side. Loading thus requires conversion
 
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			GenerateList<PTX::Int8Type>(name, shape, returnParameter);
+			GenerateList<PTX::Int8Type>(name, shape, writeShape);
 		}
 		else
 		{
@@ -139,7 +141,7 @@ public:
 
 						// Load the dynamic size if needed
 
-						if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+						if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 						{
 							GeneratePointerSize(parameter, index);
 						}
@@ -147,7 +149,7 @@ public:
 				}
 				else
 				{
-					Error(name, shape, returnParameter);
+					Error(name, shape, (writeShape != nullptr));
 				}
 			}
 			else if (inputOptions.IsListGeometry())
@@ -179,32 +181,32 @@ public:
 
 				// Load the dynamic size parameter if needed
 
-				if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
 					GeneratePointerSize(parameter, index);
 				}
 			}
 			else
 			{
-				Error(name, shape, returnParameter);
+				Error(name, shape, (writeShape != nullptr));
 			}
 		}
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			// Predicate values are stored as 8-bit integers on the CPU
 
-			GenerateTuple<PTX::Int8Type>(index, name, shape, returnParameter);
+			GenerateTuple<PTX::Int8Type>(index, name, shape, writeShape);
 		}
 		else
 		{
 			if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 			{
-				Error(name, shape, returnParameter);
+				Error(name, shape, (writeShape != nullptr));
 			}
 
 			auto resources = this->m_builder.GetLocalResources();
@@ -239,7 +241,7 @@ public:
 			// Load the dynamic size if needed
 
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			if (!returnParameter || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, inputOptions.ThreadGeometry))
+			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 			{
 				GeneratePointerSize(parameter, index);
 			}

@@ -78,7 +78,7 @@ public:
 			}
 			else
 			{
-				Error("target register for target '" + HorseIR::PrettyPrinter::PrettyString(identifier) + "'");
+				Error("target register '" + HorseIR::PrettyPrinter::PrettyString(identifier) + "'");
 			}
 		}
 	}
