@@ -33,6 +33,11 @@ public:
 			this->m_builder.AddStatement(new PTX::LocationDirective(this->m_builder.GetCurrentFile(), i++));
 			statement->Accept(*this);
 		}
+
+		if (function->GetReturnCount() == 0)
+		{
+			this->m_builder.AddStatement(new PTX::ReturnInstruction());
+		}
 	}
 
 	void Visit(const HorseIR::DeclarationStatement *declarationS) override
