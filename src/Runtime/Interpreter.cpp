@@ -216,11 +216,125 @@ void Interpreter::Visit(const HorseIR::CastExpression *cast)
 			Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(dataType) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
 		}
 
-		//TODO: Implement data casting
-		Utils::Logger::LogError("Dynamic casting unimplemented");
-	}
+		// Convert the data to the right type
 
-	m_environment.Insert(cast, {data});
+		auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(data);
+		auto vectorCastType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(castType);
+
+		auto convertedBuffer = Cast(vectorCastType, vectorBuffer);
+		m_environment.Insert(cast, {convertedBuffer});
+	}
+	else
+	{
+		m_environment.Insert(cast, {data});
+	}
+}
+
+VectorBuffer *Interpreter::Cast(const HorseIR::BasicType *castType, VectorBuffer *input) const
+{
+	switch (input->GetType()->GetBasicKind())
+	{
+		case HorseIR::BasicType::BasicKind::Boolean:
+		case HorseIR::BasicType::BasicKind::Char:
+		case HorseIR::BasicType::BasicKind::Int8:
+		{
+			return Cast<std::int8_t>(castType, input);
+		}
+		case HorseIR::BasicType::BasicKind::Int16:
+		{
+			return Cast<std::int16_t>(castType, input);
+		}
+		case HorseIR::BasicType::BasicKind::Int32:
+		{
+			return Cast<std::int32_t>(castType, input);
+		}
+		case HorseIR::BasicType::BasicKind::Int64:
+		{
+			return Cast<std::int64_t>(castType, input);
+		}
+		case HorseIR::BasicType::BasicKind::Float32:
+		{
+			return Cast<float>(castType, input);
+		}
+		case HorseIR::BasicType::BasicKind::Float64:
+		{
+			return Cast<double>(castType, input);
+		}
+		case HorseIR::BasicType::BasicKind::String:
+		case HorseIR::BasicType::BasicKind::Symbol:
+		{
+			return Cast<std::string>(castType, input);
+		}
+	}
+	Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(input->GetType()) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
+}
+
+template<class S>
+VectorBuffer *Interpreter::Cast(const HorseIR::BasicType *castType, VectorBuffer *input) const
+{
+	const auto typedInput = BufferUtils::GetVectorBuffer<S>(input);
+	switch (castType->GetBasicKind())
+	{
+		case HorseIR::BasicType::BasicKind::Boolean:
+		case HorseIR::BasicType::BasicKind::Char:
+		case HorseIR::BasicType::BasicKind::Int8:
+		{
+			return Cast<std::int8_t, S>(castType, typedInput);
+		}
+		case HorseIR::BasicType::BasicKind::Int16:
+		{
+			return Cast<std::int16_t, S>(castType, typedInput);
+		}
+		case HorseIR::BasicType::BasicKind::Int32:
+		{
+			return Cast<std::int32_t, S>(castType, typedInput);
+		}
+		case HorseIR::BasicType::BasicKind::Int64:
+		{
+			return Cast<std::int64_t, S>(castType, typedInput);
+		}
+		case HorseIR::BasicType::BasicKind::Float32:
+		{
+			return Cast<float, S>(castType, typedInput);
+		}
+		case HorseIR::BasicType::BasicKind::Float64:
+		{
+			return Cast<double, S>(castType, typedInput);
+		}
+		case HorseIR::BasicType::BasicKind::String:
+		case HorseIR::BasicType::BasicKind::Symbol:
+		{
+			return Cast<std::string, S>(castType, typedInput);
+		}
+	}
+	Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(input->GetType()) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
+}
+
+template<class D, class S>
+TypedVectorBuffer<D> *Interpreter::Cast(const HorseIR::BasicType *castType, TypedVectorBuffer<S> *input) const
+{
+	if constexpr(std::is_same<D, S>::value)
+	{
+		return input;
+	}
+	else if constexpr(std::is_same<D, std::string>::value || std::is_same<S, std::string>::value)
+	{
+		Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(input->GetType()) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
+	}
+	else
+	{
+		const auto& inputData = input->GetCPUReadBuffer()->GetValues();
+		const auto size = inputData.size();
+
+		CUDA::Vector<D> convertedData(size);
+
+		for (auto i = 0u; i < size; ++i)
+		{
+			convertedData[i] = std::move(static_cast<D>(inputData[i]));
+		}
+
+		return new TypedVectorBuffer(new TypedVectorData<D>(castType, std::move(convertedData)));
+	}
 }
 
 void Interpreter::Visit(const HorseIR::CallExpression *call)

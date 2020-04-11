@@ -75,6 +75,13 @@ public:
 	void Visit(const HorseIR::TimeLiteral *literal) override;
 
 private:
+
+	VectorBuffer *Cast(const HorseIR::BasicType *castType, VectorBuffer *input) const;
+	template<class S>
+	VectorBuffer *Cast(const HorseIR::BasicType *castType, VectorBuffer *input) const;
+	template<class D, class S>
+	TypedVectorBuffer<D> *Cast(const HorseIR::BasicType *castType, TypedVectorBuffer<S> *input) const;
+
 	Runtime& m_runtime;
 	ExecutionEnvironment m_environment;
 
