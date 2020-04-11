@@ -31,6 +31,9 @@
 
 #include "Codegen/Generators/Expressions/Builtins/RazeGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/JoinCountGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/JoinGenerator.h"
+
 #include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
 
@@ -99,6 +102,18 @@ public:
 			case HorseIR::BuiltinFunction::Primitive::GPUGroup:
 			{
 				GroupGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+			{
+				JoinCountGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+			{
+				JoinGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets, arguments);
 				break;
 			}

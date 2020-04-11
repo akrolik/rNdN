@@ -12,7 +12,12 @@ static Module *GPUModule = new LibraryModule("GPU", {
 
 	// Group by
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUGroupLib),
-	new BuiltinFunction(BuiltinFunction::Primitive::GPUGroup)
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUGroup),
+
+	// Join
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoinLib),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoinCount),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoin)
 });
 
 }

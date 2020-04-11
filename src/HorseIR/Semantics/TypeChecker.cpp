@@ -165,7 +165,7 @@ void TypeChecker::VisitOut(CallExpression *call)
 	call->SetTypes(returnTypes);
 }
 
-std::vector<Type *> TypeChecker::AnalyzeCall(const FunctionType *functionType, const std::vector<Type *>& argumentTypes)
+std::vector<Type *> TypeChecker::AnalyzeCall(const FunctionType *functionType, const std::vector<Type *>& argumentTypes) const
 {
 	switch (functionType->GetFunctionKind())
 	{
@@ -178,12 +178,12 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const FunctionType *functionType, c
 	}
 }
 
-[[noreturn]] void TypeError(const FunctionDeclaration *function, const std::vector<Type *>& argumentTypes)
+[[noreturn]] void TypeChecker::TypeError(const FunctionDeclaration *function, const std::vector<Type *>& argumentTypes) const
 {
 	Utils::Logger::LogError("Incompatible arguments " + TypeUtils::TypeString(argumentTypes) + " for function '" + function->GetName() + "'");
 }
 
-std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<Type *>& argumentTypes)
+std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<Type *>& argumentTypes) const
 {
 	// Check the arguments are equal with the parameters, allowing for runtime checks
 	
@@ -194,7 +194,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const Fun
 	return functionType->GetReturnTypes();
 }
 
-std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, const std::vector<Type *>& argumentTypes)
+std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, const std::vector<Type *>& argumentTypes) const
 {
 	// Check the argument count against function
 
@@ -944,70 +944,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::JoinIndex:
 		{
-			// At least one function must be present, in addition to 2 input variables
-
-			Require(argumentTypes.size() >= 3);
-
-			auto functionCount = argumentTypes.size() - 2;
-			const auto inputType1 = argumentTypes.at(functionCount);
-			const auto inputType2 = argumentTypes.at(functionCount + 1);
-			Require((TypeUtils::IsType<BasicType>(inputType1) && TypeUtils::IsType<BasicType>(inputType2)) ||
-				(TypeUtils::IsType<ListType>(inputType1) && TypeUtils::IsType<ListType>(inputType2))
-			);
-
-			if (TypeUtils::IsType<ListType>(inputType1))
-			{
-				const auto elementTypes1 = TypeUtils::GetType<ListType>(inputType1)->GetElementTypes();
-				const auto elementTypes2 = TypeUtils::GetType<ListType>(inputType2)->GetElementTypes();
-
-				auto elementCount1 = elementTypes1.size();
-				auto elementCount2 = elementTypes2.size();
-				if (elementCount1 == elementCount2)
-				{
-					Require(functionCount == 1 || elementCount1 == functionCount);
-				}
-				else if (elementCount1 == 1)
-				{
-					Require(functionCount == 1 || elementCount2 == functionCount);
-				}
-				else if (elementCount2 == 1)
-				{
-					Require(functionCount == 1 || elementCount1 == functionCount);
-				}
-				else
-				{
-					Require(false);
-				}
-
-				auto count = std::max({elementCount1, elementCount2, functionCount});
-				for (auto i = 0u; i < count; ++i)
-				{
-					const auto inputType = argumentTypes.at((functionCount == 1) ? 0 : i);
-					Require(TypeUtils::IsType<FunctionType>(inputType));
-
-					// Get the arguments from the lists and the function
-
-					const auto functionType = TypeUtils::GetType<FunctionType>(inputType);
-					const auto l_inputType1 = elementTypes1.at((elementCount1 == 1) ? 0 : i);
-					const auto l_inputType2 = elementTypes2.at((elementCount2 == 1) ? 0 : i);
-
-					const auto returnType = AnalyzeCall(functionType, {l_inputType1, l_inputType2});
-					Require(TypeUtils::IsSingleType(returnType) && TypeUtils::IsBooleanType(TypeUtils::GetSingleType(returnType)));
-				}
-			}
-			else
-			{
-				// If the inputs are vectors, require a single function
-
-				Require(functionCount == 1);
-
-				const auto inputType0 = argumentTypes.at(0);
-				Require(TypeUtils::IsType<FunctionType>(inputType0));
-				const auto functionType = TypeUtils::GetType<FunctionType>(inputType0);
-
-				const auto returnType = AnalyzeCall(functionType, {inputType1, inputType2});
-				Require(TypeUtils::IsSingleType(returnType) && TypeUtils::IsBooleanType(TypeUtils::GetSingleType(returnType)));
-			}
+			Require(AnalyzeJoinArguments(argumentTypes));
 			return {new ListType(new BasicType(BasicType::BasicKind::Int64))};
 		}
 
@@ -1157,7 +1094,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			// Init sort call
 
-			auto orderType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean);
+			auto orderType = new BasicType(BasicType::BasicKind::Boolean);
 
 			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3, orderType});
 			Require(callTypes0.size() == 2);
@@ -1197,6 +1134,65 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
+		case BuiltinFunction::Primitive::GPUJoinLib:
+		{
+			// @GPU.join_lib(@count, @join, left, right)
+
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
+			const auto inputType3 = argumentTypes.at(3);
+
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<FunctionType>(inputType1));
+
+			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
+			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+
+			Require(TypeUtils::IsType<BasicType>(inputType2) || TypeUtils::IsType<ListType>(inputType2));
+			Require(TypeUtils::IsType<BasicType>(inputType3) || TypeUtils::IsType<ListType>(inputType3));
+
+			if (const auto listType2 = TypeUtils::GetType<ListType>(inputType2))
+			{
+				Require(TypeUtils::ForallElements(listType2, TypeUtils::IsType<BasicType>));
+			}
+			if (const auto listType3 = TypeUtils::GetType<ListType>(inputType3))
+			{
+				Require(TypeUtils::ForallElements(listType3, TypeUtils::IsType<BasicType>));
+			}
+
+			// Count call
+
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType2, inputType3});
+			Require(callTypes0.size() == 1);
+			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
+
+			// Join call
+
+			const auto callTypes1 = AnalyzeCall(functionType1, {inputType2, inputType3, callTypes0.at(0)});
+			Require(TypeUtils::IsType<ListType>(callTypes1.at(0)));
+
+			const auto listCallType1 = TypeUtils::GetType<ListType>(callTypes1.at(0));
+			const auto elementCallType1 = TypeUtils::GetReducedType(listCallType1->GetElementTypes());
+			Require(TypeUtils::IsBasicType(elementCallType1, BasicType::BasicKind::Int64));
+
+			return {callTypes1.at(0)};
+		}
+		case BuiltinFunction::Primitive::GPUJoinCount:
+		{
+			Require(AnalyzeJoinArguments(argumentTypes));
+			return {new BasicType(BasicType::BasicKind::Int64)};
+		}
+		case BuiltinFunction::Primitive::GPUJoin:
+		{
+			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 1);
+			Require(AnalyzeJoinArguments(joinTypes));
+
+			const auto countType = argumentTypes.back();
+			Require(TypeUtils::IsBasicType(countType, BasicType::BasicKind::Int64));
+
+			return {new ListType(new BasicType(BasicType::BasicKind::Int64))};
+		}
 		default:
 		{
 			Utils::Logger::LogError("Type analysis does not support builtin function '" + function->GetName() + "'");
@@ -1206,6 +1202,77 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 	// If we cannot infer a return type, report a type error
 
 	TypeError(function, argumentTypes);
+}
+
+bool TypeChecker::AnalyzeJoinArguments(const std::vector<Type *>& argumentTypes) const
+{
+#define RequireJoin(x) if (!(x)) return false
+
+	// At least one function must be present, in addition to 2 input variables
+
+	RequireJoin(argumentTypes.size() >= 3);
+
+	auto functionCount = argumentTypes.size() - 2;
+	const auto inputType1 = argumentTypes.at(functionCount);
+	const auto inputType2 = argumentTypes.at(functionCount + 1);
+	RequireJoin((TypeUtils::IsType<BasicType>(inputType1) && TypeUtils::IsType<BasicType>(inputType2)) ||
+		(TypeUtils::IsType<ListType>(inputType1) && TypeUtils::IsType<ListType>(inputType2))
+	);
+
+	if (TypeUtils::IsType<ListType>(inputType1))
+	{
+		const auto elementTypes1 = TypeUtils::GetType<ListType>(inputType1)->GetElementTypes();
+		const auto elementTypes2 = TypeUtils::GetType<ListType>(inputType2)->GetElementTypes();
+
+		auto elementCount1 = elementTypes1.size();
+		auto elementCount2 = elementTypes2.size();
+		if (elementCount1 == elementCount2)
+		{
+			RequireJoin(functionCount == 1 || elementCount1 == functionCount);
+		}
+		else if (elementCount1 == 1)
+		{
+			RequireJoin(functionCount == 1 || elementCount2 == functionCount);
+		}
+		else if (elementCount2 == 1)
+		{
+			RequireJoin(functionCount == 1 || elementCount1 == functionCount);
+		}
+		else
+		{
+			return false;
+		}
+
+		auto count = std::max({elementCount1, elementCount2, functionCount});
+		for (auto i = 0u; i < count; ++i)
+		{
+			const auto inputType = argumentTypes.at((functionCount == 1) ? 0 : i);
+			RequireJoin(TypeUtils::IsType<FunctionType>(inputType));
+
+			// Get the arguments from the lists and the function
+
+			const auto functionType = TypeUtils::GetType<FunctionType>(inputType);
+			const auto l_inputType1 = elementTypes1.at((elementCount1 == 1) ? 0 : i);
+			const auto l_inputType2 = elementTypes2.at((elementCount2 == 1) ? 0 : i);
+
+			const auto returnType = AnalyzeCall(functionType, {l_inputType1, l_inputType2});
+			RequireJoin(TypeUtils::IsSingleType(returnType) && TypeUtils::IsBooleanType(TypeUtils::GetSingleType(returnType)));
+		}
+	}
+	else
+	{
+		// If the inputs are vectors, require a single function
+
+		RequireJoin(functionCount == 1);
+
+		const auto inputType0 = argumentTypes.at(0);
+		RequireJoin(TypeUtils::IsType<FunctionType>(inputType0));
+		const auto functionType = TypeUtils::GetType<FunctionType>(inputType0);
+
+		const auto returnType = AnalyzeCall(functionType, {inputType1, inputType2});
+		RequireJoin(TypeUtils::IsSingleType(returnType) && TypeUtils::IsBooleanType(TypeUtils::GetSingleType(returnType)));
+	}
+	return true;
 }
 
 void TypeChecker::VisitOut(Identifier *identifier)

@@ -189,9 +189,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		// Database
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
-		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
-			//TODO: Join index should check the nested function for GPU/synchronization
 			return {Device::GPU, Synchronization::None};
 		}
 
@@ -284,7 +282,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 					return {Device::CPU, Synchronization::None};
 				}
 			}
-			else if (HorseIR::TypeUtils::IsCharacterType(listType0))
+			else if (HorseIR::TypeUtils::IsCharacterType(type0))
 			{
 				return {Device::CPU, Synchronization::None};
 			}
@@ -294,6 +292,8 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::Unique:
 		case HorseIR::BuiltinFunction::Primitive::Group:
 
+		// Database
+		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
 			// Complex independent operations are controlled on the CPU with GPU sections
 
@@ -347,12 +347,17 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
 		{
 			return {Device::CPU, Synchronization::None};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
 		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+
 		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
+
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
 		{
 			return {Device::CPU, (Synchronization::In | Synchronization::Out)};
 		}

@@ -17,6 +17,7 @@
 
 #include "Runtime/GPU/Library/GPUSortEngine.h"
 #include "Runtime/GPU/Library/GPUGroupEngine.h"
+#include "Runtime/GPU/Library/GPUJoinEngine.h"
 
 #include "Utils/Logger.h"
 
@@ -125,6 +126,13 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			GPUGroupEngine groupEngine(m_runtime, m_program);
 			return {groupEngine.Group(arguments)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		{
+			// GPU join!
+
+			GPUJoinEngine joinEngine(m_runtime, m_program);
+			return {joinEngine.Join(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{

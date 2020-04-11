@@ -112,6 +112,35 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 
 			return new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "order_lib")), operands);
 		}
+		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
+		{
+			std::vector<const HorseIR::Operand *> functions(std::begin(arguments), std::end(arguments) - 2);
+
+			auto leftArgument = arguments.at(arguments.size() - 2);
+			auto rightArgument = arguments.at(arguments.size() - 1);
+
+			auto leftType = leftArgument->GetType();
+			auto rightType = rightArgument->GetType();
+
+			auto countFunction = GenerateJoinCountFunction(functions, leftType, rightType);
+			auto joinFunction = GenerateJoinFunction(functions, leftType, rightType);
+
+			m_functions.push_back(countFunction);
+			m_functions.push_back(joinFunction);
+
+			// Build the list of arguments for the library function call
+
+			std::vector<HorseIR::Operand *> operands;
+			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(countFunction->GetName())));
+			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(joinFunction->GetName())));
+
+			operands.push_back(arguments.at(0)->Clone());
+			operands.push_back(arguments.at(0)->Clone());
+
+			// Build the library call
+
+			return new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join_lib")), operands);
+		}
 		default:
 		{
 			Utils::Logger::LogError("GPU library outliner does not support builtin function '" + function->GetName() + "'");
@@ -214,6 +243,76 @@ HorseIR::Function *OutlineLibrary::GenerateGroupFunction(const HorseIR::Type *da
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 
 	return new HorseIR::Function("group_" + std::to_string(m_index++), parameters, returnTypes, {groupStatement, returnStatement}, true);
+}
+
+HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType)
+{
+	std::vector<HorseIR::Parameter *> parameters;
+
+	std::vector<HorseIR::Operand *> operands;
+	std::vector<HorseIR::LValue *> lvalues;
+
+	std::vector<HorseIR::Operand *> returnOperands;
+	std::vector<HorseIR::Type *> returnTypes;
+
+	for (const auto argument : functions)
+	{
+		operands.push_back(argument->Clone());
+	}
+
+	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data_left"));
+
+	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data_right"));
+
+	lvalues.push_back(new HorseIR::VariableDeclaration("count", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+
+	returnOperands.push_back(new HorseIR::Identifier("count"));
+	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
+
+	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join_count")), operands);
+	auto joinStatement = new HorseIR::AssignStatement(lvalues, joinCall);
+	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
+
+	return new HorseIR::Function("join_count_" + std::to_string(m_index++), parameters, returnTypes, {joinStatement, returnStatement}, true);
+}
+
+HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType)
+{
+	std::vector<HorseIR::Parameter *> parameters;
+
+	std::vector<HorseIR::Operand *> operands;
+	std::vector<HorseIR::LValue *> lvalues;
+
+	std::vector<HorseIR::Operand *> returnOperands;
+	std::vector<HorseIR::Type *> returnTypes;
+
+	for (const auto argument : functions)
+	{
+		operands.push_back(argument->Clone());
+	}
+
+	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data_left"));
+
+	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data_right"));
+
+	parameters.push_back(new HorseIR::Parameter("count", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	operands.push_back(new HorseIR::Identifier("count"));
+
+	lvalues.push_back(new HorseIR::VariableDeclaration("indexes", new HorseIR::ListType(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64))));
+
+	returnOperands.push_back(new HorseIR::Identifier("indexes"));
+	returnTypes.push_back(new HorseIR::ListType(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+
+	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join")), operands);
+	auto joinStatement = new HorseIR::AssignStatement(lvalues, joinCall);
+	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
+
+	return new HorseIR::Function("join_" + std::to_string(m_index++), parameters, returnTypes, {joinStatement, returnStatement}, true);
+
 }
 
 }

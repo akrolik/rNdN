@@ -114,6 +114,8 @@ private:
 	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const HorseIR::Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
 	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const HorseIR::BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
 
+	bool AnalyzeJoinArguments(const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments);
+
 	// Static checks for sizes
 
 	bool CheckStaticScalar(const Shape::Size *size) const;

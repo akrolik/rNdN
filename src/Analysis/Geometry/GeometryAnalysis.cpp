@@ -230,8 +230,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::Keys:
 		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
-		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
-		//TODO: @join_index may belong in a separate group
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
@@ -278,6 +276,9 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 
 		// Algebriac Binary
 		case HorseIR::BuiltinFunction::Primitive::Order:
+
+		// Database
+		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
 			Independent();
 		}
@@ -366,6 +367,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// GPU
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
 		{
 			CPU();
 		}
@@ -395,6 +397,25 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			auto indexShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 			Require(ShapeUtils::IsShape<VectorShape>(indexShape));
 			return indexShape;
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		{
+			// Left data geometry
+
+			auto leftIndex = (arguments.size() - ((function->GetPrimitive() == HorseIR::BuiltinFunction::Primitive::GPUJoin) ? 3 : 2));
+			auto leftShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(leftIndex));
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(leftShape))
+			{
+				return vectorShape;
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(leftShape))
+			{
+				auto cellShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
+				return cellShape;
+			}
+			break;
 		}
 		default:
 		{

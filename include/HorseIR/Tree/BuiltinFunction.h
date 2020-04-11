@@ -151,7 +151,11 @@ public:
 		GPUOrder,
 
 		GPUGroupLib,
-		GPUGroup
+		GPUGroup,
+
+		GPUJoinLib,
+		GPUJoinCount,
+		GPUJoin
 	};
 
 	static const std::string PrimitiveName(Primitive primitive)
@@ -384,7 +388,12 @@ public:
 				return "group_lib";
 			case Primitive::GPUGroup:
 				return "group";
-
+			case Primitive::GPUJoinLib:
+				return "join_lib";
+			case Primitive::GPUJoinCount:
+				return "join_count";
+			case Primitive::GPUJoin:
+				return "join";
 		}
 		return "<unknown>";
 	}
@@ -563,6 +572,12 @@ public:
 				return 4; // @order_init, @order, data
 			case Primitive::GPUGroup:
 				return 2; // index, data
+			case Primitive::GPUJoinLib:
+				return 4; // @join_count, @join, data1, data2
+			case Primitive::GPUJoinCount:
+				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2
+			case Primitive::GPUJoin:
+				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2, count
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

@@ -198,6 +198,31 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 		{
 			return {new DataObject(), new DataObject()};
 		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		{
+			const auto countType = arguments.at(0)->GetType();
+			const auto joinType = arguments.at(1)->GetType();
+
+			const auto countFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(countType)->GetFunctionDeclaration();
+			const auto joinFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(joinType)->GetFunctionDeclaration();
+
+			const auto size = argumentObjects.size();
+
+			// Functions are provided internally
+
+			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1)});
+			const auto joinObjects = AnalyzeCall(joinFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1), countObjects.at(0)});
+
+			return {joinObjects.at(0)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+		{
+			return {new DataObject()};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		{
+			return {new DataObject()};
+		}
 	}
 	return {new DataObject()};
 }

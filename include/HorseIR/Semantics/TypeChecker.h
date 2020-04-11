@@ -50,9 +50,15 @@ public:
 private:
 	Function *m_currentFunction = nullptr;
 
-	std::vector<Type *> AnalyzeCall(const FunctionType *function, const std::vector<Type *>& argumentTypes);
-	std::vector<Type *> AnalyzeCall(const BuiltinFunction *function, const std::vector<Type *>& argumentTypes);
-	std::vector<Type *> AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<Type *>& argumentTypes);
+	[[noreturn]] void TypeError(const FunctionDeclaration *function, const std::vector<Type *>& argumentTypes) const;
+
+	std::vector<Type *> AnalyzeCall(const FunctionType *function, const std::vector<Type *>& argumentTypes) const;
+	std::vector<Type *> AnalyzeCall(const BuiltinFunction *function, const std::vector<Type *>& argumentTypes) const;
+	std::vector<Type *> AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<Type *>& argumentTypes) const;
+
+	// Share join checking between GPU/CPU implementations
+
+	bool AnalyzeJoinArguments(const std::vector<Type *>& argumentTypes) const;
 };
 
 }

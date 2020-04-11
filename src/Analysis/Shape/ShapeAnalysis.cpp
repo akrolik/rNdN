@@ -1600,82 +1600,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		}
 		case HorseIR::BuiltinFunction::Primitive::JoinIndex:
 		{
-			// -- Vector join
-			// Input: f, Vector<Size1*>, Vector<Size2*>
-			// Output: List<2, {Vector<SizeDynamic>}>
-			//
-			// Require: f(Vector<Size1*>, Vector<Size2*>) == Vector
-			//
-			// -- List join
-			// Input: f1, ..., fn, List<Size1*, {Vector<Size2*>}>, List<Size1*, {Vector<Size3*>}>
-			// Output: List<2, {Vector<SizeDynamic>}>
-			//
-			// Require: f*(Vector<Size2*>, Vector<Size3*>) == Vector
-
-			const auto functionCount = argumentShapes.size() - 2;
-			const auto argumentShape1 = argumentShapes.at(functionCount);
-			const auto argumentShape2 = argumentShapes.at(functionCount + 1);
-
-			Require(
-				(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2)) ||
-				(ShapeUtils::IsShape<ListShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2))
-			);
-
-			if (const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1))
-			{
-				const auto elementShapes1 = listShape1->GetElementShapes();
-				const auto elementShapes2 = ShapeUtils::GetShape<ListShape>(argumentShape2)->GetElementShapes();
-
-				auto elementCount1 = elementShapes1.size();
-				auto elementCount2 = elementShapes2.size();
-				if (elementCount1 == elementCount2)
-				{
-					Require(functionCount == 1 || elementCount1 == functionCount);
-				}
-				else if (elementCount1 == 1)
-				{
-					Require(functionCount == 1 || elementCount2 == functionCount);
-				}
-				else if (elementCount2 == 1)
-				{
-					Require(functionCount == 1 || elementCount1 == functionCount);
-				}
-				else
-				{
-					Require(false);
-				}
-
-				auto count = std::max({elementCount1, elementCount2, functionCount});
-				for (auto i = 0u; i < count; ++i)
-				{
-					const auto type = arguments.at((functionCount == 1) ? 0 : i)->GetType();
-					const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
-
-					const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
-					const auto l_inputShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
-
-					const auto [returnShapes, writeShapes] = AnalyzeCall(function, {l_inputShape1, l_inputShape2}, {});
-					Require(ShapeUtils::IsSingleShape(returnShapes));
-					Require(ShapeUtils::IsSingleShape(writeShapes));
-					Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
-					Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(writeShapes)));
-				}
-			}
-			else
-			{
-				// If the inputs are vectors, require a single function
-
-				Require(functionCount == 1);
-
-				const auto type = arguments.at(0)->GetType();
-				const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
-
-				const auto [returnShapes, writeShapes] = AnalyzeCall(function, {argumentShape1, argumentShape2}, {});
-				Require(ShapeUtils::IsSingleShape(returnShapes));
-				Require(ShapeUtils::IsSingleShape(writeShapes));
-				Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
-				Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(writeShapes)));
-			}
+			Require(AnalyzeJoinArguments(argumentShapes, arguments));
 			Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call))}));
 		}
 
@@ -1985,6 +1910,91 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto returnShape2 = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize()));
 			Return2(returnShape1, returnShape2);
 		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		{
+			// -- Vector input
+			// Input: *, *, Vector<Size*>, Vector<Size*>
+			// Output: List<2, {Vector<SizeDynamic/m>}>
+			//
+			// -- List input
+			// Input: *, *, List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>
+			// Output: List<2, {Vector<SizeDynamic/m>}>
+
+			const auto countType = arguments.at(0)->GetType();
+			const auto joinType = arguments.at(1)->GetType();
+
+			const auto countFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(countType)->GetFunctionDeclaration();
+			const auto joinFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(joinType)->GetFunctionDeclaration();
+
+			const auto argumentShape3 = argumentShapes.at(2);
+			const auto argumentShape4 = argumentShapes.at(3);
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape3) || ShapeUtils::IsShape<ListShape>(argumentShape3));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape4) || ShapeUtils::IsShape<ListShape>(argumentShape4));
+
+			// Count call
+
+			const auto [countShapes, countWriteShapes] = AnalyzeCall(countFunction, {argumentShape3, argumentShape4}, {});
+			Require(countShapes.size() == 1);
+			Require(ShapeUtils::IsShape<VectorShape>(countShapes.at(0)));
+
+			const auto vectorCount = ShapeUtils::GetShape<VectorShape>(countShapes.at(0));
+			Require(CheckStaticScalar(vectorCount->GetSize()));
+
+			// Join call
+
+			const auto [joinShapes, joinWriteShapes] = AnalyzeCall(joinFunction, {argumentShape3, argumentShape4, countShapes.at(0)}, {});
+			Require(joinShapes.size() == 1);
+			Require(ShapeUtils::IsShape<ListShape>(joinShapes.at(0)));
+
+			const auto indexesShape = ShapeUtils::GetShape<ListShape>(joinShapes.at(0));
+			const auto indexesSize = indexesShape->GetListSize();
+
+			Require(ShapeUtils::IsSize<Shape::ConstantSize>(indexesSize));
+			Require(ShapeUtils::GetSize<Shape::ConstantSize>(indexesSize)->GetValue() == 2);
+			Require(CheckStaticTabular(indexesShape));
+
+			// Return
+
+			return {joinShapes, joinWriteShapes};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+		{
+			// -- Vector input
+			// Input: Vector<Size*>, Vector<Size*>
+			// Output: Vector<1>
+			//
+			// -- List input
+			// Input: List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>
+			// Output: Vector<1>
+
+			Require(AnalyzeJoinArguments(argumentShapes, arguments));
+			Return(new VectorShape(new Shape::ConstantSize(1)));
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		{
+			// -- Unknown scalar constant
+			// Intput: Vector<Size*>, Vector<Size*>, Vector<1> | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<1>
+			// Output: List<2, {Vector<SizeDynamic>}>
+			//
+			// -- Known scalar constant
+			// Intput: Vector<Size*>, Vector<Size*>, Vector<1> (value m) | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<1> (value m)
+			// Output: List<2, {Vector<m>}>
+
+			std::vector<const Shape *> joinShapes(std::begin(argumentShapes), std::end(argumentShapes) - 1);
+			std::vector<HorseIR::Operand *> joinArguments(std::begin(arguments), std::end(arguments) - 1);
+
+			Require(AnalyzeJoinArguments(joinShapes, joinArguments));
+
+			if (arguments.size() > 0)
+			{
+				if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, arguments.size() - 1); isConstant)
+				{
+					Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::ConstantSize(value))}));
+				}
+			}
+			Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call))}));
+		}
 		default:
 		{
 			Utils::Logger::LogError("Shape analysis is not supported for builtin function '" + function->GetName() + "'");
@@ -1993,6 +2003,89 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 	ShapeError(function, argumentShapes);
 }         
+
+bool ShapeAnalysis::AnalyzeJoinArguments(const std::vector<const Shape *>& argumentShapes, const std::vector<HorseIR::Operand *>& arguments)
+{
+#define RequireJoin(x) if (!(x)) return false
+
+	// -- Vector join
+	// Input: f, Vector<Size1*>, Vector<Size2*>
+	// Output: List<2, {Vector<SizeDynamic>}>
+	//
+	// Require: f(Vector<Size1*>, Vector<Size2*>) == Vector
+	//
+	// -- List join
+	// Input: f1, ..., fn, List<Size1*, {Vector<Size2*>}>, List<Size1*, {Vector<Size3*>}>
+	// Output: List<2, {Vector<SizeDynamic>}>
+	//
+	// Require: f*(Vector<Size2*>, Vector<Size3*>) == Vector
+
+	const auto functionCount = argumentShapes.size() - 2;
+	const auto argumentShape1 = argumentShapes.at(functionCount);
+	const auto argumentShape2 = argumentShapes.at(functionCount + 1);
+
+	RequireJoin(
+		(ShapeUtils::IsShape<VectorShape>(argumentShape1) && ShapeUtils::IsShape<VectorShape>(argumentShape2)) ||
+		(ShapeUtils::IsShape<ListShape>(argumentShape1) && ShapeUtils::IsShape<ListShape>(argumentShape2))
+	);
+
+	if (const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1))
+	{
+		const auto elementShapes1 = listShape1->GetElementShapes();
+		const auto elementShapes2 = ShapeUtils::GetShape<ListShape>(argumentShape2)->GetElementShapes();
+
+		auto elementCount1 = elementShapes1.size();
+		auto elementCount2 = elementShapes2.size();
+		if (elementCount1 == elementCount2)
+		{
+			RequireJoin(functionCount == 1 || elementCount1 == functionCount);
+		}
+		else if (elementCount1 == 1)
+		{
+			RequireJoin(functionCount == 1 || elementCount2 == functionCount);
+		}
+		else if (elementCount2 == 1)
+		{
+			RequireJoin(functionCount == 1 || elementCount1 == functionCount);
+		}
+		else
+		{
+			return false;
+		}
+
+		auto count = std::max({elementCount1, elementCount2, functionCount});
+		for (auto i = 0u; i < count; ++i)
+		{
+			const auto type = arguments.at((functionCount == 1) ? 0 : i)->GetType();
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+
+			const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
+			const auto l_inputShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
+
+			const auto [returnShapes, writeShapes] = AnalyzeCall(function, {l_inputShape1, l_inputShape2}, {});
+			RequireJoin(ShapeUtils::IsSingleShape(returnShapes));
+			RequireJoin(ShapeUtils::IsSingleShape(writeShapes));
+			RequireJoin(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
+			RequireJoin(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(writeShapes)));
+		}
+	}
+	else
+	{
+		// If the inputs are vectors, require a single function
+
+		RequireJoin(functionCount == 1);
+
+		const auto type = arguments.at(0)->GetType();
+		const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+
+		const auto [returnShapes, writeShapes] = AnalyzeCall(function, {argumentShape1, argumentShape2}, {});
+		RequireJoin(ShapeUtils::IsSingleShape(returnShapes));
+		RequireJoin(ShapeUtils::IsSingleShape(writeShapes));
+		RequireJoin(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
+		RequireJoin(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(writeShapes)));
+	}
+	return true;
+}
 
 [[noreturn]] void ShapeAnalysis::ShapeError(const HorseIR::FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes) const
 {
