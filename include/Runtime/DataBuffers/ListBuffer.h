@@ -92,6 +92,16 @@ public:
 	std::string Description() const override;
 	std::string DebugDump() const override;
 
+	// Clear
+
+	void Clear() override
+	{
+		for (auto i = 0u; i < m_cells.size(); ++i)
+		{
+			m_cells.at(i)->Clear();
+		}
+	}
+
 private:
 	bool IsAllocatedOnCPU() const override { return true; }
 	bool IsAllocatedOnGPU() const override { return (m_gpuBuffer != nullptr); }

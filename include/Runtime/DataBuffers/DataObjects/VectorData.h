@@ -24,6 +24,8 @@ public:
 	virtual size_t GetElementSize() const = 0;
 
 	virtual std::string DebugDump(unsigned int index) const = 0;
+
+	virtual void Clear() = 0;
 };
 
 template<typename T>
@@ -31,7 +33,7 @@ class TypedVectorData : public VectorData
 {
 public:
 	TypedVectorData(const HorseIR::BasicType *elementType, CUDA::Vector<T>&& data) : m_type(elementType), m_data(std::move(data)) {}
-	TypedVectorData(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType)
+	TypedVectorData(const HorseIR::BasicType *elementType, unsigned long size) : m_type(elementType), m_size(size)
 	{
 		m_data.resize(size);
 	}
@@ -129,10 +131,17 @@ public:
 		}
 	}
 
+	void Clear() override
+	{
+		m_data.clear();
+		m_data.resize(m_size);
+	}
+
 private:
 	const HorseIR::BasicType *m_type = nullptr;
 
 	CUDA::Vector<T> m_data;
+	unsigned int m_size = 0;
 };
 
 }

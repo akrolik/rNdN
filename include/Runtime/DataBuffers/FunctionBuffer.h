@@ -28,6 +28,10 @@ public:
 	std::string Description() const override;
 	std::string DebugDump() const override;
 
+	// Clear, nothing to do
+
+	void Clear() override {}
+
 private:
 	const HorseIR::FunctionType *m_type = nullptr;
 	const Analysis::Shape *m_shape = nullptr;

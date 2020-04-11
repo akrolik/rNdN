@@ -104,6 +104,10 @@ public:
 	virtual std::string Description() const = 0;
 	virtual std::string DebugDump() const = 0;
 
+	// Clear
+
+	virtual void Clear() = 0;
+
 protected:
 	DataBuffer(Kind kind) : m_kind(kind) {}
 	Kind m_kind;

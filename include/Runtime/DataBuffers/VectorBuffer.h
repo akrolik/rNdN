@@ -42,6 +42,10 @@ public:
 
 	unsigned int GetElementCount() const { return m_elementCount; }
 
+	// Clear
+
+	virtual void Clear() override = 0;
+
 protected:
 	VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount) :
 		ColumnBuffer(DataBuffer::Kind::Vector), m_typeid(tid), m_elementCount(elementCount)
@@ -134,6 +138,20 @@ public:
 	std::string DebugDump(unsigned int index) const override
 	{
 		return GetCPUReadBuffer()->DebugDump(index);
+	}
+
+	// Clear
+
+	void Clear() override
+	{
+		if (IsCPUConsistent())
+		{
+			GetCPUWriteBuffer()->Clear();
+		}
+		if (IsGPUConsistent())
+		{
+			GetGPUWriteBuffer()->Clear();
+		}
 	}
 
 protected:

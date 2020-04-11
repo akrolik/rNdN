@@ -56,6 +56,14 @@ public:
 	std::string Description() const override;
 	std::string DebugDump() const override;
 
+	// Clear
+
+	void Clear() override
+	{
+		m_keys->Clear();
+		m_values->Clear();
+	}
+
 private:
 	const HorseIR::DictionaryType *m_type = nullptr;
 	const Analysis::DictionaryShape *m_shape = nullptr;

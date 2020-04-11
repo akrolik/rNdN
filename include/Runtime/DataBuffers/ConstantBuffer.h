@@ -31,6 +31,10 @@ public:
 	const HorseIR::BasicType *GetType() const override { return m_type; }
 	const Analysis::VectorShape *GetShape() const override { return m_shape; }
 
+	// Clear, nothing to do
+
+	void Clear() override {}
+
 protected:
 	ConstantBuffer(const HorseIR::BasicType::BasicKind basicKind) : DataBuffer(DataBuffer::Kind::Constant)
 	{

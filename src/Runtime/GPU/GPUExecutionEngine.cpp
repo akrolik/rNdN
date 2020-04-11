@@ -193,19 +193,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			}
 			else
 			{
-				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
-				{
-					auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer);
-					vectorBuffer->GetGPUWriteBuffer()->Clear();
-				}
-				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
-				{
-					//TODO: Clear list return buffer
-				}
-				else
-				{
-					Utils::Logger::LogError("Unable to clear return buffer shape " + Analysis::ShapeUtils::ShapeString(shape));
-				}
+				returnBuffer->Clear();
 			}
 		}
 	}

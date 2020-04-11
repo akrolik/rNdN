@@ -73,8 +73,17 @@ public:
 	std::string Description() const override;
 	std::string DebugDump() const override;
 
-private:
+	// Clear
 
+	void Clear() override
+	{
+		for (auto& [_, buffer] : m_columns)
+		{
+			buffer->Clear();
+		}
+	}
+
+private:
 	const HorseIR::TableType *m_type = new HorseIR::TableType();
 	const Analysis::TableShape *m_shape = nullptr;
 

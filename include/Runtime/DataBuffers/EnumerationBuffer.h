@@ -58,6 +58,14 @@ public:
 	std::string DebugDump() const override;
 	std::string DebugDump(unsigned int index) const override;
 
+	// Clear
+
+	void Clear() override
+	{
+		m_keys->Clear();
+		m_values->Clear();
+	}
+
 private:
 	const HorseIR::EnumerationType *m_type = nullptr;
 	const Analysis::EnumerationShape *m_shape = nullptr;
