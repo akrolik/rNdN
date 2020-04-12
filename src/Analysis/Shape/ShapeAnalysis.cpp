@@ -1678,6 +1678,8 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		// GPU
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		{
+			// For both, optional order
+
 			// -- Vector input
 			// Input: *, *, Vector<Size*>, Vector<1>
 			// Output: Vector<Size*>
@@ -1693,9 +1695,35 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 
 			const auto argumentShape3 = argumentShapes.at(2);
-			const auto argumentShape4 = argumentShapes.at(3);
-
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape3) || ShapeUtils::IsShape<ListShape>(argumentShape3));
+
+			if (arguments.size() == 3)
+			{
+				// Init call
+
+				const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {argumentShape3}, {});
+				Require(initShapes.size() == 2);
+				Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
+
+				// Sort call
+
+				const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1)}, {});
+				Require(sortShapes.size() == 0);
+
+				// Return
+
+				if (ShapeUtils::IsShape<VectorShape>(argumentShape3))
+				{
+					Return(argumentShape3);
+				}
+				else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape3))
+				{
+					Require(CheckStaticTabular(listShape));
+					Return(ShapeUtils::MergeShapes(listShape->GetElementShapes()));
+				}
+			}
+
+			const auto argumentShape4 = argumentShapes.at(3);
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape4));
 
 			const auto vectorShape4 = ShapeUtils::GetShape<VectorShape>(argumentShape4);
@@ -1835,19 +1863,6 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto dataShape = argumentShapes.at(3);
 			Require(ShapeUtils::IsShape<VectorShape>(dataShape) || ShapeUtils::IsShape<ListShape>(dataShape));
 
-			const Shape::Size *orderSize = nullptr;
-			if (ShapeUtils::IsShape<VectorShape>(dataShape))
-			{
-				orderSize = new Shape::ConstantSize(1);
-			}
-			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
-			{
-				Require(CheckStaticTabular(listShape));
-				orderSize = listShape->GetListSize();
-			}
-
-			const auto orderShape = new VectorShape(orderSize);
-
 			// Fetch functions
 
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
@@ -1856,13 +1871,13 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			// Init call
 
-			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape, orderShape}, {});
+			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape}, {});
 			Require(initShapes.size() == 2);
 			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
 
 			// Sort call
 
-			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), orderShape}, {});
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1)}, {});
 			Require(sortShapes.size() == 0);
 
 			// Group call

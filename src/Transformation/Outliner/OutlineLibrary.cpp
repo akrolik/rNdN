@@ -106,7 +106,10 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
 			operands.push_back(arguments.at(0)->Clone());
-			operands.push_back(arguments.at(1)->Clone());
+			if (orderLiteral == nullptr)
+			{
+				operands.push_back(arguments.at(1)->Clone());
+			}
 
 			// Build the library call
 
@@ -135,7 +138,7 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(joinFunction->GetName())));
 
 			operands.push_back(arguments.at(0)->Clone());
-			operands.push_back(arguments.at(0)->Clone());
+			operands.push_back(arguments.at(1)->Clone());
 
 			// Build the library call
 
@@ -161,9 +164,9 @@ HorseIR::Function *OutlineLibrary::GenerateInitFunction(const HorseIR::Type *dat
 	parameters.push_back(new HorseIR::Parameter("data", dataType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data"));
 
-	parameters.push_back(new HorseIR::Parameter("orders", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean)));
 	if (orders == nullptr)
 	{
+		parameters.push_back(new HorseIR::Parameter("orders", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean)));
 		operands.push_back(new HorseIR::Identifier("orders"));
 	}
 	else
@@ -197,9 +200,9 @@ HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dat
 	parameters.push_back(new HorseIR::Parameter("data", dataType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data"));
 
-	parameters.push_back(new HorseIR::Parameter("orders", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean)));
 	if (orders == nullptr)
 	{
+		parameters.push_back(new HorseIR::Parameter("orders", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean)));
 		operands.push_back(new HorseIR::Identifier("orders"));
 	}
 	else

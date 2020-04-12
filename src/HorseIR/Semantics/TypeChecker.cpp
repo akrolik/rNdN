@@ -990,12 +990,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		// GPU
 		case BuiltinFunction::Primitive::GPUOrderLib:
 		{
-			// @GPU.order_lib(@init, @sort, data, order)
+			// @GPU.order_lib(@init, @sort, data, order?)
+
+			Require(argumentTypes.size() == 3 || argumentTypes.size() == 4);
 
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
 			const auto inputType2 = argumentTypes.at(2);
-			const auto inputType3 = argumentTypes.at(3);
 
 			Require(TypeUtils::IsType<FunctionType>(inputType0));
 			Require(TypeUtils::IsType<FunctionType>(inputType1));
@@ -1012,6 +1013,24 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
 			}
 
+			if (argumentTypes.size() == 3)
+			{
+				// Init sort call
+
+				const auto callTypes0 = AnalyzeCall(functionType0, {inputType2});
+				Require(callTypes0.size() == 2);
+				Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
+				Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType2));
+
+				// Sort call
+
+				const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType2});
+				Require(TypeUtils::IsEmptyType(callTypes1));
+
+				return {callTypes0.at(0)};
+			}
+
+			const auto inputType3 = argumentTypes.at(3);
 			Require(TypeUtils::IsBooleanType(inputType3));
 
 			// Init sort call
@@ -1094,19 +1113,15 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			// Init sort call
 
-			auto orderType = new BasicType(BasicType::BasicKind::Boolean);
-
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3, orderType});
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3});
 			Require(callTypes0.size() == 2);
 			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
 			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType3));
 
 			// Sort call
 
-			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType3, orderType});
+			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType3});
 			Require(TypeUtils::IsEmptyType(callTypes1));
-
-			delete orderType;
 
 			// Group call
 

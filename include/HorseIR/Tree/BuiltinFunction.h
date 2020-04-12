@@ -563,7 +563,7 @@ public:
 
 			// GPU
 			case Primitive::GPUOrderLib:
-				return 4; // @order_init, @order, data, order
+				return VariadicParameterCount; // @order_init, @order, data, order?
 			case Primitive::GPUOrderInit:
 				return 2; // data, order
 			case Primitive::GPUOrder:

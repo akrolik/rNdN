@@ -165,6 +165,14 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 
+			if (argumentObjects.size() == 3)
+			{
+				const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(2)});
+				const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1)});
+
+				return {initObjects.at(0)};
+			}
+
 			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(2), argumentObjects.at(3)});
 			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1), argumentObjects.at(3)});
 
@@ -188,8 +196,8 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 			const auto groupFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(groupType)->GetFunctionDeclaration();
 
-			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3), new DataObject()});
-			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1), new DataObject()});
+			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3)});
+			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1)});
 			const auto groupObjects = AnalyzeCall(groupFunction, {}, {initObjects.at(0), initObjects.at(1)});
 
 			return {new DataObject()};

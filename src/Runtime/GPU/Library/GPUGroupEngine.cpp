@@ -16,18 +16,13 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeSort_start = Utils::Chrono::Start("Group sort execution");
 
-	auto orderBuffer = new TypedVectorBuffer<std::int8_t>(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), {true}));
-
 	std::vector<DataBuffer *> sortBuffers;
 	sortBuffers.push_back(arguments.at(0)); // Init
 	sortBuffers.push_back(arguments.at(1)); // Sort
 	sortBuffers.push_back(arguments.at(3)); // Data
-	sortBuffers.push_back(orderBuffer); // Order
 
 	GPUSortEngine sortEngine(m_runtime, m_program);
 	auto [indexBuffer, dataBuffer] = sortEngine.Sort(sortBuffers);
-
-	delete orderBuffer;
 
 	Utils::Chrono::End(timeSort_start);
 
