@@ -20,12 +20,6 @@ public:
 		m_nodes.insert(node);
 	}
 
-	void InsertEdge(const T& source, const T& destination)
-	{
-		m_successors[source].insert(destination);
-		m_predecessors[destination].insert(source);
-	}
-
 	const std::unordered_set<T>& GetNodes() const { return m_nodes; }
 	bool ContainsNode(const T& node) const { return (m_nodes.find(node) != m_nodes.end()); }
 
@@ -40,6 +34,41 @@ public:
 	unsigned int GetOutDegree(const T& node) const
 	{
 		return m_successors.at(node).size();
+	}
+
+	virtual void RemoveNode(const T& node)
+	{
+		m_nodes.erase(node);
+
+		const auto successors = m_successors.at(node);
+		for (auto successor : successors)
+		{
+			RemoveEdge(node, successor);
+		}
+
+		const auto predecessors = m_predecessors.at(node);
+		for (auto predecessor : predecessors)
+		{
+			RemoveEdge(predecessor, node);
+		}
+	}
+
+	virtual void RemoveEdge(const T& source, const T& destination)
+	{
+		m_successors.at(source).erase(destination);
+		m_predecessors.at(destination).erase(source);
+	}
+
+	void InsertEdge(const T& source, const T& destination)
+	{
+		m_successors[source].insert(destination);
+		m_predecessors[destination].insert(source);
+	}
+
+	bool ContainsEdge(const T& source, const T& destination)
+	{
+		const auto& successors = m_successors.at(source);
+		return (successors.find(destination) != successors.end());
 	}
 
 	struct OrderingContext
@@ -64,7 +93,7 @@ public:
 
 		// Initialization with root nodes and count for incoming edges of each node
 
-		for (const auto& node : GetNodes())
+		for (auto& node : GetNodes())
 		{
 			auto count = GetLinearInDegree(node);
 			if (count == 0)
@@ -78,12 +107,12 @@ public:
 
 		while (!queue.empty())
 		{
-			const auto node = queue.front();
+			auto node = queue.front();
 			queue.pop();
 
 			// Apply the given function
 
-			function(node);
+			function(context, node);
 
 			// Process all predecessors of the node
 
@@ -105,7 +134,7 @@ public:
 
 		// Initialization with root nodes and count for incoming edges of each node
 
-		for (const auto& node : GetNodes())
+		for (auto& node : GetNodes())
 		{
 			auto count = GetLinearOutDegree(node);
 			if (count == 0)
@@ -119,7 +148,7 @@ public:
 
 		while (!queue.empty())
 		{
-			const auto node = queue.front();
+			auto node = queue.front();
 			queue.pop();
 
 			// Apply the given function

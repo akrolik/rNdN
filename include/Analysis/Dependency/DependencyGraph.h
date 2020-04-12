@@ -41,6 +41,14 @@ public:
 		return (m_libraryNodes.find(node) != m_libraryNodes.end());
 	}
 
+	void RemoveNode(const N& node) override
+	{
+		m_gpuNodes.erase(node);
+		m_libraryNodes.erase(node);
+
+		Graph<N>::RemoveNode(node);
+	}
+
 	void InsertEdge(const N& source, const N& destination, const HorseIR::SymbolTable::Symbol *symbol, bool isBackEdge, bool isSynchronized)
 	{
 		InsertEdge(source, destination, std::unordered_set<const HorseIR::SymbolTable::Symbol *>({symbol}), isBackEdge, isSynchronized);
@@ -90,6 +98,15 @@ public:
 	bool IsSynchronizedEdge(const N& source, const N& destination) const
 	{
 		return (m_synchronizedEdges.find({source, destination}) != m_synchronizedEdges.end());
+	}
+
+	void RemoveEdge(const N& source, const N& destination) override
+	{
+		m_edgeData.erase({source, destination});
+		m_backEdges.erase({source, destination});
+		m_synchronizedEdges.erase({source, destination});
+
+		Graph<N>::RemoveEdge(source, destination);
 	}
 
 private:

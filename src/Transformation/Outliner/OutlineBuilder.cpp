@@ -90,7 +90,7 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 	// Perform the topological sort and construct the statement list recursively
 
 	const auto subgraph = overlay->GetSubgraph();
-	subgraph->TopologicalOrdering([&](const Analysis::DependencySubgraphNode& node)
+	subgraph->TopologicalOrdering([&](Analysis::DependencySubgraph::OrderingContext& context, const Analysis::DependencySubgraphNode& node)
 	{
 		std::visit(overloaded
 		{

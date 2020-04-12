@@ -56,10 +56,13 @@ public:
 	}
 	void AddChild(DependencyOverlay *child)
 	{
-		m_children.push_back(child);
-		child ->m_parent = this;
+		if (std::find(m_children.begin(), m_children.end(), child) == m_children.end())
+		{
+			m_children.push_back(child);
+			child->m_parent = this;
+		}
 	}
-	void RemoveChild(DependencyOverlay *child)
+	void RemoveChild(const DependencyOverlay *child)
 	{
 		m_children.erase(std::remove(m_children.begin(), m_children.end(), child), m_children.end());
 	}
