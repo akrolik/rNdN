@@ -60,6 +60,12 @@ private:
 	const Shape *BuildGeometry(const DependencyOverlay *overlay) const;
 	bool IsCompatible(const Shape *source, const Shape *destination) const;
 	bool IsCompatible(const Shape::Size *source, const Shape::Size *destination) const;
+
+	// Optimization
+
+	void Optimize(DependencyOverlay *parentOverlay);
+	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderingContext& context, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
+	void MoveOverlay(DependencySubgraph::OrderingContext& context, DependencyOverlay *merged, const DependencyOverlay *source);
 };
 
 }

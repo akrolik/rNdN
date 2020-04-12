@@ -5,6 +5,9 @@
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
 
+//TODO:
+#include "Analysis/Dependency/DependencySubgraphAnalysis.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
@@ -209,6 +212,215 @@ bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape:
 	return (*source == *unmaskedSize);
 }
 
+void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
+{
+	//TODO: This should be somewhere else, or it's expensive
+	DependencySubgraphAnalysis dependencySubgraphAnalysis;
+	dependencySubgraphAnalysis.Analyze(parentOverlay);
+
+	std::unordered_set<DependencySubgraphNode> processedNodes;
+
+	auto subgraph = parentOverlay->GetSubgraph();
+	subgraph->TopologicalOrdering([&](DependencySubgraph::OrderingContext& context, DependencySubgraphNode& node)
+	{
+		// Iteratively merge the children
+
+		bool changed = true;
+		while (changed)
+		{
+			changed = false;
+
+			const auto& childSet = subgraph->GetSuccessors(node);
+			const auto size = childSet.size();
+
+			std::vector<DependencySubgraphNode> childOverlays(std::begin(childSet), std::end(childSet));
+
+			for (auto i = 0; i < size; ++i)
+			{
+				auto node1 = childOverlays.at(i);
+				if (std::holds_alternative<const HorseIR::Statement *>(node1))
+				{
+					continue;
+				}
+
+				auto overlay1 = std::get<const DependencyOverlay *>(node1);
+				for (auto j = i + 1; j < size; ++j)
+				{
+					auto node2 = childOverlays.at(j);
+					if (std::holds_alternative<const HorseIR::Statement *>(node2))
+					{
+						continue;
+					}
+
+					auto overlay2 = std::get<const DependencyOverlay *>(node2);
+
+					// Check for dependency edges between the two overlays, prevents merging
+
+					if (subgraph->ContainsEdge(node1, node2) || subgraph->ContainsEdge(node2, node1))
+					{
+						continue;
+					}
+
+					// Check for compatibility (exact geometry equality) between the overlays
+
+					auto geometry1 = m_overlayGeometries.at(overlay1);
+					auto geometry2 = m_overlayGeometries.at(overlay2);
+
+					if (*geometry1 != *geometry2)
+					{
+						continue;
+					}
+
+					// Merge the overlays!
+
+					auto mergedOverlay = MergeOverlays(context, overlay1, overlay2);
+
+					// Update the incoming count for the merged overlay in the ordering context
+
+					auto predecessors = subgraph->GetPredecessors(mergedOverlay);
+					for (const auto processed : processedNodes)
+					{
+						predecessors.erase(processed);
+					}
+					context.edges.insert({mergedOverlay, predecessors.size()});
+
+					changed = true;
+					break;
+				}
+				if (changed) break;
+			}
+		}
+
+		//TODO: Merge parent overlay if possible
+
+		// Merge parent overlay if possible
+
+		// if (std::holds_alternative<const HorseIR::Statement *>(node))
+		// {
+		// 	return;
+		// }
+
+		// Require the overlay to be GPU executable
+
+		// auto overlay = std::get<const DependencyOverlay *>(node);
+		// if (!overlay->IsGPU())
+		// {
+		// 	return;
+		// }
+
+		// Keep track of processed nodes for computing new in-degrees when merging
+
+		processedNodes.insert(node);
+	});
+}
+
+DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderingContext& context, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
+{
+	auto parentOverlay = overlay1->GetParent();
+	auto parentSubgraph = parentOverlay->GetSubgraph();
+
+	auto mergedOverlay = new DependencyOverlay(overlay1->GetGraph(), parentOverlay);
+	mergedOverlay->SetGPU(true);
+	mergedOverlay->SetSubgraph(new DependencySubgraph());
+
+	parentOverlay->AddChild(mergedOverlay);
+	parentSubgraph->InsertNode(mergedOverlay, true, false); //TODO: What to do with the other 2 parameters
+
+	MoveOverlay(context, mergedOverlay, overlay1);
+	MoveOverlay(context, mergedOverlay, overlay2);
+
+	// Transfer the overlay geometry
+
+	m_overlayGeometries[mergedOverlay] = m_overlayGeometries.at(overlay1);
+
+	m_overlayGeometries.erase(overlay1);
+	m_overlayGeometries.erase(overlay1);
+
+	context.edges.erase(overlay1);
+	context.edges.erase(overlay2);
+
+	return mergedOverlay;
+}
+
+void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderingContext& context, DependencyOverlay *mergedOverlay, const DependencyOverlay *sourceOverlay)
+{
+	// Add all nodes from source to merged
+	//   - Overlay: Statements, child overlays
+	//   - Subgraph: Nodes, gpu nodes, library nodes
+
+	auto mergedSubgraph = mergedOverlay->GetSubgraph();
+	auto sourceSubgraph = sourceOverlay->GetSubgraph();
+
+	for (auto statement : sourceOverlay->GetStatements())
+	{
+		mergedOverlay->InsertStatement(statement);
+	}
+
+	for (auto childOverlay : sourceOverlay->GetChildren())
+	{
+		mergedOverlay->AddChild(childOverlay);
+	}
+
+	for (auto node : sourceSubgraph->GetNodes())
+	{
+		auto isGPU = sourceSubgraph->IsGPUNode(node);
+		auto isLibrary = sourceSubgraph->IsGPULibraryNode(node);
+
+		mergedSubgraph->InsertNode(node, isGPU, isLibrary);
+	}
+
+	// Add all edges from sourceOverlay to mergedOverlay
+	//   - Overlay: --
+	//   - Subgraph: Edges, back edges, synchronized edges, edge data
+
+	for (auto node1 : sourceSubgraph->GetNodes())
+	{
+		for (auto node2 : sourceSubgraph->GetSuccessors(node1))
+		{
+			auto isBackEdge = sourceSubgraph->IsBackEdge(node1, node2);
+			auto isSynchronizedEdge = sourceSubgraph->IsSynchronizedEdge(node1, node2);
+			auto edgeData = sourceSubgraph->GetEdgeData(node1, node2);
+
+			mergedSubgraph->InsertEdge(node1, node2, edgeData, isBackEdge, isSynchronizedEdge);
+		}
+	}
+
+	// Update function overlay
+	//   - Overlay: Remove sourceOverlay
+	//   - Subgraph: Edges, back edges, synchronized edges, edge data (copy from source to merged)
+
+	auto parentOverlay = mergedOverlay->GetParent();
+	auto parentSubgraph = parentOverlay->GetSubgraph();
+
+	for (auto successor : parentSubgraph->GetSuccessors(sourceOverlay))
+	{
+		auto isBackEdge = parentSubgraph->IsBackEdge(sourceOverlay, successor);
+		auto isSynchronizedEdge = parentSubgraph->IsSynchronizedEdge(sourceOverlay, successor);
+		auto edgeData = parentSubgraph->GetEdgeData(sourceOverlay, successor);
+
+		if (parentSubgraph->ContainsEdge(mergedOverlay, successor))
+		{
+			// Reduce count for successor nodes that are already in the graph
+			// they may be duplicated by the merging process
+
+			context.edges.at(successor)--;
+		}
+		parentSubgraph->InsertEdge(mergedOverlay, successor, edgeData, isBackEdge, isSynchronizedEdge);
+	}
+
+	for (auto predecessor : parentSubgraph->GetPredecessors(sourceOverlay))
+	{
+		auto isBackEdge = parentSubgraph->IsBackEdge(predecessor, sourceOverlay);
+		auto isSynchronizedEdge = parentSubgraph->IsSynchronizedEdge(predecessor, sourceOverlay);
+		auto edgeData = parentSubgraph->GetEdgeData(predecessor, sourceOverlay);
+
+		parentSubgraph->InsertEdge(predecessor, mergedOverlay, edgeData, isBackEdge, isSynchronizedEdge);
+	}
+
+	parentSubgraph->RemoveNode(sourceOverlay);
+	parentOverlay->RemoveChild(sourceOverlay);
+}
+
 void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 {
 	// The child overlay construction is bottom-up, so we temporarily store sibling overlays to store later
@@ -309,6 +521,10 @@ void CompatibilityAnalysis::Visit(const FunctionDependencyOverlay *overlay)
 	auto bodyOverlay = m_currentOverlays.at(size - 1);
 
 	m_currentOverlays.pop_back();
+
+	// Optimize the functionn
+
+	Optimize(bodyOverlay);
 
 	// Construct a function overlay and propagate the resulting geometry
 
