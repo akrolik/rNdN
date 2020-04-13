@@ -33,6 +33,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	if (m_optionsCache.find(function) == m_optionsCache.end())
 	{
+		auto timeAnalysis_start = Utils::Chrono::Start("Runtime analysis");
+
 		auto timeAnalysisInit_start = Utils::Chrono::Start("Analysis initialziation");
 
 		// Collect runtime shape information for determining exact thread geometry and return shapes
@@ -80,6 +82,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		optionsAnalysis.Analyze(function);
 
 		m_optionsCache[function] = std::move(optionsAnalysis.GetInputOptions());
+
+		Utils::Chrono::End(timeAnalysis_start);
 	}
 	else
 	{
