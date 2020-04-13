@@ -2,6 +2,8 @@
 
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 
+#include <regex>
+
 namespace Analysis {
 
 void DependencyOverlayPrinter::Indent()
@@ -32,7 +34,9 @@ void DependencyOverlayPrinter::Visit(const DependencyOverlay *overlay)
 		m_nameMap[node] = name;
 
 		Indent();
-		m_string << name <<"[label=\"" << HorseIR::PrettyPrinter::PrettyString(node, true) << "\", shape=rectangle";
+
+		auto label = std::regex_replace(HorseIR::PrettyPrinter::PrettyString(node, true), std::regex("\""), "\\\"");
+		m_string << name <<"[label=\"" << label << "\", shape=rectangle";
 
 		// Bold GPU capable statements
 
