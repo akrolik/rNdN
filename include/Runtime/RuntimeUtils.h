@@ -31,6 +31,23 @@ public:
 			return false;
 		}
 
+		// List in vector
+
+		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
+		{
+			if (const auto listData = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(dataShape))
+			{
+				const auto cellData = Analysis::ShapeUtils::MergeShapes(listData->GetElementShapes());
+				if (const auto vectorData = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellData))
+				{
+					if (*vectorGeometry == *vectorData)
+					{
+						return false;
+					}
+				}
+			}
+		}
+
 		// @raze special case output shape
 
 		if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))
