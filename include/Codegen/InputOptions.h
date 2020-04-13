@@ -71,6 +71,7 @@ struct InputOptions
 				{
 					output += ", ";
 				}
+				first = false;
 				output += parameter->GetName() + " = " + Analysis::ShapeUtils::ShapeString(shape);
 			}
 		}
