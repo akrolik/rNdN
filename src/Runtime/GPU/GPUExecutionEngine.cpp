@@ -285,7 +285,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Resize return buffers for dynamically sized outputs (compression)
 
-	if (function->GetReturnCount() > 0)
+	if (returnSizeBuffers.size() > 0)
 	{
 		auto timeResize_start = Utils::Chrono::Start("Resize buffers");
 
@@ -326,7 +326,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		return resizedBuffers;
 	}
 
-	return {};
+	return {returnBuffers};
 }
 
 VectorBuffer *GPUExecutionEngine::ResizeBuffer(VectorBuffer *vectorBuffer, std::uint32_t size) const
