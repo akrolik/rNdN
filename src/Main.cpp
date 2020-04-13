@@ -80,10 +80,13 @@ int main(int argc, const char *argv[])
 
 	Utils::Chrono::End(timeFrontend_start);
 
-	// Execute the fixed point optimizer
+	if (Utils::Options::Present(Utils::Options::Opt_Optimize))
+	{
+		// Execute the fixed point optimizer
 
-	Optimizer::Optimizer optimizer;
-	optimizer.Optimize(program);
+		Optimizer::Optimizer optimizer;
+		optimizer.Optimize(program);
+	}
 
 	// Outliner
 
