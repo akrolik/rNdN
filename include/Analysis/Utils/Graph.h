@@ -1,6 +1,7 @@
 #pragma once
 
 #include <queue>
+#include <stack>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -65,10 +66,58 @@ public:
 		m_predecessors[destination].insert(source);
 	}
 
-	bool ContainsEdge(const T& source, const T& destination)
+	bool ContainsEdge(const T& source, const T& destination) const
 	{
 		const auto& successors = m_successors.at(source);
 		return (successors.find(destination) != successors.end());
+	}
+
+	bool ContainsPath(const T& source, const T& destination) const
+	{
+		auto found = DFS(source, [&](const T& node)
+		{
+			return (destination == node);
+		});
+
+		return found;
+	}
+
+	template<typename F>
+	bool DFS(const T& start, F function) const
+	{
+		// Construct DFA ordering structure
+
+		std::stack<T> stack;
+		std::unordered_set<T> visited;
+
+		// Initialize with the given node
+
+		stack.push(start);
+
+		while (!stack.empty())
+		{
+			auto node = stack.top();
+			stack.pop();
+
+			if (visited.find(node) == visited.end())
+			{
+				// Apply the given function, exit if returned true
+
+				if (function(node))
+				{
+					return true;
+				}
+
+				// Maintain the visited structure and add successors
+
+				visited.insert(node);
+				for (auto successor : GetSuccessors(node))
+				{
+					stack.push(successor);
+				}
+			}
+		}
+		return false;
 	}
 
 	struct OrderingContext

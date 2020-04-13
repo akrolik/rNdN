@@ -256,7 +256,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 
 					// Check for dependency edges between the two overlays, prevents merging
 
-					if (subgraph->ContainsEdge(node1, node2) || subgraph->ContainsEdge(node2, node1))
+					if (subgraph->ContainsPath(node1, node2) || subgraph->ContainsPath(node2, node1))
 					{
 						continue;
 					}
