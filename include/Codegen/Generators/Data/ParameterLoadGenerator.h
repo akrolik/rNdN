@@ -137,7 +137,7 @@ public:
 						auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellAddress);
 						auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(parameterAddress, index);
 
-						this->m_builder.AddStatement(new PTX::LoadInstruction<B, DataType, PTX::GlobalSpace>(dataPointer, indexedAddress));
+						this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
 
 						// Load the dynamic size if needed
 
@@ -177,7 +177,7 @@ public:
 				auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellRegister);
 				auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(globalIndexedPointer);
 
-				this->m_builder.AddStatement(new PTX::LoadInstruction<B, DataType, PTX::GlobalSpace>(dataPointer, indexedAddress));
+				this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
 
 				// Load the dynamic size parameter if needed
 
@@ -236,7 +236,7 @@ public:
 			auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellAddress);
 			auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(parameterAddress, index);
 
-			this->m_builder.AddStatement(new PTX::LoadInstruction<B, DataType, PTX::GlobalSpace>(dataPointer, indexedAddress));
+			this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
 
 			// Load the dynamic size if needed
 
