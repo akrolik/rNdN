@@ -87,6 +87,9 @@ public:
 		return (sizeof(CUdeviceptr) * m_cells.size());
 	}
 
+	void SetGPUSizeBuffer(CUDA::Buffer *sizeBuffer) { m_sizeBuffer = sizeBuffer; }
+	CUDA::Buffer *GetGPUSizeBuffer() const { return m_sizeBuffer; }
+
 	// Printers
 
 	std::string Description() const override;
@@ -144,6 +147,8 @@ private:
 
 	std::vector<DataBuffer *> m_cells;
 	mutable CUDA::Buffer *m_gpuBuffer = nullptr;
+
+	CUDA::Buffer *m_sizeBuffer = nullptr;
 };
 
 }
