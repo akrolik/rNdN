@@ -331,6 +331,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 VectorBuffer *GPUExecutionEngine::ResizeBuffer(VectorBuffer *vectorBuffer, std::uint32_t size) const
 {
+	//TODO: Resize CUDA buffer only if it makes substantial difference. Always make a new container though
+
 	// Check if resize necessary
 
 	if (vectorBuffer->GetElementCount() != size)
@@ -551,6 +553,9 @@ CUDA::Buffer *GPUExecutionEngine::AllocateListSizeParameter(CUDA::KernelInvocati
 	auto buffer = new CUDA::Buffer(cellSizes.data(), cellSizes.size() * sizeof(std::uint32_t));
 	buffer->AllocateOnGPU();
 	buffer->TransferToGPU();
+
+	//TODO: Save the size buffer on the list object to re-use
+
 	invocation.AddParameter(*buffer);
 	return buffer;
 }

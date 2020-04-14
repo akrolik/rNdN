@@ -189,6 +189,7 @@ protected:
 
 			// Marshal data
 
+			//TODO: Move this to the main data load
 			auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
 
 			auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
@@ -216,6 +217,7 @@ protected:
 				m_gpuBuffer->SetCPUBuffer(hashedData);
 			}
 
+			//TODO: Move this to the main data load
 			// Marshal data
 
 			auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
