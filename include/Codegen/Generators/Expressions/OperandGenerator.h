@@ -16,7 +16,6 @@
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/PrefixSumGenerator.h"
-#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -346,16 +345,13 @@ public:
 
 				// Ensure the thread is within bounds for loading data
 
-				DataIndexGenerator<B> indexGenerator(this->m_builder);
-				auto index = indexGenerator.GenerateDataIndex();
-
-				ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
-				auto size = geometryGenerator.GenerateDataGeometry();
+				DataSizeGenerator<B> sizeGenerator(this->m_builder);
+				auto size = sizeGenerator.GenerateSize(parameter);
 
 				auto sizeLabel = this->m_builder.CreateLabel("SIZE");
 				auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 				this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
 
 				// Load the value from the global space
