@@ -404,6 +404,10 @@ private:
 			this->m_builder.AddStatement(new PTX::XorInstruction<PTX::PredicateType>(temp, m_data, value));
 			this->m_builder.AddStatement(new PTX::NotInstruction<PTX::PredicateType>(temp, temp));
 		}
+		else if constexpr(std::is_same<T, PTX::Int8Type>::value)
+		{
+			//TODO: Use comparison generator
+		}
 		else
 		{
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(temp, m_data, value, T::ComparisonOperator::Equal));
