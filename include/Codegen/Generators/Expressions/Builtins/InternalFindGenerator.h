@@ -6,7 +6,10 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
+#include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -14,11 +17,17 @@
 
 namespace Codegen {
 
+enum class FindOperation {
+	Member,
+	Index,
+	Count
+};
+
 template<PTX::Bits B, class T, class D>
 class InternalFindGenerator : public BuiltinGenerator<B, D>, public HorseIR::ConstVisitor
 {
 public:
-	using BuiltinGenerator<B, D>::BuiltinGenerator;
+	InternalFindGenerator(Builder& builder, FindOperation  findOp) : BuiltinGenerator<B, D>(builder), m_findOp(findOp) {}
 
 	std::string Name() const override { return "InternalFindGenerator"; }
 
@@ -31,11 +40,32 @@ public:
 	{
 		m_targetRegister = this->GenerateTargetRegister(target, arguments);
 
-		// Initialize target register (@member->false)
+		// Initialize target register (@member->false, @index_of->0, @join_count->0)
 
 		if constexpr(std::is_same<D, PTX::PredicateType>::value)
 		{
-			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_targetRegister, new PTX::BoolValue(false)));
+			if (m_findOp == FindOperation::Member)
+			{
+				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_targetRegister, new PTX::BoolValue(false)));
+			}
+		}
+		else if constexpr(std::is_same<D, PTX::Int64Type>::value)
+		{
+			switch (m_findOp)
+			{
+				case FindOperation::Index:
+				{
+					auto resources = this->m_builder.GetLocalResources();
+					m_predicateRegister = resources->template AllocateTemporary<PTX::PredicateType>();
+
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_predicateRegister, new PTX::BoolValue(false)));
+					// Fallthrough
+				}
+				case FindOperation::Count:
+				{
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_targetRegister, new PTX::Int64Value(0)));
+				}
+			}
 		}
 
 		// Operating range in argument 0, possibilities in argument 1
@@ -49,75 +79,201 @@ public:
 
 	void Visit(const HorseIR::Identifier *identifier) override
 	{
-		// Generate a loop, iterating over all values and checking if they match
+		// Generate a double loop, checking for matches in chunks (for coalescing)
 		//
-		//   START:
-		//      setp %p, ...
-		//      @%p br END
+		// __shared__ T s[BLOCK_SIZE]
 		//
-		//      <value>
-		//      <check>
-		//      <increment>
+		// found = false
 		//
-		//      br START
+		// i = threadIdx.x
+		// START_1:
+		//    setp %p1, i, identifier.size
+		//    @%p1 br END_1
 		//
-		//   END:
+		//    s[threadIdx.x] = value[i]
+		//
+		//    <barrier>
+		//
+		//    <inner loop>
+		//
+		//    <barrier>
+		//    <increment, i, BLOCK_SIZE>
+		//
+		//    br START_1
+		//
+		// END_1:
 
-		// Construct the loop
+		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		{
+			//TODO: Use comparison generator instead
+		}
+		else
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto globalResources = this->m_builder.GetGlobalResources();
 
+			// Maximize the block size
+
+			auto& targetOptions = this->m_builder.GetTargetOptions();
+			auto& kernelOptions = this->m_builder.GetKernelOptions();
+
+			constexpr auto BLOCK_SIZE = 1024u;
+			kernelOptions.SetBlockSize(BLOCK_SIZE);
+
+			auto s_cache = new PTX::ArrayVariableAdapter<T, BLOCK_SIZE, PTX::SharedSpace>(
+				kernelResources->template AllocateSharedVariable<PTX::ArrayType<T, BLOCK_SIZE>>(this->m_builder.UniqueIdentifier("cache"))
+			);
+
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			BarrierGenerator<B> barrierGenerator(this->m_builder);
+
+			ThreadIndexGenerator<B> threadGenerator(this->m_builder);
+			DataSizeGenerator<B> sizeGenerator(this->m_builder);
+
+			// Initialize the outer loop
+
+			auto size = sizeGenerator.GenerateSize(identifier);
+			auto index = threadGenerator.GenerateLocalIndex();
+
+			auto bound = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(bound, index, size));
+
+			// Check if the final iteration is complete
+
+			auto remainder = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(remainder, size, new PTX::UInt32Value(BLOCK_SIZE)));
+
+			auto sizePredicate_1 = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(
+				new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate_1, remainder, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual)
+			);
+
+			auto startLabel = this->m_builder.CreateLabel("START");
+			auto endLabel = this->m_builder.CreateLabel("END");
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			this->m_builder.AddStatement(startLabel);
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+
+			// Begin the loop body
+			//   - Load data from global into shared
+			//   - Synchronize
+
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			auto value = operandGenerator.GenerateRegister(identifier, index, this->m_builder.UniqueIdentifier("member"));
+
+			auto localIndex = threadGenerator.GenerateLocalIndex();
+			auto s_cacheAddress = addressGenerator.GenerateAddress(s_cache, localIndex);
+
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_cacheAddress, value));
+
+			barrierGenerator.Generate();
+
+			// Setup the inner loop and bound
+			//  - Chunks 0...(N-1): BLOCK_SIZE
+			//  - Chunk N: remainder
+
+			// Increment by the number of threads. Do it here since it will be reused
+
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(BLOCK_SIZE)));
+
+			// Chose the correct bound for the inner loop, sizePredicate indicates a complete iteration
+
+			auto sizePredicate_2 = resources->template AllocateTemporary<PTX::PredicateType>();
+			auto sizePredicate_3 = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate_2, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(sizePredicate_3, sizePredicate_1, sizePredicate_2));
+
+			auto ifElseLabel = this->m_builder.CreateLabel("ELSE"); 
+			auto ifEndLabel = this->m_builder.CreateLabel("END"); 
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(ifElseLabel, sizePredicate_3));
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+
+			GenerateInnerLoop(s_cache, new PTX::UInt32Value(BLOCK_SIZE), BLOCK_SIZE, 16);
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(ifEndLabel));
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+			this->m_builder.AddStatement(ifElseLabel);
+
+			// Compute bound if this is the last iteration
+
+			GenerateInnerLoop(s_cache, remainder, BLOCK_SIZE, 1);
+			
+			this->m_builder.AddStatement(ifEndLabel);
+
+			// Barrier before the next chunk, otherwise some warps might overwrite the previous values too soon
+
+			barrierGenerator.Generate();
+
+			// Complete the loop structure, check the next index chunk
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
+			this->m_builder.AddStatement(new PTX::BlankStatement());
+			this->m_builder.AddStatement(endLabel);
+		}
+	}
+
+	void GenerateInnerLoop(const PTX::SharedVariable<T> *s_cache, const PTX::TypedOperand<PTX::UInt32Type> *bound, unsigned int BLOCK_SIZE, unsigned int factor)
+	{
 		auto resources = this->m_builder.GetLocalResources();
+
+		// Loop body
+		//
+		//    j = 0
+		//    START_2: (unroll)
+		//       setp %p2, j, BLOCK_SIZE
+		//       @%p2 br END_2
+		//
+		//       <check= s[j]> (set found, do NOT break -> slower)
+		//
+		//       <increment, j, 1>
+		//       br START_2
+		//
+		//    END_2:
+
 		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(index, new PTX::UInt32Value(0)));
+		
+		auto base = resources->template AllocateTemporary<PTX::UIntType<B>>();
+		auto basePointer = new PTX::PointerRegisterAdapter<B, T, PTX::SharedSpace>(base);
+		auto baseAddress = new PTX::MemoryAddress<B, T, PTX::SharedSpace>(s_cache);
 
-		DataSizeGenerator<B> sizeGenerator(this->m_builder);
-		auto size = sizeGenerator.GenerateSize(identifier);
+		this->m_builder.AddStatement(new PTX::MoveAddressInstruction<B, T, PTX::SharedSpace>(basePointer, baseAddress));
 
 		auto startLabel = this->m_builder.CreateLabel("START");
 		auto endLabel = this->m_builder.CreateLabel("END");
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 		this->m_builder.AddStatement(startLabel);
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
-		// Construct the loop body for checking the next value
-
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		auto value = operandGenerator.GenerateOperand(identifier, index, this->m_builder.UniqueIdentifier("member"));
-
-		const PTX::Register<PTX::PredicateType> *match = nullptr;
-		if constexpr(std::is_same<D, PTX::PredicateType>::value)
+		for (auto i = 0; i < factor; ++i)
 		{
-			match = m_targetRegister;
-		}
-		else
-		{
-			auto resources = this->m_builder.GetLocalResources();
-			match = resources->template AllocateTemporary<PTX::PredicateType>();
+			// Inner loop body, match the value against the thread data
+
+			auto value = resources->template AllocateTemporary<T>();
+			auto s_cacheAddress = new PTX::RegisterAddress<B, T, PTX::SharedSpace>(basePointer, i);
+
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
+
+			GenerateMatch(value);
 		}
 
-		// Check the next value
+		// Increment by the iterations completed
 
-		GenerateMatch(match, value);
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, match));
-
-		// Increment the index by 1
-
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(1)));
-
-		// Complete the loop structure. Exit (fallthrough) if match
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(factor)));
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(base, base, new PTX::UIntValue<B>(factor * PTX::BitSize<T::TypeBits>::NumBytes)));
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
-		this->m_builder.AddStatement(endLabel);
-
-		// If we are computing the index, store the index that exited (== size if not found)
-
-		if constexpr(std::is_same<D, PTX::Int64Type>::value)
-		{
-			ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, m_targetRegister, index);
-		}
+		this->m_builder.AddStatement(endLabel);     
 	}
 
 	void Visit(const HorseIR::Literal *literal) override
@@ -214,60 +370,84 @@ public:
 		{
 			// Load the value and cast to the appropriate type
 
-			auto resources = this->m_builder.GetLocalResources();
-			auto match = resources->template AllocateTemporary<PTX::PredicateType>();
-
 			if constexpr(std::is_same<L, std::string>::value)
 			{
-				GenerateMatch(match, new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value))));
+				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value))));
 			}
 			else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
 			{
-				GenerateMatch(match, new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName()))));
+				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName()))));
 			}
 			else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
 			{
-				GenerateMatch(match, new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime())));
+				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime())));
 			}
 			else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
 			{
-				GenerateMatch(match, new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime())));
+				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime())));
 			}
 			else
 			{
-				GenerateMatch(match, new PTX::Value<T>(static_cast<typename T::SystemType>(value)));
-			}
-
-			if constexpr(std::is_same<D, PTX::PredicateType>::value)
-			{
-				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, match));
-			}
-			else
-			{
-				//TODO: Support @index_of with literals
+				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value)));
 			}
 		}
 	}
 
 private:
-	void GenerateMatch(const PTX::Register<PTX::PredicateType> *match, const PTX::TypedOperand<T> *value)
+	void GenerateMatch(const PTX::TypedOperand<T> *value)
 	{
+		auto resources = this->m_builder.GetLocalResources();
+		auto temp = resources->template AllocateTemporary<PTX::PredicateType>();
+
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			auto resources = this->m_builder.GetLocalResources();
-			auto temp = resources->template AllocateTemporary<PTX::PredicateType>();
-
 			this->m_builder.AddStatement(new PTX::XorInstruction<PTX::PredicateType>(temp, m_data, value));
-			this->m_builder.AddStatement(new PTX::NotInstruction<PTX::PredicateType>(match, temp));
+			this->m_builder.AddStatement(new PTX::NotInstruction<PTX::PredicateType>(temp, temp));
 		}
 		else
 		{
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(match, m_data, value, T::ComparisonOperator::Equal));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(temp, m_data, value, T::ComparisonOperator::Equal));
+		}
+
+		if constexpr(std::is_same<D, PTX::PredicateType>::value)
+		{
+			if (m_findOp == FindOperation::Member)
+			{
+				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, temp));
+			}
+		}
+		else if constexpr(std::is_same<D, PTX::Int64Type>::value)
+		{
+			switch (m_findOp)
+			{
+				case FindOperation::Index:
+				{
+					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_predicateRegister, m_predicateRegister, temp));
+
+					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
+					addInstruction->SetPredicate(m_predicateRegister, true);
+					this->m_builder.AddStatement(addInstruction);
+
+					break;
+				}
+				case FindOperation::Count:
+				{
+					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
+					addInstruction->SetPredicate(temp);
+					this->m_builder.AddStatement(addInstruction);
+
+					break;
+				}
+			}
 		}
 	}
 
+	const PTX::Register<PTX::PredicateType> *m_predicateRegister = nullptr;
+
 	const PTX::TypedOperand<T> *m_data = nullptr;
 	const PTX::Register<D> *m_targetRegister = nullptr;
+
+	FindOperation m_findOp;
 };
 
 }

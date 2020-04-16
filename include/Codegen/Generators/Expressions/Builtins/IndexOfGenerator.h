@@ -38,18 +38,8 @@ public:
 	template<typename T>
 	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		//TODO: Use comparison generator instead
-		if constexpr(std::is_same<T, PTX::Int8Type>::value)
-		{
-			// Comparison can only occur for 16-bits+
-
-			GenerateVector<PTX::Int16Type>(target, arguments);
-		}
-		else
-		{
-			InternalFindGenerator<B, T, PTX::Int64Type> findGenerator(this->m_builder);
-			m_targetRegister = findGenerator.Generate(target, arguments);
-		}
+		InternalFindGenerator<B, T, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Index);
+		m_targetRegister = findGenerator.Generate(target, arguments);
 	}
 
 	template<typename T>
