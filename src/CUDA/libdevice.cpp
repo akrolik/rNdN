@@ -166,7 +166,7 @@ std::string Generate(const std::string& compute)
 	// Generate PTX code from the optimized LLVM module. We generate to a string
 	// instead of a file so it links with the next phase of the pipeline
 
-	auto timeCodegen_start = Utils::Chrono::Start("Codegen");
+	auto timeEmit_start = Utils::Chrono::Start("Emit");
 
 	// Force flush on scope exit
 
@@ -179,7 +179,7 @@ std::string Generate(const std::string& compute)
 		codegenPasses.run(*module);
 	}
 
-	Utils::Chrono::End(timeCodegen_start);
+	Utils::Chrono::End(timeEmit_start);
 	Utils::Chrono::End(timeLibrary_start);
 
 	return ptxCode;

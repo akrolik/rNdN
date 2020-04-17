@@ -83,7 +83,16 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
-	Utils::ScopedChrono chrono("Builtin function '" + function->GetName() + "'");
+	std::string name = "Builtin function";
+	switch (function->GetPrimitive())
+	{
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+			name = "Library function";
+	}
+
+	Utils::ScopedChrono chrono(name + " '" + function->GetName() + "'");
 
 	BuiltinExecutionEngine engine(m_runtime, m_program);
 	return engine.Execute(function, arguments);
