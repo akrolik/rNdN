@@ -5,7 +5,6 @@
 
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
-#include "Runtime/StringBucket.h"
 
 #include "Analysis/Shape/Shape.h"
 
@@ -106,28 +105,16 @@ public:
 
 	size_t GetGPUBufferSize() const override
 	{
-		if constexpr(std::is_same<T, std::string>::value)
-		{
-			return sizeof(std::uint64_t) * m_elementCount;
-		}
-		else
-		{
-			return sizeof(T) * m_elementCount;
-		}
+		return sizeof(T) * m_elementCount;
 	}
 
 	std::string Description() const override
 	{
-		std::string string = HorseIR::PrettyPrinter::PrettyString(m_type) + "(";
-		if constexpr(std::is_same<T, std::string>::value)
-		{
-			string += std::to_string(sizeof(std::uint64_t));
-		}
-		else
-		{
-			string += std::to_string(sizeof(T));
-		}
-		return string + " bytes) x " + std::to_string(m_elementCount);
+		std::string string;
+		string += HorseIR::PrettyPrinter::PrettyString(m_type) + "(";
+		string += std::to_string(sizeof(T));
+		string += " bytes) x " + std::to_string(m_elementCount);
+		return string;
 	}
 
 	std::string DebugDump() const override
@@ -163,80 +150,20 @@ protected:
 
 	void AllocateGPUBuffer() const override
 	{
-		if constexpr(std::is_same<T, std::string>::value)
-		{
-			m_gpuBuffer = new CUDA::Buffer(sizeof(std::uint64_t) * m_elementCount);
-		}
-		else
-		{
-			m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
-		}
+		m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
 		m_gpuBuffer->AllocateOnGPU();
 	}
 
 	void TransferToCPU() const override
 	{
-		if constexpr(std::is_same<T, std::string>::value)
-		{
-			// Setup CPU buffer if needed
-
-			if (!m_gpuBuffer->HasCPUBuffer())
-			{
-				auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
-				m_gpuBuffer->SetCPUBuffer(hashedData);
-			}
-			m_gpuBuffer->TransferToCPU();
-
-			// Marshal data
-
-			//TODO: Move this to the main data load
-			auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
-
-			auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
-			for (auto i = 0u; i < m_elementCount; ++i)
-			{
-				m_cpuBuffer->SetValue(i, StringBucket::RecoverString(hashedData[i]));
-			}
-
-			Utils::Chrono::End(timeMarshalling_start);
-		}
-		else
-		{
-			m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
-			m_gpuBuffer->TransferToCPU();
-		}
+		m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
+		m_gpuBuffer->TransferToCPU();
 	}
 
 	void TransferToGPU() const override
 	{
-		if constexpr(std::is_same<T, std::string>::value)
-		{
-			if (!m_gpuBuffer->HasCPUBuffer())
-			{
-				auto hashedData = static_cast<std::uint64_t *>(malloc(sizeof(std::uint64_t) * m_elementCount));
-				m_gpuBuffer->SetCPUBuffer(hashedData);
-			}
-
-			//TODO: Move this to the main data load
-			// Marshal data
-
-			auto timeMarshalling_start = Utils::Chrono::Start("Data marshalling (string)");
-
-			auto hashedData = static_cast<std::uint64_t *>(m_gpuBuffer->GetCPUBuffer());
-			for (auto i = 0u; i < m_elementCount; ++i)
-			{
-				hashedData[i] = StringBucket::HashString(m_cpuBuffer->GetValue(i));
-			}
-
-			Utils::Chrono::End(timeMarshalling_start);
-
-			m_gpuBuffer->TransferToGPU();
-		}
-		else
-		{
-			m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
-			m_gpuBuffer->TransferToGPU();
-		}
+		m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
+		m_gpuBuffer->TransferToGPU();
 	}
 
 	mutable TypedVectorData<T> *m_cpuBuffer = nullptr;

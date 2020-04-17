@@ -140,7 +140,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
-			auto columnNames = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer();
+			auto columnNames = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer();
 			auto columnValues = BufferUtils::GetBuffer<ListBuffer>(arguments.at(1));
 
 			if (columnNames->GetElementCount() != columnValues->GetCellCount())
@@ -150,8 +150,9 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			auto i = 0u;
 			std::vector<std::pair<std::string, ColumnBuffer *>> columns;
-			for (const auto& columnName : columnNames->GetValues())
+			for (const auto& columnHash : columnNames->GetValues())
 			{
+				const auto& columnName = StringBucket::RecoverString(columnHash);
 				columns.push_back({columnName, BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++))});
 			}
 			return {new TableBuffer(columns)};
@@ -185,31 +186,33 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
 			auto table = BufferUtils::GetBuffer<TableBuffer>(arguments.at(0));
-			auto columnSymbol = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer();
+			auto columnSymbol = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(1))->GetCPUReadBuffer();
 
 			if (columnSymbol->GetElementCount() != 1)
 			{
 				Error("expects a single column argument, received " + std::to_string(columnSymbol->GetElementCount()));
 			}
 
-			return {table->GetColumn(columnSymbol->GetValue(0))};
+			const auto& columnName = StringBucket::RecoverString(columnSymbol->GetValue(0));
+			return {table->GetColumn(columnName)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 		{
 			auto& dataRegistry = m_runtime.GetDataRegistry();
-			auto tableSymbol = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer();
+			auto tableSymbol = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer();
 
 			if (tableSymbol->GetElementCount() != 1)
 			{
 				Error("expects a single table argument, received " + std::to_string(tableSymbol->GetElementCount()));
 			}
 
-			return {dataRegistry.GetTable(tableSymbol->GetValue(0))};
+			const auto& tableName = StringBucket::RecoverString(tableSymbol->GetValue(0));
+			return {dataRegistry.GetTable(tableName)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
-			auto& stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
-			auto patternData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(1))->GetCPUReadBuffer();
+			auto& stringData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			auto patternData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(1))->GetCPUReadBuffer();
 
 			if (patternData->GetElementCount() != 1)
 			{
@@ -220,7 +223,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			//  - Escape: '.', '*', and '\'
 			//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
 
-			const auto likePatternString = patternData->GetValue(0);
+			const auto& likePatternString = StringBucket::RecoverString(patternData->GetValue(0));
 			const auto likePatternSize = likePatternString.size();
 
 			const char *likePattern = likePatternString.c_str();
@@ -266,14 +269,14 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				likeData.at(i) = regex.match(stringData.at(i));
+				likeData.at(i) = regex.match(StringBucket::RecoverString(stringData.at(i)));
 			}
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), std::move(likeData)))};
 		}
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			auto& stringData = BufferUtils::GetVectorBuffer<std::string>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			auto& stringData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
 			auto rangeVector = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(1));
 
 			if (rangeVector->GetElementCount() != 2)
@@ -322,14 +325,14 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 
 			const auto size = stringData.size();
-			CUDA::Vector<std::string> substringData(size);
+			CUDA::Vector<std::uint64_t> substringData(size);
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				substringData[i] = std::move(stringData[i].substr(position - 1, length));
+				substringData[i] = StringBucket::HashString(StringBucket::RecoverString(stringData[i]).substr(position - 1, length));
 			}
 
-			return {new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(substringData)))};
+			return {new TypedVectorBuffer(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(substringData)))};
 		}
 		default:
 		{

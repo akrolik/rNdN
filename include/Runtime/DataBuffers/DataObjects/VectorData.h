@@ -4,6 +4,8 @@
 
 #include "Runtime/DataBuffers/DataObjects/DataObject.h"
 
+#include "Runtime/StringBucket.h"
+
 #include "CUDA/Vector.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -47,6 +49,13 @@ public:
 
 	bool IsSorted(unsigned int i1, unsigned int i2) const override
 	{
+		if constexpr(std::is_same<T, std::uint64_t>::value)
+		{
+			if (HorseIR::TypeUtils::IsCharacterType(m_type))
+			{
+				return (StringBucket::RecoverString(m_data.at(i1)) < StringBucket::RecoverString(m_data.at(i2)));
+			}
+		}
 		return (m_data.at(i1) < m_data.at(i2));
 	}
 
@@ -111,11 +120,7 @@ public:
 
 	std::string DebugDump(unsigned int index) const override
 	{
-		if constexpr(std::is_same<T, std::string>::value)
-		{
-			return m_data.at(index);
-		}
-		else if constexpr(std::is_pointer<T>::value)
+		if constexpr(std::is_pointer<T>::value)
 		{
 			std::stringstream stream;
 			stream << *m_data.at(index);
@@ -123,7 +128,11 @@ public:
 		}
 		else
 		{
-			if (HorseIR::TypeUtils::IsBasicType(m_type, HorseIR::BasicType::BasicKind::Char))
+			if (HorseIR::TypeUtils::IsCharacterType(m_type))
+			{
+				return StringBucket::RecoverString(m_data.at(index));
+			}
+			else if (HorseIR::TypeUtils::IsBasicType(m_type, HorseIR::BasicType::BasicKind::Char))
 			{
 				return std::string(1, m_data.at(index));
 			}

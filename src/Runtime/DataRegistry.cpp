@@ -10,6 +10,7 @@
 
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
+#include "Runtime/StringBucket.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Date.h"
@@ -54,19 +55,19 @@ void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer
 
 void DataRegistry::LoadStringDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size)
 {
-	CUDA::Vector<std::string> strings(size);
-	CUDA::Vector<std::string> symbols(size);
+	CUDA::Vector<std::uint64_t> strings(size);
+	CUDA::Vector<std::uint64_t> symbols(size);
 
 	for (auto i = 0u; i < size; ++i)
 	{
 		auto numberString = std::to_string(i);
 		auto paddedString = std::string(5 - numberString.length(), '0') + numberString;
-		strings[i] = "String#" + paddedString;
-		symbols[i] = "Symbol#" + paddedString;
+		strings[i] = StringBucket::HashString("String#" + paddedString);
+		symbols[i] = StringBucket::HashString("Symbol#" + paddedString);
 	}
 
-	columns.push_back({"strings", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(strings)))});
-	columns.push_back({"symbols", new TypedVectorBuffer(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(symbols)))});
+	columns.push_back({"strings", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(strings)))});
+	columns.push_back({"symbols", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(symbols)))});
 }
 
 void DataRegistry::LoadDebugData()
@@ -75,7 +76,7 @@ void DataRegistry::LoadDebugData()
 
 	auto timeData_start = Utils::Chrono::Start("Load debug data");
 
-	for (unsigned long i = 1; i <= 2048; i <<= 1)
+	for (unsigned long i = 1; i <= 64 * 1024; i <<= 1)
 	{
 		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
@@ -136,8 +137,8 @@ void DataRegistry::LoadTPCHLineItemTable()
 	CUDA::Vector<std::int32_t> commitDate;
 	CUDA::Vector<std::int32_t> receiptDate;
 
-	CUDA::Vector<std::string> shipInstruct;
-	CUDA::Vector<std::string> shipMode;
+	CUDA::Vector<std::uint64_t> shipInstruct;
+	CUDA::Vector<std::uint64_t> shipMode;
 
 	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/lineitem.tbl");
 	char *l_orderKey, *l_partKey, *l_supplyKey, *l_lineNumber, *l_quantity, *l_extPrice, *l_discount, *l_tax, *l_returnFlag,
@@ -169,8 +170,8 @@ void DataRegistry::LoadTPCHLineItemTable()
 		commitDate.push_back(EpochTime(l_commitDate));
 		receiptDate.push_back(EpochTime(l_receiptDate));
 
-		shipInstruct.push_back(std::string(l_shipInstruct));
-		shipMode.push_back(std::string(l_shipMode));
+		shipInstruct.push_back(StringBucket::HashString(l_shipInstruct));
+		shipMode.push_back(StringBucket::HashString(l_shipMode));
 
 		count++;
 	}
@@ -194,8 +195,8 @@ void DataRegistry::LoadTPCHLineItemTable()
 	columns.push_back({"l_commitdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(commitDate)))});
 	columns.push_back({"l_receiptdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(receiptDate)))});
 	
-	columns.push_back({"l_shipinstruct", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipInstruct)))});
-	columns.push_back({"l_shipmode", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipMode)))});
+	columns.push_back({"l_shipinstruct", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipInstruct)))});
+	columns.push_back({"l_shipmode", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipMode)))});
 
 	AddTable("lineitem", new TableBuffer(columns));
 }
@@ -205,10 +206,10 @@ void DataRegistry::LoadTPCHPartTable()
 	std::unordered_map<std::int64_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int64_t> partKey;
-	CUDA::Vector<std::string> brand;
-	CUDA::Vector<std::string> type;
+	CUDA::Vector<std::uint64_t> brand;
+	CUDA::Vector<std::uint64_t> type;
 	CUDA::Vector<std::int64_t> size;
-	CUDA::Vector<std::string> container;
+	CUDA::Vector<std::uint64_t> container;
 
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/part.tbl");
 	char *p_partkey, *p_name, *p_mfgr, *p_brand, *p_type, *p_size, *p_container, *p_retailprice, *p_comment, *p_end;
@@ -221,10 +222,10 @@ void DataRegistry::LoadTPCHPartTable()
 		primaryMap[atoi(p_partkey)] = count;
 
 		partKey.push_back(atoi(p_partkey));
-		brand.push_back(std::string(p_brand));
-		type.push_back(std::string(p_type));
+		brand.push_back(StringBucket::HashString(p_brand));
+		type.push_back(StringBucket::HashString(p_type));
 		size.push_back(atof(p_size));
-		container.push_back(std::string(p_container));
+		container.push_back(StringBucket::HashString(p_container));
 
 		count++;
 	}
@@ -233,10 +234,10 @@ void DataRegistry::LoadTPCHPartTable()
 
 	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(partKey)));
 	columns.push_back({"p_partkey", primaryKey});
-	columns.push_back({"p_brand", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(brand)))});
-	columns.push_back({"p_type", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(type)))});
+	columns.push_back({"p_brand", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(brand)))});
+	columns.push_back({"p_type", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(type)))});
 	columns.push_back({"p_size", new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(size)))});
-	columns.push_back({"p_container", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(container)))});
+	columns.push_back({"p_container", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(container)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
@@ -290,7 +291,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	CUDA::Vector<std::int64_t> orderKey;
 	CUDA::Vector<std::int64_t> customerKey;
 	CUDA::Vector<std::int32_t> orderDate;
-	CUDA::Vector<std::string> orderPriority;
+	CUDA::Vector<std::uint64_t> orderPriority;
 
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/orders.tbl");
 	char *o_orderkey, *o_custkey, *o_orderstatus, *o_totalprice, *o_orderdate, *o_orderpriority, *o_clerk, *o_shippriority, *o_comment, *o_end;
@@ -309,7 +310,7 @@ void DataRegistry::LoadTPCHOrderTable()
 		orderKey.push_back(atoi(o_orderkey));
 		customerKey.push_back(customerForeignMap.at(atoi(o_custkey)));
 		orderDate.push_back(EpochTime(o_orderdate));
-		orderPriority.push_back(std::string(o_orderpriority));
+		orderPriority.push_back(StringBucket::HashString(o_orderpriority));
 
 		count++;
 	}
@@ -322,7 +323,7 @@ void DataRegistry::LoadTPCHOrderTable()
 		customerForeignKey, new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(customerKey)))
 	)});
 	columns.push_back({"o_orderdate", new TypedVectorBuffer<std::int32_t>(new TypedVectorData<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(orderDate)))});
-	columns.push_back({"o_orderpriority", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(orderPriority)))});
+	columns.push_back({"o_orderpriority", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(orderPriority)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
@@ -334,7 +335,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	std::unordered_map<std::int64_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int64_t> supplierKey;
-	CUDA::Vector<std::string> comment;
+	CUDA::Vector<std::uint64_t> comment;
 
 	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/supplier.tbl");
 	char *s_suppkey, *s_name, *s_address, *s_nationkey, *s_phone, *s_acctbal, *s_comment, *s_end;
@@ -347,7 +348,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 		primaryMap[atoi(s_suppkey)] = count;
 
 		supplierKey.push_back(atoi(s_suppkey));
-		comment.push_back(std::string(s_comment));
+		comment.push_back(StringBucket::HashString(s_comment));
 
 		count++;
 	}
@@ -356,7 +357,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 
 	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(supplierKey)));
 	columns.push_back({"s_suppkey", primaryKey});
-	columns.push_back({"s_comment", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(comment)))});
+	columns.push_back({"s_comment", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(comment)))});
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
@@ -368,7 +369,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	std::unordered_map<std::int64_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int64_t> custKey;
-	CUDA::Vector<std::string> phone;
+	CUDA::Vector<std::uint64_t> phone;
 	CUDA::Vector<double> accountBalance;
 
 	io::CSVReader<9, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/customer.tbl");
@@ -382,7 +383,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 		primaryMap[atoi(c_custkey)] = count;
 
 		custKey.push_back(atoi(c_custkey));
-		phone.push_back(std::string(c_phone));
+		phone.push_back(StringBucket::HashString(c_phone));
 		accountBalance.push_back(atof(c_acctbal));
 
 		count++;
@@ -392,7 +393,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 
 	auto primaryKey = new TypedVectorBuffer<std::int64_t>(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(custKey)));
 	columns.push_back({"c_custkey", primaryKey});
-	columns.push_back({"c_phone", new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(phone)))});
+	columns.push_back({"c_phone", new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(phone)))});
 	columns.push_back({"c_acctbal", new TypedVectorBuffer<double>(new TypedVectorData<double>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(accountBalance)))});
 	
 	auto table = new TableBuffer(columns);

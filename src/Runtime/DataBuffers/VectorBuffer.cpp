@@ -30,9 +30,8 @@ VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const An
 			case HorseIR::BasicType::BasicKind::Float64:
 				return new TypedVectorBuffer<double>(type, value);
 			case HorseIR::BasicType::BasicKind::Symbol:
-				return new TypedVectorBuffer<std::string>(type, value);
 			case HorseIR::BasicType::BasicKind::String:
-				return new TypedVectorBuffer<std::string>(type, value);
+				return new TypedVectorBuffer<std::uint64_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Date:
 			case HorseIR::BasicType::BasicKind::Month:
 			case HorseIR::BasicType::BasicKind::Minute:

@@ -263,7 +263,7 @@ VectorBuffer *Interpreter::Cast(const HorseIR::BasicType *castType, VectorBuffer
 		case HorseIR::BasicType::BasicKind::String:
 		case HorseIR::BasicType::BasicKind::Symbol:
 		{
-			return Cast<std::string>(castType, input);
+			return Cast<std::uint64_t>(castType, input);
 		}
 	}
 	Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(input->GetType()) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
@@ -304,7 +304,7 @@ VectorBuffer *Interpreter::Cast(const HorseIR::BasicType *castType, VectorBuffer
 		case HorseIR::BasicType::BasicKind::String:
 		case HorseIR::BasicType::BasicKind::Symbol:
 		{
-			return Cast<std::string, S>(castType, typedInput);
+			return Cast<std::uint64_t, S>(castType, typedInput);
 		}
 	}
 	Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(input->GetType()) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
@@ -316,10 +316,6 @@ TypedVectorBuffer<D> *Interpreter::Cast(const HorseIR::BasicType *castType, Type
 	if constexpr(std::is_same<D, S>::value)
 	{
 		return input;
-	}
-	else if constexpr(std::is_same<D, std::string>::value || std::is_same<S, std::string>::value)
-	{
-		Utils::Logger::LogError("Invalid cast, cannot cast '" + HorseIR::PrettyPrinter::PrettyString(input->GetType()) + "' to '" + HorseIR::PrettyPrinter::PrettyString(castType) + "'");
 	}
 	else
 	{
@@ -380,14 +376,23 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 	}
 	auto basicType = HorseIR::TypeUtils::GetType<HorseIR::BasicType>(type);
 
-	if constexpr(std::is_same<T, HorseIR::SymbolValue *>::value)
+	if constexpr(std::is_same<T, std::string>::value)
 	{
-		CUDA::Vector<std::string> vector;
+		CUDA::Vector<std::uint64_t> vector;
+		for (const auto& string : literal->GetValues())
+		{
+			vector.push_back(StringBucket::HashString(string));
+		}
+		m_environment.Insert(literal, new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(basicType, std::move(vector))));
+	}
+	else if constexpr(std::is_same<T, HorseIR::SymbolValue *>::value)
+	{
+		CUDA::Vector<std::uint64_t> vector;
 		for (const auto& symbol : literal->GetValues())
 		{
-			vector.push_back(symbol->GetName());
+			vector.push_back(StringBucket::HashString(symbol->GetName()));
 		}
-		m_environment.Insert(literal, new TypedVectorBuffer<std::string>(new TypedVectorData<std::string>(basicType, std::move(vector))));
+		m_environment.Insert(literal, new TypedVectorBuffer<std::uint64_t>(new TypedVectorData<std::uint64_t>(basicType, std::move(vector))));
 	}	
 	else if constexpr(std::is_convertible<T, HorseIR::CalendarValue *>::value)
 	{
