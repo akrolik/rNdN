@@ -11,21 +11,30 @@ public:
 	StringBucket(StringBucket const&) = delete;
 	void operator=(StringBucket const&) = delete;
 
-	static std::uint64_t HashString(const char *string)
-	{
-		return HashString(std::string(string));
-	}
-
 	static std::uint64_t HashString(const std::string& string)
 	{
+		auto& instance = GetInstance();
+		auto& hashMap = instance.m_hashMap;
+
 		auto hash = std::hash<std::string>{}(string);
-		GetInstance().m_bucket[hash] = string;
-		return hash;
+		auto find = hashMap.find(hash);
+		if (find != hashMap.end())
+		{
+			return find->second;
+		}
+
+		auto& bucket = instance.m_bucket;
+		auto index = instance.m_index++;
+
+		bucket.push_back(string);
+		hashMap[hash] = index;
+
+		return index;
 	}
 
-	static const std::string& RecoverString(std::uint64_t hash)
+	static const std::string& RecoverString(std::uint64_t index)
 	{
-		return GetInstance().m_bucket.at(hash);
+		return GetInstance().m_bucket.at(index);
 	}
 
 private:
@@ -37,7 +46,10 @@ private:
 		return instance;
 	}
 
-	std::unordered_map<std::uint64_t, std::string> m_bucket;
+	std::uint64_t m_index = 0;
+
+	std::vector<std::string> m_bucket;
+	std::unordered_map<std::uint64_t, std::uint64_t> m_hashMap;
 };
 
 }

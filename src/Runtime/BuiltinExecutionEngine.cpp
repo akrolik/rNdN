@@ -276,7 +276,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
-			auto& stringData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
+			const auto& stringData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
 			auto rangeVector = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(1));
 
 			if (rangeVector->GetElementCount() != 2)
@@ -293,28 +293,28 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				case HorseIR::BasicType::BasicKind::Int8:
 				{
 					auto range = BufferUtils::GetVectorBuffer<std::int8_t>(rangeVector)->GetCPUReadBuffer();
-					position = range->GetValue(0);
+					position = range->GetValue(0) - 1;
 					length = range->GetValue(1);
 					break;
 				}
 				case HorseIR::BasicType::BasicKind::Int16:
 				{
 					auto range = BufferUtils::GetVectorBuffer<std::int16_t>(rangeVector)->GetCPUReadBuffer();
-					position = range->GetValue(0);
+					position = range->GetValue(0) - 1;
 					length = range->GetValue(1);
 					break;
 				}
 				case HorseIR::BasicType::BasicKind::Int32:
 				{
 					auto range = BufferUtils::GetVectorBuffer<std::int32_t>(rangeVector)->GetCPUReadBuffer();
-					position = range->GetValue(0);
+					position = range->GetValue(0) - 1;
 					length = range->GetValue(1);
 					break;
 				}
 				case HorseIR::BasicType::BasicKind::Int64:
 				{
 					auto range = BufferUtils::GetVectorBuffer<std::int64_t>(rangeVector)->GetCPUReadBuffer();
-					position = range->GetValue(0);
+					position = range->GetValue(0) - 1;
 					length = range->GetValue(1);
 					break;
 				}
@@ -329,7 +329,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				substringData[i] = StringBucket::HashString(StringBucket::RecoverString(stringData[i]).substr(position - 1, length));
+				substringData[i] = StringBucket::HashString(StringBucket::RecoverString(stringData[i]).substr(position, length));
 			}
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(substringData)))};
