@@ -62,6 +62,9 @@ public:
 
 	// GPU/CPU management
 
+	virtual void InvalidateCPU() { m_cpuConsistent = false; }
+	virtual void InvalidateGPU() { m_gpuConsistent = false; }
+
 	virtual void ValidateCPU(bool recursive = false) const
 	{
 		if (!m_cpuConsistent)

@@ -332,16 +332,32 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 VectorBuffer *GPUExecutionEngine::ResizeBuffer(VectorBuffer *vectorBuffer, std::uint32_t size) const
 {
-	//TODO: Resize CUDA buffer only if it makes substantial difference. Always make a new container though
-
 	// Check if resize necessary
 
 	if (vectorBuffer->GetElementCount() != size)
 	{
-		// Allocate a new buffer and transfer the contents
+		// Allocate a new buffer and transfer the contents if substantially smaller than the allocated size
 
 		auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-		CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), vectorBuffer->GetGPUReadBuffer(), resizedBuffer->GetGPUBufferSize());
+		auto gpuBuffer = vectorBuffer->GetGPUReadBuffer();
+
+		if (resizedBuffer->GetGPUBufferSize() < gpuBuffer->GetAllocatedSize() * 0.9)
+		{
+			// Copy data to new buffer
+
+			CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), gpuBuffer, resizedBuffer->GetGPUBufferSize());
+		}
+		else
+		{
+			// Move the buffer from one VectorBuffer to another
+
+			gpuBuffer->SetCPUBuffer(nullptr);
+			gpuBuffer->SetSize(size);
+			resizedBuffer->SetGPUBuffer(gpuBuffer);
+
+			vectorBuffer->SetGPUBuffer(nullptr);
+			vectorBuffer->InvalidateGPU();
+		}
 
 		Utils::Logger::LogDebug("Resized vector buffer [" + vectorBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
 

@@ -30,14 +30,16 @@ public:
 	void *GetAddress() override { return &m_GPUBuffer; }
 
 	size_t GetSize() const { return m_size; }
-	size_t GetPaddedSize() const { return m_paddedSize; }
+	void SetSize(size_t size) { m_size = size; }
+
+	size_t GetAllocatedSize() const { return m_allocatedSize; }
 
 private:
 	void *m_CPUBuffer = nullptr;
 	CUdeviceptr m_GPUBuffer;
 
 	size_t m_size = 0;
-	size_t m_paddedSize = 0;
+	size_t m_allocatedSize = 0;
 };
 
 }

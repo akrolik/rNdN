@@ -20,17 +20,17 @@ Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
 	const auto multiple = 1024;
 	if (m_size == 0)
 	{
-		m_paddedSize = multiple;
+		m_allocatedSize = multiple;
 	}
 	else
 	{
-		m_paddedSize = (((m_size + multiple - 1) / multiple) * multiple);
+		m_allocatedSize = (((m_size + multiple - 1) / multiple) * multiple);
 	}
 }
 
 Buffer::~Buffer()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA free (" + std::to_string(m_paddedSize) + " bytes)");
+	auto start = Utils::Chrono::StartCUDA("CUDA free (" + std::to_string(m_allocatedSize) + " bytes)");
 
 	checkDriverResult(cuMemFree(m_GPUBuffer));
 
@@ -39,18 +39,18 @@ Buffer::~Buffer()
 
 void Buffer::AllocateOnGPU()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA allocation (" + std::to_string(m_paddedSize) + " bytes)");
+	auto start = Utils::Chrono::StartCUDA("CUDA allocation (" + std::to_string(m_allocatedSize) + " bytes)");
 
-	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_paddedSize));
+	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_allocatedSize));
 
 	Utils::Chrono::End(start);
 }
 
 void Buffer::Clear()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA clear (" + std::to_string(m_paddedSize) + " bytes)");
+	auto start = Utils::Chrono::StartCUDA("CUDA clear (" + std::to_string(m_allocatedSize) + " bytes)");
 
-	checkDriverResult(cuMemsetD8(m_GPUBuffer, 0, m_paddedSize));
+	checkDriverResult(cuMemsetD8(m_GPUBuffer, 0, m_allocatedSize));
 
 	Utils::Chrono::End(start);
 }

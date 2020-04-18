@@ -37,6 +37,8 @@ public:
 	virtual VectorData *GetCPUWriteBuffer() = 0;
 	virtual const VectorData *GetCPUReadBuffer() const = 0;
 
+	virtual void SetGPUBuffer(CUDA::Buffer *buffer, bool consistent = true, bool dealloc = false) = 0;
+
 	// Data size, useful for allocations
 
 	unsigned int GetElementCount() const { return m_elementCount; }
@@ -106,6 +108,18 @@ public:
 	size_t GetGPUBufferSize() const override
 	{
 		return sizeof(T) * m_elementCount;
+	}
+
+	void SetGPUBuffer(CUDA::Buffer *buffer, bool consistent = true, bool dealloc = false) override
+	{
+		// Check if calling code responsible for deleting old buffer
+
+		m_gpuConsistent = consistent;
+		if (dealloc)
+		{
+			delete m_gpuBuffer;
+		}
+		m_gpuBuffer = buffer;
 	}
 
 	std::string Description() const override
