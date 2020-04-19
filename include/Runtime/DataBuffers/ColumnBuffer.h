@@ -11,6 +11,8 @@ class ColumnBuffer : public DataBuffer
 public:
 	~ColumnBuffer() override;
 
+	virtual ColumnBuffer *Clone() const = 0;
+
 	// Column size
 
 	virtual unsigned int GetElementCount() const = 0;

@@ -26,6 +26,8 @@ public:
 		delete m_shape;
 	}
 
+	virtual ConstantBuffer *Clone() const = 0;
+
 	// Type/Shape
 
 	const HorseIR::BasicType *GetType() const override { return m_type; }
@@ -55,6 +57,13 @@ public:
 	{
 		delete m_gpuBuffer;
 	}
+
+	TypedConstantBuffer<T> *Clone() const override
+	{
+		return new TypedConstantBuffer<T>(m_type->GetBasicKind(), m_value);
+	}
+
+	// GPU buffers
 
 	CUDA::Constant *GetGPUReadBuffer() const override
 	{

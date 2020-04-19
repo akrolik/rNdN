@@ -55,6 +55,8 @@ public:
 	static DataBuffer *CreateEmpty(const HorseIR::Type *type, const Analysis::Shape *shape);
 	virtual ~DataBuffer() {}
 
+	virtual DataBuffer *Clone() const = 0;
+
 	// Type/Shape
 
 	virtual const HorseIR::Type *GetType() const = 0;

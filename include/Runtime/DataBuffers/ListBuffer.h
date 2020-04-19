@@ -25,6 +25,16 @@ public:
 	ListBuffer(const std::vector<DataBuffer *>& cells);
 	~ListBuffer() override;
 	
+	ListBuffer *Clone() const override
+	{
+		std::vector<DataBuffer *> cells;
+		for (const auto cell : m_cells)
+		{
+			cells.push_back(cell->Clone());
+		}
+		return new ListBuffer(cells);
+	}
+
 	// Type/Shape
 
 	const HorseIR::ListType *GetType() const override { return m_type; }

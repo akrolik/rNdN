@@ -21,6 +21,13 @@ public:
 	DictionaryBuffer(VectorBuffer *keys, ListBuffer *values);
 	~DictionaryBuffer() override;
 
+	DictionaryBuffer *Clone() const override
+	{
+		return new DictionaryBuffer(m_keys->Clone(), m_values->Clone());
+	}
+
+	// Type/shape
+
 	const HorseIR::DictionaryType *GetType() const override { return m_type; }
 	const Analysis::DictionaryShape *GetShape() const override { return m_shape; }
 

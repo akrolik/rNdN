@@ -11,6 +11,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
@@ -25,6 +26,27 @@ public:
 
 	TableBuffer(const std::vector<std::pair<std::string, ColumnBuffer *>>& columns);
 	~TableBuffer() override;
+
+	TableBuffer *Clone() const override
+	{
+		auto primaryKey = m_primaryKey;
+
+		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
+		for (const auto& [name, buffer] : m_columns)
+		{
+			auto clone = buffer->Clone();
+			if (primaryKey == buffer)
+			{
+				primaryKey = BufferUtils::GetBuffer<VectorBuffer>(clone);
+			}
+			columns.push_back({name, clone});
+		}
+		auto table = new TableBuffer(columns);
+		table->SetPrimaryKey(primaryKey, m_primaryMap);
+		return table;
+	}
+
+	// Type/shape
 
 	const HorseIR::TableType *GetType() const override { return m_type; }
 	const Analysis::TableShape *GetShape() const override { return m_shape; }

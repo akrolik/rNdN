@@ -20,6 +20,13 @@ public:
 	EnumerationBuffer(VectorBuffer *keys, VectorBuffer *values);
 	~EnumerationBuffer() override;
 
+	EnumerationBuffer *Clone() const override
+	{
+		return new EnumerationBuffer(m_keys->Clone(), m_values->Clone());
+	}
+
+	// Type/shape
+
 	const HorseIR::EnumerationType *GetType() const override { return m_type; }
 	const Analysis::EnumerationShape *GetShape() const override { return m_shape; }
 

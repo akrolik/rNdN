@@ -141,17 +141,39 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		for (auto i = 0u; i < function->GetReturnCount(); ++i)
 		{
-			// Create a new buffer for the return value
+			const auto& dataCopies = runtimeOptions->CopyObjects;
+			const auto returnObject = runtimeOptions->ReturnObjects.at(i);
 
-			const auto type = function->GetReturnType(i);
-			const auto shape = runtimeOptions->ReturnShapes.at(i);
+			DataBuffer *returnBuffer = nullptr;
+			if (dataCopies.find(returnObject) != dataCopies.end())
+			{
+				// Create a new buffer as a copy of an input object
 
-			auto returnBuffer = DataBuffer::CreateEmpty(type, shape);
+				const auto inputObject = dataCopies.at(returnObject);
+				const auto inputBuffer = inputObject->GetDataBuffer();
+
+				returnBuffer = inputBuffer->Clone();
+
+				Utils::Logger::LogDebug(
+					"Initializing return argument: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString() +
+					"[" + returnBuffer->Description() + "]"
+				);
+			}
+			else
+			{
+				// Create a new buffer for the return value
+
+				const auto type = function->GetReturnType(i);
+				const auto shape = runtimeOptions->ReturnShapes.at(i);
+
+				returnBuffer = DataBuffer::CreateEmpty(type, shape);
+				returnBuffer->Clear();
+
+				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
+			}
 			returnBuffers.push_back(returnBuffer);
 
-			Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
-
-			// Transfer the write buffer to te GPU, we assume all returns write (or else...)
+			// Transfer the write buffer to the GPU, we assume all returns write (or else...)
 
 			auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
 			invocation.AddParameter(*gpuBuffer);
@@ -170,38 +192,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				invocation.AddParameter(*sizeBuffer);
 			}
 
-			// Copy data if needed from input
-
-			const auto& dataCopies = runtimeOptions->CopyObjects;
-			const auto returnObject = runtimeOptions->ReturnObjects.at(i);
-
-			if (dataCopies.find(returnObject) != dataCopies.end())
-			{
-				const auto inputObject = dataCopies.at(returnObject);
-				auto inputBuffer = inputObject->GetDataBuffer();
-
-				Utils::Logger::LogDebug("Initializing return data: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString());
-
-				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
-				{
-					auto vectorInput = BufferUtils::GetBuffer<VectorBuffer>(inputBuffer);
-					auto vectorReturn = BufferUtils::GetBuffer<VectorBuffer>(returnBuffer);
-
-					CUDA::Buffer::Copy(vectorReturn->GetGPUWriteBuffer(), vectorInput->GetGPUReadBuffer(), vectorInput->GetGPUBufferSize());
-				}
-				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
-				{
-					//TODO: Initialize list return buffer
-				}
-				else
-				{
-					Utils::Logger::LogError("Unable to initalize return buffer shape " + Analysis::ShapeUtils::ShapeString(shape));
-				}
-			}
-			else
-			{
-				returnBuffer->Clear();
-			}
 		}
 	}
 

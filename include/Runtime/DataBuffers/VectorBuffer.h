@@ -24,6 +24,8 @@ public:
 	static VectorBuffer *CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::Size *size);
 	~VectorBuffer() override;
 
+	virtual VectorBuffer *Clone() const = 0;
+
 	// Type/Shape
 
 	const HorseIR::BasicType *GetType() const override { return m_type; }
@@ -73,6 +75,29 @@ public:
 	{
 		delete m_cpuBuffer;
 		delete m_gpuBuffer;
+	}
+
+	TypedVectorBuffer<T> *Clone() const override
+	{
+		// Initialize the vector buffer either with the CPU contents, or an empty buffer that will presumably hold GPU data
+
+		TypedVectorBuffer<T> *clone = nullptr;
+		if (IsCPUConsistent())
+		{
+			clone = new TypedVectorBuffer<T>(m_cpuBuffer);
+		}
+		else
+		{
+			clone = new TypedVectorBuffer<T>(m_type, m_elementCount);
+		}
+
+		// Copy GPU contents if consistent. This will also allocate the size
+
+		if (IsGPUConsistent())
+		{
+			CUDA::Buffer::Copy(clone->GetGPUWriteBuffer(), GetGPUReadBuffer(), GetGPUBufferSize());
+		}
+		return clone;
 	}
 
 	// Sizing
