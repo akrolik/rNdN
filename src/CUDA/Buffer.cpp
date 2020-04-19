@@ -8,7 +8,18 @@ namespace CUDA {
 
 void Buffer::Copy(Buffer *destination, Buffer *source, size_t size)
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA copy (" + std::to_string(size) + " bytes)");
+	std::string description = "CUDA copy ";
+	if (source->m_tag != "")
+	{
+		description += "'" + source->m_tag + "' ";
+	}
+	if (destination->m_tag != "")
+	{
+		description += "to '" + destination->m_tag + "' ";
+	}
+	description += "(" + std::to_string(size) + " bytes)";
+
+	auto start = Utils::Chrono::StartCUDA(description);
 
 	checkDriverResult(cuMemcpy(destination->m_GPUBuffer, source->m_GPUBuffer, size));
 
@@ -28,9 +39,18 @@ Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
 	}
 }
 
+std::string Buffer::ChronoDescription(const std::string& operation, size_t size)
+{
+	if (m_tag == "")
+	{
+		return "CUDA " + operation + " (" + std::to_string(size) + " bytes)";
+	}
+	return "CUDA " + operation + " '" + m_tag + "' (" + std::to_string(size) + " bytes)";
+}
+
 Buffer::~Buffer()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA free (" + std::to_string(m_allocatedSize) + " bytes)");
+	auto start = Utils::Chrono::StartCUDA(ChronoDescription("free", m_allocatedSize));
 
 	checkDriverResult(cuMemFree(m_GPUBuffer));
 
@@ -39,7 +59,7 @@ Buffer::~Buffer()
 
 void Buffer::AllocateOnGPU()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA allocation (" + std::to_string(m_allocatedSize) + " bytes)");
+	auto start = Utils::Chrono::StartCUDA(ChronoDescription("allocation", m_allocatedSize));
 
 	checkDriverResult(cuMemAlloc(&m_GPUBuffer, m_allocatedSize));
 
@@ -48,7 +68,7 @@ void Buffer::AllocateOnGPU()
 
 void Buffer::Clear()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA clear (" + std::to_string(m_allocatedSize) + " bytes)");
+	auto start = Utils::Chrono::StartCUDA(ChronoDescription("clear", m_allocatedSize));
 
 	checkDriverResult(cuMemsetD8(m_GPUBuffer, 0, m_allocatedSize));
 
@@ -57,7 +77,7 @@ void Buffer::Clear()
 
 void Buffer::TransferToGPU()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA transfer (" + std::to_string(m_size) + " bytes) ->");
+	auto start = Utils::Chrono::StartCUDA(ChronoDescription("transfer", m_size) + " ->");
 
 	checkDriverResult(cuMemcpyHtoD(m_GPUBuffer, m_CPUBuffer, m_size));
 
@@ -66,7 +86,7 @@ void Buffer::TransferToGPU()
 
 void Buffer::TransferToCPU()
 {
-	auto start = Utils::Chrono::StartCUDA("CUDA transfer (" + std::to_string(m_size) + " bytes) <-");
+	auto start = Utils::Chrono::StartCUDA(ChronoDescription("transfer", m_size) + " <-");
 
 	checkDriverResult(cuMemcpyDtoH(m_CPUBuffer, m_GPUBuffer, m_size));
 

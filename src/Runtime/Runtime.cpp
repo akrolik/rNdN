@@ -34,10 +34,10 @@ void Runtime::LoadData()
 
 	// Transfer dummy data to initialize the PCI-e bus
 
-	//TODO: Remove these timings from the analysis
 	CUDA::Vector<std::uint64_t> dummyVector;
 	dummyVector.resize(1);
 	auto dummyBuffer = new CUDA::Buffer(dummyVector.data(), dummyVector.size() * sizeof(std::uint64_t));
+	dummyBuffer->SetTag("dummy");
 	dummyBuffer->AllocateOnGPU();
 	dummyBuffer->TransferToGPU();
 	delete dummyBuffer;
