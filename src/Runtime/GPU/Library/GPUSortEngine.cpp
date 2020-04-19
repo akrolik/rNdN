@@ -48,6 +48,13 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	const auto activeSize = indexBuffer->GetElementCount();
 	const auto iterations = static_cast<unsigned int>(std::log2(activeSize));
 
+	// Invalidate the CPU buffers as the GPU will be sorting in place
+
+	indexBuffer->InvalidateCPU();
+	dataBuffer->InvalidateCPU();
+
+	// Interate sort!
+
 	for (auto stage = 0u; stage < iterations; ++stage)
 	{
 		for (auto substage = 0u; substage <= stage; ++substage)
@@ -79,20 +86,20 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 		auto outputBuffer = BufferUtils::GetBuffer<VectorBuffer>(dataBuffer);
 		auto size = vectorBuffer->GetElementCount();
 
-		auto resizedIndexBuffer = engine.ResizeBuffer(indexBuffer, size);
-		auto resizedDataBuffer = engine.ResizeBuffer(outputBuffer, size);
+		indexBuffer->Resize(size);
+		outputBuffer->Resize(size);
 
-		return {BufferUtils::GetVectorBuffer<std::int64_t>(resizedIndexBuffer), resizedDataBuffer};
+		return {BufferUtils::GetVectorBuffer<std::int64_t>(indexBuffer), outputBuffer};
 	}
 	else if (auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(arguments.at(2), false))
 	{
 		auto outputBuffer = BufferUtils::GetBuffer<ListBuffer>(dataBuffer);
 		auto size = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0))->GetElementCount();
 
-		auto resizedIndexBuffer = engine.ResizeBuffer(indexBuffer, size);
-		auto resizedDataBuffer = engine.ResizeBuffer(outputBuffer, {size});
+		indexBuffer->Resize(size);
+		outputBuffer->ResizeCells(size);
 
-		return {BufferUtils::GetVectorBuffer<std::int64_t>(resizedIndexBuffer), resizedDataBuffer};
+		return {BufferUtils::GetVectorBuffer<std::int64_t>(indexBuffer), outputBuffer};
 	}
 	else
 	{

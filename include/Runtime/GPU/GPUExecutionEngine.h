@@ -6,7 +6,7 @@
 
 #include "Codegen/InputOptions.h"
 
-#include "CUDA/Buffer.h"
+#include "CUDA/Constant.h"
 #include "CUDA/KernelInvocation.h"
 
 #include "PTX/FunctionOptions.h"
@@ -27,18 +27,11 @@ public:
 
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 
-	VectorBuffer *ResizeBuffer(VectorBuffer *vectorBuffer, std::uint32_t size) const;
-	ListBuffer *ResizeBuffer(ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const;
-	DataBuffer *ResizeBuffer(DataBuffer *dataBuffer, CUDA::Buffer *sizeBuffer) const;
-
 private:
 	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
 
 	template<typename T>
-	void AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;
-
-	CUDA::Buffer *AllocateListSizeParameter(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const;
-	CUDA::Buffer *AllocateSizeParameter(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const;
+	CUDA::TypedConstant<T> *AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;

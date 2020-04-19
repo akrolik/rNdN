@@ -114,7 +114,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Initialize the input buffers for the kernel
 
-	std::vector<CUDA::Buffer *> inputSizeBuffers;
 	for (auto i = 0u; i < function->GetParameterCount(); ++i)
 	{
 		const auto parameter = function->GetParameter(i);
@@ -127,17 +126,15 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		auto buffer = argument->GetGPUReadBuffer();
 		invocation.AddParameter(*buffer);
 
-		// Allocate a size parameter for all inputs
+		// Add a size parameter for each input
 
-		const auto runtimeShape = runtimeOptions->ParameterShapes.at(parameter);
-		inputSizeBuffers.push_back(AllocateSizeParameter(invocation, runtimeShape, false));
+		auto sizeBuffer = argument->GetGPUSizeBuffer();
+		invocation.AddParameter(*sizeBuffer);
 	}
 
 	// Initialize the return buffers for the kernel
 
 	std::vector<DataBuffer *> returnBuffers;
-	std::vector<CUDA::Buffer *> returnSizeBuffers;
-
 	if (function->GetReturnCount() > 0)
 	{
 		// Determine any data copies that occur
@@ -159,13 +156,18 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
 			invocation.AddParameter(*gpuBuffer);
 
-			// Allocate a size parameter if neded
+			// Add a dynamic size parameter if neded
 
 			const auto returnShape = inputOptions->ReturnShapes.at(i);
 			const auto returnWriteShape = inputOptions->ReturnWriteShapes.at(i);
 			if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
 			{
-				returnSizeBuffers.push_back(AllocateSizeParameter(invocation, shape, true));
+				// Clear the size buffer for the dynamic output data
+
+				auto sizeBuffer = returnBuffer->GetGPUSizeBuffer();
+				sizeBuffer->Clear();
+
+				invocation.AddParameter(*sizeBuffer);
 			}
 
 			// Copy data if needed from input
@@ -205,50 +207,96 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Setup constant dynamic size parameters and allocate the dynamic shared memory according to the kernel
 
-	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeOptions->ThreadGeometry))
+	std::vector<CUDA::Data *> dynamicBuffers;
+	std::vector<std::uint32_t> dynamicCellSizes;
+
+	if (const auto runtimeVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeOptions->ThreadGeometry))
 	{
-		const auto inputGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry);
-		if (Analysis::ShapeUtils::IsDynamicSize(inputGeometry->GetSize()))
+		const auto inputVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry);
+		if (Analysis::ShapeUtils::IsDynamicSize(inputVectorGeometry->GetSize()))
 		{
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
+			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(runtimeVectorGeometry->GetSize()))
 			{
-				AllocateConstantParameter(invocation, constantSize->GetValue(), "<vector geometry>");
+				dynamicBuffers.push_back(AllocateConstantParameter(invocation, constantSize->GetValue(), "<vector geometry>"));
 			}
 			else
 			{
-				Utils::Logger::LogError("Invocation thread geometry must be static " + Analysis::ShapeUtils::ShapeString(vectorGeometry));
+				Utils::Logger::LogError("Invocation thread geometry must be constant vector " + Analysis::ShapeUtils::ShapeString(runtimeVectorGeometry));
 			}
 		}
 
 		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize());
 	}
-	else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(runtimeOptions->ThreadGeometry))
+	else if (const auto runtimeListGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(runtimeOptions->ThreadGeometry))
 	{
 		// Add the dynamic thread count to the parameters if needed
 
 		if (inputOptions->ListCellThreads == Codegen::InputOptions::DynamicSize)
 		{
-			AllocateConstantParameter(invocation, runtimeOptions->ListCellThreads, "<geometry cell threads>");
+			dynamicBuffers.push_back(AllocateConstantParameter(invocation, runtimeOptions->ListCellThreads, "<list geometry threads>"));
 		}
 
 		// Allocate a buffer with the cell sizes for the execution geometry
 
-		const auto inputListShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions->ThreadGeometry);
-		if (Analysis::ShapeUtils::IsDynamicSize(inputListShape->GetListSize()))
+		const auto inputListGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions->ThreadGeometry);
+		if (const auto listSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(runtimeListGeometry->GetListSize()))
 		{
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			auto cellCount = listSize->GetValue();
+
+			// Number of cells parameter if dynamic
+
+			if (Analysis::ShapeUtils::IsDynamicSize(inputListGeometry->GetListSize()))
 			{
-				AllocateConstantParameter(invocation, constantSize->GetValue(), "<geometry list size>");
+				dynamicBuffers.push_back(AllocateConstantParameter(invocation, cellCount, "<list geometry size>"));
 			}
-			else
+
+			// Form a vector of cell sizes, for lists of constan-sized vectors
+
+			const auto& cellShapes = runtimeListGeometry->GetElementShapes();
+			for (const auto cellShape : cellShapes)
 			{
-				Utils::Logger::LogError("Invocation thread geometry must be static " + Analysis::ShapeUtils::ShapeString(vectorGeometry));
+				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
+				{
+					if (const auto cellSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
+					{
+						if (cellShapes.size() == 1 && cellCount > 1)
+						{
+							for (auto i = 0u; i < cellCount; ++i)
+							{
+								dynamicCellSizes.push_back(cellSize->GetValue());
+							}
+						}
+						else if (cellShapes.size() == cellCount)
+						{
+							dynamicCellSizes.push_back(cellSize->GetValue());
+						}
+						else
+						{
+							Utils::Logger::LogError("Mismatched cell count and list size for shape " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
+						}
+					}
+					else
+					{
+						Utils::Logger::LogError("Invocation thread geometry must be constant list " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
+					}
+				}
 			}
+
+			Utils::Logger::LogDebug("Initializing size argument: <list geometry cell sizes> [u32(4 bytes) x " + std::to_string(dynamicCellSizes.size()) + "]");
+
+			// Transfer to the GPU
+
+			auto buffer = new CUDA::Buffer(dynamicCellSizes.data(), dynamicCellSizes.size() * sizeof(std::uint32_t));
+			buffer->AllocateOnGPU();
+			buffer->TransferToGPU();
+			invocation.AddParameter(*buffer);
+
+			dynamicBuffers.push_back(buffer);
 		}
-
-		// Always transfer the cell sizes
-
-		AllocateListSizeParameter(invocation, listShape, "<geometry cell sizes>");
+		else
+		{
+			Utils::Logger::LogError("Invocation thread geometry must be constant list " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
+		}
 
 		//TODO: Determine the correct amount of shared memory for cells
 		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize() * 2);
@@ -277,21 +325,22 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	CUDA::Synchronize();
 
-	// Deallocate input size buffers
+	Utils::Logger::LogDebug("Kernel '" + function->GetName() + "' complete");
 
-	for (auto buffer : inputSizeBuffers)
+	// Deallocate dynamic buffers
+
+	for (auto buffer : dynamicBuffers)
 	{
 		delete buffer;
 	}
 
 	// Resize return buffers for dynamically sized outputs (compression)
 
-	if (returnSizeBuffers.size() > 0)
+	if (returnBuffers.size() > 0)
 	{
 		auto timeResize_start = Utils::Chrono::Start("Resize buffers");
 
-		std::vector<DataBuffer *> resizedBuffers;
-		for (auto returnIndex = 0u, resizeIndex = 0u; returnIndex < function->GetReturnCount(); ++returnIndex)
+		for (auto returnIndex = 0u; returnIndex < function->GetReturnCount(); ++returnIndex)
 		{
 			// Check if the return buffer was a dynamic allocation
 
@@ -304,112 +353,14 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			{
 				// Resize the buffer according to the dynamic size
 
-				auto sizeBuffer = returnSizeBuffers.at(resizeIndex++);
-				auto resizedBuffer = ResizeBuffer(returnBuffer, sizeBuffer);
-
-				resizedBuffers.push_back(resizedBuffer);
+				returnBuffer->ReallocateGPUBuffer();
 			}
-			else
-			{
-				resizedBuffers.push_back(returnBuffer);
-			}
-		}
-
-		// Deallocate return size CUDA buffers
-
-		for (auto buffer : returnSizeBuffers)
-		{
-			delete buffer;
 		}
 
 		Utils::Chrono::End(timeResize_start);
-
-		return resizedBuffers;
 	}
 
 	return {returnBuffers};
-}
-
-VectorBuffer *GPUExecutionEngine::ResizeBuffer(VectorBuffer *vectorBuffer, std::uint32_t size) const
-{
-	// Check if resize necessary
-
-	if (vectorBuffer->GetElementCount() != size)
-	{
-		// Allocate a new buffer and transfer the contents if substantially smaller than the allocated size
-
-		auto resizedBuffer = VectorBuffer::CreateEmpty(vectorBuffer->GetType(), new Analysis::Shape::ConstantSize(size));
-		auto gpuBuffer = vectorBuffer->GetGPUReadBuffer();
-
-		if (resizedBuffer->GetGPUBufferSize() < gpuBuffer->GetAllocatedSize() * 0.9)
-		{
-			// Copy data to new buffer
-
-			CUDA::Buffer::Copy(resizedBuffer->GetGPUWriteBuffer(), gpuBuffer, resizedBuffer->GetGPUBufferSize());
-		}
-		else
-		{
-			// Move the buffer from one VectorBuffer to another
-
-			gpuBuffer->SetCPUBuffer(nullptr);
-			gpuBuffer->SetSize(size);
-			resizedBuffer->SetGPUBuffer(gpuBuffer);
-
-			vectorBuffer->SetGPUBuffer(nullptr);
-			vectorBuffer->InvalidateGPU();
-		}
-
-		Utils::Logger::LogDebug("Resized vector buffer [" + vectorBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
-
-		delete vectorBuffer;
-		return resizedBuffer;
-	}
-	return vectorBuffer;
-}
-
-ListBuffer *GPUExecutionEngine::ResizeBuffer(ListBuffer *listBuffer, const std::vector<std::uint32_t>& sizes) const
-{
-	// For each cell, allocate a new buffer and transfer the contents
-
-	std::vector<DataBuffer *> resizedCells;
-	for (auto i = 0u; i < listBuffer->GetCellCount(); ++i)
-	{
-		const auto size = sizes.at((sizes.size() == 1) ? 0 : i);
-		const auto cellBuffer = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(i));
-
-		resizedCells.push_back(ResizeBuffer(cellBuffer, size));
-	}
-
-	auto resizedBuffer = new ListBuffer(resizedCells);
-
-	Utils::Logger::LogDebug("Resized list buffer [" + listBuffer->Description() + "] to [" + resizedBuffer->Description() + "]");
-
-	delete listBuffer;
-	return resizedBuffer;
-}
-
-DataBuffer *GPUExecutionEngine::ResizeBuffer(DataBuffer *dataBuffer, CUDA::Buffer *sizeBuffer) const
-{
-	// Transfer the size to the CPU to resize the buffer
-
-	if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(dataBuffer, false))
-	{
-		auto size = 0u;
-		sizeBuffer->SetCPUBuffer(&size);
-		sizeBuffer->TransferToCPU();
-		return ResizeBuffer(vectorBuffer, size);
-	}
-	else if (const auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(dataBuffer, false))
-	{
-		std::vector<std::uint32_t> cellSizes(listBuffer->GetCellCount());
-		sizeBuffer->SetCPUBuffer(cellSizes.data());
-		sizeBuffer->TransferToCPU();
-		return ResizeBuffer(listBuffer, cellSizes);
-	}
-	else
-	{
-		Utils::Logger::LogError("Unable to resize data buffer " + dataBuffer->Description());
-	}
 }
 
 std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
@@ -501,120 +452,14 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 }
 
 template<typename T>
-void GPUExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
+CUDA::TypedConstant<T> *GPUExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
 {
 	Utils::Logger::LogDebug("Initializing constant input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes = " + std::to_string(value) + "]");
 
 	auto sizeConstant = new CUDA::TypedConstant<T>(value);
 	invocation.AddParameter(*sizeConstant);
-}
 
-CUDA::Buffer *GPUExecutionEngine::AllocateListSizeParameter(CUDA::KernelInvocation& invocation, const Analysis::ListShape *shape, const std::string& description) const
-{
-	// Form a vector of cell sizes, for lists of constan-sized vectors
-
-	std::vector<std::uint32_t> cellSizes;
-	if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(shape->GetListSize()))
-	{
-		const auto& elementShapes = shape->GetElementShapes();
-		auto cellCount = constantSize->GetValue();
-
-		if (elementShapes.size() == 1 && cellCount > 1)
-		{
-			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(elementShapes.at(0)))
-			{
-				if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
-				{
-					for (auto i = 0u; i < cellCount; ++i)
-					{
-						cellSizes.push_back(constantSize->GetValue());
-					}
-				}
-				else
-				{
-					Utils::Logger::LogError("Unable to get constant cell size for list shape " + Analysis::ShapeUtils::ShapeString(shape));
-				}
-			}
-		}
-		else if (elementShapes.size() == cellCount)
-		{
-			for (const auto cellShape : shape->GetElementShapes())
-			{
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
-				{
-					if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
-					{
-						cellSizes.push_back(constantSize->GetValue());
-					}
-					else
-					{
-						Utils::Logger::LogError("Unable to get constant cell size for list shape " + Analysis::ShapeUtils::ShapeString(shape));
-					}
-				}
-			}
-		}
-		else
-		{
-			Utils::Logger::LogError("Mismatched cell count and list size for shape " + Analysis::ShapeUtils::ShapeString(shape));
-		}
-	}
-	else
-	{
-		Utils::Logger::LogError("Unable to get constant cell count for list shape " + Analysis::ShapeUtils::ShapeString(shape));
-	}
-
-	Utils::Logger::LogDebug("Initializing size argument: " + description + " [u32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x " + std::to_string(cellSizes.size()) + "]");
-
-	// Transfer to the GPU
-
-	auto buffer = new CUDA::Buffer(cellSizes.data(), cellSizes.size() * sizeof(std::uint32_t));
-	buffer->AllocateOnGPU();
-	buffer->TransferToGPU();
-
-	//TODO: Save the size buffer on the list object to re-use
-
-	invocation.AddParameter(*buffer);
-	return buffer;
-}
-
-CUDA::Buffer *GPUExecutionEngine::AllocateSizeParameter(CUDA::KernelInvocation& invocation, const Analysis::Shape *shape, bool returnParameter) const
-{
-	// Allocate a size buffer for the shape
-
-	if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
-	{
-		if (!returnParameter)
-		{
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
-			{
-				// Constant size buffers can be directly added to the kernel parameters
-
-				AllocateConstantParameter(invocation, constantSize->GetValue(), "<vector size>");
-				return nullptr;
-			}
-		}
-
-		// This requires a global memory allocation to output the result
-
-		Utils::Logger::LogDebug("Initializing size argument: <dynamic vector size> [u32(" + std::to_string(sizeof(std::uint32_t)) + " bytes) x 1]");
-
-		auto buffer = new CUDA::Buffer(sizeof(std::uint32_t));
-		buffer->AllocateOnGPU();
-		buffer->Clear();
-		invocation.AddParameter(*buffer);
-
-		return buffer;
-	}
-	else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
-	{
-		// A list size is given by the cell sizes (the number of cells is specified through another parameter)
-
-		return AllocateListSizeParameter(invocation, listShape, "<dynamic cell sizes>");
-	}
-	else
-	{
-		Utils::Logger::LogError("Unable to allocate size buffer for " + Analysis::ShapeUtils::ShapeString(shape) + "[unsupported shape]");
-	}
+	return sizeConstant;
 }
 
 }

@@ -75,7 +75,7 @@ public:
 			{
 				// Input parameters always have a size argument
 
-				GenerateConstant<PTX::UInt32Type>(NameUtils::SizeName(parameter));
+				GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 			}
 		}
 	}
@@ -100,7 +100,9 @@ public:
 			auto& inputOptions = this->m_builder.GetInputOptions();
 			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 			{
-				GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
+				// Double indirection size parameters
+
+				GeneratePointer<PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>(NameUtils::SizeName(parameter));
 			}
 		}
 	}
@@ -132,10 +134,23 @@ public:
 				auto& inputOptions = this->m_builder.GetInputOptions();
 				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
-					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
+					// Double indirection size parameters
+
+					GeneratePointer<PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>(NameUtils::SizeName(parameter));
 				}
 			}
 		}
+	}
+
+	template<class T>
+	const PTX::ParameterVariable<T> *GenerateConstant(const std::string& name, bool alias = false)
+	{
+		// Allocate a constant parameter declaration for the type
+
+		auto declaration = new PTX::ParameterDeclaration<T>(name);
+		this->m_builder.AddParameter(name, declaration, alias);
+
+		return declaration->GetVariable(name);
 	}
 
 	template<class T>
@@ -145,17 +160,6 @@ public:
 
 		auto declaration = new PTX::PointerDeclaration<B, T>(name);
 		this->m_builder.AddParameter(name, declaration, alias);
-
-		return declaration->GetVariable(name);
-	}
-
-	template<class T>
-	const PTX::ParameterVariable<T> *GenerateConstant(const std::string& name)
-	{
-		// Allocate a constant parameter declaration for the type
-
-		auto declaration = new PTX::ParameterDeclaration<T>(name);
-		this->m_builder.AddParameter(name, declaration);
 
 		return declaration->GetVariable(name);
 	}

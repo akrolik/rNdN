@@ -20,6 +20,21 @@ public:
 
 	std::string Name() const override { return "ValueLoadGenerator"; }
 
+	const PTX::Register<T> *GenerateConstant(const PTX::ParameterVariable<T> *parameter)
+	{
+		// Get the address for the constant parameter
+
+		auto resources = this->m_builder.GetLocalResources();
+		auto destination = resources->AllocateRegister<T>(parameter->GetName());
+
+		// Load the value from the fetched address
+
+		auto address = new PTX::MemoryAddress<B, T, PTX::ParameterSpace>(parameter);
+		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::ParameterSpace>(destination, address));
+
+		return destination;
+	}
+
 	const PTX::Register<T> *GeneratePointer(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		return GeneratePointer(parameter->GetName(), parameter, index, offset);
@@ -75,21 +90,6 @@ public:
 		// Load the value from the fetched address
 
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
-
-		return destination;
-	}
-
-	const PTX::Register<T> *GenerateConstant(const PTX::ParameterVariable<T> *parameter)
-	{
-		// Get the address for the constant parameter
-
-		auto resources = this->m_builder.GetLocalResources();
-		auto destination = resources->AllocateRegister<T>(parameter->GetName());
-
-		// Load the value from the fetched address
-
-		auto address = new PTX::MemoryAddress<B, T, PTX::ParameterSpace>(parameter);
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::ParameterSpace>(destination, address));
 
 		return destination;
 	}

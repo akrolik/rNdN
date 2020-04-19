@@ -25,6 +25,8 @@ public:
 	virtual size_t GetElementCount() const = 0;
 	virtual size_t GetElementSize() const = 0;
 
+	virtual void Resize(size_t size) = 0;
+
 	virtual std::string DebugDump(unsigned int index) const = 0;
 
 	virtual void Clear() = 0;
@@ -82,6 +84,12 @@ public:
 
 	size_t GetElementCount() const override { return m_data.size(); }
 	size_t GetElementSize() const override { return sizeof(T); }
+
+	void Resize(size_t size)
+	{
+		m_data.resize(size);
+		m_size = size;
+	}
 
 	std::string Description() const
 	{

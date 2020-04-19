@@ -36,6 +36,46 @@ public:
 	DataBuffer *GetCell(unsigned int index) const { return m_cells.at(index); }
 	size_t GetCellCount() const { return m_cells.size(); }
 
+	// Sizing
+
+	void ResizeCells(unsigned int size)
+	{
+		auto oldDescription = Description();
+		auto changed = false;
+
+		for (auto cell : m_cells)
+		{
+			if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(cell, false))
+			{
+				changed |= vectorBuffer->Resize(size);
+			}
+			else
+			{
+				Utils::Logger::LogError("List buffer resize may only apply vector cells, received " + cell->Description());
+			}
+		}
+
+		if (changed)
+		{
+			// Invalidate the GPU content as the cell buffers may have been reallocated
+
+			InvalidateGPU();
+
+			// Propagate shape change
+
+			delete m_shape;
+
+			std::vector<const Analysis::Shape *> cellShapes;
+			for (const auto& cell : m_cells)
+			{
+				cellShapes.push_back(cell->GetShape());
+			}
+			m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
+
+			Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
+		}
+	}
+
 	// CPU/GPU management
 
 	void ValidateCPU(bool recursive = false) const override
@@ -87,8 +127,45 @@ public:
 		return (sizeof(CUdeviceptr) * m_cells.size());
 	}
 
-	void SetGPUSizeBuffer(CUDA::Buffer *sizeBuffer) { m_sizeBuffer = sizeBuffer; }
-	CUDA::Buffer *GetGPUSizeBuffer() const { return m_sizeBuffer; }
+	CUDA::Buffer *GetGPUSizeBuffer() const override
+	{
+		ValidateGPU();
+		return m_gpuSizeBuffer;
+	}
+
+	bool ReallocateGPUBuffer() override
+	{
+		// Resize all cells in the list individually
+
+		auto oldDescription = Description();
+		auto changed = false;
+
+		for (auto cell : m_cells)
+		{
+			changed |= cell->ReallocateGPUBuffer();
+		}
+
+		if (changed)
+		{
+			// Invalidate the GPU content as the cell buffers may have been reallocated
+
+			InvalidateGPU();
+
+			// Propagate shape change
+
+			delete m_shape;
+
+			std::vector<const Analysis::Shape *> cellShapes;
+			for (const auto& cell : m_cells)
+			{
+				cellShapes.push_back(cell->GetShape());
+			}
+			m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
+
+			Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
+		}
+		return changed;
+	}
 
 	// Printers
 
@@ -112,8 +189,14 @@ private:
 	void AllocateCPUBuffer() const override {} // Do nothing
 	void AllocateGPUBuffer() const override
 	{
-		m_gpuBuffer = new CUDA::Buffer(sizeof(CUdeviceptr) * m_cells.size());
+		auto cellCount = m_cells.size();
+		size_t bufferSize = cellCount * sizeof(CUdeviceptr);
+
+		m_gpuBuffer = new CUDA::Buffer(bufferSize);
 		m_gpuBuffer->AllocateOnGPU();
+
+		m_gpuSizeBuffer = new CUDA::Buffer(bufferSize);
+		m_gpuSizeBuffer->AllocateOnGPU();
 	}
 
 	void TransferToCPU() const override {} // Always consistent
@@ -122,15 +205,23 @@ private:
 		auto cellCount = m_cells.size();
 		size_t bufferSize = cellCount * sizeof(CUdeviceptr);
 
-		void *devicePointers = malloc(bufferSize);
-		CUdeviceptr *data = reinterpret_cast<CUdeviceptr *>(devicePointers);
+		if (m_gpuDataPointers == nullptr)
+		{
+			m_gpuDataPointers = new CUdeviceptr[bufferSize];
+		}
+
+		if (m_gpuSizePointers == nullptr)
+		{
+			m_gpuSizePointers = new CUdeviceptr[bufferSize];
+		}
 
 		for (auto i = 0u; i < cellCount; ++i)
 		{
 			auto buffer = m_cells.at(i);
 			if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer, false))
 			{
-				data[i] = vectorBuffer->GetGPUReadBuffer()->GetGPUBuffer();
+				m_gpuDataPointers[i] = vectorBuffer->GetGPUReadBuffer()->GetGPUBuffer();
+				m_gpuSizePointers[i] = vectorBuffer->GetGPUSizeBuffer()->GetGPUBuffer();
 			}
 			else
 			{
@@ -138,17 +229,27 @@ private:
 			}
 		}
 
-		m_gpuBuffer->SetCPUBuffer(devicePointers);
+		// Data
+
+		m_gpuBuffer->SetCPUBuffer(m_gpuDataPointers);
 		m_gpuBuffer->TransferToGPU();
+
+		// Size
+
+		m_gpuSizeBuffer->SetCPUBuffer(m_gpuSizePointers);
+		m_gpuSizeBuffer->TransferToGPU();
 	}
 
 	HorseIR::ListType *m_type = nullptr;
 	Analysis::ListShape *m_shape = nullptr;
 
 	std::vector<DataBuffer *> m_cells;
-	mutable CUDA::Buffer *m_gpuBuffer = nullptr;
 
-	CUDA::Buffer *m_sizeBuffer = nullptr;
+	mutable CUDA::Buffer *m_gpuBuffer = nullptr;
+	mutable CUDA::Buffer *m_gpuSizeBuffer = nullptr;
+
+	mutable CUdeviceptr *m_gpuDataPointers = nullptr;
+	mutable CUdeviceptr *m_gpuSizePointers = nullptr;
 };
 
 }

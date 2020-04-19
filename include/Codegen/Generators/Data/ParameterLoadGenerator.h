@@ -89,7 +89,7 @@ public:
 			}
 			else
 			{
-				GenerateConstantSize(parameter);
+				GeneratePointerSize(parameter);
 			}
 		}
 	}
@@ -105,16 +105,6 @@ public:
 		}
 		else
 		{
-			auto resources = this->m_builder.GetLocalResources();
-			auto kernelResources = this->m_builder.GetKernelResources();
-
-			// Get the variable from the kernel resources, and generate the address. This will load the cell contents in addition to the list structure
-
-			using DataType = PTX::PointerType<B, T, PTX::GlobalSpace>;
-
-			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, DataType>>(name);
-			auto parameterAddress = GenerateParameterAddress<DataType>(parameter);
-
 			// Load the list data depending on the geometry (either list-in-list, or list-in-vector)
 
 			auto& inputOptions = this->m_builder.GetInputOptions();
@@ -129,22 +119,7 @@ public:
 
 					for (auto index = 0u; index < cellSize->GetValue(); ++index)
 					{
-						// Load the address of the cell
-
-						auto cellAddressName = NameUtils::DataCellAddressName(parameter, index);
-						auto cellAddress = resources->template AllocateRegister<PTX::UIntType<B>>(cellAddressName);
-
-						auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellAddress);
-						auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(parameterAddress, index);
-
-						this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
-
-						// Load the dynamic size if needed
-
-						if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-						{
-							GeneratePointerSize(parameter, index);
-						}
+						GenerateTuple<T>(index, name, shape, writeShape);
 					}
 				}
 				else
@@ -154,36 +129,24 @@ public:
 			}
 			else if (inputOptions.IsListGeometry())
 			{
+				auto kernelResources = this->m_builder.GetKernelResources();
+
+				// Get the variable from the kernel resources, and generate the address. This will load the cell contents in addition to the list structure
+
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+
 				// Load the list depending on the respective cell threads
 
 				DataIndexGenerator<B> indexGenerator(this->m_builder);
 				auto index = indexGenerator.GenerateListIndex();
 
-				// Get the address of the value in the indirection structure (by the bitsize of the address)
-
-				auto globalIndexed = resources->template AllocateTemporary<PTX::UIntType<B>>();
-				auto globalIndexedPointer = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(globalIndexed);
-
-				AddressGenerator<B, DataType> addressGenerator(this->m_builder);
-				auto offset = addressGenerator.template GenerateAddressOffset<B>(index);
-
-				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(globalIndexed, parameterAddress->GetVariable(), offset));
-
-				// Load the address of the data
-
-				auto cellAddressName = NameUtils::DataCellAddressName(parameter);
-				auto cellRegister = resources->template AllocateRegister<PTX::UIntType<B>>(cellAddressName);
-
-				auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellRegister);
-				auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(globalIndexedPointer);
-
-				this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
+				GenerateIndirectList(parameter, index);
 
 				// Load the dynamic size parameter if needed
 
 				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
-					GeneratePointerSize(parameter, index);
+					GenerateIndirectSize(parameter, index);
 				}
 			}
 			else
@@ -209,43 +172,93 @@ public:
 				Error(name, shape, (writeShape != nullptr));
 			}
 
-			auto resources = this->m_builder.GetLocalResources();
+			// Get the parameter and load the indirection structure
+
 			auto kernelResources = this->m_builder.GetKernelResources();
+			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
 
-			using DataType = PTX::PointerType<B, T, PTX::GlobalSpace>;
-
-			// If this is the first cell, load the main list structure
-			
-			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, DataType>>(name);
-
-			if (index == 0)
-			{
-				GenerateParameterAddress<DataType>(parameter);
-			}
-
-			auto dataAddressName = NameUtils::DataAddressName(parameter);
-			auto globalRegister = resources->template GetRegister<PTX::UIntType<B>>(dataAddressName);
-
-			auto parameterAddress = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(globalRegister);
-
-			// Load the contents of the cell
-
-			auto cellAddressName = NameUtils::DataCellAddressName(parameter, index);
-			auto cellAddress = resources->template AllocateRegister<PTX::UIntType<B>>(cellAddressName);
-
-			auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellAddress);
-			auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(parameterAddress, index);
-
-			this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
+			GenerateIndirectTuple(parameter, index);
 
 			// Load the dynamic size if needed
 
 			auto& inputOptions = this->m_builder.GetInputOptions();
 			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 			{
-				GeneratePointerSize(parameter, index);
+				GenerateIndirectSize(parameter, index);
 			}
 		}
+	}
+
+	template<class T>
+	void GenerateIndirectList(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+
+		using DataType = PTX::PointerType<B, T, PTX::GlobalSpace>;
+
+		// Get the address of the value in the indirection structure (by the bitsize of the address)
+
+		auto globalIndexed = resources->template AllocateTemporary<PTX::UIntType<B>>();
+		auto globalIndexedPointer = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(globalIndexed);
+
+		AddressGenerator<B, DataType> addressGenerator(this->m_builder);
+		auto offset = addressGenerator.template GenerateAddressOffset<B>(index);
+
+		auto parameterAddress = GenerateParameterAddress<DataType>(parameter);
+
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(globalIndexed, parameterAddress->GetVariable(), offset));
+
+		// Load the indirect address of the data
+
+		auto cellAddressName = NameUtils::DataCellAddressName(parameter);
+		auto cellRegister = resources->template AllocateRegister<PTX::UIntType<B>>(cellAddressName);
+
+		auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellRegister);
+		auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(globalIndexedPointer);
+
+		this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
+	}
+
+	template<class T>
+	void GenerateIndirectTuple(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+
+		using DataType = PTX::PointerType<B, T, PTX::GlobalSpace>;
+
+		// If this is the first cell, load the indirection structure
+
+		if (index == 0)
+		{
+			GenerateParameterAddress<DataType>(parameter);
+		}
+
+		auto dataAddressName = NameUtils::DataAddressName(parameter);
+		auto globalRegister = resources->template GetRegister<PTX::UIntType<B>>(dataAddressName);
+
+		auto parameterAddress = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(globalRegister);
+
+		// Load the indirect address of the cell
+
+		auto cellAddressName = NameUtils::DataCellAddressName(parameter, index);
+		auto cellAddress = resources->template AllocateRegister<PTX::UIntType<B>>(cellAddressName);
+
+		auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellAddress);
+		auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(parameterAddress, index);
+
+		this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
+	}
+
+	template<class T>
+	void GenerateConstantSize(const PTX::ParameterVariable<T> *parameter)
+	{
+		auto kernelResources = this->m_builder.GetKernelResources();
+		auto sizeName = NameUtils::SizeName(parameter);
+
+		auto sizeParameter = kernelResources->template GetParameter<PTX::UInt32Type>(sizeName);
+
+		ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
+		loadGenerator.GenerateConstant(sizeParameter);
 	}
 
 	template<class T>
@@ -262,30 +275,39 @@ public:
 	}
 
 	template<class T>
-	void GeneratePointerSize(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, unsigned int index)
+	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
+
+		// Get the size parameter and load the indirection structure
+
 		auto sizeName = NameUtils::SizeName(parameter);
+		auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>>(sizeName);
 
-		auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(sizeName);
-		GenerateParameterAddress<PTX::UInt32Type>(sizeParameter);
+		GenerateIndirectList(sizeParameter, index);
 
-		auto cellSizeName = NameUtils::SizeName(parameter, index);
+		// Load the size value
 
 		ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
-		loadGenerator.GeneratePointer(cellSizeName, sizeParameter, nullptr, index);
+		loadGenerator.GeneratePointer(sizeParameter);
 	}
 
 	template<class T>
-	void GenerateConstantSize(const PTX::ParameterVariable<T> *parameter)
+	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
-		auto sizeName = NameUtils::SizeName(parameter);
+	
+		// Get the size parameter and load the indirection structure
 
-		auto sizeParameter = kernelResources->template GetParameter<PTX::UInt32Type>(sizeName);
+		auto sizeName = NameUtils::SizeName(parameter);
+		auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>>(sizeName);
+
+		GenerateIndirectTuple(sizeParameter, index);
+
+		// Load the size value
 
 		ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
-		loadGenerator.GenerateConstant(sizeParameter);
+		loadGenerator.GeneratePointer(NameUtils::SizeName(parameter, index), sizeParameter, index);
 	}
 
 	template<class T>
