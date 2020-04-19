@@ -157,6 +157,8 @@ public:
 
 	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
+		//TODO: This will fail to generate the target register
+
 		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
 		auto temp = gen.Generate(target, arguments);
 
