@@ -440,7 +440,6 @@ private:
 
 		auto value = GenerateWriteValue<T>(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
-		//TODO: We need to better link the dynamic output size and prefix sum
 		if (auto predicate = resources->template GetCompressedRegister<T>(value))
 		{
 			// Before generating compressed output, see if the write is indexed - if so, no compressed necessary
