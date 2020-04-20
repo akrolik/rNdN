@@ -73,7 +73,12 @@ public:
 
 	~TypedVectorBuffer() override
 	{
-		delete m_cpuBuffer;
+		if (m_cpuBuffer != nullptr)
+		{
+			auto timeDealloc_start = Utils::Chrono::Start("CPU free (" + std::to_string(m_elementCount * sizeof(T)) + " bytes)");
+			delete m_cpuBuffer;
+			Utils::Chrono::End(timeDealloc_start);
+		}
 		delete m_gpuBuffer;
 	}
 
@@ -258,7 +263,9 @@ protected:
 
 	void AllocateCPUBuffer() const override
 	{
+		auto timeAlloc_start = Utils::Chrono::Start("CPU allocation (" + std::to_string(m_elementCount * sizeof(T)) + " bytes)");
 		m_cpuBuffer = new TypedVectorData<T>(m_type, m_elementCount);
+		Utils::Chrono::End(timeAlloc_start);
 	}
 
 	void AllocateGPUBuffer() const override
