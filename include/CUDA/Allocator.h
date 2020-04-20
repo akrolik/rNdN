@@ -32,7 +32,7 @@ struct Allocator
 
 	void deallocate(T *p, std::size_t) noexcept
 	{
-		cudaFreeHost(p);
+		checkRuntimeError(cudaFreeHost(p));
 	}
 };
 
