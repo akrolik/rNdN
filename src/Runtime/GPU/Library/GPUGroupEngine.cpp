@@ -28,6 +28,8 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	// Execute the group function
 
+	auto timeGroup_start = Utils::Chrono::Start("Group execution");
+
 	auto groupFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction();
 
 	Interpreter interpreter(m_runtime);
@@ -47,7 +49,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	}
 
 	auto values = valuesBuffer->GetCPUReadBuffer();
-	auto& indexes = indexBuffer->GetCPUReadBuffer()->GetValues();
+	const auto& indexes = indexBuffer->GetCPUReadBuffer()->GetValues();
 
 	Utils::Logger::LogDebug("Initializing dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
 
@@ -84,6 +86,8 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	delete valuesBuffer;
 	delete indexBuffer;
 	delete dataBuffer;
+
+	Utils::Chrono::End(timeGroup_start);
 
 	return dictionaryBuffer;
 }

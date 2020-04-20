@@ -311,9 +311,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	// Launch the kernel!
 
-	invocation.Launch();
+	auto timeKernel_start = Utils::Chrono::Start("Kernel '" + function->GetName() + "' execution");
 
+	invocation.Launch();
 	CUDA::Synchronize();
+
+	Utils::Chrono::End(timeKernel_start);
 
 	Utils::Logger::LogDebug("Kernel '" + function->GetName() + "' complete");
 

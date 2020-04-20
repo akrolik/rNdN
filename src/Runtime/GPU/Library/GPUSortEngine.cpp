@@ -59,16 +59,17 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	{
 		for (auto substage = 0u; substage <= stage; ++substage)
 		{
-			// Collect the input bufers for sorting: (index, data), order, stage, substage
+			// Collect the input bufers for sorting: (index, data), [order], stage, substage
 
-			std::vector<DataBuffer *> sortBuffers(initBuffers);
 			auto stageBuffer = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, stage);
 			auto substageBuffer = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, substage);
 
+			std::vector<DataBuffer *> sortBuffers(initBuffers);
 			if (arguments.size() == 4)
 			{
 				sortBuffers.push_back(arguments.at(3));
 			}
+
 			sortBuffers.push_back(stageBuffer);
 			sortBuffers.push_back(substageBuffer);
 
@@ -80,6 +81,10 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 			delete substageBuffer;
 		}
 	}
+
+	// Resize buffers
+
+	Utils::ScopedChrono timeResize("Resize buffers");
 
 	if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(2), false))
 	{
