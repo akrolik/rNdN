@@ -37,9 +37,6 @@ int main(int argc, const char *argv[])
 
 	Utils::Logger::LogSection("Parsing HorseIR program");
 
-	auto timeCompilation_start = Utils::Chrono::Start("Compilation");
-	auto timeFrontend_start = Utils::Chrono::Start("Frontend");
-
 	auto timeFile_start = Utils::Chrono::Start("File open");
 
 	if (!Utils::Options::Present(Utils::Options::Opt_File))
@@ -55,6 +52,9 @@ int main(int argc, const char *argv[])
 	}
 
 	Utils::Chrono::End(timeFile_start);
+
+	auto timeCompilation_start = Utils::Chrono::Start("Compilation");
+	auto timeFrontend_start = Utils::Chrono::Start("Frontend");
 
 	// Parse the input HorseIR program from stdin and generate an AST
 
