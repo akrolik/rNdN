@@ -6,7 +6,7 @@
 
 namespace CUDA {
 
-void Buffer::Copy(Buffer *destination, Buffer *source, size_t size)
+void Buffer::Copy(Buffer *destination, Buffer *source, size_t size, size_t destinationOffset, size_t sourceOffset)
 {
 	std::string description = "CUDA copy ";
 	if (source->m_tag != "")
@@ -17,11 +17,20 @@ void Buffer::Copy(Buffer *destination, Buffer *source, size_t size)
 	{
 		description += "to '" + destination->m_tag + "' ";
 	}
-	description += "(" + std::to_string(size) + " bytes)";
+	description += "(" + std::to_string(size) + " bytes";
+	if (destinationOffset > 0)
+	{
+		description += "; d_offset " + std::to_string(destinationOffset) + " bytes";
+	}
+	if (sourceOffset > 0)
+	{
+		description += "; s_offset " + std::to_string(sourceOffset) + " bytes";
+	}
+	description += ")";
 
 	auto start = Utils::Chrono::StartCUDA(description);
 
-	checkDriverResult(cuMemcpy(destination->m_GPUBuffer, source->m_GPUBuffer, size));
+	checkDriverResult(cuMemcpy(destination->m_GPUBuffer + destinationOffset, source->m_GPUBuffer + sourceOffset, size));
 
 	Utils::Chrono::End(start);
 }

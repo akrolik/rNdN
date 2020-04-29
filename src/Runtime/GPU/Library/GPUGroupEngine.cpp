@@ -48,29 +48,29 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary [" + std::to_string(keysSize) + " != " + std::to_string(valuesSize) + "]");
 	}
 
-	auto values = valuesBuffer->GetCPUReadBuffer();
-	const auto& indexes = indexBuffer->GetCPUReadBuffer()->GetValues();
-
 	Utils::Logger::LogDebug("Initializing dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
 
 	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
 
+	auto values = valuesBuffer->GetCPUReadBuffer();
+
 	std::vector<DataBuffer *> entryBuffers;
-	for (auto entryIndex = 0; entryIndex < keysSize; ++entryIndex)
+	for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
 	{
 		// Compute the index range, spanning the last entry to the end of the data
 
 		auto offset = values->GetValue(entryIndex);
-		auto end = ((entryIndex + 1) == keysSize) ? indexes.size() : values->GetValue(entryIndex + 1);
-
-		CUDA::Vector<std::int64_t> data;
-		data.insert(std::begin(data), std::begin(indexes) + offset, std::begin(indexes) + end);
+		auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : values->GetValue(entryIndex + 1);
+		auto size = (end - offset);
 
 		auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
-		auto entryData = new TypedVectorData<std::int64_t>(entryType, std::move(data));
-		auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryData);
+		auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
 
 		Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
+
+		// Copy the index data
+
+		CUDA::Buffer::Copy(entryBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * sizeof(std::int64_t), 0, offset * sizeof(std::int64_t));
 
 		entryBuffers.push_back(entryBuffer);
 	}

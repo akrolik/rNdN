@@ -11,7 +11,7 @@ namespace CUDA {
 class Buffer : public Data
 {
 public:
-	static void Copy(Buffer *destination, Buffer *source, size_t size);
+	static void Copy(Buffer *destination, Buffer *source, size_t size, size_t destinationOffset = 0, size_t sourceOffset = 0);
 
 	Buffer(size_t size) : Buffer(nullptr, size) {}
 	Buffer(void *buffer, size_t size);
