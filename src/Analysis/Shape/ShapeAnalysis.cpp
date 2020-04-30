@@ -1954,7 +1954,18 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			Require(ShapeUtils::IsShape<VectorShape>(countShapes.at(0)));
 
 			const auto vectorCount = ShapeUtils::GetShape<VectorShape>(countShapes.at(0));
-			Require(CheckStaticScalar(vectorCount->GetSize()));
+			if (const auto vectorLeft = ShapeUtils::GetShape<VectorShape>(argumentShape3))
+			{
+				Require(CheckStaticEquality(vectorCount->GetSize(), vectorLeft->GetSize()));
+			}
+			else if (const auto listLeft = ShapeUtils::GetShape<ListShape>(argumentShape3))
+			{
+				auto cellShape = ShapeUtils::MergeShapes(listLeft->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
+
+				auto vectorCell = ShapeUtils::GetShape<VectorShape>(cellShape);
+				Require(CheckStaticEquality(vectorCount->GetSize(), vectorCell->GetSize()));
+			}
 
 			// Join call
 
@@ -1977,29 +1988,59 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		{
 			// -- Vector input
 			// Input: Vector<Size*>, Vector<Size*>
-			// Output: Vector<1>
+			// Output: Vector<Size*>
 			//
 			// -- List input
 			// Input: List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>
-			// Output: Vector<1>
+			// Output: Vector<Size*>
 
 			Require(AnalyzeJoinArguments(argumentShapes, arguments));
-			Return(new VectorShape(new Shape::ConstantSize(1)));
+
+			// Return shape is the left argument size
+
+			auto leftShape = argumentShapes.at(argumentShapes.size() - 2);
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(leftShape))
+			{
+				Return(vectorShape);
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(leftShape))
+			{
+				auto cellShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
+				Return(cellShape);
+			}
+			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
 		{
 			// -- Unknown scalar constant
-			// Intput: Vector<Size*>, Vector<Size*>, Vector<1> | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<1>
+			// Intput: Vector<Size*>, Vector<Size*>, Vector<Size*> | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<Size*>
 			// Output: List<2, {Vector<SizeDynamic>}>
 			//
 			// -- Known scalar constant
-			// Intput: Vector<Size*>, Vector<Size*>, Vector<1> (value m) | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<1> (value m)
+			// Intput: Vector<Size*>, Vector<Size*>, Vector<Size*> (value m) | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<Size*> (value m)
 			// Output: List<2, {Vector<m>}>
 
 			std::vector<const Shape *> joinShapes(std::begin(argumentShapes), std::end(argumentShapes) - 1);
 			std::vector<HorseIR::Operand *> joinArguments(std::begin(arguments), std::end(arguments) - 1);
 
 			Require(AnalyzeJoinArguments(joinShapes, joinArguments));
+
+			const auto vectorCount = ShapeUtils::GetShape<VectorShape>(argumentShapes.back());
+			const auto leftShape = argumentShapes.at(argumentShapes.size() - 3);
+
+			if (const auto vectorLeft = ShapeUtils::GetShape<VectorShape>(leftShape))
+			{
+				Require(CheckStaticEquality(vectorCount->GetSize(), vectorLeft->GetSize()));
+			}
+			else if (const auto listLeft = ShapeUtils::GetShape<ListShape>(leftShape))
+			{
+				auto cellShape = ShapeUtils::MergeShapes(listLeft->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
+
+				auto vectorCell = ShapeUtils::GetShape<VectorShape>(cellShape);
+				Require(CheckStaticEquality(vectorCount->GetSize(), vectorCell->GetSize()));
+			}
 
 			if (arguments.size() > 0)
 			{

@@ -33,7 +33,7 @@ ListBuffer *GPUJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 
 	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
 
-	Utils::Logger::LogDebug("Join initialization count: " + countBuffer->GetCPUReadBuffer()->GetValue(0));
+	Utils::Logger::LogDebug("Join initialization count: " + countBuffer->DebugDump());
 
 	// Perform the actual join
 
