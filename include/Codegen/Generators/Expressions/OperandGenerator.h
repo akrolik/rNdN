@@ -412,14 +412,8 @@ private:
 
 		// Calculate prefix sum to use as index
 
-		auto moduleResources = this->m_builder.GetGlobalResources();
-		auto g_size = moduleResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("size"));
-
-		AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
-		auto sizeAddress = addressGenerator.GenerateAddress(g_size);
-
-		PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
-		return prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
+		PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
+		return prefixSumGenerator.Generate(intPredicate, PrefixSumMode::Exclusive);
 	}
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDynamicIndex(const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *indexed)

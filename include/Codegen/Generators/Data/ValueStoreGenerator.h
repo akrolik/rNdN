@@ -462,8 +462,8 @@ private:
 				AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
 				auto sizeAddress = addressGenerator.GenerateAddress(sizeParameter);
 
-				PrefixSumGenerator<B> prefixSumGenerator(this->m_builder);
-				writeIndex = prefixSumGenerator.template Generate<PTX::UInt32Type>(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
+				PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
+				writeIndex = prefixSumGenerator.Generate(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
 			}
 
 			// Check for compression - this will mask outputs

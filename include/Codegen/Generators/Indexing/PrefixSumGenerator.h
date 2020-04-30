@@ -3,6 +3,7 @@
 #include "Codegen/Generators/Generator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/ShuffleGenerator.h"
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Codegen/Generators/Indexing/SpecialRegisterGenerator.h"
@@ -20,7 +21,7 @@ enum class PrefixSumMode
 	Exclusive
 };
 
-template<PTX::Bits B>
+template<PTX::Bits B, class T>
 class PrefixSumGenerator : public Generator
 {
 public:
@@ -28,7 +29,21 @@ public:
 
 	std::string Name() const override { return "PrefixSumGenerator"; }
 
-	template<class T>
+	const PTX::Register<T> *Generate(const PTX::Register<T> *value, PrefixSumMode mode)
+	{
+		// Allocate global variable for the prefix sum
+
+		auto moduleResources = this->m_builder.GetGlobalResources();
+		auto g_size = moduleResources->template AllocateGlobalVariable<T>(this->m_builder.UniqueIdentifier("size"));
+
+		AddressGenerator<B, T> addressGenerator(this->m_builder);
+		auto sizeAddress = addressGenerator.GenerateAddress(g_size);
+
+		// Compute prefix sum
+
+		return Generate(sizeAddress, value, mode);
+	}
+
 	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value, PrefixSumMode mode)
 	{
 		// A global prefix sum is computed in 4 stages:
@@ -184,7 +199,9 @@ public:
 
 		auto completedBlocks = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto g_completedBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("completedBlocks"));
-		auto g_completedBlocksAddress = addressGenerator.GenerateAddress(g_completedBlocks);
+
+		AddressGenerator<B, PTX::UInt32Type> addressGenerator_32(this->m_builder);
+		auto g_completedBlocksAddress = addressGenerator_32.GenerateAddress(g_completedBlocks);
 
 		// Get the current value by incrementing by 0
 
@@ -212,9 +229,19 @@ public:
 
 		// Update the global prefix sum to include this block
 
-		this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::AtomicOperation::Add>(
-			g_prefixSumAddress, prefixSum
-		));
+		if constexpr(std::is_same<T, PTX::Int64Type>::value)
+		{
+			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace, PTX::UInt64Type::ReductionOperation::Add>(
+				new PTX::AddressAdapter<B, PTX::UInt64Type, PTX::Int64Type, PTX::GlobalSpace>(g_prefixSumAddress),
+				new PTX::Unsigned64RegisterAdapter(prefixSum)
+			));
+		}
+		else
+		{
+			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::AtomicOperation::Add>(
+				g_prefixSumAddress, prefixSum
+			));
+		}
 
 		// Proceed to next thread by incrementing the global counter
 
@@ -235,14 +262,14 @@ public:
 
 		if (mode == PrefixSumMode::Exclusive)
 		{
-			auto exclusiveSum = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(exclusiveSum, prefixSum, initialValue));
+			auto exclusiveSum = resources->template AllocateTemporary<T>();
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<T>(exclusiveSum, prefixSum, initialValue));
 			return exclusiveSum;
 		}
 		return prefixSum;
 	}
 
-	void GenerateWarpPrefixSum(const PTX::Register<PTX::UInt32Type> *laneIndex, const PTX::Register<PTX::UInt32Type> *value)
+	void GenerateWarpPrefixSum(const PTX::Register<PTX::UInt32Type> *laneIndex, const PTX::Register<T> *value)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& targetOptions = this->m_builder.GetTargetOptions();
@@ -251,12 +278,10 @@ public:
 
 		for (auto offset = 1; offset < targetOptions.WarpSize; offset <<= 1)
 		{
-			// Shuffle the value from the above lane, merging if it part of the prefix sum
+			// shuffle the value from the above lane, merging if it part of the prefix sum
 
-			auto temp = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::ShuffleInstruction<PTX::UInt32Type>(
-				temp, value, new PTX::UInt32Value(offset), new PTX::UInt32Value(0), -1, PTX::ShuffleInstruction<PTX::UInt32Type>::Mode::Up
-			));
+			ShuffleGenerator<T> shuffleGenerator(this->m_builder);
+			auto temp = shuffleGenerator.Generate(value, offset, 0, -1, PTX::ShuffleInstruction::Mode::Up);
 
 			// Check if part of prefix sum
 
@@ -267,7 +292,7 @@ public:
 
 			// Merge!
 
-			auto add = new PTX::AddInstruction<PTX::UInt32Type>(value, temp, value);
+			auto add = new PTX::AddInstruction<T>(value, temp, value);
 			add->SetPredicate(addPredicate);
 			this->m_builder.AddStatement(add);
 		}
