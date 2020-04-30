@@ -137,8 +137,8 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(countFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(joinFunction->GetName())));
 
-			operands.push_back(arguments.at(0)->Clone());
-			operands.push_back(arguments.at(1)->Clone());
+			operands.push_back(leftArgument->Clone());
+			operands.push_back(rightArgument->Clone());
 
 			// Build the library call
 
@@ -315,7 +315,6 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 
 	return new HorseIR::Function("join_" + std::to_string(m_index++), parameters, returnTypes, {joinStatement, returnStatement}, true);
-
 }
 
 }
