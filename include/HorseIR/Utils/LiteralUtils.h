@@ -9,98 +9,98 @@
 namespace HorseIR {
 
 template<class T>
-class LiteralUtils : public HorseIR::ConstVisitor
+class LiteralUtils : public ConstVisitor
 {
 public:
-	static const HorseIR::TypedVectorLiteral<T> *GetLiteral(const HorseIR::Operand *operand)
+	static const TypedVectorLiteral<T> *GetLiteral(const Operand *operand)
 	{
 		LiteralUtils utils;
 		operand->Accept(utils);
 		return utils.m_literal;
 	}
 
-	void Visit(const HorseIR::BooleanLiteral *literal) override
+	void Visit(const BooleanLiteral *literal) override
 	{
 		VisitLiteral<std::int8_t>(literal);
 	}
 
-	void Visit(const HorseIR::CharLiteral *literal) override
+	void Visit(const CharLiteral *literal) override
 	{
 		VisitLiteral<std::int8_t>(literal);
 	}
 
-	void Visit(const HorseIR::Int8Literal *literal) override
+	void Visit(const Int8Literal *literal) override
 	{
 		VisitLiteral<std::int8_t>(literal);
 	}
 
-	void Visit(const HorseIR::Int16Literal *literal) override
+	void Visit(const Int16Literal *literal) override
 	{
 		VisitLiteral<std::int16_t>(literal);
 	}
 
-	void Visit(const HorseIR::Int32Literal *literal) override
+	void Visit(const Int32Literal *literal) override
 	{
 		VisitLiteral<std::int32_t>(literal);
 	}
 
-	void Visit(const HorseIR::Int64Literal *literal) override
+	void Visit(const Int64Literal *literal) override
 	{
 		VisitLiteral<std::int64_t>(literal);
 	}
 
-	void Visit(const HorseIR::Float32Literal *literal) override
+	void Visit(const Float32Literal *literal) override
 	{
 		VisitLiteral<float>(literal);
 	}
 
-	void Visit(const HorseIR::Float64Literal *literal) override
+	void Visit(const Float64Literal *literal) override
 	{
 		VisitLiteral<double>(literal);
 	}
 
-	void Visit(const HorseIR::StringLiteral *literal) override
+	void Visit(const StringLiteral *literal) override
 	{
 		VisitLiteral<std::string>(literal);
 	}
 
-	void Visit(const HorseIR::SymbolLiteral *literal) override
+	void Visit(const SymbolLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::SymbolValue *>(literal);
+		VisitLiteral<SymbolValue *>(literal);
 	}
 
-	void Visit(const HorseIR::DatetimeLiteral *literal) override
+	void Visit(const DatetimeLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::DatetimeValue *>(literal);
+		VisitLiteral<DatetimeValue *>(literal);
 	}
 
-	void Visit(const HorseIR::MonthLiteral *literal) override
+	void Visit(const MonthLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::MonthValue *>(literal);
+		VisitLiteral<MonthValue *>(literal);
 	}
 
-	void Visit(const HorseIR::DateLiteral *literal) override
+	void Visit(const DateLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::DateValue *>(literal);
+		VisitLiteral<DateValue *>(literal);
 	}
 
-	void Visit(const HorseIR::MinuteLiteral *literal) override
+	void Visit(const MinuteLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::MinuteValue *>(literal);
+		VisitLiteral<MinuteValue *>(literal);
 	}
 
-	void Visit(const HorseIR::SecondLiteral *literal) override
+	void Visit(const SecondLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::SecondValue *>(literal);
+		VisitLiteral<SecondValue *>(literal);
 	}
 
-	void Visit(const HorseIR::TimeLiteral *literal) override
+	void Visit(const TimeLiteral *literal) override
 	{
-		VisitLiteral<HorseIR::TimeValue *>(literal);
+		VisitLiteral<TimeValue *>(literal);
 	}
 
 	template<class L>
-	void VisitLiteral(const HorseIR::TypedVectorLiteral<L> *literal)
+	void VisitLiteral(const TypedVectorLiteral<L> *literal)
 	{
 		if constexpr(std::is_same<T, L>::value)
 		{
@@ -113,7 +113,7 @@ public:
 	}
 
 private:
-	const HorseIR::TypedVectorLiteral<T> *m_literal = nullptr;
+	const TypedVectorLiteral<T> *m_literal = nullptr;
 };
 
 }
