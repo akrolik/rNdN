@@ -182,7 +182,7 @@ public:
 			case HorseIR::BuiltinFunction::Primitive::Reciprocal:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Reciprocal);
 			case HorseIR::BuiltinFunction::Primitive::Sign:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Sign);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::Sign);
 			case HorseIR::BuiltinFunction::Primitive::Pi:
 				return new UnaryGenerator<B, T>(this->m_builder, UnaryOperation::Pi);
 			case HorseIR::BuiltinFunction::Primitive::Not:
@@ -224,17 +224,17 @@ public:
 
 			// Binary
 			case HorseIR::BuiltinFunction::Primitive::Less:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Less);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::Less);
 			case HorseIR::BuiltinFunction::Primitive::Greater:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Greater);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::Greater);
 			case HorseIR::BuiltinFunction::Primitive::LessEqual:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::LessEqual);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::LessEqual);
 			case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::GreaterEqual);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::GreaterEqual);
 			case HorseIR::BuiltinFunction::Primitive::Equal:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::Equal);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::Equal);
 			case HorseIR::BuiltinFunction::Primitive::NotEqual:
-				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperator::NotEqual);
+				return new ComparisonGenerator<B, T>(this->m_builder, ComparisonOperation::NotEqual);
 			case HorseIR::BuiltinFunction::Primitive::Plus:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Plus);
 			case HorseIR::BuiltinFunction::Primitive::Minus:

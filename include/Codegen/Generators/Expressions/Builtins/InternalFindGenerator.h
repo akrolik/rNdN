@@ -6,6 +6,7 @@
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
@@ -27,7 +28,7 @@ template<PTX::Bits B, class T, class D>
 class InternalFindGenerator : public BuiltinGenerator<B, D>, public HorseIR::ConstVisitor
 {
 public:
-	InternalFindGenerator(Builder& builder, FindOperation  findOp) : BuiltinGenerator<B, D>(builder), m_findOp(findOp) {}
+	InternalFindGenerator(Builder& builder, FindOperation findOp, ComparisonOperation comparisonOp) : BuiltinGenerator<B, D>(builder), m_findOp(findOp), m_comparisonOp(comparisonOp) {}
 
 	std::string Name() const override { return "InternalFindGenerator"; }
 
@@ -105,7 +106,7 @@ public:
 
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
-			//TODO: Use comparison generator instead
+			//TODO: Supported shared memory for smaller types
 		}
 		else
 		{
@@ -397,27 +398,16 @@ private:
 	void GenerateMatch(const PTX::TypedOperand<T> *value)
 	{
 		auto resources = this->m_builder.GetLocalResources();
-		auto temp = resources->template AllocateTemporary<PTX::PredicateType>();
+		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		if constexpr(std::is_same<T, PTX::PredicateType>::value)
-		{
-			this->m_builder.AddStatement(new PTX::XorInstruction<PTX::PredicateType>(temp, m_data, value));
-			this->m_builder.AddStatement(new PTX::NotInstruction<PTX::PredicateType>(temp, temp));
-		}
-		else if constexpr(std::is_same<T, PTX::Int8Type>::value)
-		{
-			//TODO: Use comparison generator
-		}
-		else
-		{
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(temp, m_data, value, T::ComparisonOperator::Equal));
-		}
+		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOp);
+		comparisonGenerator.Generate(predicate, m_data, value);
 
 		if constexpr(std::is_same<D, PTX::PredicateType>::value)
 		{
 			if (m_findOp == FindOperation::Member)
 			{
-				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, temp));
+				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, predicate));
 			}
 		}
 		else if constexpr(std::is_same<D, PTX::Int64Type>::value)
@@ -426,7 +416,7 @@ private:
 			{
 				case FindOperation::Index:
 				{
-					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_predicateRegister, m_predicateRegister, temp));
+					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_predicateRegister, m_predicateRegister, predicate));
 
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
 					addInstruction->SetPredicate(m_predicateRegister, true);
@@ -437,7 +427,7 @@ private:
 				case FindOperation::Count:
 				{
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
-					addInstruction->SetPredicate(temp);
+					addInstruction->SetPredicate(predicate);
 					this->m_builder.AddStatement(addInstruction);
 
 					break;
@@ -452,6 +442,7 @@ private:
 	const PTX::Register<D> *m_targetRegister = nullptr;
 
 	FindOperation m_findOp;
+	ComparisonOperation m_comparisonOp;
 };
 
 }

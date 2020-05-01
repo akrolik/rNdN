@@ -4,6 +4,7 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 
@@ -74,63 +75,59 @@ public:
 	template<class T>
 	void GenerateGroup(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
 	{
-		//TODO: Use comparison generator instead to generate optimized comparison
-		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		auto resources = this->m_builder.GetLocalResources();
+
+		// Load the current value index
+
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
+
+		// Load the previous value index , duplicating the first element (as there is no previous element)
+
+		auto indexM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexM1, index, new PTX::UInt32Value(1)));
+
+		auto previousPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			previousPredicate, index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+		)); 
+
+		auto indexPrevious = resources->template AllocateTemporary<PTX::UInt32Type>();
+		this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(indexPrevious, indexM1, index, previousPredicate));
+
+		// Get the operand values
+
+		OperandGenerator<B, T> opGen(this->m_builder);
+		const PTX::TypedOperand<T> *value = nullptr;
+		const PTX::TypedOperand<T> *previousValue = nullptr;
+
+		if (isCell)
 		{
-			GenerateGroup<PTX::Int16Type>(identifier, isCell, cellIndex);
+			value = opGen.GenerateOperand(identifier, index, "val", cellIndex);
+			previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev", cellIndex);
 		}
 		else
 		{
-			auto resources = this->m_builder.GetLocalResources();
+			value = opGen.GenerateOperand(identifier, index, "val");
+			previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev");
+		}
 
-			// Load the current value index
+		// Check if the value is different
 
-			DataIndexGenerator<B> indexGenerator(this->m_builder);
-			auto index = indexGenerator.GenerateDataIndex();
+		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-			// Load the previous value index , duplicating the first element (as there is no previous element)
+		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, ComparisonOperation::NotEqual);
+		comparisonGenerator.Generate(predicate, value, previousValue);
 
-			auto indexM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexM1, index, new PTX::UInt32Value(1)));
+		// Merge previous columns, one must be different
 
-			auto previousPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				previousPredicate, index, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
-			)); 
-
-			auto indexPrevious = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(indexPrevious, indexM1, index, previousPredicate));
-
-			// Get the operand values
-
-			OperandGenerator<B, T> opGen(this->m_builder);
-			const PTX::TypedOperand<T> *value = nullptr;
-			const PTX::TypedOperand<T> *previousValue = nullptr;
-
-			if (isCell)
-			{
-				value = opGen.GenerateOperand(identifier, index, "val", cellIndex);
-				previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev", cellIndex);
-			}
-			else
-			{
-				value = opGen.GenerateOperand(identifier, index, "val");
-				previousValue = opGen.GenerateOperand(identifier, indexPrevious, "prev");
-			}
-
-			// Check if the value is different
-
-			if (m_predicate == nullptr)
-			{
-				m_predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(m_predicate, value, previousValue, T::ComparisonOperator::NotEqual)); 
-			}
-			else
-			{
-				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
-					m_predicate, nullptr, value, previousValue, T::ComparisonOperator::NotEqual, m_predicate, PTX::PredicateModifier::BoolOperator::Or
-				)); 
-			}
+		if (m_predicate == nullptr)
+		{
+			m_predicate = predicate;
+		}
+		else
+		{
+			this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_predicate, m_predicate, predicate));
 		}
 	}
                                                                                                                   

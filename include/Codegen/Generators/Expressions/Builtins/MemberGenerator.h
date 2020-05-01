@@ -37,7 +37,7 @@ public:
 	template<typename T>
 	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		InternalFindGenerator<B, T, PTX::PredicateType> findGenerator(this->m_builder, FindOperation::Member);
+		InternalFindGenerator<B, T, PTX::PredicateType> findGenerator(this->m_builder, FindOperation::Member, ComparisonOperation::Equal);
 		m_targetRegister = findGenerator.Generate(target, arguments);
 	}
 

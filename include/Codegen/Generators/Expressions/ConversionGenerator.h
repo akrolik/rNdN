@@ -17,6 +17,13 @@ public:
 	std::string Name() const override { return "ConversionGenerator"; }
 
 	template<class T, class S>
+	static const PTX::TypedOperand<T> *ConvertSource(Builder& builder, const PTX::TypedOperand<S> *source)
+	{
+		ConversionGenerator gen(builder);
+		return gen.ConvertSource<T, S>(source);
+	}
+
+	template<class T, class S>
 	static const PTX::Register<T> *ConvertSource(Builder& builder, const PTX::Register<S> *source, bool relaxedInstruction = false)
 	{
 		ConversionGenerator gen(builder);
@@ -28,6 +35,26 @@ public:
 	{
 		ConversionGenerator gen(builder);
 		gen.ConvertSource(destination, source, relaxedInstruction);
+	}
+
+	template<class T, class S>
+	const PTX::Register<T> *ConvertSource(const PTX::TypedOperand<S> *source)
+	{
+		if constexpr(std::is_same<T, S>::value)
+		{
+			return source;
+		}
+		else
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			auto converted = resources->AllocateTemporary<T>();
+
+			//TODO: Relax?
+
+			GenerateConversion(converted, source);
+
+			return converted;
+		}
 	}
 
 	template<class T, class S>
@@ -219,7 +246,7 @@ private:
 	}
 
 	template<class D, class S>
-	void GenerateConversion(const PTX::Register<D> *converted, const PTX::Register<S> *source)
+	void GenerateConversion(const PTX::Register<D> *converted, const PTX::TypedOperand<S> *source)
 	{
 		// Check if the conversion instruction is supported by these types
 
@@ -254,20 +281,20 @@ private:
 
 	//TODO: Use conversion for the prefix sum selects
 	template<class S>
-	void ConvertToPredicate(const PTX::Register<PTX::PredicateType> *destination, const PTX::Register<S> *source)
+	void ConvertToPredicate(const PTX::Register<PTX::PredicateType> *destination, const PTX::TypedOperand<S> *source)
 	{
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<S>(destination, source, new PTX::Value<S>(0), S::ComparisonOperator::NotEqual));
 	}
 
 	template<class D>
-	void ConvertFromPredicate(const PTX::Register<D> *destination, const PTX::Register<PTX::PredicateType> *source)
+	void ConvertFromPredicate(const PTX::Register<D> *destination, const PTX::TypedOperand<PTX::PredicateType> *source)
 	{
 		this->m_builder.AddStatement(new PTX::SelectInstruction<D>(destination, new PTX::Value<D>(1), new PTX::Value<D>(0), source));
 	}
 };
 
 template<>
-void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(const PTX::Register<PTX::PredicateType> *destination, const PTX::Register<PTX::Int8Type> *source)
+void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(const PTX::Register<PTX::PredicateType> *destination, const PTX::TypedOperand<PTX::Int8Type> *source)
 {
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp16 = resources->AllocateTemporary<PTX::Int16Type>();
@@ -277,7 +304,7 @@ void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(const PTX::Register<
 }
 
 template<>
-void ConversionGenerator::ConvertFromPredicate<PTX::Int8Type>(const PTX::Register<PTX::Int8Type> *destination, const PTX::Register<PTX::PredicateType> *source)
+void ConversionGenerator::ConvertFromPredicate<PTX::Int8Type>(const PTX::Register<PTX::Int8Type> *destination, const PTX::TypedOperand<PTX::PredicateType> *source)
 {
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp32 = resources->AllocateTemporary<PTX::Int32Type>();
