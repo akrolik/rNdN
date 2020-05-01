@@ -150,6 +150,16 @@ private:
 				return new PTX::TruncateRegisterAdapter<T, D, S>(source);
 			}
 		}
+		else if constexpr(PTX::BitSize<D>::NumBits > PTX::BitSize<S>::NumBits)
+		{
+			if (relaxedInstruction)
+			{
+				// If the value is too small, extend the number of bits before doing
+				// any type conversion
+
+				return new PTX::ExtendRegisterAdapter<T, D, S>(source);
+			}
+		}
 		return nullptr;
 	}
 

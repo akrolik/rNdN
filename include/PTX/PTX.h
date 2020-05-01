@@ -85,8 +85,9 @@
 
 #include "PTX/Operands/Adapters/Adapter.h"
 #include "PTX/Operands/Adapters/AddressAdapter.h"
-#include "PTX/Operands/Adapters/BitAdapter.h"
 #include "PTX/Operands/Adapters/ArrayAdapter.h"
+#include "PTX/Operands/Adapters/BitAdapter.h"
+#include "PTX/Operands/Adapters/ExtendAdapter.h"
 #include "PTX/Operands/Adapters/PointerAdapter.h"
 #include "PTX/Operands/Adapters/SignedAdapter.h"
 #include "PTX/Operands/Adapters/TruncateAdapter.h"
