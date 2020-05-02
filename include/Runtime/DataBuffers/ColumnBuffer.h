@@ -19,6 +19,7 @@ public:
 
 	// Colum printing
 
+	virtual std::string DebugDump() const = 0;
 	virtual std::string DebugDump(unsigned int index) const = 0;
 
 protected:
