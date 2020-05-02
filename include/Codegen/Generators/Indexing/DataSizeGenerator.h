@@ -143,73 +143,27 @@ private:
 	template<class T>
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape *shape) const
 	{
+		// Get the size register for the data
+
+		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
+
 		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
 			{
-				return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
+				return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 			}
 			else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 			{
-				const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
-				{
-					return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), true);
-				}
+				return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter, m_cellIndex));
 			}
 		}
 		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
-			const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
-			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
-			{
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
-				{
-					return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
-				}
-				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
-				{
-					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-					if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
-					{
-						return GenerateSize(parameter, vectorShape->GetSize(), vectorGeometry->GetSize());
-					}
-				}
-			}
+			return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 		}
 		Error("size for shape " + Analysis::ShapeUtils::ShapeString(shape));
-	}
-
-	template<class T>
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, bool isCell = false) const
-	{
-		auto resources = this->m_builder.GetLocalResources();
-
-		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(size))
-		{
-			// Statically determined constant size
-
-			return new PTX::UInt32Value(constantSize->GetValue());
-		}
-		else if (*size == *geometrySize)
-		{
-			// If the size is equal to the geometry, then we return the size of the geometry
-
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(geometrySize))
-			{
-				return new PTX::UInt32Value(constantSize->GetValue());
-			}
-			return resources->GetRegister<PTX::UInt32Type>(NameUtils::ThreadGeometryDataSize);
-		}
-
-		// Size is not statically determined, load at runtime from special register
-
-		if (isCell)
-		{
-			return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter, m_cellIndex));
-		}
-		return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 	}
 
 	const PTX::TypedOperand<PTX::UInt32Type> *m_size = nullptr;

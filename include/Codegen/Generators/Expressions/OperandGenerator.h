@@ -346,7 +346,7 @@ public:
 				// Ensure the thread is within bounds for loading data
 
 				DataSizeGenerator<B> sizeGenerator(this->m_builder);
-				auto size = sizeGenerator.GenerateSize(parameter);
+				auto size = (isCell) ? sizeGenerator.GenerateSize(parameter, m_cellIndex) : sizeGenerator.GenerateSize(parameter);
 
 				auto sizeLabel = this->m_builder.CreateLabel("SIZE");
 				auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
