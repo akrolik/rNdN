@@ -167,6 +167,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				const auto shape = runtimeOptions->ReturnShapes.at(i);
 
 				returnBuffer = DataBuffer::CreateEmpty(type, shape);
+				returnBuffer->ValidateGPU();
 				returnBuffer->Clear();
 
 				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
@@ -191,7 +192,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 				invocation.AddParameter(*sizeBuffer);
 			}
-
 		}
 	}
 
