@@ -41,7 +41,10 @@ public:
 			}
 		}
 
-		DispatchType(*this, arguments.back()->GetType(), target, joinOperations, dataArguments);
+		// Count the number of join results per left-hand data item
+
+		InternalFindGenerator<B, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Count, joinOperations);
+		m_targetRegister = findGenerator.Generate(target, dataArguments);
 
 		// Compute prefix sum, getting the offset for each thread
 
@@ -49,34 +52,6 @@ public:
 		auto prefixSum = prefixSumGenerator.Generate(m_targetRegister, PrefixSumMode::Exclusive);
 
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_targetRegister, prefixSum));
-	}
-
-	template<typename T>
-	void GenerateVector(const HorseIR::LValue *target, const std::vector<ComparisonOperation>& joinOperations, const std::vector<HorseIR::Operand *>& dataArguments)
-	{
-		InternalFindGenerator<B, T, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Count, joinOperations.at(0));
-		m_targetRegister = findGenerator.Generate(target, dataArguments);
-	}
-
-	template<typename T>
-	void GenerateList(const HorseIR::LValue *target, const std::vector<ComparisonOperation>& functions, const std::vector<HorseIR::Operand *>& arguments)
-	{
-		//TODO: @join_count list
-		// if (this->m_builder.GetInputOptions().IsVectorGeometry())
-		// {
-		// 	BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("list-in-vector");
-		// }
-
-		// Lists are handled by the vector code through a projection
-
-		// GenerateVector<T>(target, arguments);
-	}
-
-	template<typename T>
-	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<ComparisonOperation>& functions, const std::vector<HorseIR::Operand *>& arguments)
-	{
-		//TODO: @join_count tuple
-		// BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("list-in-vector");
 	}
 
 private:

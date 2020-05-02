@@ -24,11 +24,11 @@ enum class FindOperation {
 	Count
 };
 
-template<PTX::Bits B, class T, class D>
+template<PTX::Bits B, class D>
 class InternalFindGenerator : public BuiltinGenerator<B, D>, public HorseIR::ConstVisitor
 {
 public:
-	InternalFindGenerator(Builder& builder, FindOperation findOp, ComparisonOperation comparisonOp) : BuiltinGenerator<B, D>(builder), m_findOp(findOp), m_comparisonOp(comparisonOp) {}
+	InternalFindGenerator(Builder& builder, FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps) : BuiltinGenerator<B, D>(builder), m_findOp(findOp), m_comparisonOps(comparisonOps) {}
 
 	std::string Name() const override { return "InternalFindGenerator"; }
 
@@ -71,14 +71,31 @@ public:
 
 		// Operating range in argument 0, possibilities in argument 1
 
-		OperandGenerator<B, T> opGen(this->m_builder);
-		m_data = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+		m_data = arguments.at(0);
 		arguments.at(1)->Accept(*this);
 
 		return m_targetRegister;
 	}
 
 	void Visit(const HorseIR::Identifier *identifier) override
+	{
+		DispatchType(*this, identifier->GetType(), identifier);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Identifier *identifier)
+	{
+		//TODO: List match
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
+	{
+		//TODO: Tuple match
+	}
+
+	template<class T>
+	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
 		// Generate a double loop, checking for matches in chunks (for coalescing)
 		//
@@ -131,6 +148,11 @@ public:
 
 			ThreadIndexGenerator<B> threadGenerator(this->m_builder);
 			DataSizeGenerator<B> sizeGenerator(this->m_builder);
+
+			// Get the data
+
+			OperandGenerator<B, T> opGen(this->m_builder);
+			auto data = opGen.GenerateOperand(m_data, OperandGenerator<B, T>::LoadKind::Vector);
 
 			// Initialize the outer loop
 
@@ -195,7 +217,7 @@ public:
 			this->m_builder.AddStatement(new PTX::BranchInstruction(ifElseLabel, sizePredicate_3));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
-			GenerateInnerLoop(s_cache, new PTX::UInt32Value(BLOCK_SIZE), BLOCK_SIZE, 16);
+			GenerateInnerLoop(data, s_cache, new PTX::UInt32Value(BLOCK_SIZE), BLOCK_SIZE, 16);
 
 			this->m_builder.AddStatement(new PTX::BranchInstruction(ifEndLabel));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
@@ -203,7 +225,7 @@ public:
 
 			// Compute bound if this is the last iteration
 
-			GenerateInnerLoop(s_cache, remainder, BLOCK_SIZE, 1);
+			GenerateInnerLoop(data, s_cache, remainder, BLOCK_SIZE, 1);
 			
 			this->m_builder.AddStatement(ifEndLabel);
 
@@ -219,7 +241,8 @@ public:
 		}
 	}
 
-	void GenerateInnerLoop(const PTX::SharedVariable<T> *s_cache, const PTX::TypedOperand<PTX::UInt32Type> *bound, unsigned int BLOCK_SIZE, unsigned int factor)
+	template<class T>
+	void GenerateInnerLoop(const PTX::TypedOperand<T> *data, const PTX::SharedVariable<T> *s_cache, const PTX::TypedOperand<PTX::UInt32Type> *bound, unsigned int BLOCK_SIZE, unsigned int factor)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -264,7 +287,7 @@ public:
 
 			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
 
-			GenerateMatch(value);
+			GenerateMatch(data, value);
 		}
 
 		// Increment by the iterations completed
@@ -367,41 +390,43 @@ public:
 	{
 		// For each value in the literal, check if it is equal to the data value in this thread. Note, this is an unrolled loop
 
-		for (const auto& value : literal->GetValues())
-		{
-			// Load the value and cast to the appropriate type
+		//TODO: Constant match
+		// for (const auto& value : literal->GetValues())
+		// {
+		// 	// Load the value and cast to the appropriate type
 
-			if constexpr(std::is_same<L, std::string>::value)
-			{
-				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value))));
-			}
-			else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
-			{
-				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName()))));
-			}
-			else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
-			{
-				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime())));
-			}
-			else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
-			{
-				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime())));
-			}
-			else
-			{
-				GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value)));
-			}
-		}
+		// 	if constexpr(std::is_same<L, std::string>::value)
+		// 	{
+		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value))));
+		// 	}
+		// 	else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
+		// 	{
+		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName()))));
+		// 	}
+		// 	else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
+		// 	{
+		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime())));
+		// 	}
+		// 	else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
+		// 	{
+		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime())));
+		// 	}
+		// 	else
+		// 	{
+		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value)));
+		// 	}
+		// }
 	}
 
 private:
-	void GenerateMatch(const PTX::TypedOperand<T> *value)
+	template<class T>
+	void GenerateMatch(const PTX::TypedOperand<T> *data, const PTX::TypedOperand<T> *value)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOp);
-		comparisonGenerator.Generate(predicate, m_data, value);
+		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOps.at(0));
+		comparisonGenerator.Generate(predicate, data, value);
 
 		if constexpr(std::is_same<D, PTX::PredicateType>::value)
 		{
@@ -437,12 +462,12 @@ private:
 	}
 
 	const PTX::Register<PTX::PredicateType> *m_predicateRegister = nullptr;
-
-	const PTX::TypedOperand<T> *m_data = nullptr;
 	const PTX::Register<D> *m_targetRegister = nullptr;
 
+	const HorseIR::Operand *m_data = nullptr;
+
 	FindOperation m_findOp;
-	ComparisonOperation m_comparisonOp;
+	std::vector<ComparisonOperation> m_comparisonOps;
 };
 
 }

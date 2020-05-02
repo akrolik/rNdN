@@ -3,7 +3,6 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
-#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/InternalFindGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -31,38 +30,9 @@ public:
 
 	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
-		return m_targetRegister;
+		InternalFindGenerator<B, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Index, {ComparisonOperation::Equal});
+		return findGenerator.Generate(target, arguments);
 	}
-
-	template<typename T>
-	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
-	{
-		InternalFindGenerator<B, T, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Index, ComparisonOperation::Equal);
-		m_targetRegister = findGenerator.Generate(target, arguments);
-	}
-
-	template<typename T>
-	void GenerateList(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
-	{
-		if (this->m_builder.GetInputOptions().IsVectorGeometry())
-		{
-			BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("list-in-vector");
-		}
-
-		// Lists are handled by the vector code through a projection
-
-		GenerateVector<T>(target, arguments);
-	}
-
-	template<typename T>
-	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
-	{
-		BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("list-in-vector");
-	}
-
-private:
-	const PTX::Register<PTX::Int64Type> *m_targetRegister = nullptr;
 };
 
 }
