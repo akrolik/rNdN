@@ -38,16 +38,53 @@ public:
 
 	void Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
 	{
-		m_index = 0;
 		DispatchType(*this, dataX->GetType(), dataX, dataY);
 	}
 
 	template<class T>
 	void GenerateVector(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
 	{
+		GenerateInit<T>(dataX, dataY);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateInit<T>(dataX, dataY, true, index);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+		GenerateInit<T>(dataX, dataY, true, index);
+	}
+
+private:
+	template<class T>
+	void GenerateInit(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, bool isCell = false, unsigned int cellIndex = 0)
+	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			//TODO: .pred init
+			GenerateInit<PTX::Int8Type>(dataX, dataY, isCell, cellIndex);
 		}
 		else
 		{
@@ -55,30 +92,15 @@ public:
 
 			auto kernelResources = this->m_builder.GetKernelResources();
 			
-			auto cacheName = dataY->GetName() + "_" + std::to_string(m_index++);
+			auto cacheName = dataY->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
 			auto s_cache = kernelResources->template AllocateSharedVariable<PTX::ArrayType<T, FIND_BLOCK_SIZE>>(cacheName);
 
-			// Load the X data
+			// Load the X data (cell index default to zero for vector)
 
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			operandGenerator.GenerateOperand(dataX, OperandGenerator<B, T>::LoadKind::Vector);
+			operandGenerator.GenerateOperand(dataX, OperandGenerator<B, T>::LoadKind::Vector, cellIndex);
 		}
 	}
-
-	template<class T>
-	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
-	{
-		//TODO: List init
-	}
-
-	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
-	{
-		//TODO: Tuple init
-	}
-
-private:
-	unsigned int m_index = 0;
 };
 
 template<PTX::Bits B>
@@ -93,7 +115,6 @@ public:
 	{
 		// Load data into shared memory
 
-		m_index = 0;
 		DispatchType(*this, dataX->GetType(), dataY, globalIndex);
 
 		// Synchronize shared memory
@@ -105,9 +126,47 @@ public:
 	template<class T>
 	void GenerateVector(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
 	{
+		GenerateCache<T>(dataY, globalIndex);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateCache<T>(dataY, globalIndex, true, index);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+		GenerateCache<T>(dataY, globalIndex, true, index);
+	}
+
+private:
+	template<class T>
+	void GenerateCache(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex, bool isCell = false, unsigned int cellIndex = 0)
+	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			//TODO: .pred cache
+			GenerateCache<PTX::Int8Type>(dataY, globalIndex, isCell, cellIndex);
 		}
 		else
 		{
@@ -115,15 +174,15 @@ public:
 
 			auto kernelResources = this->m_builder.GetKernelResources();
 
-			auto cacheName = dataY->GetName() + "_" + std::to_string(m_index++);
+			auto cacheName = dataY->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
 			auto s_cache = new PTX::ArrayVariableAdapter<T, FIND_BLOCK_SIZE, PTX::SharedSpace>(
 				kernelResources->template GetSharedVariable<PTX::ArrayType<T, FIND_BLOCK_SIZE>>(cacheName)
 			);
 
-			// Load the cache from global memory and store in shared
+			// Load the cache from global memory and store in shared (cell index default to zero for vector)
 
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto value = operandGenerator.GenerateRegister(dataY, globalIndex, this->m_builder.UniqueIdentifier("member"));
+			auto value = operandGenerator.GenerateRegister(dataY, globalIndex, this->m_builder.UniqueIdentifier("member"), cellIndex);
 
 			ThreadIndexGenerator<B> threadGenerator(this->m_builder);
 			auto localIndex = threadGenerator.GenerateLocalIndex();
@@ -134,21 +193,6 @@ public:
 			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_cacheAddress, value));
 		}
 	}
-
-	template<class T>
-	void GenerateList(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
-	{
-		//TODO: List cache
-	}
-
-	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
-	{
-		//TODO: Tuple cache
-	}
-
-private:
-	unsigned int m_index = 0;
 };
 
 template<PTX::Bits B>
@@ -162,7 +206,6 @@ public:
 
 	BaseRegistersTy Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
 	{
-		m_index = 0;
 		DispatchType(*this, dataX->GetType(), dataY);
 		return m_baseRegisters;
 	}
@@ -170,9 +213,47 @@ public:
 	template<class T>
 	void GenerateVector(const HorseIR::Identifier *dataY)
 	{
+		GenerateMatchInit<T>(dataY);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Identifier *dataY)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateMatchInit<T>(dataY, true, index);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Identifier *dataY)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+		GenerateMatchInit<T>(dataY, true, index);
+	}
+
+public:
+	template<class T>
+	void GenerateMatchInit(const HorseIR::Identifier *dataY, bool isCell = false, unsigned int cellIndex = 0)
+	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			//TODO: .pred match init
+			GenerateMatchInit<PTX::Int8Type>(dataY, isCell, cellIndex);
 		}
 		else
 		{
@@ -181,7 +262,7 @@ public:
 
 			// Get cache variable
 
-			auto cacheName = dataY->GetName() + "_" + std::to_string(m_index++);
+			auto cacheName = dataY->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
 			auto s_cache = new PTX::ArrayVariableAdapter<T, FIND_BLOCK_SIZE, PTX::SharedSpace>(
 				kernelResources->template GetSharedVariable<PTX::ArrayType<T, FIND_BLOCK_SIZE>>(cacheName)
 			);
@@ -198,22 +279,7 @@ public:
 		}
 	}
 
-	template<class T>
-	void GenerateList(const HorseIR::Identifier *dataY)
-	{
-		//TODO: List match init
-	}
-
-	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Identifier *dataY)
-	{
-		//TODO: Tuple match init
-	}
-
-public:
 	BaseRegistersTy m_baseRegisters;
-
-	unsigned int m_index = 0;
 };
 
 template<PTX::Bits B, class D>
@@ -223,72 +289,29 @@ public:
 	using BaseRegistersTy = std::vector<std::pair<const PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
 
 	InternalFindGenerator_Match(Builder& builder, const BaseRegistersTy& baseRegisters,
-			const PTX::Register<PTX::PredicateType> *predicateRegister, const PTX::Register<D>* targetRegister,
+			const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister,
 			FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps)
-		: Generator(builder), m_baseRegisters(baseRegisters), m_predicateRegister(predicateRegister), m_targetRegister(targetRegister), m_findOp(findOp), m_comparisonOps(comparisonOps) {}
+		: Generator(builder), m_baseRegisters(baseRegisters), m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_findOp(findOp), m_comparisonOps(comparisonOps) {}
 
 	std::string Name() const override { return "InternalFindGenerator_Match"; }
 
 	void Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
 	{
-		m_index = 0;
+		// Reset matching
+
+		m_matchPredicate = nullptr;
+
+		// Match the cache against the data
+
 		DispatchType(*this, dataX->GetType(), dataX, dataY, unrollIndex);
-	}
 
-	template<class T>
-	void GenerateVector(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
-	{
-		if constexpr(std::is_same<T, PTX::PredicateType>::value)
-		{
-			//TODO: .pred match
-		}
-		else
-		{
-			// Inner loop body, match the value against the thread data
-
-			auto resources = this->m_builder.GetLocalResources();
-			auto value = resources->template AllocateTemporary<T>();
-
-			auto base = m_baseRegisters.at(m_index++).first;
-			auto basePointer = new PTX::PointerRegisterAdapter<B, T, PTX::SharedSpace>(base);
-			auto s_cacheAddress = new PTX::RegisterAddress<B, T, PTX::SharedSpace>(basePointer, unrollIndex);
-
-			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
-
-			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto data = operandGenerator.GenerateOperand(dataX, OperandGenerator<B, T>::LoadKind::Vector);
-
-			GenerateMatch<T>(data, value);
-		}
-	}
-
-	template<class T>
-	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
-	{
-		//TODO: List match
-	}
-
-	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
-	{
-		//TODO: Tuple match
-	}
-
-private:
-	template<class T>
-	void GenerateMatch(const PTX::TypedOperand<T> *data, const PTX::TypedOperand<T> *value)
-	{
-		auto resources = this->m_builder.GetLocalResources();
-		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOps.at(0));
-		comparisonGenerator.Generate(predicate, data, value);
+		// Compute match output result
 
 		if constexpr(std::is_same<D, PTX::PredicateType>::value)
 		{
 			if (m_findOp == FindOperation::Member)
 			{
-				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, predicate));
+				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, m_matchPredicate));
 			}
 		}
 		else if constexpr(std::is_same<D, PTX::Int64Type>::value)
@@ -297,10 +320,10 @@ private:
 			{
 				case FindOperation::Index:
 				{
-					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_predicateRegister, m_predicateRegister, predicate));
+					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_runningPredicate, m_runningPredicate, m_matchPredicate));
 
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
-					addInstruction->SetPredicate(m_predicateRegister, true);
+					addInstruction->SetPredicate(m_runningPredicate, true);
 					this->m_builder.AddStatement(addInstruction);
 
 					break;
@@ -308,7 +331,7 @@ private:
 				case FindOperation::Count:
 				{
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
-					addInstruction->SetPredicate(predicate);
+					addInstruction->SetPredicate(m_matchPredicate);
 					this->m_builder.AddStatement(addInstruction);
 
 					break;
@@ -317,11 +340,93 @@ private:
 		}
 	}
 
-	const PTX::Register<PTX::PredicateType> *m_predicateRegister = nullptr;
+	template<class T>
+	void GenerateVector(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
+	{
+		GenerateMatch<T>(dataX, dataY, unrollIndex);
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
+	{
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				for (auto index = 0u; index < size->GetValue(); ++index)
+				{
+					GenerateMatch<T>(dataX, dataY, unrollIndex, true, index);
+				}
+				return;
+			}
+		}
+		Error("non-constant cell count");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+		GenerateMatch<T>(dataX, dataY, unrollIndex, true, index);
+	}
+
+private:
+	template<class T>
+	void GenerateMatch(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex, bool isCell = false, unsigned int cellIndex = 0)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			GenerateMatch<PTX::Int8Type>(dataX, dataY, unrollIndex, isCell, cellIndex);
+		}
+		else
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			auto value = resources->template AllocateTemporary<T>();
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			// Load data from the cache
+
+			auto base = m_baseRegisters.at(cellIndex).first;
+			auto basePointer = new PTX::PointerRegisterAdapter<B, T, PTX::SharedSpace>(base);
+			auto s_cacheAddress = new PTX::RegisterAddress<B, T, PTX::SharedSpace>(basePointer, unrollIndex);
+
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
+
+			// Fetch X data (cell index defaults to zero for vector)
+
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			auto data = operandGenerator.GenerateOperand(dataX, OperandGenerator<B, T>::LoadKind::Vector, cellIndex);
+
+			// Compare cache against the thread data
+
+			ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOps.at(0));
+			comparisonGenerator.Generate(predicate, data, value);
+
+			if (m_matchPredicate == nullptr)
+			{
+				m_matchPredicate = predicate;
+			}
+			else
+			{
+				auto mergedPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(mergedPredicate, m_matchPredicate, predicate));
+				m_matchPredicate = mergedPredicate;
+			}
+		}
+	}
+
+	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	const PTX::Register<PTX::PredicateType> *m_matchPredicate = nullptr;
 	const PTX::Register<D> *m_targetRegister = nullptr;
 
 	BaseRegistersTy m_baseRegisters;
-	unsigned int m_index = 0;
 
 	FindOperation m_findOp;
 	std::vector<ComparisonOperation> m_comparisonOps;
@@ -360,9 +465,9 @@ public:
 				case FindOperation::Index:
 				{
 					auto resources = this->m_builder.GetLocalResources();
-					m_predicateRegister = resources->template AllocateTemporary<PTX::PredicateType>();
+					m_runningPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_predicateRegister, new PTX::BoolValue(false)));
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_runningPredicate, new PTX::BoolValue(false)));
 					// Fallthrough
 				}
 				case FindOperation::Count:
@@ -534,7 +639,7 @@ public:
 
 		// Generate match for every unroll factor
 
-		InternalFindGenerator_Match<B, D> matchGenerator(this->m_builder, baseRegisters, m_predicateRegister, m_targetRegister, m_findOp, m_comparisonOps);
+		InternalFindGenerator_Match<B, D> matchGenerator(this->m_builder, baseRegisters, m_runningPredicate, m_targetRegister, m_findOp, m_comparisonOps);
 		for (auto i = 0; i < factor; ++i)
 		{
 			matchGenerator.Generate(m_dataX, identifierY, i);
@@ -673,7 +778,7 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::PredicateType> *m_predicateRegister = nullptr;
+	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
 	const PTX::Register<D> *m_targetRegister = nullptr;
 
 	const HorseIR::Operand *m_dataX = nullptr;
