@@ -100,7 +100,7 @@ public:
 	{
 		std::string string;
 		auto count = std::min(m_data.size(), 32ul);
-		if (count > 1)
+		if (count != 1)
 		{
 			string += "(";
 		}
@@ -118,7 +118,7 @@ public:
 		{
 			string += ", ...";
 		}
-		if (count > 1)
+		if (count != 1)
 		{
 			string += ")";
 		}
