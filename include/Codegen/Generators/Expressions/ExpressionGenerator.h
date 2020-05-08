@@ -108,7 +108,7 @@ public:
 			case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
 			{
 				JoinCountGenerator<B> generator(this->m_builder);
-				generator.Generate(m_targets.at(0), arguments);
+				generator.Generate(m_targets, arguments);
 				break;
 			}
 			case HorseIR::BuiltinFunction::Primitive::GPUJoin:

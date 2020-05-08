@@ -577,7 +577,7 @@ public:
 			case Primitive::GPUJoinCount:
 				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2
 			case Primitive::GPUJoin:
-				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2, count
+				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2, offsets, count
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

@@ -219,13 +219,13 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 			// Functions are provided internally
 
 			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1)});
-			const auto joinObjects = AnalyzeCall(joinFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1), countObjects.at(0)});
+			const auto joinObjects = AnalyzeCall(joinFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1), countObjects.at(0), countObjects.at(1)});
 
 			return {joinObjects.at(0)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
 		{
-			return {new DataObject()};
+			return {new DataObject(), new DataObject()};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
 		{

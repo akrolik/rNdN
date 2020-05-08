@@ -1179,12 +1179,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			// Count call
 
 			const auto callTypes0 = AnalyzeCall(functionType0, {inputType2, inputType3});
-			Require(callTypes0.size() == 1);
+			Require(callTypes0.size() == 2);
 			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBasicType(callTypes0.at(1), BasicType::BasicKind::Int64));
 
 			// Join call
 
-			const auto callTypes1 = AnalyzeCall(functionType1, {inputType2, inputType3, callTypes0.at(0)});
+			const auto callTypes1 = AnalyzeCall(functionType1, {inputType2, inputType3, callTypes0.at(0), callTypes0.at(1)});
 			Require(TypeUtils::IsType<ListType>(callTypes1.at(0)));
 
 			const auto listCallType1 = TypeUtils::GetType<ListType>(callTypes1.at(0));
@@ -1196,14 +1197,16 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		case BuiltinFunction::Primitive::GPUJoinCount:
 		{
 			Require(AnalyzeJoinArguments(argumentTypes));
-			return {new BasicType(BasicType::BasicKind::Int64)};
+			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
 		case BuiltinFunction::Primitive::GPUJoin:
 		{
-			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 1);
+			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 2);
 			Require(AnalyzeJoinArguments(joinTypes));
 
-			const auto countType = argumentTypes.back();
+			const auto offsetsType = argumentTypes.at(argumentTypes.size() - 2);
+			const auto countType = argumentTypes.at(argumentTypes.size() - 1);
+			Require(TypeUtils::IsBasicType(offsetsType, BasicType::BasicKind::Int64));
 			Require(TypeUtils::IsBasicType(countType, BasicType::BasicKind::Int64));
 
 			return {new ListType(new BasicType(BasicType::BasicKind::Int64))};

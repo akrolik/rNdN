@@ -141,11 +141,21 @@ private:
 				}
 				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 				{
-					GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
-					return;
+					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+					const auto cellVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape);
 
-					//TODO: Implement other kinds of writes
-					// Error("");
+					// Only support vector writing for list-in-vector geometry
+
+					if (*vectorGeometry == *cellVector)
+					{
+						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
+						return;
+					}
+					else if (Analysis::ShapeUtils::IsDynamicShape(cellVector))
+					{
+						// Otherwise, we expect the output to be handled separately
+						return;
+					}
 				}
 			}
 			else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))

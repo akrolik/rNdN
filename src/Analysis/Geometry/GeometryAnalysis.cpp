@@ -403,7 +403,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		{
 			// Left data geometry
 
-			auto leftIndex = (arguments.size() - ((function->GetPrimitive() == HorseIR::BuiltinFunction::Primitive::GPUJoin) ? 3 : 2));
+			auto leftIndex = (arguments.size() - ((function->GetPrimitive() == HorseIR::BuiltinFunction::Primitive::GPUJoin) ? 4 : 2));
 			auto leftShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(leftIndex));
 			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(leftShape))
 			{

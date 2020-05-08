@@ -269,9 +269,12 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data_right"));
 
+	lvalues.push_back(new HorseIR::VariableDeclaration("offsets", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 	lvalues.push_back(new HorseIR::VariableDeclaration("count", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 
+	returnOperands.push_back(new HorseIR::Identifier("offsets"));
 	returnOperands.push_back(new HorseIR::Identifier("count"));
+	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
 	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
 
 	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join_count")), operands);
@@ -301,6 +304,9 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 
 	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data_right"));
+
+	parameters.push_back(new HorseIR::Parameter("offsets", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	operands.push_back(new HorseIR::Identifier("offsets"));
 
 	parameters.push_back(new HorseIR::Parameter("count", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 	operands.push_back(new HorseIR::Identifier("count"));

@@ -31,14 +31,16 @@ ListBuffer *GPUJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto countFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
 	auto countBuffers = engine.Execute(countFunction, {arguments.at(2), arguments.at(3)});
 
-	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
+	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
+	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(1));
 
+	Utils::Logger::LogDebug("Join initialization offsets: " + offsetsBuffer->DebugDump());
 	Utils::Logger::LogDebug("Join initialization count: " + countBuffer->DebugDump());
 
 	// Perform the actual join
 
 	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
-	auto joinBuffers = engine.Execute(joinFunction, {arguments.at(2), arguments.at(3), countBuffer});
+	auto joinBuffers = engine.Execute(joinFunction, {arguments.at(2), arguments.at(3), offsetsBuffer, countBuffer});
 
 	return BufferUtils::GetBuffer<ListBuffer>(joinBuffers.at(0));
 }
