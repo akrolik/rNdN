@@ -25,22 +25,9 @@ public:
 
 	std::string Name() const override { return "DataSizeGenerator"; }
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter, unsigned int cellIndex)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter, unsigned int cellIndex = 0)
 	{
 		m_cellIndex = cellIndex;
-		m_size = nullptr;
-
-		DispatchType(*this, parameter->GetType(), parameter);
-		if (m_size == nullptr)
-		{
-			Error("size for parameter " + HorseIR::PrettyPrinter::PrettyString(parameter));
-		}
-		return m_size;
-	}
-
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter)
-	{
-		m_cellIndex = 0;
 		m_size = nullptr;
 
 		DispatchType(*this, parameter->GetType(), parameter);
