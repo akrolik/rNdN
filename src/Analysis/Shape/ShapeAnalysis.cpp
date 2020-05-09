@@ -1610,12 +1610,40 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			// -- Right propagation
 			// Input: Vector<Size1*>, Vector<Size2*>
 			// Output: Vector<Size2*>
+			//
+			// Input: List<Size1*, {Shape2*}>, Vector<Size2*>
+			// Output: Shape2*
 
 			const auto argumentShape1 = argumentShapes.at(0);
 			const auto argumentShape2 = argumentShapes.at(1);
-			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1));
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
-			Return(argumentShape2);
+
+			if (ShapeUtils::IsShape<VectorShape>(argumentShape1))
+			{
+				Return(argumentShape2);
+			}
+			else if (const auto listShape1 = ShapeUtils::GetShape<ListShape>(argumentShape1))
+			{
+				auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
+				Require(CheckStaticScalar(vectorShape2->GetSize()));
+
+				const auto& elementShapes = listShape1->GetElementShapes();
+				if (elementShapes.size() == 1)
+				{
+					Return(elementShapes.at(0));
+				}
+
+				if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 1); isConstant)
+				{
+					if (value < elementShapes.size())
+					{
+						Return(elementShapes.at(value));
+					}
+					break;
+				}
+				Return(ShapeUtils::MergeShapes(elementShapes));
+			}
+			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{

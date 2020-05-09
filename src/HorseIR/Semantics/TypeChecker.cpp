@@ -969,8 +969,17 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
-			Require(TypeUtils::IsType<BasicType>(inputType0) && TypeUtils::IsIntegerType(inputType1));
-			return {inputType0};
+			Require(TypeUtils::IsIntegerType(inputType1));
+
+			if (TypeUtils::IsType<BasicType>(inputType0))
+			{
+				return {inputType0};
+			}
+			else if (const auto listType0 = TypeUtils::GetType<ListType>(inputType0))
+			{
+				return {TypeUtils::GetReducedType(listType0->GetElementTypes())};
+			}
+			break;
 		}
 		case BuiltinFunction::Primitive::IndexAssignment:
 		{

@@ -31,6 +31,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 	switch (function->GetPrimitive())
 	{
+		// Algebraic Unary
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
@@ -134,10 +135,14 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			GPUJoinEngine joinEngine(m_runtime, m_program);
 			return {joinEngine.Join(arguments)};
 		}
+
+		// List
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
 			return {new ListBuffer(arguments)};
 		}
+
+		// Database
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
 			auto columnNames = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer();
@@ -209,6 +214,22 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			const auto& tableName = StringBucket::RecoverString(tableSymbol->GetValue(0));
 			return {dataRegistry.GetTable(tableName)};
 		}
+
+		// Indexing
+		case HorseIR::BuiltinFunction::Primitive::Index:
+		{
+			// Fetch from the list buffer at a particular index
+
+			auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0));
+			auto indexBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(arguments.at(1));
+
+			auto indexData = indexBuffer->GetCPUReadBuffer();
+			auto index = indexData->GetValue(0);
+
+			return {listBuffer->GetCell(index)};
+		}
+
+		// Other
 		case HorseIR::BuiltinFunction::Primitive::Like:
 		{
 			auto& stringData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer()->GetValues();

@@ -238,6 +238,12 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::Index:
 		{
+			const auto type0 = arguments.at(0)->GetType();
+			if (HorseIR::TypeUtils::IsType<HorseIR::ListType>(type0))
+			{
+				return {Device::CPU, Synchronization::None};
+			}
+
 			if (index == 0)
 			{
 				return {Device::GPU, Synchronization::In};
