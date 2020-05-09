@@ -406,7 +406,8 @@ private:
 
 			// Compare cache against the thread data
 
-			ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOps.at(0));
+			auto comparisonOp = m_comparisonOps.at((m_comparisonOps.size() == 1) ? 0 : cellIndex);
+			ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, comparisonOp);
 			comparisonGenerator.Generate(predicate, data, value);
 
 			if (m_matchPredicate == nullptr)
