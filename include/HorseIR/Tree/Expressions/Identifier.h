@@ -37,7 +37,7 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 
 	// LValue
-	const std::vector<Type *> GetTypes() const override { return Operand::GetTypes(); }
+	Type *GetType() const override { return Operand::GetType(); }
 
 	bool operator==(const Identifier& other) const
 	{

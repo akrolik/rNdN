@@ -15,7 +15,7 @@ public:
 
 	const std::vector<Type *>& GetTypes() const { return m_types; }
 
-	void SetTypes(Type *types) { m_types = {types}; }
+	void SetType(Type *type) { m_types = {type}; }
 	void SetTypes(const std::vector<Type *>& types) { m_types = types; }
 
 protected:

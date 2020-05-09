@@ -78,6 +78,16 @@ int main(int argc, const char *argv[])
 
 	HorseIR::SemanticAnalysis::Analyze(program);
 
+	if (Utils::Options::Present(Utils::Options::Opt_Print_hir_typed))
+	{
+		// Pretty print the input HorseIR program
+
+		Utils::Logger::LogInfo("Typed HorseIR program");
+
+		auto programString = HorseIR::PrettyPrinter::PrettyString(program);
+		Utils::Logger::LogInfo(programString, 0, true, Utils::Logger::NoPrefix);
+	}
+
 	Utils::Chrono::End(timeFrontend_start);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Optimize))

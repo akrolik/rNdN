@@ -47,8 +47,7 @@ void TypeChecker::VisitOut(AssignStatement *assign)
 	std::vector<Type *> targetTypes;
 	for (const auto target : assign->GetTargets())
 	{
-		const auto& types = target->GetTypes();
-		targetTypes.insert(std::end(targetTypes), std::begin(types), std::end(types));
+		targetTypes.push_back(target->GetType());
 	}
 	const auto& expressionTypes = assign->GetExpression()->GetTypes();
 
@@ -57,6 +56,23 @@ void TypeChecker::VisitOut(AssignStatement *assign)
 	if (!TypeUtils::IsTypesAssignable(targetTypes, expressionTypes))
 	{
 		Utils::Logger::LogError("Expression type " + TypeUtils::TypeString(expressionTypes) + " does not match destination type " + TypeUtils::TypeString(targetTypes));
+	}
+
+	auto index = 0u;
+	for (const auto target : assign->GetTargets())
+	{
+		const auto symbol = target->GetSymbol();
+		if (auto node = dynamic_cast<VariableDeclaration *>(symbol->node))
+		{
+			if (TypeUtils::IsType<WildcardType>(target->GetType()))
+			{
+				node->SetType(expressionTypes.at(index++));
+			}
+		}
+		else
+		{
+			Utils::Logger::LogError("Assignment target expects variable kind");
+		}
 	}
 }
 
@@ -1310,13 +1326,13 @@ void TypeChecker::VisitOut(Identifier *identifier)
 					// Builtin functions have variable input/outputs and must be checked separately
 
 					const auto function = static_cast<const BuiltinFunction *>(functionDeclaration);
-					identifier->SetTypes(new FunctionType(function));
+					identifier->SetType(new FunctionType(function));
 					break;
 				}
 				case FunctionDeclaration::Kind::Definition:
 				{
 					const auto function = static_cast<const Function *>(functionDeclaration);
-					identifier->SetTypes(new FunctionType(function));
+					identifier->SetType(new FunctionType(function));
 					break;
 				}
 				default:
@@ -1325,7 +1341,7 @@ void TypeChecker::VisitOut(Identifier *identifier)
 			break;
 		}
 		case SymbolTable::Symbol::Kind::Variable:
-			identifier->SetTypes(dynamic_cast<const VariableDeclaration *>(symbol->node)->GetTypes());
+			identifier->SetType(dynamic_cast<const VariableDeclaration *>(symbol->node)->GetType());
 			break;
 		case SymbolTable::Symbol::Kind::Module:
 			Utils::Logger::LogError("Module '" + PrettyPrinter::PrettyString(identifier) + "' used as a variable or function");
@@ -1336,14 +1352,14 @@ void TypeChecker::VisitOut(VectorLiteral *literal)
 {
 	// Propagate the value type to the literal
 
-	literal->SetTypes(new BasicType(literal->GetBasicKind()));
+	literal->SetType(new BasicType(literal->GetBasicKind()));
 }
 
 void TypeChecker::VisitOut(FunctionLiteral *literal)
 {
 	// Propagate the function from the literal expression to the expression type
 
-	literal->SetTypes(literal->GetIdentifier()->GetTypes());
+	literal->SetType(literal->GetIdentifier()->GetType());
 }
 
 void TypeChecker::VisitOut(EnumerationType *type)

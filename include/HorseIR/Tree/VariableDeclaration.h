@@ -28,9 +28,7 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 
 	// LValue
-	const std::vector<Type *> GetTypes() const override { return {m_type}; }
-
-	Type *GetType() const { return m_type; }
+	Type *GetType() const override { return m_type; }
 	void SetType(Type *type) { m_type = type; }
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }

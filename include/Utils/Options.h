@@ -11,6 +11,7 @@ public:
 	static constexpr char const *Opt_Optimize = "optimize";
 	static constexpr char const *Opt_Print_debug = "print-debug";
 	static constexpr char const *Opt_Print_hir = "print-hir";
+	static constexpr char const *Opt_Print_hir_typed = "print-hir-typed";
 	static constexpr char const *Opt_Print_symbol = "print-symbol";
 	static constexpr char const *Opt_Print_analysis = "print-analysis";
 	static constexpr char const *Opt_Print_outline = "print-outline";
@@ -57,6 +58,7 @@ private:
 		m_options.add_options("Debug")
 			(Opt_Print_debug, "Print debug logs (excludes below)")
 			(Opt_Print_hir, "Pretty print input HorseIR program")
+			(Opt_Print_hir_typed, "Pretty print typed HorseIR program")
 			(Opt_Print_symbol, "Print symbol table")
 			(Opt_Print_analysis, "Print analyses")
 			(Opt_Print_outline, "Pretty print outlined HorseIR program")

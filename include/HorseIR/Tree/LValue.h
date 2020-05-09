@@ -14,7 +14,7 @@ class LValue : virtual public Node
 public:
 	virtual LValue *Clone() const override = 0;
 
-	virtual const std::vector<Type *> GetTypes() const = 0;
+	virtual Type *GetType() const = 0;
 
 	SymbolTable::Symbol *GetSymbol() const { return m_symbol; }
 	void SetSymbol(SymbolTable::Symbol *symbol) { m_symbol = symbol; }

@@ -70,7 +70,7 @@ static bool IsTypesAssignable(const std::vector<Type *>& types1, const std::vect
 
 		if (IsType<WildcardType>(type1))
 		{
-			//TODO: Wildcard assign
+			return true;
 		}
 
 		if (IsType<ListType>(type1) && IsType<ListType>(type2))
