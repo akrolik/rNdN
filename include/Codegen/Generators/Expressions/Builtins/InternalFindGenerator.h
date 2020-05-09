@@ -6,6 +6,7 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
@@ -13,6 +14,7 @@
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 #include "Codegen/Generators/Synchronization/BarrierGenerator.h"
+#include "Codegen/NameUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -23,7 +25,8 @@ namespace Codegen {
 enum class FindOperation {
 	Member,
 	Index,
-	Count
+	Count,
+	Indexes
 };
 
 constexpr auto FIND_BLOCK_SIZE = 1024u;
@@ -182,7 +185,7 @@ private:
 			// Load the cache from global memory and store in shared (cell index default to zero for vector)
 
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto value = operandGenerator.GenerateRegister(dataY, globalIndex, this->m_builder.UniqueIdentifier("member"), cellIndex);
+			auto value = operandGenerator.GenerateRegister(dataY, globalIndex, this->m_builder.UniqueIdentifier("find"), cellIndex);
 
 			ThreadIndexGenerator<B> threadGenerator(this->m_builder);
 			auto localIndex = threadGenerator.GenerateLocalIndex();
@@ -288,10 +291,10 @@ class InternalFindGenerator_Match : public Generator
 public:
 	using BaseRegistersTy = std::vector<std::pair<const PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
 
-	InternalFindGenerator_Match(Builder& builder, const BaseRegistersTy& baseRegisters,
-			const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister,
-			FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps)
-		: Generator(builder), m_baseRegisters(baseRegisters), m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_findOp(findOp), m_comparisonOps(comparisonOps) {}
+	InternalFindGenerator_Match(Builder& builder, const BaseRegistersTy& baseRegisters, FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps,
+			const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr)
+		: Generator(builder), m_baseRegisters(baseRegisters), m_findOp(findOp), m_comparisonOps(comparisonOps),
+			m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
 	std::string Name() const override { return "InternalFindGenerator_Match"; }
 
@@ -320,6 +323,8 @@ public:
 			{
 				case FindOperation::Index:
 				{
+					// Output only the first matching index
+
 					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_runningPredicate, m_runningPredicate, m_matchPredicate));
 
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
@@ -330,9 +335,55 @@ public:
 				}
 				case FindOperation::Count:
 				{
+					// Increment the count by 1
+
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
 					addInstruction->SetPredicate(m_matchPredicate);
 					this->m_builder.AddStatement(addInstruction);
+
+					break;
+				}
+				case FindOperation::Indexes:
+				{
+					// Output all indexes, requires breaking the typical return pattern as there is an indeterminate quantity
+
+					auto resources = this->m_builder.GetLocalResources();
+					auto storePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto activePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+					ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+					auto globalIndex = indexGenerator.GenerateGlobalIndex();
+
+					DataSizeGenerator<B> sizeGenerator(this->m_builder);
+					auto size = sizeGenerator.GenerateSize(dataY);
+
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(activePredicate, globalIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
+					this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(storePredicate, activePredicate, m_matchPredicate));
+
+					auto label = this->m_builder.CreateLabel("END");
+					this->m_builder.AddStatement(new PTX::BranchInstruction(label, storePredicate, true));
+
+					auto kernelResources = this->m_builder.GetKernelResources();
+					auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::Int64Type, PTX::GlobalSpace>>>(NameUtils::ReturnName(0));
+
+					//TODO: Conversions need to be optimized. Likely by a consistent index size for all data
+
+                                        auto writeOffset = ConversionGenerator::ConvertSource<PTX::UInt32Type, PTX::Int64Type>(this->m_builder, m_writeOffset);
+
+					AddressGenerator<B, PTX::Int64Type> addressGenerator(this->m_builder);
+					auto returnAddress0 = addressGenerator.GenerateAddress(returnParameter, 0, writeOffset);
+					auto returnAddress1 = addressGenerator.GenerateAddress(returnParameter, 1, writeOffset);
+
+                                        auto globalIndex64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, globalIndex);
+
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, globalIndex64));
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, m_targetRegister));
+
+					// End control flow and increment both the matched (predicated) and running counts
+
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(m_writeOffset, m_writeOffset, new PTX::Int64Value(1)));
+					this->m_builder.AddStatement(label);
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1)));
 
 					break;
 				}
@@ -427,6 +478,8 @@ private:
 	const PTX::Register<PTX::PredicateType> *m_matchPredicate = nullptr;
 	const PTX::Register<D> *m_targetRegister = nullptr;
 
+	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+
 	BaseRegistersTy m_baseRegisters;
 
 	FindOperation m_findOp;
@@ -448,14 +501,13 @@ public:
 
 	const PTX::Register<D> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		m_targetRegister = this->GenerateTargetRegister(target, arguments);
-
 		// Initialize target register (@member->false, @index_of->0, @join_count->0)
 
 		if constexpr(std::is_same<D, PTX::PredicateType>::value)
 		{
 			if (m_findOp == FindOperation::Member)
 			{
+				m_targetRegister = this->GenerateTargetRegister(target, arguments);
 				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(m_targetRegister, new PTX::BoolValue(false)));
 			}
 		}
@@ -473,7 +525,22 @@ public:
 				}
 				case FindOperation::Count:
 				{
+					m_targetRegister = this->GenerateTargetRegister(target, arguments);
 					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_targetRegister, new PTX::Int64Value(0)));
+
+					break;
+				}
+				case FindOperation::Indexes:
+				{
+					auto resources = this->m_builder.GetLocalResources();
+					m_targetRegister = resources->template AllocateTemporary<PTX::Int64Type>();
+
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_targetRegister, new PTX::Int64Value(0)));
+
+					OperandGenerator<B, PTX::Int64Type> operandGenerator(this->m_builder);
+					m_writeOffset = operandGenerator.GenerateRegister(arguments.at(2), OperandGenerator<B, PTX::Int64Type>::LoadKind::Vector);//TODO: Unique load; this->m_builder.UniqueIdentifier("find"));
+
+					break;
 				}
 			}
 		}
@@ -640,7 +707,7 @@ public:
 
 		// Generate match for every unroll factor
 
-		InternalFindGenerator_Match<B, D> matchGenerator(this->m_builder, baseRegisters, m_runningPredicate, m_targetRegister, m_findOp, m_comparisonOps);
+		InternalFindGenerator_Match<B, D> matchGenerator(this->m_builder, baseRegisters, m_findOp, m_comparisonOps, m_runningPredicate, m_targetRegister, m_writeOffset);
 		for (auto i = 0; i < factor; ++i)
 		{
 			matchGenerator.Generate(m_dataX, identifierY, i);
@@ -781,6 +848,8 @@ public:
 private:
 	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
 	const PTX::Register<D> *m_targetRegister = nullptr;
+
+	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr; // Join output
 
 	const HorseIR::Operand *m_dataX = nullptr;
 
