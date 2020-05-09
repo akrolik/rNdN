@@ -534,11 +534,13 @@ public:
 				{
 					auto resources = this->m_builder.GetLocalResources();
 					m_targetRegister = resources->template AllocateTemporary<PTX::Int64Type>();
+					m_writeOffset = resources->template AllocateTemporary<PTX::Int64Type>();
 
 					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_targetRegister, new PTX::Int64Value(0)));
 
 					OperandGenerator<B, PTX::Int64Type> operandGenerator(this->m_builder);
-					m_writeOffset = operandGenerator.GenerateRegister(arguments.at(2), OperandGenerator<B, PTX::Int64Type>::LoadKind::Vector);//TODO: Unique load; this->m_builder.UniqueIdentifier("find"));
+					auto writeOffset = operandGenerator.GenerateOperand(arguments.at(2), OperandGenerator<B, PTX::Int64Type>::LoadKind::Vector);
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_writeOffset, writeOffset));
 
 					break;
 				}
