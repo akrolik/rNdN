@@ -39,6 +39,13 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const TimeValue& value);
 
+	std::string ToString() const
+	{
+		std::stringstream stream;
+		stream << *this;
+		return stream.str();
+	}
+
 	bool operator==(const TimeValue& other) const
 	{
 		return (m_hour == other.m_hour &&

@@ -12,6 +12,8 @@
 #include "HorseIR/Utils/PrettyPrinter.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Utils/Date.h"
+
 namespace Runtime {
 
 class VectorData : public DataObject
@@ -136,15 +138,62 @@ public:
 		}
 		else
 		{
-			if (HorseIR::TypeUtils::IsCharacterType(m_type))
+			switch (m_type->GetBasicKind())
 			{
-				return StringBucket::RecoverString(m_data.at(index));
+				case HorseIR::BasicType::BasicKind::Char:
+				{
+					return std::string(1, m_data.at(index));
+				}
+				case HorseIR::BasicType::BasicKind::Symbol:
+				case HorseIR::BasicType::BasicKind::String:
+				{
+					return StringBucket::RecoverString(m_data.at(index));
+				}
+				case HorseIR::BasicType::BasicKind::Datetime:
+				{
+					auto [year, month, day, hour, minute, second, millisecond]
+						= Utils::Date::DatetimeFromEpoch(m_data.at(index));
+					HorseIR::DateValue date(year, month, day);
+					HorseIR::TimeValue time(hour, minute, second, millisecond);
+					HorseIR::DatetimeValue datetime(&date, &time);
+					return datetime.ToString();
+				}
+				case HorseIR::BasicType::BasicKind::Date:
+				{
+					auto [year, month, day] = Utils::Date::DateFromEpoch(m_data.at(index));
+					HorseIR::DateValue date(year, month, day);
+					return date.ToString();
+				}
+				case HorseIR::BasicType::BasicKind::Month:
+				{
+					auto [year, month, day] = Utils::Date::DateFromEpoch(m_data.at(index));
+					HorseIR::MonthValue date(month, day);
+					return date.ToString();
+				}
+				case HorseIR::BasicType::BasicKind::Minute:
+				{
+					auto [hour, minute, second] = Utils::Date::TimeFromEpoch(m_data.at(index));
+					HorseIR::MinuteValue time(hour, minute);
+					return time.ToString();
+				}
+				case HorseIR::BasicType::BasicKind::Second:
+				{
+					auto [hour, minute, second] = Utils::Date::TimeFromEpoch(m_data.at(index));
+					HorseIR::SecondValue time(hour, minute, second);
+					return time.ToString();
+				}
+				case HorseIR::BasicType::BasicKind::Time:
+				{
+					auto [year, month, day, hour, minute, second, millisecond]
+						= Utils::Date::DatetimeFromEpoch(m_data.at(index));
+					HorseIR::TimeValue time(hour, minute, second, millisecond);
+					return time.ToString();
+				}
+				default:
+				{
+					return std::to_string(m_data.at(index));
+				}
 			}
-			else if (HorseIR::TypeUtils::IsBasicType(m_type, HorseIR::BasicType::BasicKind::Char))
-			{
-				return std::string(1, m_data.at(index));
-			}
-			return std::to_string(m_data.at(index));
 		}
 	}
 

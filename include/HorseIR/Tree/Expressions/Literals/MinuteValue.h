@@ -31,6 +31,13 @@ public:
 		return Utils::Date::EpochTime_time(m_hour, m_minute);
 	}
 
+	std::string ToString() const
+	{
+		std::stringstream stream;
+		stream << *this;
+		return stream.str();
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const MinuteValue& value);
 
 	bool operator==(const MinuteValue& other) const

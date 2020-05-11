@@ -35,6 +35,13 @@ public:
 		);
 	}
 
+	std::string ToString() const
+	{
+		std::stringstream stream;
+		stream << *this;
+		return stream.str();
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const DatetimeValue& value);
 
 	bool operator==(const DatetimeValue& other) const

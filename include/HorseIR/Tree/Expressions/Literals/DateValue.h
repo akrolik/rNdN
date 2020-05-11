@@ -34,6 +34,13 @@ public:
 		return Utils::Date::EpochTime_day(m_year, m_month, m_day);
 	}
 
+	std::string ToString() const
+	{
+		std::stringstream stream;
+		stream << *this;
+		return stream.str();
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const DateValue& value);
 
 	bool operator==(const DateValue& other) const
