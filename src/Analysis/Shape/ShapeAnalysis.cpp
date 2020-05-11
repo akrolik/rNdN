@@ -2163,7 +2163,7 @@ bool ShapeAnalysis::AnalyzeJoinArguments(const std::vector<const Shape *>& argum
 			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
 
 			const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
-			const auto l_inputShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
+			const auto l_inputShape2 = new VectorShape(new Shape::ConstantSize(1));
 
 			const auto [returnShapes, writeShapes] = AnalyzeCall(function, {l_inputShape1, l_inputShape2}, {});
 			RequireJoin(ShapeUtils::IsSingleShape(returnShapes));
@@ -2180,8 +2180,9 @@ bool ShapeAnalysis::AnalyzeJoinArguments(const std::vector<const Shape *>& argum
 
 		const auto type = arguments.at(0)->GetType();
 		const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+		const auto l_inputShape2 = new VectorShape(new Shape::ConstantSize(1));
 
-		const auto [returnShapes, writeShapes] = AnalyzeCall(function, {argumentShape1, argumentShape2}, {});
+		const auto [returnShapes, writeShapes] = AnalyzeCall(function, {argumentShape1, l_inputShape2}, {});
 		RequireJoin(ShapeUtils::IsSingleShape(returnShapes));
 		RequireJoin(ShapeUtils::IsSingleShape(writeShapes));
 		RequireJoin(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
