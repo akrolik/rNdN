@@ -53,14 +53,14 @@ public:
 
 	// Columns
 	
-	void SetPrimaryKey(VectorBuffer *primaryKey, const std::unordered_map<std::int64_t, std::int64_t>& primaryMap)
+	void SetPrimaryKey(VectorBuffer *primaryKey, const std::unordered_map<std::int32_t, std::int64_t>& primaryMap)
 	{
 		m_primaryKey = primaryKey; 
 		m_primaryMap = primaryMap;
 	}
 	
 	VectorBuffer *GetPrimaryKey() const { return m_primaryKey; }
-	const std::unordered_map<std::int64_t, std::int64_t>& GetPrimaryMap() const { return m_primaryMap; }
+	const std::unordered_map<std::int32_t, std::int64_t>& GetPrimaryMap() const { return m_primaryMap; }
 
 	ColumnBuffer *GetColumn(const std::string& column) const;
 
@@ -113,7 +113,7 @@ private:
 	std::unordered_map<std::string, ColumnBuffer *> m_columnMap;
 
 	VectorBuffer *m_primaryKey = nullptr;
-	std::unordered_map<std::int64_t, std::int64_t> m_primaryMap;
+	std::unordered_map<std::int32_t, std::int64_t> m_primaryMap;
 
 	unsigned int m_rows = 0;
 };
