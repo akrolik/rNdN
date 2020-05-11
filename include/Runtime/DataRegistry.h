@@ -30,8 +30,10 @@ public:
 private:
 	std::int32_t EpochTime(char *date) const;
 
-	void LoadTPCHSupplierTable();
+	void LoadTPCHNationTable();
+	void LoadTPCHRegionTable();
 	void LoadTPCHPartTable();
+	void LoadTPCHSupplierTable();
 	void LoadTPCHPartSupplierTable();
 	void LoadTPCHCustomerTable();
 	void LoadTPCHOrderTable();
