@@ -41,7 +41,7 @@ static void _checkRuntimeError(cudaError_t error, const char *file, int line)
 		return;
 	}
 
-	Utils::Logger::LogErrorPart(std::string(cudaGetErrorString(error)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "RUNTIME ERROR");
+	Utils::Logger::LogError(std::string(cudaGetErrorString(error)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "RUNTIME ERROR");
 }
 
 static void _checkNVVMResult(nvvmResult result, const char *file, int line)
@@ -51,7 +51,7 @@ static void _checkNVVMResult(nvvmResult result, const char *file, int line)
 		return;
 	}
 
-	Utils::Logger::LogErrorPart(std::string(nvvmGetErrorString(result)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "NVVM ERROR");
+	Utils::Logger::LogError(std::string(nvvmGetErrorString(result)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "NVVM ERROR");
 }
 
 static void Synchronize()
