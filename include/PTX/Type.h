@@ -856,6 +856,7 @@ struct ArrayType : DataType
 		REQUIRE_BASE(T, DataType)
 	);
 
+	using SystemType = typename T::SystemType;
 	using ElementType = T;
 	constexpr static Bits TypeBits = T::TypeBits;
 
