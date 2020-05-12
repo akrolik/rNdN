@@ -225,11 +225,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 
 		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::Index:
-
-		// Database
-		case HorseIR::BuiltinFunction::Primitive::Keys:
-		case HorseIR::BuiltinFunction::Primitive::Values:
-		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			Require(shapes.size() == 1);
@@ -350,7 +345,10 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::Dictionary:
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		case HorseIR::BuiltinFunction::Primitive::KeyedTable:
+		case HorseIR::BuiltinFunction::Primitive::Keys:
+		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Meta:
+		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 

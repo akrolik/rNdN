@@ -4,7 +4,7 @@
 
 namespace Runtime {
 
-EnumerationBuffer::EnumerationBuffer(VectorBuffer *keys, VectorBuffer *values) : ColumnBuffer(DataBuffer::Kind::Enumeration), m_keys(keys), m_values(values)
+EnumerationBuffer::EnumerationBuffer(VectorBuffer *keys, VectorBuffer *values, TypedVectorBuffer<std::int64_t> *indexes) : ColumnBuffer(DataBuffer::Kind::Enumeration), m_keys(keys), m_values(values), m_indexes(indexes)
 {
 	// Form the type/shape
 
@@ -39,7 +39,7 @@ std::string EnumerationBuffer::DebugDump() const
 
 std::string EnumerationBuffer::DebugDump(unsigned int index) const
 {
-	return m_keys->DebugDump(index) + " -> " + m_values->DebugDump(index);
+	return m_values->DebugDump(index) + " -> [" + m_indexes->DebugDump(index) + "]";
 }
 
 }

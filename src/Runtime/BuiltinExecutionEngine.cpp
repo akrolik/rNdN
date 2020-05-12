@@ -184,9 +184,15 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 			else if (auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(argument, false))
 			{
-				return {enumeration->GetValues()};
+				return {enumeration->GetIndexes()};
 			}
 			Error("unsupported target type " + HorseIR::TypeUtils::TypeString(argument->GetType()));
+		}
+		case HorseIR::BuiltinFunction::Primitive::Fetch:
+		{
+			auto argument = arguments.at(0);
+			auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(argument);
+			return {enumeration->GetValues()};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{

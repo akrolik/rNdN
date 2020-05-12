@@ -186,11 +186,8 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		case HorseIR::BuiltinFunction::Primitive::Vector:
-
-		// Database
-		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		{
-			return {Device::GPU, Synchronization::None};
+			return {Device::GPU, Synchronization:None};
 		}
 
 		// Binary
@@ -395,6 +392,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::Keys:
 		case HorseIR::BuiltinFunction::Primitive::Values:
 		case HorseIR::BuiltinFunction::Primitive::Meta:
+		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
 

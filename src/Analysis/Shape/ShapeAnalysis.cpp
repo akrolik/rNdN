@@ -1468,7 +1468,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			//
 			// -- Enumeration
 			// Input: Enum<Shape1*, Shape2*>
-			// Output: Shape2*
+			// Output: Vector<size(Shape2*)>
 
 			const auto argumentShape = argumentShapes.at(0);
 			if (const auto dictionaryShape = ShapeUtils::GetShape<DictionaryShape>(argumentShape))
@@ -1492,7 +1492,21 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			}
 			else if (const auto enumShape = ShapeUtils::GetShape<EnumerationShape>(argumentShape))
 			{
-				Return(enumShape->GetValueShape());
+				// Returns index vector
+
+				auto valueShape = enumShape->GetValueShape();
+				if (const auto vectorValueShape = ShapeUtils::GetShape<VectorShape>(valueShape))
+				{
+					Return(vectorValueShape);
+				}
+				else if (const auto listValueShape = ShapeUtils::GetShape<ListShape>(valueShape))
+				{
+					auto cellShape = ShapeUtils::MergeShapes(listValueShape->GetElementShapes());
+					if (const auto vectorCellShape = ShapeUtils::GetShape<VectorShape>(cellShape))
+					{
+						Return(vectorCellShape);
+					}
+				}
 			}
 			break;
 		}
