@@ -17,6 +17,7 @@ class DataRegistry
 public:
 	template<typename T>
 	static void LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, const HorseIR::BasicType *type, unsigned long size);
+	static void LoadDateDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size);
 	static void LoadStringDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size);
 
 	void LoadDebugData();

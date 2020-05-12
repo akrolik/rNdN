@@ -54,6 +54,21 @@ void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer
 	)});
 }
 
+void DataRegistry::LoadDateDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size)
+{
+	CUDA::Vector<std::int32_t> dates(size);
+
+	for (auto i = 0u; i < size; ++i)
+	{
+		auto year = 2000 + (i / 36);
+		auto month = (i % 36) / 3 + 1;
+		auto day = (i % 3);
+		dates[i] = Utils::Date::EpochTime_day(year, month, day);
+	}
+
+	columns.push_back({"dates", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(dates)))});
+}
+
 void DataRegistry::LoadStringDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size)
 {
 	CUDA::Vector<std::uint64_t> strings(size);
@@ -88,6 +103,7 @@ void DataRegistry::LoadDebugData()
 		LoadDebugData<std::int64_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), i);
 		LoadDebugData<float>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float32), i);
 		LoadDebugData<double>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), i);
+		LoadDateDebugData(columns, i);
 		LoadStringDebugData(columns, i);
 
 		AddTable("debug_" + std::to_string(i), new TableBuffer(columns));
