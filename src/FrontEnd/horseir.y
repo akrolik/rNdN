@@ -340,6 +340,7 @@ int_list : int_list ',' tINTVAL                                                 
          ;
 
 float_literal : tFLOATVAL ':' float_type                                        { $$ = HorseIR::CreateFloatLiteral($1, $3); }
+              | tINTVAL ':' float_type                                          { $$ = HorseIR::CreateFloatLiteral($1, $3); }
               | '(' float_list ')' ':' float_type                               { $$ = HorseIR::CreateFloatLiteral(*$2, $5); }
               ;
 
