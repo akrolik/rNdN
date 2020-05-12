@@ -57,6 +57,33 @@ public:
 	}
 
 	template<class T>
+	const PTX::ConstVariable<T> *AllocateConstVariable(const std::string& identifier, const std::vector<typename T::SystemType>& initializer)
+	{
+		return this->GetResources<T>()->AllocateConstVariable(identifier, initializer);
+	}
+
+	template<class T>
+	bool ContainsConstVariable(const std::string& identifier) const
+	{
+		auto resources = this->GetResources<T>(false);
+		if (resources != nullptr)
+		{
+			return resources->ContainsConstVariable(identifier);
+		}
+		return false;
+	}
+
+	template<class T>
+	const PTX::ConstVariable<T> *GetConstVariable(const std::string& identifier) const
+	{
+		if (ContainsConstVariable<T>(identifier))
+		{
+			return this->GetResources<T>(false)->GetConstVariable(identifier);
+		}
+		return false;
+	}
+
+	template<class T>
 	const PTX::SharedVariable<T> *AllocateDynamicSharedMemory(unsigned int size)
 	{
 		auto alignment = m_sharedMemoryDeclaration->GetAlignment();

@@ -261,6 +261,54 @@ protected:
 	}
 };
 
+template<class T, class S>
+class InitializedVariableDeclaration : public TypedVariableDeclaration<T, S>
+{
+public:
+	REQUIRE_TYPE_PARAM(VariableDeclaration,
+		REQUIRE_BASE(T, Type)
+	);
+
+	REQUIRE_SPACE_PARAM(VariableDeclaration,
+		REQUIRE_EXACT(S, GlobalSpace, ConstSpace)
+	);
+
+	InitializedVariableDeclaration(const std::string& name, const std::vector<typename T::SystemType>& initializer)
+		: TypedVariableDeclaration<T, S>({name}), m_initializer(initializer) {}
+
+	std::string ToString(unsigned int indentation, bool terminate) const override
+	{
+		auto code = TypedVariableDeclaration<T, S>::ToString(indentation, false);
+		code += " = {";
+		bool first = true;
+		for (auto value : m_initializer)
+		{
+			if (!first)
+			{
+				code += ",";
+			}
+			first = false;
+			code += " " + std::to_string(value);
+		}
+		code += " }";
+		if (terminate)
+		{
+			code += ";";
+		}
+		return code;
+	}
+
+	json ToJSON() const override
+	{
+		json j = TypedVariableDeclaration<T, S>::ToJSON();
+		j["initializer"] = m_initializer;
+		return j;
+	}
+
+protected:
+	std::vector<typename T::SystemType> m_initializer;
+};
+
 template<class T>
 using RegisterDeclaration = TypedVariableDeclaration<T, RegisterSpace>;
 
@@ -274,10 +322,16 @@ template<class T>
 using GlobalDeclaration = TypedVariableDeclaration<T, GlobalSpace>;
 
 template<class T>
+using InitializedGlobalDeclaration = InitializedVariableDeclaration<T, GlobalSpace>;
+
+template<class T>
 using SharedDeclaration = TypedVariableDeclaration<T, SharedSpace>;
 
 template<class T>
 using ConstDeclaration = TypedVariableDeclaration<T, ConstSpace>;
+
+template<class T>
+using InitializedConstDeclaration = InitializedVariableDeclaration<T, ConstSpace>;
 
 template<class T>
 using ParameterDeclaration = TypedVariableDeclaration<T, ParameterSpace>;
