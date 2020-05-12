@@ -10,7 +10,10 @@ module default{
     t12:? = @gt(t6,0:f64);
     t13:? = @and(t12,t11);
     t19:? = @compress(t13,t6);
-    t24:? = @avg(t19);
+    //t24:? = @avg(t19);
+    t24a:? = @sum(t19);
+    t24b:? = @len(t19);
+    t24:? = @div(t24a,t24b);
     t25:? = @load_table(`customer:sym);
     t26:i32 = check_cast(@column_value(t25,`c_custkey:sym), i32);
     t30:sym = check_cast(@column_value(t25,`c_phone:sym), sym);
