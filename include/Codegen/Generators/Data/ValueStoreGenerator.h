@@ -297,12 +297,28 @@ private:
 			}
 			case RegisterReductionOperation::Minimum:
 			{
-				this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value));
+				// Float not supported by red
+				if constexpr(PTX::is_float_type<T>::value)
+				{
+					GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+				}
+				else
+				{
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value));
+				}
 				break;
 			}
 			case RegisterReductionOperation::Maximum:
 			{
-				this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value));
+				// Float not supported by red
+				if constexpr(PTX::is_float_type<T>::value)
+				{
+					GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+				}
+				else
+				{
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value));
+				}
 				break;
 			}
 			default:
