@@ -31,6 +31,8 @@
 
 #include "Codegen/Generators/Expressions/Builtins/RazeGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/DateGenerator.h"
+
 #include "Codegen/Generators/Expressions/Builtins/JoinCountGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/JoinGenerator.h"
 
@@ -289,6 +291,22 @@ public:
 			// List
 			case HorseIR::BuiltinFunction::Primitive::Raze:
 				return new RazeGenerator<B, T>(this->m_builder);
+
+			// Date
+			case HorseIR::BuiltinFunction::Primitive::DateYear:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Year);
+			case HorseIR::BuiltinFunction::Primitive::DateMonth:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Month);
+			case HorseIR::BuiltinFunction::Primitive::DateDay:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Day);
+			case HorseIR::BuiltinFunction::Primitive::TimeHour:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Hour);
+			case HorseIR::BuiltinFunction::Primitive::TimeMinute:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Minute);
+			case HorseIR::BuiltinFunction::Primitive::TimeSecond:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Second);
+			case HorseIR::BuiltinFunction::Primitive::TimeMillisecond:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Millisecond);
 
 			// Indexing
 			case HorseIR::BuiltinFunction::Primitive::Index:
