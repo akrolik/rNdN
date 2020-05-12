@@ -80,9 +80,17 @@ std::string ListBuffer::Description() const
 std::string ListBuffer::DebugDump() const
 {
 	std::string string = "[";
+	bool first = true;
 	for (const auto& cell : m_cells)
 	{
+		if (first)
+		{
+			string += "\n";
+		}
+		string += " - ";
+		first = false;
 		string += cell->DebugDump();
+		string += "\n";
 	}
 	return (string + "]");
 }
