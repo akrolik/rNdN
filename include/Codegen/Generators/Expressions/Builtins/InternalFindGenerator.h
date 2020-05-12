@@ -355,7 +355,7 @@ public:
 					auto globalIndex = indexGenerator.GenerateGlobalIndex();
 
 					DataSizeGenerator<B> sizeGenerator(this->m_builder);
-					auto size = sizeGenerator.GenerateSize(dataY);
+					auto size = sizeGenerator.GenerateSize(dataX);
 
 					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(activePredicate, globalIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
 					this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(storePredicate, activePredicate, m_matchPredicate));
