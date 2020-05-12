@@ -48,7 +48,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary [" + std::to_string(keysSize) + " != " + std::to_string(valuesSize) + "]");
 	}
 
-	Utils::Logger::LogDebug("Initializing dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
+	Utils::Logger::LogDebug("Group dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
 
 	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
 

@@ -8,6 +8,7 @@
 #include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Runtime {
 
@@ -34,13 +35,21 @@ ListBuffer *GPUJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
 	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(1));
 
-	Utils::Logger::LogDebug("Join initialization offsets: " + offsetsBuffer->DebugDump());
-	Utils::Logger::LogDebug("Join initialization count: " + countBuffer->DebugDump());
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Join initialization offsets: " + offsetsBuffer->DebugDump());
+		Utils::Logger::LogDebug("Join initialization count: " + countBuffer->DebugDump());
+	}
 
 	// Perform the actual join
 
 	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
 	auto joinBuffers = engine.Execute(joinFunction, {arguments.at(2), arguments.at(3), offsetsBuffer, countBuffer});
+
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Join indexes: " + joinBuffers.at(0)->DebugDump());
+	}
 
 	return BufferUtils::GetBuffer<ListBuffer>(joinBuffers.at(0));
 }
