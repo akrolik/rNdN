@@ -1,6 +1,7 @@
 #include "Utils/Chrono.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Utils {
 
@@ -19,8 +20,11 @@ void Chrono::Complete()
 	overall->End();
 	instance.m_timings.pop();
 
-	Utils::Logger::LogSection("Execution time");
-	Utils::Logger::LogTiming(overall);
+	if (Utils::Options::Present(Utils::Options::Opt_Print_time))
+	{
+		Utils::Logger::LogSection("Execution time");
+		Utils::Logger::LogTiming(overall);
+	}
 }
 
 void Chrono::Pause(const SpanTiming *timing)

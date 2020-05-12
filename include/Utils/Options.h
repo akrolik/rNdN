@@ -18,6 +18,7 @@ public:
 	static constexpr char const *Opt_Print_outline_graph = "print-outline-graph";
 	static constexpr char const *Opt_Print_ptx = "print-ptx";
 	static constexpr char const *Opt_Print_json = "print-json";
+	static constexpr char const *Opt_Print_time = "print-time";
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
 
 	static constexpr char const *Opt_File = "file";
@@ -65,6 +66,7 @@ private:
 			(Opt_Print_outline_graph, "Pretty print outliner graphs")
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
+			(Opt_Print_time, "Print timings")
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")
