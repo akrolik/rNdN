@@ -49,7 +49,7 @@ module default{
     t111:? = @mul(0.2:f64,t110);
     t112:? = @list(t56,t42);
     t113:? = @list(t111,t72);
-    t114:? = @join_index(@lt@eq,t112,t113);
+    t114:? = @join_index(@lt,@eq,t112,t113);
     t115:? = @index(t114,0:i64);
     t131:? = @index(t57,t115);
     t147:? = @sum(t131);

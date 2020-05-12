@@ -52,7 +52,7 @@ module default{
     t156:? = @mul(0.5:f64,t153);
     t157:? = @list(t72,t69,t71);
     t158:? = @list(t156,t155,t154);
-    t159:? = @join_index(@gt@eq@eq,t157,t158);
+    t159:? = @join_index(@gt,@eq,@eq,t157,t158);
     t160:? = @index(t159,0:i64);
     t163:? = @index(t71,t160);
     t172:? = @member(t26,t163);

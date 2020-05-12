@@ -49,7 +49,7 @@ module default{
     t194:? = @fetch(t178);
     t195:? = @list(t134,t136);
     t196:? = @list(t194,t180);
-    t197:? = @join_index(@eq@neq,t195,t196);
+    t197:? = @join_index(@eq,@neq,t195,t196);
     t198:? = @index(t197,0:i64);
     t199:? = @len(t134);
     t200:? = @vector(t199,1:bool);
@@ -63,7 +63,7 @@ module default{
     t255:? = @fetch(t239);
     t256:? = @list(t215,t213);
     t257:? = @list(t241,t255);
-    t258:? = @join_index(@neq@eq,t256,t257);
+    t258:? = @join_index(@neq,@eq,t256,t257);
     t259:? = @index(t258,0:i64);
     t260:? = @unique(t259);
     t261:? = @index(t259,t260);
