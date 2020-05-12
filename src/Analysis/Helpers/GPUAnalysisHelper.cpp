@@ -197,26 +197,32 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
 		{
 			const auto type0 = arguments.at(0)->GetType();
-			const auto type1 = arguments.at(1)->GetType();
-
-			// List embedding
-			if (const auto listType0 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type0))
+			if (HorseIR::TypeUtils::IsCharacterType(type0))
+			{
+				return {Device::CPU, Synchronization:None};
+			}
+			else if (const auto listType0 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type0))
 			{
 				if (HorseIR::TypeUtils::ForanyElement(listType0, HorseIR::TypeUtils::IsCharacterType))
 				{
 					return {Device::CPU, Synchronization:None};
 				}
 			}
-			else if (const auto listType1 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type1))
+
+			if (arguments.size() == 2)
 			{
-				if (HorseIR::TypeUtils::ForanyElement(listType1, HorseIR::TypeUtils::IsCharacterType))
+				const auto type1 = arguments.at(1)->GetType();
+				if (const auto listType1 = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type1))
+				{
+					if (HorseIR::TypeUtils::ForanyElement(listType1, HorseIR::TypeUtils::IsCharacterType))
+					{
+						return {Device::CPU, Synchronization:None};
+					}
+				}
+				else if (HorseIR::TypeUtils::IsCharacterType(type1))
 				{
 					return {Device::CPU, Synchronization:None};
 				}
-			}
-			else if (HorseIR::TypeUtils::IsCharacterType(type0) || HorseIR::TypeUtils::IsCharacterType(type1))
-			{
-				return {Device::CPU, Synchronization:None};
 			}
 			return {Device::GPU, Synchronization:None};
 		}
