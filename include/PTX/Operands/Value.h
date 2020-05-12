@@ -37,18 +37,23 @@ using BoolValue = Value<PredicateType>;
 template<Bits B>
 using IntValue = Value<IntType<B>>;
 
+using Int8Value = Value<Int8Type>;
+using Int16Value = Value<Int16Type>;
 using Int32Value = Value<Int32Type>;
 using Int64Value = Value<Int64Type>;
 
 template<Bits B>
 using UIntValue = Value<UIntType<B>>;
 
+using UInt8Value = Value<UInt8Type>;
+using UInt16Value = Value<UInt16Type>;
 using UInt32Value = Value<UInt32Type>;
 using UInt64Value = Value<UInt64Type>;
 
 template<Bits B>
 using FloatValue = Value<FloatType<B>>;
 
+using Float16Value = Value<Float16Type>;
 using Float32Value = Value<Float32Type>;
 using Float64Value = Value<Float64Type>;
 
