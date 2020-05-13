@@ -528,7 +528,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	columns.push_back({"c_custkey", primaryKey});
 	columns.push_back({"c_name", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(name)))});
 	columns.push_back({"c_address", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(address)))});
-	columns.push_back({"c_nationKey", new EnumerationBuffer(nationForeignKey,
+	columns.push_back({"c_nationkey", new EnumerationBuffer(nationForeignKey,
 		new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), std::move(nationVal))),
 		new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(nationKey)))
 	)});
