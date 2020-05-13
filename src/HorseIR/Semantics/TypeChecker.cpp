@@ -1260,7 +1260,8 @@ bool TypeChecker::AnalyzeJoinArguments(const std::vector<Type *>& argumentTypes)
 	auto functionCount = argumentTypes.size() - 2;
 	const auto inputType1 = argumentTypes.at(functionCount);
 	const auto inputType2 = argumentTypes.at(functionCount + 1);
-	RequireJoin((TypeUtils::IsType<BasicType>(inputType1) && TypeUtils::IsType<BasicType>(inputType2)) ||
+	RequireJoin(
+		(TypeUtils::IsType<BasicType>(inputType1) && TypeUtils::IsType<BasicType>(inputType2)) ||
 		(TypeUtils::IsType<ListType>(inputType1) && TypeUtils::IsType<ListType>(inputType2))
 	);
 
@@ -1273,7 +1274,7 @@ bool TypeChecker::AnalyzeJoinArguments(const std::vector<Type *>& argumentTypes)
 		auto elementCount2 = elementTypes2.size();
 		if (elementCount1 == elementCount2)
 		{
-			RequireJoin(functionCount == 1 || elementCount1 == functionCount);
+			RequireJoin(functionCount == 1 || elementCount1 == 1 || elementCount1 == functionCount);
 		}
 		else if (elementCount1 == 1)
 		{
