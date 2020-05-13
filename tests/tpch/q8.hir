@@ -40,7 +40,9 @@ module default{
     t107:? = @leq(t101,1996-12-31:date);
     t108:? = @and(t106,t107);
     t109:? = @compress(t108,t97);
-    t110:? = @compress(t108,t98);
+    //t110:? = @compress(t108,t98);
+    t110:? = @fetch(t98);
+    t147:? = @compress(t108,t110);
     t113:? = @compress(t108,t101);
     t118:? = @join_index(@eq,t109,t80);
     t119:? = @index(t118,0:i64);
@@ -48,7 +50,7 @@ module default{
     t132:? = @index(t82,t120);
     t135:? = @index(t85,t120);
     t136:? = @index(t86,t120);
-    t147:? = @fetch(t110);
+    //t147:? = @fetch(t110);
     t148:? = @index(t147,t119);
     t151:? = @index(t113,t119);
     t156:? = @load_table(`customer:sym);

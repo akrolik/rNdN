@@ -8,8 +8,10 @@ module default{
     t18:sym = check_cast(@column_value(t9,`o_comment:sym), sym);
     t19:? = @like(t18,`"%special%requests%":sym);
     t20:? = @not(t19);
-    t22:? = @compress(t20,t11);
-    t30:? = @fetch(t22);
+    //t22:? = @compress(t20,t11);
+    //t30:? = @fetch(t22);
+    t22:? = @fetch(t11);
+    t30:? = @compress(t20,t22);
     t31:? = @group(t1);
     t32:? = @keys(t31);
     t33:? = @values(t31);

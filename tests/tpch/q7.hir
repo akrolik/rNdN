@@ -63,12 +63,14 @@ module default{
     t131:? = @geq(t125,1995-01-01:date);
     t132:? = @leq(t125,1996-12-31:date);
     t133:? = @and(t131,t132);
-    t134:? = @compress(t133,t115);
+    //t134:? = @compress(t133,t115);
     t136:? = @compress(t133,t117);
     t139:? = @compress(t133,t120);
     t140:? = @compress(t133,t121);
     t144:? = @compress(t133,t125);
-    t150:? = @fetch(t134);
+    //t150:? = @fetch(t134);
+    t134:? = @fetch(t115);
+    t150:? = @compress(t133,t134);
     t151:? = @join_index(@eq,t105,t150);
     t152:? = @index(t151,0:i64);
     t153:? = @index(t151,1:i64);

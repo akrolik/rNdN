@@ -35,8 +35,10 @@ module default{
     t72:? = @lt(t66,1995-01-01:date);
     t73:? = @and(t71,t72);
     t74:? = @compress(t73,t62);
-    t75:? = @compress(t73,t63);
-    t83:? = @fetch(t75);
+    //t75:? = @compress(t73,t63);
+    //t83:? = @fetch(t75);
+    t75:? = @fetch(t63);
+    t83:? = @compress(t73,t75);
     t84:? = @join_index(@eq,t53,t83);
     t85:? = @index(t84,0:i64);
     t86:? = @index(t84,1:i64);

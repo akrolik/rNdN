@@ -48,10 +48,12 @@ module default{
     t90:f64 = check_cast(@column_value(t83,`l_discount:sym), f64);
     t92:char = check_cast(@column_value(t83,`l_returnflag:sym), char);
     t100:? = @eq(t92,'R':char);
-    t101:? = @compress(t100,t84);
+    //t101:? = @compress(t100,t84);
+    t101:? = @fetch(t84);
+    t117:? = @compress(t100, t101);
     t106:? = @compress(t100,t89);
     t107:? = @compress(t100,t90);
-    t117:? = @fetch(t101);
+    //t117:? = @fetch(t101);
     t118:? = @join_index(@eq,t65,t117);
     t119:? = @index(t118,0:i64);
     t120:? = @index(t118,1:i64);
