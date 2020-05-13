@@ -400,13 +400,13 @@ private:
 				case RegisterReductionOperation::Minimum:
 				{
 					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, global, value, T::ComparisonOperator::Less));
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, value, global, T::ComparisonOperator::Less));
 					return predicate;
 				}
 				case RegisterReductionOperation::Maximum:
 				{
 					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, global, value, T::ComparisonOperator::Greater));
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate, value, global, T::ComparisonOperator::Greater));
 					return predicate;
 				}
 				default:
