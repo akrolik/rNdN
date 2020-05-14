@@ -176,9 +176,10 @@ public:
 		auto name = GenerateName(identifier, isCell);
 		auto destinationName = GenerateDestinationName(identifier, isCell);
 
+		const PTX::Register<S> *operandRegister = nullptr;
 		if (resources->ContainsRegister<S>(name))
 		{
-			m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, resources->GetRegister<S>(name));
+			operandRegister = resources->GetRegister<S>(name);
 		}
 		else
 		{
@@ -192,17 +193,13 @@ public:
 				// Check if we have a cached register for the load kind, or need to generate the load
 
 				auto parameter = find->second;
-				if (m_index == nullptr)
-				{
-					auto dataIndex = GenerateIndex(parameter, m_loadKind);
-					m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, GenerateParameterLoad<S>(destinationName, parameter, dataIndex, isCell));
-				}
-				else
-				{
-					m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, GenerateParameterLoad<S>(destinationName, parameter, m_index, isCell));
-				}
+				auto index = (m_index == nullptr) ? GenerateIndex(parameter, m_loadKind) : m_index;
+
+				operandRegister = GenerateParameterLoad<S>(destinationName, parameter, index, isCell);
 			}
 		}
+
+		m_operand = ConversionGenerator::ConvertSource<T, S>(this->m_builder, operandRegister);
 		m_register = true;
 	}
 
@@ -386,6 +383,11 @@ public:
 				this->m_builder.AddStatement(new PTX::BlankStatement());
 				this->m_builder.AddStatement(sizeLabel);
 
+				if (m_compressionRegister != nullptr)
+				{
+					resources->template SetCompressedRegister<S>(value, m_compressionRegister);
+				}
+
 				return value;
 			}
 		}
@@ -405,15 +407,14 @@ private:
 		auto dataIndex = GenerateIndex(parameter, LoadKind::Vector);
 
 		OperandGenerator<B, PTX::PredicateType> operandGenerator(this->m_builder);
-		auto predicate = operandGenerator.template GenerateParameterLoad<PTX::PredicateType>(name, parameter, dataIndex);
+		m_compressionRegister = operandGenerator.template GenerateParameterLoad<PTX::PredicateType>(name, parameter, dataIndex);
 
-		auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
+		auto prefixCompression = resources->template GetCompressedRegister<PTX::PredicateType>(m_compressionRegister);
 
 		// Calculate prefix sum to use as index
 
 		PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
-		return prefixSumGenerator.Generate(intPredicate, PrefixSumMode::Exclusive);
+		return prefixSumGenerator.template Generate<PTX::PredicateType>(m_compressionRegister, PrefixSumMode::Exclusive, prefixCompression);
 	}
 
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDynamicIndex(const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *indexed)
@@ -558,6 +559,7 @@ private:
 	}
 
 	const PTX::TypedOperand<T> *m_operand = nullptr;
+	const PTX::Register<PTX::PredicateType> *m_compressionRegister = nullptr;
 	bool m_register = false;
 
 	LoadKind m_loadKind;

@@ -29,7 +29,8 @@ public:
 
 	std::string Name() const override { return "PrefixSumGenerator"; }
 
-	const PTX::Register<T> *Generate(const PTX::Register<T> *value, PrefixSumMode mode)
+	template<class S>
+	const PTX::Register<T> *Generate(const PTX::Register<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// Allocate global variable for the prefix sum
 
@@ -41,10 +42,11 @@ public:
 
 		// Compute prefix sum
 
-		return Generate(sizeAddress, value, mode);
+		return Generate(sizeAddress, value, mode, predicate);
 	}
 
-	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<T> *value, PrefixSumMode mode)
+	template<class S>
+	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// A global prefix sum is computed in 4 stages:
 		//
@@ -83,10 +85,22 @@ public:
 		auto dataSize = geometryGenerator.GenerateDataGeometry();
 
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));
 
-		auto move = new PTX::MoveInstruction<T>(prefixSum, value);
-		move->SetPredicate(sizePredicate);
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));
+		
+		auto convertedValue = ConversionGenerator::ConvertSource<T, S>(this->m_builder, value);
+
+		auto move = new PTX::MoveInstruction<T>(prefixSum, convertedValue);
+		if (predicate == nullptr)
+		{
+			move->SetPredicate(sizePredicate);
+		}
+		else
+		{
+			auto validPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(validPredicate, sizePredicate, predicate));
+			move->SetPredicate(validPredicate);
+		}
 		this->m_builder.AddStatement(move);
 
 		auto initialValue = resources->template AllocateTemporary<T>();
