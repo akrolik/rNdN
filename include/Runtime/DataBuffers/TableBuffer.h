@@ -97,11 +97,11 @@ public:
 
 	// Clear
 
-	void Clear() override
+	void Clear(ClearMode mode = ClearMode::Zero) override
 	{
 		for (auto& [_, buffer] : m_columns)
 		{
-			buffer->Clear();
+			buffer->Clear(mode);
 		}
 	}
 

@@ -65,10 +65,13 @@ public:
 
 	// Clear
 
-	void Clear() override
+	void Clear(ClearMode mode = ClearMode::Zero) override
 	{
-		m_keys->Clear();
-		m_values->Clear();
+		if (mode == ClearMode::Zero)
+		{
+			m_keys->Clear(mode);
+			m_values->Clear(mode);
+		}
 	}
 
 private:

@@ -141,10 +141,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		for (auto i = 0u; i < function->GetReturnCount(); ++i)
 		{
+			const auto& dataInit = runtimeOptions->InitObjects;
 			const auto& dataCopies = runtimeOptions->CopyObjects;
 			const auto returnObject = runtimeOptions->ReturnObjects.at(i);
 
 			DataBuffer *returnBuffer = nullptr;
+			std::string description = "";
 			if (dataCopies.find(returnObject) != dataCopies.end())
 			{
 				// Create a new buffer as a copy of an input object
@@ -153,25 +155,42 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				const auto inputBuffer = inputObject->GetDataBuffer();
 
 				returnBuffer = inputBuffer->Clone();
-
-				Utils::Logger::LogDebug(
-					"Initializing return argument: " + std::to_string(i) + " = " + inputObject->ToString() + " -> " + returnObject->ToString() +
-					"[" + returnBuffer->Description() + "]"
-				);
+				description = " = " + inputObject->ToString() + " -> " + returnObject->ToString();
 			}
 			else
 			{
-				// Create a new buffer for the return value
-
 				const auto type = function->GetReturnType(i);
 				const auto shape = runtimeOptions->ReturnShapes.at(i);
-
 				returnBuffer = DataBuffer::CreateEmpty(type, shape);
-				returnBuffer->ValidateGPU();
-				returnBuffer->Clear();
 
-				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
+				if (dataInit.find(returnObject) != dataInit.end())
+				{
+					switch (dataInit.at(returnObject))
+					{
+						case Analysis::DataInitializationAnalysis::Initialization::Clear:
+						{
+							returnBuffer->ValidateGPU();
+							returnBuffer->Clear(DataBuffer::ClearMode::Zero);
+							description = " = <clear>";
+							break;
+						}
+						case Analysis::DataInitializationAnalysis::Initialization::Minimum:
+						{
+							returnBuffer->Clear(DataBuffer::ClearMode::Minimum);
+							description = " = <min>";
+							break;
+						}
+						case Analysis::DataInitializationAnalysis::Initialization::Maximum:
+						{
+							returnBuffer->Clear(DataBuffer::ClearMode::Maximum);
+							description = " = <max>";
+							break;
+						}
+					}
+				}
 			}
+
+			Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
 			returnBuffers.push_back(returnBuffer);
 
 			// Transfer the write buffer to the GPU, we assume all returns write (or else...)

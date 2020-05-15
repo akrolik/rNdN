@@ -11,14 +11,32 @@
 
 namespace Analysis {
 
-class DataCopyAnalysis : public HorseIR::ConstHierarchicalVisitor
+class DataInitializationAnalysis : public HorseIR::ConstHierarchicalVisitor
 {
 public:
-	DataCopyAnalysis(const DataObjectAnalysis& objectAnalysis) : m_objectAnalysis(objectAnalysis) {}
+	DataInitializationAnalysis(const DataObjectAnalysis& objectAnalysis) : m_objectAnalysis(objectAnalysis) {}
 
 	// Analysis input/output
 
 	void Analyze(const HorseIR::Function *function);
+
+	enum class Initialization {
+		Clear,
+		Minimum,
+		Maximum,
+		Copy,
+		None
+	};
+
+	Initialization GetInitialization(const DataObject *returnObject) const
+	{
+		if (m_dataInit.find(returnObject) == m_dataInit.end())
+		{
+			return Initialization::None;
+		}
+		return m_dataInit.at(returnObject);
+	}
+	std::unordered_map<const DataObject *, Initialization> GetDataInitializations() const { return m_dataInit; }
 
 	bool ContainsDataCopy(const DataObject *returnObject) const
 	{
@@ -38,7 +56,9 @@ public:
 
 private:
 	const DataObjectAnalysis& m_objectAnalysis;
+	const DataObject *GetDataObject(const HorseIR::CallExpression *call) const;
 
+	std::unordered_map<const DataObject *, Initialization> m_dataInit;
 	std::unordered_map<const DataObject *, const DataObject *> m_dataCopies;
 };
 

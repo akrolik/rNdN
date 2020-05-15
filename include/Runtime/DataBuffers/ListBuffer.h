@@ -184,11 +184,11 @@ public:
 
 	// Clear
 
-	void Clear() override
+	void Clear(ClearMode mode = ClearMode::Zero) override
 	{
 		for (auto i = 0u; i < m_cells.size(); ++i)
 		{
-			m_cells.at(i)->Clear();
+			m_cells.at(i)->Clear(mode);
 		}
 	}
 

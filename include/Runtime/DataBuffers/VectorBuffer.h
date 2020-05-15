@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <typeindex>
 #include <typeinfo>
 
@@ -46,7 +47,7 @@ public:
 
 	// Clear
 
-	virtual void Clear() override = 0;
+	virtual void Clear(ClearMode mode = ClearMode::Zero) override = 0;
 
 protected:
 	VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount) :
@@ -247,15 +248,27 @@ public:
 
 	// Clear
 
-	void Clear() override
+	void Clear(ClearMode mode = ClearMode::Zero) override
 	{
-		if (IsCPUConsistent())
+		if (mode == ClearMode::Zero)
 		{
-			GetCPUWriteBuffer()->Clear();
+			if (IsCPUConsistent())
+			{
+				GetCPUWriteBuffer()->Clear();
+			}
+			if (IsGPUConsistent())
+			{
+				GetGPUWriteBuffer()->Clear();
+			}
 		}
-		if (IsGPUConsistent())
+		else
 		{
-			GetGPUWriteBuffer()->Clear();
+			auto data = GetCPUWriteBuffer();
+			auto val = (mode == ClearMode::Maximum) ? std::numeric_limits<T>::max() : std::numeric_limits<T>::min();
+			for (auto i = 0u; i < m_elementCount; ++i)
+			{
+				data->SetValue(i, val);
+			}
 		}
 	}
 

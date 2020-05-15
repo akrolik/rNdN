@@ -114,7 +114,13 @@ public:
 
 	// Clear
 
-	virtual void Clear() = 0;
+	enum class ClearMode {
+		Zero,
+		Minimum,
+		Maximum
+	};
+
+	virtual void Clear(ClearMode mode = ClearMode::Zero) = 0;
 
 protected:
 	DataBuffer(Kind kind) : m_kind(kind) {}

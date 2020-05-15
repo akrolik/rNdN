@@ -37,7 +37,7 @@ public:
 
 	// Clear, nothing to do
 
-	void Clear() override {}
+	void Clear(ClearMode mode = ClearMode::Zero) override {}
 
 private:
 	const HorseIR::FunctionType *m_type = nullptr;

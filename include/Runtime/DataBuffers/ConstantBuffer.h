@@ -35,7 +35,7 @@ public:
 
 	// Clear, nothing to do
 
-	void Clear() override {}
+	void Clear(ClearMode mode = ClearMode::Zero) override {}
 
 protected:
 	ConstantBuffer(const HorseIR::BasicType::BasicKind basicKind) : DataBuffer(DataBuffer::Kind::Constant)

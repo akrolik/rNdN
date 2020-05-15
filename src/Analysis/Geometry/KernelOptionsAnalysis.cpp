@@ -1,6 +1,6 @@
 #include "Analysis/Geometry/KernelOptionsAnalysis.h"
 
-#include "Analysis/DataObject/DataCopyAnalysis.h"
+#include "Analysis/DataObject/DataInitializationAnalysis.h"
 #include "Analysis/Geometry/GeometryAnalysis.h"
 #include "Analysis/Geometry/KernelGeometryAnalysis.h"
 #include "Analysis/Shape/Shape.h"
@@ -51,14 +51,15 @@ void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function)
 	m_inputOptions->ReturnWriteShapes = m_shapeAnalysis.GetReturnWriteShapes();
 	m_inputOptions->ReturnObjects = dataAnalysis.GetReturnObjects();
 
-	// Determine any data copies that occur
+	// Determine any data initializations/copies that occur
 
 	if (function->GetReturnCount() > 0)
 	{
-		Analysis::DataCopyAnalysis copyAnalysis(dataAnalysis);
-		copyAnalysis.Analyze(function);
+		Analysis::DataInitializationAnalysis initAnalysis(dataAnalysis);
+		initAnalysis.Analyze(function);
 
-		m_inputOptions->CopyObjects = copyAnalysis.GetDataCopies();
+		m_inputOptions->InitObjects = initAnalysis.GetDataInitializations();
+		m_inputOptions->CopyObjects = initAnalysis.GetDataCopies();
 	}
 
 	// Check if the blocks should be in-order

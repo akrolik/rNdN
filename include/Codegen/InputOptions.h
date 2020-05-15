@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Analysis/DataObject/DataObject.h"
+#include "Analysis/DataObject/DataInitializationAnalysis.h"
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeUtils.h"
 
@@ -49,8 +50,9 @@ struct InputOptions
 	std::vector<const Analysis::Shape *> ReturnWriteShapes;
 	std::vector<const Analysis::DataObject *> ReturnObjects;
 
-	// Copies
+	// Initializations
 	
+	std::unordered_map<const Analysis::DataObject *, Analysis::DataInitializationAnalysis::Initialization> InitObjects;
 	std::unordered_map<const Analysis::DataObject *, const Analysis::DataObject *> CopyObjects;
 
 	std::string ToString() const
