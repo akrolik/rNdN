@@ -1919,12 +1919,24 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			// Sort call
 
-			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1)}, {});
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, initShapes, {});
 			Require(sortShapes.size() == 0);
 
 			// Group call
 
-			const auto [groupShapes, groupWriteShapes] = AnalyzeCall(groupFunction, {initShapes.at(0), initShapes.at(1)}, {});
+			const VectorShape *indexShape = nullptr;
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(dataShape))
+			{
+				indexShape = vectorShape;
+			}
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
+			{
+				const auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(mergedShape));
+				indexShape = ShapeUtils::GetShape<VectorShape>(mergedShape);
+			}
+
+			const auto [groupShapes, groupWriteShapes] = AnalyzeCall(groupFunction, {indexShape, dataShape}, {});
 			Require(groupShapes.size() == 2);
 			Require(ShapeUtils::IsShape<VectorShape>(groupShapes.at(0)));
 			Require(ShapeUtils::IsShape<VectorShape>(groupShapes.at(1)));
