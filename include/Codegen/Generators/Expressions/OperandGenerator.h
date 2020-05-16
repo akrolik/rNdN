@@ -193,9 +193,7 @@ public:
 				// Check if we have a cached register for the load kind, or need to generate the load
 
 				auto parameter = find->second;
-				auto index = (m_index == nullptr) ? GenerateIndex(parameter, m_loadKind) : m_index;
-
-				operandRegister = GenerateParameterLoad<S>(destinationName, parameter, index, isCell);
+				operandRegister = GenerateParameterLoad<S>(destinationName, parameter, nullptr, isCell);
 			}
 		}
 
@@ -341,6 +339,11 @@ public:
 				auto kernelResources = this->m_builder.GetKernelResources();
 
 				// Ensure the thread is within bounds for loading data
+
+				if (dataIndex == nullptr)
+				{
+					dataIndex = (m_index == nullptr) ? GenerateIndex(parameter, m_loadKind) : m_index;
+				}
 
 				DataSizeGenerator<B> sizeGenerator(this->m_builder);
 				auto size = (isCell) ? sizeGenerator.GenerateSize(parameter, m_cellIndex) : sizeGenerator.GenerateSize(parameter);
