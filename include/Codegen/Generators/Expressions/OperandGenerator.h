@@ -58,6 +58,9 @@ public:
 		m_cellIndex = cellIndex;
 
 		m_operand = nullptr;
+		m_compressionRegister = nullptr;
+		m_register = false;
+
 		operand->Accept(*this);
 		if (m_operand != nullptr)
 		{
@@ -76,6 +79,9 @@ public:
 		m_cellIndex = cellIndex;
 
 		m_operand = nullptr;
+		m_compressionRegister = nullptr;
+		m_register = false;
+
 		operand->Accept(*this);
 		if (m_operand != nullptr)
 		{
