@@ -3,6 +3,7 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
@@ -104,8 +105,8 @@ public:
 
 	const PTX::Register<PTX::FloatType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		OperandGenerator<B, PTX::BitType<S>> opGen(this->m_builder);
-		auto src = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::BitType<S>>::LoadKind::Vector);
+		OperandGenerator<B, PTX::FloatType<S>> opGen(this->m_builder);
+		auto src = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::FloatType<S>>::LoadKind::Vector);
 
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		Generate(targetRegister, src);
@@ -113,7 +114,7 @@ public:
 		return targetRegister;
 	}
 	
-	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::BitType<S>> *src)
+	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::FloatType<S>> *src)
 	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder.AddStatement(block);
@@ -134,7 +135,9 @@ public:
 		auto addressIn = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramIn);
 		auto addressOut = new PTX::MemoryAddress<B, PTX::BitType<S>, PTX::ParameterSpace>(paramOut);
 
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn, src));
+		auto converted = ConversionGenerator::ConvertSource<PTX::BitType<S>, PTX::FloatType<S>>(this->m_builder, src);
+
+		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(addressIn, converted));
 		this->m_builder.AddStatement(new PTX::CallInstruction<typename PTX::ExternalMathFunctions::UnaryFunction<S>::Signature>(function, paramOut, paramIn));
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::BitType<S>, PTX::ParameterSpace>(new PTX::BitRegisterAdapter<PTX::FloatType, S>(target), addressOut));
 
