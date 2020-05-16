@@ -263,6 +263,18 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			return {Device::GPU, Synchronization::Out};
 		}
 
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Append:
+		{
+			const auto type0 = arguments.at(0)->GetType();
+			if (!HorseIR::TypeUtils::IsType<HorseIR::BasicType>(type0))
+			{
+				return {Device::CPU, Synchronization::None};
+			}
+
+			return {Device::GPU, Synchronization::In};
+		}
+
 		// --------------------
 		// Compression Geometry
 		// --------------------
@@ -384,7 +396,6 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::Flip:
 
 		// Algebraic Binary
-		case HorseIR::BuiltinFunction::Primitive::Append:
 		case HorseIR::BuiltinFunction::Primitive::Replicate:
 		case HorseIR::BuiltinFunction::Primitive::Like:
 

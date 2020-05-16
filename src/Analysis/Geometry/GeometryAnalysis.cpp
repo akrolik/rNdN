@@ -230,13 +230,26 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			Require(shapes.size() == 1);
 			return shapes.at(0);
 		}
-
-		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
 			// We operate on the size of the index set
 
 			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(1));
+		}
+
+		// Algebraic Binary
+		case HorseIR::BuiltinFunction::Primitive::Append:
+		{
+			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
+			Require(shapes.size() == 1);
+
+			// Only support vector appending on the GPU
+
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(shapes.at(0)))
+			{
+				return vectorShape;
+			}
+			CPU();
 		}
 
 		// --------------------
@@ -331,7 +344,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::Flip:
 
 		// Algebraic Binary
-		case HorseIR::BuiltinFunction::Primitive::Append:
 		case HorseIR::BuiltinFunction::Primitive::Replicate:
 		case HorseIR::BuiltinFunction::Primitive::Like:
 

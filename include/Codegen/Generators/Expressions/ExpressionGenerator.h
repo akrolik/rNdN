@@ -21,6 +21,7 @@
 #include "Codegen/Generators/Expressions/Builtins/GroupGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/AppendGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexOfGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
@@ -274,6 +275,8 @@ public:
 				return new WhereGenerator<B, T>(this->m_builder);
 
 			// Algebraic Binary
+			case HorseIR::BuiltinFunction::Primitive::Append:
+				return new AppendGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Compress:
 				return new CompressionGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::IndexOf:
