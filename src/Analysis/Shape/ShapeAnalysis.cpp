@@ -716,8 +716,8 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 				if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1) && ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
 				{
-					auto length1 = ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize1);
-					auto length2 = ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2);
+					auto length1 = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize1)->GetValue();
+					auto length2 = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize2)->GetValue();
 					Return(new VectorShape(new Shape::ConstantSize(length1 + length2)));
 				}
 				Return(new VectorShape(new Shape::DynamicSize(m_call)));
