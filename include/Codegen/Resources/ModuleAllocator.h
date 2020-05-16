@@ -103,6 +103,13 @@ public:
 
 	unsigned int GetDynamicSharedMemorySize() const { return m_dynamicSharedMemorySize; }
 
+	std::vector<const PTX::Declaration *> GetExternalDeclarations() const
+	{
+		std::vector<const PTX::Declaration *> vector;
+		vector.insert(std::end(vector), std::begin(m_externalDeclarations), std::end(m_externalDeclarations));
+		return vector;
+	}
+
 	template<class R>
 	void AddExternalFunction(const PTX::FunctionDeclaration<R> *declaration)
 	{

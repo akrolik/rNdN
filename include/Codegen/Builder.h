@@ -57,8 +57,11 @@ public:
 
 	void CloseModule()
 	{
-		auto declarations = GetGlobalResources()->GetDeclarations();
+		auto global = GetGlobalResources();
+		auto declarations = global->GetDeclarations();
+		auto externals = global->GetExternalDeclarations();
 		m_currentModule->InsertDeclarations(declarations, 0);
+		m_currentModule->InsertDeclarations(externals, 0);
 	}
 
 	void AddKernel(PTX::FunctionDefinition<PTX::VoidType> *kernel)
