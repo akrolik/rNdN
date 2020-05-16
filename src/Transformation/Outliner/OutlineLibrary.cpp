@@ -63,7 +63,31 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 {
 	switch (function->GetPrimitive())
 	{
-		// case HorseIR::BuiltinFunction::Primitive::Unique:
+		case HorseIR::BuiltinFunction::Primitive::Unique:
+		{
+			auto dataType = arguments.at(0)->GetType();
+			auto orderLiteral = new HorseIR::BooleanLiteral({true});
+
+			auto initFunction = GenerateInitFunction(dataType, orderLiteral);
+			auto sortFunction = GenerateSortFunction(dataType, orderLiteral);
+			auto uniqueFunction = GenerateUniqueFunction(dataType);
+
+			m_functions.push_back(initFunction);
+			m_functions.push_back(sortFunction);
+			m_functions.push_back(uniqueFunction);
+
+			// Build the list of arguments for the library function call
+
+			std::vector<HorseIR::Operand *> operands;
+			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
+			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
+			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(uniqueFunction->GetName())));
+			operands.push_back(arguments.at(0)->Clone());
+
+			// Build the library call
+
+			return new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "unique_lib")), operands);
+		}
 		case HorseIR::BuiltinFunction::Primitive::Group:
 		{
 			auto dataType = arguments.at(0)->GetType();
@@ -246,6 +270,34 @@ HorseIR::Function *OutlineLibrary::GenerateGroupFunction(const HorseIR::Type *da
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 
 	return new HorseIR::Function("group_" + std::to_string(m_index++), parameters, returnTypes, {groupStatement, returnStatement}, true);
+}
+
+HorseIR::Function *OutlineLibrary::GenerateUniqueFunction(const HorseIR::Type *dataType)
+{
+	std::vector<HorseIR::Parameter *> parameters;
+
+	std::vector<HorseIR::Operand *> operands;
+	std::vector<HorseIR::LValue *> lvalues;
+
+	std::vector<HorseIR::Operand *> returnOperands;
+	std::vector<HorseIR::Type *> returnTypes;
+
+	parameters.push_back(new HorseIR::Parameter("index", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	operands.push_back(new HorseIR::Identifier("index"));
+
+	parameters.push_back(new HorseIR::Parameter("data", dataType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data"));
+
+	lvalues.push_back(new HorseIR::VariableDeclaration("keys", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	returnOperands.push_back(new HorseIR::Identifier("keys"));
+
+	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
+
+	auto groupCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "unique")), operands);
+	auto groupStatement = new HorseIR::AssignStatement(lvalues, groupCall);
+	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
+
+	return new HorseIR::Function("unique_" + std::to_string(m_index++), parameters, returnTypes, {groupStatement, returnStatement}, true);
 }
 
 HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType)

@@ -153,6 +153,9 @@ public:
 		GPUGroupLib,
 		GPUGroup,
 
+		GPUUniqueLib,
+		GPUUnique,
+
 		GPUJoinLib,
 		GPUJoinCount,
 		GPUJoin
@@ -388,6 +391,10 @@ public:
 				return "group_lib";
 			case Primitive::GPUGroup:
 				return "group";
+			case Primitive::GPUUniqueLib:
+				return "unique_lib";
+			case Primitive::GPUUnique:
+				return "unique";
 			case Primitive::GPUJoinLib:
 				return "join_lib";
 			case Primitive::GPUJoinCount:
@@ -569,8 +576,12 @@ public:
 			case Primitive::GPUOrder:
 				return 3; // index, data, order
 			case Primitive::GPUGroupLib:
-				return 4; // @order_init, @order, data
+				return 4; // @order_init, @order, @group, data
 			case Primitive::GPUGroup:
+				return 2; // index, data
+			case Primitive::GPUUniqueLib:
+				return 4; // @order_init, @order, @unique, data
+			case Primitive::GPUUnique:
 				return 2; // index, data
 			case Primitive::GPUJoinLib:
 				return 4; // @join_count, @join, data1, data2

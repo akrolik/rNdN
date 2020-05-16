@@ -14,6 +14,10 @@ static Module *GPUModule = new LibraryModule("GPU", {
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUGroupLib),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUGroup),
 
+	// Unique
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUUniqueLib),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUUnique),
+
 	// Join
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoinLib),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoinCount),

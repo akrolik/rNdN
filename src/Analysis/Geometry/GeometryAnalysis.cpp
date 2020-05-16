@@ -365,6 +365,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// GPU
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
 		{
 			CPU();
@@ -391,6 +392,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			return new VectorShape(new Shape::DynamicSize(m_call));
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
+		case HorseIR::BuiltinFunction::Primitive::GPUUnique:
 		{
 			auto indexShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 			Require(ShapeUtils::IsShape<VectorShape>(indexShape));

@@ -1979,6 +1979,62 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto returnShape2 = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize()));
 			Return2(returnShape1, returnShape2);
 		}
+		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
+		{
+			// -- Vector/list group
+			// Input: *, *, *, Vector<Size*>
+			// Output: Vector<DynamicSize1>
+
+			const auto initType = arguments.at(0)->GetType();
+			const auto sortType = arguments.at(1)->GetType();
+			const auto uniqueType = arguments.at(2)->GetType();
+
+			const auto dataShape = argumentShapes.at(3);
+			Require(ShapeUtils::IsShape<VectorShape>(dataShape));
+
+			// Fetch functions
+
+			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
+			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
+			const auto uniqueFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(uniqueType)->GetFunctionDeclaration();
+
+			// Init call
+
+			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape}, {});
+			Require(initShapes.size() == 2);
+			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
+
+			// Sort call
+
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, initShapes, {});
+			Require(sortShapes.size() == 0);
+
+			// Unique call
+
+			const auto [uniqueShapes, uniqueWriteShapes] = AnalyzeCall(uniqueFunction, {dataShape, dataShape}, {});
+			Require(uniqueShapes.size() == 1);
+			Require(ShapeUtils::IsShape<VectorShape>(uniqueShapes.at(0)));
+
+			Return(uniqueShapes.at(0));
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUUnique:
+		{
+			// -- Vector/list group
+			// Input: Vector<Size*>, Vector<Size*>
+			// Output: Vector<DynamicSize1>
+
+			const auto argumentShape0 = argumentShapes.at(0);
+			const auto argumentShape1 = argumentShapes.at(1);
+
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape0));
+			Require(ShapeUtils::IsShape<VectorShape>(argumentShape1));
+
+			const auto vectorShape0 = ShapeUtils::GetShape<VectorShape>(argumentShape0);
+			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
+			Require(CheckStaticEquality(vectorShape0->GetSize(), vectorShape1->GetSize()));
+
+			Return(new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize())));
+		}
 		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
 		{
 			// -- Vector input

@@ -17,6 +17,7 @@
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/UniqueGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/GroupGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
@@ -104,6 +105,12 @@ public:
 			case HorseIR::BuiltinFunction::Primitive::GPUGroup:
 			{
 				GroupGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUUnique:
+			{
+				UniqueGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets, arguments);
 				break;
 			}

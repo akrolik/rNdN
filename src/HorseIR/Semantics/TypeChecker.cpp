@@ -1176,6 +1176,55 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
+		case BuiltinFunction::Primitive::GPUUniqueLib:
+		{
+			// @GPU.unique_lib(@init, @sort, @unique, data)
+
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
+			const auto inputType3 = argumentTypes.at(3);
+
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<FunctionType>(inputType1));
+			Require(TypeUtils::IsType<FunctionType>(inputType2));
+
+			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
+			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+			auto functionType2 = TypeUtils::GetType<FunctionType>(inputType2);
+
+			Require(TypeUtils::IsOrderableType(inputType3));
+
+			// Init sort call
+
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3});
+			Require(callTypes0.size() == 2);
+			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType3));
+
+			// Sort call
+
+			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType3});
+			Require(TypeUtils::IsEmptyType(callTypes1));
+
+			// Unique call
+
+			const auto callTypes2 = AnalyzeCall(functionType2, {callTypes0.at(0), inputType3});
+			Require(callTypes2.size() == 1);
+			Require(TypeUtils::IsBasicType(callTypes2.at(0), BasicType::BasicKind::Int64));
+
+			return {callTypes2.at(0)};
+		}
+		case BuiltinFunction::Primitive::GPUUnique:
+		{
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+
+			Require(TypeUtils::IsBasicType(inputType0, BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsOrderableType(inputType1));
+
+			return {new BasicType(BasicType::BasicKind::Int64)};
+		}
 		case BuiltinFunction::Primitive::GPUJoinLib:
 		{
 			// @GPU.join_lib(@count, @join, left, right)

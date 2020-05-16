@@ -206,6 +206,26 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 		{
 			return {new DataObject(), new DataObject()};
 		}
+		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
+		{
+			const auto initType = arguments.at(0)->GetType();
+			const auto sortType = arguments.at(1)->GetType();
+			const auto uniqueType = arguments.at(2)->GetType();
+
+			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
+			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
+			const auto uniqueFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(uniqueType)->GetFunctionDeclaration();
+
+			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3)});
+			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1)});
+			const auto uniqueObjects = AnalyzeCall(uniqueFunction, {}, {initObjects.at(0), initObjects.at(1)});
+
+			return {uniqueObjects.at(0)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUUnique:
+		{
+			return {new DataObject()};
+		}
 		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
 		{
 			const auto countType = arguments.at(0)->GetType();

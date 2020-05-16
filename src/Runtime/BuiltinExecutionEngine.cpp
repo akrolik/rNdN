@@ -17,6 +17,7 @@
 
 #include "Runtime/GPU/Library/GPUSortEngine.h"
 #include "Runtime/GPU/Library/GPUGroupEngine.h"
+#include "Runtime/GPU/Library/GPUUniqueEngine.h"
 #include "Runtime/GPU/Library/GPUJoinEngine.h"
 
 #include "Utils/Logger.h"
@@ -127,6 +128,13 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			GPUGroupEngine groupEngine(m_runtime, m_program);
 			return {groupEngine.Group(arguments)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
+		{
+			// GPU unique!
+
+			GPUUniqueEngine uniqueEngine(m_runtime, m_program);
+			return {uniqueEngine.Unique(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
 		{
