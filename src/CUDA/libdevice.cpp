@@ -36,7 +36,7 @@ std::string Generate(const std::string& compute)
 		dummy += "declare double @__nv_" + function + "(double)\n";
 	}
 
-	std::vector<std::string> binaryFunctions({"pow", "modf"});
+	std::vector<std::string> binaryFunctions({"pow", "fmod"});
 	for (const auto& function : binaryFunctions)
 	{
 		dummy += "declare float @__nv_" + function + "f(float,float)\n";
