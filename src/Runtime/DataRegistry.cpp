@@ -60,16 +60,28 @@ void DataRegistry::LoadDebugData(std::vector<std::pair<std::string, ColumnBuffer
 void DataRegistry::LoadDateDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size)
 {
 	CUDA::Vector<std::int32_t> dates(size);
+	CUDA::Vector<std::int64_t> times(size);
+	CUDA::Vector<std::int64_t> datetimes(size);
 
 	for (auto i = 0u; i < size; ++i)
 	{
 		auto year = 2000 + (i / 36);
 		auto month = (i % 36) / 3 + 1;
 		auto day = (i % 3);
+
+		auto hour = (i % 24);
+		auto minute = (i % 60);
+		auto second = (i % 60);
+		auto millisecond = (i % 1000);
+
 		dates[i] = Utils::Date::EpochTime_day(year, month, day);
+		times[i] = Utils::Date::ExtendedEpochTime_time(hour, minute, second, millisecond);
+		datetimes[i] = Utils::Date::ExtendedEpochTime(year, month, day, hour, minute, second, millisecond);
 	}
 
 	columns.push_back({"dates", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Date), std::move(dates)))});
+	columns.push_back({"times", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Time), std::move(times)))});
+	columns.push_back({"datetimes", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Datetime), std::move(datetimes)))});
 }
 
 void DataRegistry::LoadStringDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size)

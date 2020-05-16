@@ -27,7 +27,7 @@ public:
 	TimeValue *GetTime() const { return m_time; }
 	void SetTime(TimeValue *time) { m_time = time; }
 
-	double GetExtendedEpochTime() const override
+	std::int64_t GetExtendedEpochTime() const override
 	{
 		return Utils::Date::ExtendedEpochTime(
 			m_date->GetYear(), m_date->GetMonth(), m_date->GetDay(),
@@ -61,7 +61,7 @@ protected:
 
 inline std::ostream& operator<<(std::ostream& os, const DatetimeValue& value)
 {
-      os << value.m_date << "T" << value.m_time;
+      os << *value.m_date << "T" << *value.m_time;
       return os;
 }
 

@@ -93,7 +93,7 @@ static void Dispatch(G &generator, const HorseIR::BasicType *type, unsigned int 
 			break;
 		case HorseIR::BasicType::BasicKind::Datetime:
 		case HorseIR::BasicType::BasicKind::Time:
-			D<PTX::Float64Type>::Dispatch(generator, i, nodes...);
+			D<PTX::Int64Type>::Dispatch(generator, i, nodes...);
 			break;
 		default:
 			Utils::Logger::LogError("Unsupported type '" + HorseIR::PrettyPrinter::PrettyString(type) + "' in function " + generator.m_builder.GetContextString("Dispatch"));

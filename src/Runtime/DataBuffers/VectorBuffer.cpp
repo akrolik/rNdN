@@ -39,7 +39,7 @@ VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const An
 				return new TypedVectorBuffer<std::int32_t>(type, value);
 			case HorseIR::BasicType::BasicKind::Time:
 			case HorseIR::BasicType::BasicKind::Datetime:
-				return new TypedVectorBuffer<double>(type, value);
+				return new TypedVectorBuffer<std::int64_t>(type, value);
 			default:   
 				Utils::Logger::LogError("Unable to create vector of type " + HorseIR::PrettyPrinter::PrettyString(type));
 		}

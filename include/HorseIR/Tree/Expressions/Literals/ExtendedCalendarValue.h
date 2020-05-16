@@ -5,7 +5,7 @@ namespace HorseIR {
 class ExtendedCalendarValue
 {
 public:
-	virtual double GetExtendedEpochTime() const = 0;
+	virtual std::int64_t GetExtendedEpochTime() const = 0;
 };
 
 }

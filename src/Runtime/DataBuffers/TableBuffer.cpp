@@ -72,14 +72,32 @@ std::string TableBuffer::DebugDump() const
 	std::stringstream string;
 	for (const auto& [name, data] : m_columns)
 	{
-		string << std::left << std::setw(20) << name;
+		string << std::left;
+		if (HorseIR::TypeUtils::IsDatetimeType(data->GetType()))
+		{
+			string << std::setw(30);
+		}
+		else
+		{
+			string << std::setw(20);
+		}
+		string << name;
 	}
 	string << std::endl;
 	for (auto i = 0ul; i < m_rows; ++i)
 	{
-		for (const auto& column : m_columns)
+		for (const auto& [name, data] : m_columns)
 		{
-			string << std::left << std::setw(20) << column.second->DebugDump(i);
+			string << std::left;
+			if (HorseIR::TypeUtils::IsDatetimeType(data->GetType()))
+			{
+				string << std::setw(30);
+			}
+			else
+			{
+				string << std::setw(20);
+			}
+		       	string << data->DebugDump(i);
 		}
 		string << std::endl;
 	}

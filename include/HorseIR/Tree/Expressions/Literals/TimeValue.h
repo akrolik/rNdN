@@ -32,7 +32,7 @@ public:
 	std::uint8_t GetMillisecond() const { return m_millisecond; }
 	void SetMillisecond(std::uint8_t millisecond) { m_millisecond = millisecond; }
 
-	double GetExtendedEpochTime() const override
+	std::int64_t GetExtendedEpochTime() const override
 	{
 		return Utils::Date::ExtendedEpochTime_time(m_hour, m_minute, m_second, m_millisecond);
 	}

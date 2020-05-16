@@ -293,20 +293,24 @@ public:
 				return new RazeGenerator<B, T>(this->m_builder);
 
 			// Date
+			case HorseIR::BuiltinFunction::Primitive::Date:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Date);
 			case HorseIR::BuiltinFunction::Primitive::DateYear:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Year);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::DateYear);
 			case HorseIR::BuiltinFunction::Primitive::DateMonth:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Month);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::DateMonth);
 			case HorseIR::BuiltinFunction::Primitive::DateDay:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Day);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::DateDay);
+			case HorseIR::BuiltinFunction::Primitive::Time:
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::Time);
 			case HorseIR::BuiltinFunction::Primitive::TimeHour:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Hour);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::TimeHour);
 			case HorseIR::BuiltinFunction::Primitive::TimeMinute:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Minute);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::TimeMinute);
 			case HorseIR::BuiltinFunction::Primitive::TimeSecond:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Second);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::TimeSecond);
 			case HorseIR::BuiltinFunction::Primitive::TimeMillisecond:
-				return new DateGenerator<B, T>(this->m_builder, DateOperation::Millisecond);
+				return new DateGenerator<B, T>(this->m_builder, DateOperation::TimeMillisecond);
 
 			// Indexing
 			case HorseIR::BuiltinFunction::Primitive::Index:
