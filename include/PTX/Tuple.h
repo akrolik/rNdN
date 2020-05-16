@@ -20,8 +20,8 @@ static std::ostringstream& CodeTuple(std::ostringstream& code, std::string separ
 	if (P > 1)
 	{
 		code << ",";
+		code << separator;
 	}
-	code << separator;
 	return CodeTuple(code, separator, t, int_<P-1>(), args...);
 }
 

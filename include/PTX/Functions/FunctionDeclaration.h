@@ -97,7 +97,8 @@ protected:
 		if constexpr(sizeof...(Args) > 0)
 		{
 			code << std::endl << "\t";
-			CodeTuple(code, "\t\n", m_parameters, int_<sizeof...(Args)>(), 0, false);
+			CodeTuple(code, "\n\t", m_parameters, int_<sizeof...(Args)>(), 0, false);
+			code << std::endl;
 		}
 		return code.str();
 	}
