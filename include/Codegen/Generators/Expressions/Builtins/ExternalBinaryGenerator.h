@@ -17,7 +17,7 @@ namespace Codegen {
 
 enum class ExternalBinaryOperation {
 	Power,
-	Modulo,
+	Modulo, // int or float
 	Logarithm
 };
 
@@ -42,6 +42,53 @@ public:
 	ExternalBinaryGenerator(Builder& builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, T>(builder), m_binaryOp(binaryOp) {}
 
 	std::string Name() const override { return "ExternalBinaryGenerator"; }
+
+private:
+	ExternalBinaryOperation m_binaryOp;
+};
+
+template<PTX::Bits B, PTX::Bits S>
+class ExternalBinaryGenerator<B, PTX::IntType<S>> : public BuiltinGenerator<B, PTX::IntType<S>>
+{
+public:
+	ExternalBinaryGenerator(Builder& builder, ExternalBinaryOperation binaryOp) : BuiltinGenerator<B, PTX::IntType<S>>(builder), m_binaryOp(binaryOp) {}
+
+	std::string Name() const override { return "ExternalBinaryGenerator"; }
+
+	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	{
+		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
+	}
+
+	const PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	{
+		if (m_binaryOp != ExternalBinaryOperation::Modulo)
+		{
+			BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("external binary operation " + ExternalBinaryOperationString(m_binaryOp));
+		}
+
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+		if constexpr(std::is_same<PTX::IntType<S>, PTX::Int8Type>::value)
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			auto targetRegister16 = resources->template AllocateTemporary<PTX::Int16Type>();
+
+			OperandGenerator<B, PTX::Int16Type> opGen(this->m_builder);
+			auto src1 = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
+			auto src2 = opGen.GenerateRegister(arguments.at(1), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(targetRegister16, src1, src2));
+
+			ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::Int16Type>(this->m_builder, targetRegister, targetRegister16);
+		}
+		else
+		{
+			OperandGenerator<B, PTX::IntType<S>> opGen(this->m_builder);
+			auto src1 = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::IntType<S>>::LoadKind::Vector);
+			auto src2 = opGen.GenerateRegister(arguments.at(1), OperandGenerator<B, PTX::IntType<S>>::LoadKind::Vector);
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::IntType<S>>(targetRegister, src1, src2));
+		}
+		return targetRegister;
+	}
 
 private:
 	ExternalBinaryOperation m_binaryOp;
