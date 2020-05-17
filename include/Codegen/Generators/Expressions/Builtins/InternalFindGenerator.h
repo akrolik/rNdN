@@ -286,35 +286,25 @@ public:
 };
 
 template<PTX::Bits B, class D>
-class InternalFindGenerator_Match : public Generator
+class InternalFindGenerator_Update : public Generator
 {
 public:
-	using BaseRegistersTy = std::vector<std::pair<const PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
+	InternalFindGenerator_Update(
+		Builder& builder, FindOperation findOp,
+		const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+	) : Generator(builder), m_findOp(findOp), m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
-	InternalFindGenerator_Match(Builder& builder, const BaseRegistersTy& baseRegisters, FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps,
-			const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr)
-		: Generator(builder), m_baseRegisters(baseRegisters), m_findOp(findOp), m_comparisonOps(comparisonOps),
-			m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
+	std::string Name() const override { return "InternalFindGenerator_Update"; }
 
-	std::string Name() const override { return "InternalFindGenerator_Match"; }
-
-	void Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
+	void Generate(const HorseIR::Operand *dataX, const PTX::Register<PTX::PredicateType> *matchPredicate)
 	{
-		// Reset matching
-
-		m_matchPredicate = nullptr;
-
-		// Match the cache against the data
-
-		DispatchType(*this, dataX->GetType(), dataX, dataY, unrollIndex);
-
 		// Compute match output result
 
 		if constexpr(std::is_same<D, PTX::PredicateType>::value)
 		{
 			if (m_findOp == FindOperation::Member)
 			{
-				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, m_matchPredicate));
+				this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_targetRegister, m_targetRegister, matchPredicate));
 			}
 		}
 		else if constexpr(std::is_same<D, PTX::Int64Type>::value)
@@ -325,7 +315,7 @@ public:
 				{
 					// Output only the first matching index
 
-					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_runningPredicate, m_runningPredicate, m_matchPredicate));
+					this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(m_runningPredicate, m_runningPredicate, matchPredicate));
 
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
 					addInstruction->SetPredicate(m_runningPredicate, true);
@@ -338,7 +328,7 @@ public:
 					// Increment the count by 1
 
 					auto addInstruction = new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1));
-					addInstruction->SetPredicate(m_matchPredicate);
+					addInstruction->SetPredicate(matchPredicate);
 					this->m_builder.AddStatement(addInstruction);
 
 					break;
@@ -358,7 +348,7 @@ public:
 					auto size = sizeGenerator.GenerateSize(dataX);
 
 					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(activePredicate, globalIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
-					this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(storePredicate, activePredicate, m_matchPredicate));
+					this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(storePredicate, activePredicate, matchPredicate));
 
 					auto label = this->m_builder.CreateLabel("END");
 					this->m_builder.AddStatement(new PTX::BranchInstruction(label, storePredicate, true));
@@ -389,6 +379,42 @@ public:
 				}
 			}
 		}
+	}
+
+private:
+	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	const PTX::Register<D> *m_targetRegister = nullptr;
+	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+
+	FindOperation m_findOp;
+};
+
+template<PTX::Bits B, class D>
+class InternalFindGenerator_Match : public Generator
+{
+public:
+	using BaseRegistersTy = std::vector<std::pair<const PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
+
+	InternalFindGenerator_Match(
+		Builder& builder, const BaseRegistersTy& baseRegisters, FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps,
+		const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+	) : Generator(builder), m_baseRegisters(baseRegisters), m_findOp(findOp), m_comparisonOps(comparisonOps),
+		m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
+
+	std::string Name() const override { return "InternalFindGenerator_Match"; }
+
+	void Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, unsigned int unrollIndex)
+	{
+		// Reset matching
+
+		m_matchPredicate = nullptr;
+
+		// Match the cache against the data
+
+		DispatchType(*this, dataX->GetType(), dataX, dataY, unrollIndex);
+
+		InternalFindGenerator_Update<B, D> updateGenerator(this->m_builder, m_findOp, m_runningPredicate, m_targetRegister, m_writeOffset);
+		updateGenerator.Generate(dataX, m_matchPredicate);
 	}
 
 	template<class T>
@@ -484,6 +510,93 @@ private:
 
 	FindOperation m_findOp;
 	std::vector<ComparisonOperation> m_comparisonOps;
+};
+
+template<PTX::Bits B, class D, typename L>
+class InternalFindGenerator_Constant : public Generator
+{
+public:
+	InternalFindGenerator_Constant(
+		Builder& builder, FindOperation findOp, ComparisonOperation comparisonOp,
+		const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+	) : Generator(builder), m_findOp(findOp), m_comparisonOp(comparisonOp),
+		m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
+
+	std::string Name() const override { return "InternalFindGenerator_Constant"; }
+
+	void Generate(const HorseIR::Operand *dataX, const HorseIR::TypedVectorLiteral<L> *dataY)
+	{
+		DispatchType(*this, dataX->GetType(), dataX, dataY);
+	}
+
+	template<class T>
+	void GenerateVector(const HorseIR::Operand *dataX, const HorseIR::TypedVectorLiteral<L> *dataY)
+	{
+		// For each value in the literal, check if it is equal to the data value in this thread. Note, this is an unrolled loop
+
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		auto valueX = operandGenerator.GenerateOperand(dataX, OperandGenerator<B, T>::LoadKind::Vector);
+
+		for (const auto& valueY : dataY->GetValues())
+		{
+			// Load the value and cast to the appropriate type
+
+			if constexpr(std::is_same<L, std::string>::value)
+			{
+				GenerateMatch(dataX, valueX, new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(valueY))));
+			}
+			else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
+			{
+				GenerateMatch(dataX, valueX, new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(valueY->GetName()))));
+			}
+			else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
+			{
+				GenerateMatch(dataX, valueX, new PTX::Value<T>(static_cast<typename T::SystemType>(valueY->GetEpochTime())));
+			}
+			else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
+			{
+				GenerateMatch(dataX, valueX, new PTX::Value<T>(static_cast<typename T::SystemType>(valueY->GetExtendedEpochTime())));
+			}
+			else
+			{
+				GenerateMatch(dataX, valueX, new PTX::Value<T>(static_cast<typename T::SystemType>(valueY)));
+			}
+		}
+	}
+
+	template<class T>
+	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::TypedVectorLiteral<L> *dataY)
+	{
+		Error("literal find for list type");
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::TypedVectorLiteral<L> *dataY)
+	{
+		Error("literal find for tuple type");
+	}
+
+private:
+	template<class T>
+	void GenerateMatch(const HorseIR::Operand *dataX, const PTX::TypedOperand<T> *valueX, const PTX::TypedOperand<T> *valueY)
+	{
+		auto resources = this->m_builder.GetLocalResources();
+		auto matchPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, m_comparisonOp);
+		comparisonGenerator.Generate(matchPredicate, valueX, valueY);
+
+		InternalFindGenerator_Update<B, D> updateGenerator(this->m_builder, m_findOp, m_runningPredicate, m_targetRegister, m_writeOffset);
+		updateGenerator.Generate(dataX, matchPredicate);
+	}
+
+	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	const PTX::Register<D> *m_targetRegister = nullptr;
+
+	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+
+	FindOperation m_findOp;
+	ComparisonOperation m_comparisonOp;
 };
 
 template<PTX::Bits B, class D>
@@ -731,6 +844,7 @@ public:
 
 	void Visit(const HorseIR::Literal *literal) override
 	{
+
 		BuiltinGenerator<B, D>::Unimplemented("literal kind");
 	}
 
@@ -817,34 +931,10 @@ public:
 	template<class L>
 	void VisitLiteral(const HorseIR::TypedVectorLiteral<L> *literal)
 	{
-		// For each value in the literal, check if it is equal to the data value in this thread. Note, this is an unrolled loop
-
-		//TODO: Constant match
-		// for (const auto& value : literal->GetValues())
-		// {
-		// 	// Load the value and cast to the appropriate type
-
-		// 	if constexpr(std::is_same<L, std::string>::value)
-		// 	{
-		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value))));
-		// 	}
-		// 	else if constexpr(std::is_same<L, HorseIR::SymbolValue *>::value)
-		// 	{
-		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(Runtime::StringBucket::HashString(value->GetName()))));
-		// 	}
-		// 	else if constexpr(std::is_convertible<L, HorseIR::CalendarValue *>::value)
-		// 	{
-		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetEpochTime())));
-		// 	}
-		// 	else if constexpr(std::is_convertible<L, HorseIR::ExtendedCalendarValue *>::value)
-		// 	{
-		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value->GetExtendedEpochTime())));
-		// 	}
-		// 	else
-		// 	{
-		// 		GenerateMatch(new PTX::Value<T>(static_cast<typename T::SystemType>(value)));
-		// 	}
-		// }
+		InternalFindGenerator_Constant<B, D, L> constantGenerator(
+			this->m_builder, m_findOp, m_comparisonOps.at(0), m_runningPredicate, m_targetRegister, m_writeOffset
+		);
+		constantGenerator.Generate(m_dataX, literal);
 	}
 
 private:
