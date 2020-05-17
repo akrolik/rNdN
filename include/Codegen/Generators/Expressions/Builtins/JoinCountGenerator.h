@@ -8,6 +8,7 @@
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/PrefixSumGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
