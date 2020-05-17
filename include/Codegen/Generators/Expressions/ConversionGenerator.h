@@ -49,7 +49,7 @@ public:
 			auto resources = this->m_builder.GetLocalResources();
 			auto converted = resources->AllocateTemporary<T>();
 
-			//TODO: Relax?
+			// Only relax registers, constants should be appropriately typed by the context
 
 			GenerateConversion(converted, source);
 
