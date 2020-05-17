@@ -2,14 +2,11 @@
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
-#include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/PrefixSumGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -52,36 +49,43 @@ public:
 		// Generate the predicate from the input data
 
 		OperandGenerator<B, PTX::PredicateType> opGen(this->m_builder);
-		auto predicate = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::PredicateType>::LoadKind::Vector);
-
-		// We cannot produce the indices of compressed data as this would prevent knowing the current index for each true data item.
-
-		if (resources->template IsCompressedRegister<PTX::PredicateType>(predicate))
-		{
-			BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("where operation on compressed data");
-		}
+		auto inputPredicate = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::PredicateType>::LoadKind::Vector);
 
 		// Generate the index for the data item and convert to the right type
 
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
-		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
-		auto size = geometryGenerator.GenerateDataGeometry();
-
-		// Copy the index to the data register
-
-		//TODO: Handle double compression using a prefix sum to compute the index
-
 		auto dataRegister = this->GenerateTargetRegister(target, arguments);
-		ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, dataRegister, index);
+		auto dataPredicate = inputPredicate; // Modified by the compression
+
+		if (const auto compressed = resources->template GetCompressedRegister<PTX::PredicateType>(inputPredicate))
+		{
+			// Compression requires a prefix sum to compute the index
+
+			PrefixSumGenerator<B, PTX::Int64Type> prefixSumGenerator(this->m_builder);
+			auto offsetIndex = prefixSumGenerator.template Generate<PTX::PredicateType>(compressed, PrefixSumMode::Exclusive);
+
+			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(dataRegister, offsetIndex));
+
+			dataPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(dataPredicate, inputPredicate, compressed));
+		}
+		else
+		{
+			ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, dataRegister, index);
+		}
 
 		// Ensure that the predicate is false for out-of-bounds indexes
 
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto size = geometryGenerator.GenerateDataGeometry();
+
+		auto boundsPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto boundedPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-			boundedPredicate, nullptr, index, size, PTX::UInt32Type::ComparisonOperator::Less, predicate, PTX::PredicateModifier::BoolOperator::And
-		));
+
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(boundedPredicate, index, size, PTX::UInt32Type::ComparisonOperator::Less));
+		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(boundedPredicate, boundsPredicate, dataPredicate));
 
 		resources->SetCompressedRegister(dataRegister, boundedPredicate);
 
