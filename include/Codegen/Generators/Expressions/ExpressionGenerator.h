@@ -18,6 +18,7 @@
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/UniqueGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/RangeGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/GroupGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/WhereGenerator.h"
 
@@ -271,6 +272,8 @@ public:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Xor);
 
 			// Algebraic Unary
+			case HorseIR::BuiltinFunction::Primitive::Range:
+				return new RangeGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Where:
 				return new WhereGenerator<B, T>(this->m_builder);
 
