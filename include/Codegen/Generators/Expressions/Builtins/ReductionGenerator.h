@@ -241,12 +241,12 @@ public:
 
 		// Synchronize all values in shared memory from across warps
 
-		BarrierGenerator barrierGenerator(this->m_builder);
+		BarrierGenerator<B> barrierGenerator(this->m_builder);
 		barrierGenerator.Generate();
 
 		// Load the values back from the shared memory into the individual threads
 
-		auto sharedLaneAddress = addressGenerator.template GenerateAddress<T, PTX::SharedSpace>(sharedMemory, laneIndex);
+		auto sharedLaneAddress = addressGenerator.template GenerateAddress<PTX::SharedSpace>(sharedMemory, laneIndex);
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedLaneAddress));
 
 		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
