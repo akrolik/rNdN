@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include <limits>
 
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
@@ -18,6 +17,8 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
+
+#include "Utils/Math.h"
 
 namespace Codegen {
 
@@ -306,7 +307,7 @@ public:
 
 		// Compute the number of threads used in this reduction
 
-		auto blockSize = static_cast<std::uint32_t>(std::pow(2, std::ceil(std::log2(GetBlockSize()))));
+		auto blockSize = Utils::Math::Power2(GetBlockSize());
 		kernelOptions.SetBlockSize(blockSize);
 
 		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(blockSize);
@@ -325,7 +326,7 @@ public:
 
 		// Synchronize the thread group for a consistent view of shared memory
 
-		BarrierGenerator barrierGenerator(this->m_builder);
+		BarrierGenerator<B> barrierGenerator(this->m_builder);
 		barrierGenerator.Generate();
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
@@ -338,7 +339,9 @@ public:
 
 			auto pred = resources->template AllocateTemporary<PTX::PredicateType>();
 			auto guard = new PTX::UInt32Value(i - 1);
-			auto label = this->m_builder.CreateLabel("RED_" + std::to_string(i));
+
+			auto name = (i <= warpSize) ? "RED_STORE" : "RED_" + std::to_string(i);
+			auto label = this->m_builder.CreateLabel(name);
 
 			// Check to see if we are an active thread
 
@@ -350,7 +353,6 @@ public:
 			{
 				// Once the active thread count fits within a warp, reduce without synchronization
 
-				label->SetName(this->m_builder.UniqueIdentifier("RED_STORE"));
 				for (unsigned int j = i; j >= 1; j >>= 1)
 				{
 					GenerateSharedReduction(target, sharedThreadAddress, j);
@@ -459,7 +461,7 @@ private:
 		auto resources = this->m_builder.GetLocalResources();
 
 		auto offsetVal = resources->template AllocateTemporary<T>();
-		auto offsetAddress = address->CreateOffsetAddress(offset * PTX::BitSize<T::TypeBits>::NumBytes);
+		auto offsetAddress = address->CreateOffsetAddress(offset);
 
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(offsetVal, offsetAddress));
 
