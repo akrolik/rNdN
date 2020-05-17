@@ -59,9 +59,34 @@ public:
 
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		//TODO: Support correct type matrix for reductions
-		if constexpr(!std::is_same<T, PTX::PredicateType>::value && T::TypeBits != PTX::Bits::Bits8 && T::TypeBits != PTX::Bits::Bits16)
+		auto targetRegister = this->GenerateTargetRegister(target, arguments);
+
+		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
+			// 8-bit integer and boolean values are only used directly in min/max. We can therefore safely
+			// convert to 16-bit values without any changes in result
+
+			if (m_reductionOp == ReductionOperation::Average || m_reductionOp == ReductionOperation::Average)
+			{
+				BuiltinGenerator<B, T>::Unimplemented("reduction operation " + ReductionOperationString(m_reductionOp));
+			}
+
+			auto resources = this->m_builder.GetLocalResources();
+			auto targetRegister16 = resources->template AllocateTemporary<PTX::Int16Type>();
+
+			ReductionGenerator<B, PTX::Int16Type> generator(this->m_builder, m_reductionOp);
+			generator.Generate(targetRegister16, arguments);
+			ConversionGenerator::ConvertSource<T, PTX::Int16Type>(this->m_builder, targetRegister, targetRegister16);
+		}
+		else
+		{
+			Generate(targetRegister, arguments);
+		}
+		return targetRegister;
+	}
+
+	void Generate(const PTX::Register<T> *targetRegister, const std::vector<HorseIR::Operand *>& arguments)
+	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
 
@@ -103,7 +128,6 @@ public:
 
 		// Select the initial value for the reduction depending on the data size and compression mask
 
-		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		if (compress == nullptr)
 		{
 			// If no compression is active, select between the source and the null value depending on the compression
@@ -129,11 +153,6 @@ public:
 		// GenerateShuffleBlock(targetRegister);
 		GenerateShuffleWarp(targetRegister);
 		// GenerateShared(targetRegister);
-
-		return targetRegister;
-		}
-
-		return nullptr;
 	}
 
 	void GenerateShuffleReduction(const PTX::Register<T> *target)
