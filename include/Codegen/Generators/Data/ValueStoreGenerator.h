@@ -186,7 +186,7 @@ private:
 							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
 							return;
 						}
-						else if (*cellVector == *cellVectorGeometry)
+						else if (*listShape == *listGeometry) // Compare the entire geometry, as the cells may differ
 						{
 							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex);
 							return;
