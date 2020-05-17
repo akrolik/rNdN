@@ -59,12 +59,25 @@ public:
 
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		OperandGenerator<B, T> opGen(this->m_builder);
-		auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
-
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
-		Generate(targetRegister, src);
+		if constexpr(std::is_same<T, PTX::Int8Type>::value)
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			auto targetRegister16 = resources->template AllocateTemporary<PTX::Int16Type>();
 
+			OperandGenerator<B, PTX::Int16Type> opGen(this->m_builder);
+			auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
+
+			UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
+			gen.Generate(targetRegister16, src);
+			ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::Int16Type>(this->m_builder, targetRegister, targetRegister16);
+		}
+		else
+		{
+			OperandGenerator<B, T> opGen(this->m_builder);
+			auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+			Generate(targetRegister, src);
+		}
 		return targetRegister;
 	}
 
@@ -108,34 +121,6 @@ public:
 private:
 	void GeneratePi(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src);
 
-	UnaryOperation m_unaryOp;
-};
-
-template<PTX::Bits B>
-class UnaryGenerator<B, PTX::Int8Type> : public BuiltinGenerator<B, PTX::Int8Type>
-{
-public:
-	UnaryGenerator(Builder& builder, UnaryOperation unaryOp) : BuiltinGenerator<B, PTX::Int8Type>(builder), m_unaryOp(unaryOp) {}
-
-	std::string Name() const override { return "UnaryGenerator"; }
-
-	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
-	{
-		auto resources = this->m_builder.GetLocalResources();
-		auto targetRegister16 = resources->template AllocateTemporary<PTX::Int16Type>();
-
-		OperandGenerator<B, PTX::Int16Type> opGen(this->m_builder);
-		auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
-
-		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
-		gen.Generate(targetRegister16, src);
-
-		auto targetRegister = this->GenerateTargetRegister(target, arguments);
-		ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::Int16Type>(this->m_builder, targetRegister, targetRegister16);
-		return targetRegister;
-	}
-
-private:
 	UnaryOperation m_unaryOp;
 };
 
