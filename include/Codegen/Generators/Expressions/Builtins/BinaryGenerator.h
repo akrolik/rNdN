@@ -3,6 +3,7 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
@@ -157,14 +158,18 @@ public:
 
 	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
-		//TODO: This will fail to generate the target register
+		auto resources = this->m_builder.GetLocalResources();
+		auto targetRegister16 = resources->template AllocateTemporary<PTX::Int16Type>();
 
-		BinaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_binaryOp);
-		auto temp = gen.Generate(target, arguments);
+		OperandGenerator<B, PTX::Int16Type> opGen(this->m_builder);
+		auto src1 = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
+		auto src2 = opGen.GenerateOperand(arguments.at(1), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
+
+		BinaryGenerator<B, PTX::Int16Type> generator(this->m_builder, m_binaryOp);
+		generator.Generate(targetRegister16, src1, src2);
 
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
-		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(targetRegister, temp));
-
+		ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::Int16Type>(this->m_builder, targetRegister, targetRegister16);
 		return targetRegister;
 	}
 
@@ -183,8 +188,8 @@ template<template<class, bool = true> class Op>
 void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
 {
 	auto resources = this->m_builder.GetLocalResources();
-
 	auto temp = resources->template AllocateTemporary<T>();
+
 	GenerateInstruction<Op>(temp, src1, src2);
 
 	UnaryGenerator<B, T> gen(this->m_builder, UnaryOperation::Not);

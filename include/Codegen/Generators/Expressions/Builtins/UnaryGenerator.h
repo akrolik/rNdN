@@ -3,6 +3,7 @@
 #include "Codegen/Generators/Expressions/Builtins/BuiltinGenerator.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 
@@ -120,12 +121,17 @@ public:
 
 	const PTX::Register<PTX::Int8Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
+		auto resources = this->m_builder.GetLocalResources();
+		auto targetRegister16 = resources->template AllocateTemporary<PTX::Int16Type>();
+
+		OperandGenerator<B, PTX::Int16Type> opGen(this->m_builder);
+		auto src = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, PTX::Int16Type>::LoadKind::Vector);
+
 		UnaryGenerator<B, PTX::Int16Type> gen(this->m_builder, m_unaryOp);
-		auto temp = gen.Generate(target, arguments);
+		gen.Generate(targetRegister16, src);
 
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
-		this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int16Type>(targetRegister, temp));
-
+		ConversionGenerator::ConvertSource<PTX::Int8Type, PTX::Int16Type>(this->m_builder, targetRegister, targetRegister16);
 		return targetRegister;
 	}
 
