@@ -61,7 +61,6 @@ public:
 	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
-
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
 			// 8-bit integer and boolean values are only used directly in min/max. We can therefore safely
@@ -150,10 +149,25 @@ public:
 			this->m_builder.AddStatement(s2);
 		}
 
-		//TODO: Select which type of reduction we want to implement
-		// GenerateShuffleBlock(targetRegister);
-		GenerateShuffleWarp(targetRegister);
-		// GenerateShared(targetRegister);
+		auto& codeOptions = this->m_builder.GetCodegenOptions();
+		switch (codeOptions.Reduction)
+		{
+			case CodegenOptions::ReductionKind::ShuffleBlock:
+			{
+				GenerateShuffleBlock(targetRegister);
+				break;
+			}
+			case CodegenOptions::ReductionKind::ShuffleWarp:
+			{
+				GenerateShuffleWarp(targetRegister);
+				break;
+			}
+			case CodegenOptions::ReductionKind::Shared:
+			{
+				GenerateShared(targetRegister);
+				break;
+			}
+		}
 	}
 
 	void GenerateShuffleReduction(const PTX::Register<T> *target)

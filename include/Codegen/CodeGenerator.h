@@ -3,6 +3,7 @@
 #include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "Codegen/Builder.h"
+#include "Codegen/CodegenOptions.h"
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
 #include "Codegen/Generators/Functions/ListFunctionGenerator.h"
@@ -20,7 +21,7 @@ template<PTX::Bits B>
 class CodeGenerator : public HorseIR::ConstVisitor
 {
 public:
-	CodeGenerator(const TargetOptions& targetOptions) : m_builder(targetOptions) {}
+	CodeGenerator(const CodegenOptions &codegenOptions, const TargetOptions& targetOptions) : m_builder(codegenOptions, targetOptions) {}
 
 	PTX::Program *Generate(const HorseIR::Program *program)
 	{

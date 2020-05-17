@@ -7,6 +7,7 @@
 #include "Analysis/Shape/ShapeAnalysis.h"
 
 #include "Codegen/CodeGenerator.h"
+#include "Codegen/CodegenOptions.h"
 #include "Codegen/InputOptions.h"
 #include "Codegen/TargetOptions.h"
 
@@ -47,6 +48,9 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 
 	// Collect the device properties for codegen
 
+	Codegen::CodegenOptions codegenOptions;
+	codegenOptions.Reduction = Codegen::CodegenOptions::ReductionKind::ShuffleWarp;
+
 	Codegen::TargetOptions targetOptions;
 	targetOptions.ComputeCapability = device->GetComputeCapability();
 	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
@@ -60,7 +64,7 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 		Utils::Logger::LogInfo(targetOptions.ToString(), 1);
 	}
 
-	Codegen::CodeGenerator<PTX::Bits::Bits64> codegen(targetOptions);
+	Codegen::CodeGenerator<PTX::Bits::Bits64> codegen(codegenOptions, targetOptions);
 
 	// Set the input options for each function
 
