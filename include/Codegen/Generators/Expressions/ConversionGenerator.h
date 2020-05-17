@@ -279,7 +279,6 @@ private:
 		}
 	}
 
-	//TODO: Use conversion for the prefix sum selects
 	template<class S>
 	void ConvertToPredicate(const PTX::Register<PTX::PredicateType> *destination, const PTX::TypedOperand<S> *source)
 	{

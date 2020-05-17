@@ -474,12 +474,7 @@ private:
 
 			if (writeIndex == nullptr)
 			{
-				// Generate the in-order global prefix sum! Convert the predicate to integer values for the sum
-
-				auto intPredicate = resources->template AllocateTemporary<PTX::UInt32Type>();
-				this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(intPredicate, new PTX::UInt32Value(1), new PTX::UInt32Value(0), predicate));
-
-				// Calculate prefix sum
+				// Generate the in-order global prefix sum!
 
 				auto kernelResources = this->m_builder.GetKernelResources();
 				auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
@@ -489,7 +484,7 @@ private:
 				auto sizeAddress = addressGenerator.GenerateAddress(sizeParameter);
 
 				PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
-				writeIndex = prefixSumGenerator.Generate(sizeAddress, intPredicate, PrefixSumMode::Exclusive);
+				writeIndex = prefixSumGenerator.template Generate<PTX::PredicateType>(sizeAddress, predicate, PrefixSumMode::Exclusive);
 			}
 
 			// Check for compression - this will mask outputs
