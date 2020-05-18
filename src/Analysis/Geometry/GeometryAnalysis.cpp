@@ -142,7 +142,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 #define Independent() return {new WildcardShape()}
 
 		// ---------------
-		// Vector Geometry
+		// Vector Output Geometry
 		// ---------------
 
 		// Unary
@@ -218,8 +218,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
 		case HorseIR::BuiltinFunction::Primitive::IndexOf:
-		case HorseIR::BuiltinFunction::Primitive::Take:
-		case HorseIR::BuiltinFunction::Primitive::Drop:
 		case HorseIR::BuiltinFunction::Primitive::Member:
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 
@@ -230,9 +228,24 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			Require(shapes.size() == 1);
 			return shapes.at(0);
 		}
+
+		// --------------------
+		// Vector Input Geometry
+		// --------------------
+
+		// Indexing
 		case HorseIR::BuiltinFunction::Primitive::IndexAssignment:
 		{
 			// We operate on the size of the index set
+
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(1));
+		}
+
+		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Take:
+		case HorseIR::BuiltinFunction::Primitive::Drop:
+		{
+			// We operate on the size of the input vector
 
 			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(1));
 		}

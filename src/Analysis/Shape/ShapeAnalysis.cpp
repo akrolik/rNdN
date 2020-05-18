@@ -974,14 +974,16 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
 
 			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
+			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 
+			const auto writeShape = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape2->GetSize()));
 			if (const auto [isConstant, value] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
 				auto absValue = (value < 0) ? -value : value;
-				Return(new VectorShape(new Shape::ConstantSize(absValue)));
+				return {{new VectorShape(new Shape::ConstantSize(absValue))}, {writeShape}};
 			}
-			Return(new VectorShape(new Shape::DynamicSize(m_call)));
+			return {{new VectorShape(new Shape::DynamicSize(m_call))}, {writeShape}};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		{
@@ -999,12 +1001,13 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape2));
 
 			const auto vectorShape1 = ShapeUtils::GetShape<VectorShape>(argumentShape1);
+			const auto vectorShape2 = ShapeUtils::GetShape<VectorShape>(argumentShape2);
 			Require(CheckStaticScalar(vectorShape1->GetSize()));
 
-			const auto vectorSize2 = ShapeUtils::GetShape<VectorShape>(argumentShape2)->GetSize();
+			const auto writeShape = new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape2->GetSize()));
 			if (const auto [isConstant, modLength] = GetConstantArgument<std::int64_t>(arguments, 0); isConstant)
 			{
-				if (ShapeUtils::IsSize<Shape::ConstantSize>(vectorSize2))
+				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape2->GetSize()))
 				{
 					// Compute the modification length
 
@@ -1012,14 +1015,14 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 					// Compute the new vector length, ceil at 0
 
-					auto vectorLength = ShapeUtils::GetSize<Shape::ConstantSize>(vectorSize2)->GetValue();
+					auto vectorLength = constantSize->GetValue();
 					auto value = vectorLength - absModLength;
 					value = (value < 0) ? 0 : value;
 
-					Return(new VectorShape(new Shape::ConstantSize(value)));
+					return {{new VectorShape(new Shape::ConstantSize(value))}, {writeShape}};
 				}
 			}
-			Return(new VectorShape(new Shape::DynamicSize(m_call)));
+			return {{new VectorShape(new Shape::DynamicSize(m_call))}, {writeShape}};
 		}
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{

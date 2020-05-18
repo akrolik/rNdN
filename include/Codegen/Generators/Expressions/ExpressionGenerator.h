@@ -25,6 +25,7 @@
 #include "Codegen/Generators/Expressions/Builtins/AppendGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/CompressionGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexOfGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/LimitGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/MemberGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/OrderInitGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/OrderGenerator.h"
@@ -284,6 +285,10 @@ public:
 				return new CompressionGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::IndexOf:
 				return new IndexOfGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::Take:
+				return new LimitGenerator<B, T>(this->m_builder, LimitOperation::Take);
+			case HorseIR::BuiltinFunction::Primitive::Drop:
+				return new LimitGenerator<B, T>(this->m_builder, LimitOperation::Drop);
 			case HorseIR::BuiltinFunction::Primitive::Member:
 				return new MemberGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Vector:
