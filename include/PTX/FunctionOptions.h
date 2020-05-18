@@ -30,11 +30,11 @@ public:
 
 		if (m_blockSize != DynamicBlockSize)
 		{
-			Utils::Logger::LogError("Block size " + (size == DynamicBlockSize) ? "<dynamic>" : std::to_string(size) + " incompatible with block size " + std::to_string(m_blockSize));
+			Utils::Logger::LogError("Block size " + ((size == DynamicBlockSize) ? "<dynamic>" : std::to_string(size)) + " incompatible with block size " + std::to_string(m_blockSize));
 		}
 		else if (m_threadMultiple != 0 && (size % m_threadMultiple) != 0)
 		{
-			Utils::Logger::LogError("Block size " + (size == DynamicBlockSize) ? "<dynamic>" : std::to_string(size) + " incompatible with thread multiple " + std::to_string(m_threadMultiple));
+			Utils::Logger::LogError("Block size " + ((size == DynamicBlockSize) ? "<dynamic>" : std::to_string(size)) + " incompatible with thread multiple " + std::to_string(m_threadMultiple));
 		}
 
 		m_blockSize = size;
