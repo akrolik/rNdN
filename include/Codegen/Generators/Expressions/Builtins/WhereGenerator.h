@@ -84,7 +84,7 @@ public:
 		auto boundsPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto boundedPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(boundedPredicate, index, size, PTX::UInt32Type::ComparisonOperator::Less));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(boundsPredicate, index, size, PTX::UInt32Type::ComparisonOperator::Less));
 		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(boundedPredicate, boundsPredicate, dataPredicate));
 
 		resources->SetCompressedRegister(dataRegister, boundedPredicate);
