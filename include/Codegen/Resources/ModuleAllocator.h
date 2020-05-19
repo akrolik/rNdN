@@ -96,7 +96,11 @@ public:
 		auto sharedMemoryBits = new PTX::ArrayVariableAdapter<PTX::Bit8Type, PTX::DynamicSize, PTX::SharedSpace>(m_sharedMemoryDeclaration->GetVariable(DynamicVariableName));
 		auto sharedMemory = new PTX::VariableAdapter<T, PTX::Bit8Type, PTX::SharedSpace>(sharedMemoryBits);
 
-		m_dynamicSharedMemorySize += sizeof(typename T::SystemType) * size;
+		auto bytes = sizeof(typename T::SystemType) * size;
+		if (bytes > m_dynamicSharedMemorySize)
+		{
+			m_dynamicSharedMemorySize = bytes;
+		}
 
 		return sharedMemory;
 	}

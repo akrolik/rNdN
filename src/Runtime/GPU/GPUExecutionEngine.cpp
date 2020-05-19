@@ -307,8 +307,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			Utils::Logger::LogError("Invocation thread geometry must be constant list " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
 		}
 
-		//TODO: Determine the correct amount of shared memory for cells
-		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize() * 2);
+		auto blockCells = blockSize / runtimeOptions->ListCellThreads;
+		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize() * blockCells);
 	}
 
 	// Load extra parameters for the kernel
