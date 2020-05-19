@@ -4,6 +4,7 @@
 
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/SpecialRegisterGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
 #include "PTX/PTX.h"
 
@@ -122,6 +123,22 @@ public:
 		auto madInstruction = new PTX::MADInstruction<PTX::UInt32Type>(index, ctaidx, ntidx, tidx);
 		madInstruction->SetLower(true);
 		this->m_builder.AddStatement(madInstruction);
+
+		return index;
+	}
+
+	const PTX::Register<PTX::UInt32Type> *GenerateListLocalIndex()
+	{
+		// List local index = localIndex % cellThreads
+
+		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+		auto listThreads = geometryGenerator.GenerateListThreads();
+		auto localIndex = GenerateLocalIndex();
+
+		auto resources = this->m_builder.GetLocalResources();
+		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(index, localIndex, listThreads));
 
 		return index;
 	}

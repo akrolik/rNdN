@@ -170,17 +170,16 @@ public:
 		}
 	}
 
-	void GenerateShuffleReduction(const PTX::Register<T> *target)
+	void GenerateShuffleReduction(const PTX::Register<T> *target, std::int32_t activeWarps)
 	{
 		// Warp shuffle the values down, reducing at each level until a single value is computed, log_2(WARP_SZ)
 
-		auto resources = this->m_builder.GetLocalResources();
 		auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
 
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
-		kernelOptions.SetThreadMultiple(warpSize);
+		kernelOptions.SetThreadMultiple(activeWarps);
 
-		for (unsigned int offset = warpSize >> 1; offset > 0; offset >>= 1)
+		for (unsigned int offset = activeWarps >> 1; offset > 0; offset >>= 1)
 		{
 			// Generate the shuffle instruction to pull down the other value
 
@@ -218,13 +217,12 @@ public:
 		auto blockSize = ((GetBlockSize() + warpSize - 1) / warpSize) * warpSize;
 		kernelOptions.SetBlockSize(blockSize);
 
-		//TODO: Allow multiple cells per block: shared memory offset, block size
 		auto sharedMemorySize = blockSize / warpSize;
 		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(sharedMemorySize);
 
 		// Generate the shuffle for each warp
 
-		GenerateShuffleReduction(target);
+		GenerateShuffleReduction(target, warpSize);
 
 		// Write a single reduced value to shared memory for each warp
 
@@ -259,6 +257,21 @@ public:
 		BarrierGenerator<B> barrierGenerator(this->m_builder);
 		barrierGenerator.Generate();
 
+		// Check if we are the first warp in the block for the final part of the reduction
+
+		auto warpid = indexGenerator.GenerateWarpIndex();
+		auto cellWarps = blockSize / warpSize;
+
+		auto cellWarp = resources->template AllocateTemporary<PTX::UInt32Type>();
+		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(cellWarp, warpid, new PTX::UInt32Value(cellWarps)));
+
+		auto predBlock = resources->template AllocateTemporary<PTX::PredicateType>();
+		auto labelBlock = this->m_builder.CreateLabel("RED_BLOCK");
+
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predBlock, cellWarp, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(labelBlock, predBlock));
+		this->m_builder.AddStatement(new PTX::BlankStatement());
+
 		// Load the values back from the shared memory into the individual threads
 
 		auto sharedLaneAddress = addressGenerator.template GenerateAddress<PTX::SharedSpace>(sharedMemory, laneIndex);
@@ -271,25 +284,29 @@ public:
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predActive, laneIndex, warpCount, PTX::UInt32Type::ComparisonOperator::Less));
 		this->m_builder.AddStatement(new PTX::SelectInstruction<T>(target, target, GenerateNullValue(m_reductionOp), predActive));
 
-		// Check if we are the first warp in the block for the final part of the reduction
+		// Reduce the individual values from all warps into 1 final value for the block.
+		// To handle multiple cells per block, only reduce in segments (# warps per cell)
 
-		auto warpid = indexGenerator.GenerateWarpIndex();
+		GenerateShuffleReduction(target, cellWarps);
 
-		auto predBlock = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto labelBlock = this->m_builder.CreateLabel("RED_BLOCK");
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predBlock, warpid, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(labelBlock, predBlock));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
-
-		// Reduce the individual values from all warps into 1 final value for the block
-
-		GenerateShuffleReduction(target);
+		if (inputOptions.IsListGeometry())
+		{
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedLaneAddress, target));
+		}
 
 		// End the if statement
 
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(labelBlock);
+
+		if (inputOptions.IsListGeometry())
+		{
+			barrierGenerator.Generate();
+
+			auto reload = new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedWarpAddress);
+			reload->SetPredicate(predWarp, true);
+			this->m_builder.AddStatement(reload);
+		}
 
 		// Write a single value per block to the global atomic value
 
@@ -300,7 +317,8 @@ public:
 	{
 		// Generate the shuffle for each warp
 
-		GenerateShuffleReduction(target);
+		auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
+		GenerateShuffleReduction(target, warpSize);
 
 		// Write a single value per warp to the global atomic value
 
@@ -330,6 +348,7 @@ public:
 
 		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
 		auto localIndex = indexGenerator.GenerateLocalIndex();
+		auto activeIndex = (inputOptions.IsVectorGeometry()) ? indexGenerator.GenerateLocalIndex() : indexGenerator.GenerateListLocalIndex();
 
 		AddressGenerator<B, T> addressGenerator(this->m_builder);
 		auto sharedThreadAddress = addressGenerator.GenerateAddress(sharedMemory, localIndex);
@@ -359,7 +378,7 @@ public:
 
 			// Check to see if we are an active thread
 
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, localIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, activeIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher));
 			this->m_builder.AddStatement(new PTX::BranchInstruction(label, pred));
 			this->m_builder.AddStatement(new PTX::BlankStatement());
 
@@ -417,14 +436,13 @@ private:
 		}
 		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
-			//TODO: Allow less threads per cell than the entire block if possible
 			// For each cell, limit by the number of cell threads if specified, otherwise us the entire block for each cell
 
-			// auto size = inputOptions.ListCellThreads;
-			// if (size != InputOptions::DynamicSize && size < blockSize)
-			// {
-			// 	blockSize = size;
-			// }
+			auto size = inputOptions.ListCellThreads;
+			if (size != InputOptions::DynamicSize && size < blockSize)
+			{
+				blockSize = size;
+			}
 		}
 		else
 		{

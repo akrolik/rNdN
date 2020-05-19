@@ -183,7 +183,7 @@ private:
 					{
 						if (Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
 						{
-							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
+							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
 							return;
 						}
 						else if (*listShape == *listGeometry) // Compare the entire geometry, as the cells may differ
@@ -230,7 +230,8 @@ private:
 			}
 			case RegisterReductionGranularity::Block:
 			{
-				auto localIndex = indexGenerator.GenerateLocalIndex();
+				auto isVectorGeometry = this->m_builder.GetInputOptions().IsVectorGeometry();
+				auto localIndex = (isVectorGeometry) ? indexGenerator.GenerateLocalIndex() : indexGenerator.GenerateListLocalIndex();
 				GenerateWriteReduction(op, localIndex, value, writeIndex, returnIndex);
 				break;
 			}
