@@ -391,8 +391,12 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
 		{
 			auto size = constantSize->GetValue();
-			auto blockSize = kernelOptions.GetBlockSize();
+			if (size == 0)
+			{
+				Utils::Logger::LogError("Zero size kernel for thread geometry " + Analysis::ShapeUtils::ShapeString(threadGeometry));
+			}
 
+			auto blockSize = kernelOptions.GetBlockSize();
 			if (blockSize == PTX::FunctionOptions::DynamicBlockSize)
 			{
 				// Fill the multiprocessors, but not more than the data size
