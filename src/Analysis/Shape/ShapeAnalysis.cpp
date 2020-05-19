@@ -1191,6 +1191,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
 			Return(new ListShape(vectorShape->GetSize(), {new VectorShape(new Shape::ConstantSize(1))}));
 		}
+		//TODO: Each functions pass argument data to internal function
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		{
 			// -- Function call

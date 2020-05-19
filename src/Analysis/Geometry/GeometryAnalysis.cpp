@@ -322,6 +322,8 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// List Operations
 		// ---------------
 
+		//TODO: Use the nested function for geometry computation
+
 		// List
 		case HorseIR::BuiltinFunction::Primitive::Each:
 		case HorseIR::BuiltinFunction::Primitive::EachItem:
