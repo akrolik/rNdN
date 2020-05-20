@@ -70,9 +70,9 @@ std::string TableBuffer::Description() const
 std::string TableBuffer::DebugDump() const
 {
 	std::stringstream string;
+	string << std::left;
 	for (const auto& [name, data] : m_columns)
 	{
-		string << std::left;
 		if (HorseIR::TypeUtils::IsDatetimeType(data->GetType()))
 		{
 			string << std::setw(30);
@@ -82,6 +82,18 @@ std::string TableBuffer::DebugDump() const
 			string << std::setw(20);
 		}
 		string << name;
+	}
+	string << std::endl;
+	for (const auto& [name, data] : m_columns)
+	{
+		if (HorseIR::TypeUtils::IsDatetimeType(data->GetType()))
+		{
+			string << std::string(30, '-');
+		}
+		else
+		{
+			string << std::string(20, '-');
+		}
 	}
 	string << std::endl;
 	for (auto i = 0ul; i < m_rows; ++i)
