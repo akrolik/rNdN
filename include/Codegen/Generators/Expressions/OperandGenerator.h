@@ -338,7 +338,9 @@ public:
 			if constexpr(std::is_same<S, PTX::PredicateType>::value)
 			{
 				auto value = GenerateParameterLoad<PTX::Int8Type>(name, parameter, dataIndex, isCell);
-				return ConversionGenerator::ConvertSource<S, PTX::Int8Type>(this->m_builder, value);
+				auto destination = resources->AllocateRegister<S>(name);
+				ConversionGenerator::ConvertSource<S, PTX::Int8Type>(this->m_builder, destination, value);
+				return destination;
 			}
 			else
 			{
