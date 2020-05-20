@@ -21,6 +21,7 @@ public:
 		Enumeration,
 		Dictionary,
 		Table,
+		KeyedTable,
 		Function,
 		Constant
 	};
@@ -44,6 +45,8 @@ public:
 				return "DataBuffer::Dictionary";
 			case Kind::Table:
 				return "DataBuffer::Table";
+			case Kind::KeyedTable:
+				return "DataBuffer::KeyedTable";
 			case Kind::Function:
 				return "DataBuffer::Function";
 			case Kind::Constant:
