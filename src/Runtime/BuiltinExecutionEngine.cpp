@@ -252,9 +252,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		{
-			auto argument = arguments.at(0);
-			auto enumeration = BufferUtils::GetBuffer<EnumerationBuffer>(argument);
-			return {enumeration->GetValues()};
+			return {BufferUtils::GetBuffer<EnumerationBuffer>(arguments.at(0))->GetValues()};
 		}
 		case HorseIR::BuiltinFunction::Primitive::ColumnValue:
 		{
