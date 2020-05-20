@@ -107,23 +107,36 @@ void DataRegistry::LoadDebugData()
 
 	auto timeData_start = Utils::Chrono::Start("Load debug data");
 
-	for (unsigned long i = 1; i <= 64 * 1024; i <<= 1)
+	for (auto size = 1ul; size <= 64 * 1024; size <<= 1)
 	{
 		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-		LoadDebugData<std::int8_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), i);
-		LoadDebugData<std::int8_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int8), i);
-		LoadDebugData<std::int16_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int16), i);
-		LoadDebugData<std::int32_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), i);
-		LoadDebugData<std::int64_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), i);
-		LoadDebugData<float>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float32), i);
-		LoadDebugData<double>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), i);
-		LoadDateDebugData(columns, i);
-		LoadStringDebugData(columns, i);
+		std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+		CUDA::Vector<std::int64_t> primaryKey(size);
+		for (auto i = 0u; i < size; ++i)
+		{
+			primaryMap[i] = i;
+			primaryKey[i] = i;
+		}
+		auto primaryBuffer = new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), std::move(primaryKey)));
+		columns.push_back({"pkey", primaryBuffer});
 
-		AddTable("debug_" + std::to_string(i), new TableBuffer(columns));
+		LoadDebugData<std::int8_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), size);
+		LoadDebugData<std::int8_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int8), size);
+		LoadDebugData<std::int16_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int16), size);
+		LoadDebugData<std::int32_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), size);
+		LoadDebugData<std::int64_t>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), size);
+		LoadDebugData<float>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float32), size);
+		LoadDebugData<double>(columns, new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), size);
+		LoadDateDebugData(columns, size);
+		LoadStringDebugData(columns, size);
 
-		Utils::Logger::LogInfo("Loaded table 'debug_" + std::to_string(i) + "'");
+		auto table = new TableBuffer(columns);
+		table->SetPrimaryKey(primaryBuffer, primaryMap);
+
+		AddTable("debug_" + std::to_string(size), table);
+
+		Utils::Logger::LogInfo("Loaded table 'debug_" + std::to_string(size) + "'");
 	}
 
 	Utils::Chrono::End(timeData_start);
