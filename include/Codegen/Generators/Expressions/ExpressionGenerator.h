@@ -15,6 +15,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ExternalBinaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ExternalUnaryGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RoundingGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/ReverseGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/UniqueGenerator.h"
@@ -275,6 +276,8 @@ public:
 			// Algebraic Unary
 			case HorseIR::BuiltinFunction::Primitive::Range:
 				return new RangeGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::Reverse:
+				return new ReverseGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Where:
 				return new WhereGenerator<B, T>(this->m_builder);
 

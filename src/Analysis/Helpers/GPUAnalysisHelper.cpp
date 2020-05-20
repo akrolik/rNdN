@@ -179,7 +179,6 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Algebraic Unary
 		case HorseIR::BuiltinFunction::Primitive::Range:
 		case HorseIR::BuiltinFunction::Primitive::Factorial:
-		case HorseIR::BuiltinFunction::Primitive::Reverse:
 
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Random_k:
@@ -188,6 +187,12 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::Vector:
 		{
 			return {Device::GPU, Synchronization:None};
+		}
+
+		case HorseIR::BuiltinFunction::Primitive::Reverse:
+		{
+			// Indexed write
+			return {Device::GPU, Synchronization::In};
 		}
 
 		// Binary
