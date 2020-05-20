@@ -21,7 +21,7 @@ void TypeChecker::VisitOut(GlobalDeclaration *global)
 
 	const auto& expressionTypes = global->GetExpression()->GetTypes();
 	const auto declarationType = global->GetDeclaration()->GetType();
-	if (!TypeUtils::IsTypesEqual({declarationType}, expressionTypes, true))
+	if (!TypeUtils::IsTypesAssignable({declarationType}, expressionTypes))
 	{
 		Utils::Logger::LogError("Expression type " + TypeUtils::TypeString(expressionTypes) + " does not match declaration type " + TypeUtils::TypeString(declarationType));
 	}
@@ -136,7 +136,7 @@ void TypeChecker::VisitOut(ReturnStatement *ret)
 
 	// Check that the types are equal, allowing for runtime checks
 
-	if (!TypeUtils::IsTypesEqual(returnTypes, operandTypes, true))
+	if (!TypeUtils::IsTypesAssignable(returnTypes, operandTypes))
 	{
 		Utils::Logger::LogError("Function '" + m_currentFunction->GetName() + "' expected return type " + TypeUtils::TypeString(returnTypes) + ", received " + TypeUtils::TypeString(operandTypes));
 	}
@@ -152,7 +152,7 @@ void TypeChecker::VisitOut(CastExpression *cast)
 	if (TypeUtils::IsSingleType(expressionTypes))
 	{
 		const auto expressionType = TypeUtils::GetSingleType(expressionTypes);
-		if (expressionType == nullptr || TypeUtils::IsCastable(castType, expressionType))
+		if (TypeUtils::IsType<WildcardType>(expressionType) || TypeUtils::IsCastable(castType, expressionType))
 		{
 			cast->SetTypes({castType});
 			return;
@@ -203,7 +203,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const Fun
 {
 	// Check the arguments are equal with the parameters, allowing for runtime checks
 	
-	if (!TypeUtils::IsTypesEqual(functionType->GetParameterTypes(), argumentTypes, true))
+	if (!TypeUtils::IsTypesAssignable(functionType->GetParameterTypes(), argumentTypes))
 	{
 		TypeError(function, argumentTypes);
 	}
@@ -951,7 +951,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			// A column value call is intentionally untyped since it comes from the runtime system.
 			// It must be cast before assigning to a variable
 
-			return {nullptr};
+			return {new HorseIR::WildcardType()};
 		}
 		case BuiltinFunction::Primitive::LoadTable:
 		{

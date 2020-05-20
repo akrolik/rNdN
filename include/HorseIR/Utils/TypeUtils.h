@@ -80,7 +80,7 @@ static bool IsTypesAssignable(const std::vector<Type *>& types1, const std::vect
 
 			if (const auto elementType = TypeUtils::GetReducedType(listType2->GetElementTypes()))
 			{
-				if (IsTypesEqual({elementType}, listType1->GetElementTypes()))
+				if (IsTypesAssignable({elementType}, listType1->GetElementTypes()))
 				{
 					continue;
 				}
