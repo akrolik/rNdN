@@ -62,6 +62,7 @@ public:
 	VectorBuffer *GetPrimaryKey() const { return m_primaryKey; }
 	const std::unordered_map<std::int32_t, std::int64_t>& GetPrimaryMap() const { return m_primaryMap; }
 
+	const std::vector<std::pair<std::string, ColumnBuffer *>>& GetColumns() const { return m_columns; }
 	ColumnBuffer *GetColumn(const std::string& column) const;
 
 	// CPU/GPU management
