@@ -1000,7 +1000,6 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			return {new BasicType(BasicType::BasicKind::Int64)};
 		}
-		case BuiltinFunction::Primitive::Format:
 		case BuiltinFunction::Primitive::String:
 		{
 			return {new BasicType(BasicType::BasicKind::String)};

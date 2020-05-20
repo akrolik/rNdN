@@ -141,7 +141,6 @@ public:
 		// Other
 		LoadCSV,
 		Print,
-		Format,
 		String,
 		SubString,
 
@@ -375,8 +374,6 @@ public:
 				return "load_csv";
 			case Primitive::Print:
 				return "print";
-			case Primitive::Format:
-				return "format";
 			case Primitive::String:
 				return "str";
 			case Primitive::SubString:
@@ -562,7 +559,6 @@ public:
 			// Others
 			case Primitive::LoadCSV:
 			case Primitive::Print:
-			case Primitive::Format:
 			case Primitive::String:
 				return 1;
 			case Primitive::SubString:

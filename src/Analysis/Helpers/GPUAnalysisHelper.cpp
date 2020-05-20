@@ -427,7 +427,6 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Other
 		case HorseIR::BuiltinFunction::Primitive::LoadCSV:
 		case HorseIR::BuiltinFunction::Primitive::Print:
-		case HorseIR::BuiltinFunction::Primitive::Format:
 		case HorseIR::BuiltinFunction::Primitive::String:
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{

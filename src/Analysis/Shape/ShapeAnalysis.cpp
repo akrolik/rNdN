@@ -1699,7 +1699,6 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			Return(new TableShape(new Shape::DynamicSize(m_call, 1), new Shape::DynamicSize(m_call, 2)));
 		}
 		case HorseIR::BuiltinFunction::Primitive::Print:
-		case HorseIR::BuiltinFunction::Primitive::Format:
 		case HorseIR::BuiltinFunction::Primitive::String:
 		{
 			// -- Any shape

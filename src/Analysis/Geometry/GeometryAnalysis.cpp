@@ -387,7 +387,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// Other
 		case HorseIR::BuiltinFunction::Primitive::LoadCSV:
 		case HorseIR::BuiltinFunction::Primitive::Print:
-		case HorseIR::BuiltinFunction::Primitive::Format:
 		case HorseIR::BuiltinFunction::Primitive::String:
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{

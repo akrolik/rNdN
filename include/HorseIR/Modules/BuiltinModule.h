@@ -128,7 +128,6 @@ static Module *BuiltinModule = new LibraryModule("Builtin", {
 	// Other
 	new BuiltinFunction(BuiltinFunction::Primitive::LoadCSV),
 	new BuiltinFunction(BuiltinFunction::Primitive::Print),
-	new BuiltinFunction(BuiltinFunction::Primitive::Format),
 	new BuiltinFunction(BuiltinFunction::Primitive::String),
 	new BuiltinFunction(BuiltinFunction::Primitive::SubString)
 });
