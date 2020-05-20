@@ -220,6 +220,36 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			//TODO: @values - keyedtable
 			Error("unsupported target type " + HorseIR::TypeUtils::TypeString(argument->GetType()));
 		}
+		case HorseIR::BuiltinFunction::Primitive::Meta:
+		{
+			auto table = BufferUtils::GetBuffer<TableBuffer>(arguments.at(0));
+
+			CUDA::Vector<std::uint64_t> names;
+			CUDA::Vector<std::uint64_t> types;
+			CUDA::Vector<std::uint64_t> attributes;
+
+			for (const auto& [name, column] : table->GetColumns())
+			{
+				names.push_back(StringBucket::HashString(name));
+				types.push_back(StringBucket::HashString(HorseIR::PrettyPrinter::PrettyString(column->GetType())));
+
+				if (column == table->GetPrimaryKey())
+				{
+					attributes.push_back(StringBucket::HashString("primary"));
+				}
+				else
+				{
+					attributes.push_back(StringBucket::HashString(""));
+				}
+			}
+
+			std::vector<std::pair<std::string, ColumnBuffer *>> columns;
+			columns.push_back({"name", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(names)))});
+			columns.push_back({"type", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(types)))});
+			columns.push_back({"attributes", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(attributes)))});
+
+			return {new TableBuffer(columns)};
+		}
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
 		{
 			auto argument = arguments.at(0);
