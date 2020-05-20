@@ -181,6 +181,18 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			{
 				return {enumeration->GetKeys()};
 			}
+			else if (auto table = BufferUtils::GetBuffer<TableBuffer>(argument, false))
+			{
+				// Vector of column names
+				
+				CUDA::Vector<std::uint64_t> names;
+				for (const auto& [name, _] : table->GetColumns())
+				{
+					names.push_back(StringBucket::HashString(name));
+				}
+				return {new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(names)))};
+			}
+			//TODO: @keys - keyedtable
 			Error("unsupported target type " + HorseIR::TypeUtils::TypeString(argument->GetType()));
 		}
 		case HorseIR::BuiltinFunction::Primitive::Values:
@@ -194,6 +206,18 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			{
 				return {enumeration->GetIndexes()};
 			}
+			else if (auto table = BufferUtils::GetBuffer<TableBuffer>(argument, false))
+			{
+				// List of column data
+
+				std::vector<DataBuffer *> cells;
+				for (const auto& [_, column] : table->GetColumns())
+				{
+					cells.push_back(column);
+				}
+				return {new ListBuffer(cells)};
+			}
+			//TODO: @values - keyedtable
 			Error("unsupported target type " + HorseIR::TypeUtils::TypeString(argument->GetType()));
 		}
 		case HorseIR::BuiltinFunction::Primitive::Fetch:
