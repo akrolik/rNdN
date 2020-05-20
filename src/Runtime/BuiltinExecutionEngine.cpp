@@ -309,6 +309,19 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), std::move(likeData)))};
 		}
+		case HorseIR::BuiltinFunction::Primitive::Print:
+		{
+			Utils::Logger::LogInfo(arguments.at(0)->DebugDump(), 0, true, Utils::Logger::NoPrefix);
+			CUDA::Vector<std::int64_t> data({0});
+			return {new TypedVectorBuffer(new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(data)))};
+		}
+		case HorseIR::BuiltinFunction::Primitive::String:
+		{
+			auto string = arguments.at(0)->DebugDump();
+			auto hash = StringBucket::HashString(string);
+			CUDA::Vector<std::uint64_t> data({hash});
+			return {new TypedVectorBuffer(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(data)))};
+		}
 		case HorseIR::BuiltinFunction::Primitive::SubString:
 		{
 			const auto& stringData = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer()->GetValues();
