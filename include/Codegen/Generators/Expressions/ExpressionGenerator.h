@@ -35,6 +35,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ReductionGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/RazeGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/ToListGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/DateGenerator.h"
 
@@ -312,6 +313,8 @@ public:
 			// List
 			case HorseIR::BuiltinFunction::Primitive::Raze:
 				return new RazeGenerator<B, T>(this->m_builder);
+			case HorseIR::BuiltinFunction::Primitive::ToList:
+				return new ToListGenerator<B, T>(this->m_builder);
 
 			// Date
 			case HorseIR::BuiltinFunction::Primitive::Date:

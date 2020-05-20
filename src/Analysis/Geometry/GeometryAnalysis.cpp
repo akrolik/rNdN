@@ -348,6 +348,12 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		{
 			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 		}
+		case HorseIR::BuiltinFunction::Primitive::ToList:
+		{
+			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
+			Require(shapes.size() == 1);
+			return shapes.at(0);
+		}
 		
 		// --------------
 		// CPU Operations
@@ -364,7 +370,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 
 		// List
 		case HorseIR::BuiltinFunction::Primitive::List:
-		case HorseIR::BuiltinFunction::Primitive::ToList:
 		case HorseIR::BuiltinFunction::Primitive::Match:
 
 		// Database

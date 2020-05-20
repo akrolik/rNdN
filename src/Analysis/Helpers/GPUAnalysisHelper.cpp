@@ -366,6 +366,10 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		{
 			return {Device::GPU, (Synchronization::Out | Synchronization::Raze)};
 		}
+		case HorseIR::BuiltinFunction::Primitive::ToList:
+		{
+			return {Device::GPU, Synchronization::In};
+		}
 
 		// ----------------------
 		// GPU Library Operations
@@ -406,7 +410,6 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		// List
 		case HorseIR::BuiltinFunction::Primitive::List:
-		case HorseIR::BuiltinFunction::Primitive::ToList:
 		case HorseIR::BuiltinFunction::Primitive::Match:
 
 		// Database
