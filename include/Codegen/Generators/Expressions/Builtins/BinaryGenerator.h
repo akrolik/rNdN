@@ -138,11 +138,9 @@ public:
 			{
 				this->m_builder.AddStatement(new Op<T>(target, src1, src2, PTX::Float64Type::RoundingMode::Nearest));
 			}
-			else if constexpr(std::is_same<Op<T>, PTX::MultiplyInstruction<T>>::value && PTX::is_int_type<T>::value)
+			else if constexpr(std::is_same<Op<T>, PTX::MultiplyInstruction<T>>::value && PTX::HalfModifier<T>::Enabled)
 			{
-				auto instruction = new Op<T>(target, src1, src2);
-				instruction->SetLower(true);
-				this->m_builder.AddStatement(instruction);
+				this->m_builder.AddStatement(new PTX::MultiplyInstruction<T>(target, src1, src2, PTX::HalfModifier<T>::Half::Lower));
 			}
 			else
 			{

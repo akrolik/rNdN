@@ -16,49 +16,35 @@ class HalfModifier<T, force,
 public:
 	constexpr static bool Enabled = true;
 
-	HalfModifier() {}
+	enum class Half {
+		Lower,
+		Upper
+	};
 
-	bool GetLower() const { return m_lower; }
-	void SetLower(bool lower)
-	{
-		m_lower = lower;
-		if (lower)
-		{
-			m_upper = false;
-		}
-	}
+	HalfModifier(Half half) : m_half(half) {}
 
-	bool GetUpper() const { return m_upper; }
-	void SetUpper(bool upper)
-	{
-		m_upper = upper;
-		if (upper)
-		{
-			m_lower = false;
-		}
-	}
+	Half GetHalf() const { return m_half; }
+	void SetHalf(Half half) { m_half = half; }
 
 	std::string OpCodeModifier() const
 	{
-		if (m_upper)
+		switch (m_half)
 		{
-			return ".hi";
-		}
-		else if (m_lower)
-		{
-			return ".lo";
+			case Half::Lower:
+				return ".lo";
+			case Half::Upper:
+				return ".hi";
 		}
 		return "";
 	}
 
 	bool IsActive() const
 	{
-		return m_lower || m_upper;
+		return true;
 	}
 
 protected:
-	bool m_upper = false;
-	bool m_lower = false;
+	Half m_half;
 };
 
 }

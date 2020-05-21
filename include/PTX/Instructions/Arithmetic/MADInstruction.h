@@ -21,7 +21,11 @@ public:
 		)
 	);
 
-	using InstructionBase_3<T>::InstructionBase_3;
+	template <class T1 = T, class = typename std::enable_if_t<HalfModifier<T1>::Enabled>>
+	MADInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, typename HalfModifier<T1>::Half half) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), HalfModifier<T>(half) {} 
+
+	template <class T1 = T, class = typename std::enable_if_t<!HalfModifier<T1>::Enabled>>
+	MADInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC) {}
 
 	static std::string Mnemonic() { return "mad"; }
 

@@ -20,7 +20,11 @@ public:
 		)
 	);
 
-	using InstructionBase_2<T>::InstructionBase_2;
+	template <class T1 = T, class = typename std::enable_if_t<HalfModifier<T1>::Enabled>>
+	MultiplyInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename HalfModifier<T1>::Half half) : InstructionBase_2<T>(destination, sourceA, sourceB), HalfModifier<T>(half) {} 
+
+	template <class T1 = T, class = typename std::enable_if_t<!HalfModifier<T1>::Enabled>>
+	MultiplyInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB) : InstructionBase_2<T>(destination, sourceA, sourceB) {}
 
 	static std::string Mnemonic() { return "mul"; }
 
@@ -44,20 +48,6 @@ public:
 			code += SaturateModifier<T>::OpCodeModifier();
 		}
 		return code + T::Name();
-	}
-};
-
-template<>
-class MultiplyInstruction<Int32Type> : public InstructionBase_2<Int32Type>, public HalfModifier<Int32Type>
-{
-public:
-	using InstructionBase_2<Int32Type>::InstructionBase_2;
-
-	static std::string Mnemonic() { return "mul"; }
-
-	std::string OpCode() const override
-	{
-		return Mnemonic() + HalfModifier<Int32Type>::OpCodeModifier() + Int32Type::Name();
 	}
 };
 

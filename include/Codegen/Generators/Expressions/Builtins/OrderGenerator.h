@@ -380,9 +380,9 @@ public:
 
 		auto sequenceStart = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		auto multiplyInstruction = new PTX::MultiplyInstruction<PTX::UInt32Type>(sequenceStart, sequenceIndex, sequenceSize);
-		multiplyInstruction->SetLower(true);
-		this->m_builder.AddStatement(multiplyInstruction);
+		this->m_builder.AddStatement(new PTX::MultiplyInstruction<PTX::UInt32Type>(
+			sequenceStart, sequenceIndex, sequenceSize, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+		));
 
 		// === Find the substage location
 
@@ -417,9 +417,9 @@ public:
 
 		auto subsequenceStart = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		auto madInstruction = new PTX::MADInstruction<PTX::UInt32Type>(subsequenceStart, subsequenceIndex, subsequenceSize, sequenceStart);
-		madInstruction->SetLower(true);
-		this->m_builder.AddStatement(madInstruction);
+		this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
+			subsequenceStart, subsequenceIndex, subsequenceSize, sequenceStart, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+		));
 
 		// Index of the thread in *its* substage
 		//   subsequenceLocalIndex = index % (subsequenceSize / 2)

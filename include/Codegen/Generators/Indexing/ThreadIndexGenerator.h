@@ -120,9 +120,9 @@ public:
 		auto resources = this->m_builder.GetLocalResources();
 		auto index = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		auto madInstruction = new PTX::MADInstruction<PTX::UInt32Type>(index, ctaidx, ntidx, tidx);
-		madInstruction->SetLower(true);
-		this->m_builder.AddStatement(madInstruction);
+		this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
+			index, ctaidx, ntidx, tidx, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+		));
 
 		return index;
 	}

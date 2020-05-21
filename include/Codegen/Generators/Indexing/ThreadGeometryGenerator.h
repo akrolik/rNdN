@@ -149,13 +149,14 @@ public:
 		auto temp = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		auto multiply = new PTX::MultiplyInstruction<PTX::UInt32Type>(threads, listSize, listThreads);
-		multiply->SetLower(true);
-		this->m_builder.AddStatement(multiply);
-
+		this->m_builder.AddStatement(new PTX::MultiplyInstruction<PTX::UInt32Type>(
+			threads, listSize, listThreads, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+		));
 		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(roundThreads, threads, ntidx));
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(temp, ctaidx, new PTX::UInt32Value(1)));
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, temp, nctaidx, PTX::UInt32Type::ComparisonOperator::Equal));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			predicate, temp, nctaidx, PTX::UInt32Type::ComparisonOperator::Equal
+		));
 		this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::UInt32Type>(activeThreads, roundThreads, ntidx, predicate));
 
 		return activeThreads;
