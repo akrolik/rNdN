@@ -4,6 +4,7 @@
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace CUDA {
 
@@ -14,10 +15,13 @@ void KernelInvocation::AddParameter(Data &data)
 
 void KernelInvocation::Launch()
 {
-	Utils::Logger::LogDebug("Kernel '" + m_kernel.GetName() + "' launched");
-	Utils::Logger::LogDebug(" - Grid: " + std::to_string(m_gridX) + " x " + std::to_string(m_gridY) + " x " + std::to_string(m_gridZ)); 
-	Utils::Logger::LogDebug(" - Block: " + std::to_string(m_blockX) + " x " + std::to_string(m_blockY) + " x " + std::to_string(m_blockZ)); 
-	Utils::Logger::LogDebug(" - Dynamic shared memory: " + std::to_string(m_dynamicSharedMemorySize) + " bytes");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Kernel '" + m_kernel.GetName() + "' launched");
+		Utils::Logger::LogDebug(" - Grid: " + std::to_string(m_gridX) + " x " + std::to_string(m_gridY) + " x " + std::to_string(m_gridZ)); 
+		Utils::Logger::LogDebug(" - Block: " + std::to_string(m_blockX) + " x " + std::to_string(m_blockY) + " x " + std::to_string(m_blockZ)); 
+		Utils::Logger::LogDebug(" - Dynamic shared memory: " + std::to_string(m_dynamicSharedMemorySize) + " bytes");
+	}
 
 	auto timeExecution_start = Utils::Chrono::StartCUDA("CUDA kernel '" + m_kernel.GetName() + "' execution");
 	checkDriverResult(cuLaunchKernel(

@@ -21,7 +21,7 @@ public:
 	static void LogSection(const std::string& name, bool separate = true);
 
 	static void LogInfo(const std::string& info = "", unsigned int indentation = 0, bool newline = true, const std::string& prefix = InfoPrefix);
-	static void LogDebug(const std::string& info = "", unsigned int indentation = 0, bool newline = true, const std::string& prefix = InfoPrefix);
+	static void LogDebug(const std::string& info = "", unsigned int indentation = 0, bool newline = true);
 	static void LogBlank(const std::string& prefix = InfoPrefix);
 
 	[[noreturn]] static void LogError(const std::string& error, const std::string& prefix = ErrorPrefix);

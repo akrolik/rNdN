@@ -46,7 +46,10 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::FunctionDeclaratio
 
 std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
-	Utils::Logger::LogDebug("Executing function '" + function->GetName() + "'");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Executing function '" + function->GetName() + "'");
+	}
 	Utils::ScopedChrono chrono("Function '" + function->GetName() + "'");
 
 	if (function->IsKernel())

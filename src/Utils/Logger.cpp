@@ -45,12 +45,9 @@ void Logger::LogInfo(const std::string& info, unsigned int indentation, bool new
 	}
 }
 
-void Logger::LogDebug(const std::string& info, unsigned int indentation, bool newline, const std::string& prefix)
+void Logger::LogDebug(const std::string& info, unsigned int indentation, bool newline)
 {
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
-	{
-		LogInfo(info, indentation, newline, prefix);
-	}
+	LogInfo(info, indentation, newline, DebugPrefix);
 }
 
 void Logger::LogError(const std::string& error, const std::string& prefix)

@@ -11,6 +11,7 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Runtime {
 
@@ -82,7 +83,10 @@ public:
 			}
 			m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
 
-			Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			{
+				Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
+			}
 		}
 	}
 
@@ -172,7 +176,10 @@ public:
 			}
 			m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
 
-			Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			{
+				Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
+			}
 		}
 		return changed;
 	}

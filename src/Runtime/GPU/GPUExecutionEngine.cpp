@@ -87,7 +87,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	}
 	else
 	{
-		Utils::Logger::LogDebug("Using cached input options for kernel '" + function->GetName() + "'");
+		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		{
+			Utils::Logger::LogDebug("Using cached input options for kernel '" + function->GetName() + "'");
+		}
 	}
 
 	auto runtimeOptions = m_optionsCache.at(function);
@@ -119,7 +122,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		const auto parameter = function->GetParameter(i);
 		const auto argument = arguments.at(i);
 
-		Utils::Logger::LogDebug("Initializing input argument: " + parameter->GetName() + " [" + argument->Description() + "]");
+		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		{
+			Utils::Logger::LogDebug("Initializing input argument: " + parameter->GetName() + " [" + argument->Description() + "]");
+		}
 
 		// Transfer the buffer to the GPU, for input parameters we assume read only
 
@@ -146,7 +152,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			const auto returnObject = runtimeOptions->ReturnObjects.at(i);
 
 			DataBuffer *returnBuffer = nullptr;
-			std::string description = "";
 			if (dataCopies.find(returnObject) != dataCopies.end())
 			{
 				// Create a new buffer as a copy of an input object
@@ -155,7 +160,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				const auto inputBuffer = inputObject->GetDataBuffer();
 
 				returnBuffer = inputBuffer->Clone();
-				description = " = " + inputObject->ToString() + " -> " + returnObject->ToString();
+
+				if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+				{
+					auto description = " = " + inputObject->ToString() + " -> " + returnObject->ToString();
+					Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
+				}
 			}
 			else
 			{
@@ -163,6 +173,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				const auto shape = runtimeOptions->ReturnShapes.at(i);
 				returnBuffer = DataBuffer::CreateEmpty(type, shape);
 
+				auto description = "";
 				if (dataInit.find(returnObject) != dataInit.end())
 				{
 					switch (dataInit.at(returnObject))
@@ -188,9 +199,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 						}
 					}
 				}
+				if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+				{
+					Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
+				}
 			}
 
-			Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
 			returnBuffers.push_back(returnBuffer);
 
 			// Transfer the write buffer to the GPU, we assume all returns write (or else...)
@@ -291,7 +305,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				}
 			}
 
-			Utils::Logger::LogDebug("Initializing size argument: <list geometry cell sizes> [u32(4 bytes) x " + std::to_string(dynamicCellSizes.size()) + "]");
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			{
+				Utils::Logger::LogDebug("Initializing size argument: <list geometry cell sizes> [u32(4 bytes) x " + std::to_string(dynamicCellSizes.size()) + "]");
+			}
 
 			// Transfer to the GPU
 
@@ -317,7 +334,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	{
 		const auto argument = arguments.at(i);
 
-		Utils::Logger::LogDebug("Initializing extra input argument: " + std::to_string(i) + " [" + argument->Description() + "]");
+		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		{
+			Utils::Logger::LogDebug("Initializing extra input argument: " + std::to_string(i) + " [" + argument->Description() + "]");
+		}
 
 		// Transfer the buffer to the GPU, for input parameters we assume read only. Extra parameters have no shape
 
@@ -337,7 +357,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 	Utils::Chrono::End(timeKernel_start);
 
-	Utils::Logger::LogDebug("Kernel '" + function->GetName() + "' complete");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Kernel '" + function->GetName() + "' complete");
+	}
 
 	// Deallocate dynamic buffers
 
@@ -470,7 +493,10 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 template<typename T>
 CUDA::TypedConstant<T> *GPUExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
 {
-	Utils::Logger::LogDebug("Initializing constant input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes = " + std::to_string(value) + "]");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Initializing constant input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes = " + std::to_string(value) + "]");
+	}
 
 	auto sizeConstant = new CUDA::TypedConstant<T>(value);
 	invocation.AddParameter(*sizeConstant);

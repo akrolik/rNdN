@@ -48,7 +48,10 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary [" + std::to_string(keysSize) + " != " + std::to_string(valuesSize) + "]");
 	}
 
-	Utils::Logger::LogDebug("Group dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Group dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
+	}
 
 	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
 
@@ -66,7 +69,10 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 		auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
 		auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
 
-		Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
+		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		{
+			Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
+		}
 
 		// Copy the index data
 

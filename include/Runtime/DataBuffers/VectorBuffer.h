@@ -12,6 +12,8 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Runtime {
 
@@ -165,7 +167,10 @@ public:
 			delete m_shape;
 			m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
 
-			Utils::Logger::LogDebug("Resized vector buffer [" + oldDescription + "] to [" + Description() + "]");
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			{
+				Utils::Logger::LogDebug("Resized vector buffer [" + oldDescription + "] to [" + Description() + "]");
+			}
 
 			return true;
 		}

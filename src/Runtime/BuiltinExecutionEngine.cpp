@@ -27,7 +27,10 @@ namespace Runtime {
 
 std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
-	Utils::Logger::LogDebug("Executing builtin function '" + function->GetName() + "'");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Executing builtin function '" + function->GetName() + "'");
+	}
 
 #define Error(m) Utils::Logger::LogError("Builtin function '" + function->GetName() + "' " + m);
 
