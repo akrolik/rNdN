@@ -12,7 +12,6 @@
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Expressions/MoveGenerator.h"
-#include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/PrefixSumGenerator.h"
@@ -33,6 +32,9 @@ public:
 	using Generator::Generator;
 
 	std::string Name() const override { return "OperandGenerator"; }
+
+	bool GetBoundsCheck() const { return m_boundsCheck; }
+	void SetBoundsCheck(bool boundsCheck) { m_boundsCheck = boundsCheck; }
 
 	enum class LoadKind {
 		Vector,
@@ -346,21 +348,25 @@ public:
 			{
 				auto kernelResources = this->m_builder.GetKernelResources();
 
-				// Ensure the thread is within bounds for loading data
-
 				if (dataIndex == nullptr)
 				{
 					dataIndex = (m_index == nullptr) ? GenerateIndex(parameter, m_loadKind) : m_index;
 				}
 
-				DataSizeGenerator<B> sizeGenerator(this->m_builder);
-				auto size = (isCell) ? sizeGenerator.GenerateSize(parameter, m_cellIndex) : sizeGenerator.GenerateSize(parameter);
+				// Ensure the thread is within bounds for loading data
 
-				auto sizeLabel = this->m_builder.CreateLabel("SIZE");
-				auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				const PTX::Label *sizeLabel = nullptr;
+				if (m_boundsCheck)
+				{
+					DataSizeGenerator<B> sizeGenerator(this->m_builder);
+					auto size = (isCell) ? sizeGenerator.GenerateSize(parameter, m_cellIndex) : sizeGenerator.GenerateSize(parameter);
 
-				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-				this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
+					sizeLabel = this->m_builder.CreateLabel("SIZE");
+					auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+					this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
+				}
 
 				// Load the value from the global space
 				
@@ -388,11 +394,13 @@ public:
 					}
 				}
 
+				if (m_boundsCheck)
+				{
+					// Completed determining size
 
-				// Completed determining size
-
-				this->m_builder.AddStatement(new PTX::BlankStatement());
-				this->m_builder.AddStatement(sizeLabel);
+					this->m_builder.AddStatement(new PTX::BlankStatement());
+					this->m_builder.AddStatement(sizeLabel);
+				}
 
 				if (m_compressionRegister != nullptr)
 				{
@@ -578,6 +586,8 @@ private:
 	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
 	std::string m_indexName = "";
 	unsigned int m_cellIndex = 0;
+
+	bool m_boundsCheck = true;
 };
 
 }
