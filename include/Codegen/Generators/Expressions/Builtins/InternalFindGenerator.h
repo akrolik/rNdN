@@ -10,6 +10,7 @@
 #include "Codegen/Generators/Expressions/OperandCompressionGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/InternalCacheGenerator.h"
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
@@ -29,7 +30,7 @@ enum class FindOperation {
 	Indexes
 };
 
-constexpr auto FIND_BLOCK_SIZE = 1024u;
+constexpr auto FIND_CACHE_SIZE = 1024u;
 
 template<PTX::Bits B>
 class InternalFindGenerator_Init : public Generator
@@ -39,31 +40,27 @@ public:
 
 	std::string Name() const override { return "InternalFindGenerator_Init"; }
 
-	void Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	void Generate(const HorseIR::Operand *dataX, const Analysis::Shape *shape)
 	{
-		DispatchType(*this, dataX->GetType(), dataX, dataY);
+		DispatchType(*this, dataX->GetType(), dataX, shape);
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	void GenerateVector(const HorseIR::Operand *dataX, const Analysis::Shape *shape)
 	{
-		GenerateInit<T>(dataX, dataY);
+		GenerateInit<T>(dataX);
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	void GenerateList(const HorseIR::Operand *dataX, const Analysis::Shape *shape)
 	{
-		const auto& inputOptions = this->m_builder.GetInputOptions();
-		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
-		const auto shape = inputOptions.ParameterShapes.at(parameter);
-
 		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 		{
 			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				for (auto index = 0u; index < size->GetValue(); ++index)
 				{
-					GenerateInit<T>(dataX, dataY, true, index);
+					GenerateInit<T>(dataX, index);
 				}
 				return;
 			}
@@ -72,128 +69,29 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const Analysis::Shape *shape)
 	{
 		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
 			Error("tuple-in-list");
 		}
-		GenerateInit<T>(dataX, dataY, true, index);
+		GenerateInit<T>(dataX, index);
 	}
 
 private:
 	template<class T>
-	void GenerateInit(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, bool isCell = false, unsigned int cellIndex = 0)
+	void GenerateInit(const HorseIR::Operand *dataX, unsigned int cellIndex = 0)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			GenerateInit<PTX::Int8Type>(dataX, dataY, isCell, cellIndex);
+			GenerateInit<PTX::Int8Type>(dataX, cellIndex);
 		}
 		else
 		{
-			// Allocate shared memory space used for data cache
-
-			auto kernelResources = this->m_builder.GetKernelResources();
-			
-			auto cacheName = dataY->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
-			auto s_cache = kernelResources->template AllocateSharedVariable<PTX::ArrayType<T, FIND_BLOCK_SIZE>>(cacheName);
-
 			// Load the X data (cell index default to zero for vector)
 
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
 			operandGenerator.GenerateOperand(dataX, OperandGenerator<B, T>::LoadKind::Vector, cellIndex);
-		}
-	}
-};
-
-template<PTX::Bits B>
-class InternalFindGenerator_Cache : public Generator
-{
-public:
-	using Generator::Generator; 
-
-	std::string Name() const override { return "InternalFindGenerator_Cache"; }
-
-	void Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
-	{
-		// Load data into shared memory
-
-		DispatchType(*this, dataX->GetType(), dataY, globalIndex);
-
-		// Synchronize shared memory
-
-		BarrierGenerator<B> barrierGenerator(this->m_builder);
-		barrierGenerator.Generate();
-	}
-
-	template<class T>
-	void GenerateVector(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
-	{
-		GenerateCache<T>(dataY, globalIndex);
-	}
-
-	template<class T>
-	void GenerateList(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
-	{
-		const auto& inputOptions = this->m_builder.GetInputOptions();
-		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
-		const auto shape = inputOptions.ParameterShapes.at(parameter);
-
-		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
-		{
-			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
-			{
-				for (auto index = 0u; index < size->GetValue(); ++index)
-				{
-					GenerateCache<T>(dataY, globalIndex, true, index);
-				}
-				return;
-			}
-		}
-		Error("non-constant cell count");
-	}
-
-	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex)
-	{
-		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
-		{
-			Error("tuple-in-list");
-		}
-		GenerateCache<T>(dataY, globalIndex, true, index);
-	}
-
-private:
-	template<class T>
-	void GenerateCache(const HorseIR::Identifier *dataY, const PTX::TypedOperand<PTX::UInt32Type> *globalIndex, bool isCell = false, unsigned int cellIndex = 0)
-	{
-		if constexpr(std::is_same<T, PTX::PredicateType>::value)
-		{
-			GenerateCache<PTX::Int8Type>(dataY, globalIndex, isCell, cellIndex);
-		}
-		else
-		{
-			// Get the shared memory cache
-
-			auto kernelResources = this->m_builder.GetKernelResources();
-
-			auto cacheName = dataY->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
-			auto s_cache = new PTX::ArrayVariableAdapter<T, FIND_BLOCK_SIZE, PTX::SharedSpace>(
-				kernelResources->template GetSharedVariable<PTX::ArrayType<T, FIND_BLOCK_SIZE>>(cacheName)
-			);
-
-			// Load the cache from global memory and store in shared (cell index default to zero for vector)
-
-			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto value = operandGenerator.GenerateRegister(dataY, globalIndex, this->m_builder.UniqueIdentifier("find"), cellIndex);
-
-			ThreadIndexGenerator<B> threadGenerator(this->m_builder);
-			auto localIndex = threadGenerator.GenerateLocalIndex();
-
-			AddressGenerator<B, T> addressGenerator(this->m_builder);
-			auto s_cacheAddress = addressGenerator.GenerateAddress(s_cache, localIndex);
-
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_cacheAddress, value));
 		}
 	}
 };
@@ -207,9 +105,9 @@ public:
 
 	std::string Name() const override { return "InternalFindGenerator_MatchInit"; }
 
-	BaseRegistersTy Generate(const HorseIR::Operand *dataX, const HorseIR::Identifier *dataY)
+	BaseRegistersTy Generate(const HorseIR::Identifier *dataY, const HorseIR::Type *type)
 	{
-		DispatchType(*this, dataX->GetType(), dataY);
+		DispatchType(*this, type, dataY);
 		return m_baseRegisters;
 	}
 
@@ -266,8 +164,8 @@ public:
 			// Get cache variable
 
 			auto cacheName = dataY->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
-			auto s_cache = new PTX::ArrayVariableAdapter<T, FIND_BLOCK_SIZE, PTX::SharedSpace>(
-				kernelResources->template GetSharedVariable<PTX::ArrayType<T, FIND_BLOCK_SIZE>>(cacheName)
+			auto s_cache = new PTX::ArrayVariableAdapter<T, FIND_CACHE_SIZE, PTX::SharedSpace>(
+				kernelResources->template GetSharedVariable<PTX::ArrayType<T, FIND_CACHE_SIZE>>(cacheName)
 			);
 
 			// Load the initial address of the cache (will be increment by the match loop)
@@ -672,7 +570,7 @@ public:
 	{
 		// Generate a double loop, checking for matches in chunks (for coalescing)
 		//
-		// __shared__ T s[FIND_BLOCK_SIZE]
+		// __shared__ T s[FIND_CACHE_SIZE]
 		//
 		// found = false
 		//
@@ -688,7 +586,7 @@ public:
 		//    <inner loop>
 		//
 		//    <barrier>
-		//    <increment, i, FIND_BLOCK_SIZE>
+		//    <increment, i, FIND_CACHE_SIZE>
 		//
 		//    br START_1
 		//
@@ -699,15 +597,19 @@ public:
 		// Maximize the block size
 
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
-		kernelOptions.SetBlockSize(FIND_BLOCK_SIZE);
+		kernelOptions.SetBlockSize(FIND_CACHE_SIZE);
 
 		ThreadIndexGenerator<B> threadGenerator(this->m_builder);
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 
-		// Initialize data cache and X0 vector
+		// Initialize X0 vector
+
+		auto& inputOptions = this->m_builder.GetInputOptions();
+		auto parameterY = inputOptions.Parameters.at(identifierY->GetSymbol());
+		auto shapeY = inputOptions.ParameterShapes.at(parameterY);
 
 		InternalFindGenerator_Init<B> initGenerator(this->m_builder);
-		initGenerator.Generate(m_dataX, identifierY);
+		initGenerator.Generate(m_dataX, shapeY);
 
 		// Initialize the outer loop
 
@@ -720,7 +622,7 @@ public:
 		// Check if the final iteration is complete
 
 		auto remainder = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(remainder, size, new PTX::UInt32Value(FIND_BLOCK_SIZE)));
+		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(remainder, size, new PTX::UInt32Value(FIND_CACHE_SIZE)));
 
 		auto sizePredicate_1 = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(
@@ -738,16 +640,16 @@ public:
 
 		// Load the data cache into shared memory and synchronize
 
-		InternalFindGenerator_Cache<B> cacheGenerator(this->m_builder);
-		cacheGenerator.Generate(m_dataX, identifierY, index);
+		InternalCacheGenerator_Load<B, FIND_CACHE_SIZE, 1> cacheGenerator(this->m_builder);
+		cacheGenerator.Generate(identifierY, index, m_dataX->GetType());
 
 		// Setup the inner loop and bound
-		//  - Chunks 0...(N-1): FIND_BLOCK_SIZE
+		//  - Chunks 0...(N-1): FIND_CACHE_SIZE
 		//  - Chunk N: remainder
 
 		// Increment by the number of threads. Do it here since it will be reused
 
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(FIND_BLOCK_SIZE)));
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(FIND_CACHE_SIZE)));
 
 		// Chose the correct bound for the inner loop, sizePredicate indicates a complete iteration
 
@@ -763,7 +665,7 @@ public:
 		this->m_builder.AddStatement(new PTX::BranchInstruction(ifElseLabel, sizePredicate_3));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 
-		GenerateInnerLoop(identifierY, new PTX::UInt32Value(FIND_BLOCK_SIZE), 16);
+		GenerateInnerLoop(identifierY, new PTX::UInt32Value(FIND_CACHE_SIZE), 16);
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(ifEndLabel));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
@@ -795,7 +697,7 @@ public:
 		//
 		//    j = 0
 		//    START_2: (unroll)
-		//       setp %p2, j, FIND_BLOCK_SIZE
+		//       setp %p2, j, FIND_CACHE_SIZE
 		//       @%p2 br END_2
 		//
 		//       <check= s[j]> (set found, do NOT break -> slower)
@@ -809,7 +711,7 @@ public:
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(index, new PTX::UInt32Value(0)));
 
 		InternalFindGenerator_MatchInit<B> initGenerator(this->m_builder);
-		auto baseRegisters = initGenerator.Generate(m_dataX, identifierY);
+		auto baseRegisters = initGenerator.Generate(identifierY, m_dataX->GetType());
 
 		auto startLabel = this->m_builder.CreateLabel("START");
 		auto endLabel = this->m_builder.CreateLabel("END");
