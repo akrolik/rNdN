@@ -409,6 +409,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			return indexShape;
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderShared:
 		{
 			auto indexShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 			Require(ShapeUtils::IsShape<VectorShape>(indexShape));

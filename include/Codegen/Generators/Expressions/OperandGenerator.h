@@ -154,24 +154,6 @@ public:
 		}
 	}
 
-	std::string GenerateName(const HorseIR::Identifier *identifier, bool isCell) const
-	{
-		if (isCell)
-		{
-			return NameUtils::VariableName(identifier, m_cellIndex, m_indexName);
-		}
-		return NameUtils::VariableName(identifier, m_indexName);
-	}
-
-	std::string GenerateDestinationName(const HorseIR::Identifier *identifier, bool isCell) const
-	{
-		if (isCell)
-		{
-			return NameUtils::VariableName(identifier, m_cellIndex, (m_index == nullptr) ? LoadKindString(m_loadKind) : m_indexName);
-		}
-		return NameUtils::VariableName(identifier, (m_index == nullptr) ? LoadKindString(m_loadKind) : m_indexName);
-	}
-
 	template<class S>
 	void GenerateLoad(const HorseIR::Identifier *identifier, bool isCell)
 	{
@@ -181,8 +163,8 @@ public:
 
 		// Check if the register has been assigned (or re-assigned for parameters)
 
-		auto name = GenerateName(identifier, isCell);
-		auto destinationName = GenerateDestinationName(identifier, isCell);
+		auto name = NameUtils::VariableName(identifier, isCell, m_cellIndex, m_indexName);
+		auto destinationName = NameUtils::VariableName(identifier, isCell, m_cellIndex, (m_index == nullptr) ? LoadKindString(m_loadKind) : m_indexName);
 
 		const PTX::Register<S> *operandRegister = nullptr;
 		if (resources->ContainsRegister<S>(name))

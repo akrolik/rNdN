@@ -159,22 +159,41 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 	{
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		{
+			const auto isShared = HorseIR::TypeUtils::IsType<HorseIR::FunctionType>(arguments.at(2)->GetType());
+
 			const auto initType = arguments.at(0)->GetType();
 			const auto sortType = arguments.at(1)->GetType();
+			const auto dataObject = argumentObjects.at(2 + isShared);
 
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 
-			if (argumentObjects.size() == 3)
+			if (argumentObjects.size() == (3 + isShared))
 			{
-				const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(2)});
+				const auto initObjects = AnalyzeCall(initFunction, {}, {dataObject});
 				const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1)});
+
+				if (isShared)
+				{
+					const auto sharedType = arguments.at(2)->GetType();
+					const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+					const auto sharedObject = AnalyzeCall(sharedFunction, {}, {initObjects.at(0), initObjects.at(1)});
+				}
 
 				return {initObjects.at(0)};
 			}
 
-			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(2), argumentObjects.at(3)});
-			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1), argumentObjects.at(3)});
+			const auto orderObject = argumentObjects.at(3 + isShared);
+
+			const auto initObjects = AnalyzeCall(initFunction, {}, {dataObject, orderObject});
+			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1), orderObject});
+
+			if (isShared)
+			{
+				const auto sharedType = arguments.at(2)->GetType();
+				const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+				const auto sharedObjects = AnalyzeCall(sharedFunction, {}, {initObjects.at(0), initObjects.at(1), orderObject});
+			}
 
 			return {initObjects.at(0)};
 		}
@@ -183,21 +202,32 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 			return {new DataObject(), new DataObject()};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderShared:
 		{
 			return {};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
 		{
+			const auto isShared = (arguments.size() == 5);
+
 			const auto initType = arguments.at(0)->GetType();
 			const auto sortType = arguments.at(1)->GetType();
-			const auto groupType = arguments.at(2)->GetType();
+			const auto groupType = arguments.at(2 + isShared)->GetType();
 
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 			const auto groupFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(groupType)->GetFunctionDeclaration();
 
-			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3)});
+			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3 + isShared)});
 			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1)});
+
+			if (isShared)
+			{
+				const auto sharedType = arguments.at(2)->GetType();
+				const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+				const auto sharedObjects = AnalyzeCall(sharedFunction, {}, {initObjects.at(0), initObjects.at(1)});
+			}
+
 			const auto groupObjects = AnalyzeCall(groupFunction, {}, {initObjects.at(0), initObjects.at(1)});
 
 			return {new DataObject()};
@@ -208,16 +238,26 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
 		{
+			const auto isShared = (arguments.size() == 5);
+
 			const auto initType = arguments.at(0)->GetType();
 			const auto sortType = arguments.at(1)->GetType();
-			const auto uniqueType = arguments.at(2)->GetType();
+			const auto uniqueType = arguments.at(2 + isShared)->GetType();
 
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 			const auto uniqueFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(uniqueType)->GetFunctionDeclaration();
 
-			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3)});
+			const auto initObjects = AnalyzeCall(initFunction, {}, {argumentObjects.at(3 + isShared)});
 			const auto sortObjects = AnalyzeCall(sortFunction, {}, {initObjects.at(0), initObjects.at(1)});
+
+			if (isShared)
+			{
+				const auto sharedType = arguments.at(2)->GetType();
+				const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+				const auto sharedObjects = AnalyzeCall(sharedFunction, {}, {initObjects.at(0), initObjects.at(1)});
+			}
+
 			const auto uniqueObjects = AnalyzeCall(uniqueFunction, {}, {initObjects.at(0), initObjects.at(1)});
 
 			return {uniqueObjects.at(0)};

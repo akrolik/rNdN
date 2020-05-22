@@ -103,7 +103,13 @@ public:
 			}
 			case HorseIR::BuiltinFunction::Primitive::GPUOrder:
 			{
-				OrderGenerator<B> generator(this->m_builder);
+				OrderGenerator<B> generator(this->m_builder, OrderMode::Global);
+				generator.Generate(arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUOrderShared:
+			{
+				OrderGenerator<B> generator(this->m_builder, OrderMode::Shared);
 				generator.Generate(arguments);
 				break;
 			}

@@ -148,6 +148,7 @@ public:
 		GPUOrderLib,
 		GPUOrderInit,
 		GPUOrder,
+		GPUOrderShared,
 
 		GPUGroupLib,
 		GPUGroup,
@@ -384,6 +385,8 @@ public:
 				return "order_init";
 			case Primitive::GPUOrder:
 				return "order";
+			case Primitive::GPUOrderShared:
+				return "order_shared";
 			case Primitive::GPUGroupLib:
 				return "group_lib";
 			case Primitive::GPUGroup:
@@ -566,17 +569,18 @@ public:
 
 			// GPU
 			case Primitive::GPUOrderLib:
-				return VariadicParameterCount; // @order_init, @order, data, order?
+				return VariadicParameterCount; // @order_init, @order, @order_shared?, data, order?
 			case Primitive::GPUOrderInit:
 				return 2; // data, order
 			case Primitive::GPUOrder:
+			case Primitive::GPUOrderShared:
 				return 3; // index, data, order
 			case Primitive::GPUGroupLib:
-				return 4; // @order_init, @order, @group, data
+				return VariadicParameterCount; // @order_init, @order, @order_shared?, @group, data
 			case Primitive::GPUGroup:
 				return 2; // index, data
 			case Primitive::GPUUniqueLib:
-				return 4; // @order_init, @order, @unique, data
+				return VariadicParameterCount; // @order_init, @order, @order_shared?, @unique, data
 			case Primitive::GPUUnique:
 				return 2; // index, data
 			case Primitive::GPUJoinLib:

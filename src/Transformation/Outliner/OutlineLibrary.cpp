@@ -1,5 +1,7 @@
 #include "Transformation/Outliner/OutlineLibrary.h"
 
+#include "Utils/Options.h"
+
 namespace Transformation {
 
 HorseIR::Statement *OutlineLibrary::Outline(const HorseIR::Statement *statement)
@@ -68,19 +70,27 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			auto dataType = arguments.at(0)->GetType();
 			auto orderLiteral = new HorseIR::BooleanLiteral({true});
 
+			// Build the list of arguments for the library function call
+
 			auto initFunction = GenerateInitFunction(dataType, orderLiteral);
-			auto sortFunction = GenerateSortFunction(dataType, orderLiteral);
-			auto uniqueFunction = GenerateUniqueFunction(dataType);
+			auto sortFunction = GenerateSortFunction(dataType, orderLiteral, false);
 
 			m_functions.push_back(initFunction);
 			m_functions.push_back(sortFunction);
-			m_functions.push_back(uniqueFunction);
-
-			// Build the list of arguments for the library function call
 
 			std::vector<HorseIR::Operand *> operands;
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
+
+			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort))
+			{
+				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
+				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));
+				m_functions.push_back(sortFunctionShared);
+			}
+
+			auto uniqueFunction = GenerateUniqueFunction(dataType);
+			m_functions.push_back(uniqueFunction);
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(uniqueFunction->GetName())));
 			operands.push_back(arguments.at(0)->Clone());
 
@@ -93,19 +103,27 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			auto dataType = arguments.at(0)->GetType();
 			auto orderLiteral = new HorseIR::BooleanLiteral({true});
 
+			// Build the list of arguments for the library function call
+
 			auto initFunction = GenerateInitFunction(dataType, orderLiteral);
-			auto sortFunction = GenerateSortFunction(dataType, orderLiteral);
-			auto groupFunction = GenerateGroupFunction(dataType);
+			auto sortFunction = GenerateSortFunction(dataType, orderLiteral, false);
 
 			m_functions.push_back(initFunction);
 			m_functions.push_back(sortFunction);
-			m_functions.push_back(groupFunction);
-
-			// Build the list of arguments for the library function call
 
 			std::vector<HorseIR::Operand *> operands;
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
+
+			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort))
+			{
+				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
+				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));
+				m_functions.push_back(sortFunctionShared);
+			}
+
+			auto groupFunction = GenerateGroupFunction(dataType);
+			m_functions.push_back(groupFunction);
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(groupFunction->GetName())));
 			operands.push_back(arguments.at(0)->Clone());
 
@@ -118,17 +136,25 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			auto dataType = arguments.at(0)->GetType();
 			auto orderLiteral = dynamic_cast<const HorseIR::BooleanLiteral *>(arguments.at(1));
 
+			// Build the list of arguments for the library function call
+
 			auto initFunction = GenerateInitFunction(dataType, orderLiteral);
-			auto sortFunction = GenerateSortFunction(dataType, orderLiteral);
+			auto sortFunction = GenerateSortFunction(dataType, orderLiteral, false);
 
 			m_functions.push_back(initFunction);
 			m_functions.push_back(sortFunction);
 
-			// Build the list of arguments for the library function call
-
 			std::vector<HorseIR::Operand *> operands;
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
+
+			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort))
+			{
+				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
+				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));
+				m_functions.push_back(sortFunctionShared);
+			}
+
 			operands.push_back(arguments.at(0)->Clone());
 			if (orderLiteral == nullptr)
 			{
@@ -213,7 +239,7 @@ HorseIR::Function *OutlineLibrary::GenerateInitFunction(const HorseIR::Type *dat
 	return new HorseIR::Function("order_init_" + std::to_string(m_index++), parameters, returnTypes, {initStatement, returnStatement}, true);
 }
 
-HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders)
+HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders, bool shared)
 {
 	std::vector<HorseIR::Parameter *> parameters;
 	std::vector<HorseIR::Operand *> operands;
@@ -234,10 +260,11 @@ HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dat
 		operands.push_back(orders->Clone());
 	}
 
-	auto sortCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "order")), operands);
+	auto name = std::string((shared) ? "order_shared" : "order");
+	auto sortCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", name)), operands);
 	auto sortStatement = new HorseIR::ExpressionStatement(sortCall);
 	
-	return new HorseIR::Function("order_" + std::to_string(m_index++), parameters, {}, {sortStatement}, true);
+	return new HorseIR::Function(name + "_" + std::to_string(m_index++), parameters, {}, {sortStatement}, true);
 }
 
 HorseIR::Function *OutlineLibrary::GenerateGroupFunction(const HorseIR::Type *dataType)

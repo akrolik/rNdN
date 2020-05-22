@@ -1726,27 +1726,29 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			// For both, optional order
 
 			// -- Vector input
-			// Input: *, *, Vector<Size*>, Vector<1>
+			// Input: *, *, [*,] Vector<Size*>, Vector<1>
 			// Output: Vector<Size*>
 			//
 			// -- List input
-			// Input: *, *, List<k, {Vector<Size*>}>, Vector<k>
+			// Input: *, *, [*,] List<k, {Vector<Size*>}>, Vector<k>
 			// Output: Vector<Size*>
+
+			const auto isShared = HorseIR::TypeUtils::IsType<HorseIR::FunctionType>(arguments.at(2)->GetType());
 
 			const auto initType = arguments.at(0)->GetType();
 			const auto sortType = arguments.at(1)->GetType();
+			const auto dataShape = argumentShapes.at(2 + isShared);
 
 			const auto initFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(initType)->GetFunctionDeclaration();
 			const auto sortFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sortType)->GetFunctionDeclaration();
 
-			const auto argumentShape3 = argumentShapes.at(2);
-			Require(ShapeUtils::IsShape<VectorShape>(argumentShape3) || ShapeUtils::IsShape<ListShape>(argumentShape3));
+			Require(ShapeUtils::IsShape<VectorShape>(dataShape) || ShapeUtils::IsShape<ListShape>(dataShape));
 
-			if (arguments.size() == 3)
+			if (arguments.size() == (3 + isShared))
 			{
 				// Init call
 
-				const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {argumentShape3}, {});
+				const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape}, {});
 				Require(initShapes.size() == 2);
 				Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
 
@@ -1755,45 +1757,60 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1)}, {});
 				Require(sortShapes.size() == 0);
 
+				if (isShared)
+				{
+					const auto sharedType = arguments.at(2)->GetType();
+					const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+					const auto [sharedShapes, sharedWriteShapes] = AnalyzeCall(sharedFunction, {initShapes.at(0), initShapes.at(1)}, {});
+					Require(sharedShapes.size() == 0);
+				}
+
 				// Return
 
-				if (ShapeUtils::IsShape<VectorShape>(argumentShape3))
+				if (ShapeUtils::IsShape<VectorShape>(dataShape))
 				{
-					Return(argumentShape3);
+					Return(dataShape);
 				}
-				else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape3))
+				else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
 				{
 					Require(CheckStaticTabular(listShape));
 					Return(ShapeUtils::MergeShapes(listShape->GetElementShapes()));
 				}
 			}
 
-			const auto argumentShape4 = argumentShapes.at(3);
-			Require(ShapeUtils::IsShape<VectorShape>(argumentShape4));
-
-			const auto vectorShape4 = ShapeUtils::GetShape<VectorShape>(argumentShape4);
+			const auto orderShape = argumentShapes.at(3 + isShared);
+			Require(ShapeUtils::IsShape<VectorShape>(orderShape));
 
 			// Init call
 
-			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {argumentShape3, argumentShape4}, {});
+			const auto [initShapes, initWriteShapes] = AnalyzeCall(initFunction, {dataShape, orderShape}, {});
 			Require(initShapes.size() == 2);
 			Require(ShapeUtils::IsShape<VectorShape>(initShapes.at(0)));
 
 			// Sort call
 
-			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), argumentShape4}, {});
+			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, {initShapes.at(0), initShapes.at(1), orderShape}, {});
 			Require(sortShapes.size() == 0);
+
+			if (isShared)
+			{
+				const auto sharedType = arguments.at(2)->GetType();
+				const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+				const auto [sharedShapes, sharedWriteShapes] = AnalyzeCall(sharedFunction, {initShapes.at(0), initShapes.at(1), orderShape}, {});
+				Require(sharedShapes.size() == 0);
+			}
 
 			// Return
 
-			if (ShapeUtils::IsShape<VectorShape>(argumentShape3))
+			const auto orderVector = ShapeUtils::GetShape<VectorShape>(orderShape);
+			if (ShapeUtils::IsShape<VectorShape>(dataShape))
 			{
-				Require(CheckStaticScalar(vectorShape4->GetSize()));
-				Return(argumentShape3);
+				Require(CheckStaticScalar(orderVector->GetSize()));
+				Return(dataShape);
 			}
-			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(argumentShape3))
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
 			{
-				Require(CheckStaticEquality(listShape->GetListSize(), vectorShape4->GetSize()));
+				Require(CheckStaticEquality(listShape->GetListSize(), orderVector->GetSize()));
 				Require(CheckStaticTabular(listShape));
 				Return(ShapeUtils::MergeShapes(listShape->GetElementShapes()));
 			}
@@ -1820,7 +1837,12 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				Require(CheckStaticScalar(vectorShape1->GetSize()));
 				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape0->GetSize()))
 				{
-					const auto indexShape = new VectorShape(new Shape::ConstantSize(Utils::Math::Power2(constantSize->GetValue())));
+					auto powerSize = Utils::Math::Power2(constantSize->GetValue());
+					if (powerSize < 2048)
+					{
+						powerSize = 2048;
+					}
+					const auto indexShape = new VectorShape(new Shape::ConstantSize(powerSize));
 					Return2(indexShape, indexShape);
 				}
 
@@ -1837,7 +1859,12 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				{
 					if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 					{
-						const auto indexShape = new VectorShape(new Shape::ConstantSize(Utils::Math::Power2(constantSize->GetValue())));
+						auto powerSize = Utils::Math::Power2(constantSize->GetValue());
+						if (powerSize < 2048)
+						{
+							powerSize = 2048;
+						}
+						const auto indexShape = new VectorShape(new Shape::ConstantSize(powerSize));
 						Return2(indexShape, new ListShape(listShape->GetListSize(), {indexShape}));
 					}
 
@@ -1848,6 +1875,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			break;
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderShared:
 		{
 			// -- Vector input
 			// Input: Vector<Power2(Size*)>, Vector<Power2(Size*)>, Vector<1>
@@ -1896,16 +1924,18 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
 		{
 			// -- Vector/list group
-			// Input: *, *, *, {Vector<Size*> | List<Size*, {Shape*}>}
+			// Input: *, *, [*,] *, {Vector<Size*> | List<Size*, {Shape*}>}
 			// Output: Dictionary<Vector<SizeDynamic1>, Vector<SizeDynamic2>>
 			//
 			// For lists, ensure all shapes are vectors of the same length
 
+			const auto isShared = (arguments.size() == 5);
+
 			const auto initType = arguments.at(0)->GetType();
 			const auto sortType = arguments.at(1)->GetType();
-			const auto groupType = arguments.at(2)->GetType();
+			const auto groupType = arguments.at(2 + isShared)->GetType();
 
-			const auto dataShape = argumentShapes.at(3);
+			const auto dataShape = argumentShapes.at(3 + isShared);
 			Require(ShapeUtils::IsShape<VectorShape>(dataShape) || ShapeUtils::IsShape<ListShape>(dataShape));
 
 			// Fetch functions
@@ -1924,6 +1954,17 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, initShapes, {});
 			Require(sortShapes.size() == 0);
+
+			// Sort shared call
+
+			if (isShared)
+			{
+				const auto sharedType = arguments.at(2)->GetType();
+				const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+
+				const auto [sharedShapes, sharedWriteShapes] = AnalyzeCall(sharedFunction, initShapes, {});
+				Require(sharedShapes.size() == 0);
+			}
 
 			// Group call
 
@@ -1985,14 +2026,16 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
 		{
 			// -- Vector/list group
-			// Input: *, *, *, Vector<Size*>
+			// Input: *, *, [*,] *, Vector<Size*>
 			// Output: Vector<DynamicSize1>
+
+			const auto isShared = (arguments.size() == 5);
 
 			const auto initType = arguments.at(0)->GetType();
 			const auto sortType = arguments.at(1)->GetType();
-			const auto uniqueType = arguments.at(2)->GetType();
+			const auto uniqueType = arguments.at(2 + isShared)->GetType();
 
-			const auto dataShape = argumentShapes.at(3);
+			const auto dataShape = argumentShapes.at(3 + isShared);
 			Require(ShapeUtils::IsShape<VectorShape>(dataShape));
 
 			// Fetch functions
@@ -2011,6 +2054,16 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			const auto [sortShapes, sortWriteShapes] = AnalyzeCall(sortFunction, initShapes, {});
 			Require(sortShapes.size() == 0);
+
+			// Sort call
+
+			if (isShared)
+			{
+				const auto sharedType = arguments.at(2)->GetType();
+				const auto sharedFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(sharedType)->GetFunctionDeclaration();
+				const auto [sharedShapes, sharedWriteShapes] = AnalyzeCall(sharedFunction, initShapes, {});
+				Require(sharedShapes.size() == 0);
+			}
 
 			// Unique call
 

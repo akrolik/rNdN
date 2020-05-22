@@ -7,8 +7,10 @@
 #include "Codegen/Generators/Data/ParameterGenerator.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/InternalCacheGenerator.h"
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+#include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/LiteralUtils.h"
@@ -17,17 +19,25 @@
 
 namespace Codegen {
 
+constexpr auto SORT_CACHE_SIZE = 1024u;
+
+enum class OrderMode {
+	Shared,
+	Global
+};
+
 template<PTX::Bits B>
 class OrderLoadGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
-	OrderLoadGenerator(Builder& builder, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex) :
-		Generator(builder), m_leftIndex(leftIndex), m_rightIndex(rightIndex) {}
+	OrderLoadGenerator(Builder& builder, OrderMode mode) : Generator(builder), m_mode(mode) {}
 
 	std::string Name() const override { return "OrderLoadGenerator"; }
 
-	void Generate(const HorseIR::Operand *dataArgument)
+	void Generate(const HorseIR::Operand *dataArgument, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex)
 	{
+		m_leftIndex = leftIndex;
+		m_rightIndex = rightIndex;
 		dataArgument->Accept(*this);
 	}
 
@@ -44,9 +54,7 @@ public:
 	template<class T>
 	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		operandGenerator.GenerateOperand(identifier, m_leftIndex, "left");
-		operandGenerator.GenerateOperand(identifier, m_rightIndex, "right");
+		GenerateLoad<T>(identifier);
 	}
 
 	template<class T>
@@ -73,12 +81,67 @@ public:
 	template<class T>
 	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
 	{
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		operandGenerator.GenerateOperand(identifier, m_leftIndex, "left", index);
-		operandGenerator.GenerateOperand(identifier, m_rightIndex, "right", index);
+		GenerateLoad<T>(identifier, true, index);
 	}
 
 private:
+	template<class T>
+	void GenerateLoad(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
+	{
+		// if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			// GenerateLoad<PTX::Int16Type>(identifier, isCell, cellIndex);
+			GenerateLoad<PTX::Int8Type>(identifier, isCell, cellIndex);
+		}
+		else
+		{
+			switch (m_mode)
+			{
+				case OrderMode::Shared:
+				{
+					// Get the cache addresses of left/right values
+					
+					auto kernelResources = this->m_builder.GetKernelResources();
+
+					auto cacheName = identifier->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
+					auto s_cache = new PTX::ArrayVariableAdapter<T, SORT_CACHE_SIZE * 2, PTX::SharedSpace>(
+						kernelResources->template GetSharedVariable<PTX::ArrayType<T, SORT_CACHE_SIZE * 2>>(cacheName)
+					);
+
+					AddressGenerator<B, T> addressGenerator(this->m_builder);
+					auto s_leftAddress = addressGenerator.GenerateAddress(s_cache, m_leftIndex);
+					auto s_rightAddress = addressGenerator.GenerateAddress(s_cache, m_rightIndex);
+
+					// Load the values
+
+					auto leftName = NameUtils::VariableName(identifier, isCell, cellIndex, "left");
+					auto rightName = NameUtils::VariableName(identifier, isCell, cellIndex, "right");
+
+					auto resources = this->m_builder.GetLocalResources();
+					auto leftValue = resources->template AllocateRegister<T>(leftName);
+					auto rightValue = resources->template AllocateRegister<T>(rightName);
+
+					this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(leftValue, s_leftAddress));
+					this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(rightValue, s_rightAddress));
+
+					break;
+				}
+				case OrderMode::Global:
+				{
+					OperandGenerator<B, T> operandGenerator(this->m_builder);
+					operandGenerator.SetBoundsCheck(false);
+					operandGenerator.GenerateOperand(identifier, m_leftIndex, "left", cellIndex);
+					operandGenerator.GenerateOperand(identifier, m_rightIndex, "right", cellIndex);
+
+					break;
+				}
+			}
+		}
+	}
+	
+	OrderMode m_mode = OrderMode::Shared;
+
 	const PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
 	const PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
 };
@@ -92,8 +155,8 @@ public:
 		Descending
 	};
 
-	OrderComparisonGenerator(Builder& builder, Order sequenceOrder, const PTX::Label *swapLabel, const PTX::Label *endLabel) :
-		Generator(builder), m_sequenceOrder(sequenceOrder), m_swapLabel(swapLabel), m_endLabel(endLabel) {}
+	OrderComparisonGenerator(Builder& builder, Order sequenceOrder, const PTX::Label *swapLabel, const PTX::Label *endLabel)
+		: Generator(builder), m_sequenceOrder(sequenceOrder), m_swapLabel(swapLabel), m_endLabel(endLabel) {}
 
 	std::string Name() const override { return "OrderComparisonGenerator"; }
 
@@ -116,17 +179,7 @@ public:
 	template<class T>
 	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
-		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
-		{
-			GenerateVector<PTX::Int16Type>(identifier);
-		}
-		else
-		{
-			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto leftValue = operandGenerator.GenerateOperand(identifier, nullptr, "left");
-			auto rightValue = operandGenerator.GenerateOperand(identifier, nullptr, "right");
-			Generate<T>(leftValue, rightValue, 0);
-		}
+		GenerateComparison<T>(identifier);
 	}
 
 	template<class T>
@@ -153,45 +206,49 @@ public:
 	template<class T>
 	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
 	{
+		GenerateComparison<T>(identifier, true, index);
+	}
+
+private:
+	template<class T>
+	void GenerateComparison(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int index = 0)
+	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		// if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			GenerateTuple<PTX::Int16Type>(index, identifier);
+			GenerateComparison<PTX::Int16Type>(identifier, isCell, index);
+			// GenerateComparison<PTX::Int8Type>(identifier, isCell, index);
 		}
 		else
 		{
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
 			auto leftValue = operandGenerator.GenerateOperand(identifier, nullptr, "left", index);
 			auto rightValue = operandGenerator.GenerateOperand(identifier, nullptr, "right", index);
-			Generate<T>(leftValue, rightValue, index);
+
+			auto resources = this->m_builder.GetLocalResources();
+			auto predicateSwap = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			auto dataOrder = (m_orderLiteral->GetValue((m_orderLiteral->GetCount() == 1 ? 0 : index))) ? Order::Ascending : Order::Descending;
+			if (m_sequenceOrder == dataOrder)
+			{
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateSwap, leftValue, rightValue, T::ComparisonOperator::Less));
+			}
+			else
+			{
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateSwap, leftValue, rightValue, T::ComparisonOperator::Greater));
+			}
+
+			// Branch if the predicate is true
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(m_swapLabel, predicateSwap));
+			
+			// Check for the next branch
+
+			auto predicateEqual = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateEqual, leftValue, rightValue, T::ComparisonOperator::NotEqual));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(m_endLabel, predicateEqual));
 		}
-	}
-
-	template<class T>
-	void Generate(const PTX::TypedOperand<T> *leftValue, const PTX::TypedOperand<T> *rightValue, unsigned int index)
-	{
-		auto resources = this->m_builder.GetLocalResources();
-		auto predicateSwap = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		auto dataOrder = (m_orderLiteral->GetValue((m_orderLiteral->GetCount() == 1 ? 0 : index))) ? Order::Ascending : Order::Descending;
-		if (m_sequenceOrder == dataOrder)
-		{
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateSwap, leftValue, rightValue, T::ComparisonOperator::Less));
-		}
-		else
-		{
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateSwap, leftValue, rightValue, T::ComparisonOperator::Greater));
-		}
-
-		// Branch if the predicate is true
-
-		this->m_builder.AddStatement(new PTX::BranchInstruction(m_swapLabel, predicateSwap));
-		
-		// Check for the next branch
-
-		auto predicateEqual = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateEqual, leftValue, rightValue, T::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(m_endLabel, predicateEqual));
 	}
 
 private:
@@ -206,13 +263,14 @@ template<PTX::Bits B>
 class OrderSwapGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
-	OrderSwapGenerator(Builder& builder, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex) :
-		Generator(builder), m_leftIndex(leftIndex), m_rightIndex(rightIndex) {}
+	OrderSwapGenerator(Builder& builder, OrderMode mode) : Generator(builder), m_mode(mode) {}
 
 	std::string Name() const override { return "OrderSwapGenerator"; }
 
-	void Generate(const HorseIR::Operand *index, const HorseIR::Operand *dataArgument)
+	void Generate(const HorseIR::Operand *index, const HorseIR::Operand *dataArgument, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex)
 	{
+		m_leftIndex = leftIndex;
+		m_rightIndex = rightIndex;
 		index->Accept(*this);
 		dataArgument->Accept(*this);
 	}
@@ -230,35 +288,18 @@ public:
 	template<class T>
 	void GenerateVector(const HorseIR::Identifier *identifier)
 	{
-		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		switch (m_mode)
 		{
-			GenerateVector<PTX::Int8Type>(identifier);
-		}
-		else
-		{
-			// Swap the left and right values in global memory
-
-			auto resources = this->m_builder.GetLocalResources();
-			auto kernelResources = this->m_builder.GetKernelResources();
-			
-			// Get the left and right values
-
-			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto leftValue = operandGenerator.GenerateRegister(identifier, m_leftIndex, "left");
-			auto rightValue = operandGenerator.GenerateRegister(identifier, m_rightIndex, "right");
-
-			// Get the addresses of the left and right positions
-
-			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::VariableName(identifier));
-
-			AddressGenerator<B, T> addressGenerator(this->m_builder);
-			auto leftAddress = addressGenerator.GenerateAddress(parameter, m_leftIndex);
-			auto rightAddress = addressGenerator.GenerateAddress(parameter, m_rightIndex);
-
-			// Store the results back
-
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
+			case OrderMode::Shared:
+			{
+				GenerateSharedSwap<T>(identifier);
+				break;
+			}
+			case OrderMode::Global:
+			{
+				GenerateGlobalSwap<T>(identifier);
+				break;
+			}
 		}
 	}
 
@@ -286,9 +327,66 @@ public:
 	template<class T>
 	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
 	{
+		switch (m_mode)
+		{
+			case OrderMode::Shared:
+			{
+				GenerateSharedSwap<T>(identifier, true, index);
+				break;
+			}
+			case OrderMode::Global:
+			{
+				GenerateGlobalSwap<T>(identifier, true, index);
+				break;
+			}
+		}
+	}
+
+private:
+	template<class T>
+	void GenerateSharedSwap(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
+	{
+		// if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			GenerateTuple<PTX::Int8Type>(index, identifier);
+			// GenerateSharedSwap<PTX::Int16Type>(identifier, isCell, cellIndex);
+			GenerateSharedSwap<PTX::Int8Type>(identifier, isCell, cellIndex);
+		}
+		else
+		{
+			// Get the cache addresses of left/right values
+			
+			auto kernelResources = this->m_builder.GetKernelResources();
+
+			auto cacheName = identifier->GetName() + "_cache" + ((isCell) ? std::to_string(cellIndex) : "");
+			auto s_cache = new PTX::ArrayVariableAdapter<T, SORT_CACHE_SIZE * 2, PTX::SharedSpace>(
+				kernelResources->template GetSharedVariable<PTX::ArrayType<T, SORT_CACHE_SIZE * 2>>(cacheName)
+			);
+
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			auto s_leftAddress = addressGenerator.GenerateAddress(s_cache, m_leftIndex);
+			auto s_rightAddress = addressGenerator.GenerateAddress(s_cache, m_rightIndex);
+
+			// Load the values
+
+			auto leftName = NameUtils::VariableName(identifier, isCell, cellIndex, "left");
+			auto rightName = NameUtils::VariableName(identifier, isCell, cellIndex, "right");
+
+			auto resources = this->m_builder.GetLocalResources();
+			auto leftValue = resources->template GetRegister<T>(leftName);
+			auto rightValue = resources->template GetRegister<T>(rightName);
+
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_leftAddress, rightValue));
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_rightAddress, leftValue));
+		}
+	}
+
+	template<class T>
+	void GenerateGlobalSwap(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			GenerateGlobalSwap<PTX::Int8Type>(identifier, isCell, cellIndex);
 		}
 		else
 		{
@@ -300,24 +398,42 @@ public:
 			// Get the left and right values
 
 			OperandGenerator<B, T> operandGenerator(this->m_builder);
-			auto leftValue = operandGenerator.GenerateRegister(identifier, m_leftIndex, "left", index);
-			auto rightValue = operandGenerator.GenerateRegister(identifier, m_rightIndex, "right", index);
+			auto leftValue = operandGenerator.GenerateRegister(identifier, m_leftIndex, "left", cellIndex);
+			auto rightValue = operandGenerator.GenerateRegister(identifier, m_rightIndex, "right", cellIndex);
 
 			// Get the addresses of the left and right positions
 
-			auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::VariableName(identifier));
+			if (isCell)
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::VariableName(identifier));
 
-			AddressGenerator<B, T> addressGenerator(this->m_builder);
-			auto leftAddress = addressGenerator.GenerateAddress(parameter, index, m_leftIndex);
-			auto rightAddress = addressGenerator.GenerateAddress(parameter, index, m_rightIndex);
+				AddressGenerator<B, T> addressGenerator(this->m_builder);
+				auto leftAddress = addressGenerator.GenerateAddress(parameter, cellIndex, m_leftIndex);
+				auto rightAddress = addressGenerator.GenerateAddress(parameter, cellIndex, m_rightIndex);
 
-			// Store the results back
+				// Store the results back
 
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
+			}
+			else
+			{
+				auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::VariableName(identifier));
+
+				AddressGenerator<B, T> addressGenerator(this->m_builder);
+				auto leftAddress = addressGenerator.GenerateAddress(parameter, m_leftIndex);
+				auto rightAddress = addressGenerator.GenerateAddress(parameter, m_rightIndex);
+
+				// Store the results back
+
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(leftAddress, rightValue));
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(rightAddress, leftValue));
+			}
 		}
 	}
-private:
+
+	OrderMode m_mode = OrderMode::Shared;
+
 	const PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
 	const PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
 };
@@ -326,7 +442,7 @@ template<PTX::Bits B>
 class OrderGenerator : public Generator
 {
 public:
-	using Generator::Generator;
+	OrderGenerator(Builder& builder, OrderMode mode) : Generator(builder), m_mode(mode) {}
 
 	std::string Name() const override { return "OrderGenerator"; }
 
@@ -334,19 +450,92 @@ public:
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
-		// Add the special parameters for sorting (stage and substage) and load the values
+		const auto indexArgument = arguments.at(0);
+		const auto dataArgument = arguments.at(1);
+		const auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(arguments.at(2));
 
-		ParameterGenerator<B> parameterGenerator(this->m_builder);
-		auto sortStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
-		auto sortSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
+		const PTX::Register<PTX::UInt32Type> *sharedIndex = nullptr;
 
-		ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
-		auto stage = valueLoadGenerator.GenerateConstant(sortStageParameter);
-		auto substage = valueLoadGenerator.GenerateConstant(sortSubstageParameter);
+		const PTX::Register<PTX::UInt32Type> *stage = nullptr;
+		const PTX::Register<PTX::UInt32Type> *substage = nullptr;
+		const PTX::Register<PTX::UInt32Type> *startSubstage = nullptr;
+		const PTX::Register<PTX::UInt32Type> *totalStages = nullptr;
+
+		const PTX::Label *stageStartLabel = nullptr;
+		const PTX::Label *stageEndLabel = nullptr;
+
+		const PTX::Label *substageStartLabel = nullptr;
+		const PTX::Label *substageEndLabel = nullptr;
 
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
+		switch (m_mode)
+		{
+			case OrderMode::Shared:
+			{
+				// Add the special parameters for sorting (start_stage, start_substage, num_stages) and load the values
+
+				ParameterGenerator<B> parameterGenerator(this->m_builder);
+				auto sortStartStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStartStage);
+				auto sortStartSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStartSubstage);
+				auto sortNumStagesParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortNumStages);
+
+				ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+				auto startStage = valueLoadGenerator.GenerateConstant(sortStartStageParameter);
+				startSubstage = valueLoadGenerator.GenerateConstant(sortStartSubstageParameter);
+				auto numStages = valueLoadGenerator.GenerateConstant(sortNumStagesParameter);
+
+				ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+				auto blockIndex = indexGenerator.GenerateBlockIndex();
+				auto localIndex = indexGenerator.GenerateLocalIndex();
+
+				sharedIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
+					sharedIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2), blockIndex, localIndex, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+				));
+
+				InternalCacheGenerator_Load<B, SORT_CACHE_SIZE, 2> cacheGenerator(this->m_builder);
+				cacheGenerator.Generate(indexArgument, sharedIndex);
+				cacheGenerator.Generate(dataArgument, sharedIndex);
+				
+				// Initialize stage and bound
+
+				totalStages = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(totalStages, startStage, numStages));
+
+				stage = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(stage, startStage));
+
+				// Setup outer loop for iterating stages
+
+				stageStartLabel = this->m_builder.CreateLabel("STAGE_START");
+				stageEndLabel = this->m_builder.CreateLabel("STAGE_END");
+				auto stagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+				));
+				this->m_builder.AddStatement(new PTX::BranchInstruction(stageEndLabel, stagePredicate));
+				this->m_builder.AddStatement(stageStartLabel);
+
+				break;
+			}
+			case OrderMode::Global:
+			{
+				// Add the special parameters for sorting (stage and substage) and load the values
+
+				ParameterGenerator<B> parameterGenerator(this->m_builder);
+				auto sortStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
+				auto sortSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
+
+				ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+				stage = valueLoadGenerator.GenerateConstant(sortStageParameter);
+				substage = valueLoadGenerator.GenerateConstant(sortSubstageParameter);
+
+				break;
+			}
+		}
 		// Compute the size of each bitonic sequence in this stage
 		//   sequenceSize = 2^(stage + 1)
 
@@ -384,7 +573,25 @@ public:
 			sequenceStart, sequenceIndex, sequenceSize, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
 		));
 
-		// === Find the substage location
+		if (m_mode == OrderMode::Shared)
+		{
+			// Initialize substage
+
+			substage = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(substage, startSubstage));
+
+			// Setup inner loop for iterating substages
+
+			substageStartLabel = this->m_builder.CreateLabel("SUBSTAGE_START");
+			substageEndLabel = this->m_builder.CreateLabel("SUBSTAGE_END");
+			auto substagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::Greater
+			));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(substageEndLabel, substagePredicate));
+			this->m_builder.AddStatement(substageStartLabel);
+		}
 
 		// Compute the size of each substage
 		//   subsequenceSize = sequenceSize >> substage
@@ -431,6 +638,8 @@ public:
 		// Compute the indices of the left and right data items
 		//   leftIndex = subsequenceStart + subsequenceLocalIndex
 		//   rightIndex = leftIndex + (subsequenceSize / 2)
+		//
+		// If shared, mod SORT_CACHE_SIZE * 2
 
 		auto leftIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto rightIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
@@ -438,17 +647,17 @@ public:
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(leftIndex, subsequenceStart, subsequenceLocalIndex));
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(rightIndex, leftIndex, temp_halfSubsequence));
 
-		// Convenience for separating the data from the index
-
-		const auto& indexArgument = arguments.at(0);
-		const auto& dataArgument = arguments.at(1);
-		const auto& orderArgument = arguments.at(2);
-		auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(orderArgument);
+		if (m_mode == OrderMode::Shared)
+		{
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(leftIndex, leftIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2)));
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(rightIndex, rightIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2)));
+		}
 
 		// Load the left and right values
 
-		OrderLoadGenerator<B> loadGenerator(this->m_builder, leftIndex, rightIndex);
-		loadGenerator.Generate(dataArgument);
+		OrderLoadGenerator<B> loadGenerator(this->m_builder, m_mode);
+		loadGenerator.Generate(indexArgument, leftIndex, rightIndex);
+		loadGenerator.Generate(dataArgument, leftIndex, rightIndex);
 
 		// Generate the if-else structure for the sort order
 
@@ -490,13 +699,54 @@ public:
 
 		this->m_builder.AddStatement(swapLabel);
 
-		OrderSwapGenerator<B> swapGenerator(this->m_builder, leftIndex, rightIndex);
-		swapGenerator.Generate(indexArgument, dataArgument);
+		OrderSwapGenerator<B> swapGenerator(this->m_builder, m_mode);
+		swapGenerator.Generate(indexArgument, dataArgument, leftIndex, rightIndex);
 
 		// Finally, we end the order
 
 		this->m_builder.AddStatement(endLabel);
+
+		if (m_mode == OrderMode::Shared)
+		{
+			// Synchronize shared memory
+
+			BarrierGenerator<B> barrierGenerator(this->m_builder);
+			barrierGenerator.Generate();
+
+			// End of inner loop
+
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(substage, substage, new PTX::UInt32Value(1)));
+
+			auto substagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::LessEqual
+			));
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(substageStartLabel, substagePredicate));
+			this->m_builder.AddStatement(substageEndLabel);
+
+			// End of outer loop
+
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(stage, stage, new PTX::UInt32Value(1)));
+
+			auto stagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::Less
+			));
+
+			this->m_builder.AddStatement(new PTX::BranchInstruction(stageStartLabel, stagePredicate));
+			this->m_builder.AddStatement(stageEndLabel);
+
+			// Store cached data back in its entirety
+
+			InternalCacheGenerator_Store<B, SORT_CACHE_SIZE, 2> cacheStoreGenerator(this->m_builder);
+			cacheStoreGenerator.Generate(indexArgument, sharedIndex);
+			cacheStoreGenerator.Generate(dataArgument, sharedIndex);
+		}
 	}
+
+private:
+	OrderMode m_mode = OrderMode::Shared;
 };
 
 }

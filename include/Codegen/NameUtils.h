@@ -17,6 +17,18 @@ public:
 
 	constexpr static const char *SortStage = "$sort$stage";
 	constexpr static const char *SortSubstage = "$sort$substage";
+	constexpr static const char *SortStartStage = "$sort$start_stage";
+	constexpr static const char *SortStartSubstage = "$sort$start_substage";
+	constexpr static const char *SortNumStages = "$sort$num_stages";
+
+	static std::string VariableName(const HorseIR::Identifier *identifier, bool isCell, unsigned int cellIndex, const std::string& index = "")
+	{
+		if (isCell)
+		{
+			return NameUtils::VariableName(identifier, cellIndex, index);
+		}
+		return NameUtils::VariableName(identifier, index);
+	}
 
 	static std::string VariableName(const HorseIR::Identifier *identifier, unsigned int cellIndex, const std::string& index = "")
 	{

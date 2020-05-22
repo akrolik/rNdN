@@ -9,6 +9,7 @@ static Module *GPUModule = new LibraryModule("GPU", {
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUOrderLib),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUOrderInit),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUOrder),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUOrderShared),
 
 	// Group by
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUGroupLib),

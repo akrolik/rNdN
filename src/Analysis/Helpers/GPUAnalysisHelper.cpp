@@ -384,6 +384,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderInit:
 		case HorseIR::BuiltinFunction::Primitive::GPUOrder:
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderShared:
 
 		case HorseIR::BuiltinFunction::Primitive::GPUGroup:
 

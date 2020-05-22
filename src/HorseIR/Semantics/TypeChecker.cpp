@@ -1016,62 +1016,78 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		// GPU
 		case BuiltinFunction::Primitive::GPUOrderLib:
 		{
-			// @GPU.order_lib(@init, @sort, data, order?)
+			// @GPU.order_lib(@init, @sort, [@sort_shared], data, [order])
 
-			Require(argumentTypes.size() == 3 || argumentTypes.size() == 4);
+			Require(argumentTypes.size() >= 3);
+			const auto isShared = (TypeUtils::IsType<FunctionType>(argumentTypes.at(2)));
+			Require(argumentTypes.size() == (3 + isShared) || argumentTypes.size() == (4 + isShared));
 
-			const auto inputType0 = argumentTypes.at(0);
-			const auto inputType1 = argumentTypes.at(1);
-			const auto inputType2 = argumentTypes.at(2);
+			const auto initType = argumentTypes.at(0);
+			const auto sortType = argumentTypes.at(1);
+			const auto dataType = argumentTypes.at(2 + isShared);
 
-			Require(TypeUtils::IsType<FunctionType>(inputType0));
-			Require(TypeUtils::IsType<FunctionType>(inputType1));
+			Require(TypeUtils::IsType<FunctionType>(initType));
+			Require(TypeUtils::IsType<FunctionType>(sortType));
 
-			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
-			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+			auto initFunction = TypeUtils::GetType<FunctionType>(initType);
+			auto sortFunction = TypeUtils::GetType<FunctionType>(sortType);
 
-			Require(TypeUtils::IsOrderableType(inputType2) || TypeUtils::IsType<ListType>(inputType2));
+			Require(TypeUtils::IsOrderableType(dataType) || TypeUtils::IsType<ListType>(dataType));
 
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType2))
+			if (const auto listType = TypeUtils::GetType<ListType>(dataType))
 			{
 				// List elements need to be comparable. Same return type as vector alternative
 
 				Require(TypeUtils::ForallElements(listType, TypeUtils::IsOrderableType));
 			}
 
-			if (argumentTypes.size() == 3)
+			if (argumentTypes.size() == (3 + isShared))
 			{
 				// Init sort call
 
-				const auto callTypes0 = AnalyzeCall(functionType0, {inputType2});
-				Require(callTypes0.size() == 2);
-				Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
-				Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType2));
+				const auto initCallTypes = AnalyzeCall(initFunction, {dataType});
+				Require(initCallTypes.size() == 2);
+				Require(TypeUtils::IsBasicType(initCallTypes.at(0), BasicType::BasicKind::Int64));
+				Require(TypeUtils::IsTypesEqual(initCallTypes.at(1), dataType));
 
 				// Sort call
 
-				const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType2});
-				Require(TypeUtils::IsEmptyType(callTypes1));
+				const auto sortCallTypes = AnalyzeCall(sortFunction, {initCallTypes.at(0), dataType});
+				Require(TypeUtils::IsEmptyType(sortCallTypes));
 
-				return {callTypes0.at(0)};
+				if (isShared)
+				{
+					auto sharedFunction = TypeUtils::GetType<FunctionType>(argumentTypes.at(2));
+					const auto sharedCallTypes = AnalyzeCall(sharedFunction, {initCallTypes.at(0), dataType});
+					Require(TypeUtils::IsEmptyType(sharedCallTypes));
+				}
+
+				return {initCallTypes.at(0)};
 			}
 
-			const auto inputType3 = argumentTypes.at(3);
-			Require(TypeUtils::IsBooleanType(inputType3));
+			const auto orderType = argumentTypes.at(3 + isShared);
+			Require(TypeUtils::IsBooleanType(orderType));
 
 			// Init sort call
 
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType2, inputType3});
-			Require(callTypes0.size() == 2);
-			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
-			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType2));
+			const auto initCallTypes = AnalyzeCall(initFunction, {dataType, orderType});
+			Require(initCallTypes.size() == 2);
+			Require(TypeUtils::IsBasicType(initCallTypes.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsTypesEqual(initCallTypes.at(1), dataType));
 
 			// Sort call
 
-			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType2, inputType3});
-			Require(TypeUtils::IsEmptyType(callTypes1));
+			const auto sortCallTypes = AnalyzeCall(sortFunction, {initCallTypes.at(0), dataType, orderType});
+			Require(TypeUtils::IsEmptyType(sortCallTypes));
 
-			return {callTypes0.at(0)};
+			if (isShared)
+			{
+				auto sharedFunction = TypeUtils::GetType<FunctionType>(argumentTypes.at(2));
+				const auto sharedCallTypes = AnalyzeCall(sharedFunction, {initCallTypes.at(0), dataType, orderType});
+				Require(TypeUtils::IsEmptyType(sharedCallTypes));
+			}
+
+			return {initCallTypes.at(0)};
 		}
 		case BuiltinFunction::Primitive::GPUOrderInit:
 		{
@@ -1092,6 +1108,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			return {new BasicType(BasicType::BasicKind::Int64), inputType0};
 		}
 		case BuiltinFunction::Primitive::GPUOrder:
+		case BuiltinFunction::Primitive::GPUOrderShared:
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
@@ -1113,24 +1130,27 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::GPUGroupLib:
 		{
-			// @GPU.group_lib(@init, @sort, @group, data)
+			// @GPU.group_lib(@init, @sort, [@sort_shared], @group, data)
 
-			const auto inputType0 = argumentTypes.at(0);
-			const auto inputType1 = argumentTypes.at(1);
-			const auto inputType2 = argumentTypes.at(2);
-			const auto inputType3 = argumentTypes.at(3);
+			const auto isShared = (argumentTypes.size() == 5);
+			Require(argumentTypes.size() == (isShared + 4));
 
-			Require(TypeUtils::IsType<FunctionType>(inputType0));
-			Require(TypeUtils::IsType<FunctionType>(inputType1));
-			Require(TypeUtils::IsType<FunctionType>(inputType2));
+			const auto initType  = argumentTypes.at(0);
+			const auto sortType  = argumentTypes.at(1);
+			const auto groupType = argumentTypes.at(2 + isShared);
+			const auto dataType  = argumentTypes.at(3 + isShared);
 
-			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
-			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
-			auto functionType2 = TypeUtils::GetType<FunctionType>(inputType2);
+			Require(TypeUtils::IsType<FunctionType>(initType));
+			Require(TypeUtils::IsType<FunctionType>(sortType));
+			Require(TypeUtils::IsType<FunctionType>(groupType));
 
-			Require(TypeUtils::IsOrderableType(inputType3) || TypeUtils::IsType<ListType>(inputType3));
+			auto initFunction = TypeUtils::GetType<FunctionType>(initType);
+			auto sortFunction = TypeUtils::GetType<FunctionType>(sortType);
+			auto groupFunction = TypeUtils::GetType<FunctionType>(groupType);
 
-			if (const auto listType = TypeUtils::GetType<ListType>(inputType3))
+			Require(TypeUtils::IsOrderableType(dataType) || TypeUtils::IsType<ListType>(dataType));
+
+			if (const auto listType = TypeUtils::GetType<ListType>(dataType))
 			{
 				// List elements need to be comparable. Same return type as vector alternative
 
@@ -1139,22 +1159,34 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			// Init sort call
 
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3});
-			Require(callTypes0.size() == 2);
-			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
-			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType3));
+			const auto initCallTypes = AnalyzeCall(initFunction, {dataType});
+			Require(initCallTypes.size() == 2);
+			Require(TypeUtils::IsBasicType(initCallTypes.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsTypesEqual(initCallTypes.at(1), dataType));
 
 			// Sort call
 
-			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType3});
-			Require(TypeUtils::IsEmptyType(callTypes1));
+			const auto sortCallTypes = AnalyzeCall(sortFunction, {initCallTypes.at(0), dataType});
+			Require(TypeUtils::IsEmptyType(sortCallTypes));
+
+			if (isShared)
+			{
+				// Sort shared call
+
+				const auto sharedType = argumentTypes.at(2);
+				Require(TypeUtils::IsType<FunctionType>(sharedType));
+				auto sharedFunction = TypeUtils::GetType<FunctionType>(sharedType);
+
+				const auto sharedCallTypes = AnalyzeCall(sharedFunction, {initCallTypes.at(0), dataType});
+				Require(TypeUtils::IsEmptyType(sharedCallTypes));
+			}
 
 			// Group call
 
-			const auto callTypes2 = AnalyzeCall(functionType2, {callTypes0.at(0), inputType3});
-			Require(callTypes2.size() == 2);
-			Require(TypeUtils::IsBasicType(callTypes2.at(0), BasicType::BasicKind::Int64));
-			Require(TypeUtils::IsBasicType(callTypes2.at(1), BasicType::BasicKind::Int64));
+			const auto groupCallTypes = AnalyzeCall(groupFunction, {initCallTypes.at(0), dataType});
+			Require(groupCallTypes.size() == 2);
+			Require(TypeUtils::IsBasicType(groupCallTypes.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBasicType(groupCallTypes.at(1), BasicType::BasicKind::Int64));
 
 			return {new DictionaryType(new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64))};
 		}
@@ -1177,42 +1209,57 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::GPUUniqueLib:
 		{
-			// @GPU.unique_lib(@init, @sort, @unique, data)
+			// @GPU.unique_lib(@init, @sort, [@sort_shared], @unique, data)
 
-			const auto inputType0 = argumentTypes.at(0);
-			const auto inputType1 = argumentTypes.at(1);
-			const auto inputType2 = argumentTypes.at(2);
-			const auto inputType3 = argumentTypes.at(3);
+			const auto isShared = (argumentTypes.size() == 5);
+			Require(argumentTypes.size() == (isShared + 4));
 
-			Require(TypeUtils::IsType<FunctionType>(inputType0));
-			Require(TypeUtils::IsType<FunctionType>(inputType1));
-			Require(TypeUtils::IsType<FunctionType>(inputType2));
+			const auto initType = argumentTypes.at(0);
+			const auto sortType = argumentTypes.at(1);
+			const auto uniqueType = argumentTypes.at(2 + isShared);
+			const auto dataType   = argumentTypes.at(3 + isShared);
 
-			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
-			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
-			auto functionType2 = TypeUtils::GetType<FunctionType>(inputType2);
+			Require(TypeUtils::IsType<FunctionType>(initType));
+			Require(TypeUtils::IsType<FunctionType>(sortType));
+			Require(TypeUtils::IsType<FunctionType>(uniqueType));
 
-			Require(TypeUtils::IsOrderableType(inputType3));
+			auto initFunction = TypeUtils::GetType<FunctionType>(initType);
+			auto sortFunction = TypeUtils::GetType<FunctionType>(sortType);
+			auto uniqueFunction = TypeUtils::GetType<FunctionType>(uniqueType);
+
+			Require(TypeUtils::IsOrderableType(dataType));
 
 			// Init sort call
 
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3});
-			Require(callTypes0.size() == 2);
-			Require(TypeUtils::IsBasicType(callTypes0.at(0), BasicType::BasicKind::Int64));
-			Require(TypeUtils::IsTypesEqual(callTypes0.at(1), inputType3));
+			const auto initCallTypes = AnalyzeCall(initFunction, {dataType});
+			Require(initCallTypes.size() == 2);
+			Require(TypeUtils::IsBasicType(initCallTypes.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsTypesEqual(initCallTypes.at(1), dataType));
 
 			// Sort call
 
-			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType3});
-			Require(TypeUtils::IsEmptyType(callTypes1));
+			const auto sortCallTypes = AnalyzeCall(sortFunction, {initCallTypes.at(0), dataType});
+			Require(TypeUtils::IsEmptyType(sortCallTypes));
+
+			if (isShared)
+			{
+				// Sort shared call
+
+				const auto sharedType = argumentTypes.at(2);
+				Require(TypeUtils::IsType<FunctionType>(sharedType));
+				auto sharedFunction = TypeUtils::GetType<FunctionType>(sharedType);
+
+				const auto sharedCallTypes = AnalyzeCall(sharedFunction, {initCallTypes.at(0), dataType});
+				Require(TypeUtils::IsEmptyType(sharedCallTypes));
+			}
 
 			// Unique call
 
-			const auto callTypes2 = AnalyzeCall(functionType2, {callTypes0.at(0), inputType3});
-			Require(callTypes2.size() == 1);
-			Require(TypeUtils::IsBasicType(callTypes2.at(0), BasicType::BasicKind::Int64));
+			const auto uniqueCallTypes = AnalyzeCall(uniqueFunction, {initCallTypes.at(0), dataType});
+			Require(uniqueCallTypes.size() == 1);
+			Require(TypeUtils::IsBasicType(uniqueCallTypes.at(0), BasicType::BasicKind::Int64));
 
-			return {callTypes2.at(0)};
+			return {uniqueCallTypes.at(0)};
 		}
 		case BuiltinFunction::Primitive::GPUUnique:
 		{

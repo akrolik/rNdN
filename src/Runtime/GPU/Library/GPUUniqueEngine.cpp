@@ -15,10 +15,16 @@ TypedVectorBuffer<std::int64_t> *GPUUniqueEngine::Unique(const std::vector<DataB
 
 	auto timeSort_start = Utils::Chrono::Start("Unique sort execution");
 
+	auto isShared = (arguments.size() == 5);
+
 	std::vector<DataBuffer *> sortBuffers;
 	sortBuffers.push_back(arguments.at(0)); // Init
 	sortBuffers.push_back(arguments.at(1)); // Sort
-	sortBuffers.push_back(arguments.at(3)); // Data
+	if (isShared)
+	{
+		sortBuffers.push_back(arguments.at(2)); // Sort shared
+	}
+	sortBuffers.push_back(arguments.at(3 + isShared)); // Data
 
 	GPUSortEngine sortEngine(m_runtime, m_program);
 	auto [indexBuffer, dataBuffer] = sortEngine.Sort(sortBuffers);
@@ -29,7 +35,7 @@ TypedVectorBuffer<std::int64_t> *GPUUniqueEngine::Unique(const std::vector<DataB
 
 	auto timeUnique_start = Utils::Chrono::Start("Unique execution");
 
-	auto uniqueFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction();
+	auto uniqueFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction();
 
 	Interpreter interpreter(m_runtime);
 	auto uniqueBuffers = interpreter.Execute(uniqueFunction, {indexBuffer, dataBuffer});

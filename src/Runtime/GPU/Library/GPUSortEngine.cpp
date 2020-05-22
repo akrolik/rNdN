@@ -10,7 +10,6 @@
 #include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "Utils/Logger.h"
-#include "Utils/Math.h"
 
 namespace Runtime {
 
@@ -31,7 +30,9 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 
 	// Initialize the index buffer and sort buffer padding
 
-	std::vector<DataBuffer *> initSortBuffers(std::begin(arguments) + 2, std::end(arguments));
+	auto isShared = BufferUtils::IsBuffer<FunctionBuffer>(arguments.at(2));
+
+	std::vector<DataBuffer *> initSortBuffers(std::begin(arguments) + 2 + isShared, std::end(arguments));
 
 	auto initFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
 	auto initBuffers = engine.Execute(initFunction, initSortBuffers);
@@ -42,6 +43,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	// Perform the iterative sort
 
 	auto sortFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
+	auto sortFunctionShared = (isShared) ? GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction()) : nullptr;
 
 	// Compute the active size and iterations
 
@@ -53,30 +55,50 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	indexBuffer->InvalidateCPU();
 	dataBuffer->InvalidateCPU();
 
-	// Interate sort!
+	// Iteratively sort!
 
 	for (auto stage = 0u; stage < iterations; ++stage)
 	{
 		for (auto substage = 0u; substage <= stage; ++substage)
 		{
+			const auto subsequenceSize = 1 << (stage - substage);
+			const auto sharedSequence = (subsequenceSize <= 1024);
+
 			// Collect the input bufers for sorting: (index, data), [order], stage, substage
+
+			std::vector<DataBuffer *> sortBuffers(initBuffers);
+			if (arguments.size() == (4 + isShared))
+			{
+				sortBuffers.push_back(arguments.at(3 + isShared));
+			}
 
 			auto stageBuffer = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, stage);
 			auto substageBuffer = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, substage);
-
-			std::vector<DataBuffer *> sortBuffers(initBuffers);
-			if (arguments.size() == 4)
-			{
-				sortBuffers.push_back(arguments.at(3));
-			}
 
 			sortBuffers.push_back(stageBuffer);
 			sortBuffers.push_back(substageBuffer);
 
 			// Execute!
 
-			engine.Execute(sortFunction, sortBuffers);
+			if (sharedSequence && isShared)
+			{
+				// If there are less than 1024 threads per block, all substages left for this stage will fit in shared memory
 
+				const auto stages = (stage > 0) ? 1 : std::min(iterations, 10u);
+				auto stagesBuffer = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, stages);
+				sortBuffers.push_back(stagesBuffer);
+
+				engine.Execute(sortFunctionShared, sortBuffers);
+
+				stage += stages - 1;
+				substage = stage + 1;
+
+				delete stagesBuffer;
+			}
+			else
+			{
+				engine.Execute(sortFunction, sortBuffers);
+			}
 			delete stageBuffer;
 			delete substageBuffer;
 		}
@@ -86,20 +108,21 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 
 	Utils::ScopedChrono timeResize("Resize buffers");
 
-	if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(arguments.at(2), false))
+	auto inputBuffer = arguments.at(2 + isShared);
+	if (auto inputVectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(inputBuffer, false))
 	{
 		auto outputBuffer = BufferUtils::GetBuffer<VectorBuffer>(dataBuffer);
-		auto size = vectorBuffer->GetElementCount();
+		auto size = inputVectorBuffer->GetElementCount();
 
 		indexBuffer->Resize(size);
 		outputBuffer->Resize(size);
 
 		return {BufferUtils::GetVectorBuffer<std::int64_t>(indexBuffer), outputBuffer};
 	}
-	else if (auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(arguments.at(2), false))
+	else if (auto inputListBuffer = BufferUtils::GetBuffer<ListBuffer>(inputBuffer, false))
 	{
 		auto outputBuffer = BufferUtils::GetBuffer<ListBuffer>(dataBuffer);
-		auto size = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0))->GetElementCount();
+		auto size = BufferUtils::GetBuffer<VectorBuffer>(inputListBuffer->GetCell(0))->GetElementCount();
 
 		indexBuffer->Resize(size);
 		outputBuffer->ResizeCells(size);
@@ -108,7 +131,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	}
 	else
 	{
-		Utils::Logger::LogError("GPU sort requires vector or list data, received " + arguments.at(2)->Description());
+		Utils::Logger::LogError("GPU sort requires vector or list data, received " + dataBuffer->Description());
 	}
 }
 

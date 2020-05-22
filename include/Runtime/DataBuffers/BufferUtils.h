@@ -15,6 +15,12 @@ class BufferUtils
 public:
 
 template<class T>
+static bool IsBuffer(DataBuffer *buffer)
+{
+	return (buffer->m_kind == T::BufferKind);
+}
+
+template<class T>
 static const T *GetBuffer(const DataBuffer *buffer, bool assert = true)
 {
 	if (buffer->m_kind == T::BufferKind)

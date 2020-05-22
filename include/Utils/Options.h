@@ -9,6 +9,7 @@ class Options
 public:
 	static constexpr char const *Opt_Help = "help";
 	static constexpr char const *Opt_Optimize = "optimize";
+
 	static constexpr char const *Opt_Print_debug = "print-debug";
 	static constexpr char const *Opt_Print_hir = "print-hir";
 	static constexpr char const *Opt_Print_hir_typed = "print-hir-typed";
@@ -19,8 +20,10 @@ public:
 	static constexpr char const *Opt_Print_ptx = "print-ptx";
 	static constexpr char const *Opt_Print_json = "print-json";
 	static constexpr char const *Opt_Print_time = "print-time";
-	static constexpr char const *Opt_Load_tpch = "load-tpch";
 
+	static constexpr char const *Opt_Algo_smem_sort = "algo-smem-sort";
+
+	static constexpr char const *Opt_Load_tpch = "load-tpch";
 	static constexpr char const *Opt_File = "file";
 
 	Options(Options const&) = delete;
@@ -32,7 +35,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			std::cout << instance.m_options.help({"", "Debug", "Data"}) << std::endl;
+			std::cout << instance.m_options.help({"", "Debug", "Algorithm", "Data"}) << std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -67,6 +70,9 @@ private:
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
 			(Opt_Print_time, "Print timings")
+		;
+		m_options.add_options("Algorithm")
+			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")

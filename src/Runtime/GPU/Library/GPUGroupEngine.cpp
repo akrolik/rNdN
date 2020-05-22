@@ -16,10 +16,16 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeSort_start = Utils::Chrono::Start("Group sort execution");
 
+	auto isShared = (arguments.size() == 5);
+
 	std::vector<DataBuffer *> sortBuffers;
 	sortBuffers.push_back(arguments.at(0)); // Init
 	sortBuffers.push_back(arguments.at(1)); // Sort
-	sortBuffers.push_back(arguments.at(3)); // Data
+	if (isShared)
+	{
+		sortBuffers.push_back(arguments.at(2)); // Sort shared
+	}
+	sortBuffers.push_back(arguments.at(3 + isShared)); // Data
 
 	GPUSortEngine sortEngine(m_runtime, m_program);
 	auto [indexBuffer, dataBuffer] = sortEngine.Sort(sortBuffers);
@@ -30,7 +36,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeGroup_start = Utils::Chrono::Start("Group execution");
 
-	auto groupFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction();
+	auto groupFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction();
 
 	Interpreter interpreter(m_runtime);
 	auto groupBuffers = interpreter.Execute(groupFunction, {indexBuffer, dataBuffer});
