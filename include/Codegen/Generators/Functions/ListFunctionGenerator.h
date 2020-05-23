@@ -120,14 +120,15 @@ public:
 		// Construct the standard loop structure
 		//
 		//   <init>
-		//   START:
-		//      setp %p, ...
-		//      @%p br END
+		//   setp %p1, ...
+		//   @%p1 br END
 		//
+		//   START:
 		//      <body>
 		//      <post>
 		//
-		//      br START
+		//      setp %p2, ...
+		//      @%p2 br START
 		//
 		//   END:
 
@@ -135,11 +136,10 @@ public:
 		auto endLabel = this->m_builder.CreateLabel("END");
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate, true));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(startLabel);
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Construct the loop body according to the standard function generator
 
@@ -154,7 +154,9 @@ public:
 
 		// Complete the loop structure
 
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
+		auto predicateEnd = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicateEnd, index, bound, PTX::UInt32Type::ComparisonOperator::Less));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicateEnd, true));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(endLabel);
 
