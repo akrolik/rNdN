@@ -661,7 +661,6 @@ public:
 		// Load the left and right values
 
 		OrderLoadGenerator<B> loadGenerator(this->m_builder, m_mode);
-		loadGenerator.Generate(indexArgument, leftIndex, rightIndex);
 		loadGenerator.Generate(dataArgument, leftIndex, rightIndex);
 
 		// Generate the if-else structure for the sort order
@@ -703,6 +702,10 @@ public:
 		// Swap if needed!
 
 		this->m_builder.AddStatement(swapLabel);
+
+		// Only load index if needed
+
+		loadGenerator.Generate(indexArgument, leftIndex, rightIndex);
 
 		OrderSwapGenerator<B> swapGenerator(this->m_builder, m_mode);
 		swapGenerator.Generate(indexArgument, dataArgument, leftIndex, rightIndex);
