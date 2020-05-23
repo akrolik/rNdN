@@ -521,7 +521,7 @@ public:
 				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
 					stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::GreaterEqual
 				));
-				this->m_builder.AddStatement(new PTX::BranchInstruction(stageEndLabel, stagePredicate));
+				this->m_builder.AddStatement(new PTX::BranchInstruction(stageEndLabel, stagePredicate, false, true));
 				this->m_builder.AddStatement(stageStartLabel);
 
 				break;
@@ -594,7 +594,7 @@ public:
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
 				substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::Greater
 			));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(substageEndLabel, substagePredicate));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(substageEndLabel, substagePredicate, false, true));
 			this->m_builder.AddStatement(substageStartLabel);
 		}
 
@@ -688,7 +688,7 @@ public:
 		OrderComparisonGenerator<B> ascendingGenerator(this->m_builder, OrderComparisonGenerator<B>::Order::Ascending, swapLabel, endLabel);
 		ascendingGenerator.Generate(dataArgument, orderLiteral);
 
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, true));
 
 		// Else branch (descending sequence)
 
@@ -698,7 +698,7 @@ public:
 		OrderComparisonGenerator<B> descendingGenerator(this->m_builder, OrderComparisonGenerator<B>::Order::Descending, swapLabel, endLabel);
 		descendingGenerator.Generate(dataArgument, orderLiteral);
 
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, true));
 
 		// Swap if needed!
 
@@ -727,7 +727,7 @@ public:
 				substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::LessEqual
 			));
 
-			this->m_builder.AddStatement(new PTX::BranchInstruction(substageStartLabel, substagePredicate));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(substageStartLabel, substagePredicate, false, true));
 			this->m_builder.AddStatement(substageEndLabel);
 
 			// End of outer loop
@@ -739,7 +739,7 @@ public:
 				stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::Less
 			));
 
-			this->m_builder.AddStatement(new PTX::BranchInstruction(stageStartLabel, stagePredicate));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(stageStartLabel, stagePredicate, false, true));
 			this->m_builder.AddStatement(stageEndLabel);
 
 			// Store cached data back in its entirety
