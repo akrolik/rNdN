@@ -32,11 +32,16 @@ void Platform::LoadDevices()
 		std::unique_ptr<Device> device = std::make_unique<Device>(i);
 
 		float mem_f = float(device->GetMemorySize()) / 1024 / 1024 / 1024;
-		std::stringstream stream;
-		stream << std::setprecision(3) << mem_f;
-		std::string mem = stream.str();
+		std::stringstream gstream;
+		gstream << std::setprecision(3) << mem_f;
+		std::string mem = gstream.str();
 
-		Utils::Logger::LogInfo("[" + std::to_string(i) + "] " + device->GetName() + " (" + mem + " GB)");
+		float smem_f = float(device->GetSharedMemorySize()) / 1024;
+		std::stringstream sstream;
+		sstream << std::setprecision(3) << smem_f;
+		std::string smem = sstream.str();
+
+		Utils::Logger::LogInfo("[" + std::to_string(i) + "] " + device->GetName() + " (gmem=" + mem + "GB|smem=" + smem + "KB)");
 
 		m_devices.push_back(std::move(device));
 	}
