@@ -18,6 +18,12 @@ public:
 
 	std::string Name() const override { return "InternalCacheGenerator_Load"; }
 
+	bool GetBoundsCheck() const { return m_boundsCheck; }
+	void SetBoundsCheck(bool boundsCheck) { m_boundsCheck = boundsCheck; }
+	
+	bool GetSynchronize() const { return m_synchronize; }
+	void SetSynchronize(bool synchronize) { m_synchronize = synchronize; }
+
 	void Generate(const HorseIR::Operand *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
@@ -45,7 +51,7 @@ public:
 
 		// Synchronize shared memory
 
-		if (data->GetName() != "index")
+		if (m_synchronize)
 		{
 			BarrierGenerator<B> barrierGenerator(this->m_builder);
 			barrierGenerator.Generate();
@@ -127,7 +133,7 @@ private:
 			for (auto i = 0; i < N; ++i)
 			{
 				OperandGenerator<B, T> operandGenerator(this->m_builder);
-				operandGenerator.SetBoundsCheck((data->GetName() != "data" && data->GetName() != "index"));
+				operandGenerator.SetBoundsCheck(m_boundsCheck);
 				auto value = operandGenerator.GenerateRegister(data, index, this->m_builder.UniqueIdentifier("cache"), cellIndex);
 
 				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_cacheAddress, value));
@@ -144,6 +150,8 @@ private:
 		}
 	}
 
+	bool m_boundsCheck = true;
+	bool m_synchronize = true;
 	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
 };
 

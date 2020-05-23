@@ -496,7 +496,12 @@ public:
 				));
 
 				InternalCacheGenerator_Load<B, SORT_CACHE_SIZE, 2> cacheGenerator(this->m_builder);
+				cacheGenerator.SetBoundsCheck(false);
+
+				cacheGenerator.SetSynchronize(false);
 				cacheGenerator.Generate(indexArgument, sharedIndex);
+
+				cacheGenerator.SetSynchronize(true);
 				cacheGenerator.Generate(dataArgument, sharedIndex);
 				
 				// Initialize stage and bound
