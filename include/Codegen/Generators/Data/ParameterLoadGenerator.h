@@ -84,7 +84,7 @@ public:
 				auto& inputOptions = this->m_builder.GetInputOptions();
 				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
-					GeneratePointerSize(parameter);
+					GeneratePointerSize(parameter, nullptr, false);
 				}
 			}
 			else
@@ -146,7 +146,7 @@ public:
 
 				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 				{
-					GenerateIndirectSize(parameter, index);
+					GenerateIndirectSize(parameter, index, (writeShape == nullptr));
 				}
 			}
 			else
@@ -184,7 +184,7 @@ public:
 			auto& inputOptions = this->m_builder.GetInputOptions();
 			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
 			{
-				GenerateIndirectSize(parameter, index);
+				GenerateIndirectSize(parameter, index, (writeShape == nullptr));
 			}
 		}
 	}
@@ -262,20 +262,28 @@ public:
 	}
 
 	template<class T>
-	void GeneratePointerSize(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
+	void GeneratePointerSize(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, bool loadValue = true)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 		auto sizeName = NameUtils::SizeName(parameter);
 
+		// Get the size parameter
+
 		auto sizeParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(sizeName);
 		GenerateParameterAddress<PTX::UInt32Type>(sizeParameter);
 
-		ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
-		loadGenerator.GeneratePointer(sizeParameter, index);
+		if (loadValue)
+		{
+			// Load the size value
+
+			ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
+			loadGenerator.SetCacheCoherence(false);
+			loadGenerator.GeneratePointer(sizeParameter, index);
+		}
 	}
 
 	template<class T>
-	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
+	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, bool loadValue = true)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 
@@ -286,14 +294,18 @@ public:
 
 		GenerateIndirectList(sizeParameter, index);
 
-		// Load the size value
+		if (loadValue)
+		{
+			// Load the size value
 
-		ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
-		loadGenerator.GeneratePointer(sizeParameter);
+			ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
+			loadGenerator.SetCacheCoherence(false);
+			loadGenerator.GeneratePointer(sizeParameter);
+		}
 	}
 
 	template<class T>
-	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index)
+	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index, bool loadValue = true)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 	
@@ -304,10 +316,14 @@ public:
 
 		GenerateIndirectTuple(sizeParameter, index);
 
-		// Load the size value
+		if (loadValue)
+		{
+			// Load the size value
 
-		ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
-		loadGenerator.GeneratePointer(NameUtils::SizeName(parameter, index), sizeParameter, index);
+			ValueLoadGenerator<B, PTX::UInt32Type> loadGenerator(this->m_builder);
+			loadGenerator.SetCacheCoherence(false);
+			loadGenerator.GeneratePointer(NameUtils::SizeName(parameter, index), sizeParameter, index);
+		}
 	}
 
 	template<class T>

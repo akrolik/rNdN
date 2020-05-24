@@ -20,6 +20,9 @@ public:
 
 	std::string Name() const override { return "ValueLoadGenerator"; }
 
+	bool GetCacheCoherence() const { return m_cacheCoherence; }
+	void SetCacheCoherence(bool cacheCoherence) { m_cacheCoherence = cacheCoherence; }
+
 	const PTX::Register<T> *GenerateConstant(const PTX::ParameterVariable<T> *parameter)
 	{
 		// Get the address for the constant parameter
@@ -89,10 +92,19 @@ public:
 
 		// Load the value from the fetched address
 
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
+		if (m_cacheCoherence)
+		{
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(destination, address));
+		}
+		else
+		{
+			this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, T>(destination, address));
+		}
 
 		return destination;
 	}
+
+	bool m_cacheCoherence = true;
 };
 
 }
