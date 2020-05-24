@@ -88,10 +88,8 @@ private:
 	template<class T>
 	void GenerateLoad(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
 	{
-		// if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			// GenerateLoad<PTX::Int16Type>(identifier, isCell, cellIndex);
 			GenerateLoad<PTX::Int8Type>(identifier, isCell, cellIndex);
 		}
 		else
@@ -214,10 +212,8 @@ private:
 	void GenerateComparison(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int index = 0)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
-		// if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			GenerateComparison<PTX::Int16Type>(identifier, isCell, index);
-			// GenerateComparison<PTX::Int8Type>(identifier, isCell, index);
 		}
 		else
 		{
@@ -346,10 +342,8 @@ private:
 	template<class T>
 	void GenerateSharedSwap(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int cellIndex = 0)
 	{
-		// if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
-			// GenerateSharedSwap<PTX::Int16Type>(identifier, isCell, cellIndex);
 			GenerateSharedSwap<PTX::Int8Type>(identifier, isCell, cellIndex);
 		}
 		else
