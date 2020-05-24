@@ -130,7 +130,7 @@ private:
 					}
 					else if (*vectorGeometry == *vectorShape)
 					{
-						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
+						GenerateWriteVector<T>(operand, returnIndex);
 						return;
 					}
 					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
@@ -148,7 +148,7 @@ private:
 
 					if (*vectorGeometry == *cellVector)
 					{
-						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
+						GenerateWriteVector<T>(operand, returnIndex);
 						return;
 					}
 					else if (Analysis::ShapeUtils::IsDynamicShape(cellVector))
@@ -188,7 +188,7 @@ private:
 						}
 						else if (*listShape == *listGeometry) // Compare the entire geometry, as the cells may differ
 						{
-							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex);
+							GenerateWriteVector<T>(operand, returnIndex);
 							return;
 						}
 						else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(cellVector->GetSize()))
@@ -431,7 +431,7 @@ private:
 	}
 
 	template<class T>
-	void GenerateWriteVector(const HorseIR::Operand *operand, typename DataIndexGenerator<B>::Kind indexKind, unsigned int returnIndex)
+	void GenerateWriteVector(const HorseIR::Operand *operand, unsigned int returnIndex)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -460,7 +460,7 @@ private:
 		{
 			// Global/cell data indexing depending on thread geometry
 
-			writeIndex = indexGenerator.GenerateIndex(indexKind);
+			writeIndex = index;
 		}
 
 		auto address = GenerateAddress<T>(returnIndex, writeIndex);
