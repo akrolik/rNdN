@@ -38,8 +38,9 @@ public:
 	{
 		// Load the sort data into registers
 
-		OperandGenerator<B, T> opGen(this->m_builder);
-		auto value = opGen.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector);
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		operandGenerator.SetBoundsCheck(false);
+		auto value = operandGenerator.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector);
 
 		// Get the target register
 
@@ -78,8 +79,9 @@ public:
 	{
 		// Load the sort data into registers
 
-		OperandGenerator<B, T> opGen(this->m_builder);
-		auto value = opGen.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector, index);
+		OperandGenerator<B, T> operandGenerator(this->m_builder);
+		operandGenerator.SetBoundsCheck(false);
+		auto value = operandGenerator.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector, index);
 
 		// Get the target register
 
@@ -215,7 +217,6 @@ public:
 
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(arguments.at(0));
-
 
 		// Generate the if-else structure
 
