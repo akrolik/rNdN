@@ -90,6 +90,43 @@ public:
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
 
+		// Get the initial value for reduction
+
+		OperandGenerator<B, T> opGenerator(this->m_builder);
+
+		// Check if there is a compression predicate on the input value. If so, mask out the initial load according to the predicate
+
+		OperandCompressionGenerator compGenerator(this->m_builder);
+		auto compress = compGenerator.GetCompressionRegister(arguments.at(0));
+
+		const PTX::TypedOperand<T> *src = nullptr;
+		if (m_reductionOp == ReductionOperation::Length)
+		{
+			// No compression, we can use the active data size
+
+			if (compress == nullptr)
+			{
+				ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+				auto dataSize = geometryGenerator.GenerateDataGeometry();
+
+				auto convertedSize = ConversionGenerator::ConvertSource<T, PTX::UInt32Type>(this->m_builder, dataSize);
+				this->m_builder.AddStatement(new PTX::MoveInstruction<T>(targetRegister, convertedSize));
+
+				resources->SetReductionRegister(targetRegister, RegisterReductionGranularity::Single, RegisterReductionOperation::None);
+				return;
+			}
+
+			// A count reduction is value agnostic performs a sum over 1's, one value for each active thread
+
+			src = new PTX::Value<T>(1);
+		}
+		else
+		{
+			// All other reductions use the value for the thread
+
+			src = opGenerator.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
+		}
+
 		// Load the underlying data size, ensuring it is within bounds
 
 		auto inputPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -101,30 +138,6 @@ public:
 		auto dataIndex = indexGenerator.GenerateDataIndex();
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(inputPredicate, dataIndex, dataSize, PTX::UInt32Type::ComparisonOperator::Less));
-
-		// Get the initial value for reduction
-
-		OperandGenerator<B, T> opGenerator(this->m_builder);
-
-		// Check if there is a compression predicate on the input value. If so, mask out the
-		// initial load according to the predicate
-
-		OperandCompressionGenerator compGenerator(this->m_builder);
-		auto compress = compGenerator.GetCompressionRegister(arguments.at(0));
-
-		const PTX::TypedOperand<T> *src = nullptr;
-		if (m_reductionOp == ReductionOperation::Length)
-		{
-			// A count reduction is value agnostic performs a sum over 1's, one value for each active thread
-
-			src = new PTX::Value<T>(1);
-		}
-		else
-		{
-			// All other reductions use the value for the thread
-
-			src = opGenerator.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
-		}
 
 		// Select the initial value for the reduction depending on the data size and compression mask
 

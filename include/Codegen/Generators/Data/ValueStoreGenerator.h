@@ -222,6 +222,13 @@ private:
 
 		switch (granularity)
 		{
+			case RegisterReductionGranularity::Single:
+			{
+				DataIndexGenerator<B> indexGenerator(this->m_builder);
+				auto index = indexGenerator.GenerateDataIndex();
+				GenerateWriteReduction(op, index, value, writeIndex, returnIndex);
+				break;
+			}
 			case RegisterReductionGranularity::Warp:
 			{
 				auto laneid = indexGenerator.GenerateLaneIndex();
@@ -281,6 +288,11 @@ private:
 	{
 		switch (reductionOp)
 		{
+			case RegisterReductionOperation::None:
+			{
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+				break;
+			}
 			case RegisterReductionOperation::Add:
 			{
 				if constexpr(std::is_same<T, PTX::Int64Type>::value)

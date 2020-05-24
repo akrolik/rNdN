@@ -7,11 +7,13 @@
 namespace Codegen {
 
 enum class RegisterReductionGranularity {
+	Single,
 	Warp,
 	Block
 };
 
 enum class RegisterReductionOperation {
+	None,
 	Add,
 	Maximum,
 	Minimum
