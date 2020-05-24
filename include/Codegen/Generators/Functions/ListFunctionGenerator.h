@@ -137,7 +137,7 @@ public:
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate, true));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(startLabel);
 
@@ -156,7 +156,7 @@ public:
 
 		auto predicateEnd = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicateEnd, index, bound, PTX::UInt32Type::ComparisonOperator::Less));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicateEnd, true));
+		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicateEnd));
 		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(endLabel);
 
