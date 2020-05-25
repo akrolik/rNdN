@@ -24,7 +24,7 @@ public:
 
 	[[noreturn]] void Error(const std::string& message) const
 	{
-		Utils::Logger::LogError(Name() + ": unable to generate " + message + " [geometry = " + Analysis::ShapeUtils::ShapeString(this->m_builder.GetInputOptions().ThreadGeometry) + "]");
+		Utils::Logger::LogError(m_builder.GetContextString(Name() + ": Unable to generate " + message + " [geometry = " + Analysis::ShapeUtils::ShapeString(this->m_builder.GetInputOptions().ThreadGeometry) + "]"));
 	}
 
 	virtual std::string Name() const = 0;
