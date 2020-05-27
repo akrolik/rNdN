@@ -216,7 +216,7 @@ bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape:
 		}
 
 		auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(destination)->GetSize();
-		return (*source == *unmaskedSize);
+		return IsCompatible(source, unmaskedSize, true);
 	}
 
 	return false;
