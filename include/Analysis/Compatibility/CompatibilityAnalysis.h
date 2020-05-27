@@ -58,13 +58,13 @@ private:
 
 	const Shape *GetGeometry(const DependencySubgraphNode& node) const;
 	const Shape *BuildGeometry(const DependencyOverlay *overlay) const;
-	bool IsCompatible(const Shape *source, const Shape *destination) const;
-	bool IsCompatible(const Shape::Size *source, const Shape::Size *destination) const;
+	bool IsCompatible(const Shape *source, const Shape *destination, bool allowCompression = false) const;
+	bool IsCompatible(const Shape::Size *source, const Shape::Size *destination, bool allowCompression = false) const;
 
 	// Optimization
 
 	void Optimize(DependencyOverlay *parentOverlay);
-	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderingContext& context, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
+	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderingContext& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
 	void MoveOverlay(DependencySubgraph::OrderingContext& context, DependencyOverlay *merged, const DependencyOverlay *source);
 };
 

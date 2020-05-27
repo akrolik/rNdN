@@ -145,7 +145,7 @@ const Shape *CompatibilityAnalysis::BuildGeometry(const DependencyOverlay *overl
 	}
 }
 
-bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *destination) const
+bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *destination, bool allowCompression) const
 {
 	if (*source == *destination)
 	{
@@ -163,14 +163,14 @@ bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *desti
 		{
 			auto sourceSize = ShapeUtils::GetShape<VectorShape>(source)->GetSize();
 			auto destinationSize = ShapeUtils::GetShape<VectorShape>(destination)->GetSize();
-			return IsCompatible(sourceSize, destinationSize);
+			return IsCompatible(sourceSize, destinationSize, allowCompression);
 		}
 		case Shape::Kind::List:
 		{
 			auto sourceList = ShapeUtils::GetShape<ListShape>(source);
 			auto destinationList = ShapeUtils::GetShape<ListShape>(destination);
 
-			if (sourceList->GetListSize() != destinationList->GetListSize())
+			if (*sourceList->GetListSize() != *destinationList->GetListSize())
 			{
 				return false;
 			}
@@ -178,15 +178,22 @@ bool CompatibilityAnalysis::IsCompatible(const Shape *source, const Shape *desti
 			auto sourceCell = ShapeUtils::MergeShapes(sourceList->GetElementShapes());
 			auto destinationCell = ShapeUtils::MergeShapes(destinationList->GetElementShapes());
 
-			return IsCompatible(sourceCell, destinationCell);
+			return IsCompatible(sourceCell, destinationCell, allowCompression);
 		}
 	}
 
 	return false;
 }
 
-bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape::Size *destination) const
+bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape::Size *destination, bool allowCompression) const
 {
+	// Check exact equality
+
+	if (*source == *destination)
+	{
+		return true;
+	}
+
 	// Check for initialization compatibility
 
 	if (ShapeUtils::IsSize<Shape::InitSize>(source))
@@ -201,19 +208,26 @@ bool CompatibilityAnalysis::IsCompatible(const Shape::Size *source, const Shape:
 		return true;
 	}
 
-	// Check for compression compatibility
-
-	if (!ShapeUtils::IsSize<Shape::CompressedSize>(destination))
+	if (allowCompression)
 	{
-		return false;
+		// Check for compression compatibility
+
+		if (!ShapeUtils::IsSize<Shape::CompressedSize>(destination))
+		{
+			return false;
+		}
+
+		auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(destination)->GetSize();
+		return (*source == *unmaskedSize);
 	}
 
-	auto unmaskedSize = ShapeUtils::GetSize<Shape::CompressedSize>(destination)->GetSize();
-	return (*source == *unmaskedSize);
+	return false;
 }
 
 void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 {
+	auto timeOptimize_start = Utils::Chrono::Start("Optimize overlay '" + std::string(parentOverlay->GetName()) + "'");
+
 	//TODO: This should be somewhere else, or it's expensive
 	DependencySubgraphAnalysis dependencySubgraphAnalysis;
 	dependencySubgraphAnalysis.Analyze(parentOverlay);
@@ -273,16 +287,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 
 					// Merge the overlays!
 
-					auto mergedOverlay = MergeOverlays(context, overlay1, overlay2);
-
-					// Update the incoming count for the merged overlay in the ordering context
-
-					auto predecessors = subgraph->GetPredecessors(mergedOverlay);
-					for (const auto processed : processedNodes)
-					{
-						predecessors.erase(processed);
-					}
-					context.edges.insert({mergedOverlay, predecessors.size()});
+					MergeOverlays(context, processedNodes, overlay1, overlay2);
 
 					changed = true;
 					break;
@@ -291,30 +296,98 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 			}
 		}
 
-		//TODO: Merge parent overlay if possible
-
 		// Merge parent overlay if possible
 
-		// if (std::holds_alternative<const HorseIR::Statement *>(node))
-		// {
-		// 	return;
-		// }
+		if (std::holds_alternative<const DependencyOverlay *>(node))
+		{
+			// Require the overlay to be GPU executable
 
-		// Require the overlay to be GPU executable
+			const auto overlay = std::get<const DependencyOverlay *>(node);
+			if (overlay->IsGPU())
+			{
+				auto bestCount = 0u;
+				const DependencyOverlay *bestChildOverlay = nullptr;
 
-		// auto overlay = std::get<const DependencyOverlay *>(node);
-		// if (!overlay->IsGPU())
-		// {
-		// 	return;
-		// }
+				for (const auto& childNode : subgraph->GetSuccessors(overlay))
+				{
+					if (std::holds_alternative<const DependencyOverlay *>(childNode))
+					{
+						const auto childOverlay = std::get<const DependencyOverlay *>(childNode);
+						if (childOverlay->IsGPU())
+						{
+							// Ignore back edges for merging
+
+							if (subgraph->IsBackEdge(overlay, childOverlay))
+							{
+								continue;
+							}
+
+							// Check the sucessor for incoming or outgoing synchronization which prevents merge
+
+							if (subgraph->IsSynchronizedEdge(overlay, childOverlay))
+							{
+								continue;
+							}
+
+							// Check for cycles which prevent merge (directly, it may be handled in future iterations)
+
+							auto containsPath = false;
+							for (const auto& childNode2 : subgraph->GetSuccessors(overlay))
+							{
+								if (childNode2 == childNode)
+								{
+									continue;
+								}
+
+								if (subgraph->ContainsPath(childNode2, childNode))
+								{
+									containsPath = true;
+									break;
+								}
+							}
+							if (containsPath)
+							{
+								continue;
+							}
+
+							// Check compatibility
+
+							auto geometry = m_overlayGeometries.at(overlay);
+							auto childGeometry = m_overlayGeometries.at(childOverlay);
+
+							if (!IsCompatible(geometry, childGeometry, true))
+							{
+								continue;
+							}
+
+							auto size = subgraph->GetEdgeData(overlay, childOverlay).size();
+							if (size > bestCount)
+							{
+								bestCount = size;
+								bestChildOverlay = childOverlay;
+							}
+						}
+					}
+				}
+
+				if (bestChildOverlay != nullptr)
+				{
+					MergeOverlays(context, processedNodes, overlay, bestChildOverlay);
+					return false;
+				}
+			}
+		}
 
 		// Keep track of processed nodes for computing new in-degrees when merging
 
 		processedNodes.insert(node);
+		return true;
 	});
+
+	Utils::Chrono::End(timeOptimize_start);
 }
 
-DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderingContext& context, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
+DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderingContext& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
 {
 	auto parentOverlay = overlay1->GetParent();
 	auto parentSubgraph = parentOverlay->GetSubgraph();
@@ -339,6 +412,18 @@ DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::Orde
 	context.edges.erase(overlay1);
 	context.edges.erase(overlay2);
 
+	auto predecessors = parentSubgraph->GetPredecessors(mergedOverlay);
+	for (const auto processed : processedNodes)
+	{
+		predecessors.erase(processed);
+	}
+	context.edges.insert({mergedOverlay, predecessors.size()});
+
+	if (predecessors.size() == 0)
+	{
+		context.queue.push(mergedOverlay);
+	}
+
 	return mergedOverlay;
 }
 
@@ -361,6 +446,7 @@ void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderingContext& con
 		mergedOverlay->AddChild(childOverlay);
 	}
 
+	auto mergedNodes = mergedSubgraph->GetNodes();
 	for (auto node : sourceSubgraph->GetNodes())
 	{
 		auto isGPU = sourceSubgraph->IsGPUNode(node);
@@ -394,6 +480,11 @@ void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderingContext& con
 
 	for (auto successor : parentSubgraph->GetSuccessors(sourceOverlay))
 	{
+		if (successor == DependencySubgraphNode(mergedOverlay))
+		{
+			continue;
+		}
+
 		auto isBackEdge = parentSubgraph->IsBackEdge(sourceOverlay, successor);
 		auto isSynchronizedEdge = parentSubgraph->IsSynchronizedEdge(sourceOverlay, successor);
 		auto edgeData = parentSubgraph->GetEdgeData(sourceOverlay, successor);
@@ -410,6 +501,11 @@ void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderingContext& con
 
 	for (auto predecessor : parentSubgraph->GetPredecessors(sourceOverlay))
 	{
+		if (predecessor == DependencySubgraphNode(mergedOverlay))
+		{
+			continue;
+		}
+
 		auto isBackEdge = parentSubgraph->IsBackEdge(predecessor, sourceOverlay);
 		auto isSynchronizedEdge = parentSubgraph->IsSynchronizedEdge(predecessor, sourceOverlay);
 		auto edgeData = parentSubgraph->GetEdgeData(predecessor, sourceOverlay);

@@ -113,6 +113,7 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 			}},
 			node
 		);
+		return true;
 	});
 
 	// Collect the incoming and outgoing symbols

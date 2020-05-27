@@ -156,16 +156,19 @@ public:
 
 		while (!queue.empty())
 		{
-			auto node = queue.front();
+			auto& node = queue.front();
 			queue.pop();
 
 			// Apply the given function
 
-			function(context, node);
+			auto status = function(context, node);
 
-			// Process all predecessors of the node
+			// Process all successors of the node
 
-			ProcessSuccessors(context, node);
+			if (status)
+			{
+				ProcessSuccessors(context, node);
+			}
 		}
 	}
 
