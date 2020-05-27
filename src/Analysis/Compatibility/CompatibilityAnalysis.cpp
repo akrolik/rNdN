@@ -2,11 +2,9 @@
 
 #include "Analysis/Geometry/GeometryUtils.h"
 #include "Analysis/Shape/ShapeUtils.h"
+#include "Analysis/Dependency/DependencySubgraphAnalysis.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlay.h"
 #include "Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
-
-//TODO:
-#include "Analysis/Dependency/DependencySubgraphAnalysis.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -228,7 +226,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 {
 	auto timeOptimize_start = Utils::Chrono::Start("Optimize overlay '" + std::string(parentOverlay->GetName()) + "'");
 
-	//TODO: This should be somewhere else, or it's expensive
+	//TODO: Make subgraph analysis limited in scope
 	DependencySubgraphAnalysis dependencySubgraphAnalysis;
 	dependencySubgraphAnalysis.Analyze(parentOverlay);
 
@@ -615,12 +613,35 @@ void CompatibilityAnalysis::Visit(const FunctionDependencyOverlay *overlay)
 
 	auto size = m_currentOverlays.size();
 	auto bodyOverlay = m_currentOverlays.at(size - 1);
-
 	m_currentOverlays.pop_back();
 
-	// Optimize the functionn
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		auto kernelCount = 0u;
+		for (auto overlay : bodyOverlay->GetChildren())
+		{
+			kernelCount += overlay->IsGPU();
+		}
+		Utils::Logger::LogDebug("Outlined " + std::to_string(kernelCount) + " kernels");
+	}
 
-	Optimize(bodyOverlay);
+	//TODO: Make outliner hierarchical
+	if (Utils::Options::Get<bool>(Utils::Options::Opt_Optimize_outline))
+	{
+		// Optimize the functionn
+
+		Optimize(bodyOverlay);
+
+		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		{
+			auto kernelCount = 0u;
+			for (auto overlay : bodyOverlay->GetChildren())
+			{
+				kernelCount += overlay->IsGPU();
+			}
+			Utils::Logger::LogDebug("Outlined " + std::to_string(kernelCount) + " optimized kernels");
+		}
+	}
 
 	// Construct a function overlay and propagate the resulting geometry
 

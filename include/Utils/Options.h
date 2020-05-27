@@ -9,6 +9,7 @@ class Options
 public:
 	static constexpr char const *Opt_Help = "help";
 	static constexpr char const *Opt_Optimize = "optimize";
+	static constexpr char const *Opt_Optimize_outline = "optimize-outline";
 
 	static constexpr char const *Opt_Print_debug = "print-debug";
 	static constexpr char const *Opt_Print_hir = "print-hir";
@@ -35,7 +36,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			std::cout << instance.m_options.help({"", "Debug", "Algorithm", "Data"}) << std::endl;
+			std::cout << instance.m_options.help({"", "Debug", "Optimization", "Algorithm", "Data"}) << std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -57,7 +58,6 @@ private:
 	{
 		m_options.add_options()
 			("h,help", "Display this help menu")
-			("O,optimize", "Enable PTX optimizer")
 		;
 		m_options.add_options("Debug")
 			(Opt_Print_debug, "Print debug logs (excludes below)")
@@ -70,6 +70,10 @@ private:
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
 			(Opt_Print_time, "Print timings")
+		;
+		m_options.add_options("Optimization")
+			("O,optimize", "Unimplemented")
+			(Opt_Optimize_outline, "Enable outliner graph optimization", cxxopts::value<bool>()->default_value("true"))
 		;
 		m_options.add_options("Algorithm")
 			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
