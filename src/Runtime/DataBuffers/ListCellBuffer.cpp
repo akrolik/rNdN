@@ -42,7 +42,7 @@ ListCellBuffer *ListCellBuffer::CreateEmpty(const HorseIR::ListType *type, const
 	return new ListCellBuffer(cellBuffers);
 }
 
-ListCellBuffer::ListCellBuffer(const std::vector<DataBuffer *>& cells) : ListBuffer(nullptr, nullptr), m_cells(cells)
+ListCellBuffer::ListCellBuffer(const std::vector<DataBuffer *>& cells) : m_cells(cells)
 {
 	std::vector<HorseIR::Type *> cellTypes;
 	std::vector<const Analysis::Shape *> cellShapes;
@@ -236,7 +236,7 @@ std::string ListCellBuffer::DebugDump() const
 		string += cell->DebugDump();
 		string += "\n";
 	}
-	return (string + "]");
+	return string + "]";
 }
 
 void ListCellBuffer::Clear(ClearMode mode)

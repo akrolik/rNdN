@@ -3,7 +3,7 @@
 #include "Runtime/Interpreter.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
-#include "Runtime/DataBuffers/ListCellBuffer.h"
+#include "Runtime/DataBuffers/ListCompressedBuffer.h"
 #include "Runtime/GPU/Library/GPUSortEngine.h"
 
 #include "Utils/Chrono.h"
@@ -64,6 +64,19 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto values = valuesBuffer->GetCPUReadBuffer();
 
+	//TODO: Add option for switching between compressed and cell list
+
+	auto dataAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), keysSize);
+	auto sizeAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), keysSize);
+	auto sizesBuffer = new TypedVectorBuffer<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), keysSize);
+
+	auto indexOffset = indexBuffer->GetGPUReadBuffer()->GetGPUBuffer();
+	auto sizeOffset = sizesBuffer->GetGPUReadBuffer()->GetGPUBuffer();
+
+	auto dataAddresses = dataAddressesBuffer->GetCPUWriteBuffer();
+	auto sizeAddresses = sizeAddressesBuffer->GetCPUWriteBuffer();
+	auto sizes = sizesBuffer->GetCPUWriteBuffer();
+
 	std::vector<DataBuffer *> entryBuffers;
 	for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
 	{
@@ -73,31 +86,26 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 		auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : values->GetValue(entryIndex + 1);
 		auto size = (end - offset);
 
-		auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
-		auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
-
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
-		{
-			Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
-		}
-
-		// Copy the index data
-
-		CUDA::Buffer::Copy(entryBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * sizeof(std::int64_t), 0, offset * sizeof(std::int64_t));
-
-		entryBuffers.push_back(entryBuffer);
+		dataAddresses->SetValue(entryIndex, indexOffset + offset * sizeof(std::int64_t));
+		sizeAddresses->SetValue(entryIndex, sizeOffset + entryIndex * sizeof(std::int32_t));
+		sizes->SetValue(entryIndex, size);
 	}
 
 	// Create the dictionary buffer
 
-	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCellBuffer(entryBuffers));
+	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCompressedBuffer(dataAddressesBuffer, sizeAddressesBuffer, sizesBuffer, indexBuffer));
+
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		//TODO: Debug dump of dictionary fails
+		Utils::Logger::LogDebug(dictionaryBuffer->GetValues()->DebugDump());
+	}
 
 	Utils::Chrono::End(timeCreate_start);
 
 	// Delete all intermediate buffers
 
 	delete valuesBuffer;
-	delete indexBuffer;
 	delete dataBuffer;
 
 	Utils::Chrono::End(timeGroup_start);

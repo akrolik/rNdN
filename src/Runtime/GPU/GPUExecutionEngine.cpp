@@ -451,6 +451,11 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listGeometry->GetListSize()))
 		{
 			auto cellCount = constantSize->GetValue();
+			if (cellCount == 0)
+			{
+				Utils::Logger::LogError("Zero size kernel for thread geometry " + Analysis::ShapeUtils::ShapeString(threadGeometry));
+			}
+
 			auto cellSize = kernelOptions.GetBlockSize();
 
 			// Check if the cell size is specified as constant or dynamic
@@ -458,9 +463,13 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 			if (cellSize == PTX::FunctionOptions::DynamicBlockSize)
 			{
 				// The thread number was not specified in the input or kernel properties, but determined
-				// at runtime depending on the cell sizes
+				// at runtime depending on the cell sizes. Default to max
 
 				cellSize = runtimeOptions->ListCellThreads;
+				if (cellSize == 0)
+				{
+					cellSize = maxBlockSize;
+				}
 
 				if (kernelOptions.GetThreadMultiple() != 0)
 				{
