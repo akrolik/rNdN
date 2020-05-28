@@ -13,6 +13,7 @@
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
 #include "Runtime/DataBuffers/KeyedTableBuffer.h"
 #include "Runtime/DataBuffers/ListBuffer.h"
+#include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
@@ -151,7 +152,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		// List
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
-			return {new ListBuffer(arguments)};
+			return {new ListCellBuffer(arguments)};
 		}
 
 		// Database
@@ -228,7 +229,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				{
 					cells.push_back(column);
 				}
-				return {new ListBuffer(cells)};
+				return {new ListCellBuffer(cells)};
 			}
 			else if (auto keyedTable = BufferUtils::GetBuffer<KeyedTableBuffer>(argument, false))
 			{

@@ -26,6 +26,31 @@ KeyedTableBuffer::~KeyedTableBuffer()
 	delete m_shape;
 }
 
+KeyedTableBuffer *KeyedTableBuffer::Clone() const
+{
+	return new KeyedTableBuffer(m_key->Clone(), m_value->Clone());
+}
+
+void KeyedTableBuffer::ValidateCPU(bool recursive) const
+{
+	DataBuffer::ValidateCPU(recursive);
+	if (recursive)
+	{
+		m_key->ValidateCPU(true);
+		m_value->ValidateCPU(true);
+	}
+}
+
+void KeyedTableBuffer::ValidateGPU(bool recursive) const
+{
+	DataBuffer::ValidateGPU(recursive);
+	if (recursive)
+	{
+		m_key->ValidateGPU(true);
+		m_value->ValidateGPU(true);
+	}
+}
+
 std::string KeyedTableBuffer::Description() const
 {
 	std::string description = HorseIR::PrettyPrinter::PrettyString(m_type) + "{";
@@ -40,6 +65,15 @@ std::string KeyedTableBuffer::DebugDump() const
 	string += m_value->DebugDump();
 	string += "\n}"; 
 	return string;
+}
+
+void KeyedTableBuffer::Clear(ClearMode mode)
+{
+	if (mode == ClearMode::Zero)
+	{
+		m_key->Clear(mode);
+		m_value->Clear(mode);
+	}
 }
 
 }

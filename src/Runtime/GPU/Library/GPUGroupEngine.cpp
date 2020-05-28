@@ -3,6 +3,7 @@
 #include "Runtime/Interpreter.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
+#include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/GPU/Library/GPUSortEngine.h"
 
 #include "Utils/Chrono.h"
@@ -89,7 +90,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	// Create the dictionary buffer
 
-	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListBuffer(entryBuffers));
+	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCellBuffer(entryBuffers));
 
 	Utils::Chrono::End(timeCreate_start);
 

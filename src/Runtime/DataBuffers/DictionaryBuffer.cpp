@@ -38,6 +38,31 @@ DictionaryBuffer::~DictionaryBuffer()
 	delete m_shape;
 }
 
+DictionaryBuffer *DictionaryBuffer::Clone() const
+{
+	return new DictionaryBuffer(m_keys->Clone(), m_values->Clone());
+}
+
+void DictionaryBuffer::ValidateCPU(bool recursive) const
+{
+	DataBuffer::ValidateCPU(recursive);
+	if (recursive)
+	{
+		m_keys->ValidateCPU(true);
+		m_values->ValidateCPU(true);
+	}
+}
+
+void DictionaryBuffer::ValidateGPU(bool recursive) const
+{
+	DataBuffer::ValidateGPU(recursive);
+	if (recursive)
+	{
+		m_keys->ValidateGPU(true);
+		m_values->ValidateGPU(true);
+	}
+}
+
 std::string DictionaryBuffer::Description() const
 {
 	std::string description = HorseIR::PrettyPrinter::PrettyString(m_type) + "{";
@@ -55,6 +80,15 @@ std::string DictionaryBuffer::DebugDump() const
 		string += "\n";
 	}
 	return string;
+}
+
+void DictionaryBuffer::Clear(ClearMode mode)
+{
+	if (mode == ClearMode::Zero)
+	{
+		m_keys->Clear(mode);
+		m_values->Clear(mode);
+	}
 }
 
 }

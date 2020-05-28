@@ -27,24 +27,7 @@ public:
 	TableBuffer(const std::vector<std::pair<std::string, ColumnBuffer *>>& columns);
 	~TableBuffer() override;
 
-	TableBuffer *Clone() const override
-	{
-		auto primaryKey = m_primaryKey;
-
-		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
-		for (const auto& [name, buffer] : m_columns)
-		{
-			auto clone = buffer->Clone();
-			if (primaryKey == buffer)
-			{
-				primaryKey = BufferUtils::GetBuffer<VectorBuffer>(clone);
-			}
-			columns.push_back({name, clone});
-		}
-		auto table = new TableBuffer(columns);
-		table->SetPrimaryKey(primaryKey, m_primaryMap);
-		return table;
-	}
+	TableBuffer *Clone() const override;
 
 	// Type/shape
 
@@ -67,29 +50,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU(bool recursive = false) const override
-	{
-		DataBuffer::ValidateCPU(recursive);
-		if (recursive)
-		{
-			for (const auto& [_, buffer] : m_columns)
-			{
-				buffer->ValidateCPU(true);
-			}
-		}
-	}
-
-	void ValidateGPU(bool recursive = false) const override
-	{
-		DataBuffer::ValidateGPU(recursive);
-		if (recursive)
-		{
-			for (const auto& [_, buffer] : m_columns)
-			{
-				buffer->ValidateGPU(true);
-			}
-		}
-	}
+	void ValidateCPU(bool recursive = false) const override;
+	void ValidateGPU(bool recursive = false) const override;
 
 	// Printers
 
@@ -98,13 +60,7 @@ public:
 
 	// Clear
 
-	void Clear(ClearMode mode = ClearMode::Zero) override
-	{
-		for (auto& [_, buffer] : m_columns)
-		{
-			buffer->Clear(mode);
-		}
-	}
+	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
 	const HorseIR::TableType *m_type = new HorseIR::TableType();

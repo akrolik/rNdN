@@ -20,10 +20,7 @@ public:
 	KeyedTableBuffer(TableBuffer *key, TableBuffer *value);
 	~KeyedTableBuffer() override;
 
-	KeyedTableBuffer *Clone() const override
-	{
-		return new KeyedTableBuffer(m_key->Clone(), m_value->Clone());
-	}
+	KeyedTableBuffer *Clone() const override;
 
 	// Type/shape
 
@@ -37,25 +34,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU(bool recursive = false) const override
-	{
-		DataBuffer::ValidateCPU(recursive);
-		if (recursive)
-		{
-			m_key->ValidateCPU(true);
-			m_value->ValidateCPU(true);
-		}
-	}
-
-	void ValidateGPU(bool recursive = false) const override
-	{
-		DataBuffer::ValidateGPU(recursive);
-		if (recursive)
-		{
-			m_key->ValidateGPU(true);
-			m_value->ValidateGPU(true);
-		}
-	}
+	void ValidateCPU(bool recursive = false) const override;
+	void ValidateGPU(bool recursive = false) const override;
 
 	// Printers
 
@@ -64,14 +44,7 @@ public:
 
 	// Clear
 
-	void Clear(ClearMode mode = ClearMode::Zero) override
-	{
-		if (mode == ClearMode::Zero)
-		{
-			m_key->Clear(mode);
-			m_value->Clear(mode);
-		}
-	}
+	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
 	const HorseIR::KeyedTableType *m_type = nullptr;

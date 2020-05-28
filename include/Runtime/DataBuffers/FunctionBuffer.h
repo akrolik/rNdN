@@ -16,10 +16,7 @@ public:
 	FunctionBuffer(const HorseIR::FunctionDeclaration *function);
 	~FunctionBuffer() override;
 
-	FunctionBuffer *Clone() const override
-	{
-		return new FunctionBuffer(m_function);
-	}
+	FunctionBuffer *Clone() const override;
 
 	// Type/shape
 

@@ -4,7 +4,7 @@
 
 #include "HorseIR/Utils/TypeUtils.h"
 
-#include "Runtime/DataBuffers/ListBuffer.h"
+#include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "Utils/Logger.h"
@@ -29,7 +29,7 @@ DataBuffer *DataBuffer::CreateEmpty(const HorseIR::Type *type, const Analysis::S
 			if (const auto listType = HorseIR::TypeUtils::GetType<HorseIR::ListType>(type))
 			{
 				auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape);
-				return ListBuffer::CreateEmpty(listType, listShape);
+				return ListCellBuffer::CreateEmpty(listType, listShape);
 			}
 			Utils::Logger::LogError("Vector shape requires basic type");
 		}

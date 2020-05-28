@@ -42,6 +42,25 @@ TableBuffer::~TableBuffer()
 	delete m_shape;
 }
 
+TableBuffer *TableBuffer::Clone() const
+{
+	auto primaryKey = m_primaryKey;
+
+	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
+	for (const auto& [name, buffer] : m_columns)
+	{
+		auto clone = buffer->Clone();
+		if (primaryKey == buffer)
+		{
+			primaryKey = BufferUtils::GetBuffer<VectorBuffer>(clone);
+		}
+		columns.push_back({name, clone});
+	}
+	auto table = new TableBuffer(columns);
+	table->SetPrimaryKey(primaryKey, m_primaryMap);
+	return table;
+}
+
 ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
 {
 	if (m_columnMap.find(name) == m_columnMap.end())
@@ -49,6 +68,30 @@ ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
 		Utils::Logger::LogError("Column '" + name + "' not found");
 	}
 	return m_columnMap.at(name);
+}
+
+void TableBuffer::ValidateCPU(bool recursive) const
+{
+	DataBuffer::ValidateCPU(recursive);
+	if (recursive)
+	{
+		for (const auto& [_, buffer] : m_columns)
+		{
+			buffer->ValidateCPU(true);
+		}
+	}
+}
+
+void TableBuffer::ValidateGPU(bool recursive) const
+{
+	DataBuffer::ValidateGPU(recursive);
+	if (recursive)
+	{
+		for (const auto& [_, buffer] : m_columns)
+		{
+			buffer->ValidateGPU(true);
+		}
+	}
 }
 
 std::string TableBuffer::Description() const
@@ -114,6 +157,14 @@ std::string TableBuffer::DebugDump() const
 		string << std::endl;
 	}
 	return string.str();
+}
+
+void TableBuffer::Clear(ClearMode mode)
+{
+	for (auto& [_, buffer] : m_columns)
+	{
+		buffer->Clear(mode);
+	}
 }
 
 }

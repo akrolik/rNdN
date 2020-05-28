@@ -52,12 +52,7 @@ public:
 	virtual void Clear(ClearMode mode = ClearMode::Zero) override = 0;
 
 protected:
-	VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount) :
-		ColumnBuffer(DataBuffer::Kind::Vector), m_typeid(tid), m_elementCount(elementCount)
-	{
-		m_type = type->Clone();
-		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
-	}
+	VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount);
 
 	std::type_index m_typeid;
 

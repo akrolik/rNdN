@@ -32,6 +32,11 @@ FunctionBuffer::~FunctionBuffer()
 	delete m_shape;
 }
 
+FunctionBuffer *FunctionBuffer::Clone() const
+{
+	return new FunctionBuffer(m_function);
+}
+
 std::string FunctionBuffer::Description() const
 {
 	return HorseIR::PrettyPrinter::PrettyString(m_function, true);

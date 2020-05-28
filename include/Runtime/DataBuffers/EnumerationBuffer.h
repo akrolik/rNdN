@@ -20,10 +20,7 @@ public:
 	EnumerationBuffer(VectorBuffer *keys, VectorBuffer *values, TypedVectorBuffer<std::int64_t> *indexes);
 	~EnumerationBuffer() override;
 
-	EnumerationBuffer *Clone() const override
-	{
-		return new EnumerationBuffer(m_keys->Clone(), m_values->Clone(), m_indexes->Clone());
-	}
+	EnumerationBuffer *Clone() const override;
 
 	// Type/shape
 
@@ -40,27 +37,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU(bool recursive = false) const override
-	{
-		ColumnBuffer::ValidateCPU(recursive);
-		if (recursive)
-		{
-			m_keys->ValidateCPU(true);
-			m_values->ValidateCPU(true);
-			m_indexes->ValidateCPU(true);
-		}
-	}
-
-	void ValidateGPU(bool recursive = false) const override
-	{
-		ColumnBuffer::ValidateGPU(recursive);
-		if (recursive)
-		{
-			m_keys->ValidateGPU(true);
-			m_values->ValidateGPU(true);
-			m_indexes->ValidateGPU(true);
-		}
-	}
+	void ValidateCPU(bool recursive = false) const override;
+	void ValidateGPU(bool recursive = false) const override;
 
 	// Printers
 
@@ -70,14 +48,7 @@ public:
 
 	// Clear
 
-	void Clear(ClearMode mode = ClearMode::Zero) override
-	{
-		if (mode == ClearMode::Zero)
-		{
-			m_keys->Clear(mode);
-			m_values->Clear(mode);
-		}
-	}
+	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
 	const HorseIR::EnumerationType *m_type = nullptr;
