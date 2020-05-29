@@ -101,7 +101,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	//   3. Execute
 	//   4. Resize return values
 
-	//TODO: Timing bracket sometimes negative overhead
 	auto timeInvocationInit_start = Utils::Chrono::Start("Invocation initialization");
 
 	// Fetch the handle to the GPU entry function and create the invocation
@@ -344,6 +343,8 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		auto buffer = argument->GetGPUReadBuffer();
 		invocation.AddParameter(*buffer);
 	}
+
+	CUDA::Synchronize();
 
 	Utils::Chrono::End(timeInvocationInit_start);
 	Utils::Chrono::End(timeKernelInit_start);
