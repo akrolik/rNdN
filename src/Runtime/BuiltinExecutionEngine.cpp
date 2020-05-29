@@ -38,6 +38,11 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 	switch (function->GetPrimitive())
 	{
 		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Flip:
+		{
+			//TODO: @flip
+			Error("unimplemented");
+		}
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
@@ -115,38 +120,17 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			auto indexData = new TypedVectorData<std::int64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), std::move(indexes));
 			return {new TypedVectorBuffer<std::int64_t>(indexData)};
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
+
+		// Algebraic binary
+		case HorseIR::BuiltinFunction::Primitive::Append:
 		{
-			// GPU sort!
-
-			GPUSortEngine sortEngine(m_runtime, m_program);
-			auto [indexBuffer, dataBuffer] = sortEngine.Sort(arguments);
-
-			// Data buffers can be deallocated as they are unused in a simple sort
-
-			delete dataBuffer;
-			return {indexBuffer};
+			//TODO: @append enum/list
+			Error("unimplemented");
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		case HorseIR::BuiltinFunction::Primitive::Replicate:
 		{
-			// GPU group!
-
-			GPUGroupEngine groupEngine(m_runtime, m_program);
-			return {groupEngine.Group(arguments)};
-		}
-		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
-		{
-			// GPU unique!
-
-			GPUUniqueEngine uniqueEngine(m_runtime, m_program);
-			return {uniqueEngine.Unique(arguments)};
-		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
-		{
-			// GPU join!
-
-			GPUJoinEngine joinEngine(m_runtime, m_program);
-			return {joinEngine.Join(arguments)};
+			//TODO: @replicate
+			Error("unimplemented");
 		}
 
 		// List
@@ -156,6 +140,16 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 
 		// Database
+		case HorseIR::BuiltinFunction::Primitive::Enum:
+		{
+			//TODO: @enum
+			Error("unimplemented");	
+		}
+		case HorseIR::BuiltinFunction::Primitive::Dictionary:
+		{
+			//TODO: @dict
+			Error("unimplemented");	
+		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
 			auto columnNames = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer();
@@ -497,9 +491,44 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(substringData)))};
 		}
+
+		// GPU library
+		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
+		{
+			// GPU sort!
+
+			GPUSortEngine sortEngine(m_runtime, m_program);
+			auto [indexBuffer, dataBuffer] = sortEngine.Sort(arguments);
+
+			// Data buffers can be deallocated as they are unused in a simple sort
+
+			delete dataBuffer;
+			return {indexBuffer};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
+		{
+			// GPU group!
+
+			GPUGroupEngine groupEngine(m_runtime, m_program);
+			return {groupEngine.Group(arguments)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
+		{
+			// GPU unique!
+
+			GPUUniqueEngine uniqueEngine(m_runtime, m_program);
+			return {uniqueEngine.Unique(arguments)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		{
+			// GPU join!
+
+			GPUJoinEngine joinEngine(m_runtime, m_program);
+			return {joinEngine.Join(arguments)};
+		}
 		default:
 		{
-			Error("not implemented");
+			Error("unimplemented");
 		}
 	}
 }
