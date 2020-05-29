@@ -395,7 +395,7 @@ DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::Orde
 	mergedOverlay->SetSubgraph(new DependencySubgraph());
 
 	parentOverlay->AddChild(mergedOverlay);
-	parentSubgraph->InsertNode(mergedOverlay, true, false); //TODO: What to do with the other 2 parameters
+	parentSubgraph->InsertNode(mergedOverlay, true, false);
 
 	MoveOverlay(context, mergedOverlay, overlay1);
 	MoveOverlay(context, mergedOverlay, overlay2);

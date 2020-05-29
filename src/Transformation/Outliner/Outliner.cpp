@@ -128,8 +128,6 @@ bool Outliner::VisitIn(const HorseIR::Function *function)
 	Analysis::DependencySubgraphAnalysis compatibilitySubgraphAnalysis;
 	compatibilitySubgraphAnalysis.Analyze(compatibilityOverlay);
 
-	//TODO: Move optimization here, output as debug (# before/after), timings
-
 	OutlineBuilder builder;
 	builder.Build(compatibilityOverlay);
 
