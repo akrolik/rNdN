@@ -157,15 +157,15 @@ CUDA::Buffer *ListCellBuffer::GetGPUReadBuffer() const
 	return m_gpuBuffer;
 }
 
-size_t ListCellBuffer::GetGPUBufferSize() const
-{
-	return (sizeof(CUdeviceptr) * m_cells.size());
-}
-
 CUDA::Buffer *ListCellBuffer::GetGPUSizeBuffer() const
 {
 	ValidateGPU();
 	return m_gpuSizeBuffer;
+}
+
+size_t ListCellBuffer::GetGPUBufferSize() const
+{
+	return (sizeof(CUdeviceptr) * m_cells.size());
 }
 
 bool ListCellBuffer::ReallocateGPUBuffer()

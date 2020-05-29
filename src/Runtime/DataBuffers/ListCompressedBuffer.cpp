@@ -4,17 +4,47 @@
 
 namespace Runtime {
 
-ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<CUdeviceptr> *dataAddresses, const TypedVectorBuffer<CUdeviceptr> *sizeAddresses, const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values)
-	: m_dataAddresses(dataAddresses), m_sizeAddresses(sizeAddresses), m_sizes(sizes), m_values(values)
+ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
 {
+	const auto& cellSizes = sizes->GetCPUReadBuffer()->GetValues();
+
+	// Type and shape
+
 	m_type = new HorseIR::ListType(m_values->GetType()->Clone());
 
 	std::vector<const Analysis::Shape *> cellShapes;
-	for (const auto size : sizes->GetCPUReadBuffer()->GetValues())
+	for (const auto size : cellSizes)
 	{
 		cellShapes.push_back(new Analysis::VectorShape(new Analysis::Shape::ConstantSize(size)));
 	}
 	m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(cellShapes.size()), cellShapes);
+
+	// Construct cell addresses on GPU
+
+	auto compressedSize = cellSizes.size();
+
+	auto dataAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), compressedSize);
+	auto sizeAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), compressedSize);
+
+	auto dataOffset = m_values->GetGPUReadBuffer()->GetGPUBuffer();
+	auto sizeOffset = m_sizes->GetGPUReadBuffer()->GetGPUBuffer();
+
+	auto dataAddresses = dataAddressesBuffer->GetCPUWriteBuffer();
+	auto sizeAddresses = sizeAddressesBuffer->GetCPUWriteBuffer();
+
+	auto offset = 0u;
+	auto index = 0u;
+	for (auto size : cellSizes)
+	{
+		dataAddresses->SetValue(index, dataOffset + offset * m_values->GetElementSize());
+		sizeAddresses->SetValue(index, sizeOffset + index * m_sizes->GetElementSize());
+
+		index++;
+		offset += size;
+	}
+
+	m_dataAddresses = dataAddressesBuffer;
+	m_sizeAddresses = sizeAddressesBuffer;
 }
 
 ListCompressedBuffer::~ListCompressedBuffer()
@@ -23,9 +53,24 @@ ListCompressedBuffer::~ListCompressedBuffer()
 
 ListCompressedBuffer *ListCompressedBuffer::Clone() const
 {
-	return nullptr;
-	//TODO: Reallocation requires re-offsetting
-	// return new ListCompressedBuffer(m_dataAddresses->Clone(), m_sizeAddresses->Clone(), m_values->Clone());
+	return new ListCompressedBuffer(m_sizes->Clone(), m_values->Clone());
+}
+
+const std::vector<DataBuffer *>& ListCompressedBuffer::GetCells() const
+{
+	AllocateCells();
+	return m_cells;
+}
+
+DataBuffer *ListCompressedBuffer::GetCell(unsigned int index) const
+{
+	AllocateCells();
+	return m_cells.at(index);
+}
+
+size_t ListCompressedBuffer::GetCellCount() const
+{
+	return m_dataAddresses->GetElementCount();
 }
 
 void ListCompressedBuffer::ValidateCPU(bool recursive) const
@@ -62,6 +107,12 @@ CUDA::Buffer *ListCompressedBuffer::GetGPUReadBuffer() const
 	return m_dataAddresses->GetGPUReadBuffer();
 }
 
+CUDA::Buffer *ListCompressedBuffer::GetGPUSizeBuffer() const
+{
+	m_sizes->ValidateGPU();
+	return m_sizeAddresses->GetGPUReadBuffer();
+}
+
 std::string ListCompressedBuffer::Description() const
 {
 	std::string description = HorseIR::PrettyPrinter::PrettyString(m_type) + "{";
@@ -84,6 +135,14 @@ std::string ListCompressedBuffer::DebugDump() const
 void ListCompressedBuffer::Clear(ClearMode mode)
 {
 	m_values->Clear(mode);
+}
+
+void ListCompressedBuffer::AllocateCells() const
+{
+	if (m_cells.size() == 0)
+	{
+		//TODO: allocate cell alias buffers
+	}
 }
 
 }

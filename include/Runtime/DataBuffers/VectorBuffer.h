@@ -45,6 +45,7 @@ public:
 	// Data size, useful for allocations
 
 	unsigned int GetElementCount() const { return m_elementCount; }
+	virtual size_t GetElementSize() const = 0;
 	virtual bool Resize(unsigned int size) = 0;
 
 	// Clear
@@ -104,6 +105,11 @@ public:
 	}
 
 	// Sizing
+
+	size_t GetElementSize() const override
+	{
+		return sizeof(T);
+	}
 
 	bool Resize(unsigned int size) override
 	{

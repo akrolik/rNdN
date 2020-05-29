@@ -32,9 +32,9 @@ public:
 
 	CUDA::Buffer *GetGPUWriteBuffer() override;
 	CUDA::Buffer *GetGPUReadBuffer() const override;
+	CUDA::Buffer *GetGPUSizeBuffer() const override;
 
 	size_t GetGPUBufferSize() const override;
-	CUDA::Buffer *GetGPUSizeBuffer() const override;
 
 	bool ReallocateGPUBuffer() override;
 

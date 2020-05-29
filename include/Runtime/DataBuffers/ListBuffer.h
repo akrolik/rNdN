@@ -28,6 +28,8 @@ public:
 	virtual DataBuffer *GetCell(unsigned int index) const = 0;
 	virtual size_t GetCellCount() const = 0;
 
+	// Sizing
+
 	virtual void ResizeCells(unsigned int size) = 0;
 
 protected:

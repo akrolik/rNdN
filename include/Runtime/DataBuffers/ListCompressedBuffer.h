@@ -9,16 +9,16 @@ namespace Runtime {
 class ListCompressedBuffer : public ListBuffer
 {
 public:
-	ListCompressedBuffer(const TypedVectorBuffer<CUdeviceptr> *dataAddresses, const TypedVectorBuffer<CUdeviceptr> *sizeAddresses, const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values);
+	ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values);
 	~ListCompressedBuffer() override;
 	
 	ListCompressedBuffer *Clone() const override;
 
 	// Cells
 
-	const std::vector<DataBuffer *>& GetCells() const override { return m_cells; }
-	DataBuffer *GetCell(unsigned int index) const override { return m_cells.at(index); }
-	size_t GetCellCount() const override { return m_dataAddresses->GetElementCount(); }
+	const std::vector<DataBuffer *>& GetCells() const override;
+	DataBuffer *GetCell(unsigned int index) const override;
+	size_t GetCellCount() const override;
 
 	// Sizing
 
@@ -31,14 +31,9 @@ public:
 
 	CUDA::Buffer *GetGPUWriteBuffer() override;
 	CUDA::Buffer *GetGPUReadBuffer() const override;
+	CUDA::Buffer *GetGPUSizeBuffer() const override;
 
 	size_t GetGPUBufferSize() const override { return m_dataAddresses->GetGPUBufferSize(); }
-	CUDA::Buffer *GetGPUSizeBuffer() const override
-	{
-		//TODO: Move this
-		m_sizes->ValidateGPU();
-		return m_sizeAddresses->GetGPUReadBuffer();
-	}
 
 	bool ReallocateGPUBuffer() override { return false; } // Do nothing
 
@@ -52,7 +47,6 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
-	//TODO: Make these functions below correct
 	bool IsAllocatedOnCPU() const override { return true; } // Always allocated on CPU
 	bool IsAllocatedOnGPU() const override { return true; }
 
@@ -62,12 +56,14 @@ private:
 	void TransferToCPU() const override {} // Always consistent
 	void TransferToGPU() const override {} // Always consistent
 
+	void AllocateCells() const;
+
 	const TypedVectorBuffer<CUdeviceptr> *m_dataAddresses = nullptr;
 	const TypedVectorBuffer<CUdeviceptr> *m_sizeAddresses = nullptr;
 	const TypedVectorBuffer<std::int32_t> *m_sizes = nullptr;
 	VectorBuffer *m_values = nullptr;
 
-	std::vector<DataBuffer *> m_cells;
+	mutable std::vector<DataBuffer *> m_cells;
 };
 
 }

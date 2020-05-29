@@ -104,8 +104,8 @@ public:
 	
 	virtual CUDA::Data *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
 	virtual CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
-
 	virtual CUDA::Buffer *GetGPUSizeBuffer() const { CPUOnlyBuffer(); }
+
 	virtual size_t GetGPUBufferSize() const { CPUOnlyBuffer(); }
 
 	virtual bool ReallocateGPUBuffer() { CPUOnlyBuffer(); }

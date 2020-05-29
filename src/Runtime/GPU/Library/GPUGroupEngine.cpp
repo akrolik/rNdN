@@ -62,42 +62,31 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
 
-	auto values = valuesBuffer->GetCPUReadBuffer();
+	//TODO: Construct compressed buffer directly
 
-	//TODO: Add option for switching between compressed and cell list
-
-	auto dataAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), keysSize);
-	auto sizeAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), keysSize);
 	auto sizesBuffer = new TypedVectorBuffer<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), keysSize);
-
-	auto indexOffset = indexBuffer->GetGPUReadBuffer()->GetGPUBuffer();
-	auto sizeOffset = sizesBuffer->GetGPUReadBuffer()->GetGPUBuffer();
-
-	auto dataAddresses = dataAddressesBuffer->GetCPUWriteBuffer();
-	auto sizeAddresses = sizeAddressesBuffer->GetCPUWriteBuffer();
 	auto sizes = sizesBuffer->GetCPUWriteBuffer();
+	auto offsets = valuesBuffer->GetCPUReadBuffer();
 
 	std::vector<DataBuffer *> entryBuffers;
 	for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
 	{
 		// Compute the index range, spanning the last entry to the end of the data
 
-		auto offset = values->GetValue(entryIndex);
-		auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : values->GetValue(entryIndex + 1);
+		auto offset = offsets->GetValue(entryIndex);
+		auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : offsets->GetValue(entryIndex + 1);
 		auto size = (end - offset);
 
-		dataAddresses->SetValue(entryIndex, indexOffset + offset * sizeof(std::int64_t));
-		sizeAddresses->SetValue(entryIndex, sizeOffset + entryIndex * sizeof(std::int32_t));
 		sizes->SetValue(entryIndex, size);
 	}
 
 	// Create the dictionary buffer
 
-	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCompressedBuffer(dataAddressesBuffer, sizeAddressesBuffer, sizesBuffer, indexBuffer));
+	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCompressedBuffer(sizesBuffer, indexBuffer));
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
-		//TODO: Debug dump of dictionary fails
+		//TODO: Debug dump dictionary
 		Utils::Logger::LogDebug(dictionaryBuffer->GetValues()->DebugDump());
 	}
 
