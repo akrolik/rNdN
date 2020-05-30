@@ -86,8 +86,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
-		//TODO: Debug dump dictionary
-		Utils::Logger::LogDebug(dictionaryBuffer->GetValues()->DebugDump());
+		Utils::Logger::LogDebug(dictionaryBuffer->DebugDump());
 	}
 
 	Utils::Chrono::End(timeCreate_start);

@@ -28,6 +28,7 @@ public:
 	~VectorBuffer() override;
 
 	virtual VectorBuffer *Clone() const = 0;
+	virtual VectorBuffer *Slice(unsigned int offset, unsigned int size) const = 0;
 
 	// Type/Shape
 
@@ -68,7 +69,10 @@ class TypedVectorBuffer : public VectorBuffer
 {
 public:
 	TypedVectorBuffer(const HorseIR::BasicType *elementType, unsigned long elementCount) : VectorBuffer(typeid(T), elementType, elementCount) {}
-	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T), buffer->GetType(), buffer->GetElementCount()), m_cpuBuffer(buffer) {}
+	TypedVectorBuffer(TypedVectorData<T> *buffer) : VectorBuffer(typeid(T), buffer->GetType(), buffer->GetElementCount()), m_cpuBuffer(buffer)
+	{
+		m_cpuConsistent = true;
+	}
 
 	~TypedVectorBuffer() override
 	{
@@ -88,7 +92,8 @@ public:
 		TypedVectorBuffer<T> *clone = nullptr;
 		if (IsCPUConsistent())
 		{
-			clone = new TypedVectorBuffer<T>(m_cpuBuffer);
+			auto values = m_cpuBuffer->GetValues();
+			clone = new TypedVectorBuffer<T>(new TypedVectorData<T>(m_type, std::move(values)));
 		}
 		else
 		{
@@ -99,9 +104,36 @@ public:
 
 		if (IsGPUConsistent())
 		{
-			CUDA::Buffer::Copy(clone->GetGPUWriteBuffer(), GetGPUReadBuffer(), GetGPUBufferSize());
+			clone->AllocateGPUBuffer();
+			CUDA::Buffer::Copy(clone->GetGPUWriteBuffer(), GetGPUReadBuffer(), clone->GetGPUBufferSize());
 		}
 		return clone;
+	}
+
+	TypedVectorBuffer<T> *Slice(unsigned int offset, unsigned int size) const override
+	{
+		TypedVectorBuffer<T> *slice = nullptr;
+		if (IsCPUConsistent())
+		{
+			const auto& values = m_cpuBuffer->GetValues();
+			CUDA::Vector<T> valuesCopy(std::begin(values) + offset, std::begin(values) + offset + size);
+
+			slice = new TypedVectorBuffer<T>(new TypedVectorData<T>(m_type, std::move(valuesCopy)));
+		}
+		else
+		{
+			slice = new TypedVectorBuffer<T>(m_type, size);
+		}
+
+		// Copy GPU contents if consistent. This will also allocate the size
+
+		//TODO: Create alias instead of copy
+		if (IsGPUConsistent())
+		{
+			slice->AllocateGPUBuffer();
+			CUDA::Buffer::Copy(slice->GetGPUWriteBuffer(), GetGPUReadBuffer(), slice->GetGPUBufferSize(), 0, offset * sizeof(T));
+		}
+		return slice;
 	}
 
 	// Sizing

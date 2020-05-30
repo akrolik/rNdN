@@ -72,14 +72,18 @@ std::string DictionaryBuffer::Description() const
 
 std::string DictionaryBuffer::DebugDump() const
 {
-	std::string string = "";
+	std::string string = "{";
+	if (m_size > 0)
+	{
+		string += "\n";
+	}
 	for (auto i = 0ul; i < m_size; ++i)
 	{
-		string += m_keys->DebugDump(i) + " -> ";
+		string += "  - [" + m_keys->DebugDump(i) + "] -> ";
 		string += m_values->GetCell(i)->DebugDump();
 		string += "\n";
 	}
-	return string;
+	return string + "}";
 }
 
 void DictionaryBuffer::Clear(ClearMode mode)

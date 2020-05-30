@@ -76,21 +76,19 @@ size_t ListCompressedBuffer::GetCellCount() const
 void ListCompressedBuffer::ValidateCPU(bool recursive) const
 {
 	DataBuffer::ValidateCPU(recursive);
-
-	m_dataAddresses->ValidateCPU();
-	m_sizeAddresses->ValidateCPU();
-	m_sizes->ValidateCPU();
-	m_values->ValidateCPU();
+	if (recursive)
+	{
+		m_values->ValidateCPU();
+	}
 }
 
 void ListCompressedBuffer::ValidateGPU(bool recursive) const
 {
 	DataBuffer::ValidateGPU(recursive);
-
-	m_dataAddresses->ValidateGPU();
-	m_sizeAddresses->ValidateGPU();
-	m_sizes->ValidateGPU();
-	m_values->ValidateGPU();
+	if (recursive)
+	{
+		m_values->ValidateGPU();
+	}
 }
 
 CUDA::Buffer *ListCompressedBuffer::GetGPUWriteBuffer()
@@ -141,7 +139,12 @@ void ListCompressedBuffer::AllocateCells() const
 {
 	if (m_cells.size() == 0)
 	{
-		//TODO: allocate cell alias buffers
+		auto offset = 0u;
+		for (auto size : m_sizes->GetCPUReadBuffer()->GetValues())
+		{
+			m_cells.push_back(m_values->Slice(offset, size));
+			offset += size;
+		}
 	}
 }
 
