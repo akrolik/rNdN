@@ -21,6 +21,7 @@ public:
 		enum class Kind {
 			Init,
 			Constant,
+			Ranged,
 			Symbol,
 			Compressed,
 			Dynamic
@@ -51,7 +52,7 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Init;
 
-		InitSize() : Size(Size::Kind::Init) {}
+		InitSize() : Size(SizeKind) {}
 
 		void Print(std::ostream& os) const override
 		{
@@ -79,7 +80,7 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Constant;
 
-		ConstantSize(long value) : Size(Size::Kind::Constant), m_value(value) {}
+		ConstantSize(long value) : Size(SizeKind), m_value(value) {}
 
 		unsigned int GetValue() const { return m_value; }
 
@@ -107,12 +108,45 @@ public:
 		const unsigned int m_value = 0;
 	};
 
+	class RangedSize : public Size
+	{
+	public:
+		constexpr static Kind SizeKind = Size::Kind::Ranged;
+
+		RangedSize(const std::vector<std::uint32_t>& values) : Size(SizeKind), m_values(values) {}
+
+		const std::vector<std::uint32_t>& GetValues() const { return m_values; }
+
+		void Print(std::ostream& os) const override
+		{
+			os << "Ranged[" <<  m_values.size() << "]";
+		}
+
+		bool Equivalent(const RangedSize& other) const
+		{
+			return (m_values == other.m_values);
+		}
+
+		bool operator==(const RangedSize& other) const
+		{
+			return (m_values == other.m_values);
+		}
+
+		bool operator!=(const RangedSize& other) const
+		{
+			return !(*this == other);
+		}
+
+	private:
+		const std::vector<std::uint32_t> m_values;
+	};
+
 	class SymbolSize : public Size
 	{
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Symbol;
 
-		SymbolSize(const std::string& symbol) : Size(Size::Kind::Symbol), m_symbol(symbol) {}
+		SymbolSize(const std::string& symbol) : Size(SizeKind), m_symbol(symbol) {}
 
 		const std::string& GetSymbol() const  { return m_symbol; }
 
@@ -145,7 +179,7 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Compressed;
 
-		CompressedSize(const DataObject *predicate, const Size *size) : Size(Size::Kind::Compressed), m_predicate(predicate), m_size(size) {}
+		CompressedSize(const DataObject *predicate, const Size *size) : Size(SizeKind), m_predicate(predicate), m_size(size) {}
 
 		const DataObject *GetPredicate() const { return m_predicate; }
 		const Size *GetSize() const { return m_size; }
@@ -180,9 +214,9 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Dynamic;
 
-		DynamicSize() : Size(Size::Kind::Dynamic) {};
-		DynamicSize(const Size *size1, const Size *size2) : Size(Size::Kind::Dynamic), m_size1(size1), m_size2(size2) {}
-		DynamicSize(const HorseIR::Expression *expression, unsigned int tag = 0) : Size(Size::Kind::Dynamic), m_expression(expression), m_tag(tag) {}
+		DynamicSize() : Size(SizeKind) {};
+		DynamicSize(const Size *size1, const Size *size2) : Size(SizeKind), m_size1(size1), m_size2(size2) {}
+		DynamicSize(const HorseIR::Expression *expression, unsigned int tag = 0) : Size(SizeKind), m_expression(expression), m_tag(tag) {}
 
 		const Size *GetSize1() const { return m_size1; }
 		const Size *GetSize2() const { return m_size2; }
@@ -627,6 +661,8 @@ inline bool Shape::Size::Equivalent(const Shape::Size& other) const
 				return static_cast<const Shape::InitSize&>(*this).Equivalent(static_cast<const Shape::InitSize&>(other));
 			case Kind::Constant:
 				return static_cast<const Shape::ConstantSize&>(*this).Equivalent(static_cast<const Shape::ConstantSize&>(other));
+			case Kind::Ranged:
+				return static_cast<const Shape::RangedSize&>(*this).Equivalent(static_cast<const Shape::RangedSize&>(other));
 			case Kind::Symbol:
 				return static_cast<const Shape::SymbolSize&>(*this).Equivalent(static_cast<const Shape::SymbolSize&>(other));
 			case Kind::Compressed:
@@ -648,6 +684,8 @@ inline bool Shape::Size::operator==(const Shape::Size& other) const
 				return static_cast<const Shape::InitSize&>(*this) == static_cast<const Shape::InitSize&>(other);
 			case Kind::Constant:
 				return static_cast<const Shape::ConstantSize&>(*this) == static_cast<const Shape::ConstantSize&>(other);
+			case Kind::Ranged:
+				return static_cast<const Shape::RangedSize&>(*this) == static_cast<const Shape::RangedSize&>(other);
 			case Kind::Symbol:
 				return static_cast<const Shape::SymbolSize&>(*this) == static_cast<const Shape::SymbolSize&>(other);
 			case Kind::Compressed:

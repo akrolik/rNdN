@@ -230,8 +230,6 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	// Setup constant dynamic size parameters and allocate the dynamic shared memory according to the kernel
 
 	std::vector<CUDA::Data *> dynamicBuffers;
-	std::vector<std::uint32_t> dynamicCellSizes;
-
 	if (const auto runtimeVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeOptions->ThreadGeometry))
 	{
 		const auto inputVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry);
@@ -263,10 +261,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		const auto inputListGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions->ThreadGeometry);
 		if (const auto listSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(runtimeListGeometry->GetListSize()))
 		{
-			auto cellCount = listSize->GetValue();
-
 			// Number of cells parameter if dynamic
 
+			auto cellCount = listSize->GetValue();
 			if (Analysis::ShapeUtils::IsDynamicSize(inputListGeometry->GetListSize()))
 			{
 				dynamicBuffers.push_back(AllocateConstantParameter(invocation, cellCount, "<list geometry size>"));
@@ -274,28 +271,36 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 			// Form a vector of cell sizes, for lists of constan-sized vectors
 
+			std::vector<std::uint32_t> dynamicCellSizes;
+
 			const auto& cellShapes = runtimeListGeometry->GetElementShapes();
 			for (const auto cellShape : cellShapes)
 			{
 				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
 				{
-					if (const auto cellSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
+					auto cellSize = vectorShape->GetSize();
+					if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(cellSize))
 					{
 						if (cellShapes.size() == 1 && cellCount > 1)
 						{
 							for (auto i = 0u; i < cellCount; ++i)
 							{
-								dynamicCellSizes.push_back(cellSize->GetValue());
+								dynamicCellSizes.push_back(constantSize->GetValue());
 							}
 						}
 						else if (cellShapes.size() == cellCount)
 						{
-							dynamicCellSizes.push_back(cellSize->GetValue());
+							dynamicCellSizes.push_back(constantSize->GetValue());
 						}
 						else
 						{
 							Utils::Logger::LogError("Mismatched cell count and list size for shape " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
 						}
+					}
+					else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(cellSize))
+					{
+						dynamicCellSizes = rangedSize->GetValues();
+						break;
 					}
 					else
 					{

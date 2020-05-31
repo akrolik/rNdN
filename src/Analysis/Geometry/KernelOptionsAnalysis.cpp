@@ -70,14 +70,7 @@ void KernelOptionsAnalysis::Analyze(const HorseIR::Function *function)
 
 	if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(m_inputOptions->ThreadGeometry))
 	{
-		if (Analysis::ShapeUtils::IsDynamicShape(listShape))
-		{
-			m_inputOptions->ListCellThreads = Codegen::InputOptions::DynamicSize;
-		}
-		else
-		{
-			m_inputOptions->ListCellThreads = GetAverageCellSize(listShape);
-		}
+		m_inputOptions->ListCellThreads = GetAverageCellSize(listShape);
 	}
 
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_analysis))
@@ -150,17 +143,24 @@ std::uint32_t KernelOptionsAnalysis::GetAverageCellSize(const Analysis::ListShap
 	{
 		if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
 		{
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorShape->GetSize()))
+			auto cellSize = vectorShape->GetSize();
+			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(cellSize))
 			{
 				cellSizes.push_back(constantSize->GetValue());
 				continue;
 			}
+			else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(cellSize))
+			{
+				return Utils::Math::Power2(Utils::Math::Average(rangedSize->GetValues()));
+			}
+			return Codegen::InputOptions::DynamicSize;
 		}
-		Utils::Logger::LogError("Unable to get constant cell sizes for list shape " + Analysis::ShapeUtils::ShapeString(shape));
+		else
+		{
+			Utils::Logger::LogError("Unable to get constant cell sizes for list shape " + Analysis::ShapeUtils::ShapeString(shape));
+		}
 	}
-
-	const auto averageCellSize = std::accumulate(cellSizes.begin(), cellSizes.end(), 0) / cellSizes.size();
-	return Utils::Math::Power2(averageCellSize);
+	return Utils::Math::Power2(Utils::Math::Average(cellSizes));
 }
 
 }

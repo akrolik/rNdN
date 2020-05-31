@@ -6,18 +6,16 @@ namespace Runtime {
 
 ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
 {
-	const auto& cellSizes = sizes->GetCPUReadBuffer()->GetValues();
+	const auto& cudaSizes = sizes->GetCPUReadBuffer()->GetValues();
+	std::vector<std::uint32_t> cellSizes(std::begin(cudaSizes), std::end(cudaSizes));
 
 	// Type and shape
 
 	m_type = new HorseIR::ListType(m_values->GetType()->Clone());
-
-	std::vector<const Analysis::Shape *> cellShapes;
-	for (const auto size : cellSizes)
-	{
-		cellShapes.push_back(new Analysis::VectorShape(new Analysis::Shape::ConstantSize(size)));
-	}
-	m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(cellShapes.size()), cellShapes);
+	m_shape = new Analysis::ListShape(
+			new Analysis::Shape::ConstantSize(cellSizes.size()),
+			{new Analysis::VectorShape(new Analysis::Shape::RangedSize(cellSizes))}
+	);
 
 	// Construct cell addresses on GPU
 
