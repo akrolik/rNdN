@@ -50,6 +50,10 @@ echo "--------------------"
 
 collect "Kernel '.*' execution"
 
+collect "Library function 'order_lib'"
+collect "Library function 'group_lib'"
+collect "Library function 'join_lib'"
+
 collect "Builtin function '.*'"
 collect "Create dictionary"
 collect "Runtime analysis"
