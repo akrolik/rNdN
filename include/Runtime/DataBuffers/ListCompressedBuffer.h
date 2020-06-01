@@ -9,6 +9,8 @@ namespace Runtime {
 class ListCompressedBuffer : public ListBuffer
 {
 public:
+	static ListCompressedBuffer *CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::RangedSize *size);
+
 	ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values);
 	~ListCompressedBuffer() override;
 	

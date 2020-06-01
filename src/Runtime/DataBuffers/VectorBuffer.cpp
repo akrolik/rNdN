@@ -8,47 +8,60 @@
 
 namespace Runtime {
 
+VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, unsigned int size)
+{
+	switch (type->GetBasicKind())
+	{
+		case HorseIR::BasicType::BasicKind::Boolean:
+		case HorseIR::BasicType::BasicKind::Char:
+		case HorseIR::BasicType::BasicKind::Int8:
+			return new TypedVectorBuffer<std::int8_t>(type, size);
+		case HorseIR::BasicType::BasicKind::Int16:
+			return new TypedVectorBuffer<std::int16_t>(type, size);
+		case HorseIR::BasicType::BasicKind::Int32:
+			return new TypedVectorBuffer<std::int32_t>(type, size);
+		case HorseIR::BasicType::BasicKind::Int64:
+			return new TypedVectorBuffer<std::int64_t>(type, size);
+		case HorseIR::BasicType::BasicKind::Float32:
+			return new TypedVectorBuffer<float>(type, size);
+		case HorseIR::BasicType::BasicKind::Float64:
+			return new TypedVectorBuffer<double>(type, size);
+		case HorseIR::BasicType::BasicKind::Symbol:
+		case HorseIR::BasicType::BasicKind::String:
+			return new TypedVectorBuffer<std::uint64_t>(type, size);
+		case HorseIR::BasicType::BasicKind::Date:
+		case HorseIR::BasicType::BasicKind::Month:
+		case HorseIR::BasicType::BasicKind::Minute:
+		case HorseIR::BasicType::BasicKind::Second:
+			return new TypedVectorBuffer<std::int32_t>(type, size);
+		case HorseIR::BasicType::BasicKind::Time:
+		case HorseIR::BasicType::BasicKind::Datetime:
+			return new TypedVectorBuffer<std::int64_t>(type, size);
+		default:   
+			Utils::Logger::LogError("Unable to create vector of type " + HorseIR::PrettyPrinter::PrettyString(type));
+	}
+}
+
 VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::Size *size)
 {
 	if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(size))
 	{
-		auto value = constantSize->GetValue();
-		switch (type->GetBasicKind())
-		{
-			case HorseIR::BasicType::BasicKind::Boolean:
-			case HorseIR::BasicType::BasicKind::Char:
-			case HorseIR::BasicType::BasicKind::Int8:
-				return new TypedVectorBuffer<std::int8_t>(type, value);
-			case HorseIR::BasicType::BasicKind::Int16:
-				return new TypedVectorBuffer<std::int16_t>(type, value);
-			case HorseIR::BasicType::BasicKind::Int32:
-				return new TypedVectorBuffer<std::int32_t>(type, value);
-			case HorseIR::BasicType::BasicKind::Int64:
-				return new TypedVectorBuffer<std::int64_t>(type, value);
-			case HorseIR::BasicType::BasicKind::Float32:
-				return new TypedVectorBuffer<float>(type, value);
-			case HorseIR::BasicType::BasicKind::Float64:
-				return new TypedVectorBuffer<double>(type, value);
-			case HorseIR::BasicType::BasicKind::Symbol:
-			case HorseIR::BasicType::BasicKind::String:
-				return new TypedVectorBuffer<std::uint64_t>(type, value);
-			case HorseIR::BasicType::BasicKind::Date:
-			case HorseIR::BasicType::BasicKind::Month:
-			case HorseIR::BasicType::BasicKind::Minute:
-			case HorseIR::BasicType::BasicKind::Second:
-				return new TypedVectorBuffer<std::int32_t>(type, value);
-			case HorseIR::BasicType::BasicKind::Time:
-			case HorseIR::BasicType::BasicKind::Datetime:
-				return new TypedVectorBuffer<std::int64_t>(type, value);
-			default:   
-				Utils::Logger::LogError("Unable to create vector of type " + HorseIR::PrettyPrinter::PrettyString(type));
-		}
+		return VectorBuffer::CreateEmpty(type, constantSize->GetValue());
 	}
 	else if (const auto compressedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(size))
 	{
 		return VectorBuffer::CreateEmpty(type, compressedSize->GetSize());
 	}
-	Utils::Logger::LogError("Vector buffer expects constant size");
+	else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(size))
+	{
+		auto totalSize = 0u;
+		for (auto size : rangedSize->GetValues())
+		{
+			totalSize += size;
+		}
+		return VectorBuffer::CreateEmpty(type, totalSize);
+	}
+	Utils::Logger::LogError("Umable to create vector of size " + Analysis::ShapeUtils::SizeString(size));
 }
 
 VectorBuffer::VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount) :

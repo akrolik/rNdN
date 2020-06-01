@@ -24,6 +24,7 @@ class VectorBuffer : public ColumnBuffer
 public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Vector;
 
+	static VectorBuffer *CreateEmpty(const HorseIR::BasicType *type, unsigned int size);
 	static VectorBuffer *CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::Size *size);
 	~VectorBuffer() override;
 

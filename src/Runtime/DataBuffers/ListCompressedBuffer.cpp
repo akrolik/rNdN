@@ -4,6 +4,13 @@
 
 namespace Runtime {
 
+ListCompressedBuffer *ListCompressedBuffer::CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::RangedSize *size)
+{
+	auto values = VectorBuffer::CreateEmpty(type, size);
+	auto sizes = new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), size->GetValues()));
+	return new ListCompressedBuffer(sizes, values);
+}
+
 ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
 {
 	// Type and shape
