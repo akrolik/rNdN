@@ -140,90 +140,87 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	// Initialize the return buffers for the kernel
 
 	std::vector<DataBuffer *> returnBuffers;
-	if (function->GetReturnCount() > 0)
+	for (auto i = 0u; i < function->GetReturnCount(); ++i)
 	{
+		const auto& dataInit = runtimeOptions->InitObjects;
+		const auto& dataCopies = runtimeOptions->CopyObjects;
+		const auto returnObject = runtimeOptions->ReturnObjects.at(i);
+
 		// Determine any data copies that occur
 
-		for (auto i = 0u; i < function->GetReturnCount(); ++i)
+		DataBuffer *returnBuffer = nullptr;
+		if (dataCopies.find(returnObject) != dataCopies.end())
 		{
-			const auto& dataInit = runtimeOptions->InitObjects;
-			const auto& dataCopies = runtimeOptions->CopyObjects;
-			const auto returnObject = runtimeOptions->ReturnObjects.at(i);
+			// Create a new buffer as a copy of an input object
 
-			DataBuffer *returnBuffer = nullptr;
-			if (dataCopies.find(returnObject) != dataCopies.end())
+			const auto inputObject = dataCopies.at(returnObject);
+			const auto inputBuffer = inputObject->GetDataBuffer();
+
+			returnBuffer = inputBuffer->Clone();
+
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 			{
-				// Create a new buffer as a copy of an input object
-
-				const auto inputObject = dataCopies.at(returnObject);
-				const auto inputBuffer = inputObject->GetDataBuffer();
-
-				returnBuffer = inputBuffer->Clone();
-
-				if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
-				{
-					auto description = " = " + inputObject->ToString() + " -> " + returnObject->ToString();
-					Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
-				}
+				auto description = " = " + inputObject->ToString() + " -> " + returnObject->ToString();
+				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
 			}
-			else
-			{
-				const auto type = function->GetReturnType(i);
-				const auto shape = runtimeOptions->ReturnShapes.at(i);
-				returnBuffer = DataBuffer::CreateEmpty(type, shape);
+		}
+		else
+		{
+			const auto type = function->GetReturnType(i);
+			const auto shape = runtimeOptions->ReturnShapes.at(i);
+			returnBuffer = DataBuffer::CreateEmpty(type, shape);
 
-				auto description = "";
-				if (dataInit.find(returnObject) != dataInit.end())
+			auto description = "";
+			if (dataInit.find(returnObject) != dataInit.end())
+			{
+				switch (dataInit.at(returnObject))
 				{
-					switch (dataInit.at(returnObject))
+					case Analysis::DataInitializationAnalysis::Initialization::Clear:
 					{
-						case Analysis::DataInitializationAnalysis::Initialization::Clear:
-						{
-							returnBuffer->ValidateGPU();
-							returnBuffer->Clear(DataBuffer::ClearMode::Zero);
-							description = " = <clear>";
-							break;
-						}
-						case Analysis::DataInitializationAnalysis::Initialization::Minimum:
-						{
-							returnBuffer->Clear(DataBuffer::ClearMode::Minimum);
-							description = " = <min>";
-							break;
-						}
-						case Analysis::DataInitializationAnalysis::Initialization::Maximum:
-						{
-							returnBuffer->Clear(DataBuffer::ClearMode::Maximum);
-							description = " = <max>";
-							break;
-						}
+						returnBuffer->ValidateGPU();
+						returnBuffer->Clear(DataBuffer::ClearMode::Zero);
+						description = " = <clear>";
+						break;
+					}
+					case Analysis::DataInitializationAnalysis::Initialization::Minimum:
+					{
+						returnBuffer->Clear(DataBuffer::ClearMode::Minimum);
+						description = " = <min>";
+						break;
+					}
+					case Analysis::DataInitializationAnalysis::Initialization::Maximum:
+					{
+						returnBuffer->Clear(DataBuffer::ClearMode::Maximum);
+						description = " = <max>";
+						break;
 					}
 				}
-				if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
-				{
-					Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
-				}
 			}
-
-			returnBuffers.push_back(returnBuffer);
-
-			// Transfer the write buffer to the GPU, we assume all returns write (or else...)
-
-			auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
-			invocation.AddParameter(*gpuBuffer);
-
-			// Add a dynamic size parameter if neded
-
-			const auto returnShape = inputOptions->ReturnShapes.at(i);
-			const auto returnWriteShape = inputOptions->ReturnWriteShapes.at(i);
-			if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 			{
-				// Clear the size buffer for the dynamic output data
-
-				auto sizeBuffer = returnBuffer->GetGPUSizeBuffer();
-				sizeBuffer->Clear();
-
-				invocation.AddParameter(*sizeBuffer);
+				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
 			}
+		}
+
+		returnBuffers.push_back(returnBuffer);
+
+		// Transfer the write buffer to the GPU, we assume all returns write (or else...)
+
+		auto gpuBuffer = returnBuffer->GetGPUWriteBuffer();
+		invocation.AddParameter(*gpuBuffer);
+
+		// Add a dynamic size parameter if neded
+
+		const auto returnShape = inputOptions->ReturnShapes.at(i);
+		const auto returnWriteShape = inputOptions->ReturnWriteShapes.at(i);
+		if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
+		{
+			// Clear the size buffer for the dynamic output data
+
+			auto sizeBuffer = returnBuffer->GetGPUSizeBuffer();
+			sizeBuffer->Clear();
+
+			invocation.AddParameter(*sizeBuffer);
 		}
 	}
 
