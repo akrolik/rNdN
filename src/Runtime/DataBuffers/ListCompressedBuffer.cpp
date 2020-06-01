@@ -6,10 +6,9 @@ namespace Runtime {
 
 ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
 {
-	const auto& cudaSizes = sizes->GetCPUReadBuffer()->GetValues();
-	std::vector<std::uint32_t> cellSizes(std::begin(cudaSizes), std::end(cudaSizes));
-
 	// Type and shape
+
+	const auto& cellSizes = sizes->GetCPUReadBuffer()->GetValues();
 
 	m_type = new HorseIR::ListType(m_values->GetType()->Clone());
 	m_shape = new Analysis::ListShape(
@@ -30,6 +29,8 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t>
 	auto dataAddresses = dataAddressesBuffer->GetCPUWriteBuffer();
 	auto sizeAddresses = sizeAddressesBuffer->GetCPUWriteBuffer();
 
+	auto timeOffsets_start = Utils::Chrono::Start("Compute offsets");
+
 	auto offset = 0u;
 	auto index = 0u;
 	for (auto size : cellSizes)
@@ -40,6 +41,8 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t>
 		index++;
 		offset += size;
 	}
+
+	Utils::Chrono::End(timeOffsets_start);
 
 	m_dataAddresses = dataAddressesBuffer;
 	m_sizeAddresses = sizeAddressesBuffer;

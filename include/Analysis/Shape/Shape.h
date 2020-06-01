@@ -8,6 +8,8 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "CUDA/Vector.h"
+
 namespace Analysis {
 
 static unsigned int ShapeUniqueKey = 1;
@@ -113,9 +115,9 @@ public:
 	public:
 		constexpr static Kind SizeKind = Size::Kind::Ranged;
 
-		RangedSize(const std::vector<std::uint32_t>& values) : Size(SizeKind), m_values(values) {}
+		RangedSize(const CUDA::Vector<std::int32_t>& values) : Size(SizeKind), m_values(values) {}
 
-		const std::vector<std::uint32_t>& GetValues() const { return m_values; }
+		const CUDA::Vector<std::int32_t>& GetValues() const { return m_values; }
 
 		void Print(std::ostream& os) const override
 		{
@@ -138,7 +140,7 @@ public:
 		}
 
 	private:
-		const std::vector<std::uint32_t> m_values;
+		const CUDA::Vector<std::int32_t> m_values;
 	};
 
 	class SymbolSize : public Size

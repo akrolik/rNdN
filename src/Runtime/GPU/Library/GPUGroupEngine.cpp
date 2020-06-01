@@ -68,6 +68,8 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	auto sizes = sizesBuffer->GetCPUWriteBuffer();
 	auto offsets = valuesBuffer->GetCPUReadBuffer();
 
+	auto timeSize_start = Utils::Chrono::Start("Compute sizes");
+
 	std::vector<DataBuffer *> entryBuffers;
 	for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
 	{
@@ -79,6 +81,8 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 		sizes->SetValue(entryIndex, size);
 	}
+
+	Utils::Chrono::End(timeSize_start);
 
 	// Create the dictionary buffer
 

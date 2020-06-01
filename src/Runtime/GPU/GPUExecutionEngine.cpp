@@ -268,9 +268,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 			// Form a vector of cell sizes, for lists of constan-sized vectors
 
-			std::vector<std::uint32_t> dynamicCellSizes;
-
 			const auto& cellShapes = runtimeListGeometry->GetElementShapes();
+
+			CUDA::Vector<std::uint32_t> dynamicCellSizes;
 			for (const auto cellShape : cellShapes)
 			{
 				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
@@ -296,8 +296,9 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 					}
 					else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(cellSize))
 					{
-						dynamicCellSizes = rangedSize->GetValues();
-						break;
+						//TODO: Create const buffer
+						auto& tmp = const_cast<CUDA::Vector<std::int32_t>&>(rangedSize->GetValues());
+						dynamicBuffers.push_back(AllocateVectorParameter(invocation, tmp, "<list geometry cell sizes>"));
 					}
 					else
 					{
@@ -306,19 +307,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 				}
 			}
 
-			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			if (dynamicCellSizes.size() > 0)
 			{
-				Utils::Logger::LogDebug("Initializing size argument: <list geometry cell sizes> [u32(4 bytes) x " + std::to_string(dynamicCellSizes.size()) + "]");
+				dynamicBuffers.push_back(AllocateVectorParameter(invocation, dynamicCellSizes, "<list geometry cell sizes>"));
 			}
-
-			// Transfer to the GPU
-
-			auto buffer = new CUDA::Buffer(dynamicCellSizes.data(), dynamicCellSizes.size() * sizeof(std::uint32_t));
-			buffer->AllocateOnGPU();
-			buffer->TransferToGPU();
-			invocation.AddParameter(*buffer);
-
-			dynamicBuffers.push_back(buffer);
 		}
 		else
 		{
@@ -514,6 +506,22 @@ CUDA::TypedConstant<T> *GPUExecutionEngine::AllocateConstantParameter(CUDA::Kern
 	invocation.AddParameter(*sizeConstant);
 
 	return sizeConstant;
+}
+
+template<typename T>
+CUDA::Buffer *GPUExecutionEngine::AllocateVectorParameter(CUDA::KernelInvocation &invocation, CUDA::Vector<T>& values, const std::string& description) const
+{
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Initializing list input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes x " + std::to_string(values.size()) + "]");
+	}
+
+	auto buffer = new CUDA::Buffer(values.data(), values.size() * sizeof(T));
+	buffer->AllocateOnGPU();
+	buffer->TransferToGPU();
+	invocation.AddParameter(*buffer);
+
+	return buffer;
 }
 
 }
