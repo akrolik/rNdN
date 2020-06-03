@@ -20,9 +20,14 @@ static Module *GPUModule = new LibraryModule("GPU", {
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUUnique),
 
 	// Join
-	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoinLib),
-	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoinCount),
-	new BuiltinFunction(BuiltinFunction::Primitive::GPUJoin)
+	new BuiltinFunction(BuiltinFunction::Primitive::GPULoopJoinLib),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPULoopJoinCount),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPULoopJoin),
+
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoinLib),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashCreate),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoinCount),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoin)
 });
 
 }

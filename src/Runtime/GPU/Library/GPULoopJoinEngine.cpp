@@ -1,4 +1,4 @@
-#include "Runtime/GPU/Library/GPUJoinEngine.h"
+#include "Runtime/GPU/Library/GPULoopJoinEngine.h"
 
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeUtils.h"
@@ -12,7 +12,7 @@
 
 namespace Runtime {
 
-const HorseIR::Function *GPUJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+const HorseIR::Function *GPULoopJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
 {
 	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
 	{
@@ -21,7 +21,7 @@ const HorseIR::Function *GPUJoinEngine::GetFunction(const HorseIR::FunctionDecla
 	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
 }
 
-ListBuffer *GPUJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
+ListBuffer *GPULoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 {
 	// Get the execution engine for the count/join functions
 

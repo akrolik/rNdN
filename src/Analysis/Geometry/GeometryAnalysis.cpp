@@ -397,7 +397,8 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
 		{
 			CPU();
 		}
@@ -430,12 +431,12 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			Require(ShapeUtils::IsShape<VectorShape>(indexShape));
 			return indexShape;
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
-		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 		{
 			// Left data geometry
 
-			auto leftIndex = (arguments.size() - ((function->GetPrimitive() == HorseIR::BuiltinFunction::Primitive::GPUJoin) ? 4 : 2));
+			auto leftIndex = (arguments.size() - ((function->GetPrimitive() == HorseIR::BuiltinFunction::Primitive::GPULoopJoin) ? 4 : 2));
 			auto leftShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(leftIndex));
 			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(leftShape))
 			{

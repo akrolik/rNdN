@@ -266,7 +266,7 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 		{
 			return {new DataObject()};
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
 		{
 			const auto countType = arguments.at(0)->GetType();
 			const auto joinType = arguments.at(1)->GetType();
@@ -283,11 +283,11 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 
 			return {joinObjects.at(0)};
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
 		{
 			return {new DataObject(), new DataObject()};
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 		{
 			return {new DataObject()};
 		}

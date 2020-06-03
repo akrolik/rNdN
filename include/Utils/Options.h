@@ -23,6 +23,7 @@ public:
 	static constexpr char const *Opt_Print_time = "print-time";
 
 	static constexpr char const *Opt_Algo_smem_sort = "algo-smem-sort";
+	static constexpr char const *Opt_Algo_join = "algo-join";
 
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
 	static constexpr char const *Opt_File = "file";
@@ -53,6 +54,30 @@ public:
 		return GetInstance().m_results[name].as<T>();
 	}
 
+	enum class JoinKind {
+		LoopJoin,
+		HashJoin
+	};
+
+	static JoinKind GetJoinKind()
+	{
+		if (!Present(Opt_Algo_join))
+		{
+			return JoinKind::LoopJoin;
+		}
+
+		auto joinMode = Get<std::string>(Opt_Algo_join);
+		if (joinMode == "loop")
+		{
+			return JoinKind::LoopJoin;
+		}
+		else if (joinMode == "hash")
+		{
+			return JoinKind::HashJoin;
+		}
+		Utils::Logger::LogError("Unknown join mode '" + joinMode + "'");
+	}
+
 private:
 	Options() : m_options("r3d3", "Optimizing JIT compiler for HorseIR targetting PTX")
 	{
@@ -77,6 +102,7 @@ private:
 		;
 		m_options.add_options("Algorithm")
 			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
+			(Opt_Algo_join, "Join mode (loop|hash)", cxxopts::value<std::string>())
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")

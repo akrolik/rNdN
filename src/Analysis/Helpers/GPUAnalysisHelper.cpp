@@ -378,7 +378,8 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
 		{
 			return {Device::CPU, Synchronization::None};
 		}
@@ -390,8 +391,8 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		case HorseIR::BuiltinFunction::Primitive::GPUUnique:
 
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
-		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 		{
 			return {Device::GPU, (Synchronization::In | Synchronization::Out)};
 		}

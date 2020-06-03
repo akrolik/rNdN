@@ -175,15 +175,35 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			auto leftType = leftArgument->GetType();
 			auto rightType = rightArgument->GetType();
 
-			auto countFunction = GenerateJoinCountFunction(functions, leftType, rightType);
-			auto joinFunction = GenerateJoinFunction(functions, leftType, rightType);
+			std::vector<HorseIR::Operand *> operands;
+
+			auto isHashing = false;
+			switch (Utils::Options::GetJoinKind())
+			{
+				case Utils::Options::JoinKind::LoopJoin:
+				{
+					isHashing = false;
+					break;
+				}
+				case Utils::Options::JoinKind::HashJoin:
+				{
+					isHashing = true;
+
+					auto hashFunction = GenerateHashFunction(leftType);
+					m_functions.push_back(hashFunction);
+					operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(hashFunction->GetName())));
+					break;
+				}
+			}
+
+			auto countFunction = GenerateJoinCountFunction(functions, leftType, rightType, isHashing);
+			auto joinFunction = GenerateJoinFunction(functions, leftType, rightType, isHashing);
 
 			m_functions.push_back(countFunction);
 			m_functions.push_back(joinFunction);
 
 			// Build the list of arguments for the library function call
 
-			std::vector<HorseIR::Operand *> operands;
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(countFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(joinFunction->GetName())));
 
@@ -192,7 +212,8 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 
 			// Build the library call
 
-			return new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join_lib")), operands);
+			auto name = (isHashing) ? "hash_join_lib" : "loop_join_lib";
+			return new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", name)), operands);
 		}
 		default:
 		{
@@ -327,7 +348,36 @@ HorseIR::Function *OutlineLibrary::GenerateUniqueFunction(const HorseIR::Type *d
 	return new HorseIR::Function("unique_" + std::to_string(m_index++), parameters, returnTypes, {groupStatement, returnStatement}, true);
 }
 
-HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType)
+HorseIR::Function *OutlineLibrary::GenerateHashFunction(const HorseIR::Type *dataType)
+{
+	std::vector<HorseIR::Parameter *> parameters;
+
+	std::vector<HorseIR::Operand *> operands;
+	std::vector<HorseIR::LValue *> lvalues;
+
+	std::vector<HorseIR::Operand *> returnOperands;
+	std::vector<HorseIR::Type *> returnTypes;
+
+	parameters.push_back(new HorseIR::Parameter("data", dataType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data"));
+
+	lvalues.push_back(new HorseIR::VariableDeclaration("keys", dataType->Clone()));
+	returnOperands.push_back(new HorseIR::Identifier("keys"));
+	returnTypes.push_back(dataType->Clone());
+
+	lvalues.push_back(new HorseIR::VariableDeclaration("values", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	returnOperands.push_back(new HorseIR::Identifier("values"));
+	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
+
+	auto hashCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "hash_create")), operands);
+	auto hashStatement = new HorseIR::AssignStatement(lvalues, hashCall);
+	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
+
+	return new HorseIR::Function("hash_create_" + std::to_string(m_index++), parameters, returnTypes, {hashStatement, returnStatement}, true);
+}
+
+
+HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType, bool isHashing)
 {
 	std::vector<HorseIR::Parameter *> parameters;
 
@@ -345,8 +395,19 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data_left"));
 
-	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
-	operands.push_back(new HorseIR::Identifier("data_right"));
+	if (isHashing)
+	{
+		parameters.push_back(new HorseIR::Parameter("hash_keys", leftType->Clone()));
+		operands.push_back(new HorseIR::Identifier("hash_keys"));
+
+		parameters.push_back(new HorseIR::Parameter("hash_values", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+		operands.push_back(new HorseIR::Identifier("hash_values"));
+	}
+	else
+	{
+		parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
+		operands.push_back(new HorseIR::Identifier("data_right"));
+	}
 
 	lvalues.push_back(new HorseIR::VariableDeclaration("offsets", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 	lvalues.push_back(new HorseIR::VariableDeclaration("count", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
@@ -356,14 +417,15 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
 	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
 
-	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join_count")), operands);
+	auto joinName = (isHashing) ? "hash_join_count" : "loop_join_count";
+	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", joinName)), operands);
 	auto joinStatement = new HorseIR::AssignStatement(lvalues, joinCall);
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 
 	return new HorseIR::Function("join_count_" + std::to_string(m_index++), parameters, returnTypes, {joinStatement, returnStatement}, true);
 }
 
-HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType)
+HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType, bool isHashing)
 {
 	std::vector<HorseIR::Parameter *> parameters;
 
@@ -381,8 +443,19 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data_left"));
 
-	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
-	operands.push_back(new HorseIR::Identifier("data_right"));
+	if (isHashing)
+	{
+		parameters.push_back(new HorseIR::Parameter("hash_keys", leftType->Clone()));
+		operands.push_back(new HorseIR::Identifier("hash_keys"));
+
+		parameters.push_back(new HorseIR::Parameter("hash_values", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+		operands.push_back(new HorseIR::Identifier("hash_values"));
+	}
+	else
+	{
+		parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
+		operands.push_back(new HorseIR::Identifier("data_right"));
+	}
 
 	parameters.push_back(new HorseIR::Parameter("offsets", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 	operands.push_back(new HorseIR::Identifier("offsets"));
@@ -395,7 +468,8 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 	returnOperands.push_back(new HorseIR::Identifier("indexes"));
 	returnTypes.push_back(new HorseIR::ListType(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 
-	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "join")), operands);
+	auto joinName = (isHashing) ? "hash_join" : "loop_join";
+	auto joinCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", joinName)), operands);
 	auto joinStatement = new HorseIR::AssignStatement(lvalues, joinCall);
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 

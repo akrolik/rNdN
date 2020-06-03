@@ -34,9 +34,12 @@ private:
 	HorseIR::Function *GenerateInitFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders);
 	HorseIR::Function *GenerateSortFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders, bool shared);
 	HorseIR::Function *GenerateGroupFunction(const HorseIR::Type *dataType);
+
 	HorseIR::Function *GenerateUniqueFunction(const HorseIR::Type *dataType);
-	HorseIR::Function *GenerateJoinCountFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType);
-	HorseIR::Function *GenerateJoinFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType);
+
+	HorseIR::Function *GenerateHashFunction(const HorseIR::Type *dataType);
+	HorseIR::Function *GenerateJoinCountFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType, bool isHashing);
+	HorseIR::Function *GenerateJoinFunction(std::vector<const HorseIR::Operand *>& functions, const HorseIR::Type *leftType, const HorseIR::Type *rightType, bool isHashing);
 
 	HorseIR::CallExpression *m_libraryCall = nullptr;
 	HorseIR::Statement *m_libraryStatement = nullptr;

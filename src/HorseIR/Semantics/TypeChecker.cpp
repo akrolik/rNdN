@@ -1271,9 +1271,9 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			return {new BasicType(BasicType::BasicKind::Int64)};
 		}
-		case BuiltinFunction::Primitive::GPUJoinLib:
+		case BuiltinFunction::Primitive::GPULoopJoinLib:
 		{
-			// @GPU.join_lib(@count, @join, left, right)
+			// @GPU.loop_join_lib(@count, @join, left, right)
 
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
@@ -1316,12 +1316,12 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			return {callTypes1.at(0)};
 		}
-		case BuiltinFunction::Primitive::GPUJoinCount:
+		case BuiltinFunction::Primitive::GPULoopJoinCount:
 		{
 			Require(AnalyzeJoinArguments(argumentTypes));
 			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
-		case BuiltinFunction::Primitive::GPUJoin:
+		case BuiltinFunction::Primitive::GPULoopJoin:
 		{
 			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 2);
 			Require(AnalyzeJoinArguments(joinTypes));

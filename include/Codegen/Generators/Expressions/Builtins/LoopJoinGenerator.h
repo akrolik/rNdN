@@ -12,12 +12,12 @@
 namespace Codegen {
 
 template<PTX::Bits B>
-class JoinGenerator : public Generator
+class LoopJoinGenerator : public Generator
 {
 public:
 	using Generator::Generator;
 
-	std::string Name() const override { return "JoinGenerator"; }
+	std::string Name() const override { return "LoopJoinGenerator"; }
 
 	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{

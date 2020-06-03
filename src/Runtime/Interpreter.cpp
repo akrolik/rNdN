@@ -92,7 +92,8 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *f
 		case HorseIR::BuiltinFunction::Primitive::GPUOrderLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUGroupLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
 			name = "Library function";
 	}
 

@@ -2091,7 +2091,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			Return(new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape0->GetSize())));
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
 		{
 			// -- Vector input
 			// Input: *, *, Vector<Size*>, Vector<Size*>
@@ -2154,7 +2154,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			return {joinShapes, joinWriteShapes};
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
 		{
 			// -- Vector input
 			// Input: Vector<Size*>, Vector<Size*>
@@ -2192,7 +2192,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			}
 			break;
 		}
-		case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 		{
 			// -- Unknown scalar constant
 			// Intput: Vector<Size*>, Vector<Size*>, Vector<Size*>, Vector<1> | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<Size*>, Vector<1>

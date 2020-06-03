@@ -156,9 +156,14 @@ public:
 		GPUUniqueLib,
 		GPUUnique,
 
-		GPUJoinLib,
-		GPUJoinCount,
-		GPUJoin
+		GPULoopJoinLib,
+		GPULoopJoinCount,
+		GPULoopJoin,
+
+		GPUHashJoinLib,
+		GPUHashCreate,
+		GPUHashJoinCount,
+		GPUHashJoin
 	};
 
 	static const std::string PrimitiveName(Primitive primitive)
@@ -395,12 +400,20 @@ public:
 				return "unique_lib";
 			case Primitive::GPUUnique:
 				return "unique";
-			case Primitive::GPUJoinLib:
-				return "join_lib";
-			case Primitive::GPUJoinCount:
-				return "join_count";
-			case Primitive::GPUJoin:
-				return "join";
+			case Primitive::GPULoopJoinLib:
+				return "loop_join_lib";
+			case Primitive::GPULoopJoinCount:
+				return "loop_join_count";
+			case Primitive::GPULoopJoin:
+				return "loop_join";
+			case Primitive::GPUHashJoinLib:
+				return "hash_join_lib";
+			case Primitive::GPUHashCreate:
+				return "hash_create";
+			case Primitive::GPUHashJoinCount:
+				return "hash_join_count";
+			case Primitive::GPUHashJoin:
+				return "hash_join";
 		}
 		return "<unknown>";
 	}
@@ -583,12 +596,20 @@ public:
 				return VariadicParameterCount; // @order_init, @order, @order_shared?, @unique, data
 			case Primitive::GPUUnique:
 				return 2; // index, data
-			case Primitive::GPUJoinLib:
-				return 4; // @join_count, @join, data1, data2
-			case Primitive::GPUJoinCount:
+			case Primitive::GPULoopJoinLib:
+				return 4; // @loop_join_count, @loop_join, data1, data2
+			case Primitive::GPULoopJoinCount:
 				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2
-			case Primitive::GPUJoin:
+			case Primitive::GPULoopJoin:
 				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2, offsets, count
+			case Primitive::GPUHashJoinLib:
+				return 4; // @hash_create, @hash_join_count, @hash_join, data1, data2
+			case Primitive::GPUHashCreate:
+				return 1; // data
+			case Primitive::GPUHashJoinCount:
+				return VariadicParameterCount; // @fn1, ..., @fnk, hash_keys, hash_values, data2
+			case Primitive::GPUHashJoin:
+				return VariadicParameterCount; // @fn1, ..., @fnk, hash_keys, hash_values, data2, offsets, count
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

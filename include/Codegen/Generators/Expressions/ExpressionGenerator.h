@@ -39,8 +39,8 @@
 
 #include "Codegen/Generators/Expressions/Builtins/DateGenerator.h"
 
-#include "Codegen/Generators/Expressions/Builtins/JoinCountGenerator.h"
-#include "Codegen/Generators/Expressions/Builtins/JoinGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/LoopJoinCountGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/LoopJoinGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
@@ -125,15 +125,15 @@ public:
 				generator.Generate(m_targets, arguments);
 				break;
 			}
-			case HorseIR::BuiltinFunction::Primitive::GPUJoinCount:
+			case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
 			{
-				JoinCountGenerator<B> generator(this->m_builder);
+				LoopJoinCountGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets, arguments);
 				break;
 			}
-			case HorseIR::BuiltinFunction::Primitive::GPUJoin:
+			case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 			{
-				JoinGenerator<B> generator(this->m_builder);
+				LoopJoinGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets.at(0), arguments);
 				break;
 			}

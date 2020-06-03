@@ -10,10 +10,10 @@
 
 namespace Runtime {
 
-class GPUJoinEngine
+class GPULoopJoinEngine
 {
 public:
-	GPUJoinEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	GPULoopJoinEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
 	ListBuffer *Join(const std::vector<DataBuffer *>& arguments);
 
