@@ -393,6 +393,10 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
+
+		case HorseIR::BuiltinFunction::Primitive::GPUHashCreate:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoin:
 		{
 			return {Device::GPU, (Synchronization::In | Synchronization::Out)};
 		}

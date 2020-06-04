@@ -603,7 +603,7 @@ public:
 			case Primitive::GPULoopJoin:
 				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2, offsets, count
 			case Primitive::GPUHashJoinLib:
-				return 4; // @hash_create, @hash_join_count, @hash_join, data1, data2
+				return 5; // @hash_create, @hash_join_count, @hash_join, data1, data2
 			case Primitive::GPUHashCreate:
 				return 1; // data
 			case Primitive::GPUHashJoinCount:

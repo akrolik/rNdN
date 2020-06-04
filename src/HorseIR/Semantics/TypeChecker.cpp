@@ -1333,6 +1333,98 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			return {new ListType(new BasicType(BasicType::BasicKind::Int64))};
 		}
+		case BuiltinFunction::Primitive::GPUHashJoinLib:
+		{
+			// @GPU.hash_join_lib(@hash, @count, @join, left, right)
+
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
+			const auto inputType3 = argumentTypes.at(3);
+			const auto inputType4 = argumentTypes.at(4);
+
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<FunctionType>(inputType1));
+			Require(TypeUtils::IsType<FunctionType>(inputType2));
+
+			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
+			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+			auto functionType2 = TypeUtils::GetType<FunctionType>(inputType2);
+
+			Require(TypeUtils::IsType<BasicType>(inputType3) || TypeUtils::IsType<ListType>(inputType3));
+			Require(TypeUtils::IsType<BasicType>(inputType4) || TypeUtils::IsType<ListType>(inputType4));
+
+			if (const auto listType3 = TypeUtils::GetType<ListType>(inputType3))
+			{
+				Require(TypeUtils::ForallElements(listType3, TypeUtils::IsType<BasicType>));
+			}
+			if (const auto listType4 = TypeUtils::GetType<ListType>(inputType4))
+			{
+				Require(TypeUtils::ForallElements(listType4, TypeUtils::IsType<BasicType>));
+			}
+
+			// Hash call
+
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType4});
+			Require(callTypes0.size() == 2);
+			Require(TypeUtils::IsTypesEqual(callTypes0.at(0), inputType4));
+			Require(TypeUtils::IsBasicType(callTypes0.at(1), BasicType::BasicKind::Int64));
+
+			// Count call
+
+			const auto callTypes1 = AnalyzeCall(functionType1, {inputType3, callTypes0.at(0), callTypes0.at(1)});
+			Require(callTypes1.size() == 2);
+			Require(TypeUtils::IsBasicType(callTypes1.at(0), BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBasicType(callTypes1.at(1), BasicType::BasicKind::Int64));
+
+			// Join call
+
+			const auto callTypes2 = AnalyzeCall(functionType2, {inputType3, callTypes0.at(0), callTypes0.at(1), callTypes1.at(0), callTypes1.at(1)});
+			Require(TypeUtils::IsType<ListType>(callTypes2.at(0)));
+
+			const auto listCallType2 = TypeUtils::GetType<ListType>(callTypes2.at(0));
+			const auto elementCallType2 = TypeUtils::GetReducedType(listCallType2->GetElementTypes());
+			Require(TypeUtils::IsBasicType(elementCallType2, BasicType::BasicKind::Int64));
+
+			return {callTypes2.at(0)};
+		}
+		case BuiltinFunction::Primitive::GPUHashCreate:
+		{
+			const auto inputType = argumentTypes.at(0);
+
+			Require(TypeUtils::IsType<BasicType>(inputType) || TypeUtils::IsType<ListType>(inputType));
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType))
+			{
+				Require(TypeUtils::ForallElements(listType, TypeUtils::IsType<BasicType>));
+			}
+
+			return {inputType, new BasicType(BasicType::BasicKind::Int64)};
+		}
+		case BuiltinFunction::Primitive::GPUHashJoinCount:
+		{
+			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 1);
+			Require(AnalyzeJoinArguments(joinTypes));
+
+			const auto hashValueType = argumentTypes.at(argumentTypes.size() - 1);
+			Require(TypeUtils::IsBasicType(hashValueType, BasicType::BasicKind::Int64));
+
+			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
+		}
+		case BuiltinFunction::Primitive::GPUHashJoin:
+		{
+			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 3);
+			Require(AnalyzeJoinArguments(joinTypes));
+
+			const auto hashValueType = argumentTypes.at(argumentTypes.size() - 3);
+			const auto offsetsType = argumentTypes.at(argumentTypes.size() - 2);
+			const auto countType = argumentTypes.at(argumentTypes.size() - 1);
+
+			Require(TypeUtils::IsBasicType(hashValueType, BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBasicType(offsetsType, BasicType::BasicKind::Int64));
+			Require(TypeUtils::IsBasicType(countType, BasicType::BasicKind::Int64));
+
+			return {new ListType(new BasicType(BasicType::BasicKind::Int64))};
+		}
 		default:
 		{
 			Utils::Logger::LogError("Type analysis does not support builtin function '" + function->GetName() + "'");

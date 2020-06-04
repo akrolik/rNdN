@@ -283,11 +283,39 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 
 			return {joinObjects.at(0)};
 		}
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
+		{
+			const auto hashType = arguments.at(0)->GetType();
+			const auto countType = arguments.at(1)->GetType();
+			const auto joinType = arguments.at(2)->GetType();
+
+			const auto hashFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(hashType)->GetFunctionDeclaration();
+			const auto countFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(countType)->GetFunctionDeclaration();
+			const auto joinFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(joinType)->GetFunctionDeclaration();
+
+			const auto size = argumentObjects.size();
+
+			// Functions are provided internally
+
+			const auto hashObjects = AnalyzeCall(hashFunction, {}, {argumentObjects.at(size - 1)});
+			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(size - 2), hashObjects.at(0), hashObjects.at(1)});
+			const auto joinObjects = AnalyzeCall(joinFunction, {},
+				{argumentObjects.at(size - 2), hashObjects.at(0), hashObjects.at(1), countObjects.at(0), countObjects.at(1)}
+			);
+
+			return {joinObjects.at(0)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUHashCreate:
+		{
+			return {new DataObject(), new DataObject()};
+		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
 		{
 			return {new DataObject(), new DataObject()};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoin:
 		{
 			return {new DataObject()};
 		}
