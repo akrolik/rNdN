@@ -38,7 +38,7 @@ public:
 	}
 
 	template<class T, class S>
-	const PTX::Register<T> *ConvertSource(const PTX::TypedOperand<S> *source)
+	const PTX::TypedOperand<T> *ConvertSource(const PTX::TypedOperand<S> *source)
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
