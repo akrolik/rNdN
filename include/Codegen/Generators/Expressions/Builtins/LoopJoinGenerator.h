@@ -4,6 +4,7 @@
 
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/Data/TargetCellGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -29,7 +30,7 @@ public:
 		{
 			if (auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(functionArgument->GetType()))
 			{
-				auto joinOperation = JoinOperation(functionType->GetFunctionDeclaration());
+				auto joinOperation = GetComparisonOperation(functionType->GetFunctionDeclaration());
 				joinOperations.push_back(joinOperation);
 			}
 			else
@@ -42,31 +43,6 @@ public:
 
 		InternalFindGenerator<B, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Indexes, joinOperations);
 		findGenerator.Generate(target, dataArguments);
-	}
-
-private:
-	ComparisonOperation JoinOperation(const HorseIR::FunctionDeclaration *function)
-	{
-		if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Builtin)
-		{
-			auto builtinFunction = static_cast<const HorseIR::BuiltinFunction *>(function);
-			switch (builtinFunction->GetPrimitive())
-			{
-				case HorseIR::BuiltinFunction::Primitive::Less:
-					return ComparisonOperation::Less;
-				case HorseIR::BuiltinFunction::Primitive::Greater:
-					return ComparisonOperation::Greater;
-				case HorseIR::BuiltinFunction::Primitive::LessEqual:
-					return ComparisonOperation::LessEqual;
-				case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
-					return ComparisonOperation::GreaterEqual;
-				case HorseIR::BuiltinFunction::Primitive::Equal:
-					return ComparisonOperation::Equal;
-				case HorseIR::BuiltinFunction::Primitive::NotEqual:
-					return ComparisonOperation::NotEqual;
-			}
-		}
-		Generator::Error("comparison function '" + HorseIR::PrettyPrinter::PrettyString(function, true) + "'");
 	}
 };
 

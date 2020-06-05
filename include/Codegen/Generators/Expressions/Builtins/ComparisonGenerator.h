@@ -47,6 +47,30 @@ static std::string ComparisonOperationString(ComparisonOperation comparisonOp)
 	return "<unknown>";
 }
 
+static ComparisonOperation GetComparisonOperation(const HorseIR::FunctionDeclaration *function)
+{
+	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Builtin)
+	{
+		auto builtinFunction = static_cast<const HorseIR::BuiltinFunction *>(function);
+		switch (builtinFunction->GetPrimitive())
+		{
+			case HorseIR::BuiltinFunction::Primitive::Less:
+				return ComparisonOperation::Less;
+			case HorseIR::BuiltinFunction::Primitive::Greater:
+				return ComparisonOperation::Greater;
+			case HorseIR::BuiltinFunction::Primitive::LessEqual:
+				return ComparisonOperation::LessEqual;
+			case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
+				return ComparisonOperation::GreaterEqual;
+			case HorseIR::BuiltinFunction::Primitive::Equal:
+				return ComparisonOperation::Equal;
+			case HorseIR::BuiltinFunction::Primitive::NotEqual:
+				return ComparisonOperation::NotEqual;
+		}
+	}
+	Utils::Logger::LogError("Unable to get comparison function '" + HorseIR::PrettyPrinter::PrettyString(function, true) + "'");
+}
+
 template<PTX::Bits B, class T, typename Enable = void>
 class ComparisonGenerator : public BuiltinGenerator<B, T>
 {
