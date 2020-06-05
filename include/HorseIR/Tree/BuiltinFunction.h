@@ -607,9 +607,9 @@ public:
 			case Primitive::GPUHashCreate:
 				return 1; // data
 			case Primitive::GPUHashJoinCount:
-				return VariadicParameterCount; // @fn1, ..., @fnk, hash_keys, hash_values, data2
+				return 2; // data1, hash_keys
 			case Primitive::GPUHashJoin:
-				return VariadicParameterCount; // @fn1, ..., @fnk, hash_keys, hash_values, data2, offsets, count
+				return 5; // data1, hash_keys, hash_values, offsets, count
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

@@ -442,6 +442,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			switch (function->GetPrimitive())
 			{
 				case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
+				case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
 				{
 					leftIndex -= 2;
 					break;
@@ -449,11 +450,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 				case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 				{
 					leftIndex -= 4;
-					break;
-				}
-				case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
-				{
-					leftIndex -= 3;
 					break;
 				}
 				case HorseIR::BuiltinFunction::Primitive::GPUHashJoin:

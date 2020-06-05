@@ -274,12 +274,10 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 			const auto countFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(countType)->GetFunctionDeclaration();
 			const auto joinFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(joinType)->GetFunctionDeclaration();
 
-			const auto size = argumentObjects.size();
-
 			// Functions are provided internally
 
-			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1)});
-			const auto joinObjects = AnalyzeCall(joinFunction, {}, {argumentObjects.at(size - 2), argumentObjects.at(size - 1), countObjects.at(0), countObjects.at(1)});
+			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(2), argumentObjects.at(3)});
+			const auto joinObjects = AnalyzeCall(joinFunction, {}, {argumentObjects.at(2), argumentObjects.at(3), countObjects.at(0), countObjects.at(1)});
 
 			return {joinObjects.at(0)};
 		}
@@ -293,14 +291,12 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 			const auto countFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(countType)->GetFunctionDeclaration();
 			const auto joinFunction = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(joinType)->GetFunctionDeclaration();
 
-			const auto size = argumentObjects.size();
-
 			// Functions are provided internally
 
-			const auto hashObjects = AnalyzeCall(hashFunction, {}, {argumentObjects.at(size - 1)});
-			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(size - 2), hashObjects.at(0), hashObjects.at(1)});
+			const auto hashObjects = AnalyzeCall(hashFunction, {}, {argumentObjects.at(4)});
+			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(3), hashObjects.at(0)});
 			const auto joinObjects = AnalyzeCall(joinFunction, {},
-				{argumentObjects.at(size - 2), hashObjects.at(0), hashObjects.at(1), countObjects.at(0), countObjects.at(1)}
+				{argumentObjects.at(3), hashObjects.at(0), hashObjects.at(1), countObjects.at(0), countObjects.at(1)}
 			);
 
 			return {joinObjects.at(0)};

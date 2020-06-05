@@ -114,6 +114,12 @@ bool DataInitializationAnalysis::VisitIn(const HorseIR::CallExpression *call)
 					m_dataInit.insert({outputObject, inputInit});
 				}
 			}
+			case HorseIR::BuiltinFunction::Primitive::GPUHashCreate:
+			{
+				const auto& outputObjects = m_objectAnalysis.GetDataObjects(call);
+				m_dataInit.insert({outputObjects.at(0), Initialization::Maximum});
+				break;
+			}
 		}
 	}
 	return false;

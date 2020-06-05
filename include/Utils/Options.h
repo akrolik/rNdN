@@ -24,6 +24,7 @@ public:
 
 	static constexpr char const *Opt_Algo_smem_sort = "algo-smem-sort";
 	static constexpr char const *Opt_Algo_join = "algo-join";
+	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
 	static constexpr char const *Opt_File = "file";
@@ -103,6 +104,7 @@ private:
 		m_options.add_options("Algorithm")
 			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
 			(Opt_Algo_join, "Join mode (loop|hash)", cxxopts::value<std::string>())
+			(Opt_Algo_hash_size, "Hash table size (data * 2^n)", cxxopts::value<unsigned int>()->default_value("1"))
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")

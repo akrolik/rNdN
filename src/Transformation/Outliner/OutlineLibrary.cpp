@@ -1,5 +1,7 @@
 #include "Transformation/Outliner/OutlineLibrary.h"
 
+#include "HorseIR/Utils/TypeUtils.h"
+
 #include "Utils/Options.h"
 
 namespace Transformation {
@@ -188,10 +190,28 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 				case Utils::Options::JoinKind::HashJoin:
 				{
 					isHashing = true;
+					for (const auto function : functions)
+					{
+						const auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(function->GetType());
+						const auto declaration = functionType->GetFunctionDeclaration();
 
-					auto hashFunction = GenerateHashFunction(leftType);
-					m_functions.push_back(hashFunction);
-					operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(hashFunction->GetName())));
+						if (declaration->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
+						{
+							auto primitive = static_cast<const HorseIR::BuiltinFunction *>(declaration);
+							if (primitive->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::Equal)
+							{
+								isHashing = false;
+								break;
+							}
+						}
+					}
+
+					if (isHashing)
+					{
+						auto hashFunction = GenerateHashFunction(leftType);
+						m_functions.push_back(hashFunction);
+						operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(hashFunction->GetName())));
+					}
 					break;
 				}
 			}
@@ -387,9 +407,12 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	std::vector<HorseIR::Operand *> returnOperands;
 	std::vector<HorseIR::Type *> returnTypes;
 
-	for (const auto argument : functions)
+	if (!isHashing)
 	{
-		operands.push_back(argument->Clone());
+		for (const auto argument : functions)
+		{
+			operands.push_back(argument->Clone());
+		}
 	}
 
 	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
@@ -399,9 +422,6 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	{
 		parameters.push_back(new HorseIR::Parameter("hash_keys", leftType->Clone()));
 		operands.push_back(new HorseIR::Identifier("hash_keys"));
-
-		parameters.push_back(new HorseIR::Parameter("hash_values", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
-		operands.push_back(new HorseIR::Identifier("hash_values"));
 	}
 	else
 	{
@@ -435,9 +455,12 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 	std::vector<HorseIR::Operand *> returnOperands;
 	std::vector<HorseIR::Type *> returnTypes;
 
-	for (const auto argument : functions)
+	if (!isHashing)
 	{
-		operands.push_back(argument->Clone());
+		for (const auto argument : functions)
+		{
+			operands.push_back(argument->Clone());
+		}
 	}
 
 	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
