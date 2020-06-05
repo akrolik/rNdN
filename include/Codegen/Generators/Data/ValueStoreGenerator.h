@@ -68,12 +68,12 @@ public:
 				}
 				else
 				{
-					Error("non-constant size tuple");
+					Error("list-in-vector store for non-constant sized tuple " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 				}
 			}
 			else
 			{
-				Error("list not a tuple");
+				Error("list-in-vector store for non-list shape " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 			}
 		}
 		else
@@ -89,7 +89,7 @@ public:
 	{
 		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
-			Error("tuple-in-list");
+			Error("list store for heterogeneous tuple", returnIndex);
 		}
 
 		m_cellIndex = index;
@@ -136,6 +136,11 @@ private:
 					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
 					{
 						GenerateWriteCompressed<T>(operand, returnIndex);
+						return;
+					}
+					else if (Analysis::ShapeUtils::IsDynamicShape(vectorShape))
+					{
+						// Otherwise, we expect the output to be handled separately
 						return;
 					}
 				}
@@ -200,7 +205,7 @@ private:
 				}
 			}
 			
-			Error("store for shape " + Analysis::ShapeUtils::ShapeString(shape));
+			Error("store for shape " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 		}
 	}
 
@@ -336,7 +341,7 @@ private:
 			}
 			default:
 			{
-				Error("store reduction operation");
+				Error("store reduction operation", returnIndex);
 			}
 		}
 	}
@@ -361,7 +366,7 @@ private:
 
 		// Generate the reduction
 
-		auto predicate = GenerateCASReductionOperation(reductionOp, global, value);
+		auto predicate = GenerateCASReductionOperation(reductionOp, global, value, returnIndex);
 
 		if (predicate)
 		{
@@ -384,14 +389,14 @@ private:
 	}
 
 	template<class T>
-	const PTX::Register<PTX::PredicateType> *GenerateCASReductionOperation(RegisterReductionOperation reductionOp, const PTX::Register<T> *global, const PTX::Register<T> *value)
+	const PTX::Register<PTX::PredicateType> *GenerateCASReductionOperation(RegisterReductionOperation reductionOp, const PTX::Register<T> *global, const PTX::Register<T> *value, unsigned int returnIndex)
 	{
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
 		{
 			auto convertedGlobal = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, global);
 			auto convertedValue = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, value);
 
-			auto predicate = GenerateCASReductionOperation(reductionOp, convertedGlobal, convertedValue);
+			auto predicate = GenerateCASReductionOperation(reductionOp, convertedGlobal, convertedValue, returnIndex);
 			if (predicate)
 			{
 				return predicate;
@@ -424,7 +429,7 @@ private:
 				}
 				default:
 				{
-					Error("store CAS reduction operation");
+					Error("store CAS reduction operation", returnIndex);
 				}
 			}
 		}
@@ -517,7 +522,7 @@ private:
 		}
 		else
 		{
-			Error("compression predicate for return parameter " + NameUtils::ReturnName(returnIndex));
+			Error("compression predicate for return parameter", returnIndex);
 		}
 	}
 
@@ -548,7 +553,7 @@ private:
 			}
 			return addressGenerator.GenerateAddress(returnParameter, index);
 		}
-		Error("address for return parameter " + NameUtils::ReturnName(returnIndex) + " with shape " + Analysis::ShapeUtils::ShapeString(shape));
+		Error("address for return parameter with shape " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 	}
 
 	template<class T>
@@ -560,6 +565,11 @@ private:
 			return operandGenerator.GenerateRegister(operand, loadKind, m_cellIndex);
 		}
 		return operandGenerator.GenerateRegister(operand, loadKind);
+	}
+
+	[[noreturn]] void Error(const std::string& message, unsigned int returnIndex) const
+	{
+		Generator::Error(message + " [index = " + std::to_string(returnIndex) + "]");
 	}
 
 	unsigned int m_cellIndex = 0;
