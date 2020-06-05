@@ -19,7 +19,8 @@ public:
 			Bit32Type, Bit64Type,
 			UInt32Type, UInt64Type,
 			Int32Type, Int64Type,
-			Float16x2Type, Float32Type, Float64Type
+			Float16Type, Float16x2Type,
+			Float32Type, Float64Type
 		)
 	);
 

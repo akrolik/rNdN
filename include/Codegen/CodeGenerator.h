@@ -82,11 +82,11 @@ public:
 	{
 		// A PTX module consists of the PTX version, the device version and the address size.
 		//
-		// This compiler currently supports PTX version 6.2 from May 2018. The device
+		// This compiler currently supports PTX version 6.3 from October 2018. The device
 		// properties are dynamically detected by the enclosing package.
 
 		PTX::Module *ptxModule = new PTX::Module();
-		ptxModule->SetVersion(6, 2);
+		ptxModule->SetVersion(6, 3);
 		ptxModule->SetDeviceTarget(m_builder.GetTargetOptions().ComputeCapability);
 		ptxModule->SetAddressSize(B);
 

@@ -83,7 +83,8 @@ public:
 			Bit32Type, Bit64Type,
 			UInt32Type, UInt64Type,
 			Int32Type, Int64Type,
-			Float16x2Type, Float32Type, Float64Type
+			Float16Type, Float16x2Type,
+			Float32Type, Float64Type
 		)
 	);
 
@@ -107,7 +108,7 @@ class AtomicInstruction<B, T, S, T::AtomicOperation::CompareAndSwap, Assert> : p
 public:
 	REQUIRE_TYPE_PARAM(AtomicInstruction,
 		REQUIRE_EXACT(T,
-			Bit32Type, Bit32Type
+			Bit16Type, Bit32Type, Bit64Type
 		)
 	);
 
