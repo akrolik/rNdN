@@ -30,7 +30,7 @@ public:
 	std::string Name() const override { return "PrefixSumGenerator"; }
 
 	template<class S>
-	const PTX::Register<T> *Generate(const PTX::Register<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
+	const PTX::Register<T> *Generate(const PTX::TypedOperand<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// Allocate global variable for the prefix sum
 
@@ -46,7 +46,7 @@ public:
 	}
 
 	template<class S>
-	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::Register<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
+	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::TypedOperand<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// A global prefix sum is computed in 4 stages:
 		//
