@@ -21,6 +21,8 @@ public:
 	constexpr static const char *SortStartSubstage = "$sort$start_substage";
 	constexpr static const char *SortNumStages = "$sort$num_stages";
 
+	constexpr static const char *HashtableSize = "$hash$size";
+
 	static std::string VariableName(const HorseIR::Identifier *identifier, bool isCell, unsigned int cellIndex, const std::string& index = "")
 	{
 		if (isCell)

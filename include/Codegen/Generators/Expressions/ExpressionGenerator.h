@@ -41,6 +41,9 @@
 
 #include "Codegen/Generators/Expressions/Builtins/LoopJoinCountGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/LoopJoinGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/HashCreateGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/HashJoinCountGenerator.h"
+#include "Codegen/Generators/Expressions/Builtins/HashJoinGenerator.h"
 
 #include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
@@ -134,6 +137,24 @@ public:
 			case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 			{
 				LoopJoinGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets.at(0), arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUHashCreate:
+			{
+				HashCreateGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
+			{
+				HashJoinCountGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUHashJoin:
+			{
+				HashJoinGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets.at(0), arguments);
 				break;
 			}

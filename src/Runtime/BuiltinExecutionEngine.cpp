@@ -21,6 +21,7 @@
 #include "Runtime/GPU/Library/GPUGroupEngine.h"
 #include "Runtime/GPU/Library/GPUUniqueEngine.h"
 #include "Runtime/GPU/Library/GPULoopJoinEngine.h"
+#include "Runtime/GPU/Library/GPUHashJoinEngine.h"
 
 #include "Utils/Logger.h"
 
@@ -521,9 +522,16 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
 		{
-			// GPU join!
+			// GPU loop join!
 
 			GPULoopJoinEngine joinEngine(m_runtime, m_program);
+			return {joinEngine.Join(arguments)};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
+		{
+			// GPU hash join!
+
+			GPUHashJoinEngine joinEngine(m_runtime, m_program);
 			return {joinEngine.Join(arguments)};
 		}
 		default:
