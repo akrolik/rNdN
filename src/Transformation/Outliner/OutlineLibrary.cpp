@@ -195,14 +195,17 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 						const auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(function->GetType());
 						const auto declaration = functionType->GetFunctionDeclaration();
 
-						if (declaration->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
+						if (declaration->GetKind() != HorseIR::FunctionDeclaration::Kind::Builtin)
 						{
-							auto primitive = static_cast<const HorseIR::BuiltinFunction *>(declaration);
-							if (primitive->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::Equal)
-							{
-								isHashing = false;
-								break;
-							}
+							isHashing = false;
+							break;
+						}
+
+						auto primitive = static_cast<const HorseIR::BuiltinFunction *>(declaration);
+						if (primitive->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::Equal)
+						{
+							isHashing = false;
+							break;
 						}
 					}
 
