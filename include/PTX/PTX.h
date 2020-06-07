@@ -1,5 +1,10 @@
 #pragma once
 
+namespace PTX {
+	constexpr unsigned int MAJOR_VERSION = 6;
+	constexpr unsigned int MINOR_VERSION = 3;
+}
+
 // Utility
 
 #include "PTX/Concepts.h"
