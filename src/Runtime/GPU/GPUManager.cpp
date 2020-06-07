@@ -1,6 +1,9 @@
 #include "Runtime/GPU/GPUManager.h"
 
+#include "Runtime/GPU/GPUAssembler.h"
+
 #include "CUDA/libdevice.h"
+#include "CUDA/libr3d3.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -67,6 +70,16 @@ void GPUManager::InitializeLibraries()
 	m_externalModules.push_back(CUDA::libdevice::CreateModule(GetCurrentDevice()));
 
 	Utils::Chrono::End(timeLibrary_start);
+
+	// Instantiate the libr3d3 library, used for utility functions. The library
+	// will be access separately and not linked to the main program
+
+	auto timer3d3_start = Utils::Chrono::Start("libr3d3 library");
+
+	GPUAssembler assembler(*this);
+	m_library = assembler.Assemble(CUDA::libr3d3::CreateProgram(GetCurrentDevice()));
+
+	Utils::Chrono::End(timer3d3_start);
 }
 
 std::unique_ptr<CUDA::Device>& GPUManager::GetCurrentDevice()

@@ -173,11 +173,11 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			auto description = "";
 			if (dataInit.find(returnObject) != dataInit.end())
 			{
+				returnBuffer->ValidateGPU();
 				switch (dataInit.at(returnObject))
 				{
 					case Analysis::DataInitializationAnalysis::Initialization::Clear:
 					{
-						returnBuffer->ValidateGPU();
 						returnBuffer->Clear(DataBuffer::ClearMode::Zero);
 						description = " = <clear>";
 						break;

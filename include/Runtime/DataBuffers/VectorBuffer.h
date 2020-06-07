@@ -11,6 +11,11 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "CUDA/Constant.h"
+#include "CUDA/KernelInvocation.h"
+
+#include "Runtime/Runtime.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
@@ -256,7 +261,7 @@ public:
 	{
 		// Only resize from the GPU data size if the data is GPU resident
 
-		if (IsGPUConsistent() && IsAllocatedOnGPU())
+		if (IsAllocatedOnGPU() && IsGPUConsistent())
 		{
 			m_gpuSizeBuffer->TransferToCPU();
 			return Resize(m_gpuSize);
@@ -291,28 +296,64 @@ public:
 	{
 		if (mode == ClearMode::Zero)
 		{
-			if (IsCPUConsistent())
-			{
-				GetCPUWriteBuffer()->Clear();
-			}
-			if (IsGPUConsistent())
+			if (IsAllocatedOnGPU())
 			{
 				GetGPUWriteBuffer()->Clear();
+			}
+			else if (IsAllocatedOnCPU())
+			{
+				GetCPUWriteBuffer()->Clear();
 			}
 		}
 		else
 		{
-			auto data = GetCPUWriteBuffer();
-			auto val = (mode == ClearMode::Maximum) ? std::numeric_limits<T>::max() : std::numeric_limits<T>::min();
-			for (auto i = 0u; i < m_elementCount; ++i)
+			auto value = (mode == ClearMode::Maximum) ? std::numeric_limits<T>::max() : std::numeric_limits<T>::min();
+			if (IsAllocatedOnGPU())
 			{
-				data->SetValue(i, val);
+				// Get the set utility kernel
+
+				auto& runtime = *Runtime::GetInstance();
+				auto& gpuManager = runtime.GetGPUManager();
+
+				//TODO: Naming does not work for date/string types
+				auto libr3d3 = gpuManager.GetLibrary();
+				auto kernel = libr3d3->GetKernel("set_" + HorseIR::PrettyPrinter::PrettyString(m_type));
+				CUDA::KernelInvocation invocation(kernel);
+
+				// Configure the runtime thread layout
+
+				auto blockSize = gpuManager.GetCurrentDevice()->GetMaxThreadsDimension(0);
+				if (blockSize > m_gpuSize)
+				{
+					blockSize = m_gpuSize;
+				}
+				auto blockCount = (m_gpuSize + blockSize - 1) / blockSize;
+
+				invocation.SetBlockShape(blockSize, 1, 1);
+				invocation.SetGridShape(blockCount, 1, 1);
+
+				CUDA::TypedConstant<T> valueConstant(value);
+				CUDA::TypedConstant<std::uint32_t> sizeConstant(m_gpuSize);
+
+				invocation.AddParameter(*m_gpuBuffer);
+				invocation.AddParameter(valueConstant);
+				invocation.AddParameter(sizeConstant);
+
+				invocation.SetDynamicSharedMemorySize(0);
+				invocation.Launch();
+			}
+			else if (IsAllocatedOnGPU())
+			{
+				auto data = GetCPUWriteBuffer();
+				for (auto i = 0u; i < m_elementCount; ++i)
+				{
+					data->SetValue(i, value);
+				}
 			}
 		}
 	}
 
 protected:
-
 	void AllocateCPUBuffer() const override
 	{
 		auto timeAlloc_start = Utils::Chrono::Start("CPU allocation (" + std::to_string(m_elementCount * sizeof(T)) + " bytes)");

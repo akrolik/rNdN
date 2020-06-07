@@ -24,6 +24,10 @@ public:
 	void SetProgram(const GPUProgram *program) { m_program = program; }
 	const GPUProgram *GetProgram() const { return m_program; }
 
+	// libr3d3
+
+	const GPUProgram *GetLibrary() const { return m_library; }
+
 private:
 	void InitializeCUDA();
 	void InitializeLibraries();
@@ -32,6 +36,7 @@ private:
 	std::vector<CUDA::ExternalModule> m_externalModules;
 
 	const GPUProgram *m_program = nullptr;
+	const GPUProgram *m_library = nullptr;
 };
 
 }
