@@ -67,7 +67,10 @@ void Platform::CreateContext(std::unique_ptr<Device>& device)
 
 Platform::~Platform()
 {
-	checkDriverResult(cuCtxDestroy(m_context));
+	if (m_initialized)
+	{
+		checkDriverResult(cuCtxDestroy(m_context));
+	}
 }
 
 }
