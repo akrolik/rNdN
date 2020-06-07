@@ -1,5 +1,10 @@
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
 
+#include "CUDA/Constant.h"
+#include "CUDA/KernelInvocation.h"
+
+#include "Runtime/Runtime.h"
+
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 namespace Runtime {
@@ -9,6 +14,61 @@ ListCompressedBuffer *ListCompressedBuffer::CreateEmpty(const HorseIR::BasicType
 	auto values = VectorBuffer::CreateEmpty(type, size);
 	auto sizes = new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), size->GetValues()));
 	return new ListCompressedBuffer(sizes, values);
+}
+
+ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int64_t> *offsets, VectorBuffer *values) : m_values(values)
+{
+	// Get the set utility kernel
+
+	auto& gpuManager = Runtime::GetInstance()->GetGPUManager();
+	auto libr3d3 = gpuManager.GetLibrary();
+
+	auto kernel = libr3d3->GetKernel("init_list");
+	CUDA::KernelInvocation invocation(kernel);
+
+	// Configure the runtime thread layout
+
+	const auto compressedSize = offsets->GetElementCount();
+
+	const auto maxBlockSize = gpuManager.GetCurrentDevice()->GetMaxThreadsDimension(0);
+	const auto blockSize = (compressedSize < maxBlockSize) ? compressedSize : maxBlockSize;
+	const auto blockCount = (compressedSize + blockSize - 1) / blockSize;
+
+	invocation.SetBlockShape(blockSize, 1, 1);
+	invocation.SetGridShape(blockCount, 1, 1);
+
+	auto dataAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), compressedSize);
+	auto sizeAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), compressedSize);
+	auto sizesBuffer = new TypedVectorBuffer<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), compressedSize);
+
+	CUDA::TypedConstant<std::uint32_t> sizeConstant(compressedSize);
+	CUDA::TypedConstant<std::uint32_t> dataSizeConstant(values->GetElementCount());
+
+	invocation.AddParameter(*dataAddressesBuffer->GetGPUWriteBuffer());
+	invocation.AddParameter(*sizeAddressesBuffer->GetGPUWriteBuffer());
+	invocation.AddParameter(*sizesBuffer->GetGPUWriteBuffer());
+
+	invocation.AddParameter(*offsets->GetGPUReadBuffer());
+	invocation.AddParameter(*values->GetGPUReadBuffer());
+	invocation.AddParameter(sizeConstant);
+	invocation.AddParameter(dataSizeConstant);
+
+	invocation.SetDynamicSharedMemorySize(0);
+	invocation.Launch();
+
+	m_dataAddresses = dataAddressesBuffer;
+	m_sizeAddresses = sizeAddressesBuffer;
+	m_sizes = sizesBuffer;
+
+	// Type and shape
+
+	const auto& cellSizes = m_sizes->GetCPUReadBuffer()->GetValues();
+
+	m_type = new HorseIR::ListType(m_values->GetType()->Clone());
+	m_shape = new Analysis::ListShape(
+			new Analysis::Shape::ConstantSize(cellSizes.size()),
+			{new Analysis::VectorShape(new Analysis::Shape::RangedSize(cellSizes))}
+	);
 }
 
 ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)

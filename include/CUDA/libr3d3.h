@@ -16,6 +16,9 @@ public:
 private:
 	template<PTX::Bits B, class T>
 	static void CreateFunction_set(PTX::Module *module, const std::string& typeName);
+
+	template<PTX::Bits B>
+	static void CreateFunction_initlist(PTX::Module *module);
 };
 
 }

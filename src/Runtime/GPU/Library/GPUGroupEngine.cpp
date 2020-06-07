@@ -2,6 +2,7 @@
 
 #include "Runtime/Interpreter.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
+
 #include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
 #include "Runtime/GPU/Library/GPUSortEngine.h"
@@ -58,35 +59,19 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
 		Utils::Logger::LogDebug("Group dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
+
+		Utils::Logger::LogDebug("Group keys buffer: " + keysBuffer->DebugDump());
+		Utils::Logger::LogDebug("Group values buffer: " + valuesBuffer->DebugDump());
 	}
-
-	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
-
-	//TODO: Construct compressed buffer directly
-
-	auto sizesBuffer = new TypedVectorBuffer<std::int32_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), keysSize);
-	auto sizes = sizesBuffer->GetCPUWriteBuffer();
-	auto offsets = valuesBuffer->GetCPUReadBuffer();
-
-	auto timeSize_start = Utils::Chrono::Start("Compute sizes");
-
-	std::vector<DataBuffer *> entryBuffers;
-	for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
-	{
-		// Compute the index range, spanning the last entry to the end of the data
-
-		auto offset = offsets->GetValue(entryIndex);
-		auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : offsets->GetValue(entryIndex + 1);
-		auto size = (end - offset);
-
-		sizes->SetValue(entryIndex, size);
-	}
-
-	Utils::Chrono::End(timeSize_start);
 
 	// Create the dictionary buffer
 
-	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCompressedBuffer(sizesBuffer, indexBuffer));
+	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
+
+	// Create the dictionary object with compressed list buffer
+	//TODO: Add option for compressed/uncompressed buffer
+
+	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCompressedBuffer(valuesBuffer, indexBuffer));
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
