@@ -101,11 +101,6 @@ public:
 		GetKernelResources()->AddParameter(identifier, parameter);
 	}
 
-	const std::vector<HorseIR::Type *>& GetReturnTypes() const
-	{
-		return m_currentFunction->GetReturnTypes();
-	}
-
 	void AddStatement(const PTX::Statement *statement)
 	{
 		GetCurrentBlock()->AddStatement(statement);
