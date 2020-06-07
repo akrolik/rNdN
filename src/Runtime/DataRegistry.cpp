@@ -8,7 +8,9 @@
 
 #include "Libraries/csv.h"
 
+#include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/EnumerationBuffer.h"
+#include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 #include "Runtime/StringBucket.h"
 

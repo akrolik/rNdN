@@ -5,6 +5,7 @@
 #include "HorseIR/Semantics/SemanticAnalysis.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"

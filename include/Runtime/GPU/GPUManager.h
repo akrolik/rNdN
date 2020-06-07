@@ -11,6 +11,10 @@ namespace Runtime {
 class GPUManager
 {
 public:
+	GPUManager() {}
+	GPUManager(GPUManager const&) = delete;
+	void operator=(GPUManager const&) = delete;
+
 	void Initialize();
 
 	std::unique_ptr<CUDA::Device>& GetCurrentDevice();

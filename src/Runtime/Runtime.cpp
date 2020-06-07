@@ -8,6 +8,8 @@
 
 namespace Runtime {
 
+Runtime *Runtime::s_instance = nullptr;
+
 void Runtime::Initialize()
 {
 	// Initialize the runtime environment for the system

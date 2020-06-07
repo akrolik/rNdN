@@ -2,7 +2,7 @@
 
 #include "PTX/Program.h"
 
-#include "Runtime/Runtime.h"
+#include "Runtime/GPU/GPUManager.h"
 #include "Runtime/GPU/GPUProgram.h"
 
 namespace Runtime {
@@ -10,12 +10,12 @@ namespace Runtime {
 class GPUAssembler
 {
 public:
-	GPUAssembler(Runtime& runtime) : m_runtime(runtime) {}
+	GPUAssembler(GPUManager& gpuManager) : m_gpuManager(gpuManager) {}
 
 	const GPUProgram *Assemble(const PTX::Program *program) const;
 
 private:
-	Runtime& m_runtime;
+	GPUManager& m_gpuManager;
 };
 
 }

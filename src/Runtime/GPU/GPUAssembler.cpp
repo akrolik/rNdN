@@ -17,8 +17,7 @@ const GPUProgram *GPUAssembler::Assemble(const PTX::Program *program) const
 		cModule.AddPTXModule(module->ToString(0));
 	}
 
-	auto& gpu = m_runtime.GetGPUManager();
-	for (const auto& module : gpu.GetExternalModules())
+	for (const auto& module : m_gpuManager.GetExternalModules())
 	{
 		cModule.AddLinkedModule(module);
 	}

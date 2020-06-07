@@ -30,8 +30,10 @@ int main(int argc, const char *argv[])
 
 	Utils::Chrono::Initialize();
 
-	Runtime::Runtime runtime;
+	auto& runtime = *Runtime::Runtime::GetInstance();
 	runtime.Initialize();
+
+	auto& gpu = runtime.GetGPUManager();
 
 	// Parse the input HorseIR program from stdin and generate an AST
 
@@ -107,15 +109,14 @@ int main(int argc, const char *argv[])
 
 	// Compile the program
 
-	Runtime::GPUCompiler compiler(runtime);
+	Runtime::GPUCompiler compiler(gpu);
 	auto ptxProgram = compiler.Compile(outlinedProgram);
 
-	Runtime::GPUAssembler assembler(runtime);
+	Runtime::GPUAssembler assembler(gpu);
 	auto gpuProgram = assembler.Assemble(ptxProgram);
 
 	// Load into the GPU manager
 
-	auto& gpu = runtime.GetGPUManager();
 	gpu.SetProgram(gpuProgram);
 
 	Utils::Chrono::End(timeCompilation_start);
@@ -152,4 +153,6 @@ int main(int argc, const char *argv[])
 	}
 
 	Utils::Chrono::Complete();
+
+	Runtime::Runtime::Destroy();
 }

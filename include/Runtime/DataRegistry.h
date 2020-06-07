@@ -7,10 +7,10 @@
 
 #include "HorseIR/Tree/Tree.h"
 
-#include "Runtime/DataBuffers/ColumnBuffer.h"
-#include "Runtime/DataBuffers/TableBuffer.h"
-
 namespace Runtime {
+
+class ColumnBuffer;
+class TableBuffer;
 
 class DataRegistry
 {

@@ -3,21 +3,21 @@
 #include "HorseIR/Tree/Tree.h"
 #include "PTX/Program.h"
 
-#include "Runtime/Runtime.h"
+#include "Runtime/GPU/GPUManager.h"
 
 namespace Runtime {
 
 class GPUCompiler
 {
 public:
-	GPUCompiler(Runtime& runtime) : m_runtime(runtime) {}
+	GPUCompiler(GPUManager& gpuManager) : m_gpuManager(gpuManager) {}
 
 	PTX::Program *Compile(const HorseIR::Program *program) const;
 
 	void Optimize(PTX::Program *program) const;
 
 private:
-	Runtime& m_runtime;
+	GPUManager& m_gpuManager;
 };
 
 }

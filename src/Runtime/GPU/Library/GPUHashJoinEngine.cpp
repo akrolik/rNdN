@@ -54,6 +54,7 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	const auto shift = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Algo_hash_size);
 	const auto powerSize = Utils::Math::Power2(size) << shift;
 	const auto hashSize = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, powerSize);
+
 	auto hashFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
 	auto hashBuffers = engine.Execute(hashFunction, {arguments.at(4), hashSize});
 

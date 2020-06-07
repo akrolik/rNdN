@@ -10,6 +10,7 @@
 #include "Runtime/ExecutionEnvironment.h"
 #include "Runtime/Runtime.h"
 #include "Runtime/DataBuffers/DataBuffer.h"
+#include "Runtime/DataBuffers/VectorBuffer.h"
 
 namespace Runtime {
 

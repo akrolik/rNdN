@@ -43,8 +43,7 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 		Utils::Logger::LogSection("Generating PTX program");
 	}
 
-	auto& gpu = m_runtime.GetGPUManager();
-	auto& device = gpu.GetCurrentDevice();
+	auto& device = m_gpuManager.GetCurrentDevice();
 
 	// Collect the device properties for codegen
 
