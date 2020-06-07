@@ -23,7 +23,7 @@ static void _checkDriverResult(CUresult result, const char *file, int line)
 	const char *string = nullptr;
 
 	CUresult l_result = cuGetErrorName(result, &name);
-	if (l_result == CUDA_ERROR_INVALID_VALUE)
+	if (l_result == CUDA_ERROR_INVALID_VALUE || name == nullptr)
 	{
 		Utils::Logger::LogError("Unknown CUDA error <" + std::string(file) + ":" + std::to_string(line) + ">", "DRIVER ERROR");
 	}
