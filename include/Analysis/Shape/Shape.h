@@ -140,7 +140,7 @@ public:
 		}
 
 	private:
-		const CUDA::Vector<std::int32_t> m_values;
+		const CUDA::Vector<std::int32_t>& m_values;
 	};
 
 	class SymbolSize : public Size
