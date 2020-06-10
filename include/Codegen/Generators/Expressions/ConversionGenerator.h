@@ -46,10 +46,14 @@ public:
 		}
 		else
 		{
+			auto relaxedSource = RelaxType<T>(source);
+			if (relaxedSource)
+			{
+				return relaxedSource;
+			}
+
 			auto resources = this->m_builder.GetLocalResources();
 			auto converted = resources->AllocateTemporary<T>();
-
-			// Only relax registers, constants should be appropriately typed by the context
 
 			GenerateConversion(converted, source);
 
@@ -187,6 +191,62 @@ private:
 				return new PTX::ExtendRegisterAdapter<T, D, S>(source);
 			}
 		}
+		return nullptr;
+	}
+
+	template<class D, class S, PTX::Bits B = S::TypeBits>
+	const PTX::TypedOperand<D> *RelaxType(const PTX::TypedOperand<S> *source)
+	{
+		if constexpr(std::is_same<D, S>::value)
+		{
+			return source;
+		}
+		else if constexpr(PTX::is_bit_type<D>::value)
+		{
+			if constexpr(PTX::is_float_type<S>::value)
+			{
+				return new PTX::BitAdapter<PTX::FloatType, B>(source);
+			}
+			else if constexpr(PTX::is_signed_int_type<S>::value)
+			{
+				return new PTX::BitAdapter<PTX::IntType, B>(source);
+			}
+			else if constexpr(PTX::is_unsigned_int_type<S>::value)
+			{
+				return new PTX::BitAdapter<PTX::UIntType, B>(source);
+			}
+		}
+		//TODO: Add remaining types and adapters
+		else if constexpr(PTX::is_signed_int_type<D>::value)
+		{
+			if constexpr(PTX::is_unsigned_int_type<S>::value)
+			{
+				// return new PTX::SignedAdapter<B>(source);
+			}
+			else if constexpr(PTX::is_bit_type<S>::value)
+			{
+				// return new PTX::TypeRegisterAdapter<PTX::IntType, B>(source);
+			}
+		}
+		else if constexpr(PTX::is_unsigned_int_type<D>::value)
+		{
+			if constexpr(PTX::is_signed_int_type<S>::value)
+			{
+				// return new PTX::UnsignedAdapter<B>(source);
+			}
+			else if constexpr(PTX::is_bit_type<S>::value)
+			{
+				// return new PTX::TypeAdapter<PTX::UIntType, B>(source);
+			}
+		}
+		else if constexpr(PTX::is_float_type<D>::value)
+		{
+			if constexpr(PTX::is_bit_type<S>::value)
+			{
+				// return new PTX::TypeAdapter<PTX::FloatType, B>(source);
+			}
+		}
+
 		return nullptr;
 	}
 
