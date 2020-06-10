@@ -4,6 +4,7 @@
 #include "Runtime/DataBuffers/BufferUtils.h"
 
 #include "Runtime/DataBuffers/FunctionBuffer.h"
+#include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
 #include "Runtime/GPU/Library/GPUSortEngine.h"
 
@@ -68,14 +69,50 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
 
-	// Create the dictionary object with compressed list buffer
-	//TODO: Add option for compressed/uncompressed buffer
+	ListBuffer *listBuffer = nullptr;
+	if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_group_compressed))
+	{
+		// Create the dictionary object with compressed list buffer
 
-	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, new ListCompressedBuffer(valuesBuffer, indexBuffer));
+		listBuffer = new ListCompressedBuffer(valuesBuffer, indexBuffer);
+	}
+	else
+	{
+		// Create the dictionary object with divided list cells
+
+		auto values = valuesBuffer->GetCPUReadBuffer();
+
+		std::vector<DataBuffer *> entryBuffers;
+		for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
+		{
+			// Compute the index range, spanning the last entry to the end of the data
+
+			auto offset = values->GetValue(entryIndex);
+			auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : values->GetValue(entryIndex + 1);
+			auto size = (end - offset);
+
+			auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+			auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
+
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			{
+				Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
+			}
+
+			// Copy the index data
+
+			CUDA::Buffer::Copy(entryBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * sizeof(std::int64_t), 0, offset * sizeof(std::int64_t));
+
+			entryBuffers.push_back(entryBuffer);
+		}
+
+		listBuffer = new ListCellBuffer(entryBuffers);
+	}
+	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, listBuffer);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
-		Utils::Logger::LogDebug(dictionaryBuffer->DebugDump());
+		Utils::Logger::LogDebug("Group dictionary: " + dictionaryBuffer->DebugDump());
 	}
 
 	Utils::Chrono::End(timeCreate_start);

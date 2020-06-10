@@ -24,6 +24,7 @@ public:
 
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
 	static constexpr char const *Opt_Algo_smem_sort = "algo-smem-sort";
+	static constexpr char const *Opt_Algo_group_compressed = "algo-group-compressed";
 	static constexpr char const *Opt_Algo_join = "algo-join";
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 
@@ -100,6 +101,7 @@ private:
 		m_options.add_options("Algorithm")
 			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))
 			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
+			(Opt_Algo_group_compressed, "Group compressed list", cxxopts::value<bool>()->default_value("true"))
 			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("loop"))
 			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 		;
