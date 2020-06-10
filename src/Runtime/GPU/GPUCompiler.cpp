@@ -48,8 +48,6 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 	// Collect the device properties for codegen
 
 	Codegen::CodegenOptions codegenOptions;
-	codegenOptions.Reduction = Codegen::CodegenOptions::ReductionKind::ShuffleWarp;
-
 	Codegen::TargetOptions targetOptions;
 	targetOptions.ComputeCapability = device->GetComputeCapability();
 	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
@@ -59,6 +57,9 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
 	{
+		Utils::Logger::LogInfo("Codegen Options");
+		Utils::Logger::LogInfo(codegenOptions.ToString(), 1);
+
 		Utils::Logger::LogInfo("Target Options");
 		Utils::Logger::LogInfo(targetOptions.ToString(), 1);
 	}

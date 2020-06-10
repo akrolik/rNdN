@@ -22,6 +22,7 @@ public:
 	static constexpr char const *Opt_Print_json = "print-json";
 	static constexpr char const *Opt_Print_time = "print-time";
 
+	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
 	static constexpr char const *Opt_Algo_smem_sort = "algo-smem-sort";
 	static constexpr char const *Opt_Algo_join = "algo-join";
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
@@ -62,11 +63,6 @@ public:
 
 	static JoinKind GetJoinKind()
 	{
-		if (!Present(Opt_Algo_join))
-		{
-			return JoinKind::LoopJoin;
-		}
-
 		auto joinMode = Get<std::string>(Opt_Algo_join);
 		if (joinMode == "loop")
 		{
@@ -102,9 +98,10 @@ private:
 			(Opt_Optimize_outline, "Enable outliner graph optimization", cxxopts::value<bool>()->default_value("true"))
 		;
 		m_options.add_options("Algorithm")
+			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))
 			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
-			(Opt_Algo_join, "Join mode (loop|hash)", cxxopts::value<std::string>())
-			(Opt_Algo_hash_size, "Hash table size (data * 2^n)", cxxopts::value<unsigned int>()->default_value("1"))
+			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("loop"))
+			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")
