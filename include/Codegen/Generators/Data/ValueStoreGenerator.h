@@ -318,7 +318,8 @@ private:
 				// Float not supported by red
 				if constexpr(PTX::is_float_type<T>::value)
 				{
-					GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+					AtomicGenerator<B> atomicGenerator(this->m_builder);
+					atomicGenerator.GenerateMinMaxReduction(address, value, true);
 				}
 				else
 				{
@@ -331,7 +332,8 @@ private:
 				// Float not supported by red
 				if constexpr(PTX::is_float_type<T>::value)
 				{
-					GenerateCASWriteReduction(reductionOp, address, value, returnIndex);
+					AtomicGenerator<B> atomicGenerator(this->m_builder);
+					atomicGenerator.GenerateMinMaxReduction(address, value, false);
 				}
 				else
 				{
