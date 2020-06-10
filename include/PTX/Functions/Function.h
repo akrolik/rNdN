@@ -37,6 +37,11 @@ public:
 			code += "(" + ret + ") ";
 		}
 		code += m_name + "(" + GetParametersString() + ")";
+		if (m_options.GetBlockSize() != FunctionOptions::DynamicBlockSize)
+		{
+			code += " .reqntid " + std::to_string(m_options.GetBlockSize());
+
+		}
 		return code;
 	}
 
