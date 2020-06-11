@@ -296,9 +296,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 					}
 					else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(cellSize))
 					{
-						//TODO: Create const buffer
-						auto& tmp = const_cast<CUDA::Vector<std::int32_t>&>(rangedSize->GetValues());
-						dynamicBuffers.push_back(AllocateVectorParameter(invocation, tmp, "<list geometry cell sizes>"));
+						dynamicBuffers.push_back(AllocateConstantVectorParameter(invocation, rangedSize->GetValues(), "<list geometry cell sizes>"));
 					}
 					else
 					{
@@ -309,7 +307,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 			if (dynamicCellSizes.size() > 0)
 			{
-				dynamicBuffers.push_back(AllocateVectorParameter(invocation, dynamicCellSizes, "<list geometry cell sizes>"));
+				dynamicBuffers.push_back(AllocateConstantVectorParameter(invocation, dynamicCellSizes, "<list geometry cell sizes>"));
 			}
 		}
 		else
@@ -509,14 +507,14 @@ CUDA::TypedConstant<T> *GPUExecutionEngine::AllocateConstantParameter(CUDA::Kern
 }
 
 template<typename T>
-CUDA::Buffer *GPUExecutionEngine::AllocateVectorParameter(CUDA::KernelInvocation &invocation, CUDA::Vector<T>& values, const std::string& description) const
+CUDA::ConstantBuffer *GPUExecutionEngine::AllocateConstantVectorParameter(CUDA::KernelInvocation &invocation, const CUDA::Vector<T>& values, const std::string& description) const
 {
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
 		Utils::Logger::LogDebug("Initializing list input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes x " + std::to_string(values.size()) + "]");
 	}
 
-	auto buffer = new CUDA::Buffer(values.data(), values.size() * sizeof(T));
+	auto buffer = new CUDA::ConstantBuffer(values.data(), values.size() * sizeof(T));
 	buffer->AllocateOnGPU();
 	buffer->TransferToGPU();
 	invocation.AddParameter(*buffer);

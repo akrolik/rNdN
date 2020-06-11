@@ -33,7 +33,7 @@ private:
 	template<typename T>
 	CUDA::TypedConstant<T> *AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;
 	template<typename T>
-	CUDA::Buffer *AllocateVectorParameter(CUDA::KernelInvocation &invocation, CUDA::Vector<T>& values, const std::string& description) const;
+	CUDA::ConstantBuffer *AllocateConstantVectorParameter(CUDA::KernelInvocation &invocation, const CUDA::Vector<T>& values, const std::string& description) const;
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;
