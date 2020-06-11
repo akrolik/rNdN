@@ -56,6 +56,8 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int64_t>
 	invocation.SetDynamicSharedMemorySize(0);
 	invocation.Launch();
 
+	CUDA::Synchronize();
+
 	m_dataAddresses = dataAddressesBuffer;
 	m_sizeAddresses = sizeAddressesBuffer;
 	m_sizes = sizesBuffer;
