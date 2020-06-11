@@ -32,11 +32,9 @@ public:
 			stream << std::hex << std::setfill('0');
 
 			auto bytes = reinterpret_cast<const unsigned char *>(&m_value);
-			for (auto i = sizeof(typename T::SystemType) - 1; i >= 0; --i)
+			for (int i = sizeof(typename T::SystemType) - 1; i >= 0; --i)
 			{
 				stream << std::setw(2) << (unsigned int)bytes[i];
-				//TODO: Why does this line fix the segfault?
-				if (i == 0) break;
 			}
 			return stream.str();
 		}
