@@ -52,6 +52,7 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 	targetOptions.ComputeCapability = device->GetComputeCapability();
 	targetOptions.MaxBlockSize = device->GetMaxThreadsDimension(0);
 	targetOptions.WarpSize = device->GetWarpSize();
+	targetOptions.SharedMemorySize = device->GetSharedMemorySize();
 
 	// Initialize the geometry information for code generation
 

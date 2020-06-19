@@ -1839,6 +1839,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape0->GetSize()))
 				{
 					auto powerSize = Utils::Math::Power2(constantSize->GetValue());
+					//TODO: Is this needed?
 					if (powerSize < 2048)
 					{
 						powerSize = 2048;

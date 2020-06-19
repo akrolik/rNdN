@@ -19,14 +19,12 @@
 
 namespace Codegen {
 
-constexpr auto SORT_CACHE_SIZE = 1024u;
-
 enum class OrderMode {
 	Shared,
 	Global
 };
 
-template<PTX::Bits B>
+template<PTX::Bits B, unsigned int SORT_CACHE_SIZE>
 class OrderLoadGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
@@ -255,7 +253,7 @@ private:
 	Order m_sequenceOrder;
 };
 
-template<PTX::Bits B>
+template<PTX::Bits B, unsigned int SORT_CACHE_SIZE>
 class OrderSwapGenerator : public Generator, public HorseIR::ConstVisitor
 {
 public:
@@ -440,6 +438,38 @@ public:
 
 	std::string Name() const override { return "OrderGenerator"; }
 
+	void Generate(const std::vector<HorseIR::Operand *>& arguments)
+	{
+		const auto indexSize = HorseIR::TypeUtils::GetBitSize(arguments.at(0)->GetType());
+		const auto dataSize = HorseIR::TypeUtils::GetBitSize(arguments.at(1)->GetType());
+		const auto size = indexSize + dataSize;
+
+		auto& targetOptions = m_builder.GetTargetOptions();
+		const auto sharedSize = targetOptions.SharedMemorySize;
+
+		if (size * 2048 <= sharedSize)
+		{
+			Generate<1024>(arguments);
+		}
+		else if (size * 1024 <= sharedSize)
+		{
+			Generate<512>(arguments);
+		}
+		else if (size * 512 <= sharedSize)
+		{
+			Generate<256>(arguments);
+		}
+		else if (size * 256 <= sharedSize)
+		{
+			Generate<128>(arguments);
+		}
+		else
+		{
+			Error("shared memory size less than 128 threads");
+		}
+	}
+
+	template<unsigned int SORT_CACHE_SIZE>
 	void Generate(const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
@@ -654,7 +684,7 @@ public:
 
 		// Load the left and right values
 
-		OrderLoadGenerator<B> loadGenerator(this->m_builder, m_mode);
+		OrderLoadGenerator<B, SORT_CACHE_SIZE> loadGenerator(this->m_builder, m_mode);
 		loadGenerator.Generate(dataArgument, leftIndex, rightIndex);
 
 		// Generate the if-else structure for the sort order
@@ -701,7 +731,7 @@ public:
 
 		loadGenerator.Generate(indexArgument, leftIndex, rightIndex);
 
-		OrderSwapGenerator<B> swapGenerator(this->m_builder, m_mode);
+		OrderSwapGenerator<B, SORT_CACHE_SIZE> swapGenerator(this->m_builder, m_mode);
 		swapGenerator.Generate(indexArgument, dataArgument, leftIndex, rightIndex);
 
 		// Finally, we end the order

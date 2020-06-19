@@ -10,6 +10,7 @@
 #include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Math.h"
 
 namespace Runtime {
 
@@ -62,7 +63,6 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 		for (auto substage = 0u; substage <= stage; ++substage)
 		{
 			const auto subsequenceSize = 1 << (stage - substage);
-			const auto sharedSequence = (subsequenceSize <= 1024);
 
 			// Collect the input bufers for sorting: (index, data), [order], stage, substage
 
@@ -80,11 +80,22 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 
 			// Execute!
 
-			if (sharedSequence && isShared)
+			auto sharedSize = 0u;
+			if (isShared)
+			{
+				const auto program = m_runtime.GetGPUManager().GetProgram();
+				const auto& kernelOptions = program->GetKernelOptions(sortFunctionShared->GetName());
+
+				sharedSize = kernelOptions.GetBlockSize();
+			}
+
+			if (subsequenceSize <= sharedSize)
 			{
 				// If there are less than 1024 threads per block, all substages left for this stage will fit in shared memory
 
-				const auto stages = (stage > 0) ? 1 : std::min(iterations, 10u);
+				const auto maxIterations = Utils::Math::Log2(sharedSize);
+				const auto stages = (stage > 0) ? 1 : std::min(iterations, maxIterations);
+
 				auto stagesBuffer = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, stages);
 				sortBuffers.push_back(stagesBuffer);
 

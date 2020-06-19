@@ -291,6 +291,23 @@ static bool IsBasicType(const Type *type, BasicType::BasicKind kind)
 	return false;
 }
 
+static int GetBitSize(const Type *type)
+{
+	if (const auto basicType = GetType<BasicType>(type))
+	{
+		return GetBitSize(basicType);
+	}
+	else if (const auto listType = GetType<ListType>(type))
+	{
+		auto size = 0u;
+		for (const auto elementType : listType->GetElementTypes())
+		{
+			size += GetBitSize(elementType);
+		}
+		return size;
+	}
+	return 0;
+}
 static int GetBitSize(const BasicType *type)
 {                       
 	switch (type->GetBasicKind())
