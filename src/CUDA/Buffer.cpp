@@ -6,16 +6,16 @@
 
 namespace CUDA {
 
-void Buffer::Copy(Buffer *destination, Buffer *source, size_t size, size_t destinationOffset, size_t sourceOffset)
+void Buffer::Copy(Buffer *destination, ConstantBuffer *source, size_t size, size_t destinationOffset, size_t sourceOffset)
 {
 	std::string description = "CUDA copy ";
-	if (source->m_tag != "")
+	if (source->GetTag() != "")
 	{
-		description += "'" + source->m_tag + "' ";
+		description += "'" + source->GetTag() + "' ";
 	}
-	if (destination->m_tag != "")
+	if (destination->GetTag() != "")
 	{
-		description += "to '" + destination->m_tag + "' ";
+		description += "to '" + destination->GetTag() + "' ";
 	}
 	description += "(" + std::to_string(size) + " bytes";
 	if (destinationOffset > 0)
@@ -30,12 +30,12 @@ void Buffer::Copy(Buffer *destination, Buffer *source, size_t size, size_t desti
 
 	auto start = Utils::Chrono::StartCUDA(description);
 
-	checkDriverResult(cuMemcpy(destination->m_GPUBuffer + destinationOffset, source->m_GPUBuffer + sourceOffset, size));
+	checkDriverResult(cuMemcpy(destination->GetGPUBuffer() + destinationOffset, source->GetGPUBuffer() + sourceOffset, size));
 
 	Utils::Chrono::End(start);
 }
 
-Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
+ConstantBuffer::ConstantBuffer(const void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
 {
 	const auto multiple = 1024;
 	if (m_size == 0)
@@ -48,7 +48,7 @@ Buffer::Buffer(void *buffer, size_t size) : m_CPUBuffer(buffer), m_size(size)
 	}
 }
 
-std::string Buffer::ChronoDescription(const std::string& operation, size_t size)
+std::string ConstantBuffer::ChronoDescription(const std::string& operation, size_t size)
 {
 	if (m_tag == "")
 	{
@@ -57,7 +57,7 @@ std::string Buffer::ChronoDescription(const std::string& operation, size_t size)
 	return "CUDA " + operation + " '" + m_tag + "' (" + std::to_string(size) + " bytes)";
 }
 
-Buffer::~Buffer()
+ConstantBuffer::~ConstantBuffer()
 {
 	auto start = Utils::Chrono::StartCUDA(ChronoDescription("free", m_allocatedSize));
 
@@ -66,7 +66,7 @@ Buffer::~Buffer()
 	Utils::Chrono::End(start);
 }
 
-void Buffer::AllocateOnGPU()
+void ConstantBuffer::AllocateOnGPU()
 {
 	auto start = Utils::Chrono::StartCUDA(ChronoDescription("allocation", m_allocatedSize));
 
@@ -75,7 +75,7 @@ void Buffer::AllocateOnGPU()
 	Utils::Chrono::End(start);
 }
 
-void Buffer::Clear()
+void ConstantBuffer::Clear()
 {
 	auto start = Utils::Chrono::StartCUDA(ChronoDescription("clear", m_allocatedSize));
 
@@ -84,7 +84,7 @@ void Buffer::Clear()
 	Utils::Chrono::End(start);
 }
 
-void Buffer::TransferToGPU()
+void ConstantBuffer::TransferToGPU()
 {
 	auto start = Utils::Chrono::StartCUDA(ChronoDescription("transfer", m_size) + " ->");
 

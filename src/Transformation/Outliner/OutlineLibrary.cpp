@@ -63,10 +63,28 @@ void OutlineLibrary::Visit(const HorseIR::CallExpression *call)
 	}
 }
 
-HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments)
+HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Operand *>& arguments, bool nested)
 {
 	switch (function->GetPrimitive())
 	{
+		case HorseIR::BuiltinFunction::Primitive::Each:
+		{
+			// Support a limited number of each functions (at the moment, only @unique)
+
+			const auto type = arguments.at(0)->GetType();
+			const auto function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(type)->GetFunctionDeclaration();
+			if (function->GetKind() != HorseIR::FunctionDeclaration::Kind::Builtin)
+			{
+				break;
+			}
+
+			auto builtin = static_cast<const HorseIR::BuiltinFunction *>(function);
+			if (builtin->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::Unique)
+			{
+				break;
+			}
+			return Outline(builtin, {arguments.at(1)}, true);
+		}
 		case HorseIR::BuiltinFunction::Primitive::Unique:
 		{
 			auto dataType = arguments.at(0)->GetType();
@@ -74,8 +92,8 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 
 			// Build the list of arguments for the library function call
 
-			auto initFunction = GenerateInitFunction(dataType, orderLiteral);
-			auto sortFunction = GenerateSortFunction(dataType, orderLiteral, false);
+			auto initFunction = GenerateInitFunction(dataType, orderLiteral, nested);
+			auto sortFunction = GenerateSortFunction(dataType, orderLiteral, false, nested);
 
 			m_functions.push_back(initFunction);
 			m_functions.push_back(sortFunction);
@@ -84,14 +102,16 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
 
-			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort))
+			// Nesting disables shared memory
+
+			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort) && !nested)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));
 				m_functions.push_back(sortFunctionShared);
 			}
 
-			auto uniqueFunction = GenerateUniqueFunction(dataType);
+			auto uniqueFunction = GenerateUniqueFunction(dataType, nested);
 			m_functions.push_back(uniqueFunction);
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(uniqueFunction->GetName())));
 			operands.push_back(arguments.at(0)->Clone());
@@ -238,14 +258,11 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			auto name = (isHashing) ? "hash_join_lib" : "loop_join_lib";
 			return new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", name)), operands);
 		}
-		default:
-		{
-			Utils::Logger::LogError("GPU library outliner does not support builtin function '" + function->GetName() + "'");
-		}
 	}
+	Utils::Logger::LogError("GPU library outliner does not support builtin function '" + function->GetName() + "'");
 }
 
-HorseIR::Function *OutlineLibrary::GenerateInitFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders)
+HorseIR::Function *OutlineLibrary::GenerateInitFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders, bool nested)
 {
 	std::vector<HorseIR::Parameter *> parameters;
 
@@ -268,27 +285,46 @@ HorseIR::Function *OutlineLibrary::GenerateInitFunction(const HorseIR::Type *dat
 		operands.push_back(orders->Clone());
 	}
 
-	lvalues.push_back(new HorseIR::VariableDeclaration("index", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	HorseIR::Type *indexType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+	if (nested)
+	{
+		indexType = new HorseIR::ListType(indexType);
+	}
+
+	lvalues.push_back(new HorseIR::VariableDeclaration("index", indexType));
+	returnTypes.push_back(indexType->Clone());
 	returnOperands.push_back(new HorseIR::Identifier("index"));
-	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
 
 	lvalues.push_back(new HorseIR::VariableDeclaration("data_out", dataType->Clone()));
 	returnOperands.push_back(new HorseIR::Identifier("data_out"));
 	returnTypes.push_back(dataType->Clone());
 
-	auto initCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "order_init")), operands);
+	auto funcLiteral = new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "order_init"));
+	if (nested)
+	{
+		operands.insert(std::begin(operands), funcLiteral);
+		funcLiteral = new HorseIR::FunctionLiteral(new HorseIR::Identifier("each_left"));
+	}
+
+	auto initCall = new HorseIR::CallExpression(funcLiteral, operands);
 	auto initStatement = new HorseIR::AssignStatement(lvalues, initCall);
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 
 	return new HorseIR::Function("order_init_" + std::to_string(m_index++), parameters, returnTypes, {initStatement, returnStatement}, true);
 }
 
-HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders, bool shared)
+HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dataType, const HorseIR::BooleanLiteral *orders, bool shared, bool nested)
 {
 	std::vector<HorseIR::Parameter *> parameters;
 	std::vector<HorseIR::Operand *> operands;
 
-	parameters.push_back(new HorseIR::Parameter("index", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	HorseIR::Type *indexType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+	if (nested)
+	{
+		indexType = new HorseIR::ListType(indexType);
+	}
+
+	parameters.push_back(new HorseIR::Parameter("index", indexType));
 	operands.push_back(new HorseIR::Identifier("index"));
 
 	parameters.push_back(new HorseIR::Parameter("data", dataType->Clone()));
@@ -305,7 +341,14 @@ HorseIR::Function *OutlineLibrary::GenerateSortFunction(const HorseIR::Type *dat
 	}
 
 	auto name = std::string((shared) ? "order_shared" : "order");
-	auto sortCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", name)), operands);
+	auto funcLiteral = new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", name));
+	if (nested)
+	{
+		operands.insert(std::begin(operands), funcLiteral);
+		funcLiteral = new HorseIR::FunctionLiteral(new HorseIR::Identifier("each_item"));
+	}
+
+	auto sortCall = new HorseIR::CallExpression(funcLiteral, operands);
 	auto sortStatement = new HorseIR::ExpressionStatement(sortCall);
 	
 	return new HorseIR::Function(name + "_" + std::to_string(m_index++), parameters, {}, {sortStatement}, true);
@@ -343,7 +386,7 @@ HorseIR::Function *OutlineLibrary::GenerateGroupFunction(const HorseIR::Type *da
 	return new HorseIR::Function("group_" + std::to_string(m_index++), parameters, returnTypes, {groupStatement, returnStatement}, true);
 }
 
-HorseIR::Function *OutlineLibrary::GenerateUniqueFunction(const HorseIR::Type *dataType)
+HorseIR::Function *OutlineLibrary::GenerateUniqueFunction(const HorseIR::Type *dataType, bool nested)
 {
 	std::vector<HorseIR::Parameter *> parameters;
 
@@ -353,22 +396,34 @@ HorseIR::Function *OutlineLibrary::GenerateUniqueFunction(const HorseIR::Type *d
 	std::vector<HorseIR::Operand *> returnOperands;
 	std::vector<HorseIR::Type *> returnTypes;
 
-	parameters.push_back(new HorseIR::Parameter("index", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	HorseIR::Type *indexType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+	if (nested)
+	{
+		indexType = new HorseIR::ListType(indexType);
+	}
+
+	parameters.push_back(new HorseIR::Parameter("index", indexType));
 	operands.push_back(new HorseIR::Identifier("index"));
 
 	parameters.push_back(new HorseIR::Parameter("data", dataType->Clone()));
 	operands.push_back(new HorseIR::Identifier("data"));
 
-	lvalues.push_back(new HorseIR::VariableDeclaration("keys", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
+	lvalues.push_back(new HorseIR::VariableDeclaration("keys", indexType->Clone()));
+	returnTypes.push_back(indexType->Clone());
 	returnOperands.push_back(new HorseIR::Identifier("keys"));
 
-	returnTypes.push_back(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64));
+	auto funcLiteral = new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "unique"));
+	if (nested)
+	{
+		operands.insert(std::begin(operands), funcLiteral);
+		funcLiteral = new HorseIR::FunctionLiteral(new HorseIR::Identifier("each_item"));
+	}
 
-	auto groupCall = new HorseIR::CallExpression(new HorseIR::FunctionLiteral(new HorseIR::Identifier("GPU", "unique")), operands);
-	auto groupStatement = new HorseIR::AssignStatement(lvalues, groupCall);
+	auto uniqueCall = new HorseIR::CallExpression(funcLiteral, operands);
+	auto uniqueStatement = new HorseIR::AssignStatement(lvalues, uniqueCall);
 	auto returnStatement = new HorseIR::ReturnStatement(returnOperands);
 
-	return new HorseIR::Function("unique_" + std::to_string(m_index++), parameters, returnTypes, {groupStatement, returnStatement}, true);
+	return new HorseIR::Function("unique_" + std::to_string(m_index++), parameters, returnTypes, {uniqueStatement, returnStatement}, true);
 }
 
 HorseIR::Function *OutlineLibrary::GenerateHashFunction(const HorseIR::Type *dataType)
