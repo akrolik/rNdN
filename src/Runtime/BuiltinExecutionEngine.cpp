@@ -403,7 +403,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			// Compile the regex and match on all data strings
 
-			jpcre2::select<char>::Regex regex(regexPatternString, PCRE2_ANCHORED, jpcre2::JIT_COMPILE);
+			jpcre2::select<char>::Regex regex(regexPatternString, PCRE2_DOTALL|PCRE2_ANCHORED, jpcre2::JIT_COMPILE);
 			if (!regex)
 			{
 				Error("unable to compile regex pattern '" + regexPatternString + "' from like pattern '" + likePatternString + "'");
