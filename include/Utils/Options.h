@@ -102,7 +102,7 @@ private:
 			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))
 			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
 			(Opt_Algo_group_compressed, "Group compressed list", cxxopts::value<bool>()->default_value("true"))
-			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("loop"))
+			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("hash"))
 			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 		;
 		m_options.add_options("Data")
