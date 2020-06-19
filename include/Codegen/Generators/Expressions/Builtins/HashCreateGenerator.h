@@ -217,7 +217,6 @@ private:
 
 			auto kernelResources = this->m_builder.GetKernelResources();
 			const PTX::Address<B, T, PTX::GlobalSpace> *address = nullptr;
-
 			if (isCell)
 			{
 				auto keyParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::ReturnName(0));
@@ -231,18 +230,28 @@ private:
 				address = addressGenerator.GenerateAddress(keyParameter, slot);
 			}
 
-			// CAS!
-
 			auto bitAddress = new PTX::AddressAdapter<B, BitType, T, PTX::GlobalSpace>(address);
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace, BitType::AtomicOperation::CompareAndSwap>(
-				previous, bitAddress, emptyRegister, value
-			));
 
 			// Increment before jumping, so we can make the exit a straight shot
 
 			auto currentSlot = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(currentSlot, slot));
 			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
+
+			// Precheck value for empty, as CAS is expensive
+
+			auto prePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			auto prePrevious = resources->template AllocateTemporary<BitType>();
+
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, BitType, PTX::GlobalSpace>(prePrevious, bitAddress));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(prePredicate, prePrevious, emptyRegister, BitType::ComparisonOperator::NotEqual));
+			this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, prePredicate));
+
+			// CAS!
+
+			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace, BitType::AtomicOperation::CompareAndSwap>(
+				previous, bitAddress, emptyRegister, value
+			));
 
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(predicate, previous, emptyRegister, BitType::ComparisonOperator::NotEqual));
 			this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicate));
