@@ -52,7 +52,10 @@ collect "Kernel '.*' execution"
 
 collect "Library function 'order_lib'"
 collect "Library function 'group_lib'"
-collect "Library function 'join_lib'"
+collect "Library function 'loop_join_lib'"
+collect "Library function 'hash_join_lib'"
+collect "Kernel 'hash_create_.*' execution"
+collect "Kernel 'join_.*' execution"
 
 collect "Builtin function '.*'"
 collect "Create dictionary"
