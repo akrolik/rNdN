@@ -414,7 +414,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				likeData.at(i) = regex.match(StringBucket::RecoverString(stringData.at(i)));
+				likeData.at(i) = regex.match(&StringBucket::RecoverString(stringData.at(i)));
 			}
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), std::move(likeData)))};
