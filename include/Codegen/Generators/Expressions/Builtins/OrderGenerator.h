@@ -191,7 +191,7 @@ public:
 			{
 				for (auto index = 0u; index < size->GetValue(); ++index)
 				{
-					GenerateTuple<T>(index, identifier);
+					GenerateComparison<T>(identifier, true, index, size->GetValue());
 				}
 				return;
 			}
@@ -202,16 +202,28 @@ public:
 	template<class T>
 	void GenerateTuple(unsigned int index, const HorseIR::Identifier *identifier)
 	{
-		GenerateComparison<T>(identifier, true, index);
+		const auto& inputOptions = this->m_builder.GetInputOptions();
+		const auto parameter = inputOptions.Parameters.at(identifier->GetSymbol());
+		const auto shape = inputOptions.ParameterShapes.at(parameter);
+
+		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		{
+			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			{
+				GenerateComparison<T>(identifier, true, index, size->GetValue());
+				return;
+			}
+		}
+		Error("non-constant cell count");
 	}
 
 private:
 	template<class T>
-	void GenerateComparison(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int index = 0)
+	void GenerateComparison(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int index = 0, unsigned int limit = 1)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
-			GenerateComparison<PTX::Int16Type>(identifier, isCell, index);
+			GenerateComparison<PTX::Int16Type>(identifier, isCell, index, limit);
 		}
 		else
 		{
@@ -236,12 +248,15 @@ private:
 
 			this->m_builder.AddStatement(new PTX::BranchInstruction(m_swapLabel, predicateSwap));
 			
-			// Check for the next branch
+			if (index + 1 < limit)
+			{
+				// Check for the next branch
 
-			auto predicateEqual = resources->template AllocateTemporary<PTX::PredicateType>();
+				auto predicateEqual = resources->template AllocateTemporary<PTX::PredicateType>();
 
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateEqual, leftValue, rightValue, T::ComparisonOperator::NotEqual));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(m_endLabel, predicateEqual));
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicateEqual, leftValue, rightValue, T::ComparisonOperator::NotEqual));
+				this->m_builder.AddStatement(new PTX::BranchInstruction(m_endLabel, predicateEqual));
+			}
 		}
 	}
 
