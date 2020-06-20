@@ -27,6 +27,7 @@ public:
 	static constexpr char const *Opt_Algo_group_compressed = "algo-group-compressed";
 	static constexpr char const *Opt_Algo_join = "algo-join";
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
+	static constexpr char const *Opt_Algo_like = "algo-like";
 
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
 	static constexpr char const *Opt_File = "file";
@@ -55,6 +56,25 @@ public:
 	static const T& Get(const std::string& name)
 	{
 		return GetInstance().m_results[name].as<T>();
+	}
+
+	enum class LikeKind {
+		PCRELike,
+		OptLike
+	};
+
+	static LikeKind GetLikeKind()
+	{
+		auto likeMode = Get<std::string>(Opt_Algo_like);
+		if (likeMode == "pcre")
+		{
+			return LikeKind::PCRELike;
+		}
+		else if (likeMode == "opt")
+		{
+			return LikeKind::OptLike;
+		}
+		Utils::Logger::LogError("Unknown like mode '" + likeMode + "'");
 	}
 
 	enum class JoinKind {
@@ -104,6 +124,7 @@ private:
 			(Opt_Algo_group_compressed, "Group compressed list", cxxopts::value<bool>()->default_value("true"))
 			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("hash"))
 			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
+			(Opt_Algo_like, "Like mode [pcre|opt]", cxxopts::value<std::string>()->default_value("opt"))
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")

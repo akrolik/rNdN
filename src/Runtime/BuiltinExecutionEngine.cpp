@@ -24,6 +24,7 @@
 #include "Runtime/GPU/Library/GPUHashJoinEngine.h"
 
 #include "Utils/Logger.h"
+#include "Utils/String.h"
 
 namespace Runtime {
 
@@ -364,57 +365,69 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				Error("expects a single pattern argument, received " + std::to_string(patternData->GetElementCount()));
 			}
 
-			// Transform from SQL like to regex
-			//  - Escape: '.', '*', and '\'
-			//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
-
 			const auto& likePatternString = StringBucket::RecoverString(patternData->GetValue(0));
-			const auto likePatternSize = likePatternString.size();
-
-			const char *likePattern = likePatternString.c_str();
-			char *regexPattern = (char *)malloc(sizeof(char) * likePatternSize * 2 + 2);
-
-			auto j = 0u;
-			for (auto i = 0u; i < likePatternSize; ++i)
-			{
-				char c = likePattern[i];
-				if (c == '.' || c == '*' || c == '\\')
-				{
-					regexPattern[j++] = '\\';
-					regexPattern[j++] = c;
-				}
-				else if (c == '%')
-				{
-					regexPattern[j++] = '.';
-					regexPattern[j++] = '*';
-				}
-				else if (c == '_')
-				{
-					regexPattern[j++] = '.';
-				}
-				else
-				{
-					regexPattern[j++] = c;
-				}
-			}
-			regexPattern[j++] = '$';
-			regexPattern[j] = '\0';
-			std::string regexPatternString(regexPattern);
-
-			// Compile the regex and match on all data strings
-
-			jpcre2::select<char>::Regex regex(regexPatternString, PCRE2_DOTALL|PCRE2_ANCHORED, jpcre2::JIT_COMPILE);
-			if (!regex)
-			{
-				Error("unable to compile regex pattern '" + regexPatternString + "' from like pattern '" + likePatternString + "'");
-			}
 
 			const auto size = stringData.size();
 			CUDA::Vector<std::int8_t> likeData(size);
 
-			for (auto i = 0u; i < size; ++i)
+			auto likeKind = Utils::Options::GetLikeKind();
+			if (likeKind == Utils::Options::LikeKind::OptLike)
 			{
-				likeData.at(i) = regex.match(&StringBucket::RecoverString(stringData.at(i)));
+				for (auto i = 0u; i < size; ++i)
+				{
+					likeData.at(i) = Utils::String::Like(StringBucket::RecoverString(stringData.at(i)), likePatternString);
+				}
+
+			}
+			else if (likeKind == Utils::Options::LikeKind::PCRELike)
+			{
+				// Transform from SQL like to regex
+				//  - Escape: '.', '*', and '\'
+				//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
+
+				const auto likePatternSize = likePatternString.size();
+				const char *likePattern = likePatternString.c_str();
+				auto regexPattern = new char[likePatternSize * 2 + 2];
+
+				auto j = 0u;
+				for (auto i = 0u; i < likePatternSize; ++i)
+				{
+					char c = likePattern[i];
+					if (c == '.' || c == '*' || c == '\\')
+					{
+						regexPattern[j++] = '\\';
+						regexPattern[j++] = c;
+					}
+					else if (c == '%')
+					{
+						regexPattern[j++] = '.';
+						regexPattern[j++] = '*';
+					}
+					else if (c == '_')
+					{
+						regexPattern[j++] = '.';
+					}
+					else
+					{
+						regexPattern[j++] = c;
+					}
+				}
+				regexPattern[j++] = '$';
+				regexPattern[j] = '\0';
+				std::string regexPatternString(regexPattern);
+
+				// Compile the regex and match on all data strings
+
+				jpcre2::select<char>::Regex regex(regexPatternString, PCRE2_DOTALL|PCRE2_ANCHORED|PCRE2_NO_UTF_CHECK, jpcre2::JIT_COMPILE);
+				if (!regex)
+				{
+					Error("unable to compile regex pattern '" + regexPatternString + "' from like pattern '" + likePatternString + "'");
+				}
+
+				for (auto i = 0u; i < size; ++i)
+				{
+					likeData.at(i) = regex.match(&StringBucket::RecoverString(stringData.at(i)));
+				}
 			}
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), std::move(likeData)))};
