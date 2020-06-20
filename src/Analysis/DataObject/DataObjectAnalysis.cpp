@@ -293,10 +293,10 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const HorseIR::B
 
 			// Functions are provided internally
 
-			const auto hashObjects = AnalyzeCall(hashFunction, {}, {argumentObjects.at(4)});
-			const auto countObjects = AnalyzeCall(countFunction, {}, {argumentObjects.at(3), hashObjects.at(0)});
+			const auto hashObjects = AnalyzeCall(hashFunction, {}, {argumentObjects.at(3)});
+			const auto countObjects = AnalyzeCall(countFunction, {}, {hashObjects.at(0), argumentObjects.at(4)});
 			const auto joinObjects = AnalyzeCall(joinFunction, {},
-				{argumentObjects.at(3), hashObjects.at(0), hashObjects.at(1), countObjects.at(0), countObjects.at(1)}
+				{hashObjects.at(0), hashObjects.at(1), argumentObjects.at(4), countObjects.at(0), countObjects.at(1)}
 			);
 
 			return {joinObjects.at(0)};

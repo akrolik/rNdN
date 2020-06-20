@@ -26,8 +26,8 @@ public:
 
 		// Decompose arguments
 
-		auto dataArgument = arguments.at(0);
-		auto keyArgument = arguments.at(1);
+		auto keyArgument = arguments.at(0);
+		auto dataArgument = arguments.at(2);
 		auto offsetArgument = arguments.at(3);
 
 		// Bounds check
@@ -110,9 +110,9 @@ private:
 		}
 		else
 		{
-			auto dataOperand = arguments.at(0);
-			auto keyOperand = arguments.at(1);
-			auto valueOperand = arguments.at(2);
+			auto keyOperand = arguments.at(0);
+			auto valueOperand = arguments.at(1);
+			auto dataOperand = arguments.at(2);
 
 			auto resources = this->m_builder.GetLocalResources();
 			auto emptyPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -149,8 +149,8 @@ private:
 			operandGenerator64.SetBoundsCheck(false);
 			auto matchValue = operandGenerator64.GenerateRegister(valueOperand, oldSlot, this->m_builder.UniqueIdentifier("slot"));
 
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, globalIndex64));
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, matchValue));
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, matchValue));
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, globalIndex64));
 
 			// End control flow and increment both the matched (predicated) and running counts
 

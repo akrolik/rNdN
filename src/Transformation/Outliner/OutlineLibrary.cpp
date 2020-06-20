@@ -465,17 +465,6 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	std::vector<HorseIR::Operand *> returnOperands;
 	std::vector<HorseIR::Type *> returnTypes;
 
-	if (!isHashing)
-	{
-		for (const auto argument : functions)
-		{
-			operands.push_back(argument->Clone());
-		}
-	}
-
-	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
-	operands.push_back(new HorseIR::Identifier("data_left"));
-
 	if (isHashing)
 	{
 		parameters.push_back(new HorseIR::Parameter("hash_keys", leftType->Clone()));
@@ -483,9 +472,17 @@ HorseIR::Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const H
 	}
 	else
 	{
-		parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
-		operands.push_back(new HorseIR::Identifier("data_right"));
+		for (const auto argument : functions)
+		{
+			operands.push_back(argument->Clone());
+		}
+
+		parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
+		operands.push_back(new HorseIR::Identifier("data_left"));
 	}
+
+	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data_right"));
 
 	lvalues.push_back(new HorseIR::VariableDeclaration("offsets", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 	lvalues.push_back(new HorseIR::VariableDeclaration("count", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
@@ -513,17 +510,6 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 	std::vector<HorseIR::Operand *> returnOperands;
 	std::vector<HorseIR::Type *> returnTypes;
 
-	if (!isHashing)
-	{
-		for (const auto argument : functions)
-		{
-			operands.push_back(argument->Clone());
-		}
-	}
-
-	parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
-	operands.push_back(new HorseIR::Identifier("data_left"));
-
 	if (isHashing)
 	{
 		parameters.push_back(new HorseIR::Parameter("hash_keys", leftType->Clone()));
@@ -534,9 +520,17 @@ HorseIR::Function *OutlineLibrary::GenerateJoinFunction(std::vector<const HorseI
 	}
 	else
 	{
-		parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
-		operands.push_back(new HorseIR::Identifier("data_right"));
+		for (const auto argument : functions)
+		{
+			operands.push_back(argument->Clone());
+		}
+
+		parameters.push_back(new HorseIR::Parameter("data_left", leftType->Clone()));
+		operands.push_back(new HorseIR::Identifier("data_left"));
 	}
+
+	parameters.push_back(new HorseIR::Parameter("data_right", rightType->Clone()));
+	operands.push_back(new HorseIR::Identifier("data_right"));
 
 	parameters.push_back(new HorseIR::Parameter("offsets", new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64)));
 	operands.push_back(new HorseIR::Identifier("offsets"));

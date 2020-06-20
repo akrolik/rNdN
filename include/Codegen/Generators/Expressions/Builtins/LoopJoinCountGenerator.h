@@ -37,7 +37,7 @@ public:
 		{
 			if (auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(functionArgument->GetType()))
 			{
-				auto joinOperation = GetComparisonOperation(functionType->GetFunctionDeclaration());
+				auto joinOperation = GetJoinComparisonOperation(functionType->GetFunctionDeclaration(), true);
 				joinOperations.push_back(joinOperation);
 			}
 			else
@@ -49,7 +49,7 @@ public:
 		// Count the number of join results per left-hand data item
 
 		InternalFindGenerator<B, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Count, joinOperations);
-		auto offsetsRegister = findGenerator.Generate(targets.at(0), dataArguments);
+		auto offsetsRegister = findGenerator.Generate(targets.at(0), {dataArguments.at(1), dataArguments.at(0)});
 
 		// Compute prefix sum, getting the offset for each thread
 
@@ -72,7 +72,7 @@ public:
 		auto index = indexGenerator.GenerateGlobalIndex();
 
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
-		auto size = sizeGenerator.GenerateSize(dataArguments.at(0));
+		auto size = sizeGenerator.GenerateSize(dataArguments.at(1));
 		auto sizeLess1 = resources->template AllocateTemporary<PTX::UInt32Type>();
 
 		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(sizeLess1, size, new PTX::UInt32Value(1)));

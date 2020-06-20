@@ -1365,21 +1365,21 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			// Hash call
 
-			const auto callTypes0 = AnalyzeCall(functionType0, {inputType4});
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3});
 			Require(callTypes0.size() == 2);
-			Require(TypeUtils::IsTypesEqual(callTypes0.at(0), inputType4));
+			Require(TypeUtils::IsTypesEqual(callTypes0.at(0), inputType3));
 			Require(TypeUtils::IsBasicType(callTypes0.at(1), BasicType::BasicKind::Int64));
 
 			// Count call
 
-			const auto callTypes1 = AnalyzeCall(functionType1, {inputType3, callTypes0.at(0)});
+			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType4});
 			Require(callTypes1.size() == 2);
 			Require(TypeUtils::IsBasicType(callTypes1.at(0), BasicType::BasicKind::Int64));
 			Require(TypeUtils::IsBasicType(callTypes1.at(1), BasicType::BasicKind::Int64));
 
 			// Join call
 
-			const auto callTypes2 = AnalyzeCall(functionType2, {inputType3, callTypes0.at(0), callTypes0.at(1), callTypes1.at(0), callTypes1.at(1)});
+			const auto callTypes2 = AnalyzeCall(functionType2, {callTypes0.at(0), callTypes0.at(1), inputType4, callTypes1.at(0), callTypes1.at(1)});
 			Require(TypeUtils::IsType<ListType>(callTypes2.at(0)));
 
 			const auto listCallType2 = TypeUtils::GetType<ListType>(callTypes2.at(0));
@@ -1402,17 +1402,17 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::GPUHashJoinCount:
 		{
-			const auto leftType = argumentTypes.at(0);
-			const auto hashKeyType = argumentTypes.at(1);
+			const auto hashKeyType = argumentTypes.at(0);
+			const auto rightType = argumentTypes.at(1);
 
 			Require(
-				(TypeUtils::IsType<BasicType>(leftType) && TypeUtils::IsType<BasicType>(hashKeyType)) ||
-				(TypeUtils::IsType<ListType>(leftType) && TypeUtils::IsType<ListType>(hashKeyType))
+				(TypeUtils::IsType<BasicType>(rightType) && TypeUtils::IsType<BasicType>(hashKeyType)) ||
+				(TypeUtils::IsType<ListType>(rightType) && TypeUtils::IsType<ListType>(hashKeyType))
 			);
 
-			if (TypeUtils::IsType<ListType>(leftType))
+			if (TypeUtils::IsType<ListType>(rightType))
 			{
-				const auto& elementTypes1 = TypeUtils::GetType<ListType>(leftType)->GetElementTypes();
+				const auto& elementTypes1 = TypeUtils::GetType<ListType>(rightType)->GetElementTypes();
 				const auto& elementTypes2 = TypeUtils::GetType<ListType>(hashKeyType)->GetElementTypes();
 
 				auto elementCount1 = elementTypes1.size();
@@ -1431,28 +1431,28 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			else
 			{
-				Require(TypeUtils::IsComparableTypes(leftType, hashKeyType));
+				Require(TypeUtils::IsComparableTypes(rightType, hashKeyType));
 			}
 			return {new BasicType(BasicType::BasicKind::Int64), new BasicType(BasicType::BasicKind::Int64)};
 		}
 		case BuiltinFunction::Primitive::GPUHashJoin:
 		{
-			const auto leftType = argumentTypes.at(0);
-			const auto hashKeyType = argumentTypes.at(1);
-			const auto hashValueType = argumentTypes.at(2);
+			const auto hashKeyType = argumentTypes.at(0);
+			const auto hashValueType = argumentTypes.at(1);
+			const auto rightType = argumentTypes.at(2);
 			const auto offsetsType = argumentTypes.at(3);
 			const auto countType = argumentTypes.at(4);
 
 			Require(TypeUtils::IsBasicType(hashValueType, BasicType::BasicKind::Int64));
 
 			Require(
-				(TypeUtils::IsType<BasicType>(leftType) && TypeUtils::IsType<BasicType>(hashKeyType)) ||
-				(TypeUtils::IsType<ListType>(leftType) && TypeUtils::IsType<ListType>(hashKeyType))
+				(TypeUtils::IsType<BasicType>(rightType) && TypeUtils::IsType<BasicType>(hashKeyType)) ||
+				(TypeUtils::IsType<ListType>(rightType) && TypeUtils::IsType<ListType>(hashKeyType))
 			);
 
-			if (TypeUtils::IsType<ListType>(leftType))
+			if (TypeUtils::IsType<ListType>(rightType))
 			{
-				const auto& elementTypes1 = TypeUtils::GetType<ListType>(leftType)->GetElementTypes();
+				const auto& elementTypes1 = TypeUtils::GetType<ListType>(rightType)->GetElementTypes();
 				const auto& elementTypes2 = TypeUtils::GetType<ListType>(hashKeyType)->GetElementTypes();
 
 				auto elementCount1 = elementTypes1.size();
@@ -1471,7 +1471,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			else
 			{
-				Require(TypeUtils::IsComparableTypes(leftType, hashKeyType));
+				Require(TypeUtils::IsComparableTypes(rightType, hashKeyType));
 			}
 
 			Require(TypeUtils::IsBasicType(offsetsType, BasicType::BasicKind::Int64));

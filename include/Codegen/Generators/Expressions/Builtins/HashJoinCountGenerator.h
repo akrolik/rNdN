@@ -25,8 +25,8 @@ public:
 
 	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Operand *>& arguments)
 	{
-		auto dataArgument = arguments.at(0);
-		auto keyArgument = arguments.at(1);
+		auto keyArgument = arguments.at(0);
+		auto dataArgument = arguments.at(1);
 
 		// Get target registers
 

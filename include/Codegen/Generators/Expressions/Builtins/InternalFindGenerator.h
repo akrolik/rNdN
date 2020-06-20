@@ -264,8 +264,8 @@ public:
 
                                         auto globalIndex64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, globalIndex);
 
-					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, globalIndex64));
-					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, m_targetRegister));
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, m_targetRegister));
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, globalIndex64));
 
 					// End control flow and increment both the matched (predicated) and running counts
 
@@ -424,6 +424,7 @@ public:
 
 	void Generate(const HorseIR::Operand *dataX, const HorseIR::TypedVectorLiteral<L> *dataY)
 	{
+		//TODO: Widest type
 		DispatchType(*this, dataX->GetType(), dataX, dataY);
 	}
 

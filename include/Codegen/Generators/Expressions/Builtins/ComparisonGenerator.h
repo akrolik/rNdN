@@ -47,7 +47,7 @@ static std::string ComparisonOperationString(ComparisonOperation comparisonOp)
 	return "<unknown>";
 }
 
-static ComparisonOperation GetComparisonOperation(const HorseIR::FunctionDeclaration *function)
+static ComparisonOperation GetJoinComparisonOperation(const HorseIR::FunctionDeclaration *function, bool flip)
 {
 	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Builtin)
 	{
@@ -55,13 +55,13 @@ static ComparisonOperation GetComparisonOperation(const HorseIR::FunctionDeclara
 		switch (builtinFunction->GetPrimitive())
 		{
 			case HorseIR::BuiltinFunction::Primitive::Less:
-				return ComparisonOperation::Less;
+				return (flip) ? ComparisonOperation::Greater : ComparisonOperation::Less;
 			case HorseIR::BuiltinFunction::Primitive::Greater:
-				return ComparisonOperation::Greater;
+				return (flip) ? ComparisonOperation::Less : ComparisonOperation::Greater;
 			case HorseIR::BuiltinFunction::Primitive::LessEqual:
-				return ComparisonOperation::LessEqual;
+				return (flip) ? ComparisonOperation::GreaterEqual : ComparisonOperation::LessEqual;
 			case HorseIR::BuiltinFunction::Primitive::GreaterEqual:
-				return ComparisonOperation::GreaterEqual;
+				return (flip) ? ComparisonOperation::LessEqual : ComparisonOperation::GreaterEqual;
 			case HorseIR::BuiltinFunction::Primitive::Equal:
 				return ComparisonOperation::Equal;
 			case HorseIR::BuiltinFunction::Primitive::NotEqual:

@@ -30,7 +30,7 @@ public:
 		{
 			if (auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(functionArgument->GetType()))
 			{
-				auto joinOperation = GetComparisonOperation(functionType->GetFunctionDeclaration());
+				auto joinOperation = GetJoinComparisonOperation(functionType->GetFunctionDeclaration(), true);
 				joinOperations.push_back(joinOperation);
 			}
 			else
@@ -42,7 +42,7 @@ public:
 		// Count the number of join results per left-hand data item
 
 		InternalFindGenerator<B, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Indexes, joinOperations);
-		findGenerator.Generate(target, dataArguments);
+		findGenerator.Generate(target, {dataArguments.at(1), dataArguments.at(0), dataArguments.at(2)});
 	}
 };
 

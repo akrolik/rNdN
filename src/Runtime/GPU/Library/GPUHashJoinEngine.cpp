@@ -36,19 +36,20 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	// Construct the hash table
 
 	auto size = 0;
+	auto leftBuffer = arguments.at(3);
 	auto rightBuffer = arguments.at(4);
-	if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(rightBuffer, false))
+	if (const auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(leftBuffer, false))
 	{
 		size = vectorBuffer->GetElementCount();
 	}
-	else if (const auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(rightBuffer, false))
+	else if (const auto listBuffer = BufferUtils::GetBuffer<ListBuffer>(leftBuffer, false))
 	{
 		const auto cellBuffer = BufferUtils::GetBuffer<VectorBuffer>(listBuffer->GetCell(0));
 		size = cellBuffer->GetElementCount();
 	}
 	else
 	{
-		Utils::Logger::LogError("GPU join library unsupported buffer type " + rightBuffer->Description());
+		Utils::Logger::LogError("GPU join library unsupported buffer type " + leftBuffer->Description());
 	}
 
 	const auto shift = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Algo_hash_size);
@@ -56,7 +57,7 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	const auto hashSize = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, powerSize);
 
 	auto hashFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
-	auto hashBuffers = engine.Execute(hashFunction, {arguments.at(4), hashSize});
+	auto hashBuffers = engine.Execute(hashFunction, {leftBuffer, hashSize});
 
 	auto keysBuffer = hashBuffers.at(0);
 	auto valuesBuffer = hashBuffers.at(1);
@@ -70,7 +71,7 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	// Count the number of results for the join
 
 	auto countFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
-	auto countBuffers = engine.Execute(countFunction, {arguments.at(3), keysBuffer});
+	auto countBuffers = engine.Execute(countFunction, {keysBuffer, rightBuffer});
 
 	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
 	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(1));
@@ -84,7 +85,7 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	// Perform the actual join
 
 	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction());
-	auto joinBuffers = engine.Execute(joinFunction, {arguments.at(3), keysBuffer, valuesBuffer, offsetsBuffer, countBuffer});
+	auto joinBuffers = engine.Execute(joinFunction, {keysBuffer, valuesBuffer, rightBuffer, offsetsBuffer, countBuffer});
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{

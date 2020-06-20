@@ -432,38 +432,40 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 			return indexShape;
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
+		{
+			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
+			auto offsetsShape = shapes.at(0);
+			Require(ShapeUtils::IsShape<VectorShape>(offsetsShape));
+			return offsetsShape;
+		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
 		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
 		case HorseIR::BuiltinFunction::Primitive::GPUHashJoin:
 		{
 			// Left data geometry
 
-			auto leftIndex = arguments.size();
+			auto dataIndex = arguments.size();
 			switch (function->GetPrimitive())
 			{
-				case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
+				// case HorseIR::BuiltinFunction::Primitive::GPULoopJoinCount:
 				case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCount:
 				{
-					leftIndex -= 2;
+					dataIndex -= 1;
 					break;
 				}
 				case HorseIR::BuiltinFunction::Primitive::GPULoopJoin:
-				{
-					leftIndex -= 4;
-					break;
-				}
 				case HorseIR::BuiltinFunction::Primitive::GPUHashJoin:
 				{
-					leftIndex -= 5;
+					dataIndex -= 3;
 					break;
 				}
 			}
-			auto leftShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(leftIndex));
-			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(leftShape))
+			auto dataShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(dataIndex));
+			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(dataShape))
 			{
 				return vectorShape;
 			}
-			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(leftShape))
+			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
 			{
 				auto cellShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
 				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
