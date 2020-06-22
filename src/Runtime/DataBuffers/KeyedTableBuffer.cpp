@@ -42,22 +42,22 @@ void KeyedTableBuffer::SetTag(const std::string& tag)
 
 void KeyedTableBuffer::ValidateCPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU ktable"));
 
-	DataBuffer::ValidateCPU();
 	m_key->ValidateCPU();
 	m_value->ValidateCPU();
+	DataBuffer::ValidateCPU();
 
 	Utils::Chrono::End(timeStart);
 }
 
 void KeyedTableBuffer::ValidateGPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU ktable"));
 
-	DataBuffer::ValidateGPU();
 	m_key->ValidateGPU();
 	m_value->ValidateGPU();
+	DataBuffer::ValidateGPU();
 
 	Utils::Chrono::End(timeStart);
 }

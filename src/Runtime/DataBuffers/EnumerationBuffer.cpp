@@ -37,24 +37,24 @@ void EnumerationBuffer::SetTag(const std::string& tag)
 
 void EnumerationBuffer::ValidateCPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU enum"));
 
-	ColumnBuffer::ValidateCPU();
 	m_keys->ValidateCPU();
 	m_values->ValidateCPU();
 	m_indexes->ValidateCPU();
+	ColumnBuffer::ValidateCPU();
 
 	Utils::Chrono::End(timeStart);
 }
 
 void EnumerationBuffer::ValidateGPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU enum"));
 
-	ColumnBuffer::ValidateGPU();
 	m_keys->ValidateGPU();
 	m_values->ValidateGPU();
 	m_indexes->ValidateGPU();
+	ColumnBuffer::ValidateGPU();
 
 	Utils::Chrono::End(timeStart);
 }

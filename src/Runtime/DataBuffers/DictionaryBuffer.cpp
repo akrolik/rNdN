@@ -54,22 +54,22 @@ void DictionaryBuffer::SetTag(const std::string& tag)
 
 void DictionaryBuffer::ValidateCPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU dictionary"));
 
-	DataBuffer::ValidateCPU();
 	m_keys->ValidateCPU();
 	m_values->ValidateCPU();
+	DataBuffer::ValidateCPU();
 
 	Utils::Chrono::End(timeStart);
 }
 
 void DictionaryBuffer::ValidateGPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU dictionary"));
 
-	DataBuffer::ValidateGPU();
 	m_keys->ValidateGPU();
 	m_values->ValidateGPU();
+	DataBuffer::ValidateGPU();
 
 	Utils::Chrono::End(timeStart);
 }

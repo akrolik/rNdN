@@ -83,26 +83,26 @@ ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
 
 void TableBuffer::ValidateCPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU table"));
 
-	DataBuffer::ValidateCPU();
 	for (const auto& [_, buffer] : m_columns)
 	{
 		buffer->ValidateCPU();
 	}
+	DataBuffer::ValidateCPU();
 
 	Utils::Chrono::End(timeStart);
 }
 
 void TableBuffer::ValidateGPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU table"));
 
-	DataBuffer::ValidateGPU();
 	for (const auto& [_, buffer] : m_columns)
 	{
 		buffer->ValidateGPU();
 	}
+	DataBuffer::ValidateGPU();
 
 	Utils::Chrono::End(timeStart);
 }

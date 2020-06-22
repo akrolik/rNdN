@@ -225,7 +225,10 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 			// Clear the size buffer for the dynamic output data
 
 			auto sizeBuffer = returnBuffer->GetGPUSizeBuffer();
+
+			auto timeInitializeSize_start = Utils::Chrono::Start("Initialize buffer");
 			sizeBuffer->Clear();
+			Utils::Chrono::End(timeInitializeSize_start);
 
 			invocation.AddParameter(*sizeBuffer);
 		}

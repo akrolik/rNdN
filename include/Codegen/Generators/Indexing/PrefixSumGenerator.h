@@ -292,7 +292,7 @@ public:
 
 		for (auto offset = 1; offset < targetOptions.WarpSize; offset <<= 1)
 		{
-			// shuffle the value from the above lane, merging if it part of the prefix sum
+			// Shuffle the value from the above lane, merging if it part of the prefix sum
 
 			ShuffleGenerator<T> shuffleGenerator(this->m_builder);
 			auto temp = shuffleGenerator.Generate(value, offset, 0, -1, PTX::ShuffleInstruction::Mode::Up);

@@ -156,20 +156,20 @@ size_t ListCompressedBuffer::GetCellCount() const
 
 void ListCompressedBuffer::ValidateCPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU list"));
 
-	DataBuffer::ValidateCPU();
 	m_values->ValidateCPU();
+	DataBuffer::ValidateCPU();
 
 	Utils::Chrono::End(timeStart);
 }
 
 void ListCompressedBuffer::ValidateGPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU list"));
 
-	DataBuffer::ValidateGPU();
 	m_values->ValidateGPU();
+	DataBuffer::ValidateGPU();
 
 	Utils::Chrono::End(timeStart);
 }

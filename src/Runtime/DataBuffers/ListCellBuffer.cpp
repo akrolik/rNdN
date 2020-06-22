@@ -129,26 +129,26 @@ void ListCellBuffer::ResizeCells(unsigned int size)
 
 void ListCellBuffer::ValidateCPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU list"));
 
-	DataBuffer::ValidateCPU();
 	for (const auto buffer : m_cells)
 	{
 		buffer->ValidateCPU();
 	}
+	DataBuffer::ValidateCPU();
 
 	Utils::Chrono::End(timeStart);
 }
 
 void ListCellBuffer::ValidateGPU() const
 {
-	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU list"));
 
-	DataBuffer::ValidateGPU();
 	for (const auto buffer : m_cells)
 	{
 		buffer->ValidateGPU();
 	}
+	DataBuffer::ValidateGPU();
 
 	Utils::Chrono::End(timeStart);
 }
