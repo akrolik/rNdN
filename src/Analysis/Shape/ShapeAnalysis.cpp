@@ -6,6 +6,7 @@
 #include "Runtime/DataBuffers/DataBuffer.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Math.h"
 #include "Utils/Options.h"
@@ -306,6 +307,8 @@ std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<HorseIR:
 
 		if (const auto buffer = m_dataAnalysis.GetDataObject(arguments.at(index))->GetDataBuffer())
 		{
+			Utils::ScopedChrono bufferChrono("Runtime analysis data");
+
 			const auto vectorBuffer = Runtime::BufferUtils::GetBuffer<Runtime::VectorBuffer>(buffer);
 			if (vectorBuffer->GetElementCount() == 1)
 			{

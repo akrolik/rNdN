@@ -76,6 +76,7 @@ echo -en "\t"; collect "Library function 'hash_join_lib'"
 
 collect "Kernel '.*' execution"
 collect "Runtime analysis"
+echo -en "\t"; collect "Runtime analysis data"
 
 # collect "CPU allocation (.*)"
 # collect "CPU free (.*)"
