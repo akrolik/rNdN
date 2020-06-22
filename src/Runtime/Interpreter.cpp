@@ -51,10 +51,11 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 	{
 		Utils::Logger::LogDebug("Executing function '" + function->GetName() + "'");
 	}
-	Utils::ScopedChrono chrono("Function '" + function->GetName() + "'");
 
 	if (function->IsKernel())
 	{
+		Utils::ScopedChrono chrono("GPU function '" + function->GetName() + "'");
+
 		// Pass function execution to the GPU engine
 
 		GPUExecutionEngine engine(m_runtime, m_program);
@@ -62,6 +63,8 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 	}
 	else
 	{
+		Utils::ScopedChrono chrono("CPU function '" + function->GetName() + "'");
+
 		// Push onto the function stack, and add all parameters to the context
 
 		m_environment.PushStackFrame(function);

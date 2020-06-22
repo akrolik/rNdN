@@ -7,6 +7,7 @@
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
 
@@ -72,6 +73,19 @@ ListCellBuffer *ListCellBuffer::Clone() const
 	return new ListCellBuffer(cells);
 }
 
+void ListCellBuffer::SetTag(const std::string& tag)
+{
+	ListBuffer::SetTag(tag);
+
+	auto i = 0u;
+	for (auto cell : m_cells)
+	{
+		cell->SetTag((tag == "") ? "" : tag + "_" + std::to_string(i));
+	}
+
+	//TODO: size buffer
+}
+
 void ListCellBuffer::ResizeCells(unsigned int size)
 {
 	auto oldDescription = Description();
@@ -113,28 +127,30 @@ void ListCellBuffer::ResizeCells(unsigned int size)
 	}
 }
 
-void ListCellBuffer::ValidateCPU(bool recursive) const
+void ListCellBuffer::ValidateCPU() const
 {
-	DataBuffer::ValidateCPU(recursive);
-	if (recursive)
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+
+	DataBuffer::ValidateCPU();
+	for (const auto buffer : m_cells)
 	{
-		for (const auto buffer : m_cells)
-		{
-			buffer->ValidateCPU(true);
-		}
+		buffer->ValidateCPU();
 	}
+
+	Utils::Chrono::End(timeStart);
 }
 
-void ListCellBuffer::ValidateGPU(bool recursive) const
+void ListCellBuffer::ValidateGPU() const
 {
-	DataBuffer::ValidateGPU(recursive);
-	if (recursive)
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+
+	DataBuffer::ValidateGPU();
+	for (const auto buffer : m_cells)
 	{
-		for (const auto buffer : m_cells)
-		{
-			buffer->ValidateGPU(true);
-		}
+		buffer->ValidateGPU();
 	}
+
+	Utils::Chrono::End(timeStart);
 }
 
 CUDA::Buffer *ListCellBuffer::GetGPUWriteBuffer()

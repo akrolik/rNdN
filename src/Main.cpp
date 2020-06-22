@@ -136,11 +136,15 @@ int main(int argc, const char *argv[])
 	Runtime::Interpreter interpreter(runtime);
 	auto results = interpreter.Execute(outlinedProgram);
 
+	auto timeOutput_start = Utils::Chrono::Start("Output collection");
+
 	for (const auto& result : results)
 	{
-		result->ValidateCPU(true);
+		result->SetTag("output");
+		result->ValidateCPU();
 	}
 
+	Utils::Chrono::End(timeOutput_start);
 	Utils::Chrono::End(timeExecution_start);
 
 	// Print the results

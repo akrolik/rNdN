@@ -8,6 +8,7 @@
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -52,6 +53,42 @@ DataBuffer *DataBuffer::CreateEmpty(const HorseIR::Type *type, const Analysis::S
 		}
 	}
 	Utils::Logger::LogError("Unable to create empty buffer for shape " + Analysis::ShapeUtils::ShapeString(shape));
+}
+
+void DataBuffer::ValidateCPU() const
+{
+	if (!m_cpuConsistent)
+	{
+		auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+		if (!IsAllocatedOnCPU())
+		{
+			AllocateCPUBuffer();
+		}
+		if (IsAllocatedOnGPU())
+		{
+			TransferToCPU();
+		}
+		m_cpuConsistent = true;
+		Utils::Chrono::End(timeStart);
+	}
+}
+
+void DataBuffer::ValidateGPU() const
+{
+	if (!m_gpuConsistent)
+	{
+		auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+		if (!IsAllocatedOnGPU())
+		{
+			AllocateGPUBuffer();
+		}
+		if (IsAllocatedOnCPU())
+		{
+			TransferToGPU();
+		}
+		m_gpuConsistent = true;
+		Utils::Chrono::End(timeStart);
+	}
 }
 
 }

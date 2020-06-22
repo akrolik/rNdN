@@ -7,6 +7,8 @@
 
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
+
 namespace Runtime {
 
 ListCompressedBuffer *ListCompressedBuffer::CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::RangedSize *size)
@@ -126,6 +128,15 @@ ListCompressedBuffer *ListCompressedBuffer::Clone() const
 	return new ListCompressedBuffer(m_sizes->Clone(), m_values->Clone());
 }
 
+void ListCompressedBuffer::SetTag(const std::string& tag)
+{
+	ListBuffer::SetTag(tag);
+
+	//TODO: sizes
+	// m_sizes->SetTag(tag + "_sizes");
+	m_values->SetTag((tag == "") ? "" : tag + "_values");
+}
+
 const std::vector<DataBuffer *>& ListCompressedBuffer::GetCells() const
 {
 	AllocateCells();
@@ -143,22 +154,24 @@ size_t ListCompressedBuffer::GetCellCount() const
 	return m_dataAddresses->GetElementCount();
 }
 
-void ListCompressedBuffer::ValidateCPU(bool recursive) const
+void ListCompressedBuffer::ValidateCPU() const
 {
-	DataBuffer::ValidateCPU(recursive);
-	if (recursive)
-	{
-		m_values->ValidateCPU();
-	}
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+
+	DataBuffer::ValidateCPU();
+	m_values->ValidateCPU();
+
+	Utils::Chrono::End(timeStart);
 }
 
-void ListCompressedBuffer::ValidateGPU(bool recursive) const
+void ListCompressedBuffer::ValidateGPU() const
 {
-	DataBuffer::ValidateGPU(recursive);
-	if (recursive)
-	{
-		m_values->ValidateGPU();
-	}
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+
+	DataBuffer::ValidateGPU();
+	m_values->ValidateGPU();
+
+	Utils::Chrono::End(timeStart);
 }
 
 CUDA::Buffer *ListCompressedBuffer::GetGPUWriteBuffer()

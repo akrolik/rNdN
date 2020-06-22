@@ -5,6 +5,7 @@
 
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -61,6 +62,16 @@ TableBuffer *TableBuffer::Clone() const
 	return table;
 }
 
+void TableBuffer::SetTag(const std::string& tag)
+{
+	DataBuffer::SetTag(tag);
+
+	for (auto [colName, column] : m_columns)
+	{
+		column->SetTag((tag == "") ? "" : tag + "_" + colName);
+	}
+}
+
 ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
 {
 	if (m_columnMap.find(name) == m_columnMap.end())
@@ -70,28 +81,30 @@ ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
 	return m_columnMap.at(name);
 }
 
-void TableBuffer::ValidateCPU(bool recursive) const
+void TableBuffer::ValidateCPU() const
 {
-	DataBuffer::ValidateCPU(recursive);
-	if (recursive)
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+
+	DataBuffer::ValidateCPU();
+	for (const auto& [_, buffer] : m_columns)
 	{
-		for (const auto& [_, buffer] : m_columns)
-		{
-			buffer->ValidateCPU(true);
-		}
+		buffer->ValidateCPU();
 	}
+
+	Utils::Chrono::End(timeStart);
 }
 
-void TableBuffer::ValidateGPU(bool recursive) const
+void TableBuffer::ValidateGPU() const
 {
-	DataBuffer::ValidateGPU(recursive);
-	if (recursive)
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+
+	DataBuffer::ValidateGPU();
+	for (const auto& [_, buffer] : m_columns)
 	{
-		for (const auto& [_, buffer] : m_columns)
-		{
-			buffer->ValidateGPU(true);
-		}
+		buffer->ValidateGPU();
 	}
+
+	Utils::Chrono::End(timeStart);
 }
 
 std::string TableBuffer::Description() const

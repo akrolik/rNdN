@@ -7,11 +7,21 @@
 #include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
 #include "Runtime/GPU/Library/GPUSortEngine.h"
+#include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
+
+const HorseIR::Function *GPUGroupEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+{
+	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
+	{
+		return static_cast<const HorseIR::Function *>(function);
+	}
+	Utils::Logger::LogError("GPU group library cannot execute function '" + function->GetName() + "'");
+}
 
 DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& arguments)
 {
@@ -39,10 +49,10 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeGroup_start = Utils::Chrono::Start("Group execution");
 
-	auto groupFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction();
+	auto groupFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction());
 
-	Interpreter interpreter(m_runtime);
-	auto groupBuffers = interpreter.Execute(groupFunction, {indexBuffer, dataBuffer});
+	GPUExecutionEngine engine(m_runtime, m_program);
+	auto groupBuffers = engine.Execute(groupFunction, {indexBuffer, dataBuffer});
 
 	// Generate the shape of the group data
 

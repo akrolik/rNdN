@@ -18,6 +18,8 @@ public:
 	DictionaryBuffer *Group(const std::vector<DataBuffer *>& arguments);
 
 private:
+	const HorseIR::Function *GetFunction(const HorseIR::FunctionDeclaration *function) const;
+
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;
 };

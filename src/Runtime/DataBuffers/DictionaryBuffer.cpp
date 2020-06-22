@@ -5,6 +5,7 @@
 #include "HorseIR/Utils/PrettyPrinter.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -43,24 +44,34 @@ DictionaryBuffer *DictionaryBuffer::Clone() const
 	return new DictionaryBuffer(m_keys->Clone(), m_values->Clone());
 }
 
-void DictionaryBuffer::ValidateCPU(bool recursive) const
+void DictionaryBuffer::SetTag(const std::string& tag)
 {
-	DataBuffer::ValidateCPU(recursive);
-	if (recursive)
-	{
-		m_keys->ValidateCPU(true);
-		m_values->ValidateCPU(true);
-	}
+	DataBuffer::SetTag(tag);
+
+	m_keys->SetTag((tag == "") ? "" : tag + "_keys");
+	m_values->SetTag((tag == "") ? "" : tag + "_values");
 }
 
-void DictionaryBuffer::ValidateGPU(bool recursive) const
+void DictionaryBuffer::ValidateCPU() const
 {
-	DataBuffer::ValidateGPU(recursive);
-	if (recursive)
-	{
-		m_keys->ValidateGPU(true);
-		m_values->ValidateGPU(true);
-	}
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+
+	DataBuffer::ValidateCPU();
+	m_keys->ValidateCPU();
+	m_values->ValidateCPU();
+
+	Utils::Chrono::End(timeStart);
+}
+
+void DictionaryBuffer::ValidateGPU() const
+{
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+
+	DataBuffer::ValidateGPU();
+	m_keys->ValidateGPU();
+	m_values->ValidateGPU();
+
+	Utils::Chrono::End(timeStart);
 }
 
 std::string DictionaryBuffer::Description() const

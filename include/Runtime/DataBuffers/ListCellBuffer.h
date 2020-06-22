@@ -15,6 +15,10 @@ public:
 	
 	ListCellBuffer *Clone() const override;
 
+	// Tag
+
+	void SetTag(const std::string& tag) override;
+
 	// Cells
 
 	const std::vector<DataBuffer *>& GetCells() const override { return m_cells; }
@@ -27,8 +31,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU(bool recursive = false) const override;
-	void ValidateGPU(bool recursive = false) const override;
+	void ValidateCPU() const override;
+	void ValidateGPU() const override;
 
 	CUDA::Buffer *GetGPUWriteBuffer() override;
 	CUDA::Buffer *GetGPUReadBuffer() const override;

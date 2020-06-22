@@ -23,6 +23,10 @@ public:
 
 	DictionaryBuffer *Clone() const override;
 
+	// Tag
+
+	void SetTag(const std::string& tag) override;
+
 	// Type/shape
 
 	const HorseIR::DictionaryType *GetType() const override { return m_type; }
@@ -35,8 +39,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU(bool recursive = false) const override;
-	void ValidateGPU(bool recursive = false) const override;
+	void ValidateCPU() const override;
+	void ValidateGPU() const override;
 
 	// Printers
 

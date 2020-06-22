@@ -23,7 +23,7 @@ public:
 	void LoadDebugData();
 	void LoadTPCHData();
 
-	void AddTable(const std::string& name, TableBuffer *table);
+	void AddTable(const std::string& db, const std::string& name, TableBuffer *table);
 	TableBuffer *GetTable(const std::string& name) const;
 
 	void LoadFile(const std::string& filename);

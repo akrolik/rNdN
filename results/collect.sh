@@ -9,7 +9,7 @@ function collect {
 
 function collect_1 {
 	echo -n "$1: "
-	grep "$1:" $FILE | sed -e "s/[^:]*: //" | cut -d ' ' -f 1
+	grep "$1:" $FILE | awk 'END {print}' | sed -e "s/[^:]*: //" | cut -d ' ' -f 1
 }
 
 
@@ -29,18 +29,35 @@ collect_1 "Compilation"
 # Data
 
 echo
-echo "Data"
+echo "Data Cache"
 echo "--------------------"
 
-collect "CUDA transfer (.*) ->"
-collect "CUDA transfer (.*) <-"
+collect "Transfer 'tpch_.*' to GPU"
 
 echo
+echo "Data Intermediate"
+echo "--------------------"
 
-collect "CUDA allocation (.*)"
-collect "CUDA copy (.*)"
-collect "CUDA clear (.*)"
-collect "CUDA free (.*)"
+collect "Transfer to GPU"
+collect "Transfer to CPU"
+collect "Resize buffers"
+collect "Initialize buffer"
+
+# collect "CUDA transfer (.*) ->"
+# collect "CUDA transfer (.*) <-"
+
+# echo
+
+# collect "CUDA allocation (.*)"
+# collect "CUDA copy (.*)"
+# collect "CUDA clear (.*)"
+# collect "CUDA free (.*)"
+
+echo
+echo "Data Output"
+echo "--------------------"
+
+collect_1 "Output collection"
 
 # Execution
 
@@ -48,21 +65,20 @@ echo
 echo "Execution"
 echo "--------------------"
 
-collect "Kernel '.*' execution"
-
-collect "Library function 'order_lib'"
-collect "Library function 'group_lib'"
-collect "Library function 'loop_join_lib'"
-collect "Library function 'hash_join_lib'"
-collect "Kernel 'hash_create_.*' execution"
-collect "Kernel 'join_.*' execution"
-
 collect "Builtin function '.*'"
-collect "Create dictionary"
+collect "GPU function '.*'"
+collect "Library function '.*'"
+
+echo -en "\t"; collect "Library function 'order_lib'"
+echo -en "\t"; collect "Library function 'group_lib'"
+echo -en "\t"; collect "Library function 'loop_join_lib'"
+echo -en "\t"; collect "Library function 'hash_join_lib'"
+
+collect "Kernel '.*' execution"
 collect "Runtime analysis"
 
-collect "CPU allocation (.*)"
-collect "CPU free (.*)"
+# collect "CPU allocation (.*)"
+# collect "CPU free (.*)"
 
 echo -n "[TOTAL] "
 collect_1 "Execution"

@@ -142,6 +142,19 @@ public:
 		return slice;
 	}
 
+	// Tag
+
+	void SetTag(const std::string& tag)
+	{
+		VectorBuffer::SetTag(tag);
+
+		if (IsAllocatedOnGPU())
+		{
+			m_gpuBuffer->SetTag(tag);
+			m_gpuSizeBuffer->SetTag((tag == "") ? "" : tag + "_size");
+		}
+	}
+
 	// Sizing
 
 	size_t GetElementSize() const override
@@ -178,6 +191,7 @@ public:
 					auto oldBuffer = m_gpuBuffer;
 
 					m_gpuBuffer = new CUDA::Buffer(newBufferSize);
+					m_gpuBuffer->SetTag(m_tag);
 					m_gpuBuffer->AllocateOnGPU();
 
 					if (IsGPUConsistent())
@@ -364,10 +378,15 @@ protected:
 	void AllocateGPUBuffer() const override
 	{
 		m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
+		m_gpuBuffer->SetTag(m_tag);
 		m_gpuBuffer->AllocateOnGPU();
 
 		m_gpuSize = m_elementCount;
 		m_gpuSizeBuffer = new CUDA::Buffer(&m_gpuSize, sizeof(std::uint32_t));
+		if (m_tag != "")
+		{
+			m_gpuSizeBuffer->SetTag(m_tag + "_size");
+		}
 		m_gpuSizeBuffer->AllocateOnGPU();
 		m_gpuSizeBuffer->TransferToGPU();
 	}

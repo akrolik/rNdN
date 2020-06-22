@@ -136,7 +136,7 @@ void DataRegistry::LoadDebugData()
 		auto table = new TableBuffer(columns);
 		table->SetPrimaryKey(primaryBuffer, primaryMap);
 
-		AddTable("debug_" + std::to_string(size), table);
+		AddTable("debug", "debug_" + std::to_string(size), table);
 
 		Utils::Logger::LogInfo("Loaded table 'debug_" + std::to_string(size) + "'");
 	}
@@ -225,7 +225,7 @@ void DataRegistry::LoadTPCHNationTable()
 
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
-	AddTable("nation", table);
+	AddTable("tpch", "nation", table);
 }                       
 
 void DataRegistry::LoadTPCHRegionTable()
@@ -271,7 +271,7 @@ void DataRegistry::LoadTPCHRegionTable()
 
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
-	AddTable("region", table);
+	AddTable("tpch", "region", table);
 }
 
 void DataRegistry::LoadTPCHPartTable()
@@ -343,7 +343,7 @@ void DataRegistry::LoadTPCHPartTable()
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
-	AddTable("part", table);
+	AddTable("tpch", "part", table);
 }
 
 void DataRegistry::LoadTPCHSupplierTable()
@@ -416,7 +416,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
-	AddTable("supplier", table);
+	AddTable("tpch", "supplier", table);
 }
 
 void DataRegistry::LoadTPCHPartSupplierTable()
@@ -489,7 +489,7 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	columns.push_back({"ps_supplycost", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Float64), std::move(supplyCost)))});
 	columns.push_back({"ps_comment", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(comment)))});
 	
-	AddTable("partsupp", new TableBuffer(columns));
+	AddTable("tpch", "partsupp", new TableBuffer(columns));
 }
 
 void DataRegistry::LoadTPCHCustomerTable()
@@ -566,7 +566,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
-	AddTable("customer", table);
+	AddTable("tpch", "customer", table);
 }
 
 void DataRegistry::LoadTPCHOrderTable()
@@ -647,7 +647,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	
 	auto table = new TableBuffer(columns);
 	table->SetPrimaryKey(primaryKey, primaryMap);
-	AddTable("orders", table);
+	AddTable("tpch", "orders", table);
 }
 
 void DataRegistry::LoadTPCHLineItemTable()
@@ -768,11 +768,12 @@ void DataRegistry::LoadTPCHLineItemTable()
 	columns.push_back({"l_shipmode", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Symbol), std::move(shipMode)))});
 	columns.push_back({"l_comment", new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(comment)))});
 
-	AddTable("lineitem", new TableBuffer(columns));
+	AddTable("tpch", "lineitem", new TableBuffer(columns));
 }
 
-void DataRegistry::AddTable(const std::string& name, TableBuffer *table)
+void DataRegistry::AddTable(const std::string& db, const std::string& name, TableBuffer *table)
 {
+	table->SetTag(db + "_" + name);
 	m_registry.insert({name, table});
 }
 

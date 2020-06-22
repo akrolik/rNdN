@@ -5,6 +5,7 @@
 #include "HorseIR/Utils/PrettyPrinter.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -31,24 +32,34 @@ KeyedTableBuffer *KeyedTableBuffer::Clone() const
 	return new KeyedTableBuffer(m_key->Clone(), m_value->Clone());
 }
 
-void KeyedTableBuffer::ValidateCPU(bool recursive) const
+void KeyedTableBuffer::SetTag(const std::string& tag)
 {
-	DataBuffer::ValidateCPU(recursive);
-	if (recursive)
-	{
-		m_key->ValidateCPU(true);
-		m_value->ValidateCPU(true);
-	}
+	DataBuffer::SetTag(tag);
+
+	m_key->SetTag((tag == "") ? "" : tag + "_key");
+	m_value->SetTag((tag == "") ? "" : tag + "_value");
 }
 
-void KeyedTableBuffer::ValidateGPU(bool recursive) const
+void KeyedTableBuffer::ValidateCPU() const
 {
-	DataBuffer::ValidateGPU(recursive);
-	if (recursive)
-	{
-		m_key->ValidateGPU(true);
-		m_value->ValidateGPU(true);
-	}
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+
+	DataBuffer::ValidateCPU();
+	m_key->ValidateCPU();
+	m_value->ValidateCPU();
+
+	Utils::Chrono::End(timeStart);
+}
+
+void KeyedTableBuffer::ValidateGPU() const
+{
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+
+	DataBuffer::ValidateGPU();
+	m_key->ValidateGPU();
+	m_value->ValidateGPU();
+
+	Utils::Chrono::End(timeStart);
 }
 
 std::string KeyedTableBuffer::Description() const

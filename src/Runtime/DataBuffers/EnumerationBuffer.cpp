@@ -2,6 +2,8 @@
 
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
+
 namespace Runtime {
 
 EnumerationBuffer::EnumerationBuffer(VectorBuffer *keys, VectorBuffer *values, TypedVectorBuffer<std::int64_t> *indexes) : ColumnBuffer(DataBuffer::Kind::Enumeration), m_keys(keys), m_values(values), m_indexes(indexes)
@@ -25,26 +27,36 @@ EnumerationBuffer *EnumerationBuffer::Clone() const
 	return new EnumerationBuffer(m_keys->Clone(), m_values->Clone(), m_indexes->Clone());
 }
 
-void EnumerationBuffer::ValidateCPU(bool recursive) const
+void EnumerationBuffer::SetTag(const std::string& tag)
 {
-	ColumnBuffer::ValidateCPU(recursive);
-	if (recursive)
-	{
-		m_keys->ValidateCPU(true);
-		m_values->ValidateCPU(true);
-		m_indexes->ValidateCPU(true);
-	}
+	ColumnBuffer::SetTag(tag);
+
+	m_values->SetTag((tag == "") ? "" : tag + "_values");
+	m_indexes->SetTag((tag == "") ? "" : tag + "_indexes");
 }
 
-void EnumerationBuffer::ValidateGPU(bool recursive) const
+void EnumerationBuffer::ValidateCPU() const
 {
-	ColumnBuffer::ValidateGPU(recursive);
-	if (recursive)
-	{
-		m_keys->ValidateGPU(true);
-		m_values->ValidateGPU(true);
-		m_indexes->ValidateGPU(true);
-	}
+	auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+
+	ColumnBuffer::ValidateCPU();
+	m_keys->ValidateCPU();
+	m_values->ValidateCPU();
+	m_indexes->ValidateCPU();
+
+	Utils::Chrono::End(timeStart);
+}
+
+void EnumerationBuffer::ValidateGPU() const
+{
+	auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+
+	ColumnBuffer::ValidateGPU();
+	m_keys->ValidateGPU();
+	m_values->ValidateGPU();
+	m_indexes->ValidateGPU();
+
+	Utils::Chrono::End(timeStart);
 }
 
 std::string EnumerationBuffer::Description() const

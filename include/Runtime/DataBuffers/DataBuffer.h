@@ -60,6 +60,11 @@ public:
 
 	virtual DataBuffer *Clone() const = 0;
 
+	// Tag
+
+	const std::string& GetTag() const { return m_tag; }
+	virtual void SetTag(const std::string& tag) { m_tag = tag; }
+
 	// Type/Shape
 
 	virtual const HorseIR::Type *GetType() const = 0;
@@ -70,37 +75,8 @@ public:
 	virtual void InvalidateCPU() { m_cpuConsistent = false; }
 	virtual void InvalidateGPU() { m_gpuConsistent = false; }
 
-	virtual void ValidateCPU(bool recursive = false) const
-	{
-		if (!m_cpuConsistent)
-		{
-			if (!IsAllocatedOnCPU())
-			{
-				AllocateCPUBuffer();
-			}
-			if (IsAllocatedOnGPU())
-			{
-				TransferToCPU();
-			}
-			m_cpuConsistent = true;
-		}
-	}
-
-	virtual void ValidateGPU(bool recursive = false) const
-	{
-		if (!m_gpuConsistent)
-		{
-			if (!IsAllocatedOnGPU())
-			{
-				AllocateGPUBuffer();
-			}
-			if (IsAllocatedOnCPU())
-			{
-				TransferToGPU();
-			}
-			m_gpuConsistent = true;
-		}
-	}
+	virtual void ValidateCPU() const;
+	virtual void ValidateGPU() const;
 	
 	virtual CUDA::Data *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
 	virtual CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
@@ -143,6 +119,9 @@ protected:
 
 	mutable bool m_gpuConsistent = false;
 	mutable bool m_cpuConsistent = false;
+
+	std::string m_tag = "";
+	std::string TransferString(const std::string& name) const { return "Transfer " + ((m_tag == "") ? "" : "'" + m_tag + "' ") + "to " + name; }
 };
 
 }
