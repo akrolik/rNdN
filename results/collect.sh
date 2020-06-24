@@ -32,7 +32,10 @@ echo
 echo "Data Cache"
 echo "--------------------"
 
-collect "Transfer 'tpch_.*' to GPU"
+collect "Transfer 'tpch.*' to GPU"
+
+# collect "CUDA transfer 'tpch.*' (.*) ->"
+# collect "CUDA allocation 'tpch.*' (.*)"
 
 echo
 echo "Data Intermediate"
@@ -42,6 +45,8 @@ collect "Transfer to GPU"
 collect "Transfer to CPU"
 collect "Resize buffers"
 collect "Initialize buffer"
+
+# echo
 
 # collect "CUDA transfer (.*) ->"
 # collect "CUDA transfer (.*) <-"
@@ -58,6 +63,8 @@ echo "Data Output"
 echo "--------------------"
 
 collect_1 "Output collection"
+
+# collect "CUDA transfer 'output.*' (.*) <-"
 
 # Execution
 
