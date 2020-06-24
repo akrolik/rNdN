@@ -154,7 +154,7 @@ private:
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")
-			(Opt_Data_allocator, "GPU allocator algorithm [cuda|linear]", cxxopts::value<std::string>()->default_value("cuda"))
+			(Opt_Data_allocator, "GPU allocator algorithm [cuda|linear]", cxxopts::value<std::string>()->default_value("linear"))
 			(Opt_Data_page_size, "GPU page size", cxxopts::value<unsigned long long>()->default_value("2147483648"))
 			(Opt_Data_page_count, "GPU page count", cxxopts::value<unsigned int>()->default_value("2"))
 			(Opt_Data_resize, "Resize buffer factor (only used with cuda allocator)", cxxopts::value<float>()->default_value("0.9"))
