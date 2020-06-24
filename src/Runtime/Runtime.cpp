@@ -1,6 +1,7 @@
 #include "Runtime/Runtime.h"
 
 #include "CUDA/Buffer.h"
+#include "CUDA/BufferManager.h"
 #include "CUDA/Vector.h"
 
 #include "Utils/Chrono.h"
@@ -15,6 +16,8 @@ void Runtime::Initialize()
 	// Initialize the runtime environment for the system
 
 	m_gpu.Initialize();
+
+	CUDA::BufferManager::Initialize();
 }
 
 void Runtime::LoadData()
@@ -38,14 +41,20 @@ void Runtime::LoadData()
 
 	CUDA::Vector<std::uint64_t> dummyVector;
 	dummyVector.resize(1);
-	auto dummyBuffer = new CUDA::Buffer(dummyVector.data(), dummyVector.size() * sizeof(std::uint64_t));
+	auto dummyBuffer = new CUDA::Buffer(dummyVector.size() * sizeof(std::uint64_t));
 	dummyBuffer->SetTag("dummy");
+	dummyBuffer->SetCPUBuffer(dummyVector.data());
 	dummyBuffer->AllocateOnGPU();
 	dummyBuffer->TransferToGPU();
 	delete dummyBuffer;
 
 	Utils::Chrono::End(timeDummy_start);
 	Utils::Chrono::End(timeData_start);
+}
+
+Runtime::~Runtime()
+{
+	CUDA::BufferManager::Destroy();
 }
 
 }

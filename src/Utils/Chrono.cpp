@@ -90,6 +90,8 @@ void Chrono::CUDATiming::End()
 
 long long Chrono::CUDATiming::GetTime() const
 {
+	m_start.Synchronize();
+	m_end.Synchronize();
 	return CUDA::Event::Time(m_start, m_end);
 }
 

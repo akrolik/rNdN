@@ -27,6 +27,16 @@ static T Average(const V<T>& values)
 	return std::accumulate(std::begin(values), std::end(values), 0) / values.size();
 }
 
+template<typename T1, typename T2>
+static T1 RoundUp(T1 value, T2 multiple)
+{
+	if (value == 0)
+	{
+		return multiple;
+	}
+	return ((value + multiple - 1) / multiple) * multiple;
+}
+
 };
 
 }

@@ -2,6 +2,8 @@
 
 #include "Analysis/Shape/ShapeUtils.h"
 
+#include "CUDA/BufferManager.h"
+
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
@@ -268,10 +270,10 @@ void ListCellBuffer::AllocateGPUBuffer() const
 	auto cellCount = m_cells.size();
 	size_t bufferSize = cellCount * sizeof(CUdeviceptr);
 
-	m_gpuBuffer = new CUDA::Buffer(bufferSize);
+	m_gpuBuffer = CUDA::BufferManager::CreateBuffer(bufferSize);
 	m_gpuBuffer->AllocateOnGPU();
 
-	m_gpuSizeBuffer = new CUDA::Buffer(bufferSize);
+	m_gpuSizeBuffer = CUDA::BufferManager::CreateBuffer(bufferSize);
 	m_gpuSizeBuffer->AllocateOnGPU();
 }
 

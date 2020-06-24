@@ -11,6 +11,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "CUDA/BufferManager.h"
 #include "CUDA/Constant.h"
 #include "CUDA/KernelInvocation.h"
 
@@ -184,13 +185,13 @@ public:
 				// Allocate a new buffer and transfer the contents if substantially smaller than the allocated size
 
 				auto newBufferSize = sizeof(T) * size;
-				if (newBufferSize < m_gpuBuffer->GetAllocatedSize() * 0.9)
+				if (!m_gpuBuffer->IsAlias() && newBufferSize < m_gpuBuffer->GetAllocatedSize() * Utils::Options::Get<float>(Utils::Options::Opt_Data_resize))
 				{
 					// Copy active data range if needed, otherwise just reallocate
 
 					auto oldBuffer = m_gpuBuffer;
 
-					m_gpuBuffer = new CUDA::Buffer(newBufferSize);
+					m_gpuBuffer = CUDA::BufferManager::CreateBuffer(newBufferSize);
 					m_gpuBuffer->SetTag(m_tag);
 					m_gpuBuffer->AllocateOnGPU();
 
@@ -377,16 +378,17 @@ protected:
 
 	void AllocateGPUBuffer() const override
 	{
-		m_gpuBuffer = new CUDA::Buffer(sizeof(T) * m_elementCount);
+		m_gpuBuffer = CUDA::BufferManager::CreateBuffer(sizeof(T) * m_elementCount);
 		m_gpuBuffer->SetTag(m_tag);
 		m_gpuBuffer->AllocateOnGPU();
 
 		m_gpuSize = m_elementCount;
-		m_gpuSizeBuffer = new CUDA::Buffer(&m_gpuSize, sizeof(std::uint32_t));
+		m_gpuSizeBuffer = CUDA::BufferManager::CreateBuffer(sizeof(std::uint32_t));
 		if (m_tag != "")
 		{
 			m_gpuSizeBuffer->SetTag(m_tag + "_size");
 		}
+		m_gpuSizeBuffer->SetCPUBuffer(&m_gpuSize);
 		m_gpuSizeBuffer->AllocateOnGPU();
 		m_gpuSizeBuffer->TransferToGPU();
 	}

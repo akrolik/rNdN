@@ -25,6 +25,8 @@ public:
 	Runtime(Runtime const&) = delete;
 	void operator=(Runtime const&) = delete;
 
+	~Runtime();
+
 	void Initialize();
 	void LoadData();
 

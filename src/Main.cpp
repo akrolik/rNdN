@@ -156,7 +156,7 @@ int main(int argc, const char *argv[])
 		Utils::Logger::LogInfo(result->DebugDump(), 0, true, Utils::Logger::NoPrefix);
 	}
 
-	Utils::Chrono::Complete();
+	// Runtime::Runtime::Destroy();
 
-	Runtime::Runtime::Destroy();
+	Utils::Chrono::Complete();
 }

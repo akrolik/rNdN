@@ -2,6 +2,8 @@
 
 #include "Libraries/cxxopts.hpp"
 
+#include "Utils/Logger.h"
+
 namespace Utils {
 
 class Options
@@ -29,6 +31,11 @@ public:
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 	static constexpr char const *Opt_Algo_like = "algo-like";
 
+	static constexpr char const *Opt_Data_resize = "data-resize";
+	static constexpr char const *Opt_Data_allocator = "data-allocator";
+	static constexpr char const *Opt_Data_page_size = "data-page-size";
+	static constexpr char const *Opt_Data_page_count = "data-page-count";
+
 	static constexpr char const *Opt_Load_tpch = "load-tpch";
 	static constexpr char const *Opt_File = "file";
 
@@ -41,7 +48,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			std::cout << instance.m_options.help({"", "Debug", "Optimization", "Algorithm", "Data"}) << std::endl;
+			Utils::Logger::LogInfo(instance.m_options.help({"", "Debug", "Optimization", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -96,6 +103,25 @@ public:
 		Utils::Logger::LogError("Unknown join mode '" + joinMode + "'");
 	}
 
+	enum class AllocatorKind {
+		CUDA,
+		Linear
+	};
+
+	static AllocatorKind GetAllocatorKind()
+	{
+		auto allocator = Get<std::string>(Opt_Data_allocator);
+		if (allocator == "cuda")
+		{
+			return AllocatorKind::CUDA;
+		}
+		else if (allocator == "linear")
+		{
+			return AllocatorKind::Linear;
+		}
+		Utils::Logger::LogError("Unknown allocator '" + allocator + "'");
+	}
+
 private:
 	Options() : m_options("r3d3", "Optimizing JIT compiler for HorseIR targetting PTX")
 	{
@@ -128,6 +154,10 @@ private:
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")
+			(Opt_Data_allocator, "GPU allocator algorithm [cuda|linear]", cxxopts::value<std::string>()->default_value("cuda"))
+			(Opt_Data_page_size, "GPU page size", cxxopts::value<unsigned long long>()->default_value("2147483648"))
+			(Opt_Data_page_count, "GPU page count", cxxopts::value<unsigned int>()->default_value("2"))
+			(Opt_Data_resize, "Resize buffer factor (only used with cuda allocator)", cxxopts::value<float>()->default_value("0.9"))
 		;
 		m_options.add_options("Query")
 			(Opt_File, "Query HorseIR file", cxxopts::value<std::string>())

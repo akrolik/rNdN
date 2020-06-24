@@ -1,7 +1,9 @@
 #include "Runtime/GPU/GPUExecutionEngine.h"
 
 #include "CUDA/Buffer.h"
+#include "CUDA/BufferManager.h"
 #include "CUDA/Constant.h"
+#include "CUDA/ConstantBuffer.h"
 #include "CUDA/Kernel.h"
 #include "CUDA/KernelInvocation.h"
 #include "CUDA/Utils.h"
@@ -16,6 +18,7 @@
 #include "Runtime/DataBuffers/BufferUtils.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Math.h"
 
 namespace Runtime {
 
@@ -441,7 +444,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 					// Maximize the block size based on the GPU and thread multiple
 
 					auto multiple = kernelOptions.GetThreadMultiple();
-					blockSize = ((blockSize + multiple - 1) / multiple) * multiple;
+					blockSize = Utils::Math::RoundUp(blockSize, multiple);
 				}
 			}
 
@@ -479,7 +482,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 					// Ensure the thread number is a multiple of the kernel specification
 
 					auto multiple = kernelOptions.GetThreadMultiple();
-					cellSize = ((cellSize + multiple - 1) / multiple) * multiple;
+					cellSize = Utils::Math::RoundUp(cellSize, multiple);
 				}
 			}
 
@@ -524,7 +527,8 @@ CUDA::ConstantBuffer *GPUExecutionEngine::AllocateConstantVectorParameter(CUDA::
 		Utils::Logger::LogDebug("Initializing list input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes x " + std::to_string(values.size()) + "]");
 	}
 
-	auto buffer = new CUDA::ConstantBuffer(values.data(), values.size() * sizeof(T));
+	auto buffer = CUDA::BufferManager::CreateConstantBuffer(values.size() * sizeof(T));
+	buffer->SetCPUBuffer(values.data());
 	buffer->AllocateOnGPU();
 	buffer->TransferToGPU();
 	invocation.AddParameter(*buffer);

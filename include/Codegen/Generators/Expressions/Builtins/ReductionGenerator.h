@@ -227,7 +227,7 @@ public:
 
 		int warpSize = targetOptions.WarpSize;
 
-		auto blockSize = ((GetBlockSize() + warpSize - 1) / warpSize) * warpSize;
+		auto blockSize = Utils::Math::RoundUp(GetBlockSize(), warpSize);
 		kernelOptions.SetBlockSize(blockSize);
 
 		auto sharedMemorySize = blockSize / warpSize;

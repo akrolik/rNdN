@@ -66,8 +66,8 @@ public:
 		long long GetTime() const override;
 
 	protected:
-		CUDA::Event m_start;
-		CUDA::Event m_end;
+		mutable CUDA::Event m_start;
+		mutable CUDA::Event m_end;
 	};
 
 	static void Initialize();
