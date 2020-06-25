@@ -328,6 +328,17 @@ static int GetBitSize(const BasicType *type)
 			return 32;
 		case BasicType::BasicKind::Float64:
 			return 64;
+		case BasicType::BasicKind::String:
+		case BasicType::BasicKind::Symbol:
+			return 64;
+		case BasicType::BasicKind::Datetime:
+		case BasicType::BasicKind::Time:
+			return 64;
+		case BasicType::BasicKind::Date:
+		case BasicType::BasicKind::Month:
+		case BasicType::BasicKind::Minute:
+		case BasicType::BasicKind::Second:
+			return 32;
 	}
 	return 0;
 }

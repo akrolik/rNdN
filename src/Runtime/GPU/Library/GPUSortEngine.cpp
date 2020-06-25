@@ -62,7 +62,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	{
 		for (auto substage = 0u; substage <= stage; ++substage)
 		{
-			const auto subsequenceSize = 1 << (stage - substage);
+			const auto subsequenceSize = 2 << (stage - substage);
 
 			// Collect the input bufers for sorting: (index, data), [order], stage, substage
 

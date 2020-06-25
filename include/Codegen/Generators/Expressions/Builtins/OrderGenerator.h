@@ -457,7 +457,7 @@ public:
 	{
 		const auto indexSize = HorseIR::TypeUtils::GetBitSize(arguments.at(0)->GetType());
 		const auto dataSize = HorseIR::TypeUtils::GetBitSize(arguments.at(1)->GetType());
-		const auto size = indexSize + dataSize;
+		const auto size = (indexSize + dataSize) / 8;
 
 		auto& targetOptions = m_builder.GetTargetOptions();
 		const auto sharedSize = targetOptions.SharedMemorySize;
