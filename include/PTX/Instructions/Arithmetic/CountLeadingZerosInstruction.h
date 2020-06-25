@@ -14,7 +14,7 @@ public:
 		)
 	);
 
-	using InstructionBase_1<UInt32Type, T>::InstructionBase;
+	using InstructionBase_1<UInt32Type, T>::InstructionBase_1;
 
 	static std::string Mnemonic() { return "clz"; }
 
