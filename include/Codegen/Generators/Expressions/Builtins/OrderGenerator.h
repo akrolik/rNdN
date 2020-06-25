@@ -494,10 +494,6 @@ public:
 		const auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(arguments.at(2));
 
 		const PTX::Register<PTX::UInt32Type> *sharedIndex = nullptr;
-
-		const PTX::Register<PTX::UInt32Type> *stage = nullptr;
-		const PTX::Register<PTX::UInt32Type> *substage = nullptr;
-		const PTX::Register<PTX::UInt32Type> *startSubstage = nullptr;
 		const PTX::Register<PTX::UInt32Type> *totalStages = nullptr;
 
 		const PTX::Label *stageStartLabel = nullptr;
@@ -509,77 +505,59 @@ public:
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
-		switch (m_mode)
+		// Add stage/substage parameters and load values
+
+		ParameterGenerator<B> parameterGenerator(this->m_builder);
+		auto sortStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
+		auto sortSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
+
+		ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+		auto stage = valueLoadGenerator.GenerateConstant(sortStageParameter);
+		auto substage = valueLoadGenerator.GenerateConstant(sortSubstageParameter);
+
+		if (m_mode == OrderMode::Shared)
 		{
-			case OrderMode::Shared:
-			{
-				// Add the special parameters for sorting (start_stage, start_substage, num_stages) and load the values
+			// Add the special parameter for the number of stages
 
-				ParameterGenerator<B> parameterGenerator(this->m_builder);
-				auto sortStartStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStartStage);
-				auto sortStartSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStartSubstage);
-				auto sortNumStagesParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortNumStages);
+			auto sortNumStagesParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortNumStages);
+			auto numStages = valueLoadGenerator.GenerateConstant(sortNumStagesParameter);
 
-				ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
-				auto startStage = valueLoadGenerator.GenerateConstant(sortStartStageParameter);
-				startSubstage = valueLoadGenerator.GenerateConstant(sortStartSubstageParameter);
-				auto numStages = valueLoadGenerator.GenerateConstant(sortNumStagesParameter);
+			ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+			auto blockIndex = indexGenerator.GenerateBlockIndex();
+			auto localIndex = indexGenerator.GenerateLocalIndex();
 
-				ThreadIndexGenerator<B> indexGenerator(this->m_builder);
-				auto blockIndex = indexGenerator.GenerateBlockIndex();
-				auto localIndex = indexGenerator.GenerateLocalIndex();
+			sharedIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
+				sharedIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2), blockIndex, localIndex, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+			));
 
-				sharedIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-				this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
-					sharedIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2), blockIndex, localIndex, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
-				));
+			InternalCacheGenerator_Load<B, SORT_CACHE_SIZE, 2> cacheGenerator(this->m_builder);
+			cacheGenerator.SetBoundsCheck(false);
 
-				InternalCacheGenerator_Load<B, SORT_CACHE_SIZE, 2> cacheGenerator(this->m_builder);
-				cacheGenerator.SetBoundsCheck(false);
+			cacheGenerator.SetSynchronize(false);
+			cacheGenerator.Generate(indexArgument, sharedIndex);
 
-				cacheGenerator.SetSynchronize(false);
-				cacheGenerator.Generate(indexArgument, sharedIndex);
+			cacheGenerator.SetSynchronize(true);
+			cacheGenerator.Generate(dataArgument, sharedIndex);
 
-				cacheGenerator.SetSynchronize(true);
-				cacheGenerator.Generate(dataArgument, sharedIndex);
-				
-				// Initialize stage and bound
+			// Initialize stage and bound
 
-				totalStages = resources->template AllocateTemporary<PTX::UInt32Type>();
-				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(totalStages, startStage, numStages));
+			totalStages = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(totalStages, stage, numStages));
 
-				stage = resources->template AllocateTemporary<PTX::UInt32Type>();
-				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(stage, startStage));
+			// Setup outer loop for iterating stages
 
-				// Setup outer loop for iterating stages
+			stageStartLabel = this->m_builder.CreateLabel("STAGE_START");
+			stageEndLabel = this->m_builder.CreateLabel("STAGE_END");
+			// auto stagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-				stageStartLabel = this->m_builder.CreateLabel("STAGE_START");
-				stageEndLabel = this->m_builder.CreateLabel("STAGE_END");
-				auto stagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-
-				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-					stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::GreaterEqual
-				));
-				this->m_builder.AddStatement(new PTX::BranchInstruction(stageEndLabel, stagePredicate, false, true));
-				this->m_builder.AddStatement(stageStartLabel);
-
-				break;
-			}
-			case OrderMode::Global:
-			{
-				// Add the special parameters for sorting (stage and substage) and load the values
-
-				ParameterGenerator<B> parameterGenerator(this->m_builder);
-				auto sortStageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortStage);
-				auto sortSubstageParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::SortSubstage);
-
-				ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
-				stage = valueLoadGenerator.GenerateConstant(sortStageParameter);
-				substage = valueLoadGenerator.GenerateConstant(sortSubstageParameter);
-
-				break;
-			}
+			// this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			// 	stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+			// ));
+			// this->m_builder.AddStatement(new PTX::BranchInstruction(stageEndLabel, stagePredicate, false, true));
+			this->m_builder.AddStatement(stageStartLabel);
 		}
+
 		// Compute the size of each bitonic sequence in this stage
 		//   sequenceSize = 2^(stage + 1)
 
@@ -596,7 +574,7 @@ public:
 		));
 
 		// Compute the sequence index of this thread. We allocate threads for half the sequence size as each thread will perform 1 swap
-		//   sequenceIndex = (index / (sequenceSize / 2))
+		//   sequenceIndex = (index / (sequenceSize >> 1))
 
 		auto temp_halfSequence = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto sequenceIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
@@ -606,7 +584,31 @@ public:
 			new PTX::Bit32Adapter<PTX::UIntType>(sequenceSize),
 			new PTX::UInt32Value(1)
 		));
-		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::UInt32Type>(sequenceIndex, index, temp_halfSequence));
+
+		// Fancy division by power-of-2
+
+		auto temp_leadingZeros0 = resources->template AllocateTemporary<PTX::UInt32Type>();
+		auto temp_powerTwo0 = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+		this->m_builder.AddStatement(new PTX::CountLeadingZerosInstruction<PTX::Bit32Type>(
+			temp_leadingZeros0, new PTX::Bit32Adapter<PTX::UIntType>(temp_halfSequence)
+		));
+		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_powerTwo0, new PTX::UInt32Value(31), temp_leadingZeros0));
+		this->m_builder.AddStatement(new PTX::ShiftRightInstruction<PTX::Bit32Type>(
+			new PTX::Bit32RegisterAdapter<PTX::UIntType>(sequenceIndex),
+			new PTX::Bit32Adapter<PTX::UIntType>(index),
+			temp_powerTwo0
+		));
+
+		auto temp_halfSequenceM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+		auto temp4 = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_halfSequenceM1, temp_halfSequence, new PTX::UInt32Value(1)));
+		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
+			new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp4),
+			new PTX::Bit32Adapter<PTX::UIntType>(index),
+			new PTX::Bit32Adapter<PTX::UIntType>(temp_halfSequenceM1)
+		));
 
 		// Compute the sequence start index for this thread
 		//   sequenceStart = sequenceindex * sequenceSize
@@ -617,23 +619,30 @@ public:
 			sequenceStart, sequenceIndex, sequenceSize, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
 		));
 
+		// Bitonic sequence direction
+
+		auto temp5 = resources->template AllocateTemporary<PTX::Bit32Type>();
+		auto subsequenceDirection = resources->template AllocateTemporary<PTX::PredicateType>();
+
+		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
+			temp5, new PTX::Bit32Adapter<PTX::UIntType>(sequenceIndex), new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1))
+		));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Bit32Type>(
+			subsequenceDirection, temp5, new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1)), PTX::Bit32Type::ComparisonOperator::NotEqual
+		));
+
 		if (m_mode == OrderMode::Shared)
 		{
-			// Initialize substage
-
-			substage = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(substage, startSubstage));
-
 			// Setup inner loop for iterating substages
 
 			substageStartLabel = this->m_builder.CreateLabel("SUBSTAGE_START");
 			substageEndLabel = this->m_builder.CreateLabel("SUBSTAGE_END");
-			auto substagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			// auto substagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::Greater
-			));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(substageEndLabel, substagePredicate, false, true));
+			// this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			// 	substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::Greater
+		        // ));
+			// this->m_builder.AddStatement(new PTX::BranchInstruction(substageEndLabel, substagePredicate, false, true));
 			this->m_builder.AddStatement(substageStartLabel);
 		}
 
@@ -649,19 +658,31 @@ public:
 		));
 
 		// Compute the index of the substage, again half the number of threads are active
-		//   subsequenceIndex = (index % (sequenceSize / 2)) / (subsequenceSize / 2);
+		//   subsequenceIndex = (index % (sequenceSize >> 1)) / (subsequenceSize >> 1);
 
-		auto temp4 = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto temp_halfSubsequence = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto subsequenceIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(temp4, index, temp_halfSequence));
 		this->m_builder.AddStatement(new PTX::ShiftRightInstruction<PTX::Bit32Type>(
 			new PTX::Bit32RegisterAdapter<PTX::UIntType>(temp_halfSubsequence),
 			new PTX::Bit32Adapter<PTX::UIntType>(subsequenceSize),
 			new PTX::UInt32Value(1)
 		));
-		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::UInt32Type>(subsequenceIndex, temp4, temp_halfSubsequence));
+
+		// Fancy division by power-of-2
+
+		auto temp_leadingZeros1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+		auto temp_powerTwo1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+		this->m_builder.AddStatement(new PTX::CountLeadingZerosInstruction<PTX::Bit32Type>(
+			temp_leadingZeros1, new PTX::Bit32Adapter<PTX::UIntType>(temp_halfSubsequence)
+		));
+		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_powerTwo1, new PTX::UInt32Value(31), temp_leadingZeros1));
+		this->m_builder.AddStatement(new PTX::ShiftRightInstruction<PTX::Bit32Type>(
+			new PTX::Bit32RegisterAdapter<PTX::UIntType>(subsequenceIndex),
+			new PTX::Bit32Adapter<PTX::UIntType>(temp4),
+			temp_powerTwo1
+		));
 
 		// Compute the subsequence start index for this thread
 		//   subsequenceStart = sequenceStart + (subsequenceIndex * subsequenceSize)
@@ -673,15 +694,21 @@ public:
 		));
 
 		// Index of the thread in *its* substage
-		//   subsequenceLocalIndex = index % (subsequenceSize / 2)
+		//   subsequenceLocalIndex = index % (subsequenceSize >> 2)
 
 		auto subsequenceLocalIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+		auto temp_halfSubsequenceM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(subsequenceLocalIndex, index, temp_halfSubsequence));
+		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_halfSubsequenceM1, temp_halfSubsequence, new PTX::UInt32Value(1)));
+		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
+			new PTX::Bit32RegisterAdapter<PTX::UIntType>(subsequenceLocalIndex),
+			new PTX::Bit32Adapter<PTX::UIntType>(index),
+			new PTX::Bit32Adapter<PTX::UIntType>(temp_halfSubsequenceM1)
+		));
 
 		// Compute the indices of the left and right data items
 		//   leftIndex = subsequenceStart + subsequenceLocalIndex
-		//   rightIndex = leftIndex + (subsequenceSize / 2)
+		//   rightIndex = leftIndex + (subsequenceSize >> 1)
 		//
 		// If shared, mod SORT_CACHE_SIZE * 2
 
@@ -693,8 +720,16 @@ public:
 
 		if (m_mode == OrderMode::Shared)
 		{
-			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(leftIndex, leftIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2)));
-			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(rightIndex, rightIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2)));
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
+				new PTX::Bit32RegisterAdapter<PTX::UIntType>(leftIndex),
+				new PTX::Bit32Adapter<PTX::UIntType>(leftIndex),
+				new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(SORT_CACHE_SIZE * 2 - 1))
+			));
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
+				new PTX::Bit32RegisterAdapter<PTX::UIntType>(rightIndex),
+				new PTX::Bit32Adapter<PTX::UIntType>(rightIndex),
+				new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(SORT_CACHE_SIZE * 2 - 1))
+			));
 		}
 
 		// Load the left and right values
@@ -703,16 +738,6 @@ public:
 		loadGenerator.Generate(dataArgument, leftIndex, rightIndex);
 
 		// Generate the if-else structure for the sort order
-
-		auto temp5 = resources->template AllocateTemporary<PTX::Bit32Type>();
-		auto subsequenceDirection = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
-			temp5, new PTX::Bit32Adapter<PTX::UIntType>(sequenceIndex), new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1))
-		));
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Bit32Type>(
-			subsequenceDirection, temp5, new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1)), PTX::Bit32Type::ComparisonOperator::NotEqual
-		));
 
 		auto elseLabel = this->m_builder.CreateLabel("ELSE");
 		auto swapLabel = this->m_builder.CreateLabel("SWAP");
@@ -774,6 +799,7 @@ public:
 
 			// End of outer loop
 
+			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(substage, new PTX::UInt32Value(0)));
 			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(stage, stage, new PTX::UInt32Value(1)));
 
 			auto stagePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
