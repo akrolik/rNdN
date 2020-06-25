@@ -375,7 +375,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			{
 				for (auto i = 0u; i < size; ++i)
 				{
-					likeData.at(i) = Utils::String::Like(StringBucket::RecoverString(stringData.at(i)), likePatternString);
+					likeData[i] = Utils::String::Like(StringBucket::RecoverString(stringData[i]), likePatternString);
 				}
 
 			}
