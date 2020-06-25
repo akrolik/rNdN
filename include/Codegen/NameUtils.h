@@ -17,8 +17,6 @@ public:
 
 	constexpr static const char *SortStage = "$sort$stage";
 	constexpr static const char *SortSubstage = "$sort$substage";
-	constexpr static const char *SortStartStage = "$sort$start_stage";
-	constexpr static const char *SortStartSubstage = "$sort$start_substage";
 	constexpr static const char *SortNumStages = "$sort$num_stages";
 
 	constexpr static const char *HashtableSize = "$hash$size";
