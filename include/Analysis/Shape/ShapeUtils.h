@@ -544,6 +544,16 @@ static const Shape::Size *MergeSize(const Shape::Size *size1, const Shape::Size 
 	{
 		return size1;
 	}
+	if (const auto compressedSize1 = GetSize<Shape::CompressedSize>(size1))
+	{
+		if (const auto compressedSize2 = GetSize<Shape::CompressedSize>(size2))
+		{
+			if (*compressedSize1->GetSize() == *compressedSize2->GetSize())
+			{
+				return new Shape::CompressedSize(new DataObject(), compressedSize1->GetSize());
+			}
+		}
+	}
 	return new Shape::DynamicSize(size1, size2);
 }
 

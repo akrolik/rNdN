@@ -242,6 +242,10 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		}
 
 		// Algebraic Unary
+		case HorseIR::BuiltinFunction::Primitive::Unique:
+		{
+			return ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
+		}
 		case HorseIR::BuiltinFunction::Primitive::Take:
 		case HorseIR::BuiltinFunction::Primitive::Drop:
 		{
@@ -292,7 +296,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const HorseIR::BuiltinFunction *funct
 		// ----------------------
 
 		// Algebraic Unary
-		case HorseIR::BuiltinFunction::Primitive::Unique:
 		case HorseIR::BuiltinFunction::Primitive::Group:
 
 		// Algebriac Binary

@@ -30,6 +30,7 @@ public:
 	static constexpr char const *Opt_Algo_join = "algo-join";
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 	static constexpr char const *Opt_Algo_like = "algo-like";
+	static constexpr char const *Opt_Algo_unique = "algo-unique";
 
 	static constexpr char const *Opt_Data_resize = "data-resize";
 	static constexpr char const *Opt_Data_allocator = "data-allocator";
@@ -82,6 +83,25 @@ public:
 			return LikeKind::OptLike;
 		}
 		Utils::Logger::LogError("Unknown like mode '" + likeMode + "'");
+	}
+
+	enum class UniqueKind {
+		SortUnique,
+		LoopUnique
+	};
+
+	static UniqueKind GetUniqueKind()
+	{
+		auto uniqueKind = Get<std::string>(Opt_Algo_unique);
+		if (uniqueKind == "sort")
+		{
+			return UniqueKind::SortUnique;
+		}
+		else if (uniqueKind == "loop")
+		{
+			return UniqueKind::LoopUnique;
+		}
+		Utils::Logger::LogError("Unknown unique mode '" + uniqueKind + "'");
 	}
 
 	enum class JoinKind {
@@ -151,6 +171,7 @@ private:
 			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("hash"))
 			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 			(Opt_Algo_like, "Like mode [pcre|opt]", cxxopts::value<std::string>()->default_value("opt"))
+			(Opt_Algo_unique, "Unique mode [sort|loop]", cxxopts::value<std::string>()->default_value("loop"))
 		;
 		m_options.add_options("Data")
 			(Opt_Load_tpch, "Load TPC-H data")

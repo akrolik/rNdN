@@ -18,6 +18,7 @@
 #include "Codegen/Generators/Expressions/Builtins/ReverseGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UnaryGenerator.h"
 
+#include "Codegen/Generators/Expressions/Builtins/SortedUniqueGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/UniqueGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/RangeGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/GroupGenerator.h"
@@ -124,7 +125,7 @@ public:
 			}
 			case HorseIR::BuiltinFunction::Primitive::GPUUnique:
 			{
-				UniqueGenerator<B> generator(this->m_builder);
+				SortedUniqueGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets, arguments);
 				break;
 			}
@@ -302,6 +303,8 @@ public:
 				return new BinaryGenerator<B, T>(this->m_builder, BinaryOperation::Xor);
 
 			// Algebraic Unary
+			case HorseIR::BuiltinFunction::Primitive::Unique:
+				return new UniqueGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Range:
 				return new RangeGenerator<B, T>(this->m_builder);
 			case HorseIR::BuiltinFunction::Primitive::Reverse:

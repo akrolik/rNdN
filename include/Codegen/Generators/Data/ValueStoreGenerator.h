@@ -497,14 +497,25 @@ private:
 				// Generate the in-order global prefix sum!
 
 				auto kernelResources = this->m_builder.GetKernelResources();
-				auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
-				auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
+				auto shape = this->m_builder.GetInputOptions().ReturnWriteShapes.at(returnIndex);
+				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+				{
+					auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
+					auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
 
-				AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
-				auto sizeAddress = addressGenerator.GenerateAddress(sizeParameter);
+					AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
+					auto sizeAddress = addressGenerator.GenerateAddress(sizeParameter);
 
-				PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
-				writeIndex = prefixSumGenerator.template Generate<PTX::PredicateType>(sizeAddress, predicate, PrefixSumMode::Exclusive);
+					PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
+					writeIndex = prefixSumGenerator.template Generate<PTX::PredicateType>(sizeAddress, predicate, PrefixSumMode::Exclusive);
+				}
+				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+				{
+					auto parameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::ReturnName(returnIndex));
+					auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>>(NameUtils::SizeName(parameter));
+
+					//TODO: List prefix sum
+				}
 			}
 
 			// Check for compression - this will mask outputs

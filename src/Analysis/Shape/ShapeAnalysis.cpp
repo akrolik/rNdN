@@ -578,7 +578,9 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			const auto argumentShape = argumentShapes.at(0);
 			Require(ShapeUtils::IsShape<VectorShape>(argumentShape));
-			Return(new VectorShape(new Shape::DynamicSize(m_call)));
+
+			const auto vectorShape = ShapeUtils::GetShape<VectorShape>(argumentShape);
+			Return(new VectorShape(new Shape::CompressedSize(new DataObject(), vectorShape->GetSize())));
 		}
 		case HorseIR::BuiltinFunction::Primitive::Range:
 		{

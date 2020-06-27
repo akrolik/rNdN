@@ -3,6 +3,7 @@
 #include "HorseIR/Utils/TypeUtils.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Analysis {
 
@@ -297,6 +298,17 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Independent Operations
 		// ----------------------
 
+		case HorseIR::BuiltinFunction::Primitive::Unique:
+		{
+			switch (Utils::Options::GetUniqueKind())
+			{
+				case Utils::Options::UniqueKind::SortUnique:
+					return {Device::GPULibrary, Synchronization::None};
+				case Utils::Options::UniqueKind::LoopUnique:
+					return {Device::GPU, Synchronization::In};
+			}
+		}
+
 		// Algebraic Binary
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
@@ -315,7 +327,6 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		}
 
 		// Algebraic Unary
-		case HorseIR::BuiltinFunction::Primitive::Unique:
 		case HorseIR::BuiltinFunction::Primitive::Group:
 
 		// Database
