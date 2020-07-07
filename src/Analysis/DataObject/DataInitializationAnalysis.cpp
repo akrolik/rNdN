@@ -113,6 +113,7 @@ bool DataInitializationAnalysis::VisitIn(const HorseIR::CallExpression *call)
 					auto outputObject = GetDataObject(call);
 					m_dataInit.insert({outputObject, inputInit});
 				}
+				break;
 			}
 			case HorseIR::BuiltinFunction::Primitive::GPUHashCreate:
 			{
