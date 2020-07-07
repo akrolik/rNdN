@@ -66,6 +66,30 @@ public:
 		return GetInstance().m_results[name].as<T>();
 	}
 
+	enum class OutlineOptimization {
+		None,
+		Flow,
+		Full
+	};
+
+	static OutlineOptimization GetOutlineOptimization()
+	{
+		auto optMode = Get<std::string>(Opt_Optimize_outline);
+		if (optMode == "none")
+		{
+			return OutlineOptimization::None;
+		}
+		else if (optMode == "flow")
+		{
+			return OutlineOptimization::Flow;
+		}
+		else if (optMode == "full")
+		{
+			return OutlineOptimization::Full;
+		}
+		Utils::Logger::LogError("Unknown outline optimization '" + optMode + "'");
+	}
+
 	enum class LikeKind {
 		PCRELike,
 		OptLike
@@ -161,8 +185,8 @@ private:
 			(Opt_Print_time, "Print timings")
 		;
 		m_options.add_options("Optimization")
-			("O,optimize", "Unimplemented")
-			(Opt_Optimize_outline, "Enable outliner graph optimization", cxxopts::value<bool>()->default_value("true"))
+			("O,optimize", "<Unimplemented>")
+			(Opt_Optimize_outline, "Outline graph optimization [none|flow|full]", cxxopts::value<std::string>()->default_value("full"))
 		;
 		m_options.add_options("Algorithm")
 			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))

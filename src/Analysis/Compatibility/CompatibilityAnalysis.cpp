@@ -31,7 +31,11 @@ DependencyOverlay *CompatibilityAnalysis::GetKernelOverlay(const DependencySubgr
 {
 	// Get or create the kernel for the node
 
-	auto kernelOverlay = GetSuccessorsKernelOverlay(subgraph, node);
+	DependencyOverlay *kernelOverlay = nullptr;
+	if (Utils::Options::GetOutlineOptimization() != Utils::Options::OutlineOptimization::None)
+	{
+		kernelOverlay = GetSuccessorsKernelOverlay(subgraph, node);
+	}
 
 	// If the statement cannot be added to the successors overlay (if a unique overlay exists), create a new kernel
 
@@ -626,7 +630,7 @@ void CompatibilityAnalysis::Visit(const FunctionDependencyOverlay *overlay)
 	}
 
 	//TODO: Make outliner hierarchical
-	if (Utils::Options::Get<bool>(Utils::Options::Opt_Optimize_outline))
+	if (Utils::Options::GetOutlineOptimization() == Utils::Options::OutlineOptimization::Full)
 	{
 		// Optimize the functionn
 
