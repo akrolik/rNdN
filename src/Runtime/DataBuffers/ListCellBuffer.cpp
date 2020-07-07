@@ -63,6 +63,10 @@ ListCellBuffer::ListCellBuffer(const std::vector<DataBuffer *>& cells) : m_cells
 ListCellBuffer::~ListCellBuffer()
 {
 	delete m_gpuBuffer;
+	delete m_gpuSizeBuffer;
+
+	delete m_gpuDataPointers;
+	delete m_gpuSizePointers;
 }
 
 ListCellBuffer *ListCellBuffer::Clone() const
@@ -270,27 +274,8 @@ void ListCellBuffer::AllocateGPUBuffer() const
 	auto cellCount = m_cells.size();
 	size_t bufferSize = cellCount * sizeof(CUdeviceptr);
 
-	m_gpuBuffer = CUDA::BufferManager::CreateBuffer(bufferSize);
-	m_gpuBuffer->AllocateOnGPU();
-
-	m_gpuSizeBuffer = CUDA::BufferManager::CreateBuffer(bufferSize);
-	m_gpuSizeBuffer->AllocateOnGPU();
-}
-
-void ListCellBuffer::TransferToGPU() const
-{
-	auto cellCount = m_cells.size();
-	size_t bufferSize = cellCount * sizeof(CUdeviceptr);
-
-	if (m_gpuDataPointers == nullptr)
-	{
-		m_gpuDataPointers = new CUdeviceptr[bufferSize];
-	}
-
-	if (m_gpuSizePointers == nullptr)
-	{
-		m_gpuSizePointers = new CUdeviceptr[bufferSize];
-	}
+	m_gpuDataPointers = new CUdeviceptr[bufferSize];
+	m_gpuSizePointers = new CUdeviceptr[bufferSize];
 
 	for (auto i = 0u; i < cellCount; ++i)
 	{
@@ -308,12 +293,41 @@ void ListCellBuffer::TransferToGPU() const
 
 	// Data
 
+	m_gpuBuffer = CUDA::BufferManager::CreateBuffer(bufferSize);
+	m_gpuBuffer->AllocateOnGPU();
 	m_gpuBuffer->SetCPUBuffer(m_gpuDataPointers);
 	m_gpuBuffer->TransferToGPU();
 
 	// Size
 
+	m_gpuSizeBuffer = CUDA::BufferManager::CreateBuffer(bufferSize);
+	m_gpuSizeBuffer->AllocateOnGPU();
 	m_gpuSizeBuffer->SetCPUBuffer(m_gpuSizePointers);
+	m_gpuSizeBuffer->TransferToGPU();
+}
+
+void ListCellBuffer::TransferToGPU() const
+{
+	// Init
+
+	auto cellCount = m_cells.size();
+	for (auto i = 0u; i < cellCount; ++i)
+	{
+		auto buffer = m_cells.at(i);
+		if (auto vectorBuffer = BufferUtils::GetBuffer<VectorBuffer>(buffer, false))
+		{
+			m_gpuDataPointers[i] = vectorBuffer->GetGPUReadBuffer()->GetGPUBuffer();
+			m_gpuSizePointers[i] = vectorBuffer->GetGPUSizeBuffer()->GetGPUBuffer();
+		}
+		else
+		{
+			Utils::Logger::LogError("GPU list buffers may only have vector cells, received " + buffer->Description());
+		}
+	}
+
+	// Data
+
+	m_gpuBuffer->TransferToGPU();
 	m_gpuSizeBuffer->TransferToGPU();
 }
 
