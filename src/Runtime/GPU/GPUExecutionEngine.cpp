@@ -210,6 +210,12 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 		else
 		{
 			returnBuffer = DataBuffer::CreateEmpty(type, shape);
+
+			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			{
+				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
+			}
+
 		}
 
 		returnBuffers.push_back(returnBuffer);
@@ -524,7 +530,18 @@ CUDA::ConstantBuffer *GPUExecutionEngine::AllocateConstantVectorParameter(CUDA::
 {
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
-		Utils::Logger::LogDebug("Initializing list input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes x " + std::to_string(values.size()) + "]");
+		std::string valDescription;
+		auto first = true;
+		for (const auto& value : values)
+		{
+			if (!first)
+			{
+				valDescription += ", ";
+			}
+			first = false;
+			valDescription += std::to_string(value);
+		}
+		Utils::Logger::LogDebug("Initializing list input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes x " + std::to_string(values.size()) + " = {" + valDescription + "}]");
 	}
 
 	auto buffer = CUDA::BufferManager::CreateConstantBuffer(values.size() * sizeof(T));
