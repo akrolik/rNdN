@@ -30,6 +30,8 @@ public:
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
+		this->m_builder.AddStatement(new PTX::LocationDirective(this->m_builder.GetCurrentFile(), 0));
+
 		// Setup the parameter (in/out) declarations in the kernel
 
 		ParameterGenerator<B> parameterGenerator(this->m_builder);
