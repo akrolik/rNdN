@@ -61,22 +61,7 @@ public:
 			// Add vector parameter to the kernel
 
 			auto parameter = GeneratePointer<T>(name);
-			if (writeShape != nullptr)
-			{
-				// Return dynamic shapes use a pointer parameter for accumulating size
-
-				auto& inputOptions = this->m_builder.GetInputOptions();
-				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-				{
-					GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
-				}
-			}
-			else
-			{
-				// Input parameters always have a size argument
-
-				GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
-			}
+			GeneratePointer<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 		}
 	}
 
@@ -94,16 +79,7 @@ public:
 			// Add list parameter (pointer of pointers) to the kernel
 
 			auto parameter = GeneratePointer<PTX::PointerType<B, T, PTX::GlobalSpace>>(name);
-
-			// Dynamic returns as well as all input parameters require a size argument
-
-			auto& inputOptions = this->m_builder.GetInputOptions();
-			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-			{
-				// Double indirection size parameters
-
-				GeneratePointer<PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>(NameUtils::SizeName(parameter));
-			}
+			GeneratePointer<PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>(NameUtils::SizeName(parameter));
 		}
 	}
 
@@ -129,15 +105,9 @@ public:
 
 			if (index == 0)
 			{
-				// Dynamic returns as well as all input parameters require a size argument
+				// Double indirection size parameters
 
-				auto& inputOptions = this->m_builder.GetInputOptions();
-				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-				{
-					// Double indirection size parameters
-
-					GeneratePointer<PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>(NameUtils::SizeName(parameter));
-				}
+				GeneratePointer<PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>(NameUtils::SizeName(parameter));
 			}
 		}
 	}

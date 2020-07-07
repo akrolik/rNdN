@@ -229,18 +229,24 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 
 		const auto returnShape = inputOptions->ReturnShapes.at(i);
 		const auto returnWriteShape = inputOptions->ReturnWriteShapes.at(i);
+
+		auto sizeBuffer = returnBuffer->GetGPUSizeBuffer();
+
 		if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
 		{
-			// Clear the size buffer for the dynamic output data
+			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(returnShape))
+			{
+				// Clear the size buffer for the dynamic output data
 
-			auto sizeBuffer = returnBuffer->GetGPUSizeBuffer();
+				auto timeInitializeSize_start = Utils::Chrono::Start("Initialize buffer");
+				sizeBuffer->Clear();
+				Utils::Chrono::End(timeInitializeSize_start);
+			}
 
-			auto timeInitializeSize_start = Utils::Chrono::Start("Initialize buffer");
-			sizeBuffer->Clear();
-			Utils::Chrono::End(timeInitializeSize_start);
-
-			invocation.AddParameter(*sizeBuffer);
+			//TODO: Initialize size buffers for dynamic list
 		}
+
+		invocation.AddParameter(*sizeBuffer);
 	}
 
 	// Setup constant dynamic size parameters and allocate the dynamic shared memory according to the kernel

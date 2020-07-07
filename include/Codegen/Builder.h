@@ -159,6 +159,8 @@ public:
 	KernelAllocator *GetKernelResources() const { return m_kernelResources.at(m_currentKernel); }
 	ModuleAllocator *GetGlobalResources() const { return m_globalResources.at(m_currentModule); }
 
+	const HorseIR::Function *GetCurrentFunction() const { return m_currentFunction; }
+
 	const CodegenOptions& GetCodegenOptions() const { return m_codegenOptions; }
 	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
 

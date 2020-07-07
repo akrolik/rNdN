@@ -130,7 +130,7 @@ private:
 					}
 					else if (*vectorGeometry == *vectorShape)
 					{
-						GenerateWriteVector<T>(operand, returnIndex);
+						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
 						return;
 					}
 					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
@@ -153,7 +153,7 @@ private:
 
 					if (*vectorGeometry == *cellVector)
 					{
-						GenerateWriteVector<T>(operand, returnIndex);
+						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
 						return;
 					}
 					else if (Analysis::ShapeUtils::IsDynamicShape(cellVector))
@@ -169,8 +169,20 @@ private:
 				{
 					// Special horizontal write for @raze function
 
-					GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::ListData, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
-					return;
+					const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+					if (const auto cellVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
+					{
+						if (!Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+						{
+							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::ListData, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
+							return;
+						}
+						else if (*listGeometry->GetListSize() == *vectorShape->GetSize())
+						{
+							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
+							return;
+						}
+					}
 				}
 				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
 				{
@@ -188,12 +200,12 @@ private:
 					{
 						if (Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
 						{
-							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
+							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
 							return;
 						}
 						else if (*listShape == *listGeometry) // Compare the entire geometry, as the cells may differ
 						{
-							GenerateWriteVector<T>(operand, returnIndex);
+							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex);
 							return;
 						}
 						else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(cellVector->GetSize()))
@@ -438,7 +450,7 @@ private:
 	}
 
 	template<class T>
-	void GenerateWriteVector(const HorseIR::Operand *operand, unsigned int returnIndex)
+	void GenerateWriteVector(const HorseIR::Operand *operand, typename DataIndexGenerator<B>::Kind indexKind, unsigned int returnIndex)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -449,10 +461,10 @@ private:
 		// Ensure the write is within bounds
 
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateDataIndex();
+		auto index = indexGenerator.GenerateIndex(indexKind);
 
-		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
-		auto size = geometryGenerator.GenerateDataGeometry();
+		DataSizeGenerator<B> sizeGenerator(this->m_builder);
+		auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
 
 		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -515,6 +527,7 @@ private:
 					auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>>(NameUtils::SizeName(parameter));
 
 					//TODO: List prefix sum
+					Error("list cell prefix sum", returnIndex);
 				}
 			}
 

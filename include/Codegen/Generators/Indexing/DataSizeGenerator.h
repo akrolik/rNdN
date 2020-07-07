@@ -38,6 +38,20 @@ public:
 		return m_size;
 	}
 
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(unsigned int returnIndex, unsigned int cellIndex = 0)
+	{
+		m_cellIndex = cellIndex;
+		m_size = nullptr;
+
+		auto type = this->m_builder.GetCurrentFunction()->GetReturnType(returnIndex);
+		DispatchType(*this, type, returnIndex);
+		if (m_size == nullptr)
+		{
+			Error("size for return index " + std::to_string(returnIndex));
+		}
+		return m_size;
+	}
+
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Operand *operand)
 	{
 		m_size = nullptr;
@@ -67,7 +81,7 @@ public:
 			DispatchType(*this, parameter->GetType(), parameter);
 		}
 	}
-	
+
 	template<class T>
 	void GenerateVector(const HorseIR::Parameter *parameter)
 	{
@@ -107,6 +121,45 @@ public:
 		}
 	}
 
+	template<class T>
+	void GenerateVector(unsigned int returnIndex)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			GenerateVector<PTX::Int8Type>(returnIndex);
+		}
+		else
+		{
+			auto shape = this->m_builder.GetInputOptions().ReturnShapes.at(returnIndex);
+			auto name = NameUtils::ReturnName(returnIndex);
+
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(name);
+
+			m_size = GenerateSize(kernelParameter, shape);
+		}
+	}
+
+	template<class T>
+	void GenerateList(unsigned int returnIndex)
+	{
+		GenerateListSize<T>(returnIndex);
+	}
+
+	template<class T>
+	void GenerateTuple(unsigned int index, unsigned int returnIndex)
+	{
+		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
+		{
+			Error("tuple-in-list");
+		}
+
+		if (index == m_cellIndex)
+		{
+			GenerateListSize<T>(returnIndex);
+		}
+	}
+
 private:
 	template<class T>
 	void GenerateListSize(const HorseIR::Parameter *parameter)
@@ -119,6 +172,25 @@ private:
 		{
 			auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
 			auto name = NameUtils::VariableName(parameter);
+
+			auto kernelResources = this->m_builder.GetKernelResources();
+			auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);
+
+			m_size = GenerateSize(kernelParameter, shape);
+		}
+	}
+
+	template<class T>
+	void GenerateListSize(unsigned int returnIndex)
+	{
+		if constexpr(std::is_same<T, PTX::PredicateType>::value)
+		{
+			GenerateListSize<PTX::Int8Type>(returnIndex);
+		}
+		else
+		{
+			auto shape = this->m_builder.GetInputOptions().ReturnShapes.at(returnIndex);
+			auto name = NameUtils::ReturnName(returnIndex);
 
 			auto kernelResources = this->m_builder.GetKernelResources();
 			auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(name);

@@ -75,22 +75,10 @@ public:
 
 			GenerateParameterAddress<T>(parameter);
 
-			// Load the dynamic size parameter if needed
-						
-			if (writeShape != nullptr)
-			{
-				// Return dynamic shapes use pointer types for accumulating size
+			// Load the dynamic size parameter if needed. Return dynamic shapes use pointer types for accumulating size
 
-				auto& inputOptions = this->m_builder.GetInputOptions();
-				if (Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-				{
-					GeneratePointerSize(parameter, nullptr, false);
-				}
-			}
-			else
-			{
-				GeneratePointerSize(parameter);
-			}
+			auto& inputOptions = this->m_builder.GetInputOptions();
+			GeneratePointerSize(parameter, nullptr, (writeShape == nullptr || !Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry)));
 		}
 	}
 
@@ -144,10 +132,8 @@ public:
 
 				// Load the dynamic size parameter if needed
 
-				if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-				{
-					GenerateIndirectSize(parameter, index, (writeShape == nullptr));
-				}
+				auto& inputOptions = this->m_builder.GetInputOptions();
+				GenerateIndirectSize(parameter, index, (writeShape == nullptr || !Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry)));
 			}
 			else
 			{
@@ -182,10 +168,7 @@ public:
 			// Load the dynamic size if needed
 
 			auto& inputOptions = this->m_builder.GetInputOptions();
-			if (writeShape == nullptr || Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry))
-			{
-				GenerateIndirectSize(parameter, index, (writeShape == nullptr));
-			}
+			GenerateIndirectSize(parameter, index, (writeShape == nullptr || !Runtime::RuntimeUtils::IsDynamicReturnShape(shape, writeShape, inputOptions.ThreadGeometry)));
 		}
 	}
 
