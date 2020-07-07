@@ -35,8 +35,11 @@ public:
 		// Propagate reduction properties
 
 		auto resources = this->m_builder.GetLocalResources();
-		auto [granularity, op] = resources->GetReductionRegister(value);
-		resources->SetReductionRegister(targetRegister, granularity, op);
+		if (resources->IsReductionRegister(value))
+		{
+			auto [granularity, op] = resources->GetReductionRegister(value);
+			resources->SetReductionRegister(targetRegister, granularity, op);
+		}
 
 		return targetRegister;
 	}
