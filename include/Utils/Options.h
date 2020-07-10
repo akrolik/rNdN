@@ -13,6 +13,7 @@ public:
 	static constexpr char const *Opt_Optimize = "optimize";
 	static constexpr char const *Opt_Optimize_outline = "optimize-outline";
 
+	static constexpr char const *Opt_Print_load = "print-load";
 	static constexpr char const *Opt_Print_debug = "print-debug";
 	static constexpr char const *Opt_Print_hir = "print-hir";
 	static constexpr char const *Opt_Print_hir_typed = "print-hir-typed";
@@ -173,6 +174,7 @@ private:
 			("h,help", "Display this help menu")
 		;
 		m_options.add_options("Debug")
+			(Opt_Print_load, "Print data loading phase")
 			(Opt_Print_debug, "Print debug logs (excludes below)")
 			(Opt_Print_hir, "Pretty print input HorseIR program")
 			(Opt_Print_hir_typed, "Pretty print typed HorseIR program")

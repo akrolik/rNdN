@@ -138,7 +138,10 @@ void DataRegistry::LoadDebugData()
 
 		AddTable("debug", "debug_" + std::to_string(size), table);
 
-		Utils::Logger::LogInfo("Loaded table 'debug_" + std::to_string(size) + "'");
+		if (Utils::Options::Present(Utils::Options::Opt_Print_load))
+		{
+			Utils::Logger::LogInfo("Loaded table 'debug_" + std::to_string(size) + "'");
+		}
 	}
 
 	Utils::Chrono::End(timeData_start);
@@ -193,7 +196,7 @@ void DataRegistry::LoadTPCHNationTable()
 	const auto& regionForeignKey = regionTable->GetPrimaryKey();
 	const auto& regionForeignMap = regionTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'nation'");
+	auto progress = Utils::Progress::Start("Loading table 'nation'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 25u;
 
@@ -245,7 +248,7 @@ void DataRegistry::LoadTPCHRegionTable()
 	io::CSVReader<4, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/region.tbl");
 	char *r_regionKey, *r_name, *r_comment, *r_end;
 
-	auto progress = Utils::Progress::Start("Loading table 'region'");
+	auto progress = Utils::Progress::Start("Loading table 'region'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 5u;
 
@@ -303,7 +306,7 @@ void DataRegistry::LoadTPCHPartTable()
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/part.tbl");
 	char *p_partKey, *p_name, *p_mfgr, *p_brand, *p_type, *p_size, *p_container, *p_retailPrice, *p_comment, *p_end;
 
-	auto progress = Utils::Progress::Start("Loading table 'part'");
+	auto progress = Utils::Progress::Start("Loading table 'part'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto _size = 200000u;
 
@@ -376,7 +379,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	const auto& nationForeignKey = nationTable->GetPrimaryKey();
 	const auto& nationForeignMap = nationTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'supplier'");
+	auto progress = Utils::Progress::Start("Loading table 'supplier'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 10000u;
 
@@ -451,7 +454,7 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	const auto& supplierForeignMap = supplierTable->GetPrimaryMap();
 	const auto& supplierForeignKey = supplierTable->GetPrimaryKey();
 
-	auto progress = Utils::Progress::Start("Loading table 'partsupp'");
+	auto progress = Utils::Progress::Start("Loading table 'partsupp'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 800000u;
 
@@ -524,7 +527,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	const auto& nationForeignMap = nationTable->GetPrimaryMap();
 	const auto& nationForeignKey = nationTable->GetPrimaryKey();
 
-	auto progress = Utils::Progress::Start("Loading table 'customer'");
+	auto progress = Utils::Progress::Start("Loading table 'customer'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 150000u;
 
@@ -603,7 +606,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	const auto& customerForeignKey = customerTable->GetPrimaryKey();
 	const auto& customerForeignMap = customerTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'orders'");
+	auto progress = Utils::Progress::Start("Loading table 'orders'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 1500000u;
 
@@ -704,7 +707,7 @@ void DataRegistry::LoadTPCHLineItemTable()
 	const auto& orderForeignKey = orderTable->GetPrimaryKey();
 	const auto& orderForeignMap = orderTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'lineitem'");
+	auto progress = Utils::Progress::Start("Loading table 'lineitem'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
 	auto size = 6001215u;
 
