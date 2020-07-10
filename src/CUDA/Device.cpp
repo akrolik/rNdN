@@ -3,6 +3,7 @@
 #include "CUDA/Utils.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace CUDA {
 
@@ -16,7 +17,10 @@ void Device::SetActive()
 {
 	checkRuntimeError(cudaSetDevice(m_index));
 
-	Utils::Logger::LogInfo("Device " + std::to_string(m_index) + " selected");
+	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Device " + std::to_string(m_index) + " selected");
+	}
 }
 
 }
