@@ -460,8 +460,14 @@ private:
 
 		// Ensure the write is within bounds
 
-		DataIndexGenerator<B> indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateIndex(indexKind);
+		auto writeIndex = resources->template GetIndexedRegister<T>(value);
+		if (writeIndex == nullptr)
+		{
+			// Global/cell data indexing depending on thread geometry
+
+			DataIndexGenerator<B> indexGenerator(this->m_builder);
+			writeIndex = indexGenerator.GenerateIndex(indexKind);
+		}
 
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
@@ -469,18 +475,10 @@ private:
 		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
 		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(label, sizePredicate));
 
 		// Store the value into global space
-
-		auto writeIndex = resources->template GetIndexedRegister<T>(value);
-		if (writeIndex == nullptr)
-		{
-			// Global/cell data indexing depending on thread geometry
-
-			writeIndex = index;
-		}
 
 		auto address = GenerateAddress<T>(returnIndex, writeIndex);
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
