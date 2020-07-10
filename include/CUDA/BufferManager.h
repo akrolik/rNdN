@@ -32,6 +32,7 @@ protected:
 
 	std::vector<Buffer *> m_gpuBuffers;
 
+	size_t m_pageSize = 0;
 	size_t m_page = 0;
 	size_t m_sbrk = 0;
 };

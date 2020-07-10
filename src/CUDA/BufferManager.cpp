@@ -17,12 +17,12 @@ void BufferManager::Initialize()
 		auto& instance = GetInstance();
 		auto& buffers = instance.m_gpuBuffers;
 
-		auto pageSize = Utils::Options::Get<unsigned long long>(Utils::Options::Opt_Data_page_size);
+		instance.m_pageSize = Utils::Options::Get<unsigned long long>(Utils::Options::Opt_Data_page_size);
 		auto pageCount = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Data_page_count);
 
 		for (auto i = 0u; i < pageCount; ++i)
 		{
-			auto buffer = new Buffer(pageSize);
+			auto buffer = new Buffer(instance.m_pageSize);
 			buffer->SetTag("page_" + std::to_string(i));
 			buffer->AllocateOnGPU();
 			buffer->Clear();
@@ -68,7 +68,7 @@ Buffer *BufferManager::CreateBuffer(size_t size)
 			auto pageBuffer = instance.GetPageBuffer(size);
 			auto buffer = new Buffer(pageBuffer->GetGPUBuffer() + instance.m_sbrk, size);
 
-			instance.m_sbrk += Utils::Math::RoundUp(size, 1024);
+			instance.m_sbrk += Utils::Math::RoundUp(size, 8);
 
 			return buffer;
 		}
@@ -91,7 +91,7 @@ ConstantBuffer *BufferManager::CreateConstantBuffer(size_t size)
 			auto pageBuffer = instance.GetPageBuffer(size);
 			auto buffer = new ConstantBuffer(pageBuffer->GetGPUBuffer() + instance.m_sbrk, size);
 
-			instance.m_sbrk += Utils::Math::RoundUp(size, 1024);
+			instance.m_sbrk += Utils::Math::RoundUp(size, 8);
 
 			return buffer;
 		}
@@ -103,17 +103,21 @@ Buffer *BufferManager::GetPageBuffer(size_t size)
 {
 	// Check that the data fits within a single page
 
-	auto pageSize = Utils::Options::Get<unsigned long long>(Utils::Options::Opt_Data_page_size);
-	if (size > pageSize)
+	if (size > m_pageSize)
 	{
-		Utils::Logger::LogError("CUDA allocation exceeds page size [" + std::to_string(size) + " > " + std::to_string(pageSize) + "]");
+		Utils::Logger::LogError("CUDA allocation exceeds page size [" + std::to_string(size) + " > " + std::to_string(m_pageSize) + "]");
 	}
 
 	// Check if the size fits within the current page
 
-	if (size > pageSize - m_sbrk)
+	if (m_sbrk + size > m_pageSize)
 	{
 		m_page++;
+		m_sbrk = 0;
+		if (m_page >= m_gpuBuffers.size())
+		{
+			Utils::Logger::LogError("CUDA allocation exceeds page count [" + std::to_string(m_page + 1) + " > " + std::to_string(m_gpuBuffers.size()) + "]");
+		}
 	}
 
 	return m_gpuBuffers.at(m_page);
