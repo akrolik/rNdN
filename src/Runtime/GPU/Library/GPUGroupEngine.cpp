@@ -79,45 +79,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto timeCreate_start = Utils::Chrono::Start("Create dictionary");
 
-	ListBuffer *listBuffer = nullptr;
-	if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_group_compressed))
-	{
-		// Create the dictionary object with compressed list buffer
-
-		listBuffer = new ListCompressedBuffer(valuesBuffer, indexBuffer);
-	}
-	else
-	{
-		// Create the dictionary object with divided list cells
-
-		auto values = valuesBuffer->GetCPUReadBuffer();
-
-		std::vector<DataBuffer *> entryBuffers;
-		for (auto entryIndex = 0u; entryIndex < keysSize; ++entryIndex)
-		{
-			// Compute the index range, spanning the last entry to the end of the data
-
-			auto offset = values->GetValue(entryIndex);
-			auto end = ((entryIndex + 1) == keysSize) ? indexBuffer->GetElementCount() : values->GetValue(entryIndex + 1);
-			auto size = (end - offset);
-
-			auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
-			auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
-
-			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
-			{
-				Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
-			}
-
-			// Copy the index data
-
-			CUDA::Buffer::Copy(entryBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * sizeof(std::int64_t), 0, offset * sizeof(std::int64_t));
-
-			entryBuffers.push_back(entryBuffer);
-		}
-
-		listBuffer = new ListCellBuffer(entryBuffers);
-	}
+	auto listBuffer = ConstructListBuffer(indexBuffer, valuesBuffer);
 	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, listBuffer);
 
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
@@ -135,6 +97,53 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	Utils::Chrono::End(timeGroup_start);
 
 	return dictionaryBuffer;
+}
+
+ListBuffer *GPUGroupEngine::ConstructListBuffer(TypedVectorBuffer<std::int64_t> *indexBuffer, TypedVectorBuffer<std::int64_t> *valuesBuffer) const
+{
+	switch (Utils::Options::GetGroupKind())
+	{
+		case Utils::Options::GroupKind::CompressedGroup:
+		{
+			// Create the dictionary object with compressed list buffer
+
+			return new ListCompressedBuffer(valuesBuffer, indexBuffer);
+		}
+		case Utils::Options::GroupKind::CellGroup:
+		{
+			// Create the dictionary object with divided list cells
+
+			auto values = valuesBuffer->GetCPUReadBuffer();
+			auto valuesSize = valuesBuffer->GetElementCount();
+
+			std::vector<DataBuffer *> entryBuffers;
+			for (auto entryIndex = 0u; entryIndex < valuesSize; ++entryIndex)
+			{
+				// Compute the index range, spanning the last entry to the end of the data
+
+				auto offset = values->GetValue(entryIndex);
+				auto end = ((entryIndex + 1) == valuesSize) ? indexBuffer->GetElementCount() : values->GetValue(entryIndex + 1);
+				auto size = (end - offset);
+
+				auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
+				auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
+
+				if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+				{
+					Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
+				}
+
+				// Copy the index data
+
+				CUDA::Buffer::Copy(entryBuffer->GetGPUWriteBuffer(), indexBuffer->GetGPUReadBuffer(), size * sizeof(std::int64_t), 0, offset * sizeof(std::int64_t));
+
+				entryBuffers.push_back(entryBuffer);
+			}
+
+			return new ListCellBuffer(entryBuffers);
+		}
+	}
+	Utils::Logger::LogError("GPU group library cannot create list buffer");
 }
 
 }

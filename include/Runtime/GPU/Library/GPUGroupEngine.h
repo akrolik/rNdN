@@ -19,6 +19,7 @@ public:
 
 private:
 	const HorseIR::Function *GetFunction(const HorseIR::FunctionDeclaration *function) const;
+	ListBuffer *ConstructListBuffer(TypedVectorBuffer<std::int64_t> *indexBuffer, TypedVectorBuffer<std::int64_t> *valuesBuffer) const;
 
 	Runtime& m_runtime;
 	const HorseIR::Program *m_program = nullptr;

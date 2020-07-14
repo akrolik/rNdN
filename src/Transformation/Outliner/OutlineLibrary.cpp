@@ -104,7 +104,7 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 
 			// Nesting disables shared memory
 
-			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort) && !nested)
+			if (Utils::Options::GetSortKind() == Utils::Options::SortKind::SharedSort && !nested)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));
@@ -137,7 +137,7 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
 
-			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort))
+			if (Utils::Options::GetSortKind() == Utils::Options::SortKind::SharedSort)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));
@@ -170,7 +170,7 @@ HorseIR::CallExpression *OutlineLibrary::Outline(const HorseIR::BuiltinFunction 
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(initFunction->GetName())));
 			operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunction->GetName())));
 
-			if (Utils::Options::Get<bool>(Utils::Options::Opt_Algo_smem_sort))
+			if (Utils::Options::GetSortKind() == Utils::Options::SortKind::SharedSort)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new HorseIR::FunctionLiteral(new HorseIR::Identifier(sortFunctionShared->GetName())));

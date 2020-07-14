@@ -26,8 +26,8 @@ public:
 	static constexpr char const *Opt_Print_time = "print-time";
 
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
-	static constexpr char const *Opt_Algo_smem_sort = "algo-smem-sort";
-	static constexpr char const *Opt_Algo_group_compressed = "algo-group-compressed";
+	static constexpr char const *Opt_Algo_sort = "algo-sort";
+	static constexpr char const *Opt_Algo_group = "algo-group";
 	static constexpr char const *Opt_Algo_join = "algo-join";
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 	static constexpr char const *Opt_Algo_like = "algo-like";
@@ -109,6 +109,44 @@ public:
 			return LikeKind::OptLike;
 		}
 		Utils::Logger::LogError("Unknown like mode '" + likeMode + "'");
+	}
+
+	enum class SortKind {
+		GlobalSort,
+		SharedSort
+	};
+
+	static SortKind GetSortKind()
+	{
+		auto sortMode = Get<std::string>(Opt_Algo_sort);
+		if (sortMode == "global")
+		{
+			return SortKind::GlobalSort;
+		}
+		else if (sortMode == "shared")
+		{
+			return SortKind::SharedSort;
+		}
+		Utils::Logger::LogError("Unknown sort mode '" + sortMode + "'");
+	}
+
+	enum class GroupKind {
+		CellGroup,
+		CompressedGroup
+	};
+
+	static GroupKind GetGroupKind()
+	{
+		auto groupMode = Get<std::string>(Opt_Algo_group);
+		if (groupMode == "cell")
+		{
+			return GroupKind::CellGroup;
+		}
+		else if (groupMode == "compressed")
+		{
+			return GroupKind::CompressedGroup;
+		}
+		Utils::Logger::LogError("Unknown group mode '" + groupMode + "'");
 	}
 
 	enum class UniqueKind {
@@ -193,8 +231,8 @@ private:
 		;
 		m_options.add_options("Algorithm")
 			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))
-			(Opt_Algo_smem_sort, "Shared memory sort", cxxopts::value<bool>()->default_value("true"))
-			(Opt_Algo_group_compressed, "Group compressed list", cxxopts::value<bool>()->default_value("true"))
+			(Opt_Algo_sort, "Sort mode [global|shared]", cxxopts::value<std::string>()->default_value("shared"))
+			(Opt_Algo_group, "Group mode [cell|compressed]", cxxopts::value<std::string>()->default_value("compressed"))
 			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("hash"))
 			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 			(Opt_Algo_like, "Like mode [pcre|opt]", cxxopts::value<std::string>()->default_value("opt"))
