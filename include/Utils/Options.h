@@ -33,12 +33,13 @@ public:
 	static constexpr char const *Opt_Algo_like = "algo-like";
 	static constexpr char const *Opt_Algo_unique = "algo-unique";
 
+	static constexpr char const *Opt_Data_load_tpch = "data-load-tpch";
+	static constexpr char const *Opt_Data_path_tpch = "data-path-tpch";
 	static constexpr char const *Opt_Data_resize = "data-resize";
 	static constexpr char const *Opt_Data_allocator = "data-allocator";
 	static constexpr char const *Opt_Data_page_size = "data-page-size";
 	static constexpr char const *Opt_Data_page_count = "data-page-count";
 
-	static constexpr char const *Opt_Load_tpch = "load-tpch";
 	static constexpr char const *Opt_File = "file";
 
 	Options(Options const&) = delete;
@@ -200,7 +201,8 @@ private:
 			(Opt_Algo_unique, "Unique mode [sort|loop]", cxxopts::value<std::string>()->default_value("loop"))
 		;
 		m_options.add_options("Data")
-			(Opt_Load_tpch, "Load TPC-H data")
+			(Opt_Data_load_tpch, "Load TPC-H data")
+			(Opt_Data_path_tpch, "TPC-H data path", cxxopts::value<std::string>())
 			(Opt_Data_allocator, "GPU allocator algorithm [cuda|linear]", cxxopts::value<std::string>()->default_value("linear"))
 			(Opt_Data_page_size, "GPU page size", cxxopts::value<unsigned long long>()->default_value("2147483648"))
 			(Opt_Data_page_count, "GPU page count", cxxopts::value<unsigned int>()->default_value("2"))

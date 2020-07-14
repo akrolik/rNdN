@@ -30,6 +30,7 @@ public:
 
 private:
 	std::int32_t EpochTime(char *date) const;
+	std::string GetTPCHPath(const std::string& table) const;
 
 	void LoadTPCHNationTable();
 	void LoadTPCHRegionTable();

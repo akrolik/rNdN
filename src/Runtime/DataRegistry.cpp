@@ -165,6 +165,11 @@ void DataRegistry::LoadTPCHData()
 	Utils::Chrono::End(timeData_start);
 }
 
+std::string DataRegistry::GetTPCHPath(const std::string& table) const
+{
+	return Utils::Options::Get<std::string>(Utils::Options::Opt_Data_path_tpch) + "/" + table;
+}
+
 std::int32_t DataRegistry::EpochTime(char *date) const
 {
 	int year, month, day;
@@ -189,7 +194,7 @@ void DataRegistry::LoadTPCHNationTable()
 	CUDA::Vector<std::int64_t> regionKey; // FKey[region]
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<5, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/nation.tbl");
+	io::CSVReader<5, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("nation.tbl"));
 	char *n_nationKey, *n_name, *n_regionKey, *n_comment, *n_end;
 
 	const auto& regionTable = GetTable("region");
@@ -245,7 +250,7 @@ void DataRegistry::LoadTPCHRegionTable()
 	CUDA::Vector<std::uint64_t> name;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<4, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/region.tbl");
+	io::CSVReader<4, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("region.tbl"));
 	char *r_regionKey, *r_name, *r_comment, *r_end;
 
 	auto progress = Utils::Progress::Start("Loading table 'region'", Utils::Options::Present(Utils::Options::Opt_Print_load));
@@ -303,7 +308,7 @@ void DataRegistry::LoadTPCHPartTable()
 	CUDA::Vector<double> retailPrice;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/part.tbl");
+	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("part.tbl"));
 	char *p_partKey, *p_name, *p_mfgr, *p_brand, *p_type, *p_size, *p_container, *p_retailPrice, *p_comment, *p_end;
 
 	auto progress = Utils::Progress::Start("Loading table 'part'", Utils::Options::Present(Utils::Options::Opt_Print_load));
@@ -372,7 +377,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	CUDA::Vector<double> balance;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/supplier.tbl");
+	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("supplier.tbl"));
 	char *s_suppKey, *s_name, *s_address, *s_nationKey, *s_phone, *s_acctBal, *s_comment, *s_end;
 
 	const auto& nationTable = GetTable("nation");
@@ -442,7 +447,7 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	CUDA::Vector<double> supplyCost;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<6, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/partsupp.tbl");
+	io::CSVReader<6, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("partsupp.tbl"));
 	char *ps_partKey, *ps_suppKey, *ps_availQty, *ps_supplyCost, *ps_comment, *ps_end;
 
 	const auto& partTable = GetTable("part");
@@ -520,7 +525,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	CUDA::Vector<std::uint64_t> marketSegment;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<9, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/customer.tbl");
+	io::CSVReader<9, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("customer.tbl"));
 	char *c_custKey, *c_name, *c_address, *c_nationKey, *c_phone, *c_acctBal, *c_mktSegment, *c_comment, *c_end;
 
 	const auto& nationTable = GetTable("nation");
@@ -599,7 +604,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	CUDA::Vector<std::int32_t> shipPriority;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/orders.tbl");
+	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("orders.tbl"));
 	char *o_orderKey, *o_custKey, *o_orderStatus, *o_totalPrice, *o_orderDate, *o_orderPriority, *o_clerk, *o_shipPriority, *o_comment, *o_end;
 
 	const auto& customerTable = GetTable("customer");
@@ -699,7 +704,7 @@ void DataRegistry::LoadTPCHLineItemTable()
 	CUDA::Vector<std::uint64_t> shipMode;
 	CUDA::Vector<std::uint64_t> comment;
 
-	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader("../data/tpc-h/lineitem.tbl");
+	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("lineitem.tbl"));
 	char *l_orderKey, *l_partKey, *l_suppKey, *l_lineNumber, *l_quantity, *l_extPrice, *l_discount, *l_tax, *l_returnFlag,
 	     *l_lineStatus, *l_shipDate, *l_commitDate, *l_receiptDate, *l_shipInstruct, *l_shipMode, *l_comment, *l_end;
 
