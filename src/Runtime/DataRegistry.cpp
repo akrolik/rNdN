@@ -185,14 +185,15 @@ void DataRegistry::LoadTPCHNationTable()
 	//     N_REGIONKEY  INTEGER NOT NULL,
 	//     N_COMMENT    VARCHAR(152)
 	// );
+	auto size = 25u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> nationKey; // PKey
-	CUDA::Vector<std::uint64_t> name;
-	CUDA::Vector<std::int32_t> regionVal; // FKey[region] value
-	CUDA::Vector<std::int64_t> regionKey; // FKey[region]
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> nationKey(size); // PKey
+	CUDA::Vector<std::uint64_t> name(size);
+	CUDA::Vector<std::int32_t> regionVal(size); // FKey[region] value
+	CUDA::Vector<std::int64_t> regionKey(size); // FKey[region]
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<5, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("nation.tbl"));
 	char *n_nationKey, *n_name, *n_regionKey, *n_comment, *n_end;
@@ -203,17 +204,16 @@ void DataRegistry::LoadTPCHNationTable()
 
 	auto progress = Utils::Progress::Start("Loading table 'nation'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 25u;
 
 	while (lineReader.read_row(n_nationKey, n_name, n_regionKey, n_comment, n_end))
 	{
 		primaryMap[atoi(n_nationKey)] = count;
 
-		nationKey.push_back(atoi(n_nationKey));
-		name.push_back(StringBucket::HashString(n_name));
-		regionVal.push_back(atoi(n_regionKey));
-		regionKey.push_back(regionForeignMap.at(atoi(n_regionKey)));
-		comment.push_back(StringBucket::HashString(n_comment));
+		nationKey[count] = atoi(n_nationKey);
+		name[count] = StringBucket::HashString(n_name);
+		regionVal[count] = atoi(n_regionKey);
+		regionKey[count] = regionForeignMap.at(atoi(n_regionKey));
+		comment[count] = StringBucket::HashString(n_comment);
 
 		count++;
 		progress.Update(count, size);
@@ -243,27 +243,27 @@ void DataRegistry::LoadTPCHRegionTable()
 	//     R_NAME       CHAR(25) NOT NULL,
 	//     R_COMMENT    VARCHAR(152)
 	// );
+	auto size = 5u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> regionKey; // PKey
-	CUDA::Vector<std::uint64_t> name;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> regionKey(size); // PKey
+	CUDA::Vector<std::uint64_t> name(size);
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<4, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("region.tbl"));
 	char *r_regionKey, *r_name, *r_comment, *r_end;
 
 	auto progress = Utils::Progress::Start("Loading table 'region'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 5u;
 
 	while (lineReader.read_row(r_regionKey, r_name, r_comment, r_end))
 	{
 		primaryMap[atoi(r_regionKey)] = count;
 
-		regionKey.push_back(atoi(r_regionKey));
-		name.push_back(StringBucket::HashString(r_name));
-		comment.push_back(StringBucket::HashString(r_comment));
+		regionKey[count] = atoi(r_regionKey);
+		name[count] = StringBucket::HashString(r_name);
+		comment[count] = StringBucket::HashString(r_comment);
 
 		count++;
 		progress.Update(count, size);
@@ -295,25 +295,25 @@ void DataRegistry::LoadTPCHPartTable()
 	//     P_RETAILPRICE DECIMAL(15,2) NOT NULL,
 	//     P_COMMENT     VARCHAR(23) NOT NULL
 	// );
+	auto _size = 200000u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> partKey; // PKey
-	CUDA::Vector<std::uint64_t> name;
-	CUDA::Vector<std::uint64_t> mfgr;
-	CUDA::Vector<std::uint64_t> brand;
-	CUDA::Vector<std::uint64_t> type;
-	CUDA::Vector<std::int32_t> size;
-	CUDA::Vector<std::uint64_t> container;
-	CUDA::Vector<double> retailPrice;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> partKey(_size); // PKey
+	CUDA::Vector<std::uint64_t> name(_size);
+	CUDA::Vector<std::uint64_t> mfgr(_size);
+	CUDA::Vector<std::uint64_t> brand(_size);
+	CUDA::Vector<std::uint64_t> type(_size);
+	CUDA::Vector<std::int32_t> size(_size);
+	CUDA::Vector<std::uint64_t> container(_size);
+	CUDA::Vector<double> retailPrice(_size);
+	CUDA::Vector<std::uint64_t> comment(_size);
 
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("part.tbl"));
 	char *p_partKey, *p_name, *p_mfgr, *p_brand, *p_type, *p_size, *p_container, *p_retailPrice, *p_comment, *p_end;
 
 	auto progress = Utils::Progress::Start("Loading table 'part'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto _size = 200000u;
 
 	while (lineReader.read_row(
 		p_partKey, p_name, p_mfgr, p_brand, p_type, p_size, p_container, p_retailPrice, p_comment, p_end
@@ -321,15 +321,15 @@ void DataRegistry::LoadTPCHPartTable()
 	{
 		primaryMap[atoi(p_partKey)] = count;
 
-		partKey.push_back(atoi(p_partKey));
-		name.push_back(StringBucket::HashString(p_name));
-		mfgr.push_back(StringBucket::HashString(p_mfgr));
-		brand.push_back(StringBucket::HashString(p_brand));
-		type.push_back(StringBucket::HashString(p_type));
-		size.push_back(atoi(p_size));
-		container.push_back(StringBucket::HashString(p_container));
-		retailPrice.push_back(atof(p_retailPrice));
-		comment.push_back(StringBucket::HashString(p_comment));
+		partKey[count] = atoi(p_partKey);
+		name[count] = StringBucket::HashString(p_name);
+		mfgr[count] = StringBucket::HashString(p_mfgr);
+		brand[count] = StringBucket::HashString(p_brand);
+		type[count] = StringBucket::HashString(p_type);
+		size[count] = atoi(p_size);
+		container[count] = StringBucket::HashString(p_container);
+		retailPrice[count] = atof(p_retailPrice);
+		comment[count] = StringBucket::HashString(p_comment);
 
 		count++;
 		progress.Update(count, _size);
@@ -365,17 +365,18 @@ void DataRegistry::LoadTPCHSupplierTable()
 	//     S_ACCTBAL     DECIMAL(15,2) NOT NULL,
 	//     S_COMMENT     VARCHAR(101) NOT NULL
 	// );
+	auto size = 10000u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> supplierKey; // PKey
-	CUDA::Vector<std::uint64_t> name;
-	CUDA::Vector<std::uint64_t> address;
-	CUDA::Vector<std::int32_t> nationVal; // FKey[nation] value
-	CUDA::Vector<std::int64_t> nationKey; // FKey[nation]
-	CUDA::Vector<std::uint64_t> phone;
-	CUDA::Vector<double> balance;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> supplierKey(size); // PKey
+	CUDA::Vector<std::uint64_t> name(size);
+	CUDA::Vector<std::uint64_t> address(size);
+	CUDA::Vector<std::int32_t> nationVal(size); // FKey[nation] value
+	CUDA::Vector<std::int64_t> nationKey(size); // FKey[nation]
+	CUDA::Vector<std::uint64_t> phone(size);
+	CUDA::Vector<double> balance(size);
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("supplier.tbl"));
 	char *s_suppKey, *s_name, *s_address, *s_nationKey, *s_phone, *s_acctBal, *s_comment, *s_end;
@@ -386,7 +387,6 @@ void DataRegistry::LoadTPCHSupplierTable()
 
 	auto progress = Utils::Progress::Start("Loading table 'supplier'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 10000u;
 
 	while (lineReader.read_row(
 		s_suppKey, s_name, s_address, s_nationKey, s_phone, s_acctBal, s_comment, s_end
@@ -394,14 +394,14 @@ void DataRegistry::LoadTPCHSupplierTable()
 	{
 		primaryMap[atoi(s_suppKey)] = count;
 
-		supplierKey.push_back(atoi(s_suppKey));
-		name.push_back(StringBucket::HashString(s_name));
-		address.push_back(StringBucket::HashString(s_address));
-		nationVal.push_back(atoi(s_nationKey));
-		nationKey.push_back(nationForeignMap.at(atoi(s_nationKey)));
-		phone.push_back(StringBucket::HashString(s_phone));
-		balance.push_back(atof(s_acctBal));
-		comment.push_back(StringBucket::HashString(s_comment));
+		supplierKey[count] = atoi(s_suppKey);
+		name[count] = StringBucket::HashString(s_name);
+		address[count] = StringBucket::HashString(s_address);
+		nationVal[count] = atoi(s_nationKey);
+		nationKey[count] = nationForeignMap.at(atoi(s_nationKey));
+		phone[count] = StringBucket::HashString(s_phone);
+		balance[count] = atof(s_acctBal);
+		comment[count] = StringBucket::HashString(s_comment);
 
 		count++;
 		progress.Update(count, size);
@@ -436,16 +436,17 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	//     PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
 	//     PS_COMMENT     VARCHAR(199) NOT NULL
 	// );
+	auto size = 800000u;
 
 	//TODO: Primary key
-	CUDA::Vector<std::int32_t> partVal; // FKey[part] value, PKey
-	CUDA::Vector<std::int64_t> partKey; // FKey[part], PKey
-	CUDA::Vector<std::int32_t> supplierVal; // FKey[supplier] value, PKey
-	CUDA::Vector<std::int64_t> supplierKey; // FKey[supplier], PKey
+	CUDA::Vector<std::int32_t> partVal(size); // FKey[part] value, PKey
+	CUDA::Vector<std::int64_t> partKey(size); // FKey[part], PKey
+	CUDA::Vector<std::int32_t> supplierVal(size); // FKey[supplier] value, PKey
+	CUDA::Vector<std::int64_t> supplierKey(size); // FKey[supplier], PKey
 
-	CUDA::Vector<std::int32_t> availableQuantity;
-	CUDA::Vector<double> supplyCost;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> availableQuantity(size);
+	CUDA::Vector<double> supplyCost(size);
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<6, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("partsupp.tbl"));
 	char *ps_partKey, *ps_suppKey, *ps_availQty, *ps_supplyCost, *ps_comment, *ps_end;
@@ -461,21 +462,20 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 
 	auto progress = Utils::Progress::Start("Loading table 'partsupp'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 800000u;
 
 	while (lineReader.read_row(
 		ps_partKey, ps_suppKey, ps_availQty, ps_supplyCost, ps_comment, ps_end
 	))
 	{
-		partVal.push_back(atoi(ps_partKey));
-		partKey.push_back(partForeignMap.at(atoi(ps_partKey)));
+		partVal[count] = atoi(ps_partKey);
+		partKey[count] = partForeignMap.at(atoi(ps_partKey));
 
-		supplierVal.push_back(atoi(ps_suppKey));
-		supplierKey.push_back(partForeignMap.at(atoi(ps_suppKey)));
+		supplierVal[count] = atoi(ps_suppKey);
+		supplierKey[count] = partForeignMap.at(atoi(ps_suppKey));
 
-		availableQuantity.push_back(atoi(ps_availQty));
-		supplyCost.push_back(atof(ps_supplyCost));
-		comment.push_back(StringBucket::HashString(ps_comment));
+		availableQuantity[count] = atoi(ps_availQty);
+		supplyCost[count] = atof(ps_supplyCost);
+		comment[count] = StringBucket::HashString(ps_comment);
 
 		count++;
 		progress.Update(count, size);
@@ -512,18 +512,19 @@ void DataRegistry::LoadTPCHCustomerTable()
 	//     C_MKTSEGMENT  CHAR(10) NOT NULL,
 	//     C_COMMENT     VARCHAR(117) NOT NULL
 	// );
+	auto size = 150000u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> custKey; // PKey
-	CUDA::Vector<std::uint64_t> name;
-	CUDA::Vector<std::uint64_t> address;
-	CUDA::Vector<std::int32_t> nationVal; // FKey[nation] value
-	CUDA::Vector<std::int64_t> nationKey; // FKey[nation]
-	CUDA::Vector<std::uint64_t> phone;
-	CUDA::Vector<double> accountBalance;
-	CUDA::Vector<std::uint64_t> marketSegment;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> custKey(size); // PKey
+	CUDA::Vector<std::uint64_t> name(size);
+	CUDA::Vector<std::uint64_t> address(size);
+	CUDA::Vector<std::int32_t> nationVal(size); // FKey[nation] value
+	CUDA::Vector<std::int64_t> nationKey(size); // FKey[nation]
+	CUDA::Vector<std::uint64_t> phone(size);
+	CUDA::Vector<double> accountBalance(size);
+	CUDA::Vector<std::uint64_t> marketSegment(size);
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<9, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("customer.tbl"));
 	char *c_custKey, *c_name, *c_address, *c_nationKey, *c_phone, *c_acctBal, *c_mktSegment, *c_comment, *c_end;
@@ -534,7 +535,6 @@ void DataRegistry::LoadTPCHCustomerTable()
 
 	auto progress = Utils::Progress::Start("Loading table 'customer'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 150000u;
 
 	while (lineReader.read_row(
 		c_custKey, c_name, c_address, c_nationKey, c_phone, c_acctBal, c_mktSegment, c_comment, c_end
@@ -542,15 +542,15 @@ void DataRegistry::LoadTPCHCustomerTable()
 	{
 		primaryMap[atoi(c_custKey)] = count;
 
-		custKey.push_back(atoi(c_custKey));
-		name.push_back(StringBucket::HashString(c_name));
-		address.push_back(StringBucket::HashString(c_address));
-		nationVal.push_back(atoi(c_nationKey));
-		nationKey.push_back(nationForeignMap.at(atoi(c_nationKey)));
-		phone.push_back(StringBucket::HashString(c_phone));
-		accountBalance.push_back(atof(c_acctBal));
-		marketSegment.push_back(StringBucket::HashString(c_mktSegment));
-		comment.push_back(StringBucket::HashString(c_comment));
+		custKey[count] = atoi(c_custKey);
+		name[count] = StringBucket::HashString(c_name);
+		address[count] = StringBucket::HashString(c_address);
+		nationVal[count] = atoi(c_nationKey);
+		nationKey[count] = nationForeignMap.at(atoi(c_nationKey));
+		phone[count] = StringBucket::HashString(c_phone);
+		accountBalance[count] = atof(c_acctBal);
+		marketSegment[count] = StringBucket::HashString(c_mktSegment);
+		comment[count] = StringBucket::HashString(c_comment);
 
 		count++;
 		progress.Update(count, size);
@@ -590,19 +590,20 @@ void DataRegistry::LoadTPCHOrderTable()
 	//     O_SHIPPRIORITY   INTEGER NOT NULL,
 	//     O_COMMENT        VARCHAR(79) NOT NULL
 	// );
+	auto size = 1500000u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
-	CUDA::Vector<std::int32_t> orderKey; // PKey
-	CUDA::Vector<std::int32_t> customerVal; // FKey[customer] value
-	CUDA::Vector<std::int64_t> customerKey; // FKey[customer]
-	CUDA::Vector<std::int8_t> orderStatus;
-	CUDA::Vector<double> totalPrice;
-	CUDA::Vector<std::int32_t> orderDate;
-	CUDA::Vector<std::uint64_t> orderPriority;
-	CUDA::Vector<std::uint64_t> clerk;
-	CUDA::Vector<std::int32_t> shipPriority;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::int32_t> orderKey(size); // PKey
+	CUDA::Vector<std::int32_t> customerVal(size); // FKey[customer] value
+	CUDA::Vector<std::int64_t> customerKey(size); // FKey[customer]
+	CUDA::Vector<std::int8_t> orderStatus(size);
+	CUDA::Vector<double> totalPrice(size);
+	CUDA::Vector<std::int32_t> orderDate(size);
+	CUDA::Vector<std::uint64_t> orderPriority(size);
+	CUDA::Vector<std::uint64_t> clerk(size);
+	CUDA::Vector<std::int32_t> shipPriority(size);
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("orders.tbl"));
 	char *o_orderKey, *o_custKey, *o_orderStatus, *o_totalPrice, *o_orderDate, *o_orderPriority, *o_clerk, *o_shipPriority, *o_comment, *o_end;
@@ -613,7 +614,6 @@ void DataRegistry::LoadTPCHOrderTable()
 
 	auto progress = Utils::Progress::Start("Loading table 'orders'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 1500000u;
 
 	while (lineReader.read_row(
 		o_orderKey, o_custKey, o_orderStatus, o_totalPrice, o_orderDate, o_orderPriority, o_clerk, o_shipPriority, o_comment, o_end
@@ -621,16 +621,16 @@ void DataRegistry::LoadTPCHOrderTable()
 	{
 		primaryMap[atoi(o_orderKey)] = count;
 
-		orderKey.push_back(atoi(o_orderKey));
-		customerVal.push_back(atoi(o_custKey));
-		customerKey.push_back(customerForeignMap.at(atoi(o_custKey)));
-		orderStatus.push_back(o_orderStatus[0]);
-		totalPrice.push_back(atof(o_totalPrice));
-		orderDate.push_back(EpochTime(o_orderDate));
-		orderPriority.push_back(StringBucket::HashString(o_orderPriority));
-		clerk.push_back(StringBucket::HashString(o_clerk));
-		shipPriority.push_back(atoi(o_shipPriority));
-		comment.push_back(StringBucket::HashString(o_comment));
+		orderKey[count] = atoi(o_orderKey);
+		customerVal[count] = atoi(o_custKey);
+		customerKey[count] = customerForeignMap.at(atoi(o_custKey));
+		orderStatus[count] = o_orderStatus[0];
+		totalPrice[count] = atof(o_totalPrice);
+		orderDate[count] = EpochTime(o_orderDate);
+		orderPriority[count] = StringBucket::HashString(o_orderPriority);
+		clerk[count] = StringBucket::HashString(o_clerk);
+		shipPriority[count] = atoi(o_shipPriority);
+		comment[count] = StringBucket::HashString(o_comment);
 
 		count++;
 		progress.Update(count, size);
@@ -678,31 +678,32 @@ void DataRegistry::LoadTPCHLineItemTable()
 	//     L_SHIPMODE        CHAR(10) NOT NULL,
 	//     L_COMMENT         VARCHAR(44) NOT NULL
 	// );
+	auto size = 6001215u;
 
 	std::unordered_map<std::int32_t, std::int64_t> primaryKey;
 
-	CUDA::Vector<std::int32_t> orderVal; // FKey[orders] value, PKey
-	CUDA::Vector<std::int64_t> orderKey; // FKey[orders], PKey
+	CUDA::Vector<std::int32_t> orderVal(size); // FKey[orders] value, PKey
+	CUDA::Vector<std::int64_t> orderKey(size); // FKey[orders], PKey
 
-	CUDA::Vector<std::int32_t> partVal; // FKey[partsupplier], value
-	CUDA::Vector<std::int32_t> suppVal; // FKey[partsupplier], value
-	CUDA::Vector<std::int32_t> lineNumber; // PKey
+	CUDA::Vector<std::int32_t> partVal(size); // FKey[partsupplier], value
+	CUDA::Vector<std::int32_t> suppVal(size); // FKey[partsupplier], value
+	CUDA::Vector<std::int32_t> lineNumber(size); // PKey
 
-	CUDA::Vector<double> quantity;
-	CUDA::Vector<double> extPrice;
-	CUDA::Vector<double> discount;
-	CUDA::Vector<double> tax;
+	CUDA::Vector<double> quantity(size);
+	CUDA::Vector<double> extPrice(size);
+	CUDA::Vector<double> discount(size);
+	CUDA::Vector<double> tax(size);
 
-	CUDA::Vector<std::int8_t> returnFlag;
-	CUDA::Vector<std::int8_t> lineStatus;
+	CUDA::Vector<std::int8_t> returnFlag(size);
+	CUDA::Vector<std::int8_t> lineStatus(size);
 
-	CUDA::Vector<std::int32_t> shipDate;
-	CUDA::Vector<std::int32_t> commitDate;
-	CUDA::Vector<std::int32_t> receiptDate;
+	CUDA::Vector<std::int32_t> shipDate(size);
+	CUDA::Vector<std::int32_t> commitDate(size);
+	CUDA::Vector<std::int32_t> receiptDate(size);
 
-	CUDA::Vector<std::uint64_t> shipInstruct;
-	CUDA::Vector<std::uint64_t> shipMode;
-	CUDA::Vector<std::uint64_t> comment;
+	CUDA::Vector<std::uint64_t> shipInstruct(size);
+	CUDA::Vector<std::uint64_t> shipMode(size);
+	CUDA::Vector<std::uint64_t> comment(size);
 
 	io::CSVReader<17, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("lineitem.tbl"));
 	char *l_orderKey, *l_partKey, *l_suppKey, *l_lineNumber, *l_quantity, *l_extPrice, *l_discount, *l_tax, *l_returnFlag,
@@ -714,36 +715,35 @@ void DataRegistry::LoadTPCHLineItemTable()
 
 	auto progress = Utils::Progress::Start("Loading table 'lineitem'", Utils::Options::Present(Utils::Options::Opt_Print_load));
 	auto count = 0u;
-	auto size = 6001215u;
 
 	while (lineReader.read_row(
 		l_orderKey, l_partKey, l_suppKey, l_lineNumber, l_quantity, l_extPrice, l_discount, l_tax, l_returnFlag,
 		l_lineStatus, l_shipDate, l_commitDate, l_receiptDate, l_shipInstruct, l_shipMode, l_comment, l_end
 	))
 	{
-		orderVal.push_back(atoi(l_orderKey));
-		orderKey.push_back(orderForeignMap.at(atoi(l_orderKey)));
+		orderVal[count] = atoi(l_orderKey);
+		orderKey[count] = orderForeignMap.at(atoi(l_orderKey));
 
 		//TODO: Foreign key (partsupplier)
-		partVal.push_back(atoi(l_partKey));
-		suppVal.push_back(atoi(l_suppKey));
-		lineNumber.push_back(atoi(l_lineNumber));
+		partVal[count] = atoi(l_partKey);
+		suppVal[count] = atoi(l_suppKey);
+		lineNumber[count] = atoi(l_lineNumber);
 
-		quantity.push_back(atof(l_quantity));
-		extPrice.push_back(atof(l_extPrice));
-		discount.push_back(atof(l_discount));
-		tax.push_back(atof(l_tax));
+		quantity[count] = atof(l_quantity);
+		extPrice[count] = atof(l_extPrice);
+		discount[count] = atof(l_discount);
+		tax[count] = atof(l_tax);
 
-		returnFlag.push_back(l_returnFlag[0]);
-		lineStatus.push_back(l_lineStatus[0]);
+		returnFlag[count] = l_returnFlag[0];
+		lineStatus[count] = l_lineStatus[0];
 
-		shipDate.push_back(EpochTime(l_shipDate));
-		commitDate.push_back(EpochTime(l_commitDate));
-		receiptDate.push_back(EpochTime(l_receiptDate));
+		shipDate[count] = EpochTime(l_shipDate);
+		commitDate[count] = EpochTime(l_commitDate);
+		receiptDate[count] = EpochTime(l_receiptDate);
 
-		shipInstruct.push_back(StringBucket::HashString(l_shipInstruct));
-		shipMode.push_back(StringBucket::HashString(l_shipMode));
-		comment.push_back(StringBucket::HashString(l_comment));
+		shipInstruct[count] = StringBucket::HashString(l_shipInstruct);
+		shipMode[count] = StringBucket::HashString(l_shipMode);
+		comment[count] = StringBucket::HashString(l_comment);
 
 		count++;
 		progress.Update(count, size);
