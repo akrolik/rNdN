@@ -225,6 +225,7 @@ template <class T> class section_impl : public section
             header.sh_offset = ( *convertor )( header.sh_offset );
         }
 
+	header.sh_addr = 0x0;
         save_header( stream, header_offset );
         if ( get_type() != SHT_NOBITS && get_type() != SHT_NULL &&
              get_size() != 0 && data != 0 ) {

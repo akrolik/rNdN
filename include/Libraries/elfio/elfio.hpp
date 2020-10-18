@@ -39,13 +39,13 @@ THE SOFTWARE.
 #include <deque>
 #include <iterator>
 
-#include <elfio/elf_types.hpp>
-#include <elfio/elfio_version.hpp>
-#include <elfio/elfio_utils.hpp>
-#include <elfio/elfio_header.hpp>
-#include <elfio/elfio_section.hpp>
-#include <elfio/elfio_segment.hpp>
-#include <elfio/elfio_strings.hpp>
+#include <Libraries/elfio/elf_types.hpp>
+#include <Libraries/elfio/elfio_version.hpp>
+#include <Libraries/elfio/elfio_utils.hpp>
+#include <Libraries/elfio/elfio_header.hpp>
+#include <Libraries/elfio/elfio_section.hpp>
+#include <Libraries/elfio/elfio_segment.hpp>
+#include <Libraries/elfio/elfio_strings.hpp>
 
 #define ELFIO_HEADER_ACCESS_GET( TYPE, FNAME ) \
     TYPE get_##FNAME() const { return header ? ( header->get_##FNAME() ) : 0; }
@@ -188,13 +188,13 @@ class elfio
     ELFIO_HEADER_ACCESS_GET( unsigned char, class );
     ELFIO_HEADER_ACCESS_GET( unsigned char, elf_version );
     ELFIO_HEADER_ACCESS_GET( unsigned char, encoding );
-    ELFIO_HEADER_ACCESS_GET( Elf_Word, version );
     ELFIO_HEADER_ACCESS_GET( Elf_Half, header_size );
     ELFIO_HEADER_ACCESS_GET( Elf_Half, section_entry_size );
     ELFIO_HEADER_ACCESS_GET( Elf_Half, segment_entry_size );
 
     ELFIO_HEADER_ACCESS_GET_SET( unsigned char, os_abi );
     ELFIO_HEADER_ACCESS_GET_SET( unsigned char, abi_version );
+    ELFIO_HEADER_ACCESS_GET_SET( Elf_Word, version );
     ELFIO_HEADER_ACCESS_GET_SET( Elf_Half, type );
     ELFIO_HEADER_ACCESS_GET_SET( Elf_Half, machine );
     ELFIO_HEADER_ACCESS_GET_SET( Elf_Word, flags );
@@ -943,11 +943,11 @@ class elfio
 
 } // namespace ELFIO
 
-#include <elfio/elfio_symbols.hpp>
-#include <elfio/elfio_note.hpp>
-#include <elfio/elfio_relocation.hpp>
-#include <elfio/elfio_dynamic.hpp>
-#include <elfio/elfio_modinfo.hpp>
+#include <Libraries/elfio/elfio_symbols.hpp>
+#include <Libraries/elfio/elfio_note.hpp>
+#include <Libraries/elfio/elfio_relocation.hpp>
+#include <Libraries/elfio/elfio_dynamic.hpp>
+#include <Libraries/elfio/elfio_modinfo.hpp>
 
 #ifdef _MSC_VER
 #pragma warning( pop )

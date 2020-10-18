@@ -381,6 +381,7 @@ typedef uint64_t Elf64_Off;
 #define ELFOSABI_AMDGPU_MESA3D \
     66 // AMDGPU OS for Mesa3D compatible graphics \
         // shaders and compute kernels.
+#define ELFOSABI_NVIDIA 0x33 // Nvidia GPU
 
 // AMDGPU specific e_flags
 #define EF_AMDGPU_MACH 0x0ff // AMDGPU processor selection mask.
