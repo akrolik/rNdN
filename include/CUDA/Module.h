@@ -7,13 +7,15 @@
 #include <vector>
 
 #include "CUDA/ExternalModule.h"
+#include "Assembler/ELFBinary.h"
 
 namespace CUDA {
 
 class Module
 {
 public:
-	void AddLinkedModule(const ExternalModule& module);
+	void AddExternalModule(const ExternalModule& module);
+	void AddELFModule(const Assembler::ELFBinary& module);
 	void AddPTXModule(const std::string& code);
 
 	bool IsCompiled() const { return m_binary != nullptr; }
@@ -22,8 +24,9 @@ public:
 	const CUmodule& GetModule() const { return m_module; }
 
 private:
-	std::vector<std::reference_wrapper<const ExternalModule>> m_linkedModules;
-	std::vector<std::string> m_code;
+	std::vector<std::reference_wrapper<const ExternalModule>> m_externalModules;
+	std::vector<std::reference_wrapper<const Assembler::ELFBinary>> m_elfModules;
+	std::vector<std::string> m_ptxModules;
 
 	void *m_binary = nullptr;
 	size_t m_binarySize = 0;

@@ -11,14 +11,19 @@
 
 namespace CUDA {
 
-void Module::AddLinkedModule(const ExternalModule& module)
+void Module::AddExternalModule(const ExternalModule& module)
 {
-	m_linkedModules.push_back(std::cref(module));
+	m_externalModules.push_back(std::cref(module));
+}
+
+void Module::AddELFModule(const Assembler::ELFBinary& module)
+{
+	m_elfModules.push_back(std::cref(module));
 }
 
 void Module::AddPTXModule(const std::string& code)
 {
-	m_code.push_back(code);
+	m_ptxModules.push_back(code);
 }
 
 void Module::Compile()
@@ -61,14 +66,14 @@ void Module::Compile()
 
 	Utils::Chrono::End(timeCreate_start);
 
-	// Add the PTX source code to the linker for compilation. Note that this will invoke the compile
+	// Add the PTX source code to the linker for compilation. Note that this will invoke the compiler
 	// despite the name only pertaining to the linker
 
 	auto timeAssemble_start = Utils::Chrono::Start("Assemble");
 
-	for (const auto& code : m_code)
+	for (const auto& code : m_ptxModules)
 	{
-		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)code.c_str(), code.length() + 1, "PTX Module", 0, nullptr, nullptr);
+		auto result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)code.c_str(), code.length() + 1, "PTX Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
 			Utils::Logger::LogErrorPart("PTX failed to compile", Utils::Logger::ErrorPrefix);
@@ -77,13 +82,27 @@ void Module::Compile()
 		}
 	}
 
+	// Add relocatable ELF files to linker
+
+	for (const auto& module : m_elfModules)
+	{
+		auto result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, module.get().GetData(), module.get().GetSize(), "ELF Module", 0, nullptr, nullptr);
+		if (result != CUDA_SUCCESS)
+		{
+			Utils::Logger::LogErrorPart("ELF failed to load", Utils::Logger::ErrorPrefix);
+			Utils::Logger::LogErrorPart(l_errorLog, Utils::Logger::NoPrefix);
+			checkDriverResult(result);
+		}
+
+	}
+
 	Utils::Chrono::End(timeAssemble_start);
 
 	// Add the external libraries to the linker (if any)
 
 	auto timeLibraries_start = Utils::Chrono::Start("Libraries");
 
-	for (const auto& module : m_linkedModules)
+	for (const auto& module : m_externalModules)
 	{
 		CUresult result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, module.get().GetBinary(), module.get().GetBinarySize(), "Library Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
@@ -96,8 +115,7 @@ void Module::Compile()
 
 	Utils::Chrono::End(timeLibraries_start);
 
-	// Create the binary for the module, containing all code from the kernels as well as the
-	// exrenral libraries
+	// Create the binary for the module, containing all code from the kernels as well as the external libraries
 
 	auto timeLink_start = Utils::Chrono::Start("Link");
 
