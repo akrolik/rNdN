@@ -2,6 +2,8 @@
 
 #include "PTX/Operands/Operand.h"
 
+#include "Utils/Format.h"
+
 namespace PTX {
 
 class HexOperand : public Operand
@@ -11,9 +13,7 @@ public:
 
 	std::string ToString() const override
 	{
-		std::ostringstream hex;
-		hex << std::hex << m_value;
-		return std::string("0x") + hex.str();
+		return Utils::Format::HexString(m_value);
 	}
 
 	json ToJSON() const override
