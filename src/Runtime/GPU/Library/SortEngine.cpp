@@ -1,4 +1,4 @@
-#include "Runtime/GPU/Library/GPUSortEngine.h"
+#include "Runtime/GPU/Library/SortEngine.h"
 
 #include "Analysis/Shape/Shape.h"
 #include "Analysis/Shape/ShapeUtils.h"
@@ -7,14 +7,15 @@
 #include "Runtime/DataBuffers/ConstantBuffer.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/ListBuffer.h"
-#include "Runtime/GPU/GPUExecutionEngine.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Logger.h"
 #include "Utils/Math.h"
 
 namespace Runtime {
+namespace GPU {
 
-const HorseIR::Function *GPUSortEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+const HorseIR::Function *SortEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
 {
 	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
 	{
@@ -23,11 +24,11 @@ const HorseIR::Function *GPUSortEngine::GetFunction(const HorseIR::FunctionDecla
 	Utils::Logger::LogError("GPU sort library cannot execute function '" + function->GetName() + "'");
 }
 
-std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(const std::vector<DataBuffer *>& arguments)
+std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(const std::vector<DataBuffer *>& arguments)
 {
 	// Get the execution engine for the init/sort functions
 
-	GPUExecutionEngine engine(m_runtime, m_program);
+	ExecutionEngine engine(m_runtime, m_program);
 
 	// Initialize the index buffer and sort buffer padding
 
@@ -146,4 +147,5 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> GPUSortEngine::Sort(c
 	}
 }
 
+}
 }

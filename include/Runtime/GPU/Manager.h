@@ -4,16 +4,17 @@
 #include "CUDA/ExternalModule.h"
 #include "CUDA/Platform.h"
 
-#include "Runtime/GPU/GPUProgram.h"
+#include "Runtime/GPU/Program.h"
 
 namespace Runtime {
+namespace GPU {
 
-class GPUManager
+class Manager
 {
 public:
-	GPUManager() {}
-	GPUManager(GPUManager const&) = delete;
-	void operator=(GPUManager const&) = delete;
+	Manager() {}
+	Manager(Manager const&) = delete;
+	void operator=(Manager const&) = delete;
 
 	void Initialize();
 
@@ -21,12 +22,12 @@ public:
 
 	const std::vector<CUDA::ExternalModule>& GetExternalModules() const { return m_externalModules; }
 
-	void SetProgram(const GPUProgram *program) { m_program = program; }
-	const GPUProgram *GetProgram() const { return m_program; }
+	void SetProgram(const Program *program) { m_program = program; }
+	const Program *GetProgram() const { return m_program; }
 
 	// libr3d3
 
-	const GPUProgram *GetLibrary() const { return m_library; }
+	const Program *GetLibrary() const { return m_library; }
 
 private:
 	void InitializeCUDA();
@@ -35,8 +36,9 @@ private:
 	CUDA::Platform m_platform;
 	std::vector<CUDA::ExternalModule> m_externalModules;
 
-	const GPUProgram *m_program = nullptr;
-	const GPUProgram *m_library = nullptr;
+	const Program *m_program = nullptr;
+	const Program *m_library = nullptr;
 };
 
+}
 }

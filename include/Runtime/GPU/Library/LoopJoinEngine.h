@@ -9,11 +9,12 @@
 #include "Runtime/DataBuffers/ListBuffer.h"
 
 namespace Runtime {
+namespace GPU {
 
-class GPUHashJoinEngine
+class LoopJoinEngine
 {
 public:
-	GPUHashJoinEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	LoopJoinEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
 	ListBuffer *Join(const std::vector<DataBuffer *>& arguments);
 
@@ -24,4 +25,5 @@ private:
 	const HorseIR::Program *m_program = nullptr;
 };
 
+}
 }

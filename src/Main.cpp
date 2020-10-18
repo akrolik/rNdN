@@ -6,8 +6,8 @@
 
 #include "Runtime/Interpreter.h"
 #include "Runtime/Runtime.h"
-#include "Runtime/GPU/GPUAssembler.h"
-#include "Runtime/GPU/GPUCompiler.h"
+#include "Runtime/GPU/Assembler.h"
+#include "Runtime/GPU/Compiler.h"
 
 #include "Transformation/Outliner/Outliner.h"
 
@@ -109,10 +109,10 @@ int main(int argc, const char *argv[])
 
 	// Compile the program
 
-	Runtime::GPUCompiler compiler(gpu);
+	Runtime::GPU::Compiler compiler(gpu);
 	auto ptxProgram = compiler.Compile(outlinedProgram);
 
-	Runtime::GPUAssembler assembler(gpu);
+	Runtime::GPU::Assembler assembler(gpu);
 	auto gpuProgram = assembler.Assemble(ptxProgram);
 
 	// Load into the GPU manager

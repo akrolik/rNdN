@@ -19,11 +19,12 @@
 #include "HorseIR/Tree/Tree.h"
 
 namespace Runtime {
+namespace GPU {
 
-class GPUExecutionEngine
+class ExecutionEngine
 {
 public:
-	GPUExecutionEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	ExecutionEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 
@@ -43,4 +44,5 @@ private:
 	std::unordered_map<const HorseIR::Function *, Codegen::InputOptions *> m_optionsCache;
 };
 
+}
 }

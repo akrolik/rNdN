@@ -9,11 +9,12 @@
 #include "Runtime/DataBuffers/DictionaryBuffer.h"
 
 namespace Runtime {
+namespace GPU {
 
-class GPUGroupEngine
+class GroupEngine
 {
 public:
-	GPUGroupEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	GroupEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
 	DictionaryBuffer *Group(const std::vector<DataBuffer *>& arguments);
 
@@ -25,4 +26,5 @@ private:
 	const HorseIR::Program *m_program = nullptr;
 };
 
+}
 }

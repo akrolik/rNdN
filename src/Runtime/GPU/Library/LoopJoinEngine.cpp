@@ -1,15 +1,16 @@
-#include "Runtime/GPU/Library/GPULoopJoinEngine.h"
+#include "Runtime/GPU/Library/LoopJoinEngine.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
-#include "Runtime/GPU/GPUExecutionEngine.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
 
 namespace Runtime {
+namespace GPU {
 
-const HorseIR::Function *GPULoopJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+const HorseIR::Function *LoopJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
 {
 	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
 	{
@@ -18,11 +19,11 @@ const HorseIR::Function *GPULoopJoinEngine::GetFunction(const HorseIR::FunctionD
 	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
 }
 
-ListBuffer *GPULoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
+ListBuffer *LoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 {
 	// Get the execution engine for the count/join functions
 
-	GPUExecutionEngine engine(m_runtime, m_program);
+	ExecutionEngine engine(m_runtime, m_program);
 
 	// Count the number of results for the join
 
@@ -51,4 +52,5 @@ ListBuffer *GPULoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	return BufferUtils::GetBuffer<ListBuffer>(joinBuffers.at(0));
 }
 
+}
 }

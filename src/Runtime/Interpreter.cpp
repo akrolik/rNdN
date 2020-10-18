@@ -11,7 +11,7 @@
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
 #include "Runtime/BuiltinExecutionEngine.h"
-#include "Runtime/GPU/GPUExecutionEngine.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -58,7 +58,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::Function *function
 
 		// Pass function execution to the GPU engine
 
-		GPUExecutionEngine engine(m_runtime, m_program);
+		GPU::ExecutionEngine engine(m_runtime, m_program);
 		return engine.Execute(function, arguments);
 	}
 	else

@@ -1,4 +1,4 @@
-#include "Runtime/GPU/Library/GPUGroupEngine.h"
+#include "Runtime/GPU/Library/GroupEngine.h"
 
 #include "Runtime/Interpreter.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
@@ -6,15 +6,16 @@
 #include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
-#include "Runtime/GPU/Library/GPUSortEngine.h"
-#include "Runtime/GPU/GPUExecutionEngine.h"
+#include "Runtime/GPU/Library/SortEngine.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
+namespace GPU {
 
-const HorseIR::Function *GPUGroupEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+const HorseIR::Function *GroupEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
 {
 	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
 	{
@@ -23,7 +24,7 @@ const HorseIR::Function *GPUGroupEngine::GetFunction(const HorseIR::FunctionDecl
 	Utils::Logger::LogError("GPU group library cannot execute function '" + function->GetName() + "'");
 }
 
-DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& arguments)
+DictionaryBuffer *GroupEngine::Group(const std::vector<DataBuffer *>& arguments)
 {
 	// Perform the sort using the sort engine
 
@@ -40,7 +41,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	}
 	sortBuffers.push_back(arguments.at(3 + isShared)); // Data
 
-	GPUSortEngine sortEngine(m_runtime, m_program);
+	SortEngine sortEngine(m_runtime, m_program);
 	auto [indexBuffer, dataBuffer] = sortEngine.Sort(sortBuffers);
 
 	Utils::Chrono::End(timeSort_start);
@@ -51,7 +52,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 
 	auto groupFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction());
 
-	GPUExecutionEngine engine(m_runtime, m_program);
+	ExecutionEngine engine(m_runtime, m_program);
 	auto groupBuffers = engine.Execute(groupFunction, {indexBuffer, dataBuffer});
 
 	// Generate the shape of the group data
@@ -99,7 +100,7 @@ DictionaryBuffer *GPUGroupEngine::Group(const std::vector<DataBuffer *>& argumen
 	return dictionaryBuffer;
 }
 
-ListBuffer *GPUGroupEngine::ConstructListBuffer(TypedVectorBuffer<std::int64_t> *indexBuffer, TypedVectorBuffer<std::int64_t> *valuesBuffer) const
+ListBuffer *GroupEngine::ConstructListBuffer(TypedVectorBuffer<std::int64_t> *indexBuffer, TypedVectorBuffer<std::int64_t> *valuesBuffer) const
 {
 	switch (Utils::Options::GetGroupKind())
 	{
@@ -146,4 +147,5 @@ ListBuffer *GPUGroupEngine::ConstructListBuffer(TypedVectorBuffer<std::int64_t> 
 	Utils::Logger::LogError("GPU group library cannot create list buffer");
 }
 
+}
 }

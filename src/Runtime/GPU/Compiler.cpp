@@ -1,4 +1,4 @@
-#include "Runtime/GPU/GPUCompiler.h"
+#include "Runtime/GPU/Compiler.h"
 
 #include "Analysis/DataObject/DataObjectAnalysis.h"
 #include "Analysis/Geometry/KernelOptionsAnalysis.h"
@@ -19,8 +19,9 @@
 #include "Utils/Options.h"
 
 namespace Runtime {
+namespace GPU {
 
-PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
+PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Codegen");
 
@@ -141,8 +142,9 @@ PTX::Program *GPUCompiler::Compile(const HorseIR::Program *program) const
 	return ptxProgram;
 }
 
-void GPUCompiler::Optimize(PTX::Program *program) const
+void Compiler::Optimize(PTX::Program *program) const
 {
 }
 
+}
 }

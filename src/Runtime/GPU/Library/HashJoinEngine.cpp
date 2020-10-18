@@ -1,17 +1,18 @@
-#include "Runtime/GPU/Library/GPUHashJoinEngine.h"
+#include "Runtime/GPU/Library/HashJoinEngine.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ConstantBuffer.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
-#include "Runtime/GPU/GPUExecutionEngine.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Logger.h"
 #include "Utils/Math.h"
 #include "Utils/Options.h"
 
 namespace Runtime {
+namespace GPU {
 
-const HorseIR::Function *GPUHashJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
+const HorseIR::Function *HashJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
 {
 	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
 	{
@@ -20,7 +21,7 @@ const HorseIR::Function *GPUHashJoinEngine::GetFunction(const HorseIR::FunctionD
 	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
 }
 
-ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
+ListBuffer *HashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 {
 	// Arguments:
 	//   0 - Hash function
@@ -31,7 +32,7 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 
 	// Get the execution engine for the count/join functions
 
-	GPUExecutionEngine engine(m_runtime, m_program);
+	ExecutionEngine engine(m_runtime, m_program);
 
 	// Construct the hash table
 
@@ -95,4 +96,5 @@ ListBuffer *GPUHashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	return BufferUtils::GetBuffer<ListBuffer>(joinBuffers.at(0));
 }
 
+}
 }

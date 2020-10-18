@@ -8,11 +8,12 @@
 #include "PTX/PTX.h"
 
 namespace Runtime {
+namespace GPU {
 
-class GPUProgram
+class Program
 {
 public:
-	GPUProgram(const PTX::Program *program, const CUDA::Module& binary) : m_program(program), m_binary(binary) {}
+	Program(const PTX::Program *program, const CUDA::Module& binary) : m_program(program), m_binary(binary) {}
 
 	CUDA::Kernel GetKernel(const std::string& name) const;
 	const PTX::FunctionOptions& GetKernelOptions(const std::string& name) const;
@@ -22,4 +23,5 @@ private:
 	CUDA::Module m_binary;
 };
 
+}
 }

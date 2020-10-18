@@ -1,4 +1,4 @@
-#include "Runtime/GPU/GPUExecutionEngine.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 
 #include "CUDA/Buffer.h"
 #include "CUDA/BufferManager.h"
@@ -21,8 +21,9 @@
 #include "Utils/Math.h"
 
 namespace Runtime {
+namespace GPU {
 
-std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
+std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
 {
 	// Get the input options used for codegen
 	
@@ -416,7 +417,7 @@ std::vector<DataBuffer *> GPUExecutionEngine::Execute(const HorseIR::Function *f
 	return {returnBuffers};
 }
 
-std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
+std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
 {
 	// Compute the block size and count based on the kernel, input and target configurations
 	// We assume that all sizes are known at this point
@@ -518,7 +519,7 @@ std::pair<unsigned int, unsigned int> GPUExecutionEngine::GetBlockShape(Codegen:
 }
 
 template<typename T>
-CUDA::TypedConstant<T> *GPUExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
+CUDA::TypedConstant<T> *ExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
 {
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
@@ -532,7 +533,7 @@ CUDA::TypedConstant<T> *GPUExecutionEngine::AllocateConstantParameter(CUDA::Kern
 }
 
 template<typename T>
-CUDA::ConstantBuffer *GPUExecutionEngine::AllocateConstantVectorParameter(CUDA::KernelInvocation &invocation, const CUDA::Vector<T>& values, const std::string& description) const
+CUDA::ConstantBuffer *ExecutionEngine::AllocateConstantVectorParameter(CUDA::KernelInvocation &invocation, const CUDA::Vector<T>& values, const std::string& description) const
 {
 	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 	{
@@ -559,4 +560,5 @@ CUDA::ConstantBuffer *GPUExecutionEngine::AllocateConstantVectorParameter(CUDA::
 	return buffer;
 }
 
+}
 }

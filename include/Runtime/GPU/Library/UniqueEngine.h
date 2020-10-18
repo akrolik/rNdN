@@ -9,11 +9,12 @@
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
 namespace Runtime {
+namespace GPU {
 
-class GPUUniqueEngine
+class UniqueEngine
 {
 public:
-	GPUUniqueEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	UniqueEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
 	TypedVectorBuffer<std::int64_t> *Unique(const std::vector<DataBuffer *>& arguments);
 
@@ -22,4 +23,5 @@ private:
 	const HorseIR::Program *m_program = nullptr;
 };
 
+}
 }

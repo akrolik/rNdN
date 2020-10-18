@@ -17,11 +17,11 @@
 #include "Runtime/DataBuffers/TableBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
-#include "Runtime/GPU/Library/GPUSortEngine.h"
-#include "Runtime/GPU/Library/GPUGroupEngine.h"
-#include "Runtime/GPU/Library/GPUUniqueEngine.h"
-#include "Runtime/GPU/Library/GPULoopJoinEngine.h"
-#include "Runtime/GPU/Library/GPUHashJoinEngine.h"
+#include "Runtime/GPU/Library/GroupEngine.h"
+#include "Runtime/GPU/Library/HashJoinEngine.h"
+#include "Runtime/GPU/Library/LoopJoinEngine.h"
+#include "Runtime/GPU/Library/SortEngine.h"
+#include "Runtime/GPU/Library/UniqueEngine.h"
 
 #include "Utils/Logger.h"
 #include "Utils/String.h"
@@ -511,7 +511,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// GPU sort!
 
-			GPUSortEngine sortEngine(m_runtime, m_program);
+			GPU::SortEngine sortEngine(m_runtime, m_program);
 			auto [indexBuffer, dataBuffer] = sortEngine.Sort(arguments);
 
 			// Data buffers can be deallocated as they are unused in a simple sort
@@ -523,28 +523,28 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// GPU group!
 
-			GPUGroupEngine groupEngine(m_runtime, m_program);
+			GPU::GroupEngine groupEngine(m_runtime, m_program);
 			return {groupEngine.Group(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
 		{
 			// GPU unique!
 
-			GPUUniqueEngine uniqueEngine(m_runtime, m_program);
+			GPU::UniqueEngine uniqueEngine(m_runtime, m_program);
 			return {uniqueEngine.Unique(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
 		{
 			// GPU loop join!
 
-			GPULoopJoinEngine joinEngine(m_runtime, m_program);
+			GPU::LoopJoinEngine joinEngine(m_runtime, m_program);
 			return {joinEngine.Join(arguments)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
 		{
 			// GPU hash join!
 
-			GPUHashJoinEngine joinEngine(m_runtime, m_program);
+			GPU::HashJoinEngine joinEngine(m_runtime, m_program);
 			return {joinEngine.Join(arguments)};
 		}
 		default:

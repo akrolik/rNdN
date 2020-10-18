@@ -1,6 +1,6 @@
-#include "Runtime/GPU/GPUManager.h"
+#include "Runtime/GPU/Manager.h"
 
-#include "Runtime/GPU/GPUAssembler.h"
+#include "Runtime/GPU/Assembler.h"
 
 #include "CUDA/libdevice.h"
 #include "CUDA/libr3d3.h"
@@ -9,8 +9,9 @@
 #include "Utils/Logger.h"
 
 namespace Runtime {
+namespace GPU {
 
-void GPUManager::Initialize()
+void Manager::Initialize()
 {
 	Utils::Logger::LogSection("Initalizing CUDA", false);
 
@@ -18,7 +19,7 @@ void GPUManager::Initialize()
 	InitializeLibraries();
 }
 
-void GPUManager::InitializeCUDA()
+void Manager::InitializeCUDA()
 {
 	auto timeCUDA_start = Utils::Chrono::Start("CUDA initialization");
 
@@ -55,7 +56,7 @@ void GPUManager::InitializeCUDA()
 	Utils::Chrono::End(timeCUDA_start);
 }
 
-void GPUManager::InitializeLibraries()
+void Manager::InitializeLibraries()
 {
 	// Load the libdevice library from file, compile it to PTX, and generate a cubin
 	// binary file. Doing so at runtime means we can support new versions of
@@ -76,15 +77,16 @@ void GPUManager::InitializeLibraries()
 
 	auto timer3d3_start = Utils::Chrono::Start("libr3d3 library");
 
-	GPUAssembler assembler(*this);
+	Assembler assembler(*this);
 	m_library = assembler.Assemble(CUDA::libr3d3::CreateProgram(GetCurrentDevice()));
 
 	Utils::Chrono::End(timer3d3_start);
 }
 
-std::unique_ptr<CUDA::Device>& GPUManager::GetCurrentDevice()
+std::unique_ptr<CUDA::Device>& Manager::GetCurrentDevice()
 {
 	return m_platform.GetDevice(0);
 }
 
+}
 }

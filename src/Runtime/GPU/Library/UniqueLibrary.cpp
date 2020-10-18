@@ -1,15 +1,16 @@
-#include "Runtime/GPU/Library/GPUUniqueEngine.h"
+#include "Runtime/GPU/Library/UniqueEngine.h"
 
 #include "Runtime/Interpreter.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
-#include "Runtime/GPU/Library/GPUSortEngine.h"
+#include "Runtime/GPU/Library/SortEngine.h"
 
 #include "Utils/Chrono.h"
 
 namespace Runtime {
+namespace GPU {
 
-TypedVectorBuffer<std::int64_t> *GPUUniqueEngine::Unique(const std::vector<DataBuffer *>& arguments)
+TypedVectorBuffer<std::int64_t> *UniqueEngine::Unique(const std::vector<DataBuffer *>& arguments)
 {
 	// Perform the sort using the sort engine
 
@@ -26,7 +27,7 @@ TypedVectorBuffer<std::int64_t> *GPUUniqueEngine::Unique(const std::vector<DataB
 	}
 	sortBuffers.push_back(arguments.at(3 + isShared)); // Data
 
-	GPUSortEngine sortEngine(m_runtime, m_program);
+	SortEngine sortEngine(m_runtime, m_program);
 	auto [indexBuffer, dataBuffer] = sortEngine.Sort(sortBuffers);
 
 	Utils::Chrono::End(timeSort_start);
@@ -50,4 +51,5 @@ TypedVectorBuffer<std::int64_t> *GPUUniqueEngine::Unique(const std::vector<DataB
 	return {BufferUtils::GetVectorBuffer<std::int64_t>(uniqueBuffers.at(0))};
 }
 
+}
 }
