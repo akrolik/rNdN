@@ -7,8 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "Analysis/Shape/Shape.h"
-
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
@@ -36,7 +35,7 @@ public:
 	// Type/shape
 
 	const HorseIR::TableType *GetType() const override { return m_type; }
-	const Analysis::TableShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::TableShape *GetShape() const override { return m_shape; }
 
 	// Columns
 	
@@ -68,7 +67,7 @@ public:
 
 private:
 	const HorseIR::TableType *m_type = new HorseIR::TableType();
-	const Analysis::TableShape *m_shape = nullptr;
+	const HorseIR::Analysis::TableShape *m_shape = nullptr;
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> m_columns;
 	std::unordered_map<std::string, ColumnBuffer *> m_columnMap;

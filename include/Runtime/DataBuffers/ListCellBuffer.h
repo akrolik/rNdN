@@ -7,7 +7,7 @@ namespace Runtime {
 class ListCellBuffer : public ListBuffer
 {
 public:
-	static ListCellBuffer *CreateEmpty(const HorseIR::ListType *type, const Analysis::ListShape *shape);
+	static ListCellBuffer *CreateEmpty(const HorseIR::ListType *type, const HorseIR::Analysis::ListShape *shape);
 
 	ListCellBuffer(DataBuffer *cell) : ListCellBuffer(std::vector<DataBuffer *>({cell})) {}
 	ListCellBuffer(const std::vector<DataBuffer *>& cells);

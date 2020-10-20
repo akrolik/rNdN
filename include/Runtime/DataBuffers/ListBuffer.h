@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 namespace Runtime {
@@ -20,7 +21,7 @@ public:
 	// Type/Shape
 
 	const HorseIR::ListType *GetType() const override { return m_type; }
-	const Analysis::ListShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::ListShape *GetShape() const override { return m_shape; }
 
 	// Cells
 
@@ -33,11 +34,11 @@ public:
 	virtual void ResizeCells(unsigned int size) = 0;
 
 protected:
-	ListBuffer(HorseIR::ListType *type, Analysis::ListShape *shape);
+	ListBuffer(HorseIR::ListType *type, HorseIR::Analysis::ListShape *shape);
 	ListBuffer() : ListBuffer(nullptr, nullptr) {}
 
 	HorseIR::ListType *m_type = nullptr;
-	Analysis::ListShape *m_shape = nullptr;
+	HorseIR::Analysis::ListShape *m_shape = nullptr;
 };
 
 }

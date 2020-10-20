@@ -11,7 +11,7 @@
 
 namespace Runtime {
 
-ListCompressedBuffer *ListCompressedBuffer::CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::RangedSize *size)
+ListCompressedBuffer *ListCompressedBuffer::CreateEmpty(const HorseIR::BasicType *type, const HorseIR::Analysis::Shape::RangedSize *size)
 {
 	auto values = VectorBuffer::CreateEmpty(type, size);
 	auto sizes = new TypedVectorBuffer(new TypedVectorData(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int32), size->GetValues()));
@@ -69,9 +69,9 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int64_t>
 	const auto& cellSizes = m_sizes->GetCPUReadBuffer()->GetValues();
 
 	m_type = new HorseIR::ListType(m_values->GetType()->Clone());
-	m_shape = new Analysis::ListShape(
-			new Analysis::Shape::ConstantSize(cellSizes.size()),
-			{new Analysis::VectorShape(new Analysis::Shape::RangedSize(cellSizes))}
+	m_shape = new HorseIR::Analysis::ListShape(
+			new HorseIR::Analysis::Shape::ConstantSize(cellSizes.size()),
+			{new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::RangedSize(cellSizes))}
 	);
 }
 
@@ -82,9 +82,9 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t>
 	const auto& cellSizes = sizes->GetCPUReadBuffer()->GetValues();
 
 	m_type = new HorseIR::ListType(m_values->GetType()->Clone());
-	m_shape = new Analysis::ListShape(
-			new Analysis::Shape::ConstantSize(cellSizes.size()),
-			{new Analysis::VectorShape(new Analysis::Shape::RangedSize(cellSizes))}
+	m_shape = new HorseIR::Analysis::ListShape(
+			new HorseIR::Analysis::Shape::ConstantSize(cellSizes.size()),
+			{new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::RangedSize(cellSizes))}
 	);
 
 	// Construct cell addresses on GPU

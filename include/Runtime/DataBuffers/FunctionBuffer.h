@@ -2,8 +2,7 @@
 
 #include "Runtime/DataBuffers/DataBuffer.h"
 
-#include "Analysis/Shape/Shape.h"
-
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 namespace Runtime {
@@ -21,7 +20,7 @@ public:
 	// Type/shape
 
 	const HorseIR::FunctionType *GetType() const override { return m_type; }
-	const Analysis::Shape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::Shape *GetShape() const override { return m_shape; }
 
 	// Keys/values
 
@@ -38,7 +37,7 @@ public:
 
 private:
 	const HorseIR::FunctionType *m_type = nullptr;
-	const Analysis::Shape *m_shape = nullptr;
+	const HorseIR::Analysis::Shape *m_shape = nullptr;
 
 	const HorseIR::FunctionDeclaration *m_function = nullptr;
 };

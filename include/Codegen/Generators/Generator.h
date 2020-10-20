@@ -2,6 +2,7 @@
 
 #include "Codegen/Builder.h"
 
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "Utils/Logger.h"
@@ -24,7 +25,7 @@ public:
 
 	[[noreturn]] void Error(const std::string& message) const
 	{
-		Utils::Logger::LogError(m_builder.GetContextString(Name() + ": Unable to generate " + message + " [geometry = " + Analysis::ShapeUtils::ShapeString(this->m_builder.GetInputOptions().ThreadGeometry) + "]"));
+		Utils::Logger::LogError(m_builder.GetContextString(Name() + ": Unable to generate " + message + " [geometry = " + HorseIR::Analysis::ShapeUtils::ShapeString(this->m_builder.GetInputOptions().ThreadGeometry) + "]"));
 	}
 
 	virtual std::string Name() const = 0;

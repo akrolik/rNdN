@@ -8,11 +8,11 @@
 #include "CUDA/KernelInvocation.h"
 #include "CUDA/Utils.h"
 
-#include "Analysis/DataObject/DataObjectAnalysis.h"
-#include "Analysis/Geometry/KernelOptionsAnalysis.h"
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeAnalysis.h"
-#include "Analysis/Shape/ShapeUtils.h"
+#include "HorseIR/Analysis/DataObject/DataObjectAnalysis.h"
+#include "HorseIR/Analysis/Geometry/KernelOptionsAnalysis.h"
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeAnalysis.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "Runtime/RuntimeUtils.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
@@ -43,11 +43,11 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 		// Collect runtime shape information for determining exact thread geometry and return shapes
 
-		Analysis::DataObjectAnalysis dataAnalysis(m_program);
-		Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_program, true);
+		HorseIR::Analysis::DataObjectAnalysis dataAnalysis(m_program);
+		HorseIR::Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_program, true);
 
-		Analysis::DataObjectAnalysis::Properties inputObjects;
-		Analysis::ShapeAnalysis::Properties inputShapes;
+		HorseIR::Analysis::DataObjectAnalysis::Properties inputObjects;
+		HorseIR::Analysis::ShapeAnalysis::Properties inputShapes;
 
 		for (auto i = 0u; i < function->GetParameterCount(); ++i)
 		{
@@ -55,7 +55,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 			const auto symbol = parameter->GetSymbol();
 
 			const auto object = inputOptions->ParameterObjects.at(parameter);
-			const auto runtimeObject = new Analysis::DataObject(object->GetObjectID(), arguments.at(i));
+			const auto runtimeObject = new HorseIR::Analysis::DataObject(object->GetObjectID(), arguments.at(i));
 			inputObjects[symbol] = runtimeObject;
 
 			// Setup compression constraints
@@ -63,11 +63,11 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 			const auto symbolShape = inputOptions->ParameterShapes.at(parameter);
 			const auto runtimeShape = arguments.at(i)->GetShape();
 
-			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(symbolShape))
+			if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(symbolShape))
 			{
-				if (const auto vectorSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
+				if (const auto vectorSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
 				{
-					const auto runtimeVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeShape);
+					const auto runtimeVector = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(runtimeShape);
 					shapeAnalysis.AddCompressionConstraint(vectorSize->GetPredicate(), runtimeVector->GetSize());
 				}
 			}
@@ -82,7 +82,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		dataAnalysis.Analyze(function, inputObjects);
 		shapeAnalysis.Analyze(function, inputShapes);
 
-		Analysis::KernelOptionsAnalysis optionsAnalysis(shapeAnalysis);
+		HorseIR::Analysis::KernelOptionsAnalysis optionsAnalysis(shapeAnalysis);
 		optionsAnalysis.Analyze(function);
 
 		m_optionsCache[function] = std::move(optionsAnalysis.GetInputOptions());
@@ -159,7 +159,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		if (dataInit.find(returnObject) != dataInit.end())
 		{
 			auto initialization = dataInit.at(returnObject);
-			if (initialization != Analysis::DataInitializationAnalysis::Initialization::Copy)
+			if (initialization != HorseIR::Analysis::DataInitializationAnalysis::Initialization::Copy)
 			{
 				returnBuffer = DataBuffer::CreateEmpty(type, shape);
 				returnBuffer->ValidateGPU();
@@ -170,25 +170,25 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 			std::string description;
 			switch (initialization)
 			{
-				case Analysis::DataInitializationAnalysis::Initialization::Clear:
+				case HorseIR::Analysis::DataInitializationAnalysis::Initialization::Clear:
 				{
 					returnBuffer->Clear(DataBuffer::ClearMode::Zero);
 					description = " = <clear>";
 					break;
 				}
-				case Analysis::DataInitializationAnalysis::Initialization::Minimum:
+				case HorseIR::Analysis::DataInitializationAnalysis::Initialization::Minimum:
 				{
 					returnBuffer->Clear(DataBuffer::ClearMode::Minimum);
 					description = " = <min>";
 					break;
 				}
-				case Analysis::DataInitializationAnalysis::Initialization::Maximum:
+				case HorseIR::Analysis::DataInitializationAnalysis::Initialization::Maximum:
 				{
 					returnBuffer->Clear(DataBuffer::ClearMode::Maximum);
 					description = " = <max>";
 					break;
 				}
-				case Analysis::DataInitializationAnalysis::Initialization::Copy:
+				case HorseIR::Analysis::DataInitializationAnalysis::Initialization::Copy:
 				{
 					// Create a new buffer as a copy of an input object
 
@@ -235,7 +235,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 		if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
 		{
-			if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(returnShape))
+			if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(returnShape))
 			{
 				// Clear the size buffer for the dynamic output data
 
@@ -253,24 +253,24 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	// Setup constant dynamic size parameters and allocate the dynamic shared memory according to the kernel
 
 	std::vector<CUDA::Data *> dynamicBuffers;
-	if (const auto runtimeVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(runtimeOptions->ThreadGeometry))
+	if (const auto runtimeVectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(runtimeOptions->ThreadGeometry))
 	{
-		const auto inputVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions->ThreadGeometry);
-		if (Analysis::ShapeUtils::IsDynamicSize(inputVectorGeometry->GetSize()))
+		const auto inputVectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions->ThreadGeometry);
+		if (HorseIR::Analysis::ShapeUtils::IsDynamicSize(inputVectorGeometry->GetSize()))
 		{
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(runtimeVectorGeometry->GetSize()))
+			if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(runtimeVectorGeometry->GetSize()))
 			{
 				dynamicBuffers.push_back(AllocateConstantParameter(invocation, constantSize->GetValue(), "<vector geometry>"));
 			}
 			else
 			{
-				Utils::Logger::LogError("Invocation thread geometry must be constant vector " + Analysis::ShapeUtils::ShapeString(runtimeVectorGeometry));
+				Utils::Logger::LogError("Invocation thread geometry must be constant vector " + HorseIR::Analysis::ShapeUtils::ShapeString(runtimeVectorGeometry));
 			}
 		}
 
 		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize());
 	}
-	else if (const auto runtimeListGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(runtimeOptions->ThreadGeometry))
+	else if (const auto runtimeListGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(runtimeOptions->ThreadGeometry))
 	{
 		// Add the dynamic thread count to the parameters if needed
 
@@ -281,13 +281,13 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 		// Allocate a buffer with the cell sizes for the execution geometry
 
-		const auto inputListGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions->ThreadGeometry);
-		if (const auto listSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(runtimeListGeometry->GetListSize()))
+		const auto inputListGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions->ThreadGeometry);
+		if (const auto listSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(runtimeListGeometry->GetListSize()))
 		{
 			// Number of cells parameter if dynamic
 
 			auto cellCount = listSize->GetValue();
-			if (Analysis::ShapeUtils::IsDynamicSize(inputListGeometry->GetListSize()))
+			if (HorseIR::Analysis::ShapeUtils::IsDynamicSize(inputListGeometry->GetListSize()))
 			{
 				dynamicBuffers.push_back(AllocateConstantParameter(invocation, cellCount, "<list geometry size>"));
 			}
@@ -299,10 +299,10 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 			CUDA::Vector<std::uint32_t> dynamicCellSizes;
 			for (const auto cellShape : cellShapes)
 			{
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
+				if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellShape))
 				{
 					auto cellSize = vectorShape->GetSize();
-					if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(cellSize))
+					if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(cellSize))
 					{
 						if (cellShapes.size() == 1 && cellCount > 1)
 						{
@@ -317,16 +317,16 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 						}
 						else
 						{
-							Utils::Logger::LogError("Mismatched cell count and list size for shape " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
+							Utils::Logger::LogError("Mismatched cell count and list size for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
 						}
 					}
-					else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(cellSize))
+					else if (const auto rangedSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::RangedSize>(cellSize))
 					{
 						dynamicBuffers.push_back(AllocateConstantVectorParameter(invocation, rangedSize->GetValues(), "<list geometry cell sizes>"));
 					}
 					else
 					{
-						Utils::Logger::LogError("Invocation thread geometry must be constant list " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
+						Utils::Logger::LogError("Invocation thread geometry must be constant list " + HorseIR::Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
 					}
 				}
 			}
@@ -338,7 +338,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		}
 		else
 		{
-			Utils::Logger::LogError("Invocation thread geometry must be constant list " + Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
+			Utils::Logger::LogError("Invocation thread geometry must be constant list " + HorseIR::Analysis::ShapeUtils::ShapeString(runtimeListGeometry));
 		}
 
 		auto blockCells = blockSize / runtimeOptions->ListCellThreads;
@@ -428,14 +428,14 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Codegen::In
 	const auto maxBlockSize = device->GetMaxThreadsDimension(0);
 
 	const auto threadGeometry = runtimeOptions->ThreadGeometry;
-	if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
+	if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(threadGeometry))
 	{
-		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
+		if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
 		{
 			auto size = constantSize->GetValue();
 			if (size == 0)
 			{
-				Utils::Logger::LogError("Zero size kernel for thread geometry " + Analysis::ShapeUtils::ShapeString(threadGeometry));
+				Utils::Logger::LogError("Zero size kernel for thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(threadGeometry));
 			}
 
 			auto blockSize = kernelOptions.GetBlockSize();
@@ -465,14 +465,14 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Codegen::In
 			return {blockSize, blockCount};
 		}
 	}
-	else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))
+	else if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(threadGeometry))
 	{
-		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listGeometry->GetListSize()))
+		if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listGeometry->GetListSize()))
 		{
 			auto cellCount = constantSize->GetValue();
 			if (cellCount == 0)
 			{
-				Utils::Logger::LogError("Zero size kernel for thread geometry " + Analysis::ShapeUtils::ShapeString(threadGeometry));
+				Utils::Logger::LogError("Zero size kernel for thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(threadGeometry));
 			}
 
 			auto cellSize = kernelOptions.GetBlockSize();
@@ -515,7 +515,7 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Codegen::In
 		}
 	}
 
-	Utils::Logger::LogError("Unknown block shape for thread geometry " + Analysis::ShapeUtils::ShapeString(threadGeometry));
+	Utils::Logger::LogError("Unknown block shape for thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(threadGeometry));
 }
 
 template<typename T>

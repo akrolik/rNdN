@@ -14,6 +14,9 @@
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 #include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
@@ -434,9 +437,9 @@ private:
 		// Determine the block size, based on the machine characteristics and data size
 
 		auto blockSize = targetOptions.MaxBlockSize;
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
+			if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
 			{
 				// Allocate a smaller number of threads if possible, otherwise use the entire block
 
@@ -447,7 +450,7 @@ private:
 				}
 			}
 		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			// For each cell, limit by the number of cell threads if specified, otherwise us the entire block for each cell
 
@@ -459,7 +462,7 @@ private:
 		}
 		else
 		{
-			BuiltinGenerator<B, T>::Unimplemented("reduction block size for thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+			BuiltinGenerator<B, T>::Unimplemented("reduction block size for thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 		}
 		return blockSize;
 	}

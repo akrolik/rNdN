@@ -2,9 +2,9 @@
 
 #include "Runtime/DataBuffers/DataBuffer.h"
 
-#include "Analysis/Shape/Shape.h"
-
 #include "CUDA/Constant.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -31,7 +31,7 @@ public:
 	// Type/Shape
 
 	const HorseIR::BasicType *GetType() const override { return m_type; }
-	const Analysis::VectorShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::VectorShape *GetShape() const override { return m_shape; }
 
 	// Clear, nothing to do
 
@@ -41,11 +41,11 @@ protected:
 	ConstantBuffer(const HorseIR::BasicType::BasicKind basicKind) : DataBuffer(DataBuffer::Kind::Constant)
 	{
 		m_type = new HorseIR::BasicType(basicKind);
-		m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(1));
+		m_shape = new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::ConstantSize(1));
 	}
 
 	const HorseIR::BasicType *m_type = nullptr;
-	const Analysis::VectorShape *m_shape = nullptr;
+	const HorseIR::Analysis::VectorShape *m_shape = nullptr;
 };
 
 template<typename T>

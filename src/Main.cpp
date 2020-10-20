@@ -1,15 +1,13 @@
-#include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Optimizer/Optimizer.h"
 #include "HorseIR/Semantics/SemanticAnalysis.h"
+#include "HorseIR/Transformation/Outliner/Outliner.h"
+#include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
-
-#include "Optimizer/Optimizer.h"
 
 #include "Runtime/Interpreter.h"
 #include "Runtime/Runtime.h"
 #include "Runtime/GPU/Assembler.h"
-#include "Runtime/GPU/Compiler.h"
-
-#include "Transformation/Outliner/Outliner.h"
+#include "Runtime/GPU/FrontendCompiler.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -96,20 +94,20 @@ int main(int argc, const char *argv[])
 	{
 		// Execute the fixed point optimizer
 
-		Optimizer::Optimizer optimizer;
+		HorseIR::Optimizer::Optimizer optimizer;
 		optimizer.Optimize(program);
 	}
 
 	// Outliner
 
-	Transformation::Outliner outliner;
+	HorseIR::Transformation::Outliner outliner;
 	outliner.Outline(program);
 
 	auto outlinedProgram = outliner.GetOutlinedProgram();
 
 	// Compile the program
 
-	Runtime::GPU::Compiler compiler(gpu);
+	Runtime::GPU::FrontendCompiler compiler(gpu);
 	auto ptxProgram = compiler.Compile(outlinedProgram);
 
 	Runtime::GPU::Assembler assembler(gpu);

@@ -7,8 +7,7 @@
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/DataObjects/VectorData.h"
 
-#include "Analysis/Shape/Shape.h"
-
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "CUDA/BufferManager.h"
@@ -31,7 +30,7 @@ public:
 	constexpr static DataBuffer::Kind BufferKind = DataBuffer::Kind::Vector;
 
 	static VectorBuffer *CreateEmpty(const HorseIR::BasicType *type, unsigned int size);
-	static VectorBuffer *CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::Size *size);
+	static VectorBuffer *CreateEmpty(const HorseIR::BasicType *type, const HorseIR::Analysis::Shape::Size *size);
 	~VectorBuffer() override;
 
 	virtual VectorBuffer *Clone() const = 0;
@@ -40,7 +39,7 @@ public:
 	// Type/Shape
 
 	const HorseIR::BasicType *GetType() const override { return m_type; }
-	const Analysis::VectorShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::VectorShape *GetShape() const override { return m_shape; }
 
 	// GPU/CPU buffer management
 
@@ -66,7 +65,7 @@ protected:
 	std::type_index m_typeid;
 
 	const HorseIR::BasicType *m_type = nullptr;
-	const Analysis::VectorShape *m_shape = nullptr;
+	const HorseIR::Analysis::VectorShape *m_shape = nullptr;
 
 	unsigned long m_elementCount = 0;
 };
@@ -219,7 +218,7 @@ public:
 			m_elementCount = size;
 
 			delete m_shape;
-			m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
+			m_shape = new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::ConstantSize(m_elementCount));
 
 			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 			{

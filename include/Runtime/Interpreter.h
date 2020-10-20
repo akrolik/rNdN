@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include "Analysis/Shape/ShapeAnalysis.h"
-
 #include "HorseIR/Traversal/ConstVisitor.h"
 #include "HorseIR/Tree/Tree.h"
 

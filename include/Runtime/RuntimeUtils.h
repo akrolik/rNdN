@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 namespace Runtime {
 
 class RuntimeUtils
 {
 public:
-	static bool IsDynamicReturnShape(const Analysis::Shape *dataShape, const Analysis::Shape *writeShape, const Analysis::Shape *threadGeometry)
+	static bool IsDynamicReturnShape(const HorseIR::Analysis::Shape *dataShape, const HorseIR::Analysis::Shape *writeShape, const HorseIR::Analysis::Shape *threadGeometry)
 	{
 		// Statically defined output shapes
 
-		if (!Analysis::ShapeUtils::IsDynamicShape(dataShape))
+		if (!HorseIR::Analysis::ShapeUtils::IsDynamicShape(dataShape))
 		{
 			return false;
 		}
@@ -33,12 +33,12 @@ public:
 
 		// List in vector
 
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(threadGeometry))
+		if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(threadGeometry))
 		{
-			if (const auto listData = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(dataShape))
+			if (const auto listData = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(dataShape))
 			{
-				const auto cellData = Analysis::ShapeUtils::MergeShapes(listData->GetElementShapes());
-				if (const auto vectorData = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellData))
+				const auto cellData = HorseIR::Analysis::ShapeUtils::MergeShapes(listData->GetElementShapes());
+				if (const auto vectorData = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellData))
 				{
 					if (*vectorGeometry == *vectorData)
 					{
@@ -50,14 +50,14 @@ public:
 
 		// @raze special case output shape
 
-		if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(threadGeometry))
+		if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(threadGeometry))
 		{
 			// Ensure vector cell geometry
 
-			const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
-			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
+			const auto cellGeometry = HorseIR::Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+			if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellGeometry))
 			{
-				if (const auto vectorData = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(dataShape))
+				if (const auto vectorData = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(dataShape))
 				{
 					// Special case of @raze returning a vector
 

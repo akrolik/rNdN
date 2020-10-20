@@ -10,6 +10,9 @@
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
@@ -34,9 +37,9 @@ public:
 		// Check if the geometry size is dynamically specified
 		
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry);
+		const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry);
 
-		if (Analysis::ShapeUtils::IsDynamicSize(vectorGeometry->GetSize()))
+		if (HorseIR::Analysis::ShapeUtils::IsDynamicSize(vectorGeometry->GetSize()))
 		{
 			// Load the geometry size from the input
 

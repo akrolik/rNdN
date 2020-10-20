@@ -4,7 +4,7 @@
 
 #include "CUDA/Buffer.h"
 
-#include "Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/Shape.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -55,7 +55,7 @@ public:
 		return "<unknown>";
 	}
 
-	static DataBuffer *CreateEmpty(const HorseIR::Type *type, const Analysis::Shape *shape);
+	static DataBuffer *CreateEmpty(const HorseIR::Type *type, const HorseIR::Analysis::Shape *shape);
 	virtual ~DataBuffer() {}
 
 	virtual DataBuffer *Clone() const = 0;
@@ -68,7 +68,7 @@ public:
 	// Type/Shape
 
 	virtual const HorseIR::Type *GetType() const = 0;
-	virtual const Analysis::Shape *GetShape() const = 0;
+	virtual const HorseIR::Analysis::Shape *GetShape() const = 0;
 
 	// GPU/CPU management
 

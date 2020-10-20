@@ -4,9 +4,6 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Expressions/OperandGenerator.h"
@@ -16,6 +13,9 @@
 #include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 #include "Codegen/Generators/Synchronization/AtomicGenerator.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -55,9 +55,9 @@ public:
 		if (inputOptions.IsVectorGeometry())
 		{
 			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
-			if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+			if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 			{
-				if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+				if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 				{
 					for (auto index = 0u; index < size->GetValue(); ++index)
 					{
@@ -68,12 +68,12 @@ public:
 				}
 				else
 				{
-					Error("list-in-vector store for non-constant sized tuple " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
+					Error("list-in-vector store for non-constant sized tuple " + HorseIR::Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 				}
 			}
 			else
 			{
-				Error("list-in-vector store for non-list shape " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
+				Error("list-in-vector store for non-list shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 			}
 		}
 		else
@@ -114,16 +114,16 @@ private:
 			// Select the write kind based on the thread geometry and return shape
 
 			auto shape = inputOptions.ReturnWriteShapes.at(returnIndex);
-			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+			if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry))
 			{
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+				if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(shape))
 				{
 					// Check for the style of write:
 					//  (1) Reduction (we assume this corresponds to scalar output in a non-scalar kernel)
 					//  (2) Vector
 					//  (3) Compression
 
-					if (Analysis::ShapeUtils::IsScalarSize(vectorShape->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(vectorGeometry->GetSize()))
+					if (HorseIR::Analysis::ShapeUtils::IsScalarSize(vectorShape->GetSize()) && !HorseIR::Analysis::ShapeUtils::IsScalarSize(vectorGeometry->GetSize()))
 					{
 						GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
 						return;
@@ -133,21 +133,21 @@ private:
 						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
 						return;
 					}
-					else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
+					else if (HorseIR::Analysis::ShapeUtils::IsSize<HorseIR::Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
 					{
 						GenerateWriteCompressed<T>(operand, returnIndex);
 						return;
 					}
-					else if (Analysis::ShapeUtils::IsDynamicShape(vectorShape))
+					else if (HorseIR::Analysis::ShapeUtils::IsDynamicShape(vectorShape))
 					{
 						// Otherwise, we expect the output to be handled separately
 						return;
 					}
 				}
-				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+				else if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 				{
-					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-					const auto cellVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape);
+					const auto cellShape = HorseIR::Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+					const auto cellVector = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellShape);
 
 					// Only support vector writing for list-in-vector geometry
 
@@ -156,23 +156,23 @@ private:
 						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
 						return;
 					}
-					else if (Analysis::ShapeUtils::IsDynamicShape(cellVector))
+					else if (HorseIR::Analysis::ShapeUtils::IsDynamicShape(cellVector))
 					{
 						// Otherwise, we expect the output to be handled separately
 						return;
 					}
 				}
 			}
-			else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+			else if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
 			{
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+				if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(shape))
 				{
 					// Special horizontal write for @raze function
 
-					const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
-					if (const auto cellVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
+					const auto cellGeometry = HorseIR::Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+					if (const auto cellVectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellGeometry))
 					{
-						if (!Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+						if (!HorseIR::Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
 						{
 							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::ListData, DataIndexGenerator<B>::Kind::ListBroadcast, returnIndex);
 							return;
@@ -184,21 +184,21 @@ private:
 						}
 					}
 				}
-				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+				else if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 				{
 					// Check for the style of write:
 					//  (1) Reduction (we assume this corresponds to scalar output in a non-scalar cell)
 					//  (2) List
 
-					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-					const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+					const auto cellShape = HorseIR::Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+					const auto cellGeometry = HorseIR::Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
 
-					const auto cellVector = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape);
-					const auto cellVectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry);
+					const auto cellVector = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellShape);
+					const auto cellVectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellGeometry);
 
 					if (cellVector && cellVectorGeometry)
 					{
-						if (Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
+						if (HorseIR::Analysis::ShapeUtils::IsScalarSize(cellVector->GetSize()) && !HorseIR::Analysis::ShapeUtils::IsScalarSize(cellVectorGeometry->GetSize()))
 						{
 							GenerateWriteReduction<T>(operand, OperandGenerator<B, T>::LoadKind::Vector, DataIndexGenerator<B>::Kind::Broadcast, returnIndex);
 							return;
@@ -208,7 +208,7 @@ private:
 							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex);
 							return;
 						}
-						else if (Analysis::ShapeUtils::IsSize<Analysis::Shape::CompressedSize>(cellVector->GetSize()))
+						else if (HorseIR::Analysis::ShapeUtils::IsSize<HorseIR::Analysis::Shape::CompressedSize>(cellVector->GetSize()))
 						{
 							GenerateWriteCompressed<T>(operand, returnIndex);
 							return;
@@ -217,7 +217,7 @@ private:
 				}
 			}
 			
-			Error("store for shape " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
+			Error("store for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 		}
 	}
 
@@ -508,7 +508,7 @@ private:
 
 				auto kernelResources = this->m_builder.GetKernelResources();
 				auto shape = this->m_builder.GetInputOptions().ReturnWriteShapes.at(returnIndex);
-				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+				if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
 				{
 					auto parameter = kernelResources->GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(returnIndex));
 					auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::UInt32Type>>(NameUtils::SizeName(parameter));
@@ -519,7 +519,7 @@ private:
 					PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
 					writeIndex = prefixSumGenerator.template Generate<PTX::PredicateType>(sizeAddress, predicate, PrefixSumMode::Exclusive);
 				}
-				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+				else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(shape))
 				{
 					auto parameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::ReturnName(returnIndex));
 					auto sizeParameter = kernelResources->GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::UInt32Type, PTX::GlobalSpace>>>(NameUtils::SizeName(parameter));
@@ -559,14 +559,14 @@ private:
 		auto returnName = NameUtils::ReturnName(returnIndex);
 
 		auto shape = this->m_builder.GetInputOptions().ReturnWriteShapes.at(returnIndex);
-		if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+		if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
 		{
 			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(returnName);
 
 			AddressGenerator<B, T> addressGenerator(this->m_builder);
 			return addressGenerator.GenerateAddress(returnParameter, index);
 		}
-		else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+		else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(shape))
 		{
 			auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(returnName);
 
@@ -577,7 +577,7 @@ private:
 			}
 			return addressGenerator.GenerateAddress(returnParameter, index);
 		}
-		Error("address for return parameter with shape " + Analysis::ShapeUtils::ShapeString(shape), returnIndex);
+		Error("address for return parameter with shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape), returnIndex);
 	}
 
 	template<class T>

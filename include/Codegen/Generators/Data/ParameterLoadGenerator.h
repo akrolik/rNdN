@@ -2,15 +2,15 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/TypeDispatch.h"
 #include "Codegen/Generators/Data/ValueLoadGenerator.h"
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -58,7 +58,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
+	void GenerateVector(const std::string& name, const HorseIR::Analysis::Shape *shape, const HorseIR::Analysis::Shape *writeShape = nullptr)
 	{
 		// Predicate (1-bit) values are stored as signed 8-bit integers on the CPU side. Loading thus requires conversion
 
@@ -83,7 +83,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
+	void GenerateList(const std::string& name, const HorseIR::Analysis::Shape *shape, const HorseIR::Analysis::Shape *writeShape = nullptr)
 	{
 		// Predicate (1-bit) values are stored as signed 8-bit integers on the CPU side. Loading thus requires conversion
 
@@ -100,8 +100,8 @@ public:
 			{
 				// Check cell count is constant
 
-				auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape);
-				if (auto cellSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+				auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape);
+				if (auto cellSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 				{
 					// Load each cell into a separate address register
 
@@ -143,7 +143,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
+	void GenerateTuple(unsigned int index, const std::string& name, const HorseIR::Analysis::Shape *shape, const HorseIR::Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -334,13 +334,13 @@ public:
 		return globalBase;
 	}
 
-	[[noreturn]] void Error(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false)
+	[[noreturn]] void Error(const std::string& name, const HorseIR::Analysis::Shape *shape, bool returnParameter = false)
 	{
 		if (returnParameter)
 		{
-			Generator::Error("return parameter load '" + name + "' for shape " + Analysis::ShapeUtils::ShapeString(shape));
+			Generator::Error("return parameter load '" + name + "' for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 		}
-		Generator::Error("parameter load '" + name + "' for shape " + Analysis::ShapeUtils::ShapeString(shape));
+		Generator::Error("parameter load '" + name + "' for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 	}
 };
 

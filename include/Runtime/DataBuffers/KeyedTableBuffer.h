@@ -2,8 +2,7 @@
 
 #include "Runtime/DataBuffers/DataBuffer.h"
 
-#include "Analysis/Shape/Shape.h"
-
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/TableBuffer.h"
@@ -29,7 +28,7 @@ public:
 	// Type/shape
 
 	const HorseIR::KeyedTableType *GetType() const override { return m_type; }
-	const Analysis::KeyedTableShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::KeyedTableShape *GetShape() const override { return m_shape; }
 
 	// Keys/values
 
@@ -52,7 +51,7 @@ public:
 
 private:
 	const HorseIR::KeyedTableType *m_type = nullptr;
-	const Analysis::KeyedTableShape *m_shape = nullptr;
+	const HorseIR::Analysis::KeyedTableShape *m_shape = nullptr;
 
 	TableBuffer *m_key = nullptr;
 	TableBuffer *m_value = nullptr;

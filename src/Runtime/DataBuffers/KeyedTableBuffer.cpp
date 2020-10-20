@@ -1,7 +1,5 @@
 #include "Runtime/DataBuffers/KeyedTableBuffer.h"
 
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "HorseIR/Utils/PrettyPrinter.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
@@ -16,7 +14,7 @@ KeyedTableBuffer::KeyedTableBuffer(TableBuffer *key, TableBuffer *value) : DataB
 
 	auto keyShape = key->GetShape();
 	auto valueShape = value->GetShape();
-	m_shape = new Analysis::KeyedTableShape(keyShape, valueShape);
+	m_shape = new HorseIR::Analysis::KeyedTableShape(keyShape, valueShape);
 
 	m_type = new HorseIR::KeyedTableType();
 }

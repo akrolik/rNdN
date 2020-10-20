@@ -34,7 +34,7 @@ TableBuffer::TableBuffer(const std::vector<std::pair<std::string, ColumnBuffer *
 		}
 		m_columnMap[name] = data;
 	}
-	m_shape = new Analysis::TableShape(new Analysis::Shape::ConstantSize(m_columns.size()), new Analysis::Shape::ConstantSize(m_rows));
+	m_shape = new HorseIR::Analysis::TableShape(new HorseIR::Analysis::Shape::ConstantSize(m_columns.size()), new HorseIR::Analysis::Shape::ConstantSize(m_rows));
 }
 
 TableBuffer::~TableBuffer()

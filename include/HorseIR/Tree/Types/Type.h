@@ -2,8 +2,10 @@
 
 #include "HorseIR/Tree/Node.h"
 
-namespace HorseIR { class Type; }
-namespace Analysis { class ShapeUtils; }
+namespace HorseIR {
+	class Type;
+	namespace Analysis { class ShapeUtils; }
+}
 namespace Codegen {
 	template<class G, typename... N>
 	void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes);

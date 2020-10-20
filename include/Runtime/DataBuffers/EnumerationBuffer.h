@@ -2,8 +2,7 @@
 
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 
-#include "Analysis/Shape/Shape.h"
-
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/VectorBuffer.h"
@@ -29,7 +28,7 @@ public:
 	// Type/shape
 
 	const HorseIR::EnumerationType *GetType() const override { return m_type; }
-	const Analysis::EnumerationShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::EnumerationShape *GetShape() const override { return m_shape; }
 
 	// Keys/values
 
@@ -56,7 +55,7 @@ public:
 
 private:
 	const HorseIR::EnumerationType *m_type = nullptr;
-	const Analysis::EnumerationShape *m_shape = nullptr;
+	const HorseIR::Analysis::EnumerationShape *m_shape = nullptr;
 
 	//TODO: Support multiple column enums
 	VectorBuffer *m_keys = nullptr;

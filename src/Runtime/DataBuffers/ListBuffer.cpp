@@ -2,7 +2,7 @@
 
 namespace Runtime {
 
-ListBuffer::ListBuffer(HorseIR::ListType *type, Analysis::ListShape *shape) : DataBuffer(DataBuffer::Kind::List), m_type(type), m_shape(shape)
+ListBuffer::ListBuffer(HorseIR::ListType *type, HorseIR::Analysis::ListShape *shape) : DataBuffer(DataBuffer::Kind::List), m_type(type), m_shape(shape)
 {
 
 }

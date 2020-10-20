@@ -2,11 +2,11 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -48,7 +48,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
+	void GenerateVector(const std::string& name, const HorseIR::Analysis::Shape *shape, const HorseIR::Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -66,7 +66,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
+	void GenerateList(const std::string& name, const HorseIR::Analysis::Shape *shape, const HorseIR::Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -84,7 +84,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const std::string& name, const Analysis::Shape *shape, const Analysis::Shape *writeShape = nullptr)
+	void GenerateTuple(unsigned int index, const std::string& name, const HorseIR::Analysis::Shape *shape, const HorseIR::Analysis::Shape *writeShape = nullptr)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -134,13 +134,13 @@ public:
 		return declaration->GetVariable(name);
 	}
 
-	[[noreturn]] void Error(const std::string& name, const Analysis::Shape *shape, bool returnParameter = false) const
+	[[noreturn]] void Error(const std::string& name, const HorseIR::Analysis::Shape *shape, bool returnParameter = false) const
 	{
 		if (returnParameter)
 		{
-			Generator::Error("return parameter '" + name + "' for shape " + Analysis::ShapeUtils::ShapeString(shape));
+			Generator::Error("return parameter '" + name + "' for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 		}
-		Generator::Error("parameter '" + name + "' for shape " + Analysis::ShapeUtils::ShapeString(shape));
+		Generator::Error("parameter '" + name + "' for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 	}
 };
 

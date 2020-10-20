@@ -8,6 +8,13 @@
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 #include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
+
+#include "HorseIR/Tree/Tree.h"
+
+#include "PTX/PTX.h"
+
 namespace Codegen {
 
 template<PTX::Bits B, unsigned int CACHE_SIZE = 1024u, unsigned int N = 1>
@@ -71,9 +78,9 @@ public:
 		const auto parameter = inputOptions.Parameters.at(data->GetSymbol());
 		const auto shape = inputOptions.ParameterShapes.at(parameter);
 
-		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 		{
-			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				for (auto cellIndex = 0u; cellIndex < size->GetValue(); ++cellIndex)
 				{
@@ -199,9 +206,9 @@ public:
 		const auto parameter = inputOptions.Parameters.at(data->GetSymbol());
 		const auto shape = inputOptions.ParameterShapes.at(parameter);
 
-		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 		{
-			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				for (auto cellIndex = 0u; cellIndex < size->GetValue(); ++cellIndex)
 				{

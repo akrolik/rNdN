@@ -1,6 +1,6 @@
 #include "Runtime/DataBuffers/DictionaryBuffer.h"
 
-#include "Analysis/Shape/ShapeUtils.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Utils/PrettyPrinter.h"
 #include "HorseIR/Utils/TypeUtils.h"
@@ -26,7 +26,7 @@ DictionaryBuffer::DictionaryBuffer(VectorBuffer *keys, ListBuffer *values) : Dat
 
 	auto keysShape = keys->GetShape();
 	auto valuesShape = values->GetShape();
-	m_shape = new Analysis::DictionaryShape(keysShape, valuesShape);
+	m_shape = new HorseIR::Analysis::DictionaryShape(keysShape, valuesShape);
 
 	auto keysType = keys->GetType()->Clone();
 	auto valuesType = HorseIR::TypeUtils::GetReducedType(values->GetType()->GetElementTypes());

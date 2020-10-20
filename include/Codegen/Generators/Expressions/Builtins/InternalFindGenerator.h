@@ -17,6 +17,9 @@
 #include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 #include "Codegen/NameUtils.h"
 
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
@@ -40,23 +43,23 @@ public:
 
 	std::string Name() const override { return "InternalFindGenerator_Init"; }
 
-	void Generate(const HorseIR::Operand *dataX, const Analysis::Shape *shape)
+	void Generate(const HorseIR::Operand *dataX, const HorseIR::Analysis::Shape *shape)
 	{
 		DispatchType(*this, dataX->GetType(), dataX, shape);
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::Operand *dataX, const Analysis::Shape *shape)
+	void GenerateVector(const HorseIR::Operand *dataX, const HorseIR::Analysis::Shape *shape)
 	{
 		GenerateInit<T>(dataX);
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::Operand *dataX, const Analysis::Shape *shape)
+	void GenerateList(const HorseIR::Operand *dataX, const HorseIR::Analysis::Shape *shape)
 	{
-		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 		{
-			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				for (auto index = 0u; index < size->GetValue(); ++index)
 				{
@@ -69,7 +72,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const Analysis::Shape *shape)
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *dataX, const HorseIR::Analysis::Shape *shape)
 	{
 		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -124,9 +127,9 @@ public:
 		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
 		const auto shape = inputOptions.ParameterShapes.at(parameter);
 
-		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 		{
-			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				for (auto index = 0u; index < size->GetValue(); ++index)
 				{
@@ -328,9 +331,9 @@ public:
 		const auto parameter = inputOptions.Parameters.at(dataY->GetSymbol());
 		const auto shape = inputOptions.ParameterShapes.at(parameter);
 
-		if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+		if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 		{
-			if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+			if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 			{
 				for (auto index = 0u; index < size->GetValue(); ++index)
 				{

@@ -10,6 +10,9 @@
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
@@ -61,8 +64,8 @@ public:
 
 		// Load the number of cells from the input if required
 
-		const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry);
-		if (Analysis::ShapeUtils::IsDynamicSize(listGeometry->GetListSize()))
+		const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry);
+		if (HorseIR::Analysis::ShapeUtils::IsDynamicSize(listGeometry->GetListSize()))
 		{
 			this->m_builder.AddStatement(new PTX::CommentStatement(NameUtils::ThreadGeometryListSize));
 

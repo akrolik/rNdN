@@ -951,7 +951,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			// A column value call is intentionally untyped since it comes from the runtime system.
 			// It must be cast before assigning to a variable
 
-			return {new HorseIR::WildcardType()};
+			return {new WildcardType()};
 		}
 		case BuiltinFunction::Primitive::LoadTable:
 		{

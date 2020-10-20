@@ -5,6 +5,9 @@
 #include "Codegen/Generators/Generator.h"
 #include "HorseIR/Traversal/ConstVisitor.h"
 
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
+
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
@@ -83,9 +86,9 @@ public:
 			const auto parameter = inputOptions.Parameters.at(identifier->GetSymbol());
 			const auto shape = inputOptions.ParameterShapes.at(parameter);
 
-			if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+			if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 			{
-				if (const auto size = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listShape->GetListSize()))
+				if (const auto size = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listShape->GetListSize()))
 				{
 					for (auto index = 0u; index < size->GetValue(); ++index)
 					{

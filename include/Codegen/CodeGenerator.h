@@ -9,6 +9,7 @@
 #include "Codegen/Generators/Functions/ListFunctionGenerator.h"
 #include "Codegen/Generators/Functions/VectorFunctionGenerator.h"
 
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/PTX.h"
@@ -149,7 +150,7 @@ public:
 		}
 		else
 		{
-			Utils::Logger::LogError("Unsupported thread geometry " + Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+			Utils::Logger::LogError("Unsupported thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
 		}
 
 		// Complete the codegen for the function by setting up the options and closing the scope

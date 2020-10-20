@@ -1,9 +1,8 @@
 #include "Runtime/DataBuffers/ListCellBuffer.h"
 
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "CUDA/BufferManager.h"
 
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
@@ -15,7 +14,7 @@
 
 namespace Runtime {
 
-ListCellBuffer *ListCellBuffer::CreateEmpty(const HorseIR::ListType *type, const Analysis::ListShape *shape)
+ListCellBuffer *ListCellBuffer::CreateEmpty(const HorseIR::ListType *type, const HorseIR::Analysis::ListShape *shape)
 {
 	auto elementTypes = type->GetElementTypes();
 	auto elementShapes = shape->GetElementShapes();
@@ -23,14 +22,14 @@ ListCellBuffer *ListCellBuffer::CreateEmpty(const HorseIR::ListType *type, const
 	auto typeCount = elementTypes.size();
 	auto shapeCount = elementShapes.size();
 
-	if (const auto listSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(shape->GetListSize()))
+	if (const auto listSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(shape->GetListSize()))
 	{
 		shapeCount = listSize->GetValue();
 	}
 
 	if (typeCount != 1 && typeCount != shapeCount)
 	{
-		Utils::Logger::LogError("Mismatch between list type and shape cell count [" + HorseIR::PrettyPrinter::PrettyString(type) + "; " + Analysis::ShapeUtils::ShapeString(shape) + "]");
+		Utils::Logger::LogError("Mismatch between list type and shape cell count [" + HorseIR::PrettyPrinter::PrettyString(type) + "; " + HorseIR::Analysis::ShapeUtils::ShapeString(shape) + "]");
 	}
 
 	std::vector<DataBuffer *> cellBuffers;
@@ -48,14 +47,14 @@ ListCellBuffer *ListCellBuffer::CreateEmpty(const HorseIR::ListType *type, const
 ListCellBuffer::ListCellBuffer(const std::vector<DataBuffer *>& cells) : m_cells(cells)
 {
 	std::vector<HorseIR::Type *> cellTypes;
-	std::vector<const Analysis::Shape *> cellShapes;
+	std::vector<const HorseIR::Analysis::Shape *> cellShapes;
 	for (const auto& cell : cells)
 	{
 		cellTypes.push_back(cell->GetType()->Clone());
 		cellShapes.push_back(cell->GetShape());
 	}
 	m_type = new HorseIR::ListType(cellTypes);
-	m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(cells.size()), cellShapes);
+	m_shape = new HorseIR::Analysis::ListShape(new HorseIR::Analysis::Shape::ConstantSize(cells.size()), cellShapes);
 
 	m_cpuConsistent = true; // Always CPU consistent
 }
@@ -119,12 +118,12 @@ void ListCellBuffer::ResizeCells(unsigned int size)
 
 		delete m_shape;
 
-		std::vector<const Analysis::Shape *> cellShapes;
+		std::vector<const HorseIR::Analysis::Shape *> cellShapes;
 		for (const auto& cell : m_cells)
 		{
 			cellShapes.push_back(cell->GetShape());
 		}
-		m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
+		m_shape = new HorseIR::Analysis::ListShape(new HorseIR::Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
 
 		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 		{
@@ -212,12 +211,12 @@ bool ListCellBuffer::ReallocateGPUBuffer()
 
 		delete m_shape;
 
-		std::vector<const Analysis::Shape *> cellShapes;
+		std::vector<const HorseIR::Analysis::Shape *> cellShapes;
 		for (const auto& cell : m_cells)
 		{
 			cellShapes.push_back(cell->GetShape());
 		}
-		m_shape = new Analysis::ListShape(new Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
+		m_shape = new HorseIR::Analysis::ListShape(new HorseIR::Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
 
 		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
 		{

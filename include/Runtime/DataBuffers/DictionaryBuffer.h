@@ -2,8 +2,7 @@
 
 #include "Runtime/DataBuffers/DataBuffer.h"
 
-#include "Analysis/Shape/Shape.h"
-
+#include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/ListBuffer.h"
@@ -30,7 +29,7 @@ public:
 	// Type/shape
 
 	const HorseIR::DictionaryType *GetType() const override { return m_type; }
-	const Analysis::DictionaryShape *GetShape() const override { return m_shape; }
+	const HorseIR::Analysis::DictionaryShape *GetShape() const override { return m_shape; }
 
 	// Keys/values
 
@@ -53,7 +52,7 @@ public:
 
 private:
 	const HorseIR::DictionaryType *m_type = nullptr;
-	const Analysis::DictionaryShape *m_shape = nullptr;
+	const HorseIR::Analysis::DictionaryShape *m_shape = nullptr;
 
 	VectorBuffer *m_keys = nullptr;
 	ListBuffer *m_values = nullptr;

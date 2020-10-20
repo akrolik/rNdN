@@ -3,12 +3,12 @@
 #include "Codegen/Generators/Generator.h"
 #include "HorseIR/Traversal/ConstVisitor.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/TypeDispatch.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -200,29 +200,29 @@ private:
 	}
 
 	template<class T>
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const Analysis::Shape *shape) const
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const HorseIR::Analysis::Shape *shape) const
 	{
 		// Get the size register for the data
 
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
 
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
-			if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+			if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(shape))
 			{
 				return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 			}
-			else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+			else if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 			{
 				return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter, m_cellIndex));
 			}
 		}
-		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		else if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			return resources->GetRegister<PTX::UInt32Type>(NameUtils::SizeName(parameter));
 		}
-		Error("size for shape " + Analysis::ShapeUtils::ShapeString(shape));
+		Error("size for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 	}
 
 	const PTX::TypedOperand<PTX::UInt32Type> *m_size = nullptr;

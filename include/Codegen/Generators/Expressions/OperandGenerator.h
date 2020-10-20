@@ -3,9 +3,6 @@
 #include "Codegen/Generators/Generator.h"
 #include "HorseIR/Traversal/ConstVisitor.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/TypeDispatch.h"
@@ -15,6 +12,9 @@
 #include "Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Codegen/Generators/Indexing/PrefixSumGenerator.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -356,12 +356,12 @@ public:
 				const PTX::Register<S> *value = nullptr;
 
 				auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
-				if (Analysis::ShapeUtils::IsShape<Analysis::VectorShape>(shape))
+				if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
 				{
 					auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, S>>(NameUtils::VariableName(parameter));
 					value = loadGenerator.GeneratePointer(name, kernelParameter, dataIndex);
 				}
-				else if (Analysis::ShapeUtils::IsShape<Analysis::ListShape>(shape))
+				else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(shape))
 				{
 					// The parameter is unindexed, the cell is added in the value generation
 
@@ -395,7 +395,7 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::UInt32Type> *GenerateCompressedIndex(const Analysis::Shape::CompressedSize *size)
+	const PTX::Register<PTX::UInt32Type> *GenerateCompressedIndex(const HorseIR::Analysis::Shape::CompressedSize *size)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
@@ -439,11 +439,11 @@ private:
 		return index;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, const Analysis::Shape::Size *size, const Analysis::Shape::Size *geometrySize, typename DataIndexGenerator<B>::Kind indexKind, bool isCell = false)
+	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, const HorseIR::Analysis::Shape::Size *size, const HorseIR::Analysis::Shape::Size *geometrySize, typename DataIndexGenerator<B>::Kind indexKind, bool isCell = false)
 	{
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 
-		if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(size))
+		if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(size))
 		{
 			// If the vector is a constant scalar, broadcast
 
@@ -462,11 +462,11 @@ private:
 
 			return indexGenerator.GenerateIndex(indexKind);                      
 		}
-		else if (Analysis::ShapeUtils::IsCompressedSize(size, geometrySize))
+		else if (HorseIR::Analysis::ShapeUtils::IsCompressedSize(size, geometrySize))
 		{
 			// If the data is compressed, load a special prefix summed index
 
-			return GenerateCompressedIndex(Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(size));
+			return GenerateCompressedIndex(HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::CompressedSize>(size));
 		}
 		else
 		{
@@ -494,20 +494,20 @@ private:
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		auto shape = inputOptions.ParameterShapes.at(parameter); 
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			// Vector geometries require values be loaded into vectors
 
 			if (loadKind == LoadKind::Vector)
 			{
-				if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+				if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(shape))
 				{
 					return GenerateIndex(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), DataIndexGenerator<B>::Kind::VectorData);
 				}
-				else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+				else if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 				{
-					const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-					if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
+					const auto cellShape = HorseIR::Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+					if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellShape))
 					{
 						// Load data using the vector indexing scheme
 
@@ -516,27 +516,27 @@ private:
 				}
 			}
 		}
-		else if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		else if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			// Ensure the list geometry contents is a collection of vectors
 
-			const auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
-			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
+			const auto cellGeometry = HorseIR::Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+			if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellGeometry))
 			{
 				switch (loadKind)
 				{
 					case LoadKind::Vector:
 					{
-						if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+						if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(shape))
 						{
 							// Vectors loaded in list geometries align with the cell data (vertical vectors)
 
 							return GenerateIndex(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), DataIndexGenerator<B>::Kind::ListData);
 						}
-						else if (const auto listShape = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(shape))
+						else if (const auto listShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(shape))
 						{
-							const auto cellShape = Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
-							if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellShape))
+							const auto cellShape = HorseIR::Analysis::ShapeUtils::MergeShapes(listShape->GetElementShapes());
+							if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellShape))
 							{
 								return GenerateIndex(parameter, vectorShape->GetSize(), vectorGeometry->GetSize(), DataIndexGenerator<B>::Kind::ListData);
 							}
@@ -545,7 +545,7 @@ private:
 					}
 					case LoadKind::ListData:
 					{
-						if (const auto vectorShape = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(shape))
+						if (const auto vectorShape = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(shape))
 						{
 							// As a special case, we can load vectors horizontally, with 1 value per cell
 
@@ -556,7 +556,7 @@ private:
 				}
 			}
 		}
-		Error(LoadKindString(loadKind) + " load index for shape " + Analysis::ShapeUtils::ShapeString(shape));
+		Error(LoadKindString(loadKind) + " load index for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 	}
 
 	const PTX::TypedOperand<T> *m_operand = nullptr;

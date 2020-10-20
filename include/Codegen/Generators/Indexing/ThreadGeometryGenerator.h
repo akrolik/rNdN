@@ -2,12 +2,12 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Codegen/Builder.h"
 #include "Codegen/NameUtils.h"
 #include "Codegen/Generators/Indexing/SpecialRegisterGenerator.h"
+
+#include "HorseIR/Analysis/Shape/Shape.h"
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "PTX/PTX.h"
 
@@ -24,11 +24,11 @@ public:
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateVectorGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(inputOptions.ThreadGeometry))
+		if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry))
 		{
 			// If the input size is specified, we can use a constant value. Otherwise, use the special parameter
 
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
+			if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
 			{
 				return new PTX::UInt32Value(constantSize->GetValue());
 			}
@@ -42,11 +42,11 @@ public:
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateListGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			// If the input size is specified, we can use a constant value. Otherwise, use the special parameter
 
-			if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(listGeometry->GetListSize()))
+			if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(listGeometry->GetListSize()))
 			{
 				return new PTX::UInt32Value(constantSize->GetValue());
 			}
@@ -60,14 +60,14 @@ public:
 	const PTX::TypedOperand<PTX::UInt32Type> *GenerateListDataGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		if (const auto listGeometry = Analysis::ShapeUtils::GetShape<Analysis::ListShape>(inputOptions.ThreadGeometry))
+		if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
 		{
 			// If the input size is specified and the same for all cells, we can use a constant value. Otherwise, use the special parameter
 
-			auto cellGeometry = Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
-			if (const auto vectorGeometry = Analysis::ShapeUtils::GetShape<Analysis::VectorShape>(cellGeometry))
+			auto cellGeometry = HorseIR::Analysis::ShapeUtils::MergeShapes(listGeometry->GetElementShapes());
+			if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(cellGeometry))
 			{
-				if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
+				if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(vectorGeometry->GetSize()))
 				{
 					return new PTX::UInt32Value(constantSize->GetValue());
 				}

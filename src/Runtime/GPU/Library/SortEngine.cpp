@@ -1,8 +1,5 @@
 #include "Runtime/GPU/Library/SortEngine.h"
 
-#include "Analysis/Shape/Shape.h"
-#include "Analysis/Shape/ShapeUtils.h"
-
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ConstantBuffer.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"

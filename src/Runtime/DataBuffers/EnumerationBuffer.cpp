@@ -10,7 +10,7 @@ EnumerationBuffer::EnumerationBuffer(VectorBuffer *keys, VectorBuffer *values, T
 {
 	// Form the type/shape
 
-	m_shape = new Analysis::EnumerationShape(keys->GetShape(), values->GetShape());
+	m_shape = new HorseIR::Analysis::EnumerationShape(keys->GetShape(), values->GetShape());
 	m_type = new HorseIR::EnumerationType(keys->GetType()->Clone());
 
 	m_size = values->GetElementCount();

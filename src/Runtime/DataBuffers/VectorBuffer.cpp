@@ -1,7 +1,6 @@
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
-#include "Analysis/Shape/ShapeUtils.h"
-
+#include "HorseIR/Analysis/Shape/ShapeUtils.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 #include "Utils/Logger.h"
@@ -42,17 +41,17 @@ VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, unsigned
 	}
 }
 
-VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const Analysis::Shape::Size *size)
+VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const HorseIR::Analysis::Shape::Size *size)
 {
-	if (const auto constantSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::ConstantSize>(size))
+	if (const auto constantSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::ConstantSize>(size))
 	{
 		return VectorBuffer::CreateEmpty(type, constantSize->GetValue());
 	}
-	else if (const auto compressedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::CompressedSize>(size))
+	else if (const auto compressedSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::CompressedSize>(size))
 	{
 		return VectorBuffer::CreateEmpty(type, compressedSize->GetSize());
 	}
-	else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(size))
+	else if (const auto rangedSize = HorseIR::Analysis::ShapeUtils::GetSize<HorseIR::Analysis::Shape::RangedSize>(size))
 	{
 		auto totalSize = 0u;
 		for (auto size : rangedSize->GetValues())
@@ -61,14 +60,14 @@ VectorBuffer *VectorBuffer::CreateEmpty(const HorseIR::BasicType *type, const An
 		}
 		return VectorBuffer::CreateEmpty(type, totalSize);
 	}
-	Utils::Logger::LogError("Umable to create vector of size " + Analysis::ShapeUtils::SizeString(size));
+	Utils::Logger::LogError("Umable to create vector of size " + HorseIR::Analysis::ShapeUtils::SizeString(size));
 }
 
 VectorBuffer::VectorBuffer(const std::type_index &tid, const HorseIR::BasicType *type, unsigned long elementCount) :
 	ColumnBuffer(DataBuffer::Kind::Vector), m_typeid(tid), m_elementCount(elementCount)
 {
 	m_type = type->Clone();
-	m_shape = new Analysis::VectorShape(new Analysis::Shape::ConstantSize(m_elementCount));
+	m_shape = new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::ConstantSize(m_elementCount));
 }
 
 VectorBuffer::~VectorBuffer()
