@@ -23,6 +23,7 @@ public:
 	static constexpr char const *Opt_Print_outline_graph = "print-outline-graph";
 	static constexpr char const *Opt_Print_ptx = "print-ptx";
 	static constexpr char const *Opt_Print_json = "print-json";
+	static constexpr char const *Opt_Print_sass = "print-sass";
 	static constexpr char const *Opt_Print_time = "print-time";
 
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
@@ -32,6 +33,9 @@ public:
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 	static constexpr char const *Opt_Algo_like = "algo-like";
 	static constexpr char const *Opt_Algo_unique = "algo-unique";
+
+	static constexpr char const *Opt_Backend = "backend";
+	static constexpr char const *Opt_Backend_dump = "backend-dump";
 
 	static constexpr char const *Opt_Data_load_tpch = "data-load-tpch";
 	static constexpr char const *Opt_Data_path_tpch = "data-path-tpch";
@@ -51,7 +55,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			Utils::Logger::LogInfo(instance.m_options.help({"", "Debug", "Optimization", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(instance.m_options.help({"", "Debug", "Optimization", "Algorithm", "Backend", "Data"}), 0, true, Utils::Logger::NoPrefix);
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -206,6 +210,25 @@ public:
 		Utils::Logger::LogError("Unknown allocator '" + allocator + "'");
 	}
 
+	enum class BackendKind {
+		ptxas,
+		r3d3
+	};
+
+	static BackendKind GetBackendKind()
+	{
+		auto backend = Get<std::string>(Opt_Backend);
+		if (backend == "ptxas")
+		{
+			return BackendKind::ptxas;
+		}
+		else if (backend == "r3d3")
+		{
+			return BackendKind::r3d3;
+		}
+		Utils::Logger::LogError("Unknown backend '" + backend + "'");
+	}
+
 private:
 	Options() : m_options("r3d3", "Optimizing JIT compiler for HorseIR targetting PTX")
 	{
@@ -223,6 +246,7 @@ private:
 			(Opt_Print_outline_graph, "Pretty print outliner graphs")
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
+			(Opt_Print_sass, "Print generated SASS code")
 			(Opt_Print_time, "Print timings")
 		;
 		m_options.add_options("Optimization")
@@ -237,6 +261,10 @@ private:
 			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 			(Opt_Algo_like, "Like mode [pcre|opt]", cxxopts::value<std::string>()->default_value("opt"))
 			(Opt_Algo_unique, "Unique mode [sort|loop]", cxxopts::value<std::string>()->default_value("loop"))
+		;
+		m_options.add_options("Backend")
+			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("ptxas"))
+			(Opt_Backend_dump, "Dump assembled .cubin to file")
 		;
 		m_options.add_options("Data")
 			(Opt_Data_load_tpch, "Load TPC-H data")

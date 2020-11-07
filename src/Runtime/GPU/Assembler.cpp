@@ -1,38 +1,59 @@
 #include "Runtime/GPU/Assembler.h"
 
 #include "Assembler/Assembler.h"
+#include "Runtime/GPU/BackendCompiler.h"
 
 #include "Utils/Chrono.h"
+#include "Utils/Options.h"
 
 namespace Runtime {
 namespace GPU {
 
-const Program *Assembler::Assemble(const PTX::Program *program) const
+const Program *Assembler::Assemble(const PTX::Program *program, bool optimized) const
 {
 	// Generate the CUDA module for the program with the program
 	// modules and linked external modules (libraries)
 
-	auto timeAssembly_start = Utils::Chrono::Start("CUDA assembly");
+	auto timeAssembler_start = Utils::Chrono::Start("CUDA Assembler");
 
 	CUDA::Module cModule;
 	for (const auto& module : program->GetModules())
 	{
-		cModule.AddPTXModule(module->ToString(0));
+		//TODO: Only use the optimized assembler for the core computation, not libraries
+		if (optimized == false)
+		{
+			goto test;
+		}
+		switch (Utils::Options::GetBackendKind())
+		{
+			case Utils::Options::BackendKind::ptxas:
+			{
+test:
+				cModule.AddPTXModule(module->ToString(0));
+				break;
+			}
+			case Utils::Options::BackendKind::r3d3:
+			{
+				auto& device = m_gpuManager.GetCurrentDevice();
+				auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
+
+				if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
+				{
+					Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
+				}
+
+				BackendCompiler compiler(m_gpuManager);
+				auto sassProgram = compiler.Compile(program);
+				sassProgram->SetComputeCapability(compute);
+
+				::Assembler::Assembler assembler;
+				auto binary = assembler.Assemble(sassProgram);
+
+				cModule.AddELFModule(*binary);
+				break;
+			}
+		}
 	}
-
-	//TODO: Add PTX module information
-	// auto timeTemp = Utils::Chrono::Start("ELF Gen");
-
-	// auto ssprogram = new SASS::Program();
-	// auto ssfunction = new SASS::Function("main_1");
-	// ssprogram->AddFunction(ssfunction);
-
-	// Assembler::Assembler assembler;
-	// auto binary = assembler.Assemble(ssprogram);
-
-	// Utils::Chrono::End(timeTemp);
-
-	// cModule.AddELFModule(*binary);
 
 	for (const auto& module : m_gpuManager.GetExternalModules())
 	{
@@ -45,7 +66,7 @@ const Program *Assembler::Assemble(const PTX::Program *program) const
 
 	auto gpuProgram = new Program(program, cModule);
 
-	Utils::Chrono::End(timeAssembly_start);
+	Utils::Chrono::End(timeAssembler_start);
 
 	return gpuProgram;
 }

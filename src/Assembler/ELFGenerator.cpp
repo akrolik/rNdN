@@ -3,6 +3,11 @@
 #include <sstream>
 
 #include "Libraries/elfio/elfio.hpp"
+#include "Libraries/wmemstreambuf.hpp"
+
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 #define ELFABI_NVIDIA_VERSION 7
 #define ELF_VERSION 110
@@ -45,6 +50,8 @@ void ELFGenerator::AppendBytes(std::vector<char>& buffer, const std::vector<char
 
 ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 {
+	auto timeELF_start = Utils::Chrono::Start("ELF Generator");
+
 	// Initialize properties of ELF file
 
 	ELFIO::elfio writer;
@@ -376,18 +383,30 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	// Set full info, contains data for all functions
 
 	infoSection->set_data(infoBuffer.data(), infoBuffer.size());
-	writer.save("test.cubin");
 
 	// Output ELF binary to memory, copying data
 
-	std::ostringstream stream;
-	writer.save(stream);
+	wmemstreambuf buffer(4096);
+	std::ostream binaryStream(&buffer);
+	writer.save(binaryStream);
 
-	auto elfString = stream.str();
-	auto elfSize = elfString.size();
+	if (Utils::Options::Get<>(Utils::Options::Opt_Backend_dump))
+	{
+		writer.save("r3d3_dump.cubin");
+	}
+
+	std::size_t elfSize = 0;
+	auto bufferContent = buffer.getcontent(elfSize);
 
 	auto elfBinary = ::operator new(elfSize);
-	std::memcpy(elfBinary, elfString.data(), elfSize);
+	std::memcpy(elfBinary, bufferContent, elfSize);
+
+	Utils::Chrono::End(timeELF_start);
+
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_debug))
+	{
+		Utils::Logger::LogDebug("Generate ELF binary, " + std::to_string(elfSize) + " bytes");
+	}
 
 	return new ELFBinary(elfBinary, elfSize);
 }

@@ -23,6 +23,8 @@ public:
 
 	CUdevice& GetDevice() { return m_device; }
 
+	int GetComputeMajor() const { return m_properties.major; }
+	int GetComputeMinor() const { return m_properties.minor; }
 	std::string GetComputeCapability() const
 	{
 		return "sm_" + std::to_string(m_properties.major) + std::to_string(m_properties.minor);

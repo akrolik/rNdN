@@ -13,7 +13,7 @@ class Assembler
 public:
 	Assembler(Manager& gpuManager) : m_gpuManager(gpuManager) {}
 
-	const Program *Assemble(const PTX::Program *program) const;
+	const Program *Assemble(const PTX::Program *program, bool optimized = true) const;
 
 private:
 	Manager& m_gpuManager;

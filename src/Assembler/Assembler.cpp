@@ -1,9 +1,14 @@
 #include "Assembler/Assembler.h"
 
 #include <cstring>
+#include <unordered_map>
 #include <vector>
 
 #include "Assembler/ELFGenerator.h"
+
+#include "Utils/Chrono.h"
+#include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace Assembler {
 
@@ -17,52 +22,155 @@ ELFBinary *Assembler::Assemble(const SASS::Program *program)
 
 BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 {
-	//TODO: Add compute capability verification
+	auto timeAssembler_start = Utils::Chrono::Start("SASS assembler");
+
+	// Collect the device properties for codegen
+
 	auto binaryProgram = new BinaryProgram();
-	binaryProgram->SetComputeCapability(61);
+	binaryProgram->SetComputeCapability(program->GetComputeCapability());
 	for (const auto& function : program->GetFunctions())
 	{
 		binaryProgram->AddFunction(AssembleFunction(function));
 	}
+
+	Utils::Chrono::End(timeAssembler_start);
+
 	return binaryProgram;
 }
 
 BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 {
 	auto binaryFunction = new BinaryFunction(function->GetName());
-	binaryFunction->AddParameter(8);
-	binaryFunction->AddParameter(8);
+	for (auto parameter : function->GetParameters())
+	{
+		binaryFunction->AddParameter(parameter);
+	}
 
-	char text[] = {
-		'\xf6', '\x07', '\x20', '\xe2', '\x00', '\xfc', '\x1c', '\x00', '\x01', '\x00', '\x87', '\x00', '\x80', '\x07', '\x98', '\x4c',
-		'\x04', '\x00', '\x57', '\x02', '\x00', '\x00', '\xc8', '\xf0', '\x02', '\x00', '\x17', '\x02', '\x00', '\x00', '\xc8', '\xf0',
-		'\xf1', '\x0f', '\xc2', '\xfe', '\x42', '\xd8', '\x1f', '\x00', '\x03', '\x04', '\x27', '\x00', '\x80', '\x7f', '\x10', '\x4f',
-		'\x02', '\x04', '\x27', '\x00', '\x00', '\x01', '\x00', '\x4e', '\x04', '\x04', '\x37', '\x00', '\x18', '\x01', '\x30', '\x5b',
+	std::unordered_map<const SASS::BasicBlock *, unsigned int> blockIndex;
+	auto blockOffset = 0u;
 
-		'\xf6', '\x07', '\x40', '\xfc', '\x00', '\xc4', '\x1e', '\x00', '\x02', '\x04', '\x07', '\x05', '\x00', '\x80', '\x10', '\x4c',
-		'\x03', '\xff', '\x17', '\x05', '\x00', '\x08', '\x10', '\x4c', '\x02', '\x02', '\x07', '\x00', '\x00', '\x20', '\xd0', '\xee',
-		'\xf6', '\x07', '\xe0', '\xfe', '\x00', '\xc8', '\x1f', '\x04', '\x04', '\x04', '\x27', '\x05', '\x00', '\x80', '\x10', '\x4c',
-		'\x05', '\xff', '\x37', '\x05', '\x00', '\x08', '\x10', '\x4c', '\x06', '\x02', '\x17', '\x00', '\x00', '\x00', '\x00', '\x1c',
+	// 1. Sequence basic blocks, create linear sequence of instruction
+	// 2. Add self-loop BRA
+	// 3. Pad instructions to multiple of 6
+	// 4. Add 1 SCHI instruction for every 3 regular instructions (now padded to multiple of 8)
+	// 5. Resolve branch targets
+	//    (a) BRA instructions
+	//    (b) EXIT instructions
+	//    (c) CTAID instructions
 
-		'\xf1', '\x07', '\xe0', '\xff', '\x00', '\xfc', '\x1f', '\x00', '\x06', '\x04', '\x07', '\x00', '\x00', '\x20', '\xd8', '\xee',
-		'\x0f', '\x00', '\x07', '\x00', '\x00', '\x00', '\x00', '\xe3', '\x0f', '\x00', '\x87', '\xff', '\xff', '\x0f', '\x40', '\xe2',
-		'\xe0', '\x07', '\x00', '\xfc', '\x00', '\x80', '\x1f', '\x00', '\x00', '\x0f', '\x07', '\x00', '\x00', '\x00', '\xb0', '\x50',
-		'\x00', '\x0f', '\x07', '\x00', '\x00', '\x00', '\xb0', '\x50', '\x00', '\x0f', '\x07', '\x00', '\x00', '\x00', '\xb0', '\x50'
-	};
+	std::vector<SASS::Instruction *> linearProgram;
+	for (const auto block : function->GetBasicBlocks())
+	{
+		// Insert instructions from the basic block
 
-	auto binary = ::operator new(sizeof(text));
-	std::memcpy(binary, text, sizeof(text));
+		const auto& instructions = block->GetInstructions();
+		linearProgram.insert(std::end(linearProgram), std::begin(instructions), std::end(instructions));
 
-	binaryFunction->SetRegisters(7);
-	binaryFunction->SetText((char *)binary, sizeof(text));
+		// Keep track of the start address to resolve branches
 
-	// 1. Sequence basic blocks, create linear sequence of instructions
-	// 2. Pad instructions to multiple of 6
-	// 3. Add 1 SCHI instruction for every 3 regular instructions (now padded to multiple of 8)
-	// 4. Resolve branch targets
+		blockIndex.insert({block, blockOffset});
+		blockOffset += instructions.size();
+	}
 
-	std::vector<const SASS::Instruction *> linearProgram;
-	//TODO: Assembler pipeline
+	// Insert self-loop
+
+	auto selfBlock = new SASS::BasicBlock("_END");
+	auto selfBranch = new SASS::BRAInstruction(selfBlock);
+	selfBranch->SetScheduling(15, true, 7, 7, 0, 0);
+
+	linearProgram.push_back(selfBranch);
+	blockIndex.insert({selfBlock, blockOffset++});
+
+	// Padding to multiple of 6
+
+	const auto PAD_SIZE = 6u;
+	const auto pad = PAD_SIZE - (linearProgram.size() % PAD_SIZE);
+
+	for (auto i = 0u; i < pad; i++)
+	{
+		// Insert NOPs with scheduling directive:
+		//   0000 000000 111 111 0 0000
+
+		auto nop = new SASS::NOPInstruction();
+		nop->SetScheduling(0, false, 7, 7, 0, 0);
+		linearProgram.push_back(nop);
+	}
+
+	// Construct SCHI instructions
+
+	for (auto i = 0u; i < linearProgram.size(); i += 4)
+	{
+		auto inst1 = linearProgram.at(i);
+		auto inst2 = linearProgram.at(i+1);
+		auto inst3 = linearProgram.at(i+2);
+
+		std::uint64_t assembled = 0u;
+		assembled <<= 1;
+		assembled |= inst3->GetScheduling().GenCode();
+		assembled <<= 21;
+		assembled |= inst2->GetScheduling().GenCode();
+		assembled <<= 21;
+		assembled |= inst1->GetScheduling().GenCode();
+
+		linearProgram.insert(std::begin(linearProgram) + i, new SASS::SCHIInstruction(assembled));
+	}
+
+	// Resolve branches and collect special instructions for Nvidia ELF
+
+	for (auto i = 0u; i < linearProgram.size(); ++i)
+	{
+		auto instruction = linearProgram.at(i);
+		if (auto branchInstruction = dynamic_cast<SASS::BRAInstruction *>(instruction))
+		{
+			auto unpaddedIndex = blockIndex.at(branchInstruction->GetTarget());
+			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+
+			branchInstruction->SetTargetAddress(
+				paddedIndex * sizeof(std::uint64_t),
+				i * sizeof(std::uint64_t)
+			);
+		}
+		else if (auto exitInstruction = dynamic_cast<SASS::EXITInstruction *>(instruction))
+		{
+			binaryFunction->AddExitOffset(i * sizeof(std::uint64_t));
+		}
+		else if (auto s2rInstruction = dynamic_cast<SASS::S2RInstruction *>(instruction))
+		{
+			if (s2rInstruction->GetSource()->GetKind() == SASS::SpecialRegister::Kind::SR_CTAID_X)
+			{
+				binaryFunction->AddS2RCTAIDOffset(i * sizeof(std::uint64_t));
+			}
+		}
+	}
+
+	// Print assembled program with address and binary format
+
+	//TODO: Print function metadata
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_sass))
+	{
+		Utils::Logger::LogInfo("Assembled SASS program");
+		for (auto i = 0u; i < linearProgram.size(); ++i)
+		{
+			auto instruction = linearProgram.at(i);
+
+			auto address = "/* " + Utils::Format::HexString(i * sizeof(std::uint64_t), 4) + " */    ";
+			auto mnemonic = instruction->ToString();
+			auto binary = "/* " + Utils::Format::HexString(instruction->ToBinary(), 16) + " */";
+
+			std::string spacing(40 - mnemonic.length(), ' ');
+			Utils::Logger::LogInfo(address + mnemonic + spacing + binary, 0, true, Utils::Logger::NoPrefix);
+		}
+	}
+
+	// Assemble into binary
+
+	auto binary = new std::uint64_t[linearProgram.size()];
+	for (auto i = 0u; i < linearProgram.size(); ++i)
+	{
+		binary[i] = linearProgram.at(i)->ToBinary();
+	}
+	binaryFunction->SetText((char *)binary, sizeof(std::uint64_t) * linearProgram.size());
+	binaryFunction->SetRegisters(function->GetRegisters());
 
 	return binaryFunction;
 }
