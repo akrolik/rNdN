@@ -10,6 +10,9 @@ namespace SASS {
 class Program : public Node
 {
 public:
+	unsigned int GetComputeCapability() const { return m_computeCapability; }
+	void SetComputeCapability(unsigned int computeCapability) { m_computeCapability = computeCapability; }
+
 	void AddFunction(Function *function) { m_functions.push_back(function); }
 	const std::vector<Function *>& GetFunctions() const { return m_functions; }
 
@@ -32,6 +35,7 @@ public:
 	}
 
 private:
+	unsigned int m_computeCapability = 0;
 	std::vector<Function *> m_functions;
 };
 

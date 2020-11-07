@@ -41,17 +41,12 @@ public:
 		std::uint32_t GenCode() const
 		{
 			std::uint32_t code = 0u;
-			code |= m_reuse;
-			code <<= 6;
-			code |= m_waitBarriers;
-			code <<= 3;
-			code |= m_readBarrier;
-			code <<= 3;
-			code |= m_writeBarrier;
-			code <<= 1;
-			code |= m_yield;
-			code <<= 4;
-			code |= m_stall;
+			code |= (m_reuse        << 17);
+			code |= (m_waitBarriers << 11);
+			code |= (m_readBarrier  << 8);
+			code |= (m_writeBarrier << 5);
+			code |= (m_yield        << 4);
+			code |= (m_stall        << 0);
 			return code;
 		}
 
@@ -67,9 +62,7 @@ public:
 	Instruction() {}
 	Instruction(const std::vector<const Operand *>& operands) : m_operands(operands) {}
 
-	virtual std::string OpCode() const = 0;
-	virtual std::string OpModifiers() const { return ""; }
-	virtual std::string OperandModifiers(unsigned int index) const { return ""; }
+	// Scheduling
 
 	const SCHI& GetScheduling() const { return m_scheduling; }
 	void SetScheduling(std::uint8_t stall, bool yield, std::uint8_t writeBarrier, std::uint8_t readBarrier, std::uint8_t waitBarriers, std::uint8_t reuse)
@@ -77,26 +70,33 @@ public:
 		m_scheduling.SetScheduling(stall, yield, writeBarrier, readBarrier, waitBarriers, reuse);
 	}
 
+	// Formatting
+
+	virtual std::string OpCode() const = 0;
+	virtual std::string OpModifiers() const { return ""; }
+	virtual std::string Operands() const { return ""; }
+
 	std::string ToString() const override
 	{
-		std::string code = OpCode() + OpModifiers();
+		return OpCode() + OpModifiers() + " " + Operands() + ";";
+	}
 
-		auto index = 0u;
-		for (const auto& operand : m_operands)
-		{
-			if (index == 0)
-			{
-				code += " ";
-			}
-			else
-			{
-				code += ", ";
-			}
-			code += operand->ToString();
-			code += OperandModifiers(index++);
-		}
+	// Binary
 
-		return code + " ;";
+	virtual std::uint64_t BinaryOpCode() const = 0;
+	virtual std::uint64_t BinaryOpModifiers() const { return 0; }
+	virtual std::uint64_t BinaryOperands() const { return 0; }
+
+	virtual std::uint64_t ToBinary() const
+	{
+		// All instructions (other than SCHI) have 0x70000 mask
+
+		std::uint64_t code = 0x0;
+		code |= BinaryOpCode();
+		code |= BinaryOpModifiers();
+		code |= 0x70000;
+		code |= BinaryOperands();
+		return code;
 	}
 
 private:

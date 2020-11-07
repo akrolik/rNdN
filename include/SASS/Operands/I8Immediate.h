@@ -1,16 +1,16 @@
 #pragma once
 
-#include "SASS/Operands/Composite.h"
+#include "SASS/Operands/Immediate.h"
+
+#include "Utils/Format.h"
 
 namespace SASS {
 
-class Register : public Composite
+class I8Immediate : public Immediate
 {
 public:
-	constexpr static std::uint8_t ZeroIndex = 255;
+	I8Immediate(std::uint8_t value) : m_value(value) {}
 
-	Register(std::uint8_t value) : m_value(value) {}
-	
 	// Properties
 
 	std::uint8_t GetValue() const { return m_value; }
@@ -20,11 +20,7 @@ public:
 
 	std::string ToString() const override
 	{
-		if (m_value == ZeroIndex)
-		{
-			return "RZ";
-		}
-		return "R" + std::to_string(m_value);
+		return Utils::Format::HexString(m_value);
 	}
 
 	// Binary
@@ -37,7 +33,5 @@ public:
 private:
 	std::uint8_t m_value = 0;
 };
-
-static Register *RZ = new Register(Register::ZeroIndex);
 
 }

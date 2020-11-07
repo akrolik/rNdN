@@ -4,7 +4,7 @@
 
 namespace SASS {
 
-class Immediate : public Composite
+class Composite : public Operand
 {
 
 };

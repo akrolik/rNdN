@@ -1,15 +1,15 @@
 #pragma once
 
-#include "SASS/Operands/Composite.h"
+#include "SASS/Operands/Operand.h"
 
 namespace SASS {
 
-class Register : public Composite
+class Predicate : public Operand
 {
 public:
-	constexpr static std::uint8_t ZeroIndex = 255;
+	constexpr static std::uint8_t TrueIndex = 7;
 
-	Register(std::uint8_t value) : m_value(value) {}
+	Predicate(std::uint8_t value) : m_value(value) {}
 	
 	// Properties
 
@@ -20,11 +20,11 @@ public:
 
 	std::string ToString() const override
 	{
-		if (m_value == ZeroIndex)
+		if (m_value == TrueIndex)
 		{
-			return "RZ";
+			return "PT";
 		}
-		return "R" + std::to_string(m_value);
+		return "P" + std::to_string(m_value);
 	}
 
 	// Binary
@@ -38,6 +38,6 @@ private:
 	std::uint8_t m_value = 0;
 };
 
-static Register *RZ = new Register(Register::ZeroIndex);
+static Predicate *PT = new Predicate(Predicate::TrueIndex);
 
 }
