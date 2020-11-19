@@ -78,7 +78,7 @@ void Manager::InitializeLibraries()
 	auto timer3d3_start = Utils::Chrono::Start("libr3d3 library");
 
 	Assembler assembler(*this);
-	m_library = assembler.Assemble(CUDA::libr3d3::CreateProgram(GetCurrentDevice()), false);
+	m_library = assembler.Assemble(CUDA::libr3d3::CreateProgram(GetCurrentDevice()), true);
 
 	Utils::Chrono::End(timer3d3_start);
 }

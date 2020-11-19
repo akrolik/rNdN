@@ -9,7 +9,7 @@
 namespace Runtime {
 namespace GPU {
 
-const Program *Assembler::Assemble(const PTX::Program *program, bool optimized) const
+const Program *Assembler::Assemble(const PTX::Program *program, bool library) const
 {
 	// Generate the CUDA module for the program with the program
 	// modules and linked external modules (libraries)
@@ -19,38 +19,39 @@ const Program *Assembler::Assemble(const PTX::Program *program, bool optimized) 
 	CUDA::Module cModule;
 	for (const auto& module : program->GetModules())
 	{
-		//TODO: Only use the optimized assembler for the core computation, not libraries
-		if (optimized == false)
+		if (library)
 		{
-			goto test;
+			cModule.AddPTXModule(module->ToString(0));
 		}
-		switch (Utils::Options::GetBackendKind())
+		else
 		{
-			case Utils::Options::BackendKind::ptxas:
+			switch (Utils::Options::GetBackendKind())
 			{
-test:
-				cModule.AddPTXModule(module->ToString(0));
-				break;
-			}
-			case Utils::Options::BackendKind::r3d3:
-			{
-				auto& device = m_gpuManager.GetCurrentDevice();
-				auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
-
-				if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
+				case Utils::Options::BackendKind::ptxas:
 				{
-					Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
+					cModule.AddPTXModule(module->ToString(0));
+					break;
 				}
+				case Utils::Options::BackendKind::r3d3:
+				{
+					auto& device = m_gpuManager.GetCurrentDevice();
+					auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
 
-				BackendCompiler compiler(m_gpuManager);
-				auto sassProgram = compiler.Compile(program);
-				sassProgram->SetComputeCapability(compute);
+					if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
+					{
+						Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
+					}
 
-				::Assembler::Assembler assembler;
-				auto binary = assembler.Assemble(sassProgram);
+					BackendCompiler compiler(m_gpuManager);
+					auto sassProgram = compiler.Compile(program);
+					sassProgram->SetComputeCapability(compute);
 
-				cModule.AddELFModule(*binary);
-				break;
+					::Assembler::Assembler assembler;
+					auto binary = assembler.Assemble(sassProgram);
+
+					cModule.AddELFModule(*binary);
+					break;
+				}
 			}
 		}
 	}
