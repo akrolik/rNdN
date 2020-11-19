@@ -18,6 +18,7 @@ namespace SASS {
 // Instructions
 
 #include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 #include "SASS/Instructions/SCHIInstruction.h"
 
 #include "SASS/Instructions/Control/BRAInstruction.h"

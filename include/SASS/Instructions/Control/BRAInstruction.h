@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BasicBlock.h"
 #include "SASS/BinaryUtils.h"
@@ -9,7 +9,7 @@
 
 namespace SASS {
 
-class BRAInstruction : public Instruction
+class BRAInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {

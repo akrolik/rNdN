@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Composite.h"
@@ -9,7 +9,7 @@
 
 namespace SASS {
 
-class SHFLInstruction : public Instruction
+class SHFLInstruction : public PredicatedInstruction
 {
 public:
 	enum class ShuffleOperator : std::uint64_t {
@@ -20,7 +20,7 @@ public:
 	};
 
 	SHFLInstruction(const Predicate *destinationA, const Register *destinationB, const Register *sourceA, const Composite *sourceB, const Composite *sourceC, ShuffleOperator shuffleOp)
-		: Instruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_shuffleOp(shuffleOp) {}
+		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_shuffleOp(shuffleOp) {}
 
 	// Properties
 

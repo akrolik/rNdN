@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Address.h"
@@ -8,7 +8,7 @@
 
 namespace SASS {
 
-class LDGInstruction : public Instruction
+class LDGInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -36,7 +36,7 @@ public:
 	};
 
 	LDGInstruction(const Register *destination, const Address *source, Type type, Cache cache = Cache::None, Flags flags = Flags::None)
-		: Instruction({destination, source}), m_destination(destination), m_source(source), m_type(type), m_cache(cache), m_flags(flags) {}
+		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_type(type), m_cache(cache), m_flags(flags) {}
 
 	// Properties
 

@@ -89,12 +89,9 @@ public:
 
 	virtual std::uint64_t ToBinary() const
 	{
-		// All instructions (other than SCHI) have 0x70000 mask
-
 		std::uint64_t code = 0x0;
 		code |= BinaryOpCode();
 		code |= BinaryOpModifiers();
-		code |= 0x70000;
 		code |= BinaryOperands();
 		return code;
 	}

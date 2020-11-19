@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Address.h"
@@ -8,7 +8,7 @@
 
 namespace SASS {
 
-class STGInstruction : public Instruction
+class STGInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -35,7 +35,8 @@ public:
 		I128 = 0x0006000000000000
 	};
 
-	STGInstruction(const Address *destination, const Register *source, Type type, Cache cache = Cache::None, Flags flags = Flags::None) : Instruction({destination, source}), m_destination(destination), m_source(source), m_type(type), m_cache(cache), m_flags(flags) {}
+	STGInstruction(const Address *destination, const Register *source, Type type, Cache cache = Cache::None, Flags flags = Flags::None)
+		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_type(type), m_cache(cache), m_flags(flags) {}
 
 	// Properties
 

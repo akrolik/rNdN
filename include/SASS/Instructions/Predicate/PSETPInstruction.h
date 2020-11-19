@@ -1,13 +1,13 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Predicate.h"
 
 namespace SASS {
 
-class PSETPInstruction : public Instruction
+class PSETPInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -32,7 +32,7 @@ public:
 	};
 
 	PSETPInstruction(const Predicate *destinationA, const Predicate *destinationB, const Predicate *sourceA, const Predicate *sourceB, const Predicate *sourceC, BooleanOperator1 booleanOperator1, BooleanOperator2 booleanOperator2, Flags flags = Flags::None)
-		: Instruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_booleanOperator1(booleanOperator), m_booleanOperator2(booleanOperator2), m_flags(flags) {}
+		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_booleanOperator1(booleanOperator), m_booleanOperator2(booleanOperator2), m_flags(flags) {}
 
 	// Properties
 

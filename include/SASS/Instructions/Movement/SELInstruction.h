@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Composite.h"
@@ -9,7 +9,7 @@
 
 namespace SASS {
 
-class SELInstruction : public Instruction
+class SELInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -21,7 +21,7 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	SELInstruction(const Register *destination, const Register *sourceA, const Composite *sourceB, const Predicate *sourceC, Flags flags = Flags::None)
-		: Instruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_flags(flags) {}
+		: PredicatedInstruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_flags(flags) {}
 
 	// Properties
 

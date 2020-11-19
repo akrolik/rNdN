@@ -1,13 +1,13 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Register.h"
 
 namespace SASS {
 
-class MUFUInstruction : public Instruction
+class MUFUInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -29,7 +29,7 @@ public:
 	};
 
 	MUFUInstruction(const Register *destination, const Register *source, Function function, Flags flags = Flags::None)
-		: Instruction({destination, source}), m_destination(destination), m_source(source), m_function(function), m_flags(flags) {}
+		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_function(function), m_flags(flags) {}
 
 	// Properties
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Composite.h"
@@ -8,7 +8,7 @@
 
 namespace SASS {
 
-class XMADInstruction : public Instruction
+class XMADInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -44,7 +44,7 @@ public:
 	};
 
 	XMADInstruction(const Register *destination, const Register *sourceA, const Composite *sourceB, const Register *sourceC, Mode mode = Mode::None, Flags flags = Flags::None, Type1 type1 = Type1::U16, Type2 type2 = Type2::U16)
-		: Instruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_mode(mode), m_type1(type1), m_type2(type2), m_flags(flags) {}
+		: PredicatedInstruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_mode(mode), m_type1(type1), m_type2(type2), m_flags(flags) {}
 
 	// Properties
 

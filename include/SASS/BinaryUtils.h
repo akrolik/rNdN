@@ -76,6 +76,8 @@ public:
 
 	// Preciates
 
+	static std::uint64_t InstructionPredicate(const Predicate *value) { return Format(value->ToBinary(), 16, 0x7); }
+
 	static std::uint64_t OperandPredicate0(const Predicate *value) { return Format(value->ToBinary(), 0, 0x7); }
 	static std::uint64_t OperandPredicate3(const Predicate *value) { return Format(value->ToBinary(), 3, 0x7); }
 	static std::uint64_t OperandPredicate12(const Predicate *value) { return Format(value->ToBinary(), 12, 0x7); }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Composite.h"
@@ -8,7 +8,7 @@
 
 namespace SASS {
 
-class IADD3Instruction : public Instruction
+class IADD3Instruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -35,7 +35,7 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	IADD3Instruction(const Register *destination, const Register *sourceA, const Composite *sourceB, const Register *sourceC, Flags flags = Flags::None)
-		: Instruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_flags(flags) {}
+		: PredicatedInstruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_flags(flags) {}
 
 	// Properties
 

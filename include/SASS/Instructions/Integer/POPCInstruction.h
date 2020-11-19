@@ -1,17 +1,17 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Register.h"
 
 namespace SASS {
 
-class POPCInstruction : public Instruction
+class POPCInstruction : public PredicatedInstruction
 {
 public:
 	POPCInstruction(const Register *destination, const Register *source)
-		: Instruction({destination, source}), m_destination(destination), m_source(source) {}
+		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source) {}
 
 	// Properties
 

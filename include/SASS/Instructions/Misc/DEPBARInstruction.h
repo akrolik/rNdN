@@ -1,13 +1,13 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/I8Immediate.h"
 
 namespace SASS {
 
-class DEPBARInstruction : public Instruction
+class DEPBARInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {

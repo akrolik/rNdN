@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Operand.h"
@@ -8,7 +8,7 @@
 
 namespace SASS {
 
-class MOVInstruction : public Instruction
+class MOVInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -19,7 +19,7 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	MOVInstruction(const Register *destination, const Composite *source, Flags flags = Flags::None)
-		: Instruction({destination, source}), m_destination(destination), m_source(source), m_flags(flags) {}
+		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_flags(flags) {}
 
 	// Properties
 

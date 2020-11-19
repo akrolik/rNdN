@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 #include "SASS/BinaryUtils.h"
 #include "SASS/Operands/Register.h"
@@ -8,11 +8,11 @@
 
 namespace SASS {
 
-class S2RInstruction : public Instruction
+class S2RInstruction : public PredicatedInstruction
 {
 public:
 	S2RInstruction(const Register *destination, const SpecialRegister *source)
-		: Instruction({destination, source}), m_destination(destination), m_source(source) {}
+		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source) {}
 
 	// Properties
 	

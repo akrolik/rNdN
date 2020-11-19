@@ -1,10 +1,10 @@
 #pragma once
 
-#include "SASS/Instructions/Instruction.h"
+#include "SASS/Instructions/PredicatedInstruction.h"
 
 namespace SASS {
 
-class SYNCInstruction : public Instruction
+class SYNCInstruction : public PredicatedInstruction
 {
 public:
 	// Formatting
