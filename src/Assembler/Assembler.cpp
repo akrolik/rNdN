@@ -141,7 +141,21 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 				binaryFunction->AddS2RCTAIDOffset(i * sizeof(std::uint64_t));
 			}
 		}
+		else if (auto coopInstruction = dynamic_cast<SASS::SHFLInstruction *>(instruction))
+		{
+			binaryFunction->AddCoopOffset(i * sizeof(std::uint64_t));
+		}
 	}
+
+	// Assemble into binary
+
+	auto binary = new std::uint64_t[linearProgram.size()];
+	for (auto i = 0u; i < linearProgram.size(); ++i)
+	{
+		binary[i] = linearProgram.at(i)->ToBinary();
+	}
+	binaryFunction->SetText((char *)binary, sizeof(std::uint64_t) * linearProgram.size());
+	binaryFunction->SetRegisters(function->GetRegisters());
 
 	// Print assembled program with address and binary format
 
@@ -161,16 +175,6 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 			Utils::Logger::LogInfo(address + mnemonic + spacing + binary, 0, true, Utils::Logger::NoPrefix);
 		}
 	}
-
-	// Assemble into binary
-
-	auto binary = new std::uint64_t[linearProgram.size()];
-	for (auto i = 0u; i < linearProgram.size(); ++i)
-	{
-		binary[i] = linearProgram.at(i)->ToBinary();
-	}
-	binaryFunction->SetText((char *)binary, sizeof(std::uint64_t) * linearProgram.size());
-	binaryFunction->SetRegisters(function->GetRegisters());
 
 	return binaryFunction;
 }

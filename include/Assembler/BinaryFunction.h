@@ -51,6 +51,12 @@ public:
 	const std::vector<std::size_t>& GetExitOffsets() const { return m_exitOffsets; }
 	std::size_t GetExitOffsetsCount() const { return m_exitOffsets.size(); }
 
+	// Coop offsets
+
+	void AddCoopOffset(std::size_t coopOffset) { m_coopOffsets.push_back(coopOffset); }
+	const std::vector<std::size_t>& GetCoopOffsets() const { return m_coopOffsets; }
+	std::size_t GetCoopOffsetsCount() const { return m_coopOffsets.size(); }
+
 private:
 	std::string m_name;
 	std::size_t m_registers = 0;
@@ -63,6 +69,7 @@ private:
 
 	std::vector<std::size_t> m_ctaOffsets;
 	std::vector<std::size_t> m_exitOffsets;
+	std::vector<std::size_t> m_coopOffsets;
 };
 
 }

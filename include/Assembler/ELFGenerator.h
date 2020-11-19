@@ -21,7 +21,8 @@ public:
 		EIATTR_KPARAM_INFO             = 0x17,
 		EIATTR_MAXREG_COUNT            = 0x1b,
 		EIATTR_S2RCTAID_INSTR_OFFSETS  = 0x1d,
-		EIATTR_EXIT_INSTR_OFFSETS      = 0x1c
+		EIATTR_EXIT_INSTR_OFFSETS      = 0x1c,
+		EIATTR_COOP_GROUP_INSTR_OFFSETS = 0x28
 	};
 
 	enum class Type : char {

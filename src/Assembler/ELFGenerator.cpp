@@ -327,6 +327,28 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			}
 		}
 
+		if (function->GetCoopOffsetsCount() > 0)
+		{
+			// EIATTR_COOP_GROUP_INSTR_OFFSETS
+			//     Format: EIFMT_SVAL
+			//     Value:  0x10
+			//
+			//     /*0000*/        .byte   0x04, 0x28
+			//     /*0000*/        .short  (.L_2 - .L_1)
+			// .L_1:
+			//     /*0004*/        .word   0x00000010
+			// .L_2
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_COOP_GROUP_INSTR_OFFSETS});
+			AppendBytes(functionInfoBuffer, DecomposeShort(function->GetCoopOffsetsCount() * SZ_WORD)); // Size
+
+			for (const auto& coopOffset : function->GetCoopOffsets())
+			{
+				AppendBytes(functionInfoBuffer, DecomposeWord(coopOffset));
+			}
+		}
+
 		functionInfoSection->set_data(functionInfoBuffer.data(), functionInfoBuffer.size());
 
 		// Add constant data section:
