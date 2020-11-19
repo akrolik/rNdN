@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "Libraries/elfio/elfio.hpp"
+#include "Libraries/elfio/elfio_dump.hpp"
 #include "Libraries/wmemstreambuf.hpp"
 
 #include "Utils/Chrono.h"
@@ -309,12 +310,12 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		{
 			// EIATTR_EXIT_INSTR_OFFSETS
 			//     Format: EIFMT_SVAL
-			//     Value:  0x90
+			//     Value:  0x10
 			//
 			//     /*0000*/        .byte   0x04, 0x1c
 			//     /*0002*/        .short  (.L_2 - .L_1)
 			// .L_1:
-			//     /*0004*/        .word   0x00000090
+			//     /*0004*/        .word   0x00000010
 			// .L_2:
 
 			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
@@ -405,6 +406,23 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	// Set full info, contains data for all functions
 
 	infoSection->set_data(infoBuffer.data(), infoBuffer.size());
+
+	// Print ELF information
+
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_elf))
+	{
+		Utils::Logger::LogInfo("Asembled ELF file");
+
+		ELFIO::dump::header(std::cout, writer);
+		ELFIO::dump::section_headers(std::cout, writer);
+		ELFIO::dump::segment_headers(std::cout, writer);
+		ELFIO::dump::symbol_tables(std::cout, writer);
+		ELFIO::dump::notes(std::cout, writer);
+		ELFIO::dump::modinfo(std::cout, writer);
+		ELFIO::dump::dynamic_tags(std::cout, writer);
+		ELFIO::dump::section_datas(std::cout, writer);
+		ELFIO::dump::segment_datas(std::cout, writer);
+	}
 
 	// Output ELF binary to memory, copying data
 

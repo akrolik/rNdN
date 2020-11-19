@@ -34,7 +34,6 @@ SASS::Program *BackendCompiler::Compile(const PTX::Program *program) const
 
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_sass))
 	{
-		//TODO: Add function metadata to SASS dump
 		Utils::Logger::LogInfo("Generated SASS program");
 		Utils::Logger::LogInfo(sassProgram->ToString(), 0, true, Utils::Logger::NoPrefix);
 	}

@@ -31,7 +31,24 @@ public:
 
 	std::string ToString() const override
 	{
-		std::string code = ".text." + m_name + ":\n";
+		std::string code = "// " + m_name + "\n";
+		if (m_parameters.size() > 0)
+		{
+			code += "//  - Parameters (bytes): ";
+			auto first = true;
+			for (const auto parameter : m_parameters)
+			{
+				if (!first)
+				{
+					code += ", ";
+				}
+				first = false;
+				code += std::to_string(parameter);
+			}
+			code += "\n";
+		}
+		code += "//  - Registers: " + std::to_string(m_registers) + "\n";
+		code += ".text." + m_name + ":\n";
 		for (const auto& block : m_blocks)
 		{
 			code += block->ToString();

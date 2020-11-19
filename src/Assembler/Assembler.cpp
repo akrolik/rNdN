@@ -28,6 +28,12 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 
 	auto binaryProgram = new BinaryProgram();
 	binaryProgram->SetComputeCapability(program->GetComputeCapability());
+
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_assembled))
+	{
+		Utils::Logger::LogInfo("Assembled SASS program: sm_" + std::to_string(binaryProgram->GetComputeCapability()));
+	}
+
 	for (const auto& function : program->GetFunctions())
 	{
 		binaryProgram->AddFunction(AssembleFunction(function));
@@ -159,10 +165,78 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 
 	// Print assembled program with address and binary format
 
-	//TODO: Print function metadata
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_sass))
+	//TODO: Print compute capability for program
+	if (Utils::Options::Get<>(Utils::Options::Opt_Print_assembled))
 	{
-		Utils::Logger::LogInfo("Assembled SASS program");
+		Utils::Logger::LogInfo("Assembled SASS function: " + binaryFunction->GetName());
+
+		// Metadata memory formatting
+
+		if (binaryFunction->GetParametersCount() > 0)
+		{
+			std::string metadata = " - Parameters (bytes): ";
+			auto first = true;
+			for (const auto parameter : binaryFunction->GetParameters())
+			{
+				if (!first)
+				{
+					metadata += ", ";
+				}
+				first = false;
+				metadata += std::to_string(parameter);
+			}
+			Utils::Logger::LogInfo(metadata);
+		}
+		Utils::Logger::LogInfo(" - Registers: " + std::to_string(binaryFunction->GetRegisters()));
+
+		// Metadata offsets formatting
+
+		if (binaryFunction->GetS2RCTAIDOffsetsCount() > 0)
+		{
+			std::string metadata = " - S2RCTAID Offsets: ";
+			auto first = true;
+			for (const auto offset : binaryFunction->GetS2RCTAIDOffsets())
+			{
+				if (!first)
+				{
+					metadata += ", ";
+				}
+				first = false;
+				metadata += Utils::Format::HexString(offset, 4);
+			}
+			Utils::Logger::LogInfo(metadata);
+		}
+		if (binaryFunction->GetExitOffsetsCount() > 0)
+		{
+			std::string metadata = " - Exit Offsets: ";
+			auto first = true;
+			for (const auto offset : binaryFunction->GetExitOffsets())
+			{
+				if (!first)
+				{
+					metadata += ", ";
+				}
+				first = false;
+				metadata += Utils::Format::HexString(offset, 4);
+			}
+			Utils::Logger::LogInfo(metadata);
+		}
+		if (binaryFunction->GetCoopOffsetsCount() > 0)
+		{
+			std::string metadata = " - Coop Offsets: ";
+			auto first = true;
+			for (const auto offset : binaryFunction->GetCoopOffsets())
+			{
+				if (!first)
+				{
+					metadata += ", ";
+				}
+				first = false;
+				metadata += Utils::Format::HexString(offset, 4);
+			}
+			Utils::Logger::LogInfo(metadata);
+		}
+
 		for (auto i = 0u; i < linearProgram.size(); ++i)
 		{
 			auto instruction = linearProgram.at(i);

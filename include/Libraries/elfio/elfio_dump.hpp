@@ -28,7 +28,7 @@ THE SOFTWARE.
 #include <ostream>
 #include <sstream>
 #include <iomanip>
-#include <elfio/elfio.hpp>
+#include "Libraries/elfio/elfio.hpp"
 
 namespace ELFIO {
 

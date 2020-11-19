@@ -24,6 +24,8 @@ public:
 	static constexpr char const *Opt_Print_ptx = "print-ptx";
 	static constexpr char const *Opt_Print_json = "print-json";
 	static constexpr char const *Opt_Print_sass = "print-sass";
+	static constexpr char const *Opt_Print_assembled = "print-assembled";
+	static constexpr char const *Opt_Print_elf = "print-elf";
 	static constexpr char const *Opt_Print_time = "print-time";
 
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
@@ -247,6 +249,8 @@ private:
 			(Opt_Print_ptx, "Print generated PTX code")
 			(Opt_Print_json, "Print generated PTX JSON")
 			(Opt_Print_sass, "Print generated SASS code")
+			(Opt_Print_assembled, "Print assembled SASS code")
+			(Opt_Print_elf, "Print generated ELF file")
 			(Opt_Print_time, "Print timings")
 		;
 		m_options.add_options("Optimization")
