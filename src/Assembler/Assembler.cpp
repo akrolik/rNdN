@@ -165,7 +165,6 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 
 	// Print assembled program with address and binary format
 
-	//TODO: Print compute capability for program
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_assembled))
 	{
 		Utils::Logger::LogInfo("Assembled SASS function: " + binaryFunction->GetName());

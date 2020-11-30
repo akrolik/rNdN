@@ -22,6 +22,7 @@ public:
 	{
 		//TODO: Float string
 		// return Utils::Format::HexString(m_value);
+		return "";
 	}
 
 	// Binary
@@ -30,6 +31,7 @@ public:
 	{
 		//TODO: Float to binary
 		// return m_value;
+		return 0;
 	}
 
 private:

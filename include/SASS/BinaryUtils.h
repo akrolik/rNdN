@@ -37,6 +37,10 @@ public:
 		{
 			return (opCode & 0xefffffffffffffff);
 		}
+		else if (dynamic_cast<const Immediate *>(operand))
+		{
+			//TODO: Immediate op code
+		}
 		return opCode;
 	}
 
