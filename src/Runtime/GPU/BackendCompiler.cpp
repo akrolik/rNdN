@@ -2,6 +2,8 @@
 
 #include "Backend/CodeGenerator.h"
 
+#include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
@@ -13,19 +15,19 @@ SASS::Program *BackendCompiler::Compile(const PTX::Program *program) const
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Backend codegen");
 
-	// Generate 64-bit PTX code from the input HorseIR for the current device
+	// Allocate registers
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_sass))
-	{
-		Utils::Logger::LogSection("Generating SASS program");
-	}
+	PTX::Analysis::VirtualRegisterAllocator allocator;
+	allocator.Analyze(program);
 
-	// Generate the program
+	auto allocations = allocator.GetRegisterAllocations();
+
+	// Generate SASS code from 64-bit PTX code
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS generation");
 
 	Backend::CodeGenerator backend;
-	auto sassProgram = backend.Generate(program);
+	auto sassProgram = backend.Generate(program, allocations);
 
 	Utils::Chrono::End(timeSASS_start);
 	Utils::Chrono::End(timeCodegen_start);
