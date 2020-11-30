@@ -2,7 +2,7 @@
 
 #include "PTX/Traversal/ConstHierarchicalVisitor.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
 
 #include "SASS/SASS.h"

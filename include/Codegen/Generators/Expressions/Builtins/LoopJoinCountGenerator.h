@@ -15,7 +15,7 @@
 #include "HorseIR/Utils/PrettyPrinter.h"
 #include "HorseIR/Utils/TypeUtils.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

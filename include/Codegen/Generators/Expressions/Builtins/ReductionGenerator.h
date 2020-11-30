@@ -19,7 +19,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Utils/Math.h"
 

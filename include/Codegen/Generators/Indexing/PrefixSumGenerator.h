@@ -11,7 +11,7 @@
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 #include "Codegen/Generators/Synchronization/BarrierGenerator.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

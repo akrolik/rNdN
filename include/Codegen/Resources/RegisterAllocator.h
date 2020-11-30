@@ -4,7 +4,7 @@
 
 #include "Codegen/Resources/RegisterResources.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Utils/Logger.h"
 

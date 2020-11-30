@@ -4,7 +4,7 @@
 
 #include "Codegen/Resources/ModuleResources.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

@@ -18,7 +18,7 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/LiteralUtils.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

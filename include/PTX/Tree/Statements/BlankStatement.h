@@ -1,0 +1,33 @@
+#pragma once
+
+#include "PTX/Tree/Statements/Statement.h"
+
+namespace PTX {
+
+class BlankStatement : public Statement
+{
+public:
+	BlankStatement() {}
+
+	std::string ToString(unsigned int indentation) const override
+	{
+		return "";
+	}
+
+	json ToJSON() const override
+	{
+		json j;
+		j["kind"] = "PTX::BlankStatement";
+		return j;
+	}
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+};
+
+}

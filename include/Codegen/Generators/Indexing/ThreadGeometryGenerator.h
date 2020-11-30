@@ -9,7 +9,7 @@
 #include "HorseIR/Analysis/Shape/Shape.h"
 #include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

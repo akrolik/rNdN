@@ -49,7 +49,7 @@
 #include "Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

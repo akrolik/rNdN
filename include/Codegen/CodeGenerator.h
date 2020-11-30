@@ -12,7 +12,7 @@
 #include "HorseIR/Analysis/Shape/ShapeUtils.h"
 #include "HorseIR/Tree/Tree.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Utils/Logger.h"
 

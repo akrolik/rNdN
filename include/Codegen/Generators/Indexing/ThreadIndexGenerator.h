@@ -6,7 +6,7 @@
 #include "Codegen/Generators/Indexing/SpecialRegisterGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

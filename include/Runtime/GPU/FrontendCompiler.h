@@ -1,7 +1,7 @@
 #pragma once
 
 #include "HorseIR/Tree/Tree.h"
-#include "PTX/Program.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Runtime/GPU/Manager.h"
 

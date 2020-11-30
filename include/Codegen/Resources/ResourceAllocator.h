@@ -8,7 +8,7 @@
 
 #include "Codegen/Resources/Resources.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

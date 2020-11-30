@@ -2,7 +2,7 @@
 
 #include "Codegen/Generators/Generator.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

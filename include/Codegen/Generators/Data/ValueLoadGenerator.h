@@ -8,7 +8,7 @@
 #include "Codegen/Generators/Expressions/ConversionGenerator.h"
 #include "Codegen/Generators/Indexing/AddressGenerator.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

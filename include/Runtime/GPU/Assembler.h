@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Program.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Runtime/GPU/Manager.h"
 #include "Runtime/GPU/Program.h"

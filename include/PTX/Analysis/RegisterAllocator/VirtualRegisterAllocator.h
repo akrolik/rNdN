@@ -4,8 +4,8 @@
 
 #include <unordered_map>
 
-#include "PTX/PTX.h"
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
+#include "PTX/Tree/Tree.h"
 
 namespace PTX {
 namespace Analysis {

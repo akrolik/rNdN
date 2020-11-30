@@ -15,7 +15,7 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Runtime/RuntimeUtils.h"
 

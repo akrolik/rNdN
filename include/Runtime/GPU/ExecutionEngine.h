@@ -9,7 +9,7 @@
 #include "CUDA/Constant.h"
 #include "CUDA/KernelInvocation.h"
 
-#include "PTX/FunctionOptions.h"
+#include "PTX/Tree/Tree.h"
 
 #include "Runtime/Runtime.h"
 #include "Runtime/DataBuffers/DataBuffer.h"

@@ -8,7 +8,7 @@
 #include "Codegen/Generators/Indexing/ThreadGeometryGenerator.h"
 #include "Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Codegen {
 

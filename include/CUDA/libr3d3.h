@@ -4,7 +4,7 @@
 
 #include "CUDA/Device.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace CUDA {
 

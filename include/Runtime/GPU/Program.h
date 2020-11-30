@@ -5,7 +5,7 @@
 #include "CUDA/Kernel.h"
 #include "CUDA/Module.h"
 
-#include "PTX/PTX.h"
+#include "PTX/Tree/Tree.h"
 
 namespace Runtime {
 namespace GPU {
