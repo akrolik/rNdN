@@ -30,8 +30,7 @@ public:
 
 	std::uint64_t ToBinary() const override
 	{
-		//TODO: Bank
-		return (m_address / sizeof(std::uint32_t));
+		return (m_bank << 19) + (m_address / sizeof(std::uint32_t));
 	}
 private:
 	std::uint32_t m_bank = 0;

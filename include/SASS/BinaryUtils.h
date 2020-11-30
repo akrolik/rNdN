@@ -60,7 +60,7 @@ public:
 
 	// Immediates
 
-	static std::uint64_t OperandComposite(const Composite *value) { return Format(value->ToBinary(), 20, 0x7ffff); }
+	static std::uint64_t OperandComposite(const Composite *value) { return Format(value->ToBinary(), 20, 0xffffff); }
 
 	static std::uint64_t OperandLiteral20W6(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0x3f); }
 	static std::uint64_t OperandLiteral20W8(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0xff); }
