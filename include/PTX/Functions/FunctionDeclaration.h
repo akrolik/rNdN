@@ -12,6 +12,8 @@
 
 namespace PTX {
 
+class VoidType;
+
 template<class R>
 class FunctionDeclaration : public FunctionDeclarationBase<R>
 {
@@ -33,6 +35,23 @@ public:
 			j["parameters"].push_back(parameter->ToJSON());
 		}
 		return j;
+	}
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			if (visitor.VisitIn(this))
+			{
+				for (const auto& parameter : m_parameters)
+				{
+					parameter->Accept(visitor);
+				}
+			}
+			visitor.VisitOut(this);
+		}
 	}
 
 protected:
@@ -88,6 +107,25 @@ public:
 			j["parameters"].push_back(parameter->ToJSON());
 		}
 		return j;
+	}
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			if (visitor.VisitIn(this))
+			{
+				std::vector<const Declaration *> parameters;
+				ExpandTuple(parameters, m_parameters, int_<sizeof...(Args)>());
+				for (const auto& parameter : parameters)
+				{
+					parameter->Accept(visitor);
+				}
+			}
+			visitor.VisitOut(this);
+		}
 	}
 
 protected:

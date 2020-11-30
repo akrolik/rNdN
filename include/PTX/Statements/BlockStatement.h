@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sstream>
-
 #include "PTX/Statements/Statement.h"
 #include "PTX/Statements/StatementList.h"
 #include "PTX/Operands/Variables/Register.h"
@@ -22,6 +20,20 @@ public:
 		j["kind"] = "PTX::BlockStatement";
 		j["statements"] = StatementList::ToJSON();
 		return j;
+	}
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& statement : m_statements)
+			{
+				statement->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
 	}
 };
 

@@ -30,6 +30,14 @@ public:
 		return j;
 	}
 
+	// Visitor
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 private:
 	const FileDirective *m_file = nullptr;
 

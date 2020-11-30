@@ -47,7 +47,12 @@ enum class Bits : int {
 //           FloatType
 //       VectorType<ScalarType, VectorSize>
 
-struct Type { static std::string Name() { return ".<unknown>"; } }; 
+struct Type {
+	static std::string Name() { return ".<unknown>"; }
+
+	// Polymorphism
+	virtual ~Type() = default;
+};
 
 struct VoidType : Type { static std::string Name() { return ""; } };
 

@@ -19,7 +19,7 @@ public:
 	);
 
 	MatchAllInstruction(const Register<Bit32Type> *destination, const TypedOperand<T> *source, uint32_t memberMask) : MatchAllInstruction(destination, nullptr, source, memberMask) {}
-	MatchAllInstruction(const Register<Bit32Type> *destinationD, const Register<PTX::PredicateType> *destinationP, const TypedOperand<T> *source, uint32_t memberMask) : m_destinationD(destinationD), m_destinationP(destinationP), m_source(source), m_memberMask(memberMask) {}
+	MatchAllInstruction(const Register<Bit32Type> *destinationD, const Register<PredicateType> *destinationP, const TypedOperand<T> *source, uint32_t memberMask) : m_destinationD(destinationD), m_destinationP(destinationP), m_source(source), m_memberMask(memberMask) {}
 
 	const Register<Bit32Type> *GetDestinationD() const { return m_destinationD; }
 	void SetDestinationD(const Register<Bit32Type> *destination) { m_destinationD = destination; }

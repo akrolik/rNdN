@@ -20,17 +20,16 @@ class NameSet
 public:
 	NameSet(const std::string& name, unsigned int count = 1) : m_name(name), m_count(count) {}
 
-	virtual std::string GetPrefix() const
+	std::string GetPrefix() const
 	{
 		return m_name;
 	}
 
-	virtual std::string GetName(unsigned int index) const
+	std::string GetName(unsigned int index) const
 	{
 		if (index >= m_count)
 		{
-			std::cerr << "[ERROR] Variable index " << index << " out of bounds" << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("PTX::Variable at index " + std::to_string(index) + " out of bounds in PTX::VariableDeclaration");
 		}
 
 		if (m_count > 1)
@@ -42,8 +41,9 @@ public:
 	}
 
 	void SetCount(unsigned int count) { m_count = count; }
+	unsigned int GetCount() const { return m_count; }
 	
-	virtual std::string ToString() const
+	std::string ToString() const
 	{
 		if (m_count > 1)
 		{
@@ -141,7 +141,22 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	template<class V> bool DispatchIn(V& visitor) const;
+	template<class V, class S> bool DispatchIn(V& visitor) const;
+	template<class V> void DispatchOut(V& visitor) const;
+
 protected:
+	virtual const Type *GetType() const = 0;
+	virtual const StateSpace *GetStateSpace() const = 0;
+
 	std::vector<NameSet *> m_names;
 };
 
@@ -259,7 +274,67 @@ protected:
 		}
 		return code;
 	}
+
+	const T *GetType() const override { return &m_type; }
+	const S *GetStateSpace() const override { return &m_space; }
+
+	T m_type;
+	S m_space;
 };
+
+template<class V>
+bool VariableDeclaration::DispatchIn(V& visitor) const
+{
+#define VD_SpaceDispatch(x) if (dynamic_cast<const x*>(space)) { return DispatchIn<V,x>(visitor); }
+
+	const auto space = GetStateSpace();
+	VD_SpaceDispatch(RegisterSpace);
+	VD_SpaceDispatch(LocalSpace);
+	VD_SpaceDispatch(GlobalSpace);
+	VD_SpaceDispatch(SharedSpace);
+	VD_SpaceDispatch(ConstSpace);
+	VD_SpaceDispatch(ParameterSpace);
+	return true;
+}
+
+template<class V, class S>
+bool VariableDeclaration::DispatchIn(V& visitor) const
+{
+#define VD_TypeDispatch(x) if (dynamic_cast<const x*>(type)) { return visitor.VisitIn(static_cast<const TypedVariableDeclaration<x, S>*>(this)); }
+
+	const auto type = GetType();
+
+	// Int
+	VD_TypeDispatch(IntType<Bits::Bits8>);
+	VD_TypeDispatch(IntType<Bits::Bits16>);
+	VD_TypeDispatch(IntType<Bits::Bits32>);
+	VD_TypeDispatch(IntType<Bits::Bits64>);
+
+	// UInt
+	VD_TypeDispatch(UIntType<Bits::Bits8>);
+	VD_TypeDispatch(UIntType<Bits::Bits16>);
+	VD_TypeDispatch(UIntType<Bits::Bits32>);
+	VD_TypeDispatch(UIntType<Bits::Bits64>);
+
+	// Float
+	VD_TypeDispatch(FloatType<Bits::Bits16>);
+	VD_TypeDispatch(FloatType<Bits::Bits32>);
+	VD_TypeDispatch(FloatType<Bits::Bits64>);
+
+	// Bit
+	VD_TypeDispatch(BitType<Bits::Bits1>);
+	VD_TypeDispatch(BitType<Bits::Bits8>);
+	VD_TypeDispatch(BitType<Bits::Bits16>);
+	VD_TypeDispatch(BitType<Bits::Bits32>);
+	VD_TypeDispatch(BitType<Bits::Bits64>);
+
+	return true;
+}
+
+template<class V>
+void VariableDeclaration::DispatchOut(V& visitor) const
+{
+}
 
 template<class T, class S>
 class InitializedVariableDeclaration : public TypedVariableDeclaration<T, S>

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace PTX {
 
 #define REQUIRE_SPACE_PARAM(CONTEXT, ENABLED) \
@@ -14,7 +16,12 @@ namespace PTX {
 //
 // Storage space used for addressable variables
  
-struct StateSpace { static std::string Name() { return ".<unknown>"; } }; 
+struct StateSpace {
+	static std::string Name() { return ".<unknown>"; }
+
+	// Polymorphism
+	virtual ~StateSpace() = default;
+};
 
 template<class T, class S, typename Enabled>//typename Enabled = void>
 class Variable;

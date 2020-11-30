@@ -44,6 +44,20 @@ public:
 
 	virtual std::string OpCode() const = 0;
 	virtual std::vector<const Operand *> Operands() const = 0;
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& operand : Operands())
+			{
+				operand->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
 };
 
 }

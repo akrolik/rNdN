@@ -28,6 +28,14 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 private:
 	static std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace)
 	{

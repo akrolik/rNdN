@@ -119,6 +119,25 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& directive : m_directives)
+			{
+				directive->Accept(visitor);
+			}
+			for (const auto& declaration : m_declarations)
+			{
+				declaration->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
+
+
 private:
 	unsigned int m_versionMajor, m_versionMinor;
 	std::string m_target;

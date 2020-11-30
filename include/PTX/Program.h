@@ -18,7 +18,7 @@ public:
 
 	const std::vector<const Module *>& GetModules() const { return m_modules; }
 
-	const PTX::Function *GetEntryFunction(const std::string& name) const
+	const Function *GetEntryFunction(const std::string& name) const
 	{
 		for (const auto& module : m_modules)
 		{
@@ -56,6 +56,20 @@ public:
 			j["modules"].push_back(module->ToJSON());
 		}
 		return j;
+	}
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (const auto& module : m_modules)
+			{
+				module->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
 	}
 
 private:

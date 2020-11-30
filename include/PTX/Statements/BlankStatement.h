@@ -20,6 +20,14 @@ public:
 		j["kind"] = "PTX::BlankStatement";
 		return j;
 	}
+
+	// Visitors
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
 };
 
 }

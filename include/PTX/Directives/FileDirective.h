@@ -42,6 +42,14 @@ public:
 		return j;
 	}
 
+	// Visitor
+
+	void Accept(ConstHierarchicalVisitor &visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 private:
 	unsigned int m_index = 0;
 	std::string m_name;

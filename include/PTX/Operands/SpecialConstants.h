@@ -4,5 +4,5 @@
 #include "PTX/Operands/Constant.h"
 
 namespace PTX {
-	const auto SpecialConstant_WARP_SZ = new PTX::Constant<PTX::UInt32Type>("WARP_SZ");
+	const auto SpecialConstant_WARP_SZ = new Constant<UInt32Type>("WARP_SZ");
 }
