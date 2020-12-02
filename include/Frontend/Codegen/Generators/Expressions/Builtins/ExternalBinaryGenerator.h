@@ -147,7 +147,6 @@ public:
 
 			auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 3);
 			this->m_builder.AddStatement(paramDeclaration);
-			this->m_builder.AddStatement(new PTX::BlankStatement());
 
 			auto paramIn1 = paramDeclaration->GetVariable("$temp", 0);
 			auto paramIn2 = paramDeclaration->GetVariable("$temp", 1);

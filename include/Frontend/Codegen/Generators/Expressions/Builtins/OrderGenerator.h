@@ -748,7 +748,6 @@ public:
 		auto endLabel = this->m_builder.CreateLabel("END");
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(elseLabel, subsequenceDirection));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// True branch (ascending sequence)
 
@@ -760,7 +759,6 @@ public:
 		// Else branch (descending sequence)
 
 		this->m_builder.AddStatement(elseLabel);
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		OrderComparisonGenerator<B> descendingGenerator(this->m_builder, OrderComparisonGenerator<B>::Order::Descending, swapLabel, endLabel);
 		descendingGenerator.Generate(dataArgument, orderLiteral);

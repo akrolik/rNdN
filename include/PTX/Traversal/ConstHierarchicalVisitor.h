@@ -8,7 +8,6 @@ class Program;
 class Module;
 
 class Statement;
-class BlankStatement;
 class BlockStatement;
 class CommentStatement;
 class DirectiveStatement;
@@ -64,7 +63,6 @@ public:
 	// Statements
 
 	virtual bool VisitIn(const Statement *statement);
-	virtual bool VisitIn(const BlankStatement *statement);
 	virtual bool VisitIn(const BlockStatement *statement);
 	virtual bool VisitIn(const CommentStatement *statement);
 	virtual bool VisitIn(const DirectiveStatement *statement);
@@ -72,7 +70,6 @@ public:
 	virtual bool VisitIn(const Label *statement);
 
 	virtual void VisitOut(const Statement *statement);
-	virtual void VisitOut(const BlankStatement *statement);
 	virtual void VisitOut(const BlockStatement *statement);
 	virtual void VisitOut(const CommentStatement *statement);
 	virtual void VisitOut(const DirectiveStatement *statement);

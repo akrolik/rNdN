@@ -144,7 +144,6 @@ public:
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(startLabel);
 
 		// Construct the loop body according to the standard function generator
@@ -163,7 +162,6 @@ public:
 		auto predicateEnd = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicateEnd, index, bound, PTX::UInt32Type::ComparisonOperator::Less));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicateEnd));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(endLabel);
 
 		// Lastly, end with a return instruction - this only generated at the end for body synchronization

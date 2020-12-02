@@ -253,7 +253,6 @@ public:
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, laneIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(labelWarp, predWarp));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Store the value in shared memory
 
@@ -266,7 +265,6 @@ public:
 
 		// End the if statement
 
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(labelWarp);
 
 		// Synchronize all values in shared memory from across warps
@@ -287,7 +285,6 @@ public:
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predBlock, cellWarp, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(labelBlock, predBlock));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Load the values back from the shared memory into the individual threads
 
@@ -313,7 +310,6 @@ public:
 
 		// End the if statement
 
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(labelBlock);
 
 		if (inputOptions.IsListGeometry())
@@ -397,7 +393,6 @@ public:
 
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, activeIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher));
 			this->m_builder.AddStatement(new PTX::BranchInstruction(label, pred));
-			this->m_builder.AddStatement(new PTX::BlankStatement());
 
 			if (i <= warpSize)
 			{
@@ -413,7 +408,6 @@ public:
 				GenerateSharedReduction(target, sharedThreadAddress, i);
 			}
 
-			this->m_builder.AddStatement(new PTX::BlankStatement());
 			this->m_builder.AddStatement(label);
 			if (i > warpSize)
 			{

@@ -99,11 +99,6 @@ bool ConstHierarchicalVisitor::VisitIn(const Statement *statement)
 	return VisitIn(static_cast<const Node*>(statement));
 }
 
-bool ConstHierarchicalVisitor::VisitIn(const BlankStatement *statement)
-{
-	return VisitIn(static_cast<const Statement*>(statement));
-}
-
 bool ConstHierarchicalVisitor::VisitIn(const BlockStatement *statement)
 {
 	return VisitIn(static_cast<const Statement*>(statement));
@@ -132,11 +127,6 @@ bool ConstHierarchicalVisitor::VisitIn(const Label *statement)
 void ConstHierarchicalVisitor::VisitOut(const Statement *statement)
 {
 	VisitOut(static_cast<const Node*>(statement));
-}
-
-void ConstHierarchicalVisitor::VisitOut(const BlankStatement *statement)
-{
-	VisitOut(static_cast<const Statement*>(statement));
 }
 
 void ConstHierarchicalVisitor::VisitOut(const BlockStatement *statement)

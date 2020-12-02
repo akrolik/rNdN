@@ -130,9 +130,7 @@ public:
 
 		// Synchronize the result so all values are visible to the first warp
 
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(warpStoreLabel);
-
 		barrierGenerator.Generate();
 
 		// In the first warp, load the values back into a new register and prefix sum
@@ -159,10 +157,7 @@ public:
 		// Store the value back and synchronize between all warps
 
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_prefixSumLaneAddress, warpLocalPrefixSum));
-
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(blockSumLabel);
-
 		barrierGenerator.Generate();
 
 		// If we are not the first warp, add the summed result from the shared memory - this completes the prefix sum for the block (!predicate)
@@ -179,7 +174,6 @@ public:
 		// Add to each value within the warp - computing the block local prefix sum
 
 		this->m_builder.AddStatement(new PTX::AddInstruction<T>(prefixSum, prefixSum, warpPrefixSum));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(warpRestoreLabel);
 
 		// For each block, load the previous block's value once it is completed. This forms a linear chain, but is fairly efficient
@@ -209,7 +203,6 @@ public:
 		auto blockIndex = indexGenerator.GenerateBlockIndex();
 
 		auto atomicStartLabel = this->m_builder.CreateLabel("START");
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(atomicStartLabel);
 
 		auto completedBlocks = resources->template AllocateTemporary<PTX::UInt32Type>();
@@ -262,8 +255,6 @@ public:
 
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, new PTX::UInt32Value(1)));
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
-
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(propagateLabel);
 
 		// Synchronize the results - every thread now has the previous thread's (inclusive) prefix sum

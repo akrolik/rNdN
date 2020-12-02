@@ -381,7 +381,6 @@ public:
 				{
 					// Completed determining size
 
-					this->m_builder.AddStatement(new PTX::BlankStatement());
 					this->m_builder.AddStatement(sizeLabel);
 				}
 

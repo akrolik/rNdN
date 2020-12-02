@@ -148,10 +148,6 @@ public:
 		// must come before use, and are typically grouped at the top of the kernel.
 
 		auto declarations = GetLocalResources()->GetDeclarations();
-		if (declarations.size() > 0)
-		{
-			InsertStatements(new PTX::BlankStatement(), 0);
-		}
 		InsertStatements(declarations, 0);
 		m_scopes.pop();
 	}

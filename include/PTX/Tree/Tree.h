@@ -46,7 +46,6 @@ namespace PTX {
 #include "PTX/Tree/Statements/Statement.h"
 #include "PTX/Tree/Statements/Label.h"
 
-#include "PTX/Tree/Statements/BlankStatement.h"
 #include "PTX/Tree/Statements/CommentStatement.h"
 #include "PTX/Tree/Statements/DirectiveStatement.h"
 #include "PTX/Tree/Statements/InstructionStatement.h"

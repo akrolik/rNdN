@@ -275,7 +275,6 @@ private:
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, activeIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Get the address of the write location depending on the indexing kind and the reduction operation
 
@@ -284,7 +283,6 @@ private:
 
 		// End the function and return
 
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(label);
 	}
 
@@ -483,8 +481,6 @@ private:
 
 		auto address = GenerateAddress<T>(returnIndex, writeIndex);
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(label);
 	}
 
@@ -533,16 +529,12 @@ private:
 			// Check for compression - this will mask outputs
 
 			auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
-
 			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
-			this->m_builder.AddStatement(new PTX::BlankStatement());
 
 			// Store the value at the place specified by the prefix sum
 
 			auto address = GenerateAddress<T>(returnIndex, writeIndex);
 			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-
-			this->m_builder.AddStatement(new PTX::BlankStatement());
 			this->m_builder.AddStatement(label);
 		}
 		else

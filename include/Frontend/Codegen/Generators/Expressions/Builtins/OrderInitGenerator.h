@@ -230,7 +230,6 @@ public:
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(elseLabel, predicate));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Decompose the arguments into data and order
 
@@ -249,7 +248,6 @@ public:
 		// Else branch (index >= size), load the min/max values depending on sort
 
 		this->m_builder.AddStatement(elseLabel);
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		OrderInitNullGenerator<B> nullGenerator(this->m_builder);
 		nullGenerator.Generate(targets.at(1), dataArgument, orderLiteral);

@@ -641,7 +641,6 @@ public:
 		this->m_builder.AddStatement(startLabel);
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Load the data cache into shared memory and synchronize
 
@@ -668,12 +667,10 @@ public:
 		auto ifEndLabel = this->m_builder.CreateLabel("END"); 
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(ifElseLabel, sizePredicate_3));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		GenerateInnerLoop(identifierY, new PTX::UInt32Value(FIND_CACHE_SIZE), 16);
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(ifEndLabel));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(ifElseLabel);
 
 		// Compute bound if this is the last iteration
@@ -690,7 +687,6 @@ public:
 		// Complete the loop structure, check the next index chunk
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(endLabel);
 	}
 
@@ -725,7 +721,6 @@ public:
 		this->m_builder.AddStatement(startLabel);
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 
 		// Generate match for every unroll factor
 
@@ -745,7 +740,6 @@ public:
 		}
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(new PTX::BlankStatement());
 		this->m_builder.AddStatement(endLabel);     
 	}
 
