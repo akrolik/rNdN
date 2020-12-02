@@ -47,9 +47,8 @@ bool VirtualRegisterAllocator::VisitIn(const TypedVariableDeclaration<T, S> *dec
 				}
 				else
 				{
-					m_currentAllocation->AddRegister(names->GetName(i), m_registerOffset);
-
 					const auto allocations = (BitSize<T::TypeBits>::NumBytes + 3) / 4; 
+					m_allocation->AddRegister(names->GetName(i), m_registerOffset, allocations);
 					m_registerOffset += allocations;
 				}
 			}
