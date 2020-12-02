@@ -2,7 +2,7 @@
 
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 
-#include "Codegen/InputOptions.h"
+#include "Frontend/Codegen/InputOptions.h"
 
 #include "HorseIR/Analysis/Shape/ShapeAnalysis.h"
 #include "HorseIR/Tree/Tree.h"
@@ -17,7 +17,7 @@ public:
 
 	void Analyze(const Function *function);
 
-	Codegen::InputOptions *GetInputOptions() const { return m_inputOptions; }
+	Frontend::Codegen::InputOptions *GetInputOptions() const { return m_inputOptions; }
 
 	bool IsInOrder(const Function *function) const;
 
@@ -29,7 +29,7 @@ private:
 
 	const ShapeAnalysis& m_shapeAnalysis;
 
-	Codegen::InputOptions *m_inputOptions = nullptr;
+	Frontend::Codegen::InputOptions *m_inputOptions = nullptr;
 };
 
 }

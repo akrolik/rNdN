@@ -29,7 +29,7 @@ void KernelOptionsAnalysis::Analyze(const Function *function)
 
 	// Construct the input options
 
-	m_inputOptions = new Codegen::InputOptions();
+	m_inputOptions = new Frontend::Codegen::InputOptions();
 	m_inputOptions->ThreadGeometry = kernelAnalysis.GetOperatingGeometry();
 
 	for (const auto parameter : function->GetParameters())
@@ -154,7 +154,7 @@ std::uint32_t KernelOptionsAnalysis::GetAverageCellSize(const Analysis::ListShap
 			{
 				return Utils::Math::Power2(Utils::Math::Average<CUDA::Vector, std::int32_t>(rangedSize->GetValues()));
 			}
-			return Codegen::InputOptions::DynamicSize;
+			return Frontend::Codegen::InputOptions::DynamicSize;
 		}
 		else
 		{

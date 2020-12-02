@@ -274,7 +274,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	{
 		// Add the dynamic thread count to the parameters if needed
 
-		if (inputOptions->ListCellThreads == Codegen::InputOptions::DynamicSize)
+		if (inputOptions->ListCellThreads == Frontend::Codegen::InputOptions::DynamicSize)
 		{
 			dynamicBuffers.push_back(AllocateConstantParameter(invocation, runtimeOptions->ListCellThreads, "<list geometry threads>"));
 		}
@@ -417,7 +417,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	return {returnBuffers};
 }
 
-std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
+std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
 {
 	// Compute the block size and count based on the kernel, input and target configurations
 	// We assume that all sizes are known at this point

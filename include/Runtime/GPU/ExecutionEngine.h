@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include "Codegen/InputOptions.h"
+#include "Frontend/Codegen/InputOptions.h"
 
 #include "CUDA/Constant.h"
 #include "CUDA/KernelInvocation.h"
@@ -29,7 +29,7 @@ public:
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 
 private:
-	std::pair<unsigned int, unsigned int> GetBlockShape(Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
+	std::pair<unsigned int, unsigned int> GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
 
 	template<typename T>
 	CUDA::TypedConstant<T> *AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;
@@ -41,7 +41,7 @@ private:
 
 	// Cache for GPU execution
 
-	std::unordered_map<const HorseIR::Function *, Codegen::InputOptions *> m_optionsCache;
+	std::unordered_map<const HorseIR::Function *, Frontend::Codegen::InputOptions *> m_optionsCache;
 };
 
 }

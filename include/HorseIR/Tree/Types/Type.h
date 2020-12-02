@@ -6,9 +6,11 @@ namespace HorseIR {
 	class Type;
 	namespace Analysis { class ShapeUtils; }
 }
+namespace Frontend {
 namespace Codegen {
 	template<class G, typename... N>
 	void DispatchType(G &generator, const HorseIR::Type *type, N ...nodes);
+}
 }
 
 namespace HorseIR {
@@ -25,7 +27,7 @@ public:
 	friend class Analysis::ShapeUtils;
 
 	template<class G, typename... N>
-	friend void Codegen::DispatchType(G &generator, const Type *type, N ...nodes);
+	friend void Frontend::Codegen::DispatchType(G &generator, const Type *type, N ...nodes);
 
 protected:
 	enum class Kind {

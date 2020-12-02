@@ -29,10 +29,10 @@ include_directories(include)
 include_directories(tests)
 set(CMAKE_SOURCE_DIR src)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/FrontEnd)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Language)
 
-bison_target(HorseIRParser ${CMAKE_SOURCE_DIR}/FrontEnd/horseir.y ${CMAKE_CURRENT_BINARY_DIR}/FrontEnd/HorseIR_Parser.cpp)
-flex_target(HorseIRScanner ${CMAKE_SOURCE_DIR}/FrontEnd/horseir.l ${CMAKE_CURRENT_BINARY_DIR}/FrontEnd/HorseIR_Scanner.cpp)
+bison_target(HorseIRParser ${CMAKE_SOURCE_DIR}/HorseIR/Language/horseir.y ${CMAKE_CURRENT_BINARY_DIR}/Language/HorseIR_Parser.cpp)
+flex_target(HorseIRScanner ${CMAKE_SOURCE_DIR}/HorseIR/Language/horseir.l ${CMAKE_CURRENT_BINARY_DIR}/Language/HorseIR_Scanner.cpp)
 ADD_FLEX_BISON_DEPENDENCY(HorseIRScanner HorseIRParser)
 
 file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*.cpp")

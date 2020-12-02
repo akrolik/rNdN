@@ -6,7 +6,7 @@
 
 #include "Utils/Logger.h"
 
-namespace Codegen { class InputOptions; }
+namespace Frontend { namespace Codegen { class InputOptions; } }
 
 namespace PTX {
 
@@ -79,8 +79,8 @@ public:
 	unsigned int GetDynamicSharedMemorySize() const { return m_dynamicSharedMemorySize; }
 	void SetDynamicSharedMemorySize(unsigned int bytes) { m_dynamicSharedMemorySize = bytes; }
 
-	void SetCodegenOptions(const Codegen::InputOptions *codegenOptions) { m_codegenOptions = codegenOptions; }
-	const Codegen::InputOptions *GetCodegenOptions() const { return m_codegenOptions; }
+	void SetCodegenOptions(const Frontend::Codegen::InputOptions *codegenOptions) { m_codegenOptions = codegenOptions; }
+	const Frontend::Codegen::InputOptions *GetCodegenOptions() const { return m_codegenOptions; }
 
 	std::string ToString() const
 	{
@@ -107,7 +107,7 @@ private:
 	unsigned int m_threadMultiple = 0;
 	unsigned int m_dynamicSharedMemorySize = 0;
 
-	const Codegen::InputOptions *m_codegenOptions = nullptr;
+	const Frontend::Codegen::InputOptions *m_codegenOptions = nullptr;
 };
 
 }
