@@ -5,8 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace HorseIR {
-namespace Analysis {
+namespace Utils {
 
 template<typename T>
 class Graph
@@ -267,5 +266,4 @@ protected:
 	std::unordered_map<T, std::unordered_set<T>> m_predecessors;
 };
 
-}
 }

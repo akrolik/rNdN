@@ -5,7 +5,7 @@
 #include <utility>
 #include <variant>
 
-#include "HorseIR/Analysis/Utils/Graph.h"
+#include "Utils/Graph.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -13,14 +13,14 @@ namespace HorseIR {
 namespace Analysis {
 
 template<typename N>
-class DependencyGraphBase : public Graph<N>
+class DependencyGraphBase : public Utils::Graph<N>
 {
 public:
-	using Graph<N>::Graph;
+	using Utils::Graph<N>::Graph;
 
 	void InsertNode(const N& node, bool isGPU, bool isLibrary)
 	{
-		Graph<N>::InsertNode(node);
+		Utils::Graph<N>::InsertNode(node);
 
 		if (isGPU)
 		{
@@ -47,7 +47,7 @@ public:
 		m_gpuNodes.erase(node);
 		m_libraryNodes.erase(node);
 
-		Graph<N>::RemoveNode(node);
+		Utils::Graph<N>::RemoveNode(node);
 	}
 
 	void InsertEdge(const N& source, const N& destination, const SymbolTable::Symbol *symbol, bool isBackEdge, bool isSynchronized)
@@ -57,7 +57,7 @@ public:
 
 	void InsertEdge(const N& source, const N& destination, const std::unordered_set<const SymbolTable::Symbol *>& symbols, bool isBackEdge, bool isSynchronized)
 	{
-		Graph<N>::InsertEdge(source, destination);
+		Utils::Graph<N>::InsertEdge(source, destination);
 
 		// Add symbol to edge, extending the set if it already exists
 
@@ -107,7 +107,7 @@ public:
 		m_backEdges.erase({source, destination});
 		m_synchronizedEdges.erase({source, destination});
 
-		Graph<N>::RemoveEdge(source, destination);
+		Utils::Graph<N>::RemoveEdge(source, destination);
 	}
 
 private:
