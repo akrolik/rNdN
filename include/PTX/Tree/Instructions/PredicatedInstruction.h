@@ -2,6 +2,8 @@
 
 #include "PTX/Tree/Statements/InstructionStatement.h"
 
+#include <utility>
+
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
@@ -13,6 +15,8 @@ public:
 	PredicatedInstruction() {}
 	PredicatedInstruction(const Register<PredicateType> *predicate, bool negate = false) : m_predicate(predicate), m_negatePredicate(negate) {}
 
+	bool HasPredicate() const { return m_predicate != nullptr; }
+	std::pair<const Register<PredicateType> *, bool> GetPredicate() { return {m_predicate, m_negatePredicate}; }
 	void SetPredicate(const Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
 	std::string ToString(unsigned int indentation) const override
