@@ -1,7 +1,7 @@
 #include "Runtime/GPU/Assembler.h"
 
 #include "Assembler/Assembler.h"
-#include "Runtime/GPU/BackendCompiler.h"
+#include "Backend/Compiler.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Options.h"
@@ -42,7 +42,7 @@ const Program *Assembler::Assemble(const PTX::Program *program, bool library) co
 						Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
 					}
 
-					BackendCompiler compiler(m_gpuManager);
+					Backend::Compiler compiler;
 					auto sassProgram = compiler.Compile(program);
 					sassProgram->SetComputeCapability(compute);
 

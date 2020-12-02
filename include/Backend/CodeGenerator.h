@@ -12,11 +12,7 @@ namespace Backend {
 class CodeGenerator : public PTX::ConstHierarchicalVisitor
 {
 public:
-	SASS::Program *Generate(const PTX::Program *program, const std::unordered_map<const PTX::FunctionDefinition<PTX::VoidType> *, const PTX::Analysis::RegisterAllocation *> &allocations);
-
-	// Structure
-
-	bool VisitIn(const PTX::Program *program) override;
+	SASS::Function *Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation);
 
 	// Functions
 
@@ -30,10 +26,8 @@ public:
 	bool VisitIn(const PTX::TypedVariableDeclaration<T, S> *declaration);
 
 private:
-	SASS::Program *m_program = nullptr;
 	SASS::Function *m_function = nullptr;
-
-	std::unordered_map<const PTX::FunctionDefinition<PTX::VoidType> *, const PTX::Analysis::RegisterAllocation *> m_allocations;
+	const PTX::Analysis::RegisterAllocation *m_allocation = nullptr;
 };
 
 }

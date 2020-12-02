@@ -5,9 +5,13 @@
 namespace PTX {
 namespace Analysis {
 
-void VirtualRegisterAllocator::Analyze(const Program *program)
+void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *function)
 {
-	program->Accept(*this);
+	function->Accept(*this);
+
+	//TODO: Add printing flags
+	Utils::Logger::LogInfo("Register Allocation: " + function->GetName());
+	Utils::Logger::LogInfo(m_allocation->ToString());
 }
 
 // Functions
@@ -16,17 +20,8 @@ bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *funct
 {
 	m_registerOffset = 1; // R0 reserved for dummy
 	m_predicateOffset = 0;
-	m_currentAllocation = new RegisterAllocation();
+	m_allocation = new RegisterAllocation();
 	return true;
-}
-
-void VirtualRegisterAllocator::VisitOut(const FunctionDefinition<VoidType> *function)
-{
-	Utils::Logger::LogInfo("Register Allocation: " + function->GetName());
-	Utils::Logger::LogInfo(m_currentAllocation->ToString());
-
-	m_allocations[function] = m_currentAllocation;
-	m_currentAllocation = nullptr;
 }
 
 // Declarations
@@ -47,7 +42,7 @@ bool VirtualRegisterAllocator::VisitIn(const TypedVariableDeclaration<T, S> *dec
 			{
 				if constexpr(std::is_same<T, PredicateType>::value)
 				{
-					m_currentAllocation->AddPredicate(names->GetName(i), m_predicateOffset);
+					m_allocation->AddPredicate(names->GetName(i), m_predicateOffset);
 					m_predicateOffset++;
 				}
 				else

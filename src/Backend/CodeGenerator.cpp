@@ -4,19 +4,11 @@ namespace Backend {
 
 // Public API
 
-SASS::Program *CodeGenerator::Generate(const PTX::Program *program, const std::unordered_map<const PTX::FunctionDefinition<PTX::VoidType> *, const PTX::Analysis::RegisterAllocation *> &allocations)
+SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation)
 {
-	m_allocations = allocations;
-	program->Accept(*this);
-	return m_program;
-}
-
-// Structure
-
-bool CodeGenerator::VisitIn(const PTX::Program *program)
-{
-	m_program = new SASS::Program();
-	return true;
+	m_allocation = allocation;
+	function->Accept(*this);
+	return m_function;
 }
 
 // Functions
@@ -24,7 +16,7 @@ bool CodeGenerator::VisitIn(const PTX::Program *program)
 bool CodeGenerator::VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function)
 {
 	m_function = new SASS::Function(function->GetName());
-	m_function->SetRegisters(m_allocations.at(function)->GetCount());
+	m_function->SetRegisters(m_allocation->GetCount());
 	return true;
 }
 
@@ -151,9 +143,6 @@ void CodeGenerator::VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *funct
 
 	sassBlock0->AddInstruction(inst13);
 	sassBlock0->AddInstruction(inst14);
-                 
-	m_program->AddFunction(m_function);
-	m_function = nullptr;
 }
 
 // Declarations
