@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include <nvvm.h>
 
 #include "Utils/Logger.h"
