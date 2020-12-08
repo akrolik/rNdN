@@ -22,19 +22,24 @@ bool Compiler::VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function)
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Backend codegen: " + function->GetName());
 
-	// Allocate registers
-
-	PTX::Analysis::VirtualRegisterAllocator allocator;
-	allocator.Analyze(function);
-
-	auto allocation = allocator.GetRegisterAllocation();
-
 	// Control-flow graph
 
 	PTX::Analysis::ControlFlowBuilder cfgBuilder;
 	cfgBuilder.Analyze(function);
 
 	auto cfg = cfgBuilder.GetGraph();
+	// function->SetControlFlowGraph(cfg);
+
+	//TODO: Printing flags
+	Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
+	Utils::Logger::LogInfo(cfg->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
+
+	// Allocate registers
+
+	PTX::Analysis::VirtualRegisterAllocator allocator;
+	allocator.Analyze(function);
+
+	auto allocation = allocator.GetRegisterAllocation();
 
 	// Generate SASS code from 64-bit PTX code
 

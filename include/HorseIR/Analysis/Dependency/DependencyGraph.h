@@ -88,7 +88,7 @@ public:
 
 	const std::unordered_set<const SymbolTable::Symbol *>& GetEdgeData(const N& source, const N& destination) const
 	{
-		return (m_edgeData.at({source, destination}));
+		return m_edgeData.at({source, destination});
 	}
 
 	bool IsBackEdge(const N& source, const N& destination) const
@@ -146,14 +146,8 @@ private:
 	std::unordered_set<N> m_gpuNodes;
 	std::unordered_set<N> m_libraryNodes;
 
-	using EdgeType = std::pair<N, N>;
-	struct EdgeHash
-	{
-		inline std::size_t operator()(const EdgeType& pair) const
-		{
-			return (std::hash<N>()(pair.first) * 31 + std::hash<N>()(pair.second));
-		}
-	};
+	using EdgeType = typename Utils::Graph<N>::EdgeType;
+	using EdgeHash = typename Utils::Graph<N>::EdgeHash;
 
 	std::unordered_set<EdgeType, EdgeHash> m_backEdges;
 	std::unordered_set<EdgeType, EdgeHash> m_synchronizedEdges;

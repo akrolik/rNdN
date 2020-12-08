@@ -24,9 +24,10 @@ public:
 	bool VisitIn(const Label *label) override;
 	
 private:
+	unsigned int m_index = 0u;
 	BasicBlock *m_currentBlock = nullptr;
-	ControlFlowGraph *m_graph = nullptr;
 
+	ControlFlowGraph *m_graph = nullptr;
 	std::unordered_map<const Statement *, const BasicBlock *> m_blockMap;
 };
 
@@ -42,7 +43,6 @@ public:
 
 	bool VisitIn(const Statement *statement) override;
 	bool VisitIn(const InstructionStatement *statement) override;
-	bool VisitIn(const Label *label) override;
 
 private:
 	const BasicBlock *m_previousBlock = nullptr;

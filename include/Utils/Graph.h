@@ -4,6 +4,7 @@
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 namespace Utils {
 
@@ -264,6 +265,15 @@ protected:
 
 	std::unordered_map<T, std::unordered_set<T>> m_successors;
 	std::unordered_map<T, std::unordered_set<T>> m_predecessors;
+
+	using EdgeType = std::pair<T, T>;
+	struct EdgeHash
+	{
+		inline std::size_t operator()(const EdgeType& pair) const
+		{
+			return (std::hash<T>()(pair.first) * 31 + std::hash<T>()(pair.second));
+		}
+	};
 };
 
 }
