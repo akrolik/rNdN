@@ -280,6 +280,7 @@ protected:
 	S m_space;
 };
 
+//TODO: Update dispatch code
 template<class V>
 bool VariableDeclaration::DispatchIn(V& visitor) const
 {

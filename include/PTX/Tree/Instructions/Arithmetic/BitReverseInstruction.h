@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(BitReverseInstruction)
+
 template<class T, bool Assert = true>
-class BitReverseInstruction : public InstructionBase_2<T>
+class BitReverseInstruction : DispatchInherit(BitReverseInstruction), public InstructionBase_2<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(BitReverseInstruction,
@@ -22,6 +26,15 @@ public:
 	{
 		return Mnemonic() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(BitReverseInstruction)
 
 }

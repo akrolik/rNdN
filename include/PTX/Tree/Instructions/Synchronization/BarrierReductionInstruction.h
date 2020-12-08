@@ -6,10 +6,14 @@
 #include "PTX/Tree/Operands/Operand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(BarrierReductionInstruction)
+
 template<class T>
-class BarrierReductionInstructionBase : public PredicatedInstruction
+class BarrierReductionInstructionBase : DispatchInherit(BarrierReductionInstruction), public PredicatedInstruction
 {
 public:
 	BarrierReductionInstructionBase(const Register<T> *destination, const TypedOperand<UInt32Type> *barrier, const Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : BarrierReductionInstructionBase(destination, barrier, nullptr, sourcePredicate, negateSourcePredicate, aligned) {}
@@ -53,7 +57,13 @@ public:
 		return operands;
 	}
 
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:                
+	DispatchMember_Type(T);
+
 	const Register<T> *m_destination = nullptr;
 	const TypedOperand<UInt32Type> *m_barrier = nullptr;
 	const TypedOperand<UInt32Type> *m_threads = nullptr;
@@ -63,7 +73,7 @@ protected:
 };
 
 template<class T, bool Assert = true>
-class BarrierReductionInstruction : public PredicatedInstruction
+class BarrierReductionInstruction : public BarrierReductionInstructionBase<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(BarrierReductionInstruction,
@@ -131,8 +141,10 @@ public:
 		return code + PredicateType::Name();
 	}
 
-private:
+protected:
 	Operation m_operation;
 };
+
+DispatchImplementation(BarrierReductionInstruction)
 
 }

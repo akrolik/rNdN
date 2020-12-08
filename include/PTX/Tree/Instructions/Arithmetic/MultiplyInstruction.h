@@ -6,10 +6,14 @@
 #include "PTX/Tree/Instructions/Modifiers/RoundingModifier.h"
 #include "PTX/Tree/Instructions/Modifiers/SaturateModifier.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(MultiplyInstruction)
+
 template<class T, bool Assert = true>
-class MultiplyInstruction : public InstructionBase_2<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
+class MultiplyInstruction : DispatchInherit(MultiplyInstruction), public InstructionBase_2<T>, public HalfModifier<T>, public RoundingModifier<T>, public FlushSubnormalModifier<T>, public SaturateModifier<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(MultiplyInstruction,
@@ -49,6 +53,15 @@ public:
 		}
 		return code + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
 
+DispatchImplementation(MultiplyInstruction)
+ 
 }

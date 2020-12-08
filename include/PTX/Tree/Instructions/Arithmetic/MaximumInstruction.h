@@ -3,10 +3,14 @@
 #include "PTX/Tree/Instructions/InstructionBase.h"
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(MaximumInstruction)
+
 template<class T, bool Assert = true>
-class MaximumInstruction : public InstructionBase_2<T>, public FlushSubnormalModifier<T>
+class MaximumInstruction : DispatchInherit(MaximumInstruction), public InstructionBase_2<T>, public FlushSubnormalModifier<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(MaximumInstruction,
@@ -30,6 +34,15 @@ public:
 		}
 		return code + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(MaximumInstruction)
 
 }

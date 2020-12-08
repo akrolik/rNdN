@@ -7,10 +7,14 @@
 #include "PTX/Tree/Operands/Address/Address.h"
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_Data(PrefetchInstruction)
+
 template<Bits B, class T, class S, bool Assert = true>
-class PrefetchInstruction : public PredicatedInstruction
+class PrefetchInstruction : DispatchInherit(PrefetchInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(PrefetchInstruction,
@@ -62,10 +66,20 @@ public:
 		return { new DereferencedAddress<B, T, S>(m_address) };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Address<B, T, S> *m_address = nullptr;
 	Level m_level;
 };
+
+DispatchImplementation_Data(PrefetchInstruction)
 
 template<class T, class S>
 using Prefetch32Instruction = PrefetchInstruction<Bits::Bits32, T, S>;

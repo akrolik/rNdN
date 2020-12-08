@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(ShiftLeftInstruction)
+
 template<class T, bool Assert = true>
-class ShiftLeftInstruction : public InstructionBase_2<T, T, UInt32Type>
+class ShiftLeftInstruction : DispatchInherit(ShiftLeftInstruction), public InstructionBase_2<T, T, UInt32Type>
 {
 public:
 	REQUIRE_TYPE_PARAM(ShiftLeftInstruction,
@@ -22,6 +26,15 @@ public:
 	{
 		return Mnemonic() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T)
 };
+
+DispatchImplementation(ShiftLeftInstruction)
 
 }

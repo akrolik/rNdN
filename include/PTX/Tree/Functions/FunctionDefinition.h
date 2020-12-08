@@ -13,6 +13,8 @@ template<class R>
 class FunctionDefinition : public FunctionDeclaration<R>, public StatementList
 {
 public:
+	// Formatting
+
 	json ToJSON() const override
 	{
 		json j = FunctionDeclaration<R>::ToJSON();

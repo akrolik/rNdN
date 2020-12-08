@@ -8,10 +8,14 @@
 #include "PTX/Tree/Operands/Extended/InvertedOperand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(VoteInstruction)
+
 template<class T>
-class VoteInstructionBase : public PredicatedInstruction
+class VoteInstructionBase : DispatchInherit(VoteInstruction), public PredicatedInstruction
 {
 public:
 	VoteInstructionBase(const Register<T> *destination, const TypedOperand<PredicateType> *sourcePredicate, uint32_t memberMask, bool negateSourcePredicate = false) : m_destination(destination), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_memberMask(memberMask) {}
@@ -44,7 +48,13 @@ public:
 		return operands;
 	}
 
+	// Visitors
+	
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:                
+	DispatchMember_Type(T);
+
 	const Register<T> *m_destination = nullptr;
 	const TypedOperand<PredicateType> *m_sourcePredicate = nullptr;
 	bool m_negateSourcePredicate = false;
@@ -52,7 +62,7 @@ protected:
 };
 
 template<class T, bool Assert = true>
-class VoteInstruction : public PredicatedInstruction
+class VoteInstruction : public VoteInstructionBase<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(VoteInstruction,
@@ -61,6 +71,8 @@ public:
 
 	static std::string Mnemonic() { return "vote.sync"; }
 };
+
+DispatchImplementation(VoteInstruction)
 
 template<>
 class VoteInstruction<Bit32Type> : public VoteInstructionBase<Bit32Type>
@@ -112,7 +124,7 @@ public:
 		return Mnemonic() + ModeString(m_mode) + PredicateType::Name();
 	}
 
-private:
+protected:
 	Mode m_mode;
 };
 

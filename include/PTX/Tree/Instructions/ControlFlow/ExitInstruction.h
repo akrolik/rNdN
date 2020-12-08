@@ -20,6 +20,10 @@ public:
 	{
 		return {};
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 };
 
 }

@@ -7,10 +7,14 @@
 #include "PTX/Tree/Operands/Extended/ListOperand.h"
 #include "PTX/Tree/Operands/Extended/StringOperand.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(CallInstructionBase)
+
 template<class R>
-class CallInstructionBase : public PredicatedInstruction, public UniformModifier
+class CallInstructionBase : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
 {
 public:
 	CallInstructionBase(const Function *function, const R *returnVariable, bool uniform) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable) {}
@@ -43,7 +47,13 @@ public:
 		return operands;
 	}
 
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Type(typename R::VariableType);
+
 	virtual std::vector<const Operand *> GetArguments() const = 0;
 
 	const Function *m_function = nullptr;
@@ -51,7 +61,7 @@ protected:
 };
 
 template<>
-class CallInstructionBase<VoidType> : public PredicatedInstruction, public UniformModifier
+class CallInstructionBase<VoidType> : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
 {
 public:
 	CallInstructionBase(const Function *function, bool uniform) : UniformModifier(uniform), m_function(function) {}
@@ -80,10 +90,18 @@ public:
 		return operands;
 	}
 
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Type(VoidType);
+
 	virtual std::vector<const Operand *> GetArguments() const = 0;
 
 	const Function *m_function = nullptr;
 };
+
+DispatchImplementation(CallInstructionBase)
 
 }

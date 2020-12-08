@@ -8,10 +8,21 @@
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+enum class StoreSynchronization {
+	Weak,
+	Volatile,
+	Relaxed,
+	Release
+};
+
+DispatchInterface_DataAtomic(StoreInstruction, StoreSynchronization)
+
 template<Bits B, class T, class S, bool Assert = true>
-class StoreInstructionBase : public PredicatedInstruction
+class StoreInstructionBase : DispatchInherit(StoreInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(StoreInstruction,
@@ -38,16 +49,17 @@ public:
 		return { new DereferencedAddress<B, T, S>(m_address), m_source };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Address<B, T, S> *m_address = nullptr;
 	const Register<T> *m_source = nullptr;
-};
-
-enum class StoreSynchronization {
-	Weak,
-	Volatile,
-	Relaxed,
-	Release
 };
 
 template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak, bool Assert = true>
@@ -94,7 +106,10 @@ public:
 		return code + T::Name();
 	}
 
-private:
+
+protected:
+	DispatchMember_Atomic(StoreSynchronization, M);
+
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 
@@ -110,6 +125,9 @@ public:
 	{
 		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
+
+protected:
+	DispatchMember_Atomic(StoreSynchronization, StoreSynchronization::Volatile);
 };
 
 template<Bits B, class T, class S, bool Assert>
@@ -126,6 +144,9 @@ public:
 	{
 		return Mnemonic() + ".relaxed" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
+
+protected:
+	DispatchMember_Atomic(StoreSynchronization, StoreSynchronization::Relaxed);
 };
 
 template<Bits B, class T, class S, bool Assert>
@@ -142,7 +163,29 @@ public:
 	{
 		return Mnemonic() + ".release" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
+
+protected:
+	DispatchMember_Atomic(StoreSynchronization, StoreSynchronization::Release);
 };
+
+DispatchImplementation_DataAtomic(StoreInstruction, ({
+	const auto atomic = GetAtomic();
+	switch (atomic)
+	{
+		case StoreSynchronization::Weak:
+			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Weak>(visitor);
+			break;
+		case StoreSynchronization::Volatile:
+			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Volatile>(visitor);
+			break;
+		case StoreSynchronization::Relaxed:
+			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Relaxed>(visitor);
+			break;
+		case StoreSynchronization::Release:
+			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Release>(visitor);
+			break;
+	}
+}))
 
 template<class T, class S>
 using Store32Instruction = StoreInstruction<Bits::Bits32, T, S>;

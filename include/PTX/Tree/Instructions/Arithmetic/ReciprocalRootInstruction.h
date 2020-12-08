@@ -3,10 +3,14 @@
 #include "PTX/Tree/Instructions/InstructionBase.h"
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(ReciprocalRootInstruction)
+
 template<class T, bool Assert = true>
-class ReciprocalRootInstruction : public InstructionBase_1<T>, public FlushSubnormalModifier<T, true>
+class ReciprocalRootInstruction : DispatchInherit(ReciprocalRootInstruction), public InstructionBase_1<T>, public FlushSubnormalModifier<T, true>
 {
 public:
 	REQUIRE_TYPE_PARAM(ReciprocalRootInstruction,
@@ -23,6 +27,15 @@ public:
 	{
 		return Mnemonic() + ".approx" + FlushSubnormalModifier<T, true>::OpCodeModifier() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(ReciprocalRootInstruction)
 
 }

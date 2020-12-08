@@ -5,10 +5,14 @@
 #include "PTX/Tree/Operands/Address/MemoryAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_Data(MoveAddressInstruction)
+
 template<Bits B, class T, class S, bool Assert = true>
-class MoveAddressInstruction : public PredicatedInstruction
+class MoveAddressInstruction : DispatchInherit(MoveAddressInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(MoveAddressInstruction,
@@ -38,9 +42,19 @@ public:
 		return { m_destination, m_source };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Register<PointerType<B, T, S>> *m_destination = nullptr;
 	const MemoryAddress<B, T, S> *m_source = nullptr;
 };
+
+DispatchImplementation_Data(MoveAddressInstruction)
 
 }

@@ -1,9 +1,6 @@
 #pragma once
 
-#include <iostream>
-
-namespace PTX
-{
+namespace PTX {
 
 template<class D, class S, typename Enable = void>
 class ConvertSaturateModifier

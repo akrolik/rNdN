@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include "PTX/Tree/Type.h"
 
 namespace PTX {
@@ -49,8 +47,7 @@ public:
 	{
 		if (roundingMode == T::RoundingMode::None)
 		{
-			std::cerr << "PTX::RoundingModifier requires rounding mode" << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("PTX::RoundingModifier requires rounding mode");
 		}
 	}
 
@@ -59,8 +56,7 @@ public:
 	{
 		if (roundingMode == T::RoundingMode::None)
 		{
-			std::cerr << "PTX::RoundingModifier requires rounding mode" << std::endl;
-			std::exit(EXIT_FAILURE);
+			Utils::Logger::LogError("PTX::RoundingModifier requires rounding mode");
 		}
 	       	m_roundingMode = roundingMode;
 	}

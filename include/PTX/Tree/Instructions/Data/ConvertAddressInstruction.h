@@ -5,10 +5,14 @@
 #include "PTX/Tree/Operands/Address/Address.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_Data2(ConvertAddressInstruction)
+
 template<Bits B, class T, class D, class S, bool Assert = true>
-class ConvertAddressInstruction : public PredicatedInstruction
+class ConvertAddressInstruction : DispatchInherit(ConvertAddressInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(ConvertAddressInstruction,
@@ -48,10 +52,21 @@ public:
 		return { m_destination, m_source };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space1(D);
+	DispatchMember_Space2(S);
+
 	const Register<PointerType<B, T, D>> *m_destination = nullptr;
 	const Address<B, T, S> *m_source = nullptr;
 };
+
+DispatchImplementation_Data2(ConvertAddressInstruction)
 
 template<class T, class D, class S>
 using ConvertAddress32Instruction = ConvertAddressInstruction<Bits::Bits32, T, D, S>;

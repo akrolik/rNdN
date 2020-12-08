@@ -253,8 +253,8 @@ private:
 
 			// CAS!
 
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace, BitType::AtomicOperation::CompareAndSwap>(
-				previous, bitAddress, emptyRegister, value
+			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
+				previous, bitAddress, emptyRegister, value, BitType::AtomicOperation::CompareAndSwap
 			));
 
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(predicate, previous, emptyRegister, BitType::ComparisonOperator::NotEqual));

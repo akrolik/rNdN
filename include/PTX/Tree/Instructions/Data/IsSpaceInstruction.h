@@ -5,10 +5,14 @@
 #include "PTX/Tree/Operands/Address/Address.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_Data(IsSpaceInstruction)
+
 template<Bits B, class T, class S, bool Assert = true>
-class IsSpaceInstruction : public PredicatedInstruction
+class IsSpaceInstruction : DispatchInherit(IsSpaceInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(IsSpaceInstruction,
@@ -38,10 +42,20 @@ public:
 		return m_destination->ToString() + ", " + m_address->ToString();
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Register<PredicateType> *m_destination = nullptr;
 	const Address<B, T> *m_address = nullptr;
 };
+
+DispatchImplementation_Data(IsSpaceInstruction);
 
 template<class T, class S>
 using IsSpace32Instruction = IsSpaceInstruction<Bits::Bits32, T, S>;

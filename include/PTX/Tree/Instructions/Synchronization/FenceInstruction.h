@@ -42,6 +42,10 @@ public:
 		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<>::OpCodeModifier();
 	}
 
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
 	Synchronization m_synchronization = Synchronization::None;
 };

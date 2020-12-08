@@ -3,6 +3,8 @@
 #include "PTX/Tree/Statements/Statement.h"
 #include "PTX/Tree/Operands/Operand.h"
 
+#include "PTX/Traversal/ConstInstructionVisitor.h"
+
 namespace PTX {
 
 class InstructionStatement : public Statement
@@ -56,6 +58,8 @@ public:
 		}
 		visitor.VisitOut(this);
 	}
+
+	virtual void Accept(ConstInstructionVisitor &visitor) const = 0;
 };
 
 }

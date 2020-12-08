@@ -28,7 +28,11 @@ public:
 		return { m_label };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
 	const Label *m_label = nullptr;
 };
 

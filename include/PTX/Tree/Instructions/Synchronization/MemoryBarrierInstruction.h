@@ -39,6 +39,10 @@ public:
 		return Mnemonic() + LevelString(m_level);
 	}
 
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
 	Level m_level;
 };

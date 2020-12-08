@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include "Utils/Logger.h"
 
 namespace PTX {
 
@@ -43,8 +43,7 @@ public:
 		{
 			if (scope == Scope::None)
 			{
-				std::cerr << "[ERROR] Scope modifier requires non-empty scope" << std::endl;
-				std::exit(EXIT_FAILURE);
+				Utils::Logger::LogError("Scope modifier requires non-empty scope");
 			}
 		}
 		m_scope = scope;
@@ -56,7 +55,7 @@ public:
 	}
 
 protected:
-	Scope m_scope;
+	Scope m_scope = Scope::None;
 };
 
 }

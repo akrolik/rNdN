@@ -16,7 +16,7 @@ public:
 	PredicatedInstruction(const Register<PredicateType> *predicate, bool negate = false) : m_predicate(predicate), m_negatePredicate(negate) {}
 
 	bool HasPredicate() const { return m_predicate != nullptr; }
-	std::pair<const Register<PredicateType> *, bool> GetPredicate() { return {m_predicate, m_negatePredicate}; }
+	std::pair<const Register<PredicateType> *, bool> GetPredicate() const { return {m_predicate, m_negatePredicate}; }
 	void SetPredicate(const Register<PredicateType> *predicate, bool negate = false) { m_predicate = predicate; m_negatePredicate = negate; }
 
 	std::string ToString(unsigned int indentation) const override
@@ -45,7 +45,7 @@ public:
 		return j;
 	}
 
-private:
+protected:
 	const Register<PredicateType> *m_predicate = nullptr;
 	bool m_negatePredicate = false;
 };

@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(PopulationCountInstruction)
+
 template<class T, bool Assert = true>
-class PopulationCountInstruction : public InstructionBase_1<UInt32Type, T>
+class PopulationCountInstruction : DispatchInherit(PopulationCountInstruction), public InstructionBase_1<UInt32Type, T>
 {
 public:
 	REQUIRE_TYPE_PARAM(PopulationCountInstruction,
@@ -22,6 +26,15 @@ public:
 	{
 		return Mnemonic() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(PopulationCountInstruction)
 
 }

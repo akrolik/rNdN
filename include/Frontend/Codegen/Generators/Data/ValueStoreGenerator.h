@@ -313,14 +313,17 @@ private:
 			{
 				if constexpr(std::is_same<T, PTX::Int64Type>::value)
 				{
-					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace, PTX::UInt64Type::ReductionOperation::Add>(
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(
 						new PTX::AddressAdapter<B, PTX::UInt64Type, PTX::Int64Type, PTX::GlobalSpace>(address),
-						new PTX::Unsigned64RegisterAdapter(value)
+						new PTX::Unsigned64RegisterAdapter(value),
+						PTX::UInt64Type::ReductionOperation::Add
 					));
 				}
 				else
 				{
-					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Add>(address, value));
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace>(
+						address, value, T::ReductionOperation::Add
+					));
 				}
 				break;
 			}
@@ -334,7 +337,9 @@ private:
 				}
 				else
 				{
-					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Minimum>(address, value));
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace>(
+						address, value, T::ReductionOperation::Minimum
+					));
 				}
 				break;
 			}
@@ -348,7 +353,9 @@ private:
 				}
 				else
 				{
-					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::ReductionOperation::Maximum>(address, value));
+					this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace>(
+						address, value, T::ReductionOperation::Maximum
+					));
 				}
 				break;
 			}

@@ -8,10 +8,21 @@
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+enum class LoadSynchronization {
+	Weak,
+	Volatile,
+	Relaxed,
+	Acquire
+};
+
+DispatchInterface_DataAtomic(LoadInstruction, LoadSynchronization)
+
 template<Bits B, class T, class S, bool Assert = true>
-class LoadInstructionBase : public PredicatedInstruction
+class LoadInstructionBase : DispatchInherit(LoadInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(LoadInstruction,
@@ -38,16 +49,17 @@ public:
 		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Register<T> *m_destination = nullptr;
 	const Address<B, T, S> *m_address = nullptr;
-};
-
-enum class LoadSynchronization {
-	Weak,
-	Volatile,
-	Relaxed,
-	Acquire
 };
 
 template<Bits B, class T, class S, LoadSynchronization M = LoadSynchronization::Weak>
@@ -97,7 +109,9 @@ public:
 		return code + T::Name();
 	}
 
-private:
+protected:
+	DispatchMember_Atomic(LoadSynchronization, M);
+
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 
@@ -113,6 +127,9 @@ public:
 	{
 		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
+
+protected:
+	DispatchMember_Atomic(LoadSynchronization, LoadSynchronization::Volatile);
 };
 
 template<Bits B, class T, class S>
@@ -129,6 +146,9 @@ public:
 	{
 		return Mnemonic() + ".relaxed" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
+
+protected:
+	DispatchMember_Atomic(LoadSynchronization, LoadSynchronization::Relaxed);
 };
 
 template<Bits B, class T, class S>
@@ -145,7 +165,29 @@ public:
 	{
 		return Mnemonic() + ".acquire" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
 	}
+
+protected:
+	DispatchMember_Atomic(LoadSynchronization, LoadSynchronization::Acquire);
 };
+
+DispatchImplementation_DataAtomic(LoadInstruction, ({
+	const auto atomic = GetAtomic();
+	switch (atomic)
+	{
+		case LoadSynchronization::Weak:
+			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Weak>(visitor);
+			break;
+		case LoadSynchronization::Volatile:
+			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Volatile>(visitor);
+			break;
+		case LoadSynchronization::Relaxed:
+			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Relaxed>(visitor);
+			break;
+		case LoadSynchronization::Acquire:
+			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Acquire>(visitor);
+			break;
+	}
+}))
 
 template<class T, class S>
 using Load32Instruction = LoadInstruction<Bits::Bits32, T, S>;

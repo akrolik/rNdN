@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(BitFindInstruction)
+
 template<class T, bool Assert = true>
-class BitFindInstruction : public InstructionBase_1<UInt32Type, T>
+class BitFindInstruction : DispatchInherit(BitFindInstruction), public InstructionBase_1<UInt32Type, T>
 {
 public:
 	REQUIRE_TYPE_PARAM(BitFindInstruction,
@@ -32,8 +36,16 @@ public:
 		return code + T::Name();
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	bool m_shiftAmount = false;
 };
+
+DispatchImplementation(BitFindInstruction)
 
 }

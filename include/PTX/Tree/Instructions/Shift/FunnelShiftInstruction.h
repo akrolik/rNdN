@@ -2,11 +2,20 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-class FunnelShiftInstruction : public InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>
+DispatchInterface(FunnelShiftInstruction)
+
+template<class T>
+class FunnelShiftInstruction : DispatchInherit(FunnelShiftInstruction), public InstructionBase_3<T, T, T, UInt32Type>
 {
 public:
+	REQUIRE_TYPE_PARAM(FunnelShiftInstruction,
+		REQUIRE_EXACT(T, Bit32Type)
+	);
+
 	enum Direction {
 		Left,
 		Right
@@ -17,7 +26,7 @@ public:
 		Wrap
 	};
 
-	FunnelShiftInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<UInt32Type> *shift, Direction direction, Mode mode) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
+	FunnelShiftInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<UInt32Type> *shift, Direction direction, Mode mode) : InstructionBase_3<T, T, T, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
 
 	Direction GetDirection() const { return m_direction; }
 	void SetDirection(Direction direction) { m_direction = direction; }
@@ -46,12 +55,20 @@ public:
 		{
 			code += ".wrap";
 		}
-		return code + Bit32Type::Name();
+		return code + T::Name();
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	Direction m_direction;
 	Mode m_mode;
 };
+
+DispatchImplementation(FunnelShiftInstruction)
 
 }

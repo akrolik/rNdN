@@ -11,10 +11,14 @@
 #include "PTX/Tree/Operands/Extended/DualOperand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(SetPredicateInstruction)
+
 template<class T, bool Assert = true>
-class SetPredicateInstruction : public PredicatedInstruction, public ComparisonModifier<T>, public FlushSubnormalModifier<T>, public PredicateModifier
+class SetPredicateInstruction : DispatchInherit(SetPredicateInstruction), public PredicatedInstruction, public ComparisonModifier<T>, public FlushSubnormalModifier<T>, public PredicateModifier
 {
 public:
 	REQUIRE_TYPE_PARAM(SetPredicateInstruction,
@@ -75,7 +79,11 @@ public:
 		return operands;
 	}
 
-private:
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	const Register<PredicateType> *m_destinationP = nullptr;
 	const Register<PredicateType> *m_destinationQ = nullptr;
 	const TypedOperand<T> *m_sourceA = nullptr;
@@ -83,7 +91,7 @@ private:
 };
 
 template<>
-class SetPredicateInstruction<Float16Type> : public InstructionBase_2<PredicateType, Float16Type>, public ComparisonModifier<Float16Type>, public FlushSubnormalModifier<Float16Type>, public PredicateModifier
+class SetPredicateInstruction<Float16Type> : DispatchInherit(SetPredicateInstruction), public InstructionBase_2<PredicateType, Float16Type>, public ComparisonModifier<Float16Type>, public FlushSubnormalModifier<Float16Type>, public PredicateModifier
 {
 public:
 	SetPredicateInstruction(const Register<PredicateType> *destination, const TypedOperand<Float16Type> *sourceA, const TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator) {}
@@ -107,6 +115,15 @@ public:
 		}
 		return operands;
 	}
+
+	// Visitor
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(Float16Type);
 };
+
+DispatchImplementation(SetPredicateInstruction)
 
 }

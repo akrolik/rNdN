@@ -89,8 +89,8 @@ public:
 			auto g_initBlocksAddress = addressGenerator.GenerateAddress(g_initBlocks);
 
 			auto blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace, PTX::UInt32Type::AtomicOperation::Add>(
-				blockIndex, g_initBlocksAddress, new PTX::UInt32Value(1)
+			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(
+				blockIndex, g_initBlocksAddress, new PTX::UInt32Value(1), PTX::UInt32Type::AtomicOperation::Add
 			));
 
 			// Compute the block index, keeping it within range (the kernel may be executed multiple times)

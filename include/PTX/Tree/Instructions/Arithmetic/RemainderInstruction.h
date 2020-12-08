@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(RemainderInstruction)
+
 template<class T, bool Assert = true>
-class RemainderInstruction : public InstructionBase_2<T>
+class RemainderInstruction : DispatchInherit(RemainderInstruction), public InstructionBase_2<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(RemainderInstruction,
@@ -23,6 +27,15 @@ public:
 	{
 		return Mnemonic() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
 
+DispatchImplementation(RemainderInstruction)
+ 
 }

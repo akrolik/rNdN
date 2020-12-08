@@ -7,10 +7,14 @@
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_Data(LoadUniformInstruction)
+
 template<Bits B, class T, class S, bool Assert = true>
-class LoadUniformInstruction : public PredicatedInstruction
+class LoadUniformInstruction : DispatchInherit(LoadUniformInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(LoadUniformInstruction,
@@ -44,10 +48,20 @@ public:
 		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Register<T> *m_destination = nullptr;
 	const Address<B, T, S> *m_address = nullptr;
 };
+
+DispatchImplementation_Data(LoadUniformInstruction)
 
 template<class T, class S>
 using LoadUniform32Instruction = LoadUniformInstruction<Bits::Bits32, T, S>;

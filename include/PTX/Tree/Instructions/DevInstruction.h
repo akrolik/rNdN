@@ -22,7 +22,11 @@ public:
 		return {};
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
 	std::string m_instruction;
 };
 

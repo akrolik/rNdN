@@ -17,7 +17,7 @@ public:
 
 	std::string Name() const override { return "ShuffleGenerator"; }
 
-	const PTX::Register<T> *Generate(const PTX::Register<T> *value, unsigned int offset, unsigned int bound, unsigned int memberMask, PTX::ShuffleInstruction::Mode mode)
+	const PTX::Register<T> *Generate(const PTX::Register<T> *value, unsigned int offset, unsigned int bound, unsigned int memberMask, PTX::ShuffleInstruction<PTX::Bit32Type>::Mode mode)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto temp = resources->template AllocateTemporary<T>();

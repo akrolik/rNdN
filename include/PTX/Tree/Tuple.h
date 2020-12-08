@@ -1,8 +1,9 @@
 #pragma once
 
-#include <iostream>
 #include <sstream>
 #include <tuple>
+
+#include "Utils/Logger.h"
 
 namespace PTX {
 
@@ -14,8 +15,7 @@ static std::ostringstream& CodeTuple(std::ostringstream& code, std::string separ
 	auto arg = std::get<std::tuple_size<T>::value-P>(t);
 	if (arg == nullptr)
 	{
-		std::cerr << "[ERROR] Parameter " << std::tuple_size<T>::value-P << " not set" << std::endl;
-		std::exit(EXIT_FAILURE);
+		Utils::Logger::LogError("Parameter " + std::to_string(std::tuple_size<T>::value-P) + " not set");
 	}
 	code << arg->ToString(args...);
 	if (P > 1)

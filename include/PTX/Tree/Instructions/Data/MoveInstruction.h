@@ -1,14 +1,15 @@
 #pragma once
 
-#include "PTX/Tree/Instructions/PredicatedInstruction.h"
+#include "PTX/Tree/Instructions/InstructionBase.h"
 
-#include "PTX/Tree/Operands/Operand.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Traversal/InstructionDispatch.h"
 
 namespace PTX {
 
+DispatchInterface(MoveInstruction)
+
 template<class T, bool Assert = true>
-class MoveInstruction : public PredicatedInstruction
+class MoveInstruction : DispatchInherit(MoveInstruction), public InstructionBase_1<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(MoveInstruction,
@@ -20,13 +21,7 @@ public:
 		)
 	);
 
-	MoveInstruction(const Register<T> *destination, const TypedOperand<T> *source) : m_destination(destination), m_source(source) {}
-
-	const Register<T> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<T> *destination) { m_destination = destination; }
-
-	const TypedOperand<T> *GetSource() const { return m_source; }
-	void SetSource(const TypedOperand<T> *source) { m_source = source; }
+	using InstructionBase_1<T>::InstructionBase_1;
 
 	static std::string Mnemonic() { return "mov"; }
 
@@ -35,14 +30,14 @@ public:
 		return Mnemonic() + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
-	{
-		return { m_destination, m_source };
-	}
+	// Visitors
 
-private:
-	const Register<T> *m_destination = nullptr;
-	const TypedOperand<T> *m_source = nullptr;
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(MoveInstruction)
 
 }

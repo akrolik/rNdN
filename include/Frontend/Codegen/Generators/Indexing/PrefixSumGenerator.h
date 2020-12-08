@@ -213,8 +213,8 @@ public:
 
 		// Get the current value by incrementing by 0
 
-		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace, PTX::UInt32Type::AtomicOperation::Add>(
-			completedBlocks, g_completedBlocksAddress, new PTX::UInt32Value(0)
+		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(
+			completedBlocks, g_completedBlocksAddress, new PTX::UInt32Value(0), PTX::UInt32Type::AtomicOperation::Add
 		));
 
 		// Since the kernel may be executed multiple times, keep within range
@@ -239,15 +239,16 @@ public:
 
 		if constexpr(std::is_same<T, PTX::Int64Type>::value)
 		{
-			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace, PTX::UInt64Type::ReductionOperation::Add>(
+			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(
 				new PTX::AddressAdapter<B, PTX::UInt64Type, PTX::Int64Type, PTX::GlobalSpace>(g_prefixSumAddress),
-				new PTX::Unsigned64RegisterAdapter(prefixSum)
+				new PTX::Unsigned64RegisterAdapter(prefixSum),
+				PTX::UInt64Type::ReductionOperation::Add
 			));
 		}
 		else
 		{
-			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace, T::AtomicOperation::Add>(
-				g_prefixSumAddress, prefixSum
+			this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace>(
+				g_prefixSumAddress, prefixSum, T::AtomicOperation::Add
 			));
 		}
 
@@ -287,7 +288,7 @@ public:
 			// Shuffle the value from the above lane, merging if it part of the prefix sum
 
 			ShuffleGenerator<T> shuffleGenerator(this->m_builder);
-			auto temp = shuffleGenerator.Generate(value, offset, 0, -1, PTX::ShuffleInstruction::Mode::Up);
+			auto temp = shuffleGenerator.Generate(value, offset, 0, -1, PTX::ShuffleInstruction<PTX::Bit32Type>::Mode::Up);
 
 			// Check if part of prefix sum
 

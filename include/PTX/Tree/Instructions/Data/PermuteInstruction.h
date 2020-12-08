@@ -5,11 +5,20 @@
 #include "PTX/Tree/Operands/Operand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-class PermuteInstruction : public InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, Bit16Type>
+DispatchInterface(PermuteInstruction)
+
+template<class T>
+class PermuteInstruction : DispatchInherit(PermuteInstruction), public InstructionBase_3<T>
 {
 public:
+	REQUIRE_TYPE_PARAM(PermuteInstruction,
+		REQUIRE_EXACT(T, Bit32Type)
+	);
+
 	enum class Mode {
 		Generic,
 		Forward4Extract,
@@ -42,7 +51,7 @@ public:
 		return ".<unknown>";
 	}
 
-	PermuteInstruction(const Register<Bit32Type> *destinationD, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit16Type> *sourceC, Mode mode = Mode::Generic) : InstructionBase_3<Bit32Type, Bit32Type, Bit32Type, Bit16Type>(destinationD, sourceA, sourceB, sourceC), m_mode(mode) {}
+	PermuteInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, Mode mode = Mode::Generic) : InstructionBase_3<T>(destinationD, sourceA, sourceB, sourceC), m_mode(mode) {}
 
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
@@ -51,11 +60,19 @@ public:
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + Bit32Type::Name() + ModeString(m_mode);
+		return Mnemonic() + T::Name() + ModeString(m_mode);
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	Mode m_mode;
 };
+
+DispatchImplementation(PermuteInstruction)
 
 }

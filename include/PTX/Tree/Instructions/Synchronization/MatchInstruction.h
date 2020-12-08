@@ -8,10 +8,15 @@
 #include "PTX/Tree/Operands/Extended/HexOperand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(MatchAllInstruction)
+DispatchInterface(MatchAnyInstruction)
+
 template<class T, bool Assert = true>
-class MatchAllInstruction : public PredicatedInstruction
+class MatchAllInstruction : DispatchInherit(MatchAllInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(MatchInstruction,
@@ -55,8 +60,14 @@ public:
 		operands.push_back(new HexOperand(m_memberMask));
 		return operands;
 	}
+	
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
+	DispatchMember_Type(T);
+
 	const Register<Bit32Type> *m_destinationD = nullptr;
 	const Register<PredicateType> *m_destinationP = nullptr;
 	const TypedOperand<T> *m_source = nullptr;
@@ -64,7 +75,7 @@ protected:
 };
 
 template<class T, bool Assert = true>
-class MatchAnyInstruction : public PredicatedInstruction
+class MatchAnyInstruction : DispatchInherit(MatchAnyInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(MatchInstruction,
@@ -98,10 +109,19 @@ public:
 		return operands;
 	}
 
+	// Visitors
+	
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Type(T);
+
 	const Register<Bit32Type> *m_destination = nullptr;
 	const TypedOperand<T> *m_source = nullptr;
 	uint32_t m_memberMask = 0;
 };
+
+DispatchImplementation(MatchAllInstruction)
+DispatchImplementation(MatchAnyInstruction)
 
 }

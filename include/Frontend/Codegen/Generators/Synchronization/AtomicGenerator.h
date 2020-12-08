@@ -37,8 +37,11 @@ public:
 
 		auto lockAddress = new PTX::MemoryAddress<B, PTX::Bit32Type, PTX::GlobalSpace>(lock);
 
-		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::Bit32Type, PTX::GlobalSpace, PTX::Bit32Type::AtomicOperation::CompareAndSwap>(
-			value, lockAddress, new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(0)), new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1))
+		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::Bit32Type, PTX::GlobalSpace>(
+			value, lockAddress,
+			new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(0)),
+			new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1)),
+			PTX::Bit32Type::AtomicOperation::CompareAndSwap
 		));
 
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Bit32Type>(
@@ -104,8 +107,8 @@ public:
 		auto bitAssumed = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, assumed);
 		auto bitValue = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, value);
 
-		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace, BitType::AtomicOperation::CompareAndSwap>(
-			bitOld, bitAddress, bitAssumed, bitValue
+		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
+			bitOld, bitAddress, bitAssumed, bitValue, BitType::AtomicOperation::CompareAndSwap
 		));
 
 		auto predicate1 = resources->template AllocateTemporary<PTX::PredicateType>();

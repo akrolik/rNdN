@@ -55,7 +55,11 @@ public:
 		return { m_barrier };
 	}
 
-private:
+	// Visitors
+	
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
 	const TypedOperand<UInt32Type> *m_barrier = nullptr;
 	const TypedOperand<UInt32Type> *m_threads = nullptr;
 	bool m_wait = false;

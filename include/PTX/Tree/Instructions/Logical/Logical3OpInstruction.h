@@ -4,31 +4,46 @@
 
 #include "PTX/Tree/Operands/Extended/HexOperand.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-class Logical3OpInstruction : public InstructionBase_3<Bit32Type>
+DispatchInterface(Logical3OpInstruction)
+
+template<class T = Bit32Type, bool Assert = true>
+class Logical3OpInstruction : DispatchInherit(Logical3OpInstruction), public InstructionBase_3<T>
 {
 public:
-	Logical3OpInstruction(const Register<Bit32Type> *destination, const TypedOperand<Bit32Type> *sourceA, const TypedOperand<Bit32Type> *sourceB, const TypedOperand<Bit32Type> *sourceC, uint8_t immLut) : InstructionBase_3<Bit32Type>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+	REQUIRE_TYPE_PARAM(Logical3OpInstruction,
+		REQUIRE_EXACT(T, Bit32Type)
+	);
 
-	uint8_t GetLookup() const { return m_immLut; }
-	void SetLookup(uint8_t lookup) { m_immLut = lookup; }
+	Logical3OpInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, std::uint8_t immLut) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+
+	std::uint8_t GetLookup() const { return m_immLut; }
+	void SetLookup(std::uint8_t lookup) { m_immLut = lookup; }
 
 	static std::string Mnemonic() { return "lop3"; }
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + Bit32Type::Name();
+		return Mnemonic() + T::Name();
 	}
 
 	std::vector<const Operand *> Operands() const override
 	{
-		auto operands = InstructionBase_3<Bit32Type>::Operands();
+		auto operands = InstructionBase_3<T>::Operands();
 		operands.push_back(new HexOperand(m_immLut));
 		return operands;
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	// @uint8_t m_immLut
 	//
 	// Computed look-up-table value for the 3 part boolean operation
@@ -43,7 +58,9 @@ private:
 	// compute the value of
 	//        0xF0 & 0xCC & 0xAA = 0x80
 
-	uint8_t m_immLut;
+	std::uint8_t m_immLut = 0x00;
 };
+
+DispatchImplementation(Logical3OpInstruction)
 
 }

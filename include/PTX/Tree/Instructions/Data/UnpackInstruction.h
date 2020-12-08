@@ -4,10 +4,14 @@
 
 #include "PTX/Tree/Operands/Variables/BracedRegister.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_Vector(UnpackInstruction)
+
 template<class T, VectorSize V, bool Assert = true>
-class UnpackInstruction : public PredicatedInstruction
+class UnpackInstruction : DispatchInherit(UnpackInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(UnpackInstruction,
@@ -38,10 +42,19 @@ public:
 		return { m_destination, m_source };
 	}
 
-private:
+	// Visitors
+	
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+	DispatchMember_Vector(V);
+
 	const BracedRegister<PackType, V> *m_destination = nullptr;
 	const TypedOperand<T> *m_source = nullptr;
 };
+
+DispatchImplementation_Vector(UnpackInstruction)
 
 template<class T>
 using Unpack2Instruction = UnpackInstruction<T, VectorSize::Vector2>;

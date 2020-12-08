@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(TestPropertyInstruction)
+
 template<class T, bool Assert = true>
-class TestPropertyInstruction : public InstructionBase_1<PredicateType, T>
+class TestPropertyInstruction : DispatchInherit(TestPropertyInstruction), public InstructionBase_1<PredicateType, T>
 {
 public:
 	REQUIRE_TYPE_PARAM(TestPropertyInstruction,
@@ -55,8 +59,16 @@ public:
 		return Mnemonic() + GetPropertyString(m_property) + T::Name();
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	Property m_property;
 };
+
+DispatchImplementation(TestPropertyInstruction)
 
 }

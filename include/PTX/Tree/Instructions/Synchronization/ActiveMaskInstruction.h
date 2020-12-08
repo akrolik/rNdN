@@ -2,19 +2,37 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-class ActiveMaskInstruction : public InstructionBase_0<Bit32Type>
+DispatchInterface(ActiveMaskInstruction)
+
+template<class T>
+class ActiveMaskInstruction : DispatchInherit(ActiveMaskInstruction), public InstructionBase_0<T>
 {
 public:
-	using InstructionBase_0<Bit32Type>::InstructionBase_0;
+	REQUIRE_TYPE_PARAM(ActiveMaskInstruction,
+		REQUIRE_EXACT(T, Bit32Type)
+	);
+
+	using InstructionBase_0<T>::InstructionBase_0;
 
 	static std::string Mnemonic() { return "activemask"; }
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + Bit32Type::Name();
+		return Mnemonic() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(ActiveMaskInstruction)
 
 }

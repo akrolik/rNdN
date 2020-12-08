@@ -9,10 +9,10 @@ namespace PTX {
 class BarrierWarpInstruction : public PredicatedInstruction
 {
 public:
-	BarrierWarpInstruction(uint32_t memberMask) : m_memberMask(memberMask) {}
+	BarrierWarpInstruction(std::uint32_t memberMask) : m_memberMask(memberMask) {}
 
-	uint32_t GetMemberMask() const { return m_memberMask; }
-	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+	std::uint32_t GetMemberMask() const { return m_memberMask; }
+	void SetMemberMask(std::uint32_t memberMask) { m_memberMask = memberMask; }
 
 	static std::string Mnemonic() { return "bar.warp"; }
 
@@ -26,8 +26,12 @@ public:
 		return { new HexOperand(m_memberMask) };
 	}
 
-private:
-	uint32_t m_memberMask = 0;
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	std::uint32_t m_memberMask = 0;
 };
 
 }

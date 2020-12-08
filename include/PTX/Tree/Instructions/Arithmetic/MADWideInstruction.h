@@ -2,10 +2,14 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(MADWideInstruction)
+
 template<class T, bool Assert = true>
-class MADWideInstruction : public InstructionBase_3<typename T::WideType, T, T, typename T::WideType>
+class MADWideInstruction : DispatchInherit(MADWideInstruction), public InstructionBase_3<typename T::WideType, T, T, typename T::WideType>
 {
 public:
 	REQUIRE_TYPE_PARAM(MADWideInstruction,
@@ -20,6 +24,15 @@ public:
 	{
 		return Mnemonic() + ".wide" + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
+
+DispatchImplementation(MADWideInstruction)
 
 }

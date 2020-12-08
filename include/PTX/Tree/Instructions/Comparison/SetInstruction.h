@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sstream>
-
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 #include "PTX/Tree/Instructions/Modifiers/PredicateModifier.h"
@@ -9,10 +7,14 @@
 #include "PTX/Tree/Operands/Operand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface_2(SetInstruction)
+
 template<class D, class T, bool Assert = true>
-class SetInstruction : public InstructionBase_2<D, T>, public FlushSubnormalModifier<T>, public PredicateModifier
+class SetInstruction : DispatchInherit(SetInstruction), public InstructionBase_2<D, T>, public FlushSubnormalModifier<T>, public PredicateModifier
 {
 public:
 	REQUIRE_TYPE_PARAMS(SetInstruction,
@@ -57,8 +59,17 @@ public:
 		return operands;
 	}
 
-private:
+	// Visitors
+	
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type1(D);
+	DispatchMember_Type2(T);
+
 	typename T::ComparisonOperator m_comparator;
 };
+
+DispatchImplementation_2(SetInstruction)
 
 }

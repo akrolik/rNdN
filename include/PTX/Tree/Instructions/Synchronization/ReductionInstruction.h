@@ -8,10 +8,14 @@
 #include "PTX/Tree/Operands/Address/Address.h"
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-template<Bits B, class T, class S, typename T::ReductionOperation Op, bool Assert = true>
-class ReductionInstruction : public PredicatedInstruction, public ScopeModifier<false>
+DispatchInterface_Data(ReductionInstruction)
+
+template<Bits B, class T, class S, bool Assert = true>
+class ReductionInstruction : DispatchInherit(ReductionInstruction), public PredicatedInstruction, public ScopeModifier<false>
 {
 public:
 	REQUIRE_TYPE_PARAM(ReductionInstruction,
@@ -49,15 +53,17 @@ public:
 	}
 
 	using Scope = ScopeModifier<false>::Scope;
-	using ReductionOperation = typename T::ReductionOperation;
 
-	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : ScopeModifier<false>(scope), m_address(address), m_value(value), m_synchronization(synchronization) {}
+	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, typename T::ReductionOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : ScopeModifier<false>(scope), m_address(address), m_value(value), m_operation(operation), m_synchronization(synchronization) {}
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
 	void SetAddress(const Address<B, T, S> *address) { m_address; }
 
 	const TypedOperand<T> *GetValue() const { return m_value; }
 	void SetValue(const TypedOperand<T> *value) { m_value = value ;}
+
+	typename T::ReductionOperation GetOperation() const { return m_operation; }
+	void SetOperation(typename T::ReductionOperation operation) { m_operation = operation; }
 
 	Synchronization GetSynchronization() const { return m_synchronization; }
 	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
@@ -71,19 +77,30 @@ public:
 
 	std::string OpCode() const override
 	{
-		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<false>::OpCodeModifier() + S::Name() + T::ReductionOperationString(Op) + T::Name();
+		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<false>::OpCodeModifier() + S::Name() + T::ReductionOperationString(m_operation) + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Address<B, T, S> *m_address = nullptr;
 	const TypedOperand<T> *m_value = nullptr;
 
+	typename T::ReductionOperation m_operation;
 	Synchronization m_synchronization = Synchronization::None;
 };
 
-template<class T, class S, typename T::AtomicInstruction Op>
-using Reduction32Instruction = ReductionInstruction<Bits::Bits32, T, S, Op>;
-template<class T, class S, typename T::AtomicInstruction Op>
-using Reduction64Instruction = ReductionInstruction<Bits::Bits64, T, S, Op>;
+DispatchImplementation(ReductionInstruction)
+
+template<class T, class S>
+using Reduction32Instruction = ReductionInstruction<Bits::Bits32, T, S>;
+template<class T, class S>
+using Reduction64Instruction = ReductionInstruction<Bits::Bits64, T, S>;
 
 }

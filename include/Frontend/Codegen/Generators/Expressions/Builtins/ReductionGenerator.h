@@ -201,7 +201,7 @@ public:
 			// Generate the shuffle instruction to pull down the other value
 
 			ShuffleGenerator<T> shuffleGenerator(this->m_builder);
-			auto temp = shuffleGenerator.Generate(target, offset, warpSize - 1, -1, PTX::ShuffleInstruction::Mode::Down);
+			auto temp = shuffleGenerator.Generate(target, offset, warpSize - 1, -1, PTX::ShuffleInstruction<PTX::Bit32Type>::Mode::Down);
 
 			// Generate the operation for the reduction
 

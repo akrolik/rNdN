@@ -7,14 +7,21 @@
 #include "PTX/Tree/Operands/Address/Address.h"
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-template<Bits B, class T, bool Assert = true>
-class PrefetchUniformInstruction : public PredicatedInstruction
+DispatchInterface_Data(PrefetchUniformInstruction)
+
+template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
+class PrefetchUniformInstruction : DispatchInherit(PrefetchUniformInstruction), public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(PrefetchUniformInstruction,
 		REQUIRE_BASE(T, ValueType)
+	);
+	REQUIRE_SPACE_PARAM(PrefetchUniformInstruction,
+		REQUIRE_EXACT(S, AddressableSpace)
 	);
 
 	PrefetchUniformInstruction(const Address<B, T, AddressableSpace> *address) : m_address(address) {}
@@ -34,13 +41,23 @@ public:
 		return { new DereferencedAddress<B, T, AddressableSpace>(m_address) };
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	const Address<B, T, AddressableSpace> *m_address = nullptr;
 };
 
+DispatchImplementation_Data(PrefetchUniformInstruction)
+
 template<class T>
-using PrefetchUniform32Instruction = PrefetchUniformInstruction<Bits::Bits32, T>;
+using PrefetchUniform32Instruction = PrefetchUniformInstruction<Bits::Bits32, T, AddressableSpace>;
 template<class T>
-using PrefetchUniform64Instruction = PrefetchUniformInstruction<Bits::Bits64, T>;
+using PrefetchUniform64Instruction = PrefetchUniformInstruction<Bits::Bits64, T, AddressableSpace>;
 
 }

@@ -35,7 +35,11 @@ public:
 		return operands;
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
 	const Register<UInt32Type> *m_index = nullptr;
 	std::vector<const Label *> m_labels;
 };

@@ -22,7 +22,7 @@ public:
 		return { m_destination };
 	}
 
-private:
+protected:
 	const Register<D> *m_destination = nullptr;
 };
 
@@ -43,7 +43,7 @@ public:
 		return { m_destination, m_source };
 	}
 
-private:
+protected:
 	const Register<D> *m_destination = nullptr;
 	const TypedOperand<S> *m_source = nullptr;
 };
@@ -68,7 +68,7 @@ public:
 		return { m_destination, m_sourceA, m_sourceB };
 	}
 
-private:
+protected:
 	const Register<D> *m_destination = nullptr;
 	const TypedOperand<S1> *m_sourceA = nullptr;
 	const TypedOperand<S2> *m_sourceB = nullptr;
@@ -97,7 +97,7 @@ public:
 		return { m_destination, m_sourceA, m_sourceB, m_sourceC };
 	}
 
-private:
+protected:
 	const Register<D> *m_destination = nullptr;
 	const TypedOperand<S1> *m_sourceA = nullptr;
 	const TypedOperand<S2> *m_sourceB = nullptr;
@@ -130,7 +130,7 @@ public:
 		return { m_destination, m_sourceA, m_sourceB, m_sourceC, m_sourceD };
 	}
 
-private:
+protected:
 	const Register<D> *m_destination = nullptr;
 	const TypedOperand<S1> *m_sourceA = nullptr;
 	const TypedOperand<S2> *m_sourceB = nullptr;

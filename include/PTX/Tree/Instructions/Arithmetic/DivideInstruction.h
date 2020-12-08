@@ -4,10 +4,14 @@
 #include "PTX/Tree/Instructions/Modifiers/RoundingModifier.h"
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
+DispatchInterface(DivideInstruction)
+
 template<class T, bool Assert = true>
-class DivideInstruction : public InstructionBase_2<T>
+class DivideInstruction : DispatchInherit(DivideInstruction), public InstructionBase_2<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(DivideInstruction,
@@ -26,10 +30,17 @@ public:
 	{
 		return Mnemonic() + T::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
 };
 
 template<>
-class DivideInstruction<Float32Type> : public InstructionBase_2<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
+class DivideInstruction<Float32Type> : DispatchInherit(DivideInstruction), public InstructionBase_2<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
 	DivideInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *sourceA, const TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
@@ -73,12 +84,18 @@ public:
 		return code + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
 	}
 
-private:
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(Float32Type);
+
 	bool m_full = false;
 };
 
 template<>
-class DivideInstruction<Float64Type> : public InstructionBase_2<Float64Type>, public RoundingModifier<Float64Type, true>
+class DivideInstruction<Float64Type> : DispatchInherit(DivideInstruction), public InstructionBase_2<Float64Type>, public RoundingModifier<Float64Type, true>
 {
 public:
 	DivideInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *sourceA, const TypedOperand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
@@ -89,6 +106,15 @@ public:
 	{
 		return Mnemonic() + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
 	}
+
+	// Visitors
+
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(Float64Type);
 };
 
+DispatchImplementation(DivideInstruction)
+ 
 }
