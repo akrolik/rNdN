@@ -2,6 +2,8 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Utils/Logger.h"
+
 namespace HorseIR {
 
 std::string PrettyPrinter::PrettyString(const Node *node, bool quick)
@@ -24,16 +26,13 @@ std::string PrettyPrinter::PrettyString(const Identifier *identifier, bool quick
  
 void PrettyPrinter::Indent()
 {
-	for (unsigned int i = 0; i < m_indent; ++i)
-	{
-		m_string << "\t";
-	}
+	m_string << std::string(m_indent * Utils::Logger::IndentSize, ' ');
 }
 
 template<typename T>
 void PrettyPrinter::CommaSeparated(const std::vector<T>& elements)
 {
-	bool first = true;
+	auto first = true;
 	for (const auto& element : elements)
 	{
 		if (!first)
@@ -48,7 +47,7 @@ void PrettyPrinter::CommaSeparated(const std::vector<T>& elements)
 template<>
 void PrettyPrinter::CommaSeparated<std::string>(const std::vector<std::string>& elements)
 {
-	bool first = true;
+	auto first = true;
 	for (const auto& element : elements)
 	{
 		if (!first)
@@ -62,7 +61,7 @@ void PrettyPrinter::CommaSeparated<std::string>(const std::vector<std::string>& 
 
 void PrettyPrinter::Visit(const Program *program)
 {
-	bool first = true;
+	auto first = true;
 	for (const auto& module : program->GetModules())
 	{
 		if (!first)
@@ -337,7 +336,7 @@ void PrettyPrinter::VectorLiteral(const std::vector<T>& values, bool boolean)
 		m_string << "(";
 	}
 
-	bool first = true;
+	auto first = true;
 	for (const auto& value : values)
 	{
 		if (!first)

@@ -6,6 +6,7 @@
 #include "SASS/Instructions/Instruction.h"
 
 #include "Utils/Format.h"
+#include "Utils/Logger.h"
 
 namespace SASS {
 
@@ -24,7 +25,8 @@ public:
 		std::string code = "." + m_name + ":\n";
 		for (auto instruction : m_instructions)
 		{
-			code += "\t" + instruction->ToString() + "\n";
+			code += std::string(Utils::Logger::IndentSize, ' ');
+			code += instruction->ToString() + "\n";
 		}
 		return code;
 	}

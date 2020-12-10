@@ -15,6 +15,8 @@ public:
 	constexpr static char const *DebugPrefix = "DEBUG";
 	constexpr static char const *ErrorPrefix = "ERROR";
 
+	constexpr static unsigned int IndentSize = 8;
+
 	Logger(Logger const&) = delete;
 	void operator=(Logger const&) = delete;
 

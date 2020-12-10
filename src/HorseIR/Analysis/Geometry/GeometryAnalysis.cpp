@@ -511,10 +511,7 @@ bool GeometryAnalysis::VisitIn(const Operand *operand)
 std::string GeometryAnalysis::DebugString(const Statement *statement, unsigned int indent) const
 {
 	std::stringstream string;
-	for (auto i = 0u; i < indent; ++i)
-	{
-		string << "\t";
-	}
+	string << std::string(indent * Utils::Logger::IndentSize, ' ');
 	string << *m_geometries.at(statement);
 	return string.str();
 }

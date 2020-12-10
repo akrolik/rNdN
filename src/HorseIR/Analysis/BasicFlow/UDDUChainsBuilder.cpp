@@ -86,12 +86,7 @@ bool UDDUChainsBuilder::VisitIn(const Identifier *identifier)
 
 std::string Indent(unsigned int indent)
 {
-	std::string string;
-	for (unsigned int i = 0; i < indent; ++i)
-	{
-		string += "\t";
-	}
-	return string;
+	return std::string(indent * Utils::Logger::IndentSize, ' ');
 }
 
 std::string UDDUChainsBuilder::DebugString(unsigned int indent) const

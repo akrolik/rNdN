@@ -129,13 +129,9 @@ bool DataInitializationAnalysis::VisitIn(const CallExpression *call)
 
 std::string DataInitializationAnalysis::DebugString(unsigned int indent)
 {
-	std::string string;
-	for (unsigned int i = 0; i < indent; ++i)
-	{
-		string += "\t";
-	}
+	std::string string(indent * Utils::Logger::IndentSize, ' ');
 
-	bool first = true;
+	auto first = true;
 	for (const auto& initialization : m_dataInit)
 	{
 		if (!first)

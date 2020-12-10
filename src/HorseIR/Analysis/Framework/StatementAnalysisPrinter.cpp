@@ -2,17 +2,14 @@
 
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Logger.h"
+
 namespace HorseIR {
 namespace Analysis {
 
 std::string StatementAnalysisPrinter::Indent() const
 {
-	std::string str;
-	for (unsigned int i = 0; i < m_indent; ++i)
-	{
-		str += "\t";
-	}
-	return str;
+	return std::string(m_indent * Utils::Logger::IndentSize, ' ');
 }
 
 std::string StatementAnalysisPrinter::PrettyString(const StatementAnalysis& analysis, const Function *function)

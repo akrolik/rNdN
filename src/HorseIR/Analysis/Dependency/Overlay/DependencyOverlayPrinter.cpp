@@ -2,6 +2,8 @@
 
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlay.h"
 
+#include "Utils/Logger.h"
+
 #include <regex>
 
 namespace HorseIR {
@@ -9,10 +11,7 @@ namespace Analysis {
 
 void DependencyOverlayPrinter::Indent()
 {
-	for (unsigned int i = 0; i < m_indent; ++i)
-	{
-		m_string << "\t";
-	}
+	m_string << std::string(m_indent * Utils::Logger::IndentSize, ' ');
 }
 
 std::string DependencyOverlayPrinter::PrettyString(const DependencyOverlay *overlay)

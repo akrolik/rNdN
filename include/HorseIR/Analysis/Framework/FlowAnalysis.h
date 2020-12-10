@@ -49,11 +49,8 @@ struct FlowAnalysisSet : public std::unordered_set<const typename T::Type *, typ
 {
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
-		for (unsigned int i = 0; i < level; ++i)
-		{
-			os << '\t';
-		}
-		bool first = true;
+		os << std::string(level * Utils::Logger::IndentString, ' ');
+		auto first = true;
 		for (const auto& val : *this)
 		{
 			if (!first)
@@ -93,7 +90,7 @@ struct FlowAnalysisMap : public std::unordered_map<const typename K::Type *, con
 {
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
-		bool first = true;
+		auto first = true;
 		for (const auto& pair : *this)
 		{
 			if (!first)
@@ -101,10 +98,7 @@ struct FlowAnalysisMap : public std::unordered_map<const typename K::Type *, con
 				os << std::endl;
 			}
 			first = false;
-			for (unsigned int i = 0; i < level; ++i)
-			{
-				os << '\t';
-			}
+			os << std::string(level * Utils::Logger::IndentString, ' ');
 			K::Print(os, pair.first);
 			os << "->";
 			V::Print(os, pair.second);
@@ -147,24 +141,15 @@ struct FlowAnalysisPair : public std::pair<T1, T2>
 
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
-		for (unsigned int i = 0; i < level; ++i)
-		{
-			os << '\t';
-		}
+		os << std::string(level * Utils::Logger::IndentString, ' ');
 		os << "<" << std::endl;
 		this->first.Print(os, level + 1);
 		os << std::endl;
-		for (unsigned int i = 0; i < level; ++i)
-		{
-			os << '\t';
-		}
+		os << std::string(level * Utils::Logger::IndentString, ' ');
 		os << "," << std::endl;
 		this->second.Print(os, level + 1);
 		os << std::endl;
-		for (unsigned int i = 0; i < level; ++i)
-		{
-			os << '\t';
-		}
+		os << std::string(level * Utils::Logger::IndentString, ' ');
 		os << ">";
 	}
 };
@@ -330,11 +315,7 @@ public:
 
 	std::string DebugString(const Statement *statement, unsigned indent = 0) const override
 	{
-		std::string indentString = "";
-		for (auto i = 0u; i < indent; ++i)
-		{
-			indentString += "\t";
-		}
+		std::string indentString(indent * Utils::Logger::IndentSize, ' ');
 
 		std::stringstream string;
 		string << indentString << "In: {" << std::endl;

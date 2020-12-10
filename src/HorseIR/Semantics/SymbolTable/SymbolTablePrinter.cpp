@@ -2,14 +2,13 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Utils/Logger.h"
+
 namespace HorseIR {
 
 void SymbolTablePrinter::Indent()
 {
-	for (unsigned int i = 0; i < m_indent; ++i)
-	{
-		m_string << "\t";
-	}
+	m_string << std::string(m_indent * Utils::Logger:IndentSize, ' ');
 }
 
 std::string SymbolTablePrinter::PrettyString(const Program *program)
