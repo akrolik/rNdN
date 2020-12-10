@@ -3,6 +3,8 @@
 #include "Assembler/Assembler.h"
 #include "Backend/Compiler.h"
 
+#include "PTX/Utils/PrettyPrinter.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Options.h"
 
@@ -21,7 +23,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 	{
 		if (library)
 		{
-			cModule.AddPTXModule(module->ToString(0));
+			cModule.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
 		}
 		else
 		{
@@ -29,7 +31,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 			{
 				case Utils::Options::BackendKind::ptxas:
 				{
-					cModule.AddPTXModule(module->ToString(0));
+					cModule.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
 					break;
 				}
 				case Utils::Options::BackendKind::r3d3:

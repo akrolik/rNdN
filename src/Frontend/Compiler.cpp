@@ -13,6 +13,8 @@
 
 #include "HorseIR/Semantics/SemanticAnalysis.h"
 
+#include "PTX/Utils/PrettyPrinter.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Math.h"
@@ -109,7 +111,9 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
 	{
 		Utils::Logger::LogInfo("Generated PTX program");
-		Utils::Logger::LogInfo(ptxProgram->ToString(0), 0, true, Utils::Logger::NoPrefix);
+
+		auto programString = PTX::PrettyPrinter::PrettyString(ptxProgram);
+		Utils::Logger::LogInfo(programString, 0, true, Utils::Logger::NoPrefix);
 
 		for (const auto module : ptxProgram->GetModules())
 		{
