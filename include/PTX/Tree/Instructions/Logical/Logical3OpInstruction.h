@@ -18,19 +18,31 @@ public:
 		REQUIRE_EXACT(T, Bit32Type)
 	);
 
-	Logical3OpInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, std::uint8_t immLut) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+	Logical3OpInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, std::uint8_t immLut)
+		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
+
+	// Properties
 
 	std::uint8_t GetLookup() const { return m_immLut; }
 	void SetLookup(std::uint8_t lookup) { m_immLut = lookup; }
+	
+	// Formatting
 
 	static std::string Mnemonic() { return "lop3"; }
 
-	std::string OpCode() const override
+	std::string GetGetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		auto operands = InstructionBase_3<T>::Operands();
+		operands.push_back(new HexOperand(m_immLut));
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		auto operands = InstructionBase_3<T>::Operands();
 		operands.push_back(new HexOperand(m_immLut));

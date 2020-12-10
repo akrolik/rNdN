@@ -114,7 +114,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::ParameterVariable<T> *GenerateConstant(const std::string& name, bool alias = false)
+	PTX::ParameterVariable<T> *GenerateConstant(const std::string& name, bool alias = false)
 	{
 		// Allocate a constant parameter declaration for the type
 
@@ -125,7 +125,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::ParameterVariable<PTX::PointerType<B, T>> *GeneratePointer(const std::string& name, bool alias = false)
+	PTX::ParameterVariable<PTX::PointerType<B, T>> *GeneratePointer(const std::string& name, bool alias = false)
 	{
 		// Allocate a pointer parameter declaration for the type
 

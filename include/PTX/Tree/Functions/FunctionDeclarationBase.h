@@ -19,14 +19,20 @@ public:
 	using ReturnDeclarationType = TypedVariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
 
 	FunctionDeclarationBase() {}
-	FunctionDeclarationBase(const std::string& name, const ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
+	FunctionDeclarationBase(const std::string& name, ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
 
-	void SetReturn(const ReturnDeclarationType *ret) { m_return = ret; }
+	// Properties
 
-	std::string ToString(unsigned int indentation) const override
+	const ReturnDeclarationType *GetReturnDeclaration() const override { return m_return; }
+	ReturnDeclarationType *GetReturnDeclaration() override { return m_return; }
+	void SetReturnDeclaration(ReturnDeclarationType *ret) { m_return = ret; }
+
+	std::string GetDirectives() const override
 	{
-		return Function::ToString(indentation) + ";";
+		return ".func";
 	}
+
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -36,21 +42,7 @@ public:
 	}
 
 protected:
-	std::string GetDirectives() const override
-	{
-		return ".func";
-	}
-
-	std::string GetReturnString() const override
-	{
-		if (m_return != nullptr)
-		{
-			return m_return->ToString(0, false);
-		}
-		return "<unset>";
-	}
-
-	const ReturnDeclarationType *m_return = nullptr;
+	ReturnDeclarationType *m_return = nullptr;
 };
 
 template<>
@@ -60,15 +52,14 @@ public:
 	FunctionDeclarationBase() {}
 	FunctionDeclarationBase(const std::string& name, Declaration::LinkDirective linkDirective) : Function(name) {}
 
+	// Poperties
+
 	bool GetEntry() const { return m_entry; }
 	void SetEntry(bool entry) { m_entry = entry; }
 
-	std::string ToString(unsigned int indentation) const override
-	{
-		return Function::ToString(indentation) + ";";
-	}
+	const VariableDeclaration *GetReturnDeclaration() const { return nullptr; }
+	VariableDeclaration *GetReturnDeclaration() { return nullptr; }
 
-protected:
 	std::string GetDirectives() const override
 	{
 		if (m_entry)
@@ -78,11 +69,7 @@ protected:
 		return ".func";
 	}
 
-	std::string GetReturnString() const override
-	{
-		return "";
-	}
-
+protected:
 	bool m_entry = false;
 };
 

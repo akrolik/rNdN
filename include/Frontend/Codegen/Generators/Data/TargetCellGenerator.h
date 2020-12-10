@@ -21,7 +21,7 @@ public:
 
 	std::string Name() const override { return "TargetCellGenerator"; }
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, unsigned int index)
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, unsigned int index)
 	{
 		m_index = index;
 		target->Accept(*this);
@@ -46,7 +46,7 @@ public:
 
 private:
 	unsigned int m_index = 0;
-	const PTX::Register<T> *m_targetRegister = nullptr;
+	PTX::Register<T> *m_targetRegister = nullptr;
 };
 
 }

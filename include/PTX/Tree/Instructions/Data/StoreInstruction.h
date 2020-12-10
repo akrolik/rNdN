@@ -36,15 +36,26 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	StoreInstructionBase(const Address<B, T, S> *address, const Register<T> *source) : m_address(address), m_source(source) {}
+	StoreInstructionBase(Address<B, T, S> *address, Register<T> *source) : m_address(address), m_source(source) {}
+
+	// Properties
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address = address; }
 
 	const Register<T> *GetSource() const { return m_source; }
-	void SetSource(const Register<T> *source) { m_source = source; }
+	Register<T> *GetSource() { return m_source; }
+	void SetSource(Register<T> *source) { m_source = source; }
 
-	std::vector<const Operand *> Operands() const override
+	// Formatting
+
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { new DereferencedAddress<B, T, S>(m_address), m_source };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { new DereferencedAddress<B, T, S>(m_address), m_source };
 	}
@@ -58,8 +69,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Address<B, T, S> *m_address = nullptr;
-	const Register<T> *m_source = nullptr;
+	Address<B, T, S> *m_address = nullptr;
+	Register<T> *m_source = nullptr;
 };
 
 template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak, bool Assert = true>
@@ -89,14 +100,19 @@ public:
 		return ".<unknown>";
 	}
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, CacheOperator cacheOperator = CacheOperator::WriteBack) : StoreInstructionBase<B, T, S>(address, source), m_cacheOperator(cacheOperator) {}
+	StoreInstruction(Address<B, T, S> *address, Register<T> *source, CacheOperator cacheOperator = CacheOperator::WriteBack)
+		: StoreInstructionBase<B, T, S>(address, source), m_cacheOperator(cacheOperator) {}
+
+	// Properties
 
 	CacheOperator GetCacheOperator() const { return m_cacheOperator; }
 	void SetCacheOperator(CacheOperator cacheOperator) { m_cacheOperator = cacheOperator; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "st"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic() + S::Name();
 		if (m_cacheOperator != CacheOperator::WriteBack)
@@ -105,7 +121,6 @@ public:
 		}
 		return code + T::Name();
 	}
-
 
 protected:
 	DispatchMember_Atomic(StoreSynchronization, M);
@@ -119,9 +134,11 @@ class StoreInstruction<B, T, S, StoreSynchronization::Volatile, Assert> : public
 public:
 	using StoreInstructionBase<B, T, S, Assert>::StoreInstructionBase;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "st"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
@@ -136,13 +153,16 @@ class StoreInstruction<B, T, S, StoreSynchronization::Relaxed, Assert> : public 
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S, Assert>(address, source), ScopeModifier<>(scope) {}
+	StoreInstruction(Address<B, T, S> *address, Register<T> *source, Scope scope)
+		: StoreInstructionBase<B, T, S, Assert>(address, source), ScopeModifier<>(scope) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "st"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ".relaxed" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
+		return Mnemonic() + ".relaxed" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
 protected:
@@ -155,13 +175,16 @@ class StoreInstruction<B, T, S, StoreSynchronization::Release, Assert> : public 
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	StoreInstruction(const Address<B, T, S> *address, const Register<T> *source, Scope scope) : StoreInstructionBase<B, T, S, Assert>(address, source), ScopeModifier<>(scope) {}
+	StoreInstruction(Address<B, T, S> *address, Register<T> *source, Scope scope)
+		: StoreInstructionBase<B, T, S, Assert>(address, source), ScopeModifier<>(scope) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "st"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ".release" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
+		return Mnemonic() + ".release" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
 protected:
@@ -169,8 +192,7 @@ protected:
 };
 
 DispatchImplementation_DataAtomic(StoreInstruction, ({
-	const auto atomic = GetAtomic();
-	switch (atomic)
+	switch (GetAtomic())
 	{
 		case StoreSynchronization::Weak:
 			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Weak>(visitor);

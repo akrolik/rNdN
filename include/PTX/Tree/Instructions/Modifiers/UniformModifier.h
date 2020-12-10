@@ -7,10 +7,14 @@ class UniformModifier
 public:
 	UniformModifier(bool uniform = false) : m_uniform(uniform) {}
 
+	// Properties
+
 	bool GetUniform() const { return m_uniform; }
 	void SetUniform(bool uniform) { m_uniform = uniform; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		if (m_uniform)
 		{

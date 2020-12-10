@@ -7,12 +7,12 @@
 
 namespace Backend {
 
-class Compiler : public PTX::ConstHierarchicalVisitor
+class Compiler : public PTX::HierarchicalVisitor
 {
 public:
-	SASS::Program *Compile(const PTX::Program *program);
+	SASS::Program *Compile(PTX::Program *program);
 
-	bool VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function) override;
+	bool VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function) override;
 
 private:
 	SASS::Program *m_program = nullptr;

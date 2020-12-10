@@ -13,8 +13,12 @@ class Value : public TypedOperand<T>
 public:
 	Value(typename T::SystemType value) : m_value(value) {}
 
+	// Properties
+
 	typename T::SystemType GetValue() const { return m_value; }
 	void SetValue(typename T::SystemType value) { m_value = value; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{

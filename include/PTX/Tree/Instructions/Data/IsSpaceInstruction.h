@@ -22,24 +22,35 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	IsSpaceInstruction(const Register<PredicateType> *destination, const Address<B, T> *address) : m_destination(destination), m_address(address) {}
+	IsSpaceInstruction(Register<PredicateType> *destination, Address<B, T> *address) : m_destination(destination), m_address(address) {}
+
+	// Properties
 
 	const Register<PredicateType> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<PredicateType> *destination) { m_destination = destination; }
+	Register<PredicateType> *GetDestination() { return m_destination; }
+	void SetDestination(Register<PredicateType> *destination) { m_destination = destination; }
 
 	const Address<B, T> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T> *address) { m_address = address; }
+	Address<B, T> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T> *address) { m_address = address; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "isspacep"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + S::Name();
 	}
 
-	std::string Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
-		return m_destination->ToString() + ", " + m_address->ToString();
+		return { m_destination, m_address };
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		return { m_destination, m_address };
 	}
 
 	// Visitors
@@ -51,8 +62,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Register<PredicateType> *m_destination = nullptr;
-	const Address<B, T> *m_address = nullptr;
+	Register<PredicateType> *m_destination = nullptr;
+	Address<B, T> *m_address = nullptr;
 };
 
 DispatchImplementation_Data(IsSpaceInstruction);

@@ -10,17 +10,28 @@ class ListOperand : public Operand
 {
 public:
 	ListOperand() {}
-	ListOperand(const std::vector<const Operand *>& operands) : m_operands(operands) {}
+	ListOperand(const std::vector<Operand *>& operands) : m_operands(operands) {}
 
-	void AddOperand(const Operand *operand)
+	// Properties
+
+	std::vector<const Operand *> GetOperands() const
+	{
+		return std::vector<const Operand *>(std::begin(m_operands), std::end(m_operands));
+	}
+	std::vector<Operand *>& GetOperands() { return m_operands; }
+
+	void SetOperands(const std::vector<Operand *>& operands) { m_operands = operands; }
+	void AddOperand(Operand *operand)
 	{
 		m_operands.push_back(operand);
 	}
 
+	// Formatting
+
 	std::string ToString() const override
 	{
 		std::string code = "(";
-		bool first = true;
+		auto first = true;
 		for (const auto& operand : m_operands)
 		{
 			if (!first)
@@ -45,7 +56,7 @@ public:
 	}
 
 private:
-	std::vector<const Operand *> m_operands;
+	std::vector<Operand *> m_operands;
 };
 
 }

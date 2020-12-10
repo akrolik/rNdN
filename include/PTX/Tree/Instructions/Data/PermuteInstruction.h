@@ -51,14 +51,19 @@ public:
 		return ".<unknown>";
 	}
 
-	PermuteInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, Mode mode = Mode::Generic) : InstructionBase_3<T>(destinationD, sourceA, sourceB, sourceC), m_mode(mode) {}
+	PermuteInstruction(Register<T> *destinationD, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, Mode mode = Mode::Generic)
+		: InstructionBase_3<T>(destinationD, sourceA, sourceB, sourceC), m_mode(mode) {}
+
+	// Properties
 
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "prmt"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name() + ModeString(m_mode);
 	}

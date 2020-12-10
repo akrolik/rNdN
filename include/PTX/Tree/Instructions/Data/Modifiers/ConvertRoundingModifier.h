@@ -46,10 +46,14 @@ public:
 	ConvertRoundingModifier() {}
 	ConvertRoundingModifier(RoundingMode roundingMode) : m_roundingMode(roundingMode) {}
 
+	// Properties
+
 	RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		return RoundingModeString(m_roundingMode);
 	}
@@ -100,10 +104,14 @@ public:
 	ConvertRoundingModifier() {}
 	ConvertRoundingModifier(RoundingMode roundingMode) : m_roundingMode(roundingMode) {}
 
+	// Properties
+
 	RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		return RoundingModeString(m_roundingMode);
 	}

@@ -30,22 +30,24 @@ public:
 
 	using InstructionBase_1<D, S>::InstructionBase_1;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "cvt"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(ConvertRoundingModifier<D, S>::Enabled)
 		{
-			code += ConvertRoundingModifier<D, S>::OpCodeModifier();
+			code += ConvertRoundingModifier<D, S>::GetOpCodeModifier();
 		}
 		if constexpr(ConvertFlushSubnormalModifier<D, S>::Enabled)
 		{
-			code += ConvertFlushSubnormalModifier<D, S>::OpCodeModifier();
+			code += ConvertFlushSubnormalModifier<D, S>::GetOpCodeModifier();
 		}
 		if constexpr(ConvertSaturateModifier<D, S>::Enabled)
 		{
-			code += ConvertSaturateModifier<D, S>::OpCodeModifier();
+			code += ConvertSaturateModifier<D, S>::GetOpCodeModifier();
 		}
 		return code + D::Name() + S::Name();
 	}

@@ -19,11 +19,13 @@ public:
 
 	using InstructionBase_1<T>::InstructionBase_1;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "lg2"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ".approx" + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
+		return Mnemonic() + ".approx" + FlushSubnormalModifier<T>::GetOpCodeModifier() + T::Name();
 	}
 
 	// Visitors

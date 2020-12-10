@@ -23,10 +23,14 @@ public:
 
 	HalfModifier(Half half) : m_half(half) {}
 
+	// Properties
+
 	Half GetHalf() const { return m_half; }
 	void SetHalf(Half half) { m_half = half; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		switch (m_half)
 		{

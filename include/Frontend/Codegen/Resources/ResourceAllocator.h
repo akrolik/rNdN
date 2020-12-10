@@ -16,10 +16,10 @@ template<template<class> class R>
 class ResourceAllocator
 {
 public:
-	virtual std::vector<const PTX::VariableDeclaration *> GetDeclarations() const
+	virtual std::vector<PTX::VariableDeclaration *> GetDeclarations() const
 	{
-		std::vector<const PTX::VariableDeclaration *> declarations;
-		for (const auto& resources : m_resourcesMap)
+		std::vector<PTX::VariableDeclaration *> declarations;
+		for (auto& resources : m_resourcesMap)
 		{
 			auto _declarations = resources.second->GetDeclarations();
 			declarations.insert(declarations.end(), _declarations.begin(), _declarations.end());

@@ -26,31 +26,35 @@ public:
 	);
 
 	template <class T1 = T, class = typename std::enable_if_t<HalfModifier<T1>::Enabled>>
-	MADInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, typename HalfModifier<T1>::Half half) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), HalfModifier<T>(half) {} 
+	MADInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, typename HalfModifier<T1>::Half half)
+		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), HalfModifier<T>(half) {} 
 
 	template <class T1 = T, class = typename std::enable_if_t<!HalfModifier<T1>::Enabled>>
-	MADInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC) {}
+	MADInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC)
+		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "mad"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(CarryModifier<T>::Enabled)
 		{
-			code += CarryModifier<T>::OpCodeModifier();
+			code += CarryModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(HalfModifier<T>::Enabled)
 		{
-			code += HalfModifier<T>::OpCodeModifier();
+			code += HalfModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(RoundingModifier<T>::Enabled)
 		{
-			code += RoundingModifier<T>::OpCodeModifier();
+			code += RoundingModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(SaturateModifier<T>::Enabled)
 		{
@@ -63,12 +67,12 @@ public:
 					{
 						if (!CarryModifier<T>::IsActive())
 						{
-							code += SaturateModifier<T>::OpCodeModifier();
+							code += SaturateModifier<T>::GetOpCodeModifier();
 						}
 					}
 					else
 					{
-						code += SaturateModifier<T>::OpCodeModifier();
+						code += SaturateModifier<T>::GetOpCodeModifier();
 					}
 				}
 			}
@@ -78,12 +82,12 @@ public:
 				{
 					if (!CarryModifier<T>::IsActive())
 					{
-						code += SaturateModifier<T>::OpCodeModifier();
+						code += SaturateModifier<T>::GetOpCodeModifier();
 					}
 				}
 				else
 				{
-					code += SaturateModifier<T>::OpCodeModifier();
+					code += SaturateModifier<T>::GetOpCodeModifier();
 				}
 			}
 		}

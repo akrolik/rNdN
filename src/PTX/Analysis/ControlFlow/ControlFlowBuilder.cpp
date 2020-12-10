@@ -5,7 +5,7 @@ namespace Analysis {
 
 // API
 
-void ControlFlowAccumulator::Analyze(const FunctionDefinition<VoidType> *function)
+void ControlFlowAccumulator::Analyze(FunctionDefinition<VoidType> *function)
 {
 	m_graph = new ControlFlowGraph(function);
 	function->Accept(*this);
@@ -13,7 +13,7 @@ void ControlFlowAccumulator::Analyze(const FunctionDefinition<VoidType> *functio
 
 // Statements
 
-bool ControlFlowAccumulator::VisitIn(const Statement *statement)
+bool ControlFlowAccumulator::VisitIn(Statement *statement)
 {
 	// 1. Leader for first statement. May also occur for new blocks throughout
 	if (m_currentBlock == nullptr)
@@ -24,17 +24,17 @@ bool ControlFlowAccumulator::VisitIn(const Statement *statement)
 	}
 
 	// 2. Leader after branch instruction
-	if (auto branchInstruction = dynamic_cast<const BranchInstruction *>(statement))
+	if (auto branchInstruction = dynamic_cast<BranchInstruction *>(statement))
 	{
 		m_currentBlock->AddStatement(statement);
-		m_blockMap[statement] = m_currentBlock;
+		m_statementMap[statement] = m_currentBlock;
 
 		m_currentBlock = nullptr;
 		return false;
 	}
 
 	// 3. False branch if predicated instruction
-	if (auto predInstruction = dynamic_cast<const PredicatedInstruction *>(statement))
+	if (auto predInstruction = dynamic_cast<PredicatedInstruction *>(statement))
 	{
 		if (auto [predicate, negate] = predInstruction->GetPredicate(); predicate != nullptr)
 		{
@@ -45,7 +45,7 @@ bool ControlFlowAccumulator::VisitIn(const Statement *statement)
 
 			auto branchStatement = new PTX::BranchInstruction(labelEnd, predicate, !negate);
 			m_currentBlock->AddStatement(branchStatement);
-			m_blockMap[branchStatement] = m_currentBlock;
+			m_statementMap[branchStatement] = m_currentBlock;
 
 			// Current instruction goes in its own special block
 
@@ -55,9 +55,12 @@ bool ControlFlowAccumulator::VisitIn(const Statement *statement)
 			m_currentBlock = predBlock;
 			m_graph->InsertNode(m_currentBlock, label);
 
-			//TODO: Remove predicate (clone)
+			// Remove predicate (now part of the block)
+
+			predInstruction->SetPredicate(nullptr);
+
 			m_currentBlock->AddStatement(predInstruction);
-			m_blockMap[predInstruction] = m_currentBlock;
+			m_statementMap[predInstruction] = m_currentBlock;
 
 			// Converge branches
 
@@ -76,17 +79,18 @@ bool ControlFlowAccumulator::VisitIn(const Statement *statement)
 	}
 
 	m_currentBlock->AddStatement(statement);
-	m_blockMap[statement] = m_currentBlock;
+	m_statementMap[statement] = m_currentBlock;
 
 	return false;
 }
 
-bool ControlFlowAccumulator::VisitIn(const Label *label)
+bool ControlFlowAccumulator::VisitIn(LabelStatement *statement)
 {
 	// 4. Leader for branch target
+	auto label = statement->GetLabel();
 	auto labelBlock = new BasicBlock(label);
 	m_graph->InsertNode(labelBlock, label);
-	m_blockMap[label] = labelBlock;
+	m_labelMap[label] = labelBlock;
 
 	// Empty block occurs if the previous statement was a predicated (non-branch) instruction
 	if (m_currentBlock != nullptr)
@@ -103,24 +107,25 @@ bool ControlFlowAccumulator::VisitIn(const Label *label)
 
 // Builder API
 
-void ControlFlowBuilder::Analyze(const FunctionDefinition<VoidType> *function)
+void ControlFlowBuilder::Analyze(FunctionDefinition<VoidType> *function)
 {
 	ControlFlowAccumulator accumulator;
 	accumulator.Analyze(function);
 
 	m_graph = accumulator.GetGraph();
-	m_blockMap = accumulator.GetBlockMap();
+	m_labelMap = accumulator.GetLabelMap();
+	m_statementMap = accumulator.GetStatementMap();
 
 	function->Accept(*this);
 }
 
 // Statements
 
-bool ControlFlowBuilder::VisitIn(const Statement *statement)
+bool ControlFlowBuilder::VisitIn(Statement *statement)
 {
 	// Insert incoming edges if needed
 
-	auto statementBlock = m_blockMap.at(statement);
+	auto statementBlock = m_statementMap.at(statement);
 	if (m_previousBlock != nullptr && m_previousBlock != statementBlock)
 	{
 		m_graph->InsertEdge(m_previousBlock, statementBlock);
@@ -129,18 +134,18 @@ bool ControlFlowBuilder::VisitIn(const Statement *statement)
 	return false;
 }
 
-bool ControlFlowBuilder::VisitIn(const InstructionStatement *statement)
+bool ControlFlowBuilder::VisitIn(InstructionStatement *statement)
 {
 	// Insert incoming edges
 
-	ConstHierarchicalVisitor::VisitIn(statement);
+	HierarchicalVisitor::VisitIn(statement);
 
 	// Insert outgoing edges for branching (label target)
 
-	if (auto branchInstruction = dynamic_cast<const BranchInstruction *>(statement))
+	if (auto branchInstruction = dynamic_cast<BranchInstruction *>(statement))
 	{
-		auto statementBlock = m_blockMap.at(statement);
-		m_graph->InsertEdge(statementBlock, m_blockMap.at(branchInstruction->GetLabel()));
+		auto statementBlock = m_statementMap.at(statement);
+		m_graph->InsertEdge(statementBlock, m_labelMap.at(branchInstruction->GetLabel()));
 
 		// Predicated branches have an edge to the next block
 
@@ -150,7 +155,7 @@ bool ControlFlowBuilder::VisitIn(const InstructionStatement *statement)
 		}
 	}
 	// Predicate instructions cause internal control flow
-	else if (auto predInstruction = dynamic_cast<const PredicatedInstruction *>(statement))
+	else if (auto predInstruction = dynamic_cast<PredicatedInstruction *>(statement))
 	{
 		if (predInstruction->HasPredicate())
 		{

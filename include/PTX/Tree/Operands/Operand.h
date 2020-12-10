@@ -8,14 +8,18 @@ namespace PTX {
 class Operand : public Node
 {
 public:
-	std::string ToString(unsigned int indentation) const override
-	{
-		return ToString();
-	}
-
 	virtual std::string ToString() const = 0;
 
 	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{

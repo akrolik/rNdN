@@ -33,7 +33,7 @@ public:
 
 	std::string Name() const override { return "HashCreateInsertGenerator"; }
 
-	void Generate(const HorseIR::Operand *dataOperand, const PTX::TypedOperand<PTX::UInt32Type> *slot)
+	void Generate(const HorseIR::Operand *dataOperand, PTX::TypedOperand<PTX::UInt32Type> *slot)
 	{
 		m_slot = slot;
 		dataOperand->Accept(*this);
@@ -116,7 +116,7 @@ private:
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *m_slot = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_slot = nullptr;
 };
 
 template<PTX::Bits B>
@@ -157,7 +157,7 @@ public:
 		InternalHashGenerator<B> hashGenerator(this->m_builder);
 		auto slot = hashGenerator.Generate(dataArgument);
 
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
 			new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
 			new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
@@ -166,23 +166,23 @@ public:
 
 		DispatchType(*this, dataArgument->GetType(), slot, dataArgument, startLabel);
 
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 	}
 	
 	template<class T>
-	void GenerateVector(const PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, const PTX::Label *startLabel)
+	void GenerateVector(PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel)
 	{
 		GenerateHashInsert<T>(slot, operand, startLabel);
 	}
 
 	template<class T>
-	void GenerateList(const PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, const PTX::Label *startLabel)
+	void GenerateList(PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel)
 	{
 		GenerateHashInsert<T>(slot, operand, startLabel, true);
 	}
 	
 	template<class T>
-	void GenerateTuple(unsigned int index, const PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, const PTX::Label *startLabel)
+	void GenerateTuple(unsigned int index, PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel)
 	{
 		if (index == 0)
 		{
@@ -192,7 +192,7 @@ public:
 
 private:
 	template<class T>
-	void GenerateHashInsert(const PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, const PTX::Label *startLabel, bool isCell = false)
+	void GenerateHashInsert(PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel, bool isCell = false)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
@@ -220,7 +220,7 @@ private:
 			// Get the address for the slot
 
 			auto kernelResources = this->m_builder.GetKernelResources();
-			const PTX::Address<B, T, PTX::GlobalSpace> *address = nullptr;
+			PTX::Address<B, T, PTX::GlobalSpace> *address = nullptr;
 			if (isCell)
 			{
 				auto keyParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::ReturnName(0));

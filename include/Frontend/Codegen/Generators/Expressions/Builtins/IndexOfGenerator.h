@@ -29,7 +29,7 @@ public:
 
 	std::string Name() const override { return "IndexOfGenerator"; }
 
-	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		InternalFindGenerator<B, PTX::Int64Type> findGenerator(this->m_builder, FindOperation::Index, {ComparisonOperation::Equal});
 		return findGenerator.Generate(target, arguments);

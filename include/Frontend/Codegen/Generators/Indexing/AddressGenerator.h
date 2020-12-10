@@ -20,23 +20,23 @@ public:
 
 	std::string Name() const override { return "AddressGenerator"; }
 
-	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(const PTX::ParameterVariable<PTX::PointerType<B, T>> *variable, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
+	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(PTX::ParameterVariable<PTX::PointerType<B, T>> *variable, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		return GenerateAddress(NameUtils::DataAddressName(variable), index, offset);
 	}
 
-	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *variable, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
+	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *variable, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		return GenerateAddress(NameUtils::DataCellAddressName(variable), index, offset);
 	}
 
-	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *variable, unsigned int cellIndex, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
+	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *variable, unsigned int cellIndex, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		return GenerateAddress(NameUtils::DataCellAddressName(variable, cellIndex), index, offset);
 	}
 
 	template<class S>
-	PTX::Address<B, T, S> *GenerateAddress(const PTX::Variable<T, S> *variable, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
+	PTX::Address<B, T, S> *GenerateAddress(PTX::Variable<T, S> *variable, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -63,7 +63,7 @@ public:
 	}
 
 	template<class S>
-	PTX::RegisterAddress<B, T, S> *GenerateAddress(const PTX::Register<PTX::UIntType<B>> *base, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
+	PTX::RegisterAddress<B, T, S> *GenerateAddress(PTX::Register<PTX::UIntType<B>> *base, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -85,7 +85,7 @@ public:
 	}
 
 	template<PTX::Bits OffsetBits>
-	const PTX::TypedOperand<PTX::UIntType<B>> *GenerateAddressOffset(const PTX::TypedOperand<PTX::UInt32Type> *index)
+	PTX::TypedOperand<PTX::UIntType<B>> *GenerateAddressOffset(PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		// Compute offset from the base address using the thread id and the data size
 
@@ -117,7 +117,7 @@ public:
 	}
 
 private:
-	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(const std::string& dataAddressName, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
+	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(const std::string& dataAddressName, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, int offset = 0)
 	{
 		// Get the special address register
 

@@ -11,12 +11,12 @@ template<class T>
 class ModuleResources : public Resources
 {
 public:
-	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const override
+	std::vector<PTX::VariableDeclaration *> GetDeclarations() const override
 	{
 		return m_declarations;
 	}
 
-	const PTX::GlobalVariable<T> *AllocateGlobalVariable(const std::string& identifier)
+	PTX::GlobalVariable<T> *AllocateGlobalVariable(const std::string& identifier)
 	{
 		if (m_globalsMap.find(identifier) != m_globalsMap.end())
 		{
@@ -38,12 +38,12 @@ public:
 		return (m_globalsMap.find(identifier) != m_globalsMap.end());
 	}
 
-	const PTX::GlobalVariable<T> *GetGlobalVariable(const std::string& identifier) const
+	PTX::GlobalVariable<T> *GetGlobalVariable(const std::string& identifier) const
 	{
 		return m_globalsMap.at(identifier);
 	}
 
-	const PTX::ConstVariable<T> *AllocateConstVariable(const std::string& identifier, const std::vector<typename T::SystemType>& initializer)
+	PTX::ConstVariable<T> *AllocateConstVariable(const std::string& identifier, const std::vector<typename T::SystemType>& initializer)
 	{
 		if (m_constsMap.find(identifier) != m_constsMap.end())
 		{
@@ -65,14 +65,14 @@ public:
 		return (m_constsMap.find(identifier) != m_constsMap.end());
 	}
 
-	const PTX::ConstVariable<T> *GetConstVariable(const std::string& identifier) const
+	PTX::ConstVariable<T> *GetConstVariable(const std::string& identifier) const
 	{
 		return m_constsMap.at(identifier);
 	}
 private:
-	std::vector<const PTX::VariableDeclaration *> m_declarations;
-	std::unordered_map<std::string, const PTX::GlobalVariable<T> *> m_globalsMap;
-	std::unordered_map<std::string, const PTX::ConstVariable<T> *> m_constsMap;
+	std::vector<PTX::VariableDeclaration *> m_declarations;
+	std::unordered_map<std::string, PTX::GlobalVariable<T> *> m_globalsMap;
+	std::unordered_map<std::string, PTX::ConstVariable<T> *> m_constsMap;
 };
 
 }

@@ -3,27 +3,37 @@
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 #include "PTX/Tree/Instructions/Modifiers/UniformModifier.h"
 
-#include "PTX/Tree/Statements/Label.h"
+#include "PTX/Tree/Operands/Label.h"
 
 namespace PTX {
 
 class BranchInstruction : public PredicatedInstruction, public UniformModifier
 {
 public:
-	BranchInstruction(const Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
-	BranchInstruction(const Label *label, const Register<PredicateType> *predicate, bool negate = false, bool uniform = false) : PredicatedInstruction(predicate, negate), UniformModifier(uniform), m_label(label) {}
+	BranchInstruction(Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
+	BranchInstruction(Label *label, Register<PredicateType> *predicate, bool negate = false, bool uniform = false) : PredicatedInstruction(predicate, negate), UniformModifier(uniform), m_label(label) {}
+
+	// Properties
+
+	const Label *GetLabel() const { return m_label; }
+	Label *GetLabel() { return m_label; }
+	void SetLabel(Label *label) { m_label = label; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "bra"; }
 
-	const Label *GetLabel() const { return m_label; }
-	void SetLabel(const Label *label) { m_label = label; }
-
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + UniformModifier::OpCodeModifier();
+		return Mnemonic() + UniformModifier::GetOpCodeModifier();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { m_label };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { m_label };
 	}
@@ -33,7 +43,7 @@ public:
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
-	const Label *m_label = nullptr;
+	Label *m_label = nullptr;
 };
 
 }

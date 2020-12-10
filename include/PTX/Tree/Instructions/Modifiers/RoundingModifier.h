@@ -20,10 +20,14 @@ public:
 	RoundingModifier() {}
 	RoundingModifier(typename T::RoundingMode roundingMode) : m_roundingMode(roundingMode) {}
 
+	// Properties
+
 	typename T::RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(typename T::RoundingMode roundingMode) { m_roundingMode = roundingMode; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		return T::RoundingModeString(m_roundingMode);
 	}
@@ -51,6 +55,8 @@ public:
 		}
 	}
 
+	// Properties
+
 	typename T::RoundingMode GetRoundingMode() const { return m_roundingMode; }
 	void SetRoundingMode(typename T::RoundingMode roundingMode)
 	{
@@ -61,7 +67,9 @@ public:
 	       	m_roundingMode = roundingMode;
 	}
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		return T::RoundingModeString(m_roundingMode);
 	}

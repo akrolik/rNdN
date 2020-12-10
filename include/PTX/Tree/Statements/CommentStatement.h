@@ -9,15 +9,15 @@ class CommentStatement : public Statement
 public:
 	CommentStatement(const std::string& comment, bool multiline = false) : m_comment(comment), m_multiline(multiline) {}
 
-	std::string ToString(unsigned int indentation) const override
-	{
-		std::string indentString = std::string(indentation, '\t');
-		if (m_multiline)
-		{
-			return indentString + "/*\n" + indentString + " * " + ReplaceString(m_comment, "\n", "\n" + indentString + " * ") + "\n" + indentString + " */";
-		}
-		return indentString + "// " + ReplaceString(m_comment, "\n", "\n" + indentString + "// ");
-	}
+	// Properties
+
+	const std::string& GetComment() const { return m_comment; }
+	void SetComment(const std::string& comment) { m_comment = comment; }
+
+	bool IsMultiline() const { return m_multiline; }
+	void SetMultiline(bool multiline) { m_multiline = multiline; }
+
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -30,6 +30,15 @@ public:
 
 	// Visitors
 
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
 		visitor.VisitIn(this);
@@ -37,17 +46,6 @@ public:
 	}
 
 private:
-	static std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace)
-	{
-		size_t pos = 0;
-		while ((pos = subject.find(search, pos)) != std::string::npos)
-		{
-			subject.replace(pos, search.length(), replace);
-			pos += replace.length();
-		}
-		return subject;
-	}
-
 	std::string m_comment;
 	bool m_multiline = false;
 };

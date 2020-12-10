@@ -26,7 +26,7 @@ public:
 
 	std::string Name() const override { return "InternalChangeGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::Operand *dataArgument)
+	PTX::Register<PTX::PredicateType> *Generate(const HorseIR::Operand *dataArgument)
 	{
 		// Initialize the current and previous values, and compute the change
 		//   
@@ -128,8 +128,8 @@ public:
 		// Get the operand values
 
 		OperandGenerator<B, T> opGen(this->m_builder);
-		const PTX::TypedOperand<T> *value = nullptr;
-		const PTX::TypedOperand<T> *previousValue = nullptr;
+		PTX::TypedOperand<T> *value = nullptr;
+		PTX::TypedOperand<T> *previousValue = nullptr;
 
 		if (isCell)
 		{
@@ -162,7 +162,7 @@ public:
 	}
                                                                                                                   
 private:
-	const PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
+	PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
 };
  
 }

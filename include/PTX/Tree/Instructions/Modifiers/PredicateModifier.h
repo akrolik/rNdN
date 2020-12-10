@@ -15,10 +15,13 @@ public:
 	};
 
 	PredicateModifier() {}
-	PredicateModifier(const Register<PredicateType> *sourcePredicate, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_sourcePredicate(sourcePredicate), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
+	PredicateModifier(Register<PredicateType> *sourcePredicate, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_sourcePredicate(sourcePredicate), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
+
+	// Properties
 
 	const Register<PredicateType> *GetSourcePredicate() const { return m_sourcePredicate; }
-	void SetSourcePredicate(const Register<PredicateType> *source) { m_sourcePredicate; }
+	Register<PredicateType> *GetSourcePredicate() { return m_sourcePredicate; }
+	void SetSourcePredicate(Register<PredicateType> *source) { m_sourcePredicate; }
 
 	BoolOperator GetBoolOperator() const { return m_boolOperator; }
 	void SetBoolOperator(BoolOperator boolOperator) { m_boolOperator = boolOperator; }
@@ -26,7 +29,9 @@ public:
 	bool GetNegateSourcePredicate() const { return m_negateSourcePredicate; }
 	void SetNegateSourcePredicate(bool negateSourcePredicate) { m_negateSourcePredicate = negateSourcePredicate; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		if (m_sourcePredicate != nullptr)
 		{
@@ -44,7 +49,20 @@ public:
 		return "";
 	}
 
-	const Operand *OperandsModifier() const
+	const Operand *GetOperandsModifier() const
+	{
+		if (m_sourcePredicate != nullptr)
+		{
+			if (m_negateSourcePredicate)
+			{
+				return new InvertedOperand(m_sourcePredicate);
+			}
+			return m_sourcePredicate;
+		}
+		return nullptr;
+	}
+
+	Operand *GetOperandsModifier()
 	{
 		if (m_sourcePredicate != nullptr)
 		{
@@ -58,7 +76,7 @@ public:
 	}
 
 protected:
-	const Register<PredicateType> *m_sourcePredicate = nullptr;
+	Register<PredicateType> *m_sourcePredicate = nullptr;
 	BoolOperator m_boolOperator = BoolOperator::And;
 	bool m_negateSourcePredicate = false;
 };

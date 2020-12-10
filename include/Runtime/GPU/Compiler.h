@@ -13,7 +13,7 @@ class Compiler
 public:
 	Compiler(Manager& gpuManager) : m_gpuManager(gpuManager) {}
 
-	const PTX::Program *Compile(const HorseIR::Program *program) const;
+	PTX::Program *Compile(const HorseIR::Program *program) const;
 
 private:
 	Manager& m_gpuManager;

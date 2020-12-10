@@ -22,7 +22,7 @@ public:
 
 	std::string Name() const override { return "ThreadGeometryGenerator"; }
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateVectorGeometry()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateVectorGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(inputOptions.ThreadGeometry))
@@ -40,7 +40,7 @@ public:
 		Error("vector size for thread geometry");
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateListGeometry()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateListGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
@@ -58,7 +58,7 @@ public:
 		Error("list size for thread geometry");
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateListDataGeometry()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateListDataGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (const auto listGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(inputOptions.ThreadGeometry))
@@ -80,7 +80,7 @@ public:
 		Error("cell size for thread geometry");
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDataGeometry()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateDataGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (inputOptions.IsVectorGeometry())
@@ -94,7 +94,7 @@ public:
 		Error("data size for thread geometry");
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateWarpCount()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateWarpCount()
 	{
 		// Warp count = ntidx / warp size
 
@@ -109,7 +109,7 @@ public:
 		return count;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateListThreads()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateListThreads()
 	{
 		// Check if the thread count is specified as part of the input options or is dynamic
 
@@ -127,7 +127,7 @@ public:
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateActiveThreads()
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateActiveThreads()
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

@@ -19,14 +19,18 @@ public:
 		)
 	);
 
-	BitFindInstruction(const Register<UInt32Type> *destination, const TypedOperand<T> *source, bool shiftAmount = false) : InstructionBase_1<UInt32Type, T>(destination, source), m_shiftAmount(shiftAmount) {}
+	BitFindInstruction(Register<UInt32Type> *destination, TypedOperand<T> *source, bool shiftAmount = false) : InstructionBase_1<UInt32Type, T>(destination, source), m_shiftAmount(shiftAmount) {}
+
+	// Properties
 
 	bool GetShiftAmount() const { return m_shiftAmount; }
 	void SetShiftAmount(bool shiftAmount) { m_shiftAmount; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "bfind"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if (m_shiftAmount)

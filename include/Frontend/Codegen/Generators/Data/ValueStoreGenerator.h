@@ -264,7 +264,7 @@ private:
 	}
 
 	template<class T>
-	void GenerateWriteReduction(RegisterReductionOperation reductionOp, const PTX::TypedOperand<PTX::UInt32Type> *activeIndex, const PTX::Register<T> *value, const PTX::TypedOperand<PTX::UInt32Type> *writeIndex, unsigned int returnIndex)
+	void GenerateWriteReduction(RegisterReductionOperation reductionOp, PTX::TypedOperand<PTX::UInt32Type> *activeIndex, PTX::Register<T> *value, PTX::TypedOperand<PTX::UInt32Type> *writeIndex, unsigned int returnIndex)
 	{
 		// At the end of the partial reduction we only have a single active thread. Use it to store the final value
 
@@ -283,11 +283,11 @@ private:
 
 		// End the function and return
 
-		this->m_builder.AddStatement(label);
+		this->m_builder.AddStatement(new PTX::LabelStatement(label));
 	}
 
 	template<class T>
-	void GenerateWriteReduction(RegisterReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value, unsigned int returnIndex)
+	void GenerateWriteReduction(RegisterReductionOperation reductionOp, PTX::Address<B, T, PTX::GlobalSpace> *address, PTX::Register<T> *value, unsigned int returnIndex)
 	{
 		if constexpr(PTX::is_reduction_type<T>::value)
 		{
@@ -300,7 +300,7 @@ private:
 	}
 
 	template<class T>
-	void GenerateReductionInstruction(RegisterReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value, unsigned int returnIndex)
+	void GenerateReductionInstruction(RegisterReductionOperation reductionOp, PTX::Address<B, T, PTX::GlobalSpace> *address, PTX::Register<T> *value, unsigned int returnIndex)
 	{
 		switch (reductionOp)
 		{
@@ -367,7 +367,7 @@ private:
 	}
 
 	template<class T>
-	void GenerateCASWriteReduction(RegisterReductionOperation reductionOp, const PTX::Address<B, T, PTX::GlobalSpace> *address, const PTX::Register<T> *value, unsigned int returnIndex)
+	void GenerateCASWriteReduction(RegisterReductionOperation reductionOp, PTX::Address<B, T, PTX::GlobalSpace> *address, PTX::Register<T> *value, unsigned int returnIndex)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -409,7 +409,7 @@ private:
 	}
 
 	template<class T>
-	const PTX::Register<PTX::PredicateType> *GenerateCASReductionOperation(RegisterReductionOperation reductionOp, const PTX::Register<T> *global, const PTX::Register<T> *value, unsigned int returnIndex)
+	PTX::Register<PTX::PredicateType> *GenerateCASReductionOperation(RegisterReductionOperation reductionOp, PTX::Register<T> *global, PTX::Register<T> *value, unsigned int returnIndex)
 	{
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
 		{
@@ -488,7 +488,7 @@ private:
 
 		auto address = GenerateAddress<T>(returnIndex, writeIndex);
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		this->m_builder.AddStatement(label);
+		this->m_builder.AddStatement(new PTX::LabelStatement(label));
 	}
 
 	template<class T>
@@ -542,7 +542,7 @@ private:
 
 			auto address = GenerateAddress<T>(returnIndex, writeIndex);
 			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-			this->m_builder.AddStatement(label);
+			this->m_builder.AddStatement(new PTX::LabelStatement(label));
 		}
 		else
 		{
@@ -551,7 +551,7 @@ private:
 	}
 
 	template<class T>
-	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(unsigned int returnIndex, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	PTX::Address<B, T, PTX::GlobalSpace> *GenerateAddress(unsigned int returnIndex, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		// Get the address register for the return and offset by the index
 
@@ -581,7 +581,7 @@ private:
 	}
 
 	template<class T>
-	const PTX::Register<T> *GenerateWriteValue(const HorseIR::Operand *operand, typename OperandGenerator<B, T>::LoadKind loadKind)
+	PTX::Register<T> *GenerateWriteValue(const HorseIR::Operand *operand, typename OperandGenerator<B, T>::LoadKind loadKind)
 	{
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		if (m_isCell)

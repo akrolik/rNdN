@@ -22,7 +22,7 @@ public:
 
 	std::string Name() const override { return "TargetGenerator"; }
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const PTX::Register<PTX::PredicateType> *predicateRegister)
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, PTX::Register<PTX::PredicateType> *predicateRegister)
 	{
 		target->Accept(*this);
 
@@ -85,7 +85,7 @@ public:
 	}
 
 private:
-	const PTX::Register<T> *m_targetRegister = nullptr;
+	PTX::Register<T> *m_targetRegister = nullptr;
 };
 
 }

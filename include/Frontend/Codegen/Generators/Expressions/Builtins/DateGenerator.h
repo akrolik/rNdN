@@ -78,12 +78,12 @@ public:
 
 	std::string Name() const override { return "DateGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::Int32Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int32Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		if (m_dateOp != DateOperation::Date)
 		{
@@ -123,12 +123,12 @@ public:
 
 	std::string Name() const override { return "DateGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		if (m_dateOp != DateOperation::Time)
 		{
@@ -157,12 +157,12 @@ public:
 
 	std::string Name() const override { return "DateGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::Int16Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int16Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 
@@ -188,7 +188,7 @@ public:
 	}
 	
 	template<class T>
-	void GenerateVector(const PTX::Register<PTX::Int16Type> *target, const HorseIR::Operand *argument)
+	void GenerateVector(PTX::Register<PTX::Int16Type> *target, const HorseIR::Operand *argument)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -197,7 +197,7 @@ public:
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto inputSrc = opGen.GenerateOperand(argument, OperandGenerator<B, T>::LoadKind::Vector);
 
-		const PTX::TypedOperand<PTX::Int32Type> *src = nullptr;
+		PTX::TypedOperand<PTX::Int32Type> *src = nullptr;
 		if constexpr(std::is_same<T, PTX::Int32Type>::value)
 		{
 			src = inputSrc;
@@ -275,7 +275,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const PTX::Register<PTX::Int16Type> *target, const HorseIR::Operand *argument)
+	void GenerateList(PTX::Register<PTX::Int16Type> *target, const HorseIR::Operand *argument)
 	{
 		if (this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -288,13 +288,13 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const PTX::Register<PTX::Int16Type> *target, const HorseIR::Operand *argument)
+	void GenerateTuple(unsigned int index, PTX::Register<PTX::Int16Type> *target, const HorseIR::Operand *argument)
 	{
 		BuiltinGenerator<B, PTX::Int16Type>::Unimplemented("list-in-vector");
 	}
 
-	std::tuple<const PTX::Register<PTX::Int32Type> *, const PTX::Register<PTX::PredicateType> *> GenerateYear(
-		const PTX::Register<PTX::Int16Type> *year, const PTX::TypedOperand<PTX::Int32Type> *src
+	std::tuple<PTX::Register<PTX::Int32Type> *, PTX::Register<PTX::PredicateType> *> GenerateYear(
+		PTX::Register<PTX::Int16Type> *year, PTX::TypedOperand<PTX::Int32Type> *src
 	) {
 		// Extract year from unix time
 		//
@@ -321,7 +321,7 @@ public:
 
 		auto startLabel = this->m_builder.CreateLabel("START");
 		auto endLabel = this->m_builder.CreateLabel("END");
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 
 		auto leapPredicate_4 = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto leapPredicate_100 = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -365,12 +365,12 @@ public:
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int16Type>(year, year, new PTX::Int16Value(1)));
 		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::Int32Type>(days, days, yearDays));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 
 		return {days, leapPredicate};
 	}
 
-	const PTX::Register<PTX::Int32Type> *GenerateMonth(const PTX::Register<PTX::Int16Type> *month, const PTX::TypedOperand<PTX::Int32Type> *src)
+	PTX::Register<PTX::Int32Type> *GenerateMonth(PTX::Register<PTX::Int16Type> *month, PTX::TypedOperand<PTX::Int32Type> *src)
 	{
 		// Extract month from unix time
 		//
@@ -400,7 +400,7 @@ public:
 
 		auto startLabel = this->m_builder.CreateLabel("START");
 		auto endLabel = this->m_builder.CreateLabel("END");
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 
 		auto febPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto febLeapPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -445,12 +445,12 @@ public:
 
 		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::Int32Type>(days, days, monthDays));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 
 		return days;
 	}
 
-	void GenerateDay(const PTX::Register<PTX::Int16Type> *day, const PTX::TypedOperand<PTX::Int32Type> *src)
+	void GenerateDay(PTX::Register<PTX::Int16Type> *day, PTX::TypedOperand<PTX::Int32Type> *src)
 	{
 		// Extract day from unix time
 		//

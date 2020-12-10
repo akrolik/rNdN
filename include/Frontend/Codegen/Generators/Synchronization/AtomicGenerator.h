@@ -18,7 +18,7 @@ public:
 
 	std::string Name() const override { return "AtomicGenerator"; }
 
-	void GenerateWait(const PTX::GlobalVariable<PTX::Bit32Type> *lock)
+	void GenerateWait(PTX::GlobalVariable<PTX::Bit32Type> *lock)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -30,7 +30,7 @@ public:
 		//   @%p bra ATOM
 
 		auto label = this->m_builder.CreateLabel("ATOM");
-		this->m_builder.AddStatement(label);
+		this->m_builder.AddStatement(new PTX::LabelStatement(label));
 
 		auto value = resources->template AllocateTemporary<PTX::Bit32Type>();
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -50,7 +50,7 @@ public:
 		this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate));
 	}
 
-	void GenerateUnlock(const PTX::GlobalVariable<PTX::Bit32Type> *lock)
+	void GenerateUnlock(PTX::GlobalVariable<PTX::Bit32Type> *lock)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -64,7 +64,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateMinMaxReduction(const PTX::Address<B, T, PTX::GlobalSpace> *globalAddress, const PTX::TypedOperand<T> *value, bool min)
+	void GenerateMinMaxReduction(PTX::Address<B, T, PTX::GlobalSpace> *globalAddress, PTX::TypedOperand<T> *value, bool min)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		using BitType = PTX::BitType<T::TypeBits>;
@@ -97,7 +97,7 @@ public:
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate0, value, old, (min) ? T::ComparisonOperator::GreaterEqual : T::ComparisonOperator::LessEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate0));
 
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 
 		auto assumed = resources->template AllocateTemporary<T>();
 		this->m_builder.AddStatement(new PTX::MoveInstruction<T>(assumed, old));
@@ -120,7 +120,7 @@ public:
 		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate3, predicate1, predicate2));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicate3));
 
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 	}
 };
 

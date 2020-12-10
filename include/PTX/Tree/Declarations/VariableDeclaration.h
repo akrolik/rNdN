@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "PTX/Tree/Declarations/Declaration.h"
-#include "PTX/Tree/Statements/DirectiveStatement.h"
 
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/StateSpace.h"
@@ -18,10 +17,10 @@ class NameSet
 public:
 	NameSet(const std::string& name, unsigned int count = 1) : m_name(name), m_count(count) {}
 
-	std::string GetPrefix() const
-	{
-		return m_name;
-	}
+	// Prorties
+
+	const std::string& GetName() const { return m_name; }
+	void SetName(const std::string& name) { m_name = name; }
 
 	std::string GetName(unsigned int index) const
 	{
@@ -40,6 +39,8 @@ public:
 
 	void SetCount(unsigned int count) { m_count = count; }
 	unsigned int GetCount() const { return m_count; }
+
+	// Formatting
 	
 	std::string ToString() const
 	{
@@ -52,10 +53,10 @@ public:
 
 protected:
 	std::string m_name;
-	unsigned int m_count;
+	unsigned int m_count = 1;
 };
 
-class VariableDeclaration : public DirectiveStatement, public Declaration
+class VariableDeclaration : public Declaration
 {
 public:
 	using Declaration::Declaration;
@@ -74,8 +75,7 @@ public:
 
 	VariableDeclaration(const std::vector<NameSet *>& variables) : m_names(variables) {}
 
-	virtual std::string PreDirectives() const { return ""; }
-	virtual std::string PostDirectives() const { return ""; }
+	// Properties
 
 	void AddNames(const std::string& prefix, unsigned int count = 1)
 	{
@@ -94,7 +94,7 @@ public:
 	{
 		for (auto& set : m_names)
 		{
-			if (set->GetPrefix() == prefix)
+			if (set->GetName() == prefix)
 			{
 				set->SetCount(count);
 				return;
@@ -106,8 +106,12 @@ public:
 
 	const std::vector<NameSet *>& GetNames() const { return m_names; }
 
-	virtual std::string ToString(unsigned int indentation) const = 0;
-	virtual std::string ToString(unsigned int indentation, bool terminate) const = 0;
+	// Formatting
+
+	virtual std::string PreDirectives() const { return ""; }
+	virtual std::string PostDirectives() const { return ""; }
+
+	virtual std::string ToString() const = 0;
 
 	json ToJSON() const override
 	{
@@ -141,17 +145,30 @@ public:
 
 	// Visitors
 
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
 		visitor.VisitIn(this);
 		visitor.VisitOut(this);
 	}
 
+	// Dispatch
+
+	//TODO: Dispatch
 	template<class V> bool DispatchIn(V& visitor) const;
 	template<class V, class S> bool DispatchIn(V& visitor) const;
 	template<class V> void DispatchOut(V& visitor) const;
 
 protected:
+	//TODO: Dispatch
 	virtual const Type *GetType() const = 0;
 	virtual const StateSpace *GetStateSpace() const = 0;
 
@@ -173,8 +190,12 @@ public:
 
 	const unsigned int DefaultAlignment = BitSize<T::TypeBits>::NumBytes;
 
+	// Properties
+
 	void SetAlignment(unsigned int alignment) { m_alignment = alignment; }
 	unsigned int GetAlignment() const { return m_alignment; }
+
+	// Formatting
 
 	std::string PreDirectives() const override
 	{
@@ -203,11 +224,13 @@ public:
 
 	using TypedVariableDeclarationBase<T, S>::TypedVariableDeclarationBase;
 
-	const typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0) const
+	// Properties
+
+	typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0) const
 	{
 		for (const auto &set : this->m_names)
 		{
-			if (set->GetPrefix() == name)
+			if (set->GetName() == name)
 			{
 				return new typename S::template VariableType<T>(set, index);
 			}
@@ -215,14 +238,11 @@ public:
 		Utils::Logger::LogError("PTX::Variable(" + name + ") not found in PTX::VariableDeclaration");
 	}
 
-	std::string ToString(unsigned int indentation) const override
-	{
-		return ToString(indentation, true);
-	}
+	// Formatting
 
-	std::string ToString(unsigned int indentation, bool terminate) const override
+	std::string ToString() const override
 	{
-		std::string code = std::string(indentation, '\t');
+		std::string code;
 		if (this->m_linkDirective != Declaration::LinkDirective::None)
 		{
 			code += this->LinkDirectiveString(this->m_linkDirective) + " ";
@@ -236,12 +256,7 @@ public:
 		{
 			code += T::Name();
 		}
-		code += " " + this->PostDirectives() + VariableNames();
-		if (terminate)
-		{
-			code += ";";
-		}
-		return code;
+		return code + " " + this->PostDirectives() + VariableNames();
 	}
 
 	json ToJSON() const override
@@ -256,7 +271,7 @@ protected:
 	std::string VariableNames() const
 	{
 		std::string code;
-		bool first = true;
+		auto first = true;
 		for (const auto& set : this->m_names)
 		{
 			if (!first)
@@ -273,6 +288,7 @@ protected:
 		return code;
 	}
 
+	//TODO: Dispatch
 	const T *GetType() const override { return &m_type; }
 	const S *GetStateSpace() const override { return &m_space; }
 
@@ -350,11 +366,17 @@ public:
 	InitializedVariableDeclaration(const std::string& name, const std::vector<typename T::SystemType>& initializer)
 		: TypedVariableDeclaration<T, S>({name}), m_initializer(initializer) {}
 
-	std::string ToString(unsigned int indentation, bool terminate) const override
+	// Properties
+
+	const std::vector<typename T::SystemType>& GetInitializer() const { return m_initializer; }
+	void SetInitializer(const std::vector<typename T::SystemType>& initializer) { m_initializer = initializer; }
+
+	// Formatting
+
+	std::string ToString() const override
 	{
-		auto code = TypedVariableDeclaration<T, S>::ToString(indentation, false);
-		code += " = {";
-		bool first = true;
+		auto code = TypedVariableDeclaration<T, S>::ToString() + "{";
+		auto first = true;
 		for (auto value : m_initializer)
 		{
 			if (!first)
@@ -364,12 +386,7 @@ public:
 			first = false;
 			code += " " + std::to_string(value);
 		}
-		code += " }";
-		if (terminate)
-		{
-			code += ";";
-		}
-		return code;
+		return code + " }";
 	}
 
 	json ToJSON() const override
@@ -415,6 +432,8 @@ class PointerDeclaration : public ParameterDeclaration<PointerType<B, T, S>>
 {
 public:
 	using ParameterDeclaration<PointerType<B, T, S>>::ParameterDeclaration;
+
+	// Formatting
 
 	std::string PreDirectives() const override { return ""; } 
 

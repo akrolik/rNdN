@@ -41,17 +41,22 @@ public:
 		return ".<unknown>";
 	}
 
-	PrefetchInstruction(const Address<B, T, S> *address, Level level) : m_address(address), m_level(level) {}
+	PrefetchInstruction(Address<B, T, S> *address, Level level) : m_address(address), m_level(level) {}
+
+	// Properties
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address = address; }
 
 	Level GetLevel() const { return m_level; }
 	void SetLevel(Level level) { m_level = level; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "prefetch"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(!std::is_same<S, AddressableSpace>::value)
@@ -61,7 +66,12 @@ public:
 		return code + LevelString(m_level);
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { new DereferencedAddress<B, T, S>(m_address) };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { new DereferencedAddress<B, T, S>(m_address) };
 	}
@@ -75,7 +85,7 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Address<B, T, S> *m_address = nullptr;
+	Address<B, T, S> *m_address = nullptr;
 	Level m_level;
 };
 

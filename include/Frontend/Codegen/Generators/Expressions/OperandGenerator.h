@@ -54,7 +54,7 @@ public:
 		return "unknown";
 	}
 
-	const PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Operand *operand, const PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName, unsigned int cellIndex = 0)
+	PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Operand *operand, PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName, unsigned int cellIndex = 0)
 	{
 		m_index = index;
 		m_indexName = indexName;
@@ -73,7 +73,7 @@ public:
 		Error("indexed operand '" + HorseIR::PrettyPrinter::PrettyString(operand) + "'");
 	}
 
-	const PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Operand *operand, LoadKind loadKind, unsigned int cellIndex = 0)
+	PTX::TypedOperand<T> *GenerateOperand(const HorseIR::Operand *operand, LoadKind loadKind, unsigned int cellIndex = 0)
 	{
 		m_loadKind = loadKind;
 
@@ -94,21 +94,21 @@ public:
 		Error(LoadKindString(m_loadKind) + " operand '" + HorseIR::PrettyPrinter::PrettyString(operand) + "'");
 	}
 
-	const PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, const PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName, unsigned int cellIndex = 0)
+	PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, PTX::TypedOperand<PTX::UInt32Type> *index, const std::string& indexName, unsigned int cellIndex = 0)
 	{
 		return GenerateRegisterFromOperand(GenerateOperand(operand, index, indexName, cellIndex));
 	}
 
-	const PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, LoadKind loadKind, unsigned int cellIndex = 0)
+	PTX::Register<T> *GenerateRegister(const HorseIR::Operand *operand, LoadKind loadKind, unsigned int cellIndex = 0)
 	{
 		return GenerateRegisterFromOperand(GenerateOperand(operand, loadKind, cellIndex));
 	}
 
-	const PTX::Register<T> *GenerateRegisterFromOperand(const PTX::TypedOperand<T> *operand)
+	PTX::Register<T> *GenerateRegisterFromOperand(PTX::TypedOperand<T> *operand)
 	{
 		if (m_register)
 		{
-			return static_cast<const PTX::Register<T> *>(operand);
+			return static_cast<PTX::Register<T> *>(operand);
 		}
 
 		// Move the value into a register
@@ -167,7 +167,7 @@ public:
 		auto name = NameUtils::VariableName(identifier, isCell, m_cellIndex, m_indexName);
 		auto destinationName = NameUtils::VariableName(identifier, isCell, m_cellIndex, (m_index == nullptr) ? LoadKindString(m_loadKind) : m_indexName);
 
-		const PTX::Register<S> *operandRegister = nullptr;
+		PTX::Register<S> *operandRegister = nullptr;
 		if (resources->ContainsRegister<S>(name))
 		{
 			operandRegister = resources->GetRegister<S>(name);
@@ -311,7 +311,7 @@ public:
 	}
 
 	template<class S>
-	const PTX::Register<S> *GenerateParameterLoad(const std::string& name, const HorseIR::Parameter *parameter, const PTX::TypedOperand<PTX::UInt32Type> *dataIndex, bool isCell = false)
+	PTX::Register<S> *GenerateParameterLoad(const std::string& name, const HorseIR::Parameter *parameter, PTX::TypedOperand<PTX::UInt32Type> *dataIndex, bool isCell = false)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		if (resources->ContainsRegister<S>(name))
@@ -338,7 +338,7 @@ public:
 
 				// Ensure the thread is within bounds for loading data
 
-				const PTX::Label *sizeLabel = nullptr;
+				PTX::Label *sizeLabel = nullptr;
 				if (m_boundsCheck)
 				{
 					DataSizeGenerator<B> sizeGenerator(this->m_builder);
@@ -354,7 +354,7 @@ public:
 				// Load the value from the global space
 				
 				ValueLoadGenerator<B, S> loadGenerator(this->m_builder);
-				const PTX::Register<S> *value = nullptr;
+				PTX::Register<S> *value = nullptr;
 
 				auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
 				if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
@@ -381,7 +381,7 @@ public:
 				{
 					// Completed determining size
 
-					this->m_builder.AddStatement(sizeLabel);
+					this->m_builder.AddStatement(new PTX::LabelStatement(sizeLabel));
 				}
 
 				if (m_compressionRegister != nullptr)
@@ -395,7 +395,7 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::UInt32Type> *GenerateCompressedIndex(const HorseIR::Analysis::Shape::CompressedSize *size)
+	PTX::Register<PTX::UInt32Type> *GenerateCompressedIndex(const HorseIR::Analysis::Shape::CompressedSize *size)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
@@ -418,7 +418,7 @@ private:
 		return prefixSumGenerator.template Generate<PTX::PredicateType>(m_compressionRegister, PrefixSumMode::Exclusive, prefixCompression);
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateDynamicIndex(const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *indexed)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateDynamicIndex(PTX::TypedOperand<PTX::UInt32Type> *size, PTX::TypedOperand<PTX::UInt32Type> *indexed)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -439,7 +439,7 @@ private:
 		return index;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, const HorseIR::Analysis::Shape::Size *size, const HorseIR::Analysis::Shape::Size *geometrySize, typename DataIndexGenerator<B>::Kind indexKind, bool isCell = false)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, const HorseIR::Analysis::Shape::Size *size, const HorseIR::Analysis::Shape::Size *geometrySize, typename DataIndexGenerator<B>::Kind indexKind, bool isCell = false)
 	{
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 
@@ -475,7 +475,7 @@ private:
 			auto index = indexGenerator.GenerateIndex(indexKind);
 
 			DataSizeGenerator<B> sizeGenerator(this->m_builder);
-			const PTX::TypedOperand<PTX::UInt32Type> *dynamicSize = nullptr;
+			PTX::TypedOperand<PTX::UInt32Type> *dynamicSize = nullptr;
 
 			if (isCell)
 			{
@@ -490,7 +490,7 @@ private:
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, LoadKind loadKind)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(const HorseIR::Parameter *parameter, LoadKind loadKind)
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		auto shape = inputOptions.ParameterShapes.at(parameter); 
@@ -559,13 +559,13 @@ private:
 		Error(LoadKindString(loadKind) + " load index for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 	}
 
-	const PTX::TypedOperand<T> *m_operand = nullptr;
-	const PTX::Register<PTX::PredicateType> *m_compressionRegister = nullptr;
+	PTX::TypedOperand<T> *m_operand = nullptr;
+	PTX::Register<PTX::PredicateType> *m_compressionRegister = nullptr;
 	bool m_register = false;
 
 	LoadKind m_loadKind;
 
-	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
 	std::string m_indexName = "";
 	unsigned int m_cellIndex = 0;
 

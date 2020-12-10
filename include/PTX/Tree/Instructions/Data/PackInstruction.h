@@ -22,22 +22,33 @@ public:
 
 	using PackType = BitType<static_cast<Bits>(BitSize<T::TypeBits>::NumBits / VectorProperties<V>::ElementCount)>;
 
-	PackInstruction(const Register<T> *destination, const BracedOperand<PackType, V> *source) : m_destination(destination), m_source(source) {}
+	PackInstruction(Register<T> *destination, BracedOperand<PackType, V> *source) : m_destination(destination), m_source(source) {}
+
+	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+	Register<T> *GetDestination() { return m_destination; }
+	void SetDestination(Register<T> *destination) { m_destination = destination; }
 
 	const BracedOperand<PackType, V> *GetSource() const { return m_source; }
-	void SetSource(const BracedOperand<PackType, V> *source) { m_source = source; }
+	BracedOperand<PackType, V> *GetSource() { return m_source; }
+	void SetSource(BracedOperand<PackType, V> *source) { m_source = source; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "mov"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { m_destination, m_source };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { m_destination, m_source };
 	}
@@ -50,8 +61,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Vector(V);
 
-	const Register<T> *m_destination = nullptr;
-	const BracedOperand<PackType, V> *m_source = nullptr;
+	Register<T> *m_destination = nullptr;
+	BracedOperand<PackType, V> *m_source = nullptr;
 };
 
 DispatchImplementation_Vector(PackInstruction)

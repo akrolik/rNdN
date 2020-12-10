@@ -20,7 +20,7 @@ public:
 		m_sharedMemoryDeclaration->SetLinkDirective(PTX::Declaration::LinkDirective::External);
 	}
 
-	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const
+	std::vector<PTX::VariableDeclaration *> GetDeclarations() const
 	{
 		auto declarations = ResourceAllocator<ModuleResources>::GetDeclarations();
 		if (m_dynamicSharedMemorySize > 0)
@@ -31,7 +31,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::GlobalVariable<T> *AllocateGlobalVariable(const std::string& identifier)
+	PTX::GlobalVariable<T> *AllocateGlobalVariable(const std::string& identifier)
 	{
 		return this->GetResources<T>()->AllocateGlobalVariable(identifier);
 	}
@@ -48,7 +48,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::GlobalVariable<T> *GetGlobalVariable(const std::string& identifier) const
+	PTX::GlobalVariable<T> *GetGlobalVariable(const std::string& identifier) const
 	{
 		if (ContainsGlobalVariable<T>(identifier))
 		{
@@ -58,7 +58,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::ConstVariable<T> *AllocateConstVariable(const std::string& identifier, const std::vector<typename T::SystemType>& initializer)
+	PTX::ConstVariable<T> *AllocateConstVariable(const std::string& identifier, const std::vector<typename T::SystemType>& initializer)
 	{
 		return this->GetResources<T>()->AllocateConstVariable(identifier, initializer);
 	}
@@ -75,7 +75,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::ConstVariable<T> *GetConstVariable(const std::string& identifier) const
+	PTX::ConstVariable<T> *GetConstVariable(const std::string& identifier) const
 	{
 		if (ContainsConstVariable<T>(identifier))
 		{
@@ -85,7 +85,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::SharedVariable<T> *AllocateDynamicSharedMemory(unsigned int size)
+	PTX::SharedVariable<T> *AllocateDynamicSharedMemory(unsigned int size)
 	{
 		auto alignment = m_sharedMemoryDeclaration->GetAlignment();
 		auto typeAlignment = PTX::BitSize<T::TypeBits>::NumBytes;
@@ -108,15 +108,15 @@ public:
 
 	unsigned int GetDynamicSharedMemorySize() const { return m_dynamicSharedMemorySize; }
 
-	std::vector<const PTX::Declaration *> GetExternalDeclarations() const
+	std::vector<PTX::Declaration *> GetExternalDeclarations() const
 	{
-		std::vector<const PTX::Declaration *> vector;
+		std::vector<PTX::Declaration *> vector;
 		vector.insert(std::end(vector), std::begin(m_externalDeclarations), std::end(m_externalDeclarations));
 		return vector;
 	}
 
 	template<class R>
-	void AddExternalFunction(const PTX::FunctionDeclaration<R> *declaration)
+	void AddExternalFunction(PTX::FunctionDeclaration<R> *declaration)
 	{
 		if (m_externalDeclarations.find(declaration) == m_externalDeclarations.end())
 		{
@@ -128,7 +128,7 @@ private:
 	PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace> *m_sharedMemoryDeclaration = nullptr;
 	unsigned int m_dynamicSharedMemorySize = 0;
 
-	std::set<const PTX::Declaration *> m_externalDeclarations;
+	std::set<PTX::Declaration *> m_externalDeclarations;
 };
 
 }

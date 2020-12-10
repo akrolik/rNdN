@@ -25,9 +25,9 @@ public:
 	}
 
 protected:
-	Adapter(const TypedOperand<S<BS>> *operand) : m_operand(operand) {}
+	Adapter(TypedOperand<S<BS>> *operand) : m_operand(operand) {}
 
-	const TypedOperand<S<BS>> *m_operand = nullptr;
+	TypedOperand<S<BS>> *m_operand = nullptr;
 };
 
 }

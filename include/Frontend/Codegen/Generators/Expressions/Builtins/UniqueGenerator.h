@@ -33,7 +33,7 @@ public:
 
 	std::string Name() const override { return "UniqueGenerator"; }
 
-	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
 
@@ -77,7 +77,7 @@ public:
 		operandGenerator.SetBoundsCheck(false);
 		auto data = operandGenerator.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector);
 
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 
 		auto nextData = operandGenerator.GenerateOperand(dataArgument, loopIndex, this->m_builder.UniqueIdentifier("unique"));
 
@@ -91,7 +91,7 @@ public:
 		auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(endPredicate, loopIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, endPredicate));
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 
 		// Predicate the output using the unique predicate
 
@@ -118,7 +118,7 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::Int64Type> *m_targetRegister = nullptr;
+	PTX::Register<PTX::Int64Type> *m_targetRegister = nullptr;
 };
 
 }

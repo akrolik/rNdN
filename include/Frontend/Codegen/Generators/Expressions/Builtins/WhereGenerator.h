@@ -34,7 +34,7 @@ public:
 
 	// The output of a where function handles the predicate itself. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

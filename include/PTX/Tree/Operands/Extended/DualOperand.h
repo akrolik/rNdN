@@ -7,7 +7,19 @@ namespace PTX {
 class DualOperand : public Operand
 {
 public:
-	DualOperand(const Operand *operandP, const Operand *operandQ) : m_operandP(operandP), m_operandQ(operandQ) {}
+	DualOperand(Operand *operandP, Operand *operandQ) : m_operandP(operandP), m_operandQ(operandQ) {}
+
+	// Properties
+
+	const Operand *GetOperandP() const { return m_operandP; }
+	Operand *GetOperandP() { return m_operandP; }
+	void SetOperandP(Operand *operandP) { m_operandP = operandP; }
+
+	const Operand *GetOperandQ() const { return m_operandQ; }
+	Operand *GetOperandQ() { return m_operandQ; }
+	void SetOperandQ(Operand *operandQ) { m_operandQ = operandQ; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{
@@ -24,9 +36,8 @@ public:
 	}
 
 private:
-	const Operand *m_operandP = nullptr;
-	const Operand *m_operandQ = nullptr;
-
+	Operand *m_operandP = nullptr;
+	Operand *m_operandQ = nullptr;
 };
 
 }

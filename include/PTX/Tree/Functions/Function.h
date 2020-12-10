@@ -16,34 +16,23 @@ public:
 	Function() : m_options(*this) {}
 	Function(const std::string& name, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Declaration(linkDirective), m_name(name), m_options(*this) {};
 
-	void SetName(const std::string& name) { m_name = name; }
+	// Properties
+
 	const std::string& GetName() const { return m_name; }
+	void SetName(const std::string& name) { m_name = name; }
 
-	FunctionOptions& GetOptions() { return m_options; }
 	const FunctionOptions& GetOptions() const { return m_options; }
+	FunctionOptions& GetOptions() { return m_options; }
 
-	std::string ToString(unsigned int indentation) const override
-	{
-		std::string code;
-		if (m_linkDirective != LinkDirective::None)
-		{
-			code += LinkDirectiveString(m_linkDirective) + " ";
-		}
-		code += GetDirectives() + " ";
+	virtual const VariableDeclaration *GetReturnDeclaration() const = 0;
+	virtual VariableDeclaration *GetReturnDeclaration() = 0;
 
-		std::string ret = GetReturnString();
-		if (ret.length() > 0)
-		{
-			code += "(" + ret + ") ";
-		}
-		code += m_name + "(" + GetParametersString() + ")";
-		if (m_options.GetBlockSize() != FunctionOptions::DynamicBlockSize)
-		{
-			code += " .reqntid " + std::to_string(m_options.GetBlockSize());
+	virtual std::vector<const VariableDeclaration *> GetParameters() const = 0;
+	virtual std::vector<VariableDeclaration *>& GetParameters() = 0;
 
-		}
-		return code;
-	}
+	virtual std::string GetDirectives() const = 0;
+
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -58,12 +47,7 @@ public:
 	}
 
 private:
-	virtual std::string GetDirectives() const = 0;
-	virtual std::string GetReturnString() const = 0;
-	virtual std::string GetParametersString() const = 0;
-
 	std::string m_name;
-
 	FunctionOptions m_options;
 };
 

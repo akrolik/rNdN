@@ -22,13 +22,15 @@ public:
 
 	using InstructionBase_1<T>::InstructionBase_1;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "abs"; }
   	
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			return Mnemonic() + FlushSubnormalModifier<T>::OpCodeModifier() + T::Name();
+			return Mnemonic() + FlushSubnormalModifier<T>::GetOpCodeModifier() + T::Name();
 		}
 		else
 		{

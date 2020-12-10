@@ -24,7 +24,7 @@ public:
 
 	std::string Name() const override { return "OperandCompressionGenerator"; }
 
-	static const PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments) 
+	static PTX::Register<PTX::PredicateType> *UnaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments) 
 	{
 		// Propagate the compression mask used as input
 
@@ -32,7 +32,7 @@ public:
 		return compGen.GetCompressionRegister(arguments.at(0));
 	}
 
-	static const PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments)
+	static PTX::Register<PTX::PredicateType> *BinaryCompressionRegister(Builder& builder, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		// Propagate the compression mask forward - we assume the shape analysis guarantees equality
 
@@ -51,7 +51,7 @@ public:
 		return nullptr;
 	}
 
-	const PTX::Register<PTX::PredicateType> *GetCompressionRegister(const HorseIR::Expression *expression)
+	PTX::Register<PTX::PredicateType> *GetCompressionRegister(const HorseIR::Expression *expression)
 	{
 		m_compression = nullptr;
 		expression->Accept(*this);
@@ -140,7 +140,7 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::PredicateType> *m_compression = nullptr;
+	PTX::Register<PTX::PredicateType> *m_compression = nullptr;
 };
 
 }

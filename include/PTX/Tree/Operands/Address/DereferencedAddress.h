@@ -17,7 +17,15 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	DereferencedAddress(const Address<B, T, S> *address) : m_address(address) {}
+	DereferencedAddress(Address<B, T, S> *address) : m_address(address) {}
+
+	// Properties
+
+	const Address<B, T, S> *GetAddress() const { return m_address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address = address; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{
@@ -33,7 +41,7 @@ public:
 	}
 
 private:
-	const Address<B, T, S> *m_address = nullptr;
+	Address<B, T, S> *m_address = nullptr;
 };
 
 template<class T, class S>

@@ -32,14 +32,18 @@ public:
 
 	FenceInstruction(Scope scope, Synchronization synchronization = Synchronization::None) : ScopeModifier<>(scope), m_synchronization(synchronization) {}
 
+	// Properties
+
 	Synchronization GetSynchronization() const { return m_synchronization; }
 	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "fence"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<>::OpCodeModifier();
+		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<>::GetOpCodeModifier();
 	}
 
 	// Visitors

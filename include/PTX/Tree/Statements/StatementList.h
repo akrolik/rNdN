@@ -9,8 +9,15 @@ namespace PTX {
 class StatementList : public Node
 {
 public:
-	const std::vector<const Statement *>& GetStatements() const { return m_statements; }
-	void AddStatement(const Statement *statement)
+	// Properties
+
+	std::vector<const Statement *> GetStatements() const
+	{
+		return std::vector<const Statement *>(std::begin(m_statements), std::end(m_statements));
+	}
+	std::vector<Statement *>& GetStatements() { return m_statements; }
+
+	void AddStatement(Statement *statement)
 	{
 		m_statements.push_back(statement);
 	}
@@ -20,7 +27,7 @@ public:
 		m_statements.insert(std::end(m_statements), std::begin(statements), std::end(statements));
 	}
 
-	void InsertStatement(const Statement *statement, unsigned int index)
+	void InsertStatement(Statement *statement, unsigned int index)
 	{
 		m_statements.insert(std::begin(m_statements) + index, statement);
 	}
@@ -30,16 +37,7 @@ public:
 		m_statements.insert(std::begin(m_statements) + index, std::begin(statements), std::end(statements));
 	}
 
-	std::string ToString(unsigned int indentation) const override
-	{
-		std::string code;
-		code += std::string(indentation, '\t') + "{\n";
-		for (const auto& statement : m_statements)
-		{
-			code += statement->ToString(indentation + 1) + "\n";
-		}
-		return code + std::string(indentation, '\t') + "}";
-	}
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -52,7 +50,7 @@ public:
 	}
 
 protected:
-	std::vector<const Statement *> m_statements;
+	std::vector<Statement *> m_statements;
 };
 
 }

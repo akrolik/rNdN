@@ -18,28 +18,28 @@ public:
 	std::string Name() const override { return "ConversionGenerator"; }
 
 	template<class T, class S>
-	static const PTX::TypedOperand<T> *ConvertSource(Builder& builder, const PTX::TypedOperand<S> *source)
+	static PTX::TypedOperand<T> *ConvertSource(Builder& builder, PTX::TypedOperand<S> *source)
 	{
 		ConversionGenerator gen(builder);
 		return gen.ConvertSource<T, S>(source);
 	}
 
 	template<class T, class S>
-	static const PTX::Register<T> *ConvertSource(Builder& builder, const PTX::Register<S> *source, bool relaxedInstruction = false)
+	static PTX::Register<T> *ConvertSource(Builder& builder, PTX::Register<S> *source, bool relaxedInstruction = false)
 	{
 		ConversionGenerator gen(builder);
 		return gen.ConvertSource<T, S>(source, relaxedInstruction);
 	}
 
 	template<class T, class S>
-	static void ConvertSource(Builder& builder, const PTX::Register<T> *destination, const PTX::Register<S> *source, bool relaxedInstruction = false)
+	static void ConvertSource(Builder& builder, PTX::Register<T> *destination, PTX::Register<S> *source, bool relaxedInstruction = false)
 	{
 		ConversionGenerator gen(builder);
 		gen.ConvertSource(destination, source, relaxedInstruction);
 	}
 
 	template<class T, class S>
-	const PTX::TypedOperand<T> *ConvertSource(const PTX::TypedOperand<S> *source)
+	PTX::TypedOperand<T> *ConvertSource(PTX::TypedOperand<S> *source)
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
@@ -63,7 +63,7 @@ public:
 	}
 
 	template<class T, class S>
-	const PTX::Register<T> *ConvertSource(const PTX::Register<S> *source, bool relaxedInstruction = false)
+	PTX::Register<T> *ConvertSource(PTX::Register<S> *source, bool relaxedInstruction = false)
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
@@ -89,7 +89,7 @@ public:
 	}
 
 	template<class T, class S>
-	void ConvertSource(const PTX::Register<T> *destination, const PTX::Register<S> *source, bool relaxedInstruction = false)
+	void ConvertSource(PTX::Register<T> *destination, PTX::Register<S> *source, bool relaxedInstruction = false)
 	{
 		if constexpr(std::is_same<T, S>::value)
 		{
@@ -114,7 +114,7 @@ public:
 
 private:
 	template<class D, class S>
-	void CopyProperties(const PTX::Register<D> *destination, const PTX::Register<S> *source)
+	void CopyProperties(PTX::Register<D> *destination, PTX::Register<S> *source)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		if (const auto compressedRegister = resources->template GetCompressedRegister<S>(source))
@@ -135,7 +135,7 @@ private:
 	}
 
 	template<class D, class S>
-	const PTX::Register<D> *RelaxSource(const PTX::Register<S> *source, bool relaxedInstruction)
+	PTX::Register<D> *RelaxSource(PTX::Register<S> *source, bool relaxedInstruction)
 	{
 		if constexpr(std::is_same<D, PTX::PredicateType>::value || std::is_same<S, PTX::PredicateType>::value)
 		{
@@ -158,7 +158,7 @@ private:
 	}
 
 	template<PTX::Bits D, PTX::Bits S, template<PTX::Bits> class T>
-	const PTX::Register<T<D>> *RelaxSize(const PTX::Register<T<S>> *source, bool relaxedInstruction)
+	PTX::Register<T<D>> *RelaxSize(PTX::Register<T<S>> *source, bool relaxedInstruction)
 	{
 		if constexpr(D == S)
 		{
@@ -196,7 +196,7 @@ private:
 	}
 
 	template<class D, class S, PTX::Bits B = S::TypeBits>
-	const PTX::TypedOperand<D> *RelaxType(const PTX::TypedOperand<S> *source)
+	PTX::TypedOperand<D> *RelaxType(PTX::TypedOperand<S> *source)
 	{
 		if constexpr(std::is_same<D, S>::value)
 		{
@@ -252,7 +252,7 @@ private:
 	}
 
 	template<class D, class S, PTX::Bits B = S::TypeBits>
-	const PTX::Register<D> *RelaxType(const PTX::Register<S> *source)
+	PTX::Register<D> *RelaxType(PTX::Register<S> *source)
 	{
 		if constexpr(std::is_same<D, S>::value)
 		{
@@ -307,7 +307,7 @@ private:
 	}
 
 	template<class D, class S>
-	void GenerateConversion(const PTX::Register<D> *converted, const PTX::TypedOperand<S> *source)
+	void GenerateConversion(PTX::Register<D> *converted,  PTX::TypedOperand<S> *source)
 	{
 		// Check if the conversion instruction is supported by these types
 
@@ -341,20 +341,20 @@ private:
 	}
 
 	template<class S>
-	void ConvertToPredicate(const PTX::Register<PTX::PredicateType> *destination, const PTX::TypedOperand<S> *source)
+	void ConvertToPredicate(PTX::Register<PTX::PredicateType> *destination, PTX::TypedOperand<S> *source)
 	{
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<S>(destination, source, new PTX::Value<S>(0), S::ComparisonOperator::NotEqual));
 	}
 
 	template<class D>
-	void ConvertFromPredicate(const PTX::Register<D> *destination, const PTX::TypedOperand<PTX::PredicateType> *source)
+	void ConvertFromPredicate(PTX::Register<D> *destination, PTX::TypedOperand<PTX::PredicateType> *source)
 	{
 		this->m_builder.AddStatement(new PTX::SelectInstruction<D>(destination, new PTX::Value<D>(1), new PTX::Value<D>(0), source));
 	}
 };
 
 template<>
-void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(const PTX::Register<PTX::PredicateType> *destination, const PTX::TypedOperand<PTX::Int8Type> *source)
+void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(PTX::Register<PTX::PredicateType> *destination, PTX::TypedOperand<PTX::Int8Type> *source)
 {
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp16 = resources->AllocateTemporary<PTX::Int16Type>();
@@ -364,7 +364,7 @@ void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(const PTX::Register<
 }
 
 template<>
-void ConversionGenerator::ConvertFromPredicate<PTX::Int8Type>(const PTX::Register<PTX::Int8Type> *destination, const PTX::TypedOperand<PTX::PredicateType> *source)
+void ConversionGenerator::ConvertFromPredicate<PTX::Int8Type>(PTX::Register<PTX::Int8Type> *destination, PTX::TypedOperand<PTX::PredicateType> *source)
 {
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp32 = resources->AllocateTemporary<PTX::Int32Type>();

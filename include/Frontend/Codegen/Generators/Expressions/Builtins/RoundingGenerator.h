@@ -54,12 +54,12 @@ public:
 
 	std::string Name() const override { return "RoundingGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
 		return m_targetRegister;
@@ -123,7 +123,7 @@ private:
 
 	RoundingOperation m_roundOp;
 
-	const PTX::Register<PTX::IntType<S>> *m_targetRegister = nullptr;
+	PTX::Register<PTX::IntType<S>> *m_targetRegister = nullptr;
 };
 
 }

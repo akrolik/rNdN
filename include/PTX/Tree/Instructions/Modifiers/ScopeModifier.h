@@ -36,6 +36,8 @@ public:
 		SetScope(scope);
 	}
 
+	// Properties
+
 	Scope GetScope() const { return m_scope; }
 	void SetScope(Scope scope)
 	{
@@ -49,7 +51,9 @@ public:
 		m_scope = scope;
 	}
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		return ScopeString(m_scope);
 	}

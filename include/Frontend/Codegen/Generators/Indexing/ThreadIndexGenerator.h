@@ -28,7 +28,7 @@ public:
 		Global
 	};
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(Kind kind)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(Kind kind)
 	{
 		switch (kind)
 		{
@@ -48,7 +48,7 @@ public:
 		return nullptr;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateLaneIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateLaneIndex()
 	{
 		SpecialRegisterGenerator specialGenerator(this->m_builder);
 		auto tidx = specialGenerator.GenerateThreadIndex();
@@ -61,7 +61,7 @@ public:
 		return laneid;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateWarpIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateWarpIndex()
 	{
 		SpecialRegisterGenerator specialGenerator(this->m_builder);
 		auto tidx = specialGenerator.GenerateThreadIndex();
@@ -74,13 +74,13 @@ public:
 		return warpid;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateLocalIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateLocalIndex()
 	{
 		SpecialRegisterGenerator specialGenerator(this->m_builder);
 		return specialGenerator.GenerateThreadIndex();
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateBlockIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateBlockIndex()
 	{
 		// Check if we use in order blocks (allocation happens at the beginning of execution), or using the system value
 
@@ -108,7 +108,7 @@ public:
 		}
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
 	{
 		// Compute the thread index as blockSize * blockIndex + threadIndex
 
@@ -128,7 +128,7 @@ public:
 		return index;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateListLocalIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateListLocalIndex()
 	{
 		// List local index = localIndex % cellThreads
 

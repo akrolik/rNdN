@@ -53,12 +53,12 @@ public:
 
 	std::string Name() const override { return "UnaryGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
@@ -82,7 +82,7 @@ public:
 		return targetRegister;
 	}
 
-	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
+	void Generate(PTX::Register<T> *target, PTX::TypedOperand<T> *src)
 	{
 		switch (m_unaryOp)
 		{
@@ -107,7 +107,7 @@ public:
 	}
 
 	template<template<class, bool = true> class Op>
-	void GenerateInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
+	void GenerateInstruction(PTX::Register<T> *target, PTX::TypedOperand<T> *src)
 	{
 		if constexpr(Op<T, false>::TypeSupported)
 		{
@@ -120,7 +120,7 @@ public:
 	}
 
 private:
-	void GeneratePi(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src);
+	void GeneratePi(PTX::Register<T> *target, PTX::TypedOperand<T> *src);
 
 	UnaryOperation m_unaryOp;
 };
@@ -134,7 +134,7 @@ namespace Frontend {
 namespace Codegen {
 
 template<PTX::Bits B, class T>
-void UnaryGenerator<B, T>::GeneratePi(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src)
+void UnaryGenerator<B, T>::GeneratePi(PTX::Register<T> *target, PTX::TypedOperand<T> *src)
 {
 	if constexpr(std::is_same<T, PTX::Float32Type>::value || std::is_same<T, PTX::Float64Type>::value)
 	{

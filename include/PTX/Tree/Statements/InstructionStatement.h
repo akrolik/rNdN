@@ -10,48 +10,50 @@ namespace PTX {
 class InstructionStatement : public Statement
 {
 public:
-	std::string ToString(unsigned int indentation) const override
-	{
-		std::string code = std::string(indentation, '\t') + OpCode();
-		bool first = true;
-		for (const auto& operand : Operands())
-		{
-			if (first)
-			{
-				code += " ";
-				first = false;
-			}
-			else
-			{
-				code += ", ";
-			}
-			code += operand->ToString();
-		}
-		return code + ";";
-	}
+	// Properties
+
+	virtual std::string GetOpCode() const = 0;
+	virtual std::vector<const Operand *> GetOperands() const = 0;
+	virtual std::vector<Operand *> GetOperands() = 0;
+
+	// Formatting
+
+	virtual std::string GetPrefix() const { return ""; }
 
 	json ToJSON() const override
 	{
 		json j;
 		j["kind"] = "PTX::InstructionStatement";
-		j["opcode"] = OpCode();
-		for (const auto& operand : Operands())
+		j["opcode"] = GetOpCode();
+		for (const auto& operand : GetOperands())
 		{
 			j["operands"].push_back(operand->ToJSON());
 		}
 		return j;
 	}
 
-	virtual std::string OpCode() const = 0;
-	virtual std::vector<const Operand *> Operands() const = 0;
-
 	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (auto& operand : GetOperands())
+			{
+				operand->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
 		if (visitor.VisitIn(this))
 		{
-			for (const auto& operand : Operands())
+			for (const auto& operand : GetOperands())
 			{
 				operand->Accept(visitor);
 			}

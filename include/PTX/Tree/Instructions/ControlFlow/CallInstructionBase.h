@@ -17,29 +17,50 @@ template<class R>
 class CallInstructionBase : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
 {
 public:
-	CallInstructionBase(const Function *function, const R *returnVariable, bool uniform) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable) {}
+	CallInstructionBase(Function *function, R *returnVariable, bool uniform) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable) {}
+
+	// Properties
 
 	const Function *GetFunction() const { return m_function; }
-	void SetFunction(const Function *function) { m_function = function; }
+	Function *GetFunction() { return m_function; }
+	void SetFunction(Function *function) { m_function = function; }
 
 	const R *GetReturnVariable() const { return m_returnVariable; }
-	void SetReturnVariable(const R *returnVariable) { m_returnVariable = returnVariable; }
+	R *GetReturnVariable() { return m_returnVariable; }
+	void SetReturnVariable(R *returnVariable) { m_returnVariable = returnVariable; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "call"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + UniformModifier::OpCodeModifier();
+		return Mnemonic() + UniformModifier::GetOpCodeModifier();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
 		std::vector<const Operand *> operands;
 		operands.push_back(new ListOperand({ m_returnVariable }));
 		operands.push_back(new StringOperand(m_function->GetName()));
 
-		ListOperand *argumentList = new ListOperand();
-		for (const auto& argument : GetArguments())
+		auto argumentList = new ListOperand();
+		for (auto& argument : GetArguments())
+		{
+			argumentList->AddOperand(argument);
+		}
+		operands.push_back(argumentList);
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		std::vector<Operand *> operands;
+		operands.push_back(new ListOperand({ m_returnVariable }));
+		operands.push_back(new StringOperand(m_function->GetName()));
+
+		auto argumentList = new ListOperand();
+		for (auto& argument : GetArguments())
 		{
 			argumentList->AddOperand(argument);
 		}
@@ -54,35 +75,54 @@ public:
 protected:
 	DispatchMember_Type(typename R::VariableType);
 
-	virtual std::vector<const Operand *> GetArguments() const = 0;
+	virtual const std::vector<Operand *>& GetArguments() const = 0;
 
-	const Function *m_function = nullptr;
-	const R *m_returnVariable = nullptr;
+	Function *m_function = nullptr;
+	R *m_returnVariable = nullptr;
 };
 
 template<>
 class CallInstructionBase<VoidType> : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
 {
 public:
-	CallInstructionBase(const Function *function, bool uniform) : UniformModifier(uniform), m_function(function) {}
+	CallInstructionBase(Function *function, bool uniform) : UniformModifier(uniform), m_function(function) {}
+
+	// Properties
 
 	const Function *GetFunction() const { return m_function; }
-	void SetFunction(const Function *function) { m_function = function; }
+	Function *GetFunction() { return m_function; }
+	void SetFunction(Function *function) { m_function = function; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "call"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + UniformModifier::OpCodeModifier();
+		return Mnemonic() + UniformModifier::GetOpCodeModifier();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
 		std::vector<const Operand *> operands;
 		operands.push_back(new StringOperand(m_function->GetName()));
 
-		ListOperand *argumentList = new ListOperand();
+		auto argumentList = new ListOperand();
 		for (const auto& argument : GetArguments())
+		{
+			argumentList->AddOperand(argument);
+		}
+		operands.push_back(argumentList);
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		std::vector<Operand *> operands;
+		operands.push_back(new StringOperand(m_function->GetName()));
+
+		auto argumentList = new ListOperand();
+		for (auto& argument : GetArguments())
 		{
 			argumentList->AddOperand(argument);
 		}
@@ -97,9 +137,9 @@ public:
 protected:
 	DispatchMember_Type(VoidType);
 
-	virtual std::vector<const Operand *> GetArguments() const = 0;
+	virtual const std::vector<Operand *>& GetArguments() const = 0;
 
-	const Function *m_function = nullptr;
+	Function *m_function = nullptr;
 };
 
 DispatchImplementation(CallInstructionBase)

@@ -47,14 +47,19 @@ public:
 		return ".<unknown>";
 	}
 
-	TestPropertyInstruction(const Register<PredicateType> *destination, const TypedOperand<T> *source, Property property) : InstructionBase_1<PredicateType, T>(destination, source), m_property(property) {}
+	TestPropertyInstruction(Register<PredicateType> *destination, TypedOperand<T> *source, Property property)
+		: InstructionBase_1<PredicateType, T>(destination, source), m_property(property) {}
+
+	// Properties
 
 	Property GetProperty() const { return m_property; }
 	void SetProperty(Property property) { m_property = property; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "testp"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + GetPropertyString(m_property) + T::Name();
 	}

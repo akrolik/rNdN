@@ -44,40 +44,69 @@ public:
 		return ".<unknown>";
 	}
 
-	ShuffleInstruction(const Register<T> *destinationD, const TypedOperand<T> *sourceA, const TypedOperand<UInt32Type> *sourceB, const TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode) : m_destinationD(destinationD), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
-	ShuffleInstruction(const Register<T> *destinationD, const Register<PredicateType> *destinationP, const TypedOperand<T> *sourceA, const TypedOperand<UInt32Type> *sourceB, const TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode) : m_destinationD(destinationD), m_destinationP(destinationP), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
+	ShuffleInstruction(Register<T> *destinationD, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode)
+		: m_destinationD(destinationD), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
+	ShuffleInstruction(Register<T> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode)
+		: m_destinationD(destinationD), m_destinationP(destinationP), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
+
+	// Properties
 
 	const Register<T> *GetDestination() const { return m_destinationD; }
-	void SetDestination(const Register<T> *destination) { m_destinationD = destination; }
+	Register<T> *GetDestination() { return m_destinationD; }
+	void SetDestination(Register<T> *destination) { m_destinationD = destination; }
 
 	const Register<PredicateType> *GetDestinationP() const { return m_destinationP; }
-	void SetDestinationP(const Register<PredicateType> *destination) { m_destinationP = destination; }
+	Register<PredicateType> *GetDestinationP() { return m_destinationP; }
+	void SetDestinationP(Register<PredicateType> *destination) { m_destinationP = destination; }
 
 	const TypedOperand<T> *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const TypedOperand<T> *source) { m_sourceA = source; }
+	TypedOperand<T> *GetSourceA() { return m_sourceA; }
+	void SetSourceA(TypedOperand<T> *source) { m_sourceA = source; }
+
+	const TypedOperand<UInt32Type> *GetSourceB() const { return m_sourceB; }
+	TypedOperand<UInt32Type> *GetSourceB() { return m_sourceB; }
+	void SetSourceB(TypedOperand<UInt32Type> *source) { m_sourceB = source; }
+
+	const TypedOperand<UInt32Type> *GetSourceC() const { return m_sourceC; }
+	TypedOperand<UInt32Type> *GetSourceC() { return m_sourceC; }
+	void SetSourceC(TypedOperand<UInt32Type> *source) { m_sourceC = source; }
 
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
 
-	const TypedOperand<UInt32Type> *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const TypedOperand<UInt32Type> *source) { m_sourceB = source; }
-
-	const TypedOperand<UInt32Type> *GetSourceC() const { return m_sourceC; }
-	void SetSourceC(const TypedOperand<UInt32Type> *source) { m_sourceC = source; }
-
 	uint32_t GetMemberMask() const { return m_memberMask; }
 	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "shfl"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + ".sync" + ModeString(m_mode) + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
 		std::vector<const Operand *> operands;
+		if (m_destinationP == nullptr)
+		{
+			operands.push_back(m_destinationD);
+		}
+		else
+		{
+			operands.push_back(new DualOperand(m_destinationD, m_destinationP));
+		}
+		operands.push_back(m_sourceA);
+		operands.push_back(m_sourceB);
+		operands.push_back(m_sourceC);
+		operands.push_back(new HexOperand(m_memberMask));
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		std::vector<Operand *> operands;
 		if (m_destinationP == nullptr)
 		{
 			operands.push_back(m_destinationD);
@@ -100,11 +129,11 @@ public:
 protected:
 	DispatchMember_Type(T);
 
-	const Register<T> *m_destinationD = nullptr;
-	const Register<PredicateType> *m_destinationP = nullptr;
-	const TypedOperand<T> *m_sourceA = nullptr;
-	const TypedOperand<UInt32Type> *m_sourceB = nullptr;
-	const TypedOperand<UInt32Type> *m_sourceC = nullptr;
+	Register<T> *m_destinationD = nullptr;
+	Register<PredicateType> *m_destinationP = nullptr;
+	TypedOperand<T> *m_sourceA = nullptr;
+	TypedOperand<UInt32Type> *m_sourceB = nullptr;
+	TypedOperand<UInt32Type> *m_sourceC = nullptr;
 	uint32_t m_memberMask = 0;
 
 	Mode m_mode;

@@ -11,6 +11,13 @@ class HexOperand : public Operand
 public:
 	HexOperand(unsigned int value) : m_value(value) {}
 
+	// Properties
+
+	unsigned int GetValue() const { return m_value; }
+	void SetValue(unsigned int value) { m_value = value; }
+
+	// Formatting
+
 	std::string ToString() const override
 	{
 		return Utils::Format::HexString(m_value);

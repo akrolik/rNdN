@@ -99,12 +99,12 @@ public:
 
 	std::string Name() const override { return "ExternalUnaryGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::FloatType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::FloatType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, PTX::FloatType<S>> opGen(this->m_builder);
 		auto src = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::FloatType<S>>::LoadKind::Vector);
@@ -115,7 +115,7 @@ public:
 		return targetRegister;
 	}
 	
-	void Generate(const PTX::Register<PTX::FloatType<S>> *target, const PTX::Register<PTX::FloatType<S>> *src)
+	void Generate(PTX::Register<PTX::FloatType<S>> *target, PTX::Register<PTX::FloatType<S>> *src)
 	{
 		auto block = new PTX::BlockStatement();
 		this->m_builder.AddStatement(block);
@@ -127,7 +127,7 @@ public:
 		globalResources->AddExternalFunction(function);
 
 		auto paramDeclaration = new PTX::ParameterDeclaration<PTX::BitType<S>>("$temp", 2);
-		this->m_builder.AddStatement(paramDeclaration);
+		this->m_builder.AddStatement(new PTX::DeclarationStatement(paramDeclaration));
 
 		auto paramIn = paramDeclaration->GetVariable("$temp", 0);
 		auto paramOut = paramDeclaration->GetVariable("$temp", 1);

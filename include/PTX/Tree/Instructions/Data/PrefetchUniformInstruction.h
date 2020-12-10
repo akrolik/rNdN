@@ -24,19 +24,29 @@ public:
 		REQUIRE_EXACT(S, AddressableSpace)
 	);
 
-	PrefetchUniformInstruction(const Address<B, T, AddressableSpace> *address) : m_address(address) {}
+	PrefetchUniformInstruction(Address<B, T, AddressableSpace> *address) : m_address(address) {}
+
+	// Properties
 
 	const Address<B, T, AddressableSpace> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, AddressableSpace> *address) { m_address = address; }
+	Address<B, T, AddressableSpace> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, AddressableSpace> *address) { m_address = address; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "prefetch"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + ".L1";
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { new DereferencedAddress<B, T, AddressableSpace>(m_address) };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { new DereferencedAddress<B, T, AddressableSpace>(m_address) };
 	}
@@ -50,7 +60,7 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Address<B, T, AddressableSpace> *m_address = nullptr;
+	Address<B, T, AddressableSpace> *m_address = nullptr;
 };
 
 DispatchImplementation_Data(PrefetchUniformInstruction)

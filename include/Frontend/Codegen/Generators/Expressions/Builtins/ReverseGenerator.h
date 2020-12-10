@@ -23,19 +23,19 @@ public:
 
 	std::string Name() const override { return "ReverseGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto value = opGen.GenerateOperand(arguments.at(0), OperandGenerator<B, T>::LoadKind::Vector);
 
 		// Generate copies of the data and index for writing
 
-		const PTX::Register<PTX::UInt32Type> *index = nullptr;
+		PTX::Register<PTX::UInt32Type> *index = nullptr;
 
 		OperandCompressionGenerator compressionGenerator(this->m_builder);
 		if (auto compressionPredicate = compressionGenerator.GetCompressionRegister(arguments.at(0)))

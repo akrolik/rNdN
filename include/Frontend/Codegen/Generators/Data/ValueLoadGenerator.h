@@ -24,7 +24,7 @@ public:
 	bool GetCacheCoherence() const { return m_cacheCoherence; }
 	void SetCacheCoherence(bool cacheCoherence) { m_cacheCoherence = cacheCoherence; }
 
-	const PTX::Register<T> *GenerateConstant(const PTX::ParameterVariable<T> *parameter)
+	PTX::Register<T> *GenerateConstant(PTX::ParameterVariable<T> *parameter)
 	{
 		// Get the address for the constant parameter
 
@@ -39,12 +39,12 @@ public:
 		return destination;
 	}
 
-	const PTX::Register<T> *GeneratePointer(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
+	PTX::Register<T> *GeneratePointer(PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		return GeneratePointer(parameter->GetName(), parameter, index, offset);
 	}
 
-	const PTX::Register<T> *GeneratePointer(const std::string& name, const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
+	PTX::Register<T> *GeneratePointer(const std::string& name, PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		// Generate the address for the correct index
 
@@ -54,17 +54,17 @@ public:
 		return GeneratePointer(name, address);
 	}
 	
-	const PTX::Register<T> *GeneratePointer(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
+	PTX::Register<T> *GeneratePointer(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		return GeneratePointer(parameter->GetName(), parameter, index, offset);
 	}
 
-	const PTX::Register<T> *GeneratePointer(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int cellIndex, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
+	PTX::Register<T> *GeneratePointer(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int cellIndex, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		return GeneratePointer(parameter->GetName(), parameter, cellIndex, index, offset);
 	}
 
-	const PTX::Register<T> *GeneratePointer(const std::string& name, const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
+	PTX::Register<T> *GeneratePointer(const std::string& name, PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		// Generate the address for the correct index
 
@@ -74,7 +74,7 @@ public:
 		return GeneratePointer(name, address);
 	}
 
-	const PTX::Register<T> *GeneratePointer(const std::string& name, const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int cellIndex, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
+	PTX::Register<T> *GeneratePointer(const std::string& name, PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int cellIndex, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, unsigned int offset = 0)
 	{
 		// Generate the address for the correct index
 
@@ -84,7 +84,7 @@ public:
 		return GeneratePointer(name, address);
 	}
 
-	const PTX::Register<T> *GeneratePointer(const std::string& name, const PTX::Address<B, T, PTX::GlobalSpace> *address)
+	PTX::Register<T> *GeneratePointer(const std::string& name, PTX::Address<B, T, PTX::GlobalSpace> *address)
 	{
 		// Get the address register for the parameter
 

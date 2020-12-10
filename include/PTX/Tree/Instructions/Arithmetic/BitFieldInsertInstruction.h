@@ -20,9 +20,11 @@ public:
 
 	using InstructionBase_4<T, T, T, UInt32Type, UInt32Type>::InstructionBase;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "bfi"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}

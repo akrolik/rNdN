@@ -9,7 +9,7 @@
 namespace Runtime {
 namespace GPU {
 
-const Program *Assembler::Assemble(const PTX::Program *program, bool library) const
+const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 {
 	// Generate the CUDA module for the program with the program
 	// modules and linked external modules (libraries)

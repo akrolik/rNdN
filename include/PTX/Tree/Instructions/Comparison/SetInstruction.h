@@ -29,30 +29,45 @@ public:
 		)
 	);
 
-	SetInstruction(const Register<D> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator) {}
+	SetInstruction(Register<D> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator)
+		: InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator) {}
 
-	SetInstruction(const Register<D> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+	SetInstruction(Register<D> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false)
+		: InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+
+	// Properties
 
 	typename T::ComparisonOperator GetComparisonOperator() const { return m_comparator; }
 	void SetComparisonOperator(typename T::ComparionOperator comparisonOperator) { m_comparator = comparisonOperator; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "set"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		std::string code = Mnemonic() + T::ComparisonOperatorString(m_comparator) + PredicateModifier::OpCodeModifier();
+		std::string code = Mnemonic() + T::ComparisonOperatorString(m_comparator) + PredicateModifier::GetOpCodeModifier();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		return code + D::Name() + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
-		auto operands = InstructionBase_2<D, T>::Operands();
-		const Operand *modifier = PredicateModifier::OperandsModifier();
-		if (modifier != nullptr)
+		auto operands = InstructionBase_2<D, T>::GetOperands();
+		if (const auto modifier = PredicateModifier::GetOperandsModifier())
+		{
+			operands.push_back(modifier);
+		}
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		auto operands = InstructionBase_2<D, T>::GetOperands();
+		if (auto modifier = PredicateModifier::GetOperandsModifier())
 		{
 			operands.push_back(modifier);
 		}

@@ -9,6 +9,13 @@ class StringOperand : public Operand
 public:
 	StringOperand(const std::string& string) : m_string(string) {}
 
+	// Properties
+
+	const std::string& GetString() const { return m_string; }
+	void SetString(const std::string& string) { m_string = string; }
+
+	// Formatting
+
 	std::string ToString() const override
 	{
 		return m_string;

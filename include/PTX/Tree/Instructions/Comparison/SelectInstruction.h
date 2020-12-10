@@ -23,9 +23,11 @@ public:
 
 	using InstructionBase_3<T, T, T, PredicateType>::InstructionBase_3;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "selp"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}

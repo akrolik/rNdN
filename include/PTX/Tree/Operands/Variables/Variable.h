@@ -31,10 +31,14 @@ public:
 	using VariableType = T;
 	using VariableSpace = S;
 
+	// Properties
+
 	virtual std::string GetName() const
 	{
 		return m_nameSet->GetName(m_nameIndex);
 	}
+
+	// Formatting
 
 	std::string ToString() const override
 	{

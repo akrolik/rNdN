@@ -54,13 +54,18 @@ public:
 
 	using Scope = ScopeModifier<false>::Scope;
 
-	ReductionInstruction(const Address<B, T, S> *address, const TypedOperand<T> *value, typename T::ReductionOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None) : ScopeModifier<false>(scope), m_address(address), m_value(value), m_operation(operation), m_synchronization(synchronization) {}
+	ReductionInstruction(Address<B, T, S> *address, TypedOperand<T> *value, typename T::ReductionOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None)
+		: ScopeModifier<false>(scope), m_address(address), m_value(value), m_operation(operation), m_synchronization(synchronization) {}
+
+	// Properties
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, S> *address) { m_address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address; }
 
 	const TypedOperand<T> *GetValue() const { return m_value; }
-	void SetValue(const TypedOperand<T> *value) { m_value = value ;}
+	TypedOperand<T> *GetValue() { return m_value; }
+	void SetValue(TypedOperand<T> *value) { m_value = value ;}
 
 	typename T::ReductionOperation GetOperation() const { return m_operation; }
 	void SetOperation(typename T::ReductionOperation operation) { m_operation = operation; }
@@ -68,16 +73,23 @@ public:
 	Synchronization GetSynchronization() const { return m_synchronization; }
 	void SetSynchronization(Synchronization synchronization) { m_synchronization = synchronization; }
 
-	std::vector<const Operand *> Operands() const override
+	// Formatting
+
+	static std::string Mnemonic() { return "red"; }
+
+	std::string GetOpCode() const override
+	{
+		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<false>::GetOpCodeModifier() + S::Name() + T::ReductionOperationString(m_operation) + T::Name();
+	}
+
+	std::vector<const Operand *> GetOperands() const override
 	{
 		return { new DereferencedAddress<B, T, S>(m_address), m_value };
 	}
 
-	static std::string Mnemonic() { return "red"; }
-
-	std::string OpCode() const override
+	std::vector<Operand *> GetOperands() override
 	{
-		return Mnemonic() + SynchronizationString(m_synchronization) + ScopeModifier<false>::OpCodeModifier() + S::Name() + T::ReductionOperationString(m_operation) + T::Name();
+		return { new DereferencedAddress<B, T, S>(m_address), m_value };
 	}
 
 	// Visitors
@@ -89,8 +101,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Address<B, T, S> *m_address = nullptr;
-	const TypedOperand<T> *m_value = nullptr;
+	Address<B, T, S> *m_address = nullptr;
+	TypedOperand<T> *m_value = nullptr;
 
 	typename T::ReductionOperation m_operation;
 	Synchronization m_synchronization = Synchronization::None;

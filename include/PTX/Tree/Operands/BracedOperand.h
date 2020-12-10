@@ -16,12 +16,20 @@ public:
 
 	constexpr static int ElementCount = VectorProperties<V>::ElementCount;
 
-	BracedOperand(const std::array<const TypedOperand<T> *, ElementCount>& operands) : m_operands(operands) {}
+	BracedOperand(const std::array<TypedOperand<T> *, ElementCount>& operands) : m_operands(operands) {}
+
+	// Properties
+
+	const std::array<const TypedOperand<T> *, ElementCount>& GetElements() const { return m_operands; }
+	std::array<TypedOperand<T> *, ElementCount>& GetElements() { return m_operands; }
+	void SetElements(const std::array<TypedOperand<T> *, ElementCount>& operands) { m_operands = operands; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{
 		std::string code = "{";
-		bool first = true;
+		auto first = true;
 		for (const auto& operand : m_operands)
 		{
 			if (!first)
@@ -47,7 +55,7 @@ public:
 
 
 private:
-	const std::array<const TypedOperand<T> *, ElementCount> m_operands;
+	std::array<TypedOperand<T> *, ElementCount> m_operands;
 };
 
 template<class T>

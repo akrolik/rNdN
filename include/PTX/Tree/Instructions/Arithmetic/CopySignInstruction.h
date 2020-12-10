@@ -20,9 +20,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "copysign"; }
 	
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}

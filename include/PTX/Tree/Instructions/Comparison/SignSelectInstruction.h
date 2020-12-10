@@ -27,14 +27,16 @@ public:
 
 	using InstructionBase_3<D, D, D, T>::InstructionBase_3;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "slct"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		return code + D::Name() + T::Name();
 	}

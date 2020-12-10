@@ -10,14 +10,21 @@ class ReturnInstruction : public PredicatedInstruction, public UniformModifier
 public:
 	ReturnInstruction(bool uniform = false) : UniformModifier(uniform) {}
 
+	// formatting
+
 	static std::string Mnemonic() { return "ret"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + UniformModifier::OpCodeModifier();
+		return Mnemonic() + UniformModifier::GetOpCodeModifier();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return {};
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return {};
 	}

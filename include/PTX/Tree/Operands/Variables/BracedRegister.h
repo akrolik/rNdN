@@ -16,13 +16,20 @@ public:
 
 	constexpr static int ElementCount = VectorProperties<V>::ElementCount;
 
+	BracedRegister(const std::array<Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(new NameSet(""), 0), m_registers(registers) {}
 
-	BracedRegister(const std::array<const Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(new NameSet(""), 0), m_registers(registers) {}
+	// Properties
+
+	const std::array<const Register<T> *, ElementCount>& GetRegisters() const { return m_registers; }
+	std::array<Register<T> *, ElementCount>& GetRegisters() { return m_registers; }
+	void SetRegisters(const std::array<Register<T> *, ElementCount>& registers) { m_registers = registers; }
+
+	// Formatting
 
 	std::string GetName() const override
 	{
 		std::string code = "{";
-		bool first = true;
+		auto first = true;
 		for (const auto& reg : m_registers)
 		{
 			if (!first)
@@ -50,7 +57,7 @@ public:
 	}
 
 private:
-	const std::array<const Register<T> *, ElementCount> m_registers;
+	const std::array<Register<T> *, ElementCount> m_registers;
 };
 
 template<class T>

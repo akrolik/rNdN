@@ -28,7 +28,7 @@ public:
 		ListData
 	};
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(Kind indexKind)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateIndex(Kind indexKind)
 	{
 		switch (indexKind)
 		{
@@ -45,7 +45,7 @@ public:
 		return nullptr;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateDataIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateDataIndex()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();
 		if (inputOptions.IsVectorGeometry())
@@ -59,13 +59,13 @@ public:
 		Error("data index for geometry");
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateVectorIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateVectorIndex()
 	{
 		ThreadIndexGenerator<B> threadGenerator(this->m_builder);
 		return threadGenerator.GenerateGlobalIndex();
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateListIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateListIndex()
 	{
 		// List index = globalIndex / listThreads
 
@@ -83,7 +83,7 @@ public:
 		return index;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateListDataIndex()
+	PTX::Register<PTX::UInt32Type> *GenerateListDataIndex()
 	{
 		// Data index = globalIndex % cellThreads
 

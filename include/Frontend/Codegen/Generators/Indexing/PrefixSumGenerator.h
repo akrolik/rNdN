@@ -31,7 +31,7 @@ public:
 	std::string Name() const override { return "PrefixSumGenerator"; }
 
 	template<class S>
-	const PTX::Register<T> *Generate(const PTX::TypedOperand<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
+	PTX::Register<T> *Generate(PTX::TypedOperand<S> *value, PrefixSumMode mode, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// Allocate global variable for the prefix sum
 
@@ -47,7 +47,7 @@ public:
 	}
 
 	template<class S>
-	const PTX::Register<T> *Generate(const PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, const PTX::TypedOperand<S> *value, PrefixSumMode mode, const PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
+	PTX::Register<T> *Generate(PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, PTX::TypedOperand<S> *value, PrefixSumMode mode, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// A global prefix sum is computed in 4 stages:
 		//
@@ -130,7 +130,7 @@ public:
 
 		// Synchronize the result so all values are visible to the first warp
 
-		this->m_builder.AddStatement(warpStoreLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(warpStoreLabel));
 		barrierGenerator.Generate();
 
 		// In the first warp, load the values back into a new register and prefix sum
@@ -157,7 +157,7 @@ public:
 		// Store the value back and synchronize between all warps
 
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_prefixSumLaneAddress, warpLocalPrefixSum));
-		this->m_builder.AddStatement(blockSumLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(blockSumLabel));
 		barrierGenerator.Generate();
 
 		// If we are not the first warp, add the summed result from the shared memory - this completes the prefix sum for the block (!predicate)
@@ -174,7 +174,7 @@ public:
 		// Add to each value within the warp - computing the block local prefix sum
 
 		this->m_builder.AddStatement(new PTX::AddInstruction<T>(prefixSum, prefixSum, warpPrefixSum));
-		this->m_builder.AddStatement(warpRestoreLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(warpRestoreLabel));
 
 		// For each block, load the previous block's value once it is completed. This forms a linear chain, but is fairly efficient
 
@@ -203,7 +203,7 @@ public:
 		auto blockIndex = indexGenerator.GenerateBlockIndex();
 
 		auto atomicStartLabel = this->m_builder.CreateLabel("START");
-		this->m_builder.AddStatement(atomicStartLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(atomicStartLabel));
 
 		auto completedBlocks = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto g_completedBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("completedBlocks"));
@@ -256,7 +256,7 @@ public:
 
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, new PTX::UInt32Value(1)));
 		this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
-		this->m_builder.AddStatement(propagateLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(propagateLabel));
 
 		// Synchronize the results - every thread now has the previous thread's (inclusive) prefix sum
 
@@ -276,7 +276,7 @@ public:
 		return prefixSum;
 	}
 
-	void GenerateWarpPrefixSum(const PTX::Register<PTX::UInt32Type> *laneIndex, const PTX::Register<T> *value)
+	void GenerateWarpPrefixSum(PTX::Register<PTX::UInt32Type> *laneIndex, PTX::Register<T> *value)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& targetOptions = this->m_builder.GetTargetOptions();

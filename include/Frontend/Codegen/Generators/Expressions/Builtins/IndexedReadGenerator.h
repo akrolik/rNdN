@@ -21,12 +21,12 @@ public:
 
 	std::string Name() const override { return "IndexedReadGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		// Value in argument 0, index in argument 1
 
@@ -54,8 +54,8 @@ public:
 	}
 
 private:
-	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
-	const PTX::Register<T> *m_targetRegister = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
+	PTX::Register<T> *m_targetRegister = nullptr;
 };
 
 }

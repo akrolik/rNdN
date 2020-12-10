@@ -26,22 +26,24 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "add"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(CarryModifier<T>::Enabled)
 		{
-			code += CarryModifier<T>::OpCodeModifier();
+			code += CarryModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(RoundingModifier<T>::Enabled)
 		{
-			code += RoundingModifier<T>::OpCodeModifier();
+			code += RoundingModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(SaturateModifier<T>::Enabled)
 		{
@@ -49,12 +51,12 @@ public:
 			{
 				if (!CarryModifier<T>::IsActive())
 				{
-					code += SaturateModifier<T>::OpCodeModifier();
+					code += SaturateModifier<T>::GetOpCodeModifier();
 				}
 			}
 			else
 			{
-				code += SaturateModifier<T>::OpCodeModifier();
+				code += SaturateModifier<T>::GetOpCodeModifier();
 			}
 		}
 		return code + T::Name();

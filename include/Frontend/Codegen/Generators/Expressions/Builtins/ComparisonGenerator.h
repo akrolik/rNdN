@@ -92,12 +92,12 @@ public:
 
 	std::string Name() const override { return "ComparisonGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto type = HorseIR::TypeUtils::WidestType(arguments.at(0)->GetType(), arguments.at(1)->GetType());
 		DispatchType(*this, type, target, arguments);
@@ -134,7 +134,7 @@ public:
 	}
 
 	template<class T>
-	void Generate(const PTX::Register<PTX::PredicateType> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+	void Generate(PTX::Register<PTX::PredicateType> *target, PTX::TypedOperand<T> *src1, PTX::TypedOperand<T> *src2)
 	{
 		if constexpr(PTX::is_comparable_type<T>::value)
 		{
@@ -201,7 +201,7 @@ private:
 	}
 
 	ComparisonOperation m_comparisonOp;
-	const PTX::Register<PTX::PredicateType> *m_targetRegister = nullptr;
+	PTX::Register<PTX::PredicateType> *m_targetRegister = nullptr;
 };
 
 template<PTX::Bits B, PTX::Bits S>
@@ -212,12 +212,12 @@ public:
 
 	std::string Name() const override { return "ComparisonGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		if (m_comparisonOp == ComparisonOperation::Sign)
 		{
@@ -283,7 +283,7 @@ public:
 private:
 	ComparisonOperation m_comparisonOp;
 	
-	const PTX::Register<PTX::IntType<S>> *m_targetRegister = nullptr;
+	PTX::Register<PTX::IntType<S>> *m_targetRegister = nullptr;
 };
 
 }

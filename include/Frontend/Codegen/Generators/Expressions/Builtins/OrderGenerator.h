@@ -36,7 +36,7 @@ public:
 
 	std::string Name() const override { return "OrderLoadGenerator"; }
 
-	void Generate(const HorseIR::Operand *dataArgument, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex)
+	void Generate(const HorseIR::Operand *dataArgument, PTX::Register<PTX::UInt32Type> *leftIndex, PTX::Register<PTX::UInt32Type> *rightIndex)
 	{
 		m_leftIndex = leftIndex;
 		m_rightIndex = rightIndex;
@@ -142,8 +142,8 @@ private:
 	
 	OrderMode m_mode = OrderMode::Shared;
 
-	const PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
-	const PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
 };
 
 template<PTX::Bits B>
@@ -155,7 +155,7 @@ public:
 		Descending
 	};
 
-	OrderComparisonGenerator(Builder& builder, Order sequenceOrder, const PTX::Label *swapLabel, const PTX::Label *endLabel)
+	OrderComparisonGenerator(Builder& builder, Order sequenceOrder, PTX::Label *swapLabel, PTX::Label *endLabel)
 		: Generator(builder), m_sequenceOrder(sequenceOrder), m_swapLabel(swapLabel), m_endLabel(endLabel) {}
 
 	std::string Name() const override { return "OrderComparisonGenerator"; }
@@ -265,8 +265,8 @@ private:
 	}
 
 private:
-	const PTX::Label *m_swapLabel = nullptr;
-	const PTX::Label *m_endLabel = nullptr;
+	PTX::Label *m_swapLabel = nullptr;
+	PTX::Label *m_endLabel = nullptr;
 
 	const HorseIR::TypedVectorLiteral<std::int8_t> *m_orderLiteral = nullptr;
 	Order m_sequenceOrder;
@@ -280,7 +280,7 @@ public:
 
 	std::string Name() const override { return "OrderSwapGenerator"; }
 
-	void Generate(const HorseIR::Operand *index, const HorseIR::Operand *dataArgument, const PTX::Register<PTX::UInt32Type> *leftIndex, const PTX::Register<PTX::UInt32Type> *rightIndex)
+	void Generate(const HorseIR::Operand *index, const HorseIR::Operand *dataArgument, PTX::Register<PTX::UInt32Type> *leftIndex, PTX::Register<PTX::UInt32Type> *rightIndex)
 	{
 		m_leftIndex = leftIndex;
 		m_rightIndex = rightIndex;
@@ -445,8 +445,8 @@ private:
 
 	OrderMode m_mode = OrderMode::Shared;
 
-	const PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
-	const PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_leftIndex = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_rightIndex = nullptr;
 };
 
 template<PTX::Bits B>
@@ -497,14 +497,14 @@ public:
 		const auto dataArgument = arguments.at(1);
 		const auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(arguments.at(2));
 
-		const PTX::Register<PTX::UInt32Type> *sharedIndex = nullptr;
-		const PTX::Register<PTX::UInt32Type> *totalStages = nullptr;
+		PTX::Register<PTX::UInt32Type> *sharedIndex = nullptr;
+		PTX::Register<PTX::UInt32Type> *totalStages = nullptr;
 
-		const PTX::Label *stageStartLabel = nullptr;
-		const PTX::Label *stageEndLabel = nullptr;
+		PTX::Label *stageStartLabel = nullptr;
+		PTX::Label *stageEndLabel = nullptr;
 
-		const PTX::Label *substageStartLabel = nullptr;
-		const PTX::Label *substageEndLabel = nullptr;
+		PTX::Label *substageStartLabel = nullptr;
+		PTX::Label *substageEndLabel = nullptr;
 
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
@@ -559,7 +559,7 @@ public:
 			// 	stagePredicate, stage, totalStages, PTX::UInt32Type::ComparisonOperator::GreaterEqual
 			// ));
 			// this->m_builder.AddStatement(new PTX::BranchInstruction(stageEndLabel, stagePredicate, false, true));
-			this->m_builder.AddStatement(stageStartLabel);
+			this->m_builder.AddStatement(new PTX::LabelStatement(stageStartLabel));
 		}
 
 		// Compute the size of each bitonic sequence in this stage
@@ -647,7 +647,7 @@ public:
 			// 	substagePredicate, substage, stage, PTX::UInt32Type::ComparisonOperator::Greater
 		        // ));
 			// this->m_builder.AddStatement(new PTX::BranchInstruction(substageEndLabel, substagePredicate, false, true));
-			this->m_builder.AddStatement(substageStartLabel);
+			this->m_builder.AddStatement(new PTX::LabelStatement(substageStartLabel));
 		}
 
 		// Compute the size of each substage
@@ -758,7 +758,7 @@ public:
 
 		// Else branch (descending sequence)
 
-		this->m_builder.AddStatement(elseLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(elseLabel));
 
 		OrderComparisonGenerator<B> descendingGenerator(this->m_builder, OrderComparisonGenerator<B>::Order::Descending, swapLabel, endLabel);
 		descendingGenerator.Generate(dataArgument, orderLiteral);
@@ -767,7 +767,7 @@ public:
 
 		// Swap if needed!
 
-		this->m_builder.AddStatement(swapLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(swapLabel));
 
 		// Only load index if needed
 
@@ -778,7 +778,7 @@ public:
 
 		// Finally, we end the order
 
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 
 		if (m_mode == OrderMode::Shared)
 		{
@@ -797,7 +797,7 @@ public:
 			));
 
 			this->m_builder.AddStatement(new PTX::BranchInstruction(substageStartLabel, substagePredicate, false, true));
-			this->m_builder.AddStatement(substageEndLabel);
+			this->m_builder.AddStatement(new PTX::LabelStatement(substageEndLabel));
 
 			// End of outer loop
 
@@ -810,7 +810,7 @@ public:
 			));
 
 			this->m_builder.AddStatement(new PTX::BranchInstruction(stageStartLabel, stagePredicate, false, true));
-			this->m_builder.AddStatement(stageEndLabel);
+			this->m_builder.AddStatement(new PTX::LabelStatement(stageEndLabel));
 
 			// Store cached data back in its entirety
 

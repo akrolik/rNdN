@@ -23,17 +23,24 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 	
-	ConvertAddressInstruction(const Register<PointerType<B, T, D>> *destination, const Address<B, T, S> *source) : m_destination(destination), m_source(source) {}
+	ConvertAddressInstruction(Register<PointerType<B, T, D>> *destination, Address<B, T, S> *source)
+		: m_destination(destination), m_source(source) {}
+
+	// Properties
 
 	const Register<PointerType<B, T, D>> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<PointerType<B, T, D>> *destination) { m_destination = destination; }
+	Register<PointerType<B, T, D>> *GetDestination() { return m_destination; }
+	void SetDestination(Register<PointerType<B, T, D>> *destination) { m_destination = destination; }
 
 	const Address<B, T, S> *GetAddress() const { return m_source; }
-	void SetAddress(const Address<B, T, S> *address) { m_source = address; } 
+	Address<B, T, S> *GetAddress() { return m_source; }
+	void SetAddress(Address<B, T, S> *address) { m_source = address; } 
+
+	// Formatting
 
 	static std::string Mnemonic() { return "cvta"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(std::is_same<S, AddressableSpace>::value)
@@ -47,7 +54,12 @@ public:
 		return code + PointerType<B, T, D>::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { m_destination, m_source };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { m_destination, m_source };
 	}
@@ -62,8 +74,8 @@ protected:
 	DispatchMember_Space1(D);
 	DispatchMember_Space2(S);
 
-	const Register<PointerType<B, T, D>> *m_destination = nullptr;
-	const Address<B, T, S> *m_source = nullptr;
+	Register<PointerType<B, T, D>> *m_destination = nullptr;
+	Address<B, T, S> *m_source = nullptr;
 };
 
 DispatchImplementation_Data2(ConvertAddressInstruction)

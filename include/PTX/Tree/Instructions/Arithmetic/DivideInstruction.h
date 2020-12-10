@@ -24,9 +24,11 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "div"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}
@@ -43,7 +45,9 @@ template<>
 class DivideInstruction<Float32Type> : DispatchInherit(DivideInstruction), public InstructionBase_2<Float32Type>, public RoundingModifier<Float32Type>, public FlushSubnormalModifier<Float32Type>
 {
 public:
-	DivideInstruction(const Register<Float32Type> *destination, const TypedOperand<Float32Type> *sourceA, const TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
+	DivideInstruction(Register<Float32Type> *destination, TypedOperand<Float32Type> *sourceA, TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
+
+	// Properties
 
 	void SetRoundingMode(Float32Type::RoundingMode roundingMode)
 	{
@@ -64,14 +68,16 @@ public:
 		m_full = full;
 	}
 
+	// Formatting
+
 	static std::string Mnemonic() { return "div"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if (RoundingModifier<Float32Type>::IsActive())
 		{
-			code += RoundingModifier<Float32Type>::OpCodeModifier();
+			code += RoundingModifier<Float32Type>::GetOpCodeModifier();
 		}
 		else if (m_full)
 		{
@@ -81,7 +87,7 @@ public:
 		{
 			code += ".approx";
 		}
-		return code + FlushSubnormalModifier<Float32Type>::OpCodeModifier() + Float32Type::Name();
+		return code + FlushSubnormalModifier<Float32Type>::GetOpCodeModifier() + Float32Type::Name();
 	}
 
 	// Visitors
@@ -98,13 +104,15 @@ template<>
 class DivideInstruction<Float64Type> : DispatchInherit(DivideInstruction), public InstructionBase_2<Float64Type>, public RoundingModifier<Float64Type, true>
 {
 public:
-	DivideInstruction(const Register<Float64Type> *destination, const TypedOperand<Float64Type> *sourceA, const TypedOperand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
+	DivideInstruction(Register<Float64Type> *destination, TypedOperand<Float64Type> *sourceA, TypedOperand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "div"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + RoundingModifier<Float64Type, true>::OpCodeModifier() + Float64Type::Name();
+		return Mnemonic() + RoundingModifier<Float64Type, true>::GetOpCodeModifier() + Float64Type::Name();
 	}
 
 	// Visitors

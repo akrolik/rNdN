@@ -7,7 +7,15 @@ namespace PTX {
 class InvertedOperand : public Operand
 {
 public:
-	InvertedOperand(const Operand *operand) : m_operand(operand) {}
+	InvertedOperand(Operand *operand) : m_operand(operand) {}
+
+	// Properties
+
+	const Operand *GetOperand() const { return m_operand; }
+	Operand *GetOperand() { return m_operand; }
+	void SetOperand(Operand *operand) { m_operand = operand; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{
@@ -23,8 +31,7 @@ public:
 	}
 
 private:
-	const Operand *m_operand = nullptr;
-
+	Operand *m_operand = nullptr;
 };
 
 }

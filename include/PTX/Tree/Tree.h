@@ -44,9 +44,10 @@ namespace PTX {
 // Statements
 
 #include "PTX/Tree/Statements/Statement.h"
-#include "PTX/Tree/Statements/Label.h"
+#include "PTX/Tree/Statements/LabelStatement.h"
 
 #include "PTX/Tree/Statements/CommentStatement.h"
+#include "PTX/Tree/Statements/DeclarationStatement.h"
 #include "PTX/Tree/Statements/DirectiveStatement.h"
 #include "PTX/Tree/Statements/InstructionStatement.h"
 
@@ -56,6 +57,7 @@ namespace PTX {
 // Operands
 
 #include "PTX/Tree/Operands/Operand.h"
+#include "PTX/Tree/Operands/Label.h"
 #include "PTX/Tree/Operands/BracedOperand.h"
 #include "PTX/Tree/Operands/Constant.h"
 #include "PTX/Tree/Operands/SpecialConstants.h"

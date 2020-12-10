@@ -30,35 +30,43 @@ public:
 		)
 	);
 
-	SetPredicateInstruction(const Register<PredicateType> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator) : ComparisonModifier<T>(comparator), m_destinationP(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
+	SetPredicateInstruction(Register<PredicateType> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator) : ComparisonModifier<T>(comparator), m_destinationP(destination), m_sourceA(sourceA), m_sourceB(sourceB) {}
 
-	SetPredicateInstruction(const Register<PredicateType> *destinationP, const Register<PredicateType> *destinationQ, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : ComparisonModifier<T>(comparator), m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+	SetPredicateInstruction(Register<PredicateType> *destinationP, Register<PredicateType> *destinationQ, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : ComparisonModifier<T>(comparator), m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+
+	// Properties
 
 	const Register<PredicateType> *GetDestination() const { return m_destinationP; }
-	void SetDestination(const Register<PredicateType> *destination) { m_destinationP = destination; }
+	Register<PredicateType> *GetDestination() { return m_destinationP; }
+	void SetDestination(Register<PredicateType> *destination) { m_destinationP = destination; }
 
 	const Register<PredicateType> *GetDestinationQ() const { return m_destinationQ; }
-	void SetDestinationQ(const Register<PredicateType> *destination) { m_destinationQ = destination; }
+	Register<PredicateType> *GetDestinationQ() { return m_destinationQ; }
+	void SetDestinationQ(Register<PredicateType> *destination) { m_destinationQ = destination; }
 
 	const TypedOperand<T> *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const TypedOperand<T> *source) { m_sourceA = source; }
+	TypedOperand<T> *GetSourceA() { return m_sourceA; }
+	void SetSourceA(TypedOperand<T> *source) { m_sourceA = source; }
 
 	const TypedOperand<T> *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const TypedOperand<T> *source) { m_sourceB = source; }
+	TypedOperand<T> *GetSourceB() { return m_sourceB; }
+	void SetSourceB(TypedOperand<T> *source) { m_sourceB = source; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "setp"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		std::string code = Mnemonic() + ComparisonModifier<T>::OpCodeModifier() + PredicateModifier::OpCodeModifier();
+		std::string code = Mnemonic() + ComparisonModifier<T>::GetOpCodeModifier() + PredicateModifier::GetOpCodeModifier();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		return code + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
 		std::vector<const Operand *> operands;
 		if (m_destinationQ == nullptr)
@@ -71,8 +79,27 @@ public:
 		}
 		operands.push_back(m_sourceA);
 		operands.push_back(m_sourceB);
-		const Operand *modifier = PredicateModifier::OperandsModifier();
-		if (modifier != nullptr)
+		if (const auto modifier = PredicateModifier::GetOperandsModifier())
+		{
+			operands.push_back(modifier);
+		}
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		std::vector<Operand *> operands;
+		if (m_destinationQ == nullptr)
+		{
+			operands.push_back(m_destinationP);
+		}
+		else
+		{
+			operands.push_back(new DualOperand(m_destinationP, m_destinationQ));
+		}
+		operands.push_back(m_sourceA);
+		operands.push_back(m_sourceB);
+		if (auto modifier = PredicateModifier::GetOperandsModifier())
 		{
 			operands.push_back(modifier);
 		}
@@ -84,32 +111,41 @@ public:
 protected:
 	DispatchMember_Type(T);
 
-	const Register<PredicateType> *m_destinationP = nullptr;
-	const Register<PredicateType> *m_destinationQ = nullptr;
-	const TypedOperand<T> *m_sourceA = nullptr;
-	const TypedOperand<T> *m_sourceB = nullptr;
+	Register<PredicateType> *m_destinationP = nullptr;
+	Register<PredicateType> *m_destinationQ = nullptr;
+	TypedOperand<T> *m_sourceA = nullptr;
+	TypedOperand<T> *m_sourceB = nullptr;
 };
 
 template<>
 class SetPredicateInstruction<Float16Type> : DispatchInherit(SetPredicateInstruction), public InstructionBase_2<PredicateType, Float16Type>, public ComparisonModifier<Float16Type>, public FlushSubnormalModifier<Float16Type>, public PredicateModifier
 {
 public:
-	SetPredicateInstruction(const Register<PredicateType> *destination, const TypedOperand<Float16Type> *sourceA, const TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator) {}
+	SetPredicateInstruction(Register<PredicateType> *destination, TypedOperand<Float16Type> *sourceA, TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator) {}
 
-	SetPredicateInstruction(const Register<PredicateType> *destination, const TypedOperand<Float16Type> *sourceA, const TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator, const Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+	SetPredicateInstruction(Register<PredicateType> *destination, TypedOperand<Float16Type> *sourceA, TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
 	static std::string Mnemonic() { return "setp"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ComparisonModifier<Float16Type>::OpCodeModifier() + PredicateModifier::OpCodeModifier() + FlushSubnormalModifier<Float16Type>::OpCodeModifier() + Float16Type::Name();
+		return Mnemonic() + ComparisonModifier<Float16Type>::GetOpCodeModifier() + PredicateModifier::GetOpCodeModifier() + FlushSubnormalModifier<Float16Type>::GetOpCodeModifier() + Float16Type::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
-		auto operands = InstructionBase_2<PredicateType, Float16Type>::Operands();
-		const Operand *modifier = PredicateModifier::OperandsModifier();
-		if (modifier != nullptr)
+		auto operands = InstructionBase_2<PredicateType, Float16Type>::GetOperands();
+		if (const auto modifier = PredicateModifier::GetOperandsModifier())
+		{
+			operands.push_back(modifier);
+		}
+		return operands;
+	}
+
+	std::vector<Operand *> GetOperands() override
+	{
+		auto operands = InstructionBase_2<PredicateType, Float16Type>::GetOperands();
+		if (auto modifier = PredicateModifier::GetOperandsModifier())
 		{
 			operands.push_back(modifier);
 		}

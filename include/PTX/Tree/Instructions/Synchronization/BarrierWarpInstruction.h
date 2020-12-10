@@ -11,17 +11,26 @@ class BarrierWarpInstruction : public PredicatedInstruction
 public:
 	BarrierWarpInstruction(std::uint32_t memberMask) : m_memberMask(memberMask) {}
 
+	// Properties
+
 	std::uint32_t GetMemberMask() const { return m_memberMask; }
 	void SetMemberMask(std::uint32_t memberMask) { m_memberMask = memberMask; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "bar.warp"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + ".sync";
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { new HexOperand(m_memberMask) };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { new HexOperand(m_memberMask) };
 	}

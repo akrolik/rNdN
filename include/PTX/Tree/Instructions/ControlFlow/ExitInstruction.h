@@ -9,14 +9,21 @@ class ExitInstruction : public PredicatedInstruction
 public:
 	ExitInstruction() {}
 
+	// Formatting
+
 	static std::string Mnemonic() { return "exit"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return {};
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return {};
 	}

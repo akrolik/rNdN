@@ -27,7 +27,7 @@ public:
 
 	std::string Name() const override { return "InternalHashGenerator"; }
 
-	const PTX::Register<PTX::UInt32Type> *Generate(const HorseIR::Operand *operand)
+	PTX::Register<PTX::UInt32Type> *Generate(const HorseIR::Operand *operand)
 	{
 		m_hash = nullptr;
 		operand->Accept(*this);
@@ -90,7 +90,7 @@ public:
 
 private:
 	template<class T>
-	const PTX::Register<PTX::UInt32Type> *GenerateHash(const HorseIR::Identifier *identifier, unsigned int cellIndex = 0)
+	PTX::Register<PTX::UInt32Type> *GenerateHash(const HorseIR::Identifier *identifier, unsigned int cellIndex = 0)
 	{
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		operandGenerator.SetBoundsCheck(false);
@@ -135,7 +135,7 @@ private:
 		return hash;
 	}
 
-	const PTX::Register<PTX::UInt32Type> *m_hash = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_hash = nullptr;
 };
 
 template<PTX::Bits B, class K>
@@ -146,8 +146,8 @@ public:
 
 	std::string Name() const override { return "InternalHashEqualGenerator"; }
 
-	std::pair<const PTX::Register<PTX::PredicateType> *, const PTX::TypedOperand<K> *> Generate(
-		const HorseIR::Operand *dataOperand, const HorseIR::Operand *keyOperand, const PTX::TypedOperand<PTX::UInt32Type> *slot
+	std::pair<PTX::Register<PTX::PredicateType> *, PTX::TypedOperand<K> *> Generate(
+		const HorseIR::Operand *dataOperand, const HorseIR::Operand *keyOperand, PTX::TypedOperand<PTX::UInt32Type> *slot
 	)
 	{
 		m_keyOperand = keyOperand;
@@ -215,7 +215,7 @@ public:
 
 private:
 	template<class T>
-	const PTX::Register<PTX::PredicateType> *GeneratePredicate(const HorseIR::Operand *dataOperand, unsigned int cellIndex = 0)
+	PTX::Register<PTX::PredicateType> *GeneratePredicate(const HorseIR::Operand *dataOperand, unsigned int cellIndex = 0)
 	{
 		OperandGenerator<B, T> operandGenerator(this->m_builder);
 		operandGenerator.SetBoundsCheck(false);
@@ -243,11 +243,11 @@ private:
 		return predicate;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *m_slot = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_slot = nullptr;
 	const HorseIR::Operand *m_keyOperand = nullptr;
 
-	const PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
-	const PTX::TypedOperand<K> *m_slotValue = nullptr;
+	PTX::Register<PTX::PredicateType> *m_predicate = nullptr;
+	PTX::TypedOperand<K> *m_slotValue = nullptr;
 };
 
 }

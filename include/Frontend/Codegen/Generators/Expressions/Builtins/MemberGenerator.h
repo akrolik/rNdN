@@ -29,7 +29,7 @@ public:
 
 	std::string Name() const override { return "MemberGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		InternalFindGenerator<B, PTX::PredicateType> findGenerator(this->m_builder, FindOperation::Member, {ComparisonOperation::Equal});
 		return findGenerator.Generate(target, arguments);

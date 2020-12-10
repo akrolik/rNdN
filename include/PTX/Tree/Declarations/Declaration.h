@@ -35,6 +35,8 @@ public:
 
 	Declaration(LinkDirective linkDirective = LinkDirective::None) : m_linkDirective(linkDirective) {}
 
+	// Properties
+
 	LinkDirective GetLinkDirective() const { return m_linkDirective; }
 	void SetLinkDirective(LinkDirective linkDirective) { m_linkDirective = linkDirective; }
 

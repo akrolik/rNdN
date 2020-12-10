@@ -32,7 +32,7 @@ public:
 
 	// The output of the range function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	const PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		// Get the data index depending on the geometry
 

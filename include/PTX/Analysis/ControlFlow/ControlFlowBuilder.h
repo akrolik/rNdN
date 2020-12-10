@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Traversal/ConstHierarchicalVisitor.h"
+#include "PTX/Traversal/HierarchicalVisitor.h"
 
 #include "PTX/Tree/Tree.h"
 #include "PTX/Analysis/ControlFlow/ControlFlowGraph.h"
@@ -8,47 +8,51 @@
 namespace PTX {
 namespace Analysis {
 
-class ControlFlowAccumulator : public ConstHierarchicalVisitor
+class ControlFlowAccumulator : public HierarchicalVisitor
 {
 public:
 	// API
 
-	void Analyze(const FunctionDefinition<VoidType> *function);
+	void Analyze(FunctionDefinition<VoidType> *function);
 
 	ControlFlowGraph *GetGraph() const { return m_graph; }
-	const std::unordered_map<const Statement *, const BasicBlock *>& GetBlockMap() const { return m_blockMap; }
+
+	const std::unordered_map<const Label *, const BasicBlock *>& GetLabelMap() const { return m_labelMap; }
+	const std::unordered_map<const Statement *, const BasicBlock *>& GetStatementMap() const { return m_statementMap; }
 
 	// Statements
 
-	bool VisitIn(const Statement *statement) override;
-	bool VisitIn(const Label *label) override;
+	bool VisitIn(Statement *statement) override;
+	bool VisitIn(LabelStatement *statement) override;
 	
 private:
 	unsigned int m_index = 0u;
 	BasicBlock *m_currentBlock = nullptr;
 
 	ControlFlowGraph *m_graph = nullptr;
-	std::unordered_map<const Statement *, const BasicBlock *> m_blockMap;
+	std::unordered_map<const Label *, const BasicBlock *> m_labelMap;
+	std::unordered_map<const Statement *, const BasicBlock *> m_statementMap;
 };
 
-class ControlFlowBuilder : public ConstHierarchicalVisitor
+class ControlFlowBuilder : public HierarchicalVisitor
 {
 public:
 	// API
 
-	void Analyze(const FunctionDefinition<VoidType> *function);
+	void Analyze(FunctionDefinition<VoidType> *function);
 	ControlFlowGraph *GetGraph() const { return m_graph; }
 	
 	// Statements
 
-	bool VisitIn(const Statement *statement) override;
-	bool VisitIn(const InstructionStatement *statement) override;
+	bool VisitIn(Statement *statement) override;
+	bool VisitIn(InstructionStatement *statement) override;
 
 private:
 	const BasicBlock *m_previousBlock = nullptr;
 
 	ControlFlowGraph *m_graph = nullptr;
-	std::unordered_map<const Statement *, const BasicBlock *> m_blockMap;
+	std::unordered_map<const Label *, const BasicBlock *> m_labelMap;
+	std::unordered_map<const Statement *, const BasicBlock *> m_statementMap;
 };
 
 }

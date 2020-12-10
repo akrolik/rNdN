@@ -10,14 +10,18 @@ namespace PTX {
 class BarrierInstruction : public PredicatedInstruction
 {
 public:
-	BarrierInstruction(const TypedOperand<UInt32Type> *barrier, bool aligned = false) : m_barrier(barrier), m_wait(true), m_aligned(aligned) {}
-	BarrierInstruction(const TypedOperand<UInt32Type> *barrier, const TypedOperand<UInt32Type> *threads, bool wait, bool aligned = false) : m_barrier(barrier), m_threads(threads), m_wait(wait), m_aligned(aligned) {}
+	BarrierInstruction(TypedOperand<UInt32Type> *barrier, bool aligned = false) : m_barrier(barrier), m_wait(true), m_aligned(aligned) {}
+	BarrierInstruction(TypedOperand<UInt32Type> *barrier, TypedOperand<UInt32Type> *threads, bool wait, bool aligned = false) : m_barrier(barrier), m_threads(threads), m_wait(wait), m_aligned(aligned) {}
+
+	// Properties
 
 	const TypedOperand<UInt32Type> *GetBarrier() const { return m_barrier; }
-	void SetBarrier(const TypedOperand<UInt32Type> *barrier) { m_barrier = barrier; }
+	TypedOperand<UInt32Type> *GetBarrier() { return m_barrier; }
+	void SetBarrier(TypedOperand<UInt32Type> *barrier) { m_barrier = barrier; }
 
 	const TypedOperand<UInt32Type> *GetThreads() const { return m_threads; }
-	void SetThreads(const TypedOperand<UInt32Type> *threads) { m_threads = threads; }
+	TypedOperand<UInt32Type> *GetThreads() { return m_threads; }
+	void SetThreads(TypedOperand<UInt32Type> *threads) { m_threads = threads; }
 
 	bool GetWait() { return m_wait; }
 	void SetWait(bool wait) { m_wait = wait; }
@@ -25,9 +29,11 @@ public:
 	bool GetAligned() { return m_aligned; }
 	void SetAligned(bool aligned) { m_aligned = aligned; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "barrier"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if (m_wait)
@@ -45,12 +51,20 @@ public:
 		return code;
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
 	{
 		if (m_wait == false || m_threads != nullptr)
 		{
 			return { m_barrier, m_threads };
+		}
+		return { m_barrier };
+	}
 
+	std::vector<Operand *> GetOperands() override
+	{
+		if (m_wait == false || m_threads != nullptr)
+		{
+			return { m_barrier, m_threads };
 		}
 		return { m_barrier };
 	}
@@ -60,8 +74,8 @@ public:
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
-	const TypedOperand<UInt32Type> *m_barrier = nullptr;
-	const TypedOperand<UInt32Type> *m_threads = nullptr;
+	TypedOperand<UInt32Type> *m_barrier = nullptr;
+	TypedOperand<UInt32Type> *m_threads = nullptr;
 	bool m_wait = false;
 	bool m_aligned = false;
 };

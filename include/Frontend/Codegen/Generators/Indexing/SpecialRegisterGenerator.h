@@ -14,27 +14,27 @@ public:
 
 	std::string Name() const { return "SpecialRegisterGenerator"; }
 
-	const PTX::Register<PTX::UInt32Type> *GenerateThreadIndex(PTX::VectorElement element = PTX::VectorElement::X)
+	PTX::Register<PTX::UInt32Type> *GenerateThreadIndex(PTX::VectorElement element = PTX::VectorElement::X)
 	{
 		return GenerateSpecialRegister(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), element);
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateThreadCount(PTX::VectorElement element = PTX::VectorElement::X)
+	PTX::Register<PTX::UInt32Type> *GenerateThreadCount(PTX::VectorElement element = PTX::VectorElement::X)
 	{
 		return GenerateSpecialRegister(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), element);
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateBlockIndex(PTX::VectorElement element = PTX::VectorElement::X)
+	PTX::Register<PTX::UInt32Type> *GenerateBlockIndex(PTX::VectorElement element = PTX::VectorElement::X)
 	{
 		return GenerateSpecialRegister(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), element);
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateBlockCount(PTX::VectorElement element = PTX::VectorElement::X)
+	PTX::Register<PTX::UInt32Type> *GenerateBlockCount(PTX::VectorElement element = PTX::VectorElement::X)
 	{
 		return GenerateSpecialRegister(PTX::SpecialRegisterDeclaration_nctaid->GetVariable("%nctaid"), element);
 	}
 
-	const PTX::Register<PTX::UInt32Type> *GenerateSpecialRegister(const PTX::Register<PTX::Vector4Type<PTX::UInt32Type>> *specialRegister, PTX::VectorElement element)
+	PTX::Register<PTX::UInt32Type> *GenerateSpecialRegister(PTX::Register<PTX::Vector4Type<PTX::UInt32Type>> *specialRegister, PTX::VectorElement element)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

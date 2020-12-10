@@ -23,14 +23,14 @@ public:
 
 	std::string Name() const override { return "AppendGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		// Requires synchronization-in, never compressed
 
 		return nullptr;
 	}
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -64,7 +64,7 @@ public:
 		auto data1 = opGen.GenerateOperand(arguments.at(1), indexOffset, this->m_builder.UniqueIdentifier("append"));
 		moveGenerator.Generate(targetRegister, data1);
 
-		this->m_builder.AddStatement(offsetLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(offsetLabel));
 
 		return targetRegister;
 	}

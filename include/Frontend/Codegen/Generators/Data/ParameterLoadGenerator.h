@@ -174,7 +174,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateIndirectList(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
+	void GenerateIndirectList(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -204,7 +204,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateIndirectTuple(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index)
+	void GenerateIndirectTuple(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -234,7 +234,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateConstantSize(const PTX::ParameterVariable<T> *parameter)
+	void GenerateConstantSize(PTX::ParameterVariable<T> *parameter)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 		auto sizeName = NameUtils::SizeName(parameter);
@@ -246,7 +246,7 @@ public:
 	}
 
 	template<class T>
-	void GeneratePointerSize(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, bool loadValue = true)
+	void GeneratePointerSize(PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, bool loadValue = true)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 		auto sizeName = NameUtils::SizeName(parameter);
@@ -267,7 +267,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, const PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, bool loadValue = true)
+	void GenerateIndirectSize(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, PTX::TypedOperand<PTX::UInt32Type> *index = nullptr, bool loadValue = true)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 
@@ -289,7 +289,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateIndirectSize(const PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index, bool loadValue = true)
+	void GenerateIndirectSize(PTX::ParameterVariable<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>> *parameter, unsigned int index, bool loadValue = true)
 	{
 		auto kernelResources = this->m_builder.GetKernelResources();
 	
@@ -311,7 +311,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace> *GenerateParameterAddress(const PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter)
+	PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace> *GenerateParameterAddress(PTX::ParameterVariable<PTX::PointerType<B, T>> *parameter)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

@@ -11,14 +11,14 @@
 
 namespace Backend {
 
-SASS::Program *Compiler::Compile(const PTX::Program *program)
+SASS::Program *Compiler::Compile(PTX::Program *program)
 {
 	m_program = new SASS::Program();
 	program->Accept(*this);
 	return m_program;
 }
 
-bool Compiler::VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function)
+bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Backend codegen: " + function->GetName());
 

@@ -21,11 +21,19 @@ public:
 	using FunctionDeclarationBase<R>::FunctionDeclarationBase;
 	using Signature = R;
 
+	// Properties
+
+	std::vector<const VariableDeclaration *> GetParameters() const override
+	{
+		return std::vector<const VariableDeclaration *>(std::begin(m_parameters), std::end(m_parameters));
+	}
+	std::vector<VariableDeclaration *>& GetParameters() override { return m_parameters; }
+
 	template<class T, class S>
 	std::enable_if_t<REQUIRE_EXACT(S, RegisterSpace) || REQUIRE_BASE(S, ParameterSpace), void>
-	AddParameter(const TypedVariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
+	AddParameter(TypedVariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
 
-	const std::vector<const VariableDeclaration*> GetParameters() { return m_parameters; }
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -38,6 +46,37 @@ public:
 	}
 
 	// Visitors
+
+	void Accept(Visitor& visitor) override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	void Accept(ConstVisitor& visitor) const override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			if (visitor.VisitIn(this))
+			{
+				for (auto& parameter : m_parameters)
+				{
+					parameter->Accept(visitor);
+				}
+			}
+			visitor.VisitOut(this);
+		}
+	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
@@ -55,31 +94,7 @@ public:
 	}
 
 protected:
-	std::string GetParametersString() const override
-	{
-		std::string code;
-		bool first = true;
-		for (const auto& parameter : m_parameters)
-		{
-			if (first)
-			{
-				code += "\n";
-			}
-			else
-			{
-				code += ",\n";
-			}
-			first = false;
-			code += parameter->ToString(1, false);
-		}
-		if (!first)
-		{
-			code += "\n";
-		}
-		return code;
-	}
-
-	std::vector<const VariableDeclaration *> m_parameters;
+	std::vector<VariableDeclaration *> m_parameters;
 };
 
 template<class R, typename... Args>
@@ -93,16 +108,32 @@ public:
 	using Signature = R(Args...);
 
 	FunctionDeclaration() {}
-	FunctionDeclaration(const std::string& name, const typename FunctionDeclarationBase<R>::ReturnDeclarationType *ret, const TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : FunctionDeclarationBase<R>(name, ret, linkDirective), m_parameters(std::make_tuple(parameters...)) {}
+	FunctionDeclaration(const std::string& name, typename FunctionDeclarationBase<R>::ReturnDeclarationType *ret, TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : FunctionDeclarationBase<R>(name, ret, linkDirective)
+	{
+		auto tuple = std::make_tuple(parameters...);
+		ExpandTuple(m_parameters, tuple, int_<sizeof...(Args)>());
+	}
 
-	void SetParameters(const TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters) { m_parameters = std::make_tuple(parameters...); }
+	// Properties
+
+	std::vector<const VariableDeclaration *> GetParameters() const override
+	{
+		return std::vector<const VariableDeclaration *>(std::begin(m_parameters), std::end(m_parameters));
+	}
+	std::vector<VariableDeclaration *>& GetParameters() override { return m_parameters; }
+
+	void SetParameters(TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters)
+	{
+		auto tuple = std::make_tuple(parameters...);
+		ExpandTuple(m_parameters, tuple, int_<sizeof...(Args)>());
+	}
+
+	// Formatting
 
 	json ToJSON() const override
 	{
 		json j = FunctionDeclarationBase<R>::ToJSON();
-		std::vector<const Declaration *> parameters;
-		ExpandTuple(parameters, m_parameters, int_<sizeof...(Args)>());
-		for (const auto& parameter : parameters)
+		for (const auto& parameter : m_parameters)
 		{
 			j["parameters"].push_back(parameter->ToJSON());
 		}
@@ -111,15 +142,44 @@ public:
 
 	// Visitors
 
+	void Accept(Visitor& visitor) override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	void Accept(ConstVisitor& visitor) const override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			if (visitor.VisitIn(this))
+			{
+				for (auto& parameter : m_parameters)
+				{
+					parameter->Accept(visitor);
+				}
+			}
+			visitor.VisitOut(this);
+		}
+	}
+
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
 		if constexpr(std::is_same<R, VoidType>::value)
 		{
 			if (visitor.VisitIn(this))
 			{
-				std::vector<const Declaration *> parameters;
-				ExpandTuple(parameters, m_parameters, int_<sizeof...(Args)>());
-				for (const auto& parameter : parameters)
+				for (const auto& parameter : m_parameters)
 				{
 					parameter->Accept(visitor);
 				}
@@ -129,38 +189,7 @@ public:
 	}
 
 protected:
-	std::string GetParametersString() const override
-	{
-		std::ostringstream code;
-		if constexpr(sizeof...(Args) > 0)
-		{
-			code << std::endl << "\t";
-			CodeTuple(code, "\n\t", m_parameters, int_<sizeof...(Args)>(), 0, false);
-			code << std::endl;
-		}
-		return code.str();
-	}
-
-	template <typename T, size_t P>
-	static std::vector<const Declaration *>& ExpandTuple(std::vector<const Declaration *>& declarations, const T& t, int_<P>)
-	{
-		auto arg = std::get<std::tuple_size<T>::value-P>(t);
-		if (arg == nullptr)
-		{
-			std::cerr << "[ERROR] Parameter " << std::tuple_size<T>::value-P << " not set" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-		declarations.push_back(arg);
-		return ExpandTuple(declarations, t, int_<P-1>());
-	}
-
-	template <typename T>
-	static std::vector<const Declaration *>& ExpandTuple(std::vector<const Declaration *>& declarations, const T& t, int_<0>)
-	{
-		return declarations;
-	}
-
-	std::tuple<const TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...> m_parameters;
+	std::vector<VariableDeclaration *> m_parameters;
 };
 
 }

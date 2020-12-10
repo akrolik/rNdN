@@ -105,7 +105,7 @@ class InternalFindGenerator_MatchInit : public Generator
 {
 public:
 	using Generator::Generator; 
-	using BaseRegistersTy = std::vector<std::pair<const PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
+	using BaseRegistersTy = std::vector<std::pair<PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
 
 	std::string Name() const override { return "InternalFindGenerator_MatchInit"; }
 
@@ -193,12 +193,12 @@ class InternalFindGenerator_Update : public Generator
 public:
 	InternalFindGenerator_Update(
 		Builder& builder, FindOperation findOp,
-		const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::Int64Type> *writeOffset = nullptr
 	) : Generator(builder), m_findOp(findOp), m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
 	std::string Name() const override { return "InternalFindGenerator_Update"; }
 
-	void Generate(const HorseIR::Operand *dataX, const PTX::Register<PTX::PredicateType> *matchPredicate)
+	void Generate(const HorseIR::Operand *dataX, PTX::Register<PTX::PredicateType> *matchPredicate)
 	{
 		// Compute match output result
 
@@ -274,7 +274,7 @@ public:
 					// End control flow and increment both the matched (predicated) and running counts
 
 					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(m_writeOffset, m_writeOffset, new PTX::Int64Value(1)));
-					this->m_builder.AddStatement(label);
+					this->m_builder.AddStatement(new PTX::LabelStatement(label));
 					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1)));
 
 					break;
@@ -284,9 +284,9 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
-	const PTX::Register<D> *m_targetRegister = nullptr;
-	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	PTX::Register<D> *m_targetRegister = nullptr;
+	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
 
 	FindOperation m_findOp;
 };
@@ -295,11 +295,11 @@ template<PTX::Bits B, class D>
 class InternalFindGenerator_Match : public Generator
 {
 public:
-	using BaseRegistersTy = std::vector<std::pair<const PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
+	using BaseRegistersTy = std::vector<std::pair<PTX::Register<PTX::UIntType<B>> *, unsigned int>>;
 
 	InternalFindGenerator_Match(
 		Builder& builder, const BaseRegistersTy& baseRegisters, FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps,
-		const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::Int64Type> *writeOffset = nullptr
 	) : Generator(builder), m_baseRegisters(baseRegisters), m_findOp(findOp), m_comparisonOps(comparisonOps),
 		m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
@@ -402,11 +402,11 @@ private:
 		}
 	}
 
-	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
-	const PTX::Register<PTX::PredicateType> *m_matchPredicate = nullptr;
-	const PTX::Register<D> *m_targetRegister = nullptr;
+	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	PTX::Register<PTX::PredicateType> *m_matchPredicate = nullptr;
+	PTX::Register<D> *m_targetRegister = nullptr;
 
-	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
 
 	BaseRegistersTy m_baseRegisters;
 
@@ -420,7 +420,7 @@ class InternalFindGenerator_Constant : public Generator
 public:
 	InternalFindGenerator_Constant(
 		Builder& builder, FindOperation findOp, ComparisonOperation comparisonOp,
-		const PTX::Register<PTX::PredicateType> *runningPredicate, const PTX::Register<D>* targetRegister, const PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::Int64Type> *writeOffset = nullptr
 	) : Generator(builder), m_findOp(findOp), m_comparisonOp(comparisonOp),
 		m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
@@ -481,7 +481,7 @@ public:
 
 private:
 	template<class T>
-	void GenerateMatch(const HorseIR::Operand *dataX, const PTX::TypedOperand<T> *valueX, const PTX::TypedOperand<T> *valueY)
+	void GenerateMatch(const HorseIR::Operand *dataX, PTX::TypedOperand<T> *valueX, PTX::TypedOperand<T> *valueY)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto matchPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -493,10 +493,10 @@ private:
 		updateGenerator.Generate(dataX, matchPredicate);
 	}
 
-	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
-	const PTX::Register<D> *m_targetRegister = nullptr;
+	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	PTX::Register<D> *m_targetRegister = nullptr;
 
-	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
 
 	FindOperation m_findOp;
 	ComparisonOperation m_comparisonOp;
@@ -510,12 +510,12 @@ public:
 
 	std::string Name() const override { return "InternalFindGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<D> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	PTX::Register<D> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		// Initialize target register (@member->false, @index_of->0, @join_count->0)
 
@@ -638,7 +638,7 @@ public:
 		auto endLabel = this->m_builder.CreateLabel("END");
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
 
@@ -671,13 +671,13 @@ public:
 		GenerateInnerLoop(identifierY, new PTX::UInt32Value(FIND_CACHE_SIZE), 16);
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(ifEndLabel));
-		this->m_builder.AddStatement(ifElseLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(ifElseLabel));
 
 		// Compute bound if this is the last iteration
 
 		GenerateInnerLoop(identifierY, remainder, 1);
 		
-		this->m_builder.AddStatement(ifEndLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(ifEndLabel));
 
 		// Barrier before the next chunk, otherwise some warps might overwrite the previous values too soon
 
@@ -687,10 +687,10 @@ public:
 		// Complete the loop structure, check the next index chunk
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 	}
 
-	void GenerateInnerLoop(const HorseIR::Identifier *identifierY, const PTX::TypedOperand<PTX::UInt32Type> *bound, unsigned int factor)
+	void GenerateInnerLoop(const HorseIR::Identifier *identifierY, PTX::TypedOperand<PTX::UInt32Type> *bound, unsigned int factor)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -718,7 +718,7 @@ public:
 		auto endLabel = this->m_builder.CreateLabel("END");
 		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
 
@@ -740,7 +740,7 @@ public:
 		}
 
 		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(endLabel);     
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));     
 	}
 
 	void Visit(const HorseIR::Literal *literal) override
@@ -839,10 +839,10 @@ public:
 	}
 
 private:
-	const PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
-	const PTX::Register<D> *m_targetRegister = nullptr;
+	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
+	PTX::Register<D> *m_targetRegister = nullptr;
 
-	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr; // Join output
+	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr; // Join output
 
 	const HorseIR::Operand *m_dataX = nullptr;
 

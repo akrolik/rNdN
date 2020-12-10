@@ -9,10 +9,7 @@ namespace PTX {
 class BlockStatement : public Statement, public StatementList
 {
 public:
-	std::string ToString(unsigned int indentation) const override
-	{
-		return StatementList::ToString(indentation);
-	}
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -23,6 +20,21 @@ public:
 	}
 
 	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (auto& statement : m_statements)
+			{
+				statement->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{

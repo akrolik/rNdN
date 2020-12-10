@@ -22,12 +22,42 @@ public:
 		return j;
 	}
 
-	std::string ToString(unsigned int indentation) const override
+	// Visitors
+
+	void Accept(Visitor& visitor) override
 	{
-		return Function::ToString(indentation) + "\n" + StatementList::ToString(0);
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			visitor.Visit(this);
+		}
 	}
 
-	// Visitors
+	void Accept(ConstVisitor& visitor) const override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		if constexpr(std::is_same<R, VoidType>::value)
+		{
+			if (visitor.VisitIn(this))
+			{
+				for (auto& parameter : FunctionDeclaration<R>::m_parameters)
+				{
+					parameter->Accept(visitor);
+				}
+				for (auto& statement : m_statements)
+				{
+					statement->Accept(visitor);
+				}
+			}
+			visitor.VisitOut(this);
+		}
+	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{

@@ -16,7 +16,7 @@ public:
 		REQUIRE_BASE(S, StateSpace)
 	);
 
-	VariableAdapter(const Variable<TS, S> *variable) : Variable<TD, S>(variable->m_nameSet, variable->m_nameIndex), m_variable(variable) {}
+	VariableAdapter(Variable<TS, S> *variable) : Variable<TD, S>(variable->m_nameSet, variable->m_nameIndex), m_variable(variable) {}
 
 	json ToJSON() const override
 	{
@@ -30,9 +30,10 @@ public:
 	}
 
 	const Variable<TS, S> *GetVariable() const { return m_variable; }
+	Variable<TS, S> *GetVariable() { return m_variable; }
 
 private:
-	const Variable<TS, S> *m_variable;
+	Variable<TS, S> *m_variable;
 };
 
 }

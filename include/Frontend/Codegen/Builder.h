@@ -43,7 +43,7 @@ public:
 		m_currentProgram->AddModule(module);
 	}
 
-	void AddDirective(const PTX::Directive *directive)
+	void AddDirective(PTX::Directive *directive)
 	{
 		m_currentModule->AddDirective(directive);
 	}
@@ -84,8 +84,11 @@ public:
 
 	void CloseKernel()
 	{
-		auto declarations = GetKernelResources()->GetDeclarations();
-		m_currentKernel->InsertStatements(declarations, 0);
+		auto index = 0u;
+		for (auto& declaration : GetKernelResources()->GetDeclarations())
+		{
+			m_currentKernel->InsertStatement(new PTX::DeclarationStatement(declaration), index++);
+		}
 
 		m_currentKernel = nullptr;
 		m_currentFunction = nullptr;
@@ -93,7 +96,7 @@ public:
 
 	template<class T, class S>
 	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
-	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *parameter, bool alias = false)
+	AddParameter(const std::string& identifier, PTX::TypedVariableDeclaration<T, S> *parameter, bool alias = false)
 	{
 		if (!alias)
 		{
@@ -102,7 +105,7 @@ public:
 		GetKernelResources()->AddParameter(identifier, parameter);
 	}
 
-	void AddStatement(const PTX::Statement *statement)
+	void AddStatement(PTX::Statement *statement)
 	{
 		GetCurrentBlock()->AddStatement(statement);
 	}
@@ -112,7 +115,7 @@ public:
 		GetCurrentBlock()->AddStatements(statements);
 	}
 
-	void InsertStatements(const PTX::Statement *statement, unsigned int index)
+	void InsertStatements(PTX::Statement *statement, unsigned int index)
 	{
 		GetCurrentBlock()->InsertStatement(statement, index);
 	}
@@ -127,7 +130,7 @@ public:
 		return (name + "_" + std::to_string(m_uniqueIndex++));
 	}
 
-	const PTX::Label *CreateLabel(const std::string& name)
+	PTX::Label *CreateLabel(const std::string& name)
 	{
 		return new PTX::Label(UniqueIdentifier(name));
 	}
@@ -147,8 +150,11 @@ public:
 		// Attach the resource declarations to the kernel. In PTX code, the declarations
 		// must come before use, and are typically grouped at the top of the kernel.
 
-		auto declarations = GetLocalResources()->GetDeclarations();
-		InsertStatements(declarations, 0);
+		auto index = 0u;
+		for (auto& declaration : GetLocalResources()->GetDeclarations())
+		{
+			InsertStatements(new PTX::DeclarationStatement(declaration), index++);
+		}
 		m_scopes.pop();
 	}
 
@@ -169,8 +175,8 @@ public:
 		m_inputOptions[function] = inputOptions;
 	}
 
-	const PTX::FileDirective *GetCurrentFile() const { return m_files.at(m_currentFunction); }
-	void SetFile(const HorseIR::Function *function, const PTX::FileDirective *file)
+	PTX::FileDirective *GetCurrentFile() const { return m_files.at(m_currentFunction); }
+	void SetFile(const HorseIR::Function *function, PTX::FileDirective *file)
 	{
 		m_files[function] = file;
 	}
@@ -186,7 +192,7 @@ private:
 	const CodegenOptions& m_codegenOptions;
 	const TargetOptions& m_targetOptions;
 	std::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;
-	std::unordered_map<const HorseIR::Function*, const PTX::FileDirective *> m_files;
+	std::unordered_map<const HorseIR::Function*, PTX::FileDirective *> m_files;
 
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;

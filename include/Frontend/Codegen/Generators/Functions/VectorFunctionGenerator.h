@@ -104,7 +104,7 @@ public:
 
 			auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
 			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(s_blockIndexAddress, blockIndex));
-			this->m_builder.AddStatement(blockIndexLabel);
+			this->m_builder.AddStatement(new PTX::LabelStatement(blockIndexLabel));
 
 			// Synchronize the block index across all threads in the block
 			

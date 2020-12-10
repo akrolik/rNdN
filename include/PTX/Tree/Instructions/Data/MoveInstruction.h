@@ -23,9 +23,11 @@ public:
 
 	using InstructionBase_1<T>::InstructionBase_1;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "mov"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}

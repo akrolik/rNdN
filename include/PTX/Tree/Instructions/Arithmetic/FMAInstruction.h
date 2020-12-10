@@ -18,20 +18,23 @@ public:
 		)
 	);
 
-	FMAInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, const TypedOperand<T> *sourceC, typename T::RoundingMode roundingMode) : InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
+	FMAInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, typename T::RoundingMode roundingMode)
+		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "fma"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		std::string code = Mnemonic() + RoundingModifier<T, true>::OpCodeModifier();
+		std::string code = Mnemonic() + RoundingModifier<T, true>::GetOpCodeModifier();
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(SaturateModifier<T>::Enabled)
 		{
-			code += SaturateModifier<T>::OpCodeModifier();
+			code += SaturateModifier<T>::GetOpCodeModifier();
 		}
 		return code + T::Name();
 	}

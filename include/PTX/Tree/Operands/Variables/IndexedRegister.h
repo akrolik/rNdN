@@ -13,14 +13,20 @@ public:
 		REQUIRE_BASE(T, ScalarType)
 	);
 
-	IndexedRegister(const Register<VectorType<T, V>> *variable, VectorElement vectorElement) : VariableAdapter<T, VectorType<T, V>, RegisterSpace>(variable), m_vectorElement(vectorElement) {}
+	IndexedRegister(Register<VectorType<T, V>> *variable, VectorElement vectorElement)
+		: VariableAdapter<T, VectorType<T, V>, RegisterSpace>(variable), m_vectorElement(vectorElement) {}
 
-	virtual VectorElement GetVectorElement() const { return m_vectorElement; }
+	// Properties
+
+	VectorElement GetVectorElement() const { return m_vectorElement; }
+	void SetVectorElement(VectorElement vectorElement) { m_vectorElement = vectorElement; }
 
 	std::string GetName() const override
 	{
 		return VariableAdapter<T, VectorType<T, V>, RegisterSpace>::GetName() + GetVectorElementName(m_vectorElement);
 	}
+
+	// Formatting
 
 	json ToJSON() const override
 	{

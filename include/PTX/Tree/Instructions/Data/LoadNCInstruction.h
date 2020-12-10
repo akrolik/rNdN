@@ -48,20 +48,27 @@ public:
 		return ".<unknown>";
 	}
 
-	LoadNCInstruction(const Register<T> *destination, const Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All) : m_destination(destination), m_address(address), m_cacheOperator(cacheOperator) {}
+	LoadNCInstruction(Register<T> *destination, Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All)
+		: m_destination(destination), m_address(address), m_cacheOperator(cacheOperator) {}
+
+	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+	Register<T> *GetDestination() { return m_destination; }
+	void SetDestination(Register<T> *destination) { m_destination = destination; }
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address = address; }
 
 	CacheOperator GetCacheOperator() const { return m_cacheOperator; }
 	void SetCacheOperator(CacheOperator cacheOperator) { m_cacheOperator = cacheOperator; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "ld"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic() + S::Name();
 		if (m_cacheOperator != CacheOperator::All)
@@ -71,7 +78,12 @@ public:
 		return code + ".nc" + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
@@ -85,8 +97,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Register<T> *m_destination = nullptr;
-	const Address<B, T, S> *m_address = nullptr;
+	Register<T> *m_destination = nullptr;
+	Address<B, T, S> *m_address = nullptr;
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 

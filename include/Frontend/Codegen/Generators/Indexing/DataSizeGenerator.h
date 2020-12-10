@@ -26,7 +26,7 @@ public:
 
 	std::string Name() const override { return "DataSizeGenerator"; }
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter, unsigned int cellIndex = 0)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Parameter *parameter, unsigned int cellIndex = 0)
 	{
 		m_cellIndex = cellIndex;
 		m_size = nullptr;
@@ -39,7 +39,7 @@ public:
 		return m_size;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(unsigned int returnIndex, unsigned int cellIndex = 0)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(unsigned int returnIndex, unsigned int cellIndex = 0)
 	{
 		m_cellIndex = cellIndex;
 		m_size = nullptr;
@@ -53,7 +53,7 @@ public:
 		return m_size;
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Operand *operand)
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const HorseIR::Operand *operand)
 	{
 		m_size = nullptr;
 		operand->Accept(*this);
@@ -201,7 +201,7 @@ private:
 	}
 
 	template<class T>
-	const PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(const PTX::ParameterVariable<T> *parameter, const HorseIR::Analysis::Shape *shape) const
+	PTX::TypedOperand<PTX::UInt32Type> *GenerateSize(PTX::ParameterVariable<T> *parameter, const HorseIR::Analysis::Shape *shape) const
 	{
 		// Get the size register for the data
 
@@ -226,7 +226,7 @@ private:
 		Error("size for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *m_size = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_size = nullptr;
 
 	unsigned int m_cellIndex = 0;
 };

@@ -63,12 +63,12 @@ public:
 
 	std::string Name() const override { return "BinaryGenerator"; }
 
-	const PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		if constexpr(std::is_same<T, PTX::Int8Type>::value)
@@ -94,7 +94,7 @@ public:
 		return targetRegister;
 	}
 
-	void Generate(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+	void Generate(PTX::Register<T> *target, PTX::TypedOperand<T> *src1, PTX::TypedOperand<T> *src2)
 	{	
 		switch (m_binaryOp)
 		{
@@ -131,7 +131,7 @@ public:
 	}
 
 	template<template<class, bool = true> class Op>
-	void GenerateInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+	void GenerateInstruction(PTX::Register<T> *target, PTX::TypedOperand<T> *src1, PTX::TypedOperand<T> *src2)
 	{
 		if constexpr(Op<T, false>::TypeSupported)
 		{
@@ -156,7 +156,7 @@ public:
 
 private:
 	template<template<class, bool = true> class Op>
-	void GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2);
+	void GenerateInverseInstruction(PTX::Register<T> *target, PTX::TypedOperand<T> *src1, PTX::TypedOperand<T> *src2);
 
 	BinaryOperation m_binaryOp;
 };
@@ -171,7 +171,7 @@ namespace Codegen {
 
 template<PTX::Bits B, class T>
 template<template<class, bool = true> class Op>
-void BinaryGenerator<B, T>::GenerateInverseInstruction(const PTX::Register<T> *target, const PTX::TypedOperand<T> *src1, const PTX::TypedOperand<T> *src2)
+void BinaryGenerator<B, T>::GenerateInverseInstruction(PTX::Register<T> *target, PTX::TypedOperand<T> *src1, PTX::TypedOperand<T> *src2)
 {
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp = resources->template AllocateTemporary<T>();

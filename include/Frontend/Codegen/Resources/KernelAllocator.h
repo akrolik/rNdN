@@ -16,7 +16,7 @@ class KernelAllocator : public ResourceAllocator<KernelResources>
 public:
 	template<class T, class S = PTX::ParameterSpace>
 	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
-	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *declaration)
+	AddParameter(const std::string& identifier, PTX::TypedVariableDeclaration<T, S> *declaration)
 	{
 		this->GetResources<T>()->template AddParameter<S>(identifier, declaration);
 	}
@@ -34,7 +34,7 @@ public:
 	}
 
 	template<class T, class S = PTX::ParameterSpace>
-	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, const PTX::Variable<T, S> *>
+	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, PTX::Variable<T, S> *>
 	GetParameter(const std::string& identifier) const
 	{
 		if (ContainsParameter<T, S>(identifier))
@@ -45,7 +45,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::SharedVariable<T> *AllocateSharedVariable(const std::string& identifier)
+	PTX::SharedVariable<T> *AllocateSharedVariable(const std::string& identifier)
 	{
 		return this->GetResources<T>()->AllocateSharedVariable(identifier);
 	}
@@ -62,7 +62,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::SharedVariable<T> *GetSharedVariable(const std::string& identifier) const
+	PTX::SharedVariable<T> *GetSharedVariable(const std::string& identifier) const
 	{
 		if (ContainsSharedVariable<T>(identifier))
 		{

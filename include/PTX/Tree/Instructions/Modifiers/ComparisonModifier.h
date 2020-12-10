@@ -18,13 +18,17 @@ public:
 
 	ComparisonModifier(typename T::ComparisonOperator comparisonOperator) : m_comparisonOperator(comparisonOperator) {}
 
+	// Properties
+
 	typename T::ComparisonOperator GetComparisonOperator() const { return m_comparisonOperator; }
 	void SetComparisonOperator(typename T::ComparisonOperator comparisonOperator)
 	{
 	       	m_comparisonOperator = comparisonOperator;
 	}
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		return T::ComparisonOperatorString(m_comparisonOperator);
 	}

@@ -9,15 +9,24 @@ class DevInstruction : public PredicatedInstruction
 public:
 	DevInstruction(const std::string& instruction) : m_instruction(instruction) {}
 
+	// Properties
+
 	const std::string& GetInstruction() const { return m_instruction; }
 	void SetInstruction(const std::string& instruction) { m_instruction = instruction; }
 
-	std::string OpCode() const override
+	// Formatting
+
+	std::string GetOpCode() const override
 	{
 		return m_instruction;
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return {};
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return {};
 	}

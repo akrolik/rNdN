@@ -43,7 +43,7 @@ public:
 
 	// The output of a limit function handles the predicate itself. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -92,17 +92,17 @@ public:
 		GeneratePositiveBounds(lowerBound, upperBound, size, absLimit);
 		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
 
-		this->m_builder.AddStatement(elseLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(elseLabel));
 		GenerateNegativeBounds(lowerBound, upperBound, size, absLimit);
 
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 
 		// Compute the data indexes that will be used for bounds checking
 
 		OperandCompressionGenerator compressionGenerator(this->m_builder);
 		auto compressionPredicate = compressionGenerator.GetCompressionRegister(arguments.at(1));
 
-		const PTX::Register<PTX::UInt32Type> *index = nullptr;
+		PTX::Register<PTX::UInt32Type> *index = nullptr;
 		if (compressionPredicate != nullptr)
 		{
 			// Compression requires a prefix sum to compute the index
@@ -150,8 +150,8 @@ public:
 
 private:
 	void GeneratePositiveBounds(
-		const PTX::Register<PTX::UInt32Type> *lowerBound, const PTX::Register<PTX::UInt32Type> *upperBound,
-		const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *limit
+		PTX::Register<PTX::UInt32Type> *lowerBound, PTX::Register<PTX::UInt32Type> *upperBound,
+		PTX::TypedOperand<PTX::UInt32Type> *size, PTX::TypedOperand<PTX::UInt32Type> *limit
 	)
 	{
 		switch (m_limitOp)
@@ -176,8 +176,8 @@ private:
 	}
 
 	void GenerateNegativeBounds(
-		const PTX::Register<PTX::UInt32Type> *lowerBound, const PTX::Register<PTX::UInt32Type> *upperBound,
-		const PTX::TypedOperand<PTX::UInt32Type> *size, const PTX::TypedOperand<PTX::UInt32Type> *limit
+		PTX::Register<PTX::UInt32Type> *lowerBound, PTX::Register<PTX::UInt32Type> *upperBound,
+		PTX::TypedOperand<PTX::UInt32Type> *size, PTX::TypedOperand<PTX::UInt32Type> *limit
 	)
 	{
 		auto resources = this->m_builder.GetLocalResources();

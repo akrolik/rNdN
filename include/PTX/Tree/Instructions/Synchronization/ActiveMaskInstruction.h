@@ -18,9 +18,11 @@ public:
 
 	using InstructionBase_0<T>::InstructionBase_0;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "activemask"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + T::Name();
 	}

@@ -185,7 +185,7 @@ private:
 	}
 
 	template<class T>
-	const PTX::Value<T> *GenerateNull(Order order) const
+	PTX::Value<T> *GenerateNull(Order order) const
 	{
 		if (order == Order::Ascending)
 		{
@@ -247,12 +247,12 @@ public:
 
 		// Else branch (index >= size), load the min/max values depending on sort
 
-		this->m_builder.AddStatement(elseLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(elseLabel));
 
 		OrderInitNullGenerator<B> nullGenerator(this->m_builder);
 		nullGenerator.Generate(targets.at(1), dataArgument, orderLiteral);
 
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 	}
 };
 

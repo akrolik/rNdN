@@ -15,7 +15,23 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	MemoryAddress(const typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
+	MemoryAddress(typename S::template VariableType<T> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
+
+	// Properties
+
+	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
+	typename S::template VariableType<T> *GetVariable() { return m_variable; }
+	void SetVariable(typename S::template VariableType<T> *variable) { m_variable = variable; }
+
+	int GetOffset() const { return m_offset; }
+	void SetOffset(int offset) { m_offset = offset; }
+
+	MemoryAddress<B, T, S> *CreateOffsetAddress(int offset) const override
+	{
+		return new MemoryAddress(m_variable, m_offset + offset);
+	}
+
+	// Formatting
 
 	std::string ToString() const override
 	{
@@ -41,16 +57,8 @@ public:
 		return j;
 	}
 
-	const typename S::template VariableType<T> *GetVariable() const { return m_variable; }
-	int GetOffset() const { return m_offset; }
-
-	MemoryAddress<B, T, S> *CreateOffsetAddress(int offset) const override
-	{
-		return new MemoryAddress(m_variable, m_offset + offset);
-	}
-
 private:
-	const typename S::template VariableType<T> *m_variable = nullptr;
+	typename S::template VariableType<T> *m_variable = nullptr;
 	int m_offset = 0;
 };
 

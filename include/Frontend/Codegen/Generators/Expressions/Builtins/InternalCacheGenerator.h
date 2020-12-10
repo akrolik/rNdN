@@ -32,7 +32,7 @@ public:
 	bool GetSynchronize() const { return m_synchronize; }
 	void SetSynchronize(bool synchronize) { m_synchronize = synchronize; }
 
-	void Generate(const HorseIR::Operand *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void Generate(const HorseIR::Operand *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		auto& kernelOptions = this->m_builder.GetKernelOptions();
 		kernelOptions.SetBlockSize(CACHE_SIZE);
@@ -51,7 +51,7 @@ public:
 		Error("literal data");
 	}
 
-	void Generate(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index, const HorseIR::Type *type)
+	void Generate(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index, const HorseIR::Type *type)
 	{
 		// Load data into shared memory
 
@@ -67,13 +67,13 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void GenerateVector(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		GenerateCache<T>(data, index);
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void GenerateList(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		const auto& inputOptions = this->m_builder.GetInputOptions();
 		const auto parameter = inputOptions.Parameters.at(data->GetSymbol());
@@ -94,7 +94,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int cellIndex, const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void GenerateTuple(unsigned int cellIndex, const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -105,7 +105,7 @@ public:
 
 private:
 	template<class T>
-	void GenerateCache(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index, bool isCell = false, unsigned int cellIndex = 0)
+	void GenerateCache(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index, bool isCell = false, unsigned int cellIndex = 0)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -160,7 +160,7 @@ private:
 
 	bool m_boundsCheck = true;
 	bool m_synchronize = true;
-	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
 };
 
 template<PTX::Bits B, unsigned int CACHE_SIZE = 1024u, unsigned int N = 1>
@@ -171,7 +171,7 @@ public:
 
 	std::string Name() const override { return "InternalCacheGenerator_Load"; }
 
-	void Generate(const HorseIR::Operand *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void Generate(const HorseIR::Operand *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		m_index = index;
 		data->Accept(*this);
@@ -187,7 +187,7 @@ public:
 		Error("literal data");
 	}
 
-	void Generate(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index, const HorseIR::Type *type)
+	void Generate(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index, const HorseIR::Type *type)
 	{
 		// Store data from shared memory
 
@@ -195,13 +195,13 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void GenerateVector(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		GenerateCache<T>(data, index);
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void GenerateList(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		const auto& inputOptions = this->m_builder.GetInputOptions();
 		const auto parameter = inputOptions.Parameters.at(data->GetSymbol());
@@ -222,7 +222,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int cellIndex, const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void GenerateTuple(unsigned int cellIndex, const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		if (!this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -233,7 +233,7 @@ public:
 
 private:
 	template<class T>
-	void GenerateCache(const HorseIR::Identifier *data, const PTX::TypedOperand<PTX::UInt32Type> *index, bool isCell = false, unsigned int cellIndex = 0)
+	void GenerateCache(const HorseIR::Identifier *data, PTX::TypedOperand<PTX::UInt32Type> *index, bool isCell = false, unsigned int cellIndex = 0)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
@@ -301,7 +301,7 @@ private:
 		}
 	}
 
-	const PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
+	PTX::TypedOperand<PTX::UInt32Type> *m_index = nullptr;
 };
 
 }

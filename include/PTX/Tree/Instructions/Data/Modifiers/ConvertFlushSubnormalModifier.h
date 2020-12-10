@@ -17,10 +17,14 @@ public:
 
 	ConvertFlushSubnormalModifier(bool flush = false) : m_flush(flush) {}
 
+	// Properties
+
 	bool GetFlushSubnormal() const { return m_flush; }
 	void SetFlushSubnormal(bool flush) { m_flush = flush; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		if (m_flush)
 		{

@@ -28,22 +28,33 @@ public:
 		REQUIRE_EXACT(S, AddressableSpace, GlobalSpace)
 	);
 
-	LoadUniformInstruction(const Register<T> *destination, const Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
+	LoadUniformInstruction(Register<T> *destination, Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
+
+	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+	Register<T> *GetDestination() { return m_destination; }
+	void SetDestination(Register<T> *destination) { m_destination = destination; }
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address = address; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "ldu"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + S::Name() + T::Name();
 	}
 
-	std::vector<const Operand *> Operands() const override
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
@@ -57,8 +68,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Register<T> *m_destination = nullptr;
-	const Address<B, T, S> *m_address = nullptr;
+	Register<T> *m_destination = nullptr;
+	Address<B, T, S> *m_address = nullptr;
 };
 
 DispatchImplementation_Data(LoadUniformInstruction)

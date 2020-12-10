@@ -66,7 +66,7 @@ public:
 
 		// Keep the slot within range
 
-		this->m_builder.AddStatement(startLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
 		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
 			new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
 			new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
@@ -75,24 +75,24 @@ public:
 
 		DispatchType(*this, dataArgument->GetType(), arguments, slot, startLabel);
 
-		this->m_builder.AddStatement(endLabel);
+		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
 
 	}
 
 	template<class T>
-	void GenerateVector(const std::vector<HorseIR::Operand *>& arguments, const PTX::Register<PTX::UInt32Type> *slot, const PTX::Label *startLabel)
+	void GenerateVector(const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		GenerateHashLookup<T>(arguments, slot, startLabel);
 	}
 
 	template<class T>
-	void GenerateList(const std::vector<HorseIR::Operand *>& arguments, const PTX::Register<PTX::UInt32Type> *slot, const PTX::Label *startLabel)
+	void GenerateList(const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		GenerateHashLookup<T>(arguments, slot, startLabel);
 	}
 	
 	template<class T>
-	void GenerateTuple(unsigned int index, const std::vector<HorseIR::Operand *>& arguments, const PTX::Register<PTX::UInt32Type> *slot, const PTX::Label *startLabel)
+	void GenerateTuple(unsigned int index, const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		if (index == 0)
 		{
@@ -102,7 +102,7 @@ public:
 
 private:
 	template<class T>
-	void GenerateHashLookup(const std::vector<HorseIR::Operand *>& arguments, const PTX::Register<PTX::UInt32Type> *slot, const PTX::Label *startLabel)
+	void GenerateHashLookup(const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
@@ -160,7 +160,7 @@ private:
 
 			// No match, check for empty
 
-			this->m_builder.AddStatement(elseLabel);
+			this->m_builder.AddStatement(new PTX::LabelStatement(elseLabel));
 
 			auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(emptyPredicate, slotValue, empty, T::ComparisonOperator::NotEqual));
@@ -168,7 +168,7 @@ private:
 		}
 	}
 
-	const PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
 };
 
 }

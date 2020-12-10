@@ -11,14 +11,14 @@ template<class T>
 class KernelResources : public Resources
 {
 public:
-	std::vector<const PTX::VariableDeclaration *> GetDeclarations() const override
+	std::vector<PTX::VariableDeclaration *> GetDeclarations() const override
 	{
 		return m_sharedDeclarations;
 	}
 
 	template<class S>
 	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, void>
-	AddParameter(const std::string& identifier, const PTX::TypedVariableDeclaration<T, S> *declaration)
+	AddParameter(const std::string& identifier, PTX::TypedVariableDeclaration<T, S> *declaration)
 	{
 		if constexpr(std::is_same<S, PTX::RegisterSpace>::value)
 		{
@@ -45,7 +45,7 @@ public:
 	}
 
 	template<class S>
-	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, const PTX::Variable<T, S> *>
+	std::enable_if_t<std::is_same<S, PTX::RegisterSpace>::value || std::is_base_of<S, PTX::ParameterSpace>::value, PTX::Variable<T, S> *>
 	GetParameter(const std::string& identifier) const
 	{
 		if constexpr(std::is_same<S, PTX::RegisterSpace>::value)
@@ -62,7 +62,7 @@ public:
 		}
 	}
 
-	const PTX::SharedVariable<T> *AllocateSharedVariable(const std::string& identifier)
+	PTX::SharedVariable<T> *AllocateSharedVariable(const std::string& identifier)
 	{
 		if (m_sharedMap.find(identifier) != m_sharedMap.end())
 		{
@@ -84,17 +84,17 @@ public:
 		return (m_sharedMap.find(identifier) != m_sharedMap.end());
 	}
 
-	const PTX::SharedVariable<T> *GetSharedVariable(const std::string& identifier) const
+	PTX::SharedVariable<T> *GetSharedVariable(const std::string& identifier) const
 	{
 		return m_sharedMap.at(identifier);
 	}
 
 private:
-	std::unordered_map<std::string, const PTX::ParameterDeclaration<T> *> m_parametersMap;
-	std::unordered_map<std::string, const PTX::RegisterDeclaration<T> *> m_registersMap;
+	std::unordered_map<std::string, PTX::ParameterDeclaration<T> *> m_parametersMap;
+	std::unordered_map<std::string, PTX::RegisterDeclaration<T> *> m_registersMap;
 
-	std::vector<const PTX::VariableDeclaration *> m_sharedDeclarations;
-	std::unordered_map<std::string, const PTX::SharedVariable<T> *> m_sharedMap;
+	std::vector<PTX::VariableDeclaration *> m_sharedDeclarations;
+	std::unordered_map<std::string, PTX::SharedVariable<T> *> m_sharedMap;
 };
 
 }

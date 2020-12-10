@@ -12,6 +12,8 @@ class Variable<T, RegisterSpace> : public VariableBase<T, RegisterSpace>, public
 public:
 	using VariableBase<T, RegisterSpace>::VariableBase;
 
+	// Formatting
+
 	std::string ToString() const override
 	{
 		return VariableBase<T, RegisterSpace>::ToString();

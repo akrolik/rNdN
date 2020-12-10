@@ -18,10 +18,14 @@ public:
 
 	ConvertSaturateModifier(bool saturate = false) : m_saturate(saturate) {}
 
+	// Properties
+
 	bool GetSaturate() const { return m_saturate; }
 	void SetSaturate(bool saturate) { m_saturate = saturate; }
 
-	std::string OpCodeModifier() const
+	// Formatting
+
+	std::string GetOpCodeModifier() const
 	{
 		if (m_saturate)
 		{

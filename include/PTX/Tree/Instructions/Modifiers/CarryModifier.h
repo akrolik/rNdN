@@ -19,13 +19,17 @@ public:
 	CarryModifier() {}
 	CarryModifier(bool carryIn, bool carryOut) : m_carryIn(carryIn), m_carryOut(carryOut) {}
 
+	// Properties
+
 	bool GetCarryIn() const { return m_carryIn; }
 	void SetCarryIn(bool carryIn) { m_carryIn = carryIn; }
 
 	bool GetCarryOut() const { return m_carryOut; }
 	void SetCarryOut(bool carryOut) { m_carryOut = carryOut; }
+
+	// Formatting
 	
-	std::string OpCodeModifier() const
+	std::string GetOpCodeModifier() const
 	{
 		std::string ret;
 		if (m_carryIn)

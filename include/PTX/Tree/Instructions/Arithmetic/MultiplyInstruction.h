@@ -25,31 +25,35 @@ public:
 	);
 
 	template <class T1 = T, class = typename std::enable_if_t<HalfModifier<T1>::Enabled>>
-	MultiplyInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB, typename HalfModifier<T1>::Half half) : InstructionBase_2<T>(destination, sourceA, sourceB), HalfModifier<T>(half) {} 
+	MultiplyInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename HalfModifier<T1>::Half half)
+		: InstructionBase_2<T>(destination, sourceA, sourceB), HalfModifier<T>(half) {} 
 
 	template <class T1 = T, class = typename std::enable_if_t<!HalfModifier<T1>::Enabled>>
-	MultiplyInstruction(const Register<T> *destination, const TypedOperand<T> *sourceA, const TypedOperand<T> *sourceB) : InstructionBase_2<T>(destination, sourceA, sourceB) {}
+	MultiplyInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB)
+		: InstructionBase_2<T>(destination, sourceA, sourceB) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "mul"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic();
 		if constexpr(HalfModifier<T>::Enabled)
 		{
-			code += HalfModifier<T>::OpCodeModifier();
+			code += HalfModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(RoundingModifier<T>::Enabled)
 		{
-			code += RoundingModifier<T>::OpCodeModifier();
+			code += RoundingModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
-			code += FlushSubnormalModifier<T>::OpCodeModifier();
+			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
 		}
 		if constexpr(SaturateModifier<T>::Enabled)
 		{
-			code += SaturateModifier<T>::OpCodeModifier();
+			code += SaturateModifier<T>::GetOpCodeModifier();
 		}
 		return code + T::Name();
 	}

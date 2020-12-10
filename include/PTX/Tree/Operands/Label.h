@@ -1,26 +1,20 @@
 #pragma once
 
 #include "PTX/Tree/Operands/Operand.h"
-#include "PTX/Tree/Statements/Statement.h"
 
 namespace PTX {
 
-class Label : public Statement, public Operand
+class Label : public Operand
 {
 public:
 	Label(const std::string& name) : m_name(name) {}
 
-	void SetName(const std::string& name) { m_name = name; }
-	std::string GetName() const { return m_name; }
+	// Properties
 
-	std::string ToString(unsigned int indentation) const override
-	{
-		if (indentation > 0)
-		{
-			return std::string(indentation-1, '\t') + m_name + ":";
-		}
-		return m_name;
-	}
+	void SetName(const std::string& name) { m_name = name; }
+	const std::string& GetName() const { return m_name; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{
@@ -36,6 +30,15 @@ public:
 	}
 
 	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{

@@ -19,7 +19,7 @@ public:
 	// Registers
 
 	template<class T>
-	const PTX::Register<T> *AllocateRegister(const std::string& identifier)
+	PTX::Register<T> *AllocateRegister(const std::string& identifier)
 	{
 		return this->GetResources<T>()->AllocateRegister(identifier);
 	}
@@ -36,7 +36,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<T> *GetRegister(const std::string& identifier) const
+	PTX::Register<T> *GetRegister(const std::string& identifier) const
 	{
 		if (ContainsRegister<T>(identifier))
 		{
@@ -52,7 +52,7 @@ public:
 	// Temporary registers
 
 	template<class T>
-	const PTX::Register<T> *AllocateTemporary()
+	PTX::Register<T> *AllocateTemporary()
 	{
 		return this->GetResources<T>()->AllocateTemporary();
 	}
@@ -60,13 +60,13 @@ public:
 	// Compresed register flag
 
 	template<class T>
-	void SetCompressedRegister(const PTX::Register<T> *value, const PTX::Register<PTX::PredicateType> *predicate)
+	void SetCompressedRegister(PTX::Register<T> *value, PTX::Register<PTX::PredicateType> *predicate)
 	{
 		this->GetResources<T>()->SetCompressedRegister(value, predicate);
 	}
 
 	template<class T>
-	bool IsCompressedRegister(const PTX::Register<T> *value) const
+	bool IsCompressedRegister(PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{
@@ -83,7 +83,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::Register<PTX::PredicateType> *GetCompressedRegister(const PTX::Register<T> *value) const
+	PTX::Register<PTX::PredicateType> *GetCompressedRegister(PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{
@@ -102,13 +102,13 @@ public:
 	// Indexed data register flag
 
 	template<class T>
-	void SetIndexedRegister(const PTX::Register<T> *value, const PTX::TypedOperand<PTX::UInt32Type> *index)
+	void SetIndexedRegister(PTX::Register<T> *value, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
 		this->GetResources<T>()->SetIndexedRegister(value, index);
 	}
 
 	template<class T>
-	bool IsIndexedRegister(const PTX::Register<T> *value) const
+	bool IsIndexedRegister(PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{
@@ -125,7 +125,7 @@ public:
 	}
 
 	template<class T>
-	const PTX::TypedOperand<PTX::UInt32Type> *GetIndexedRegister(const PTX::Register<T> *value) const
+	PTX::TypedOperand<PTX::UInt32Type> *GetIndexedRegister(PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{
@@ -144,13 +144,13 @@ public:
 	// Reduction register flag
 
 	template<class T>
-	void SetReductionRegister(const PTX::Register<T> *value, RegisterReductionGranularity granularity, RegisterReductionOperation op)
+	void SetReductionRegister(PTX::Register<T> *value, RegisterReductionGranularity granularity, RegisterReductionOperation op)
 	{
 		this->GetResources<T>()->SetReductionRegister(value, granularity, op);
 	}
 
 	template<class T>
-	bool IsReductionRegister(const PTX::Register<T> *value) const
+	bool IsReductionRegister(PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{
@@ -167,7 +167,7 @@ public:
 	}
 
 	template<class T>
-	std::pair<RegisterReductionGranularity, RegisterReductionOperation> GetReductionRegister(const PTX::Register<T> *value) const
+	std::pair<RegisterReductionGranularity, RegisterReductionOperation> GetReductionRegister(PTX::Register<T> *value) const
 	{
 		if (auto resources = this->GetResources<T>(false))
 		{

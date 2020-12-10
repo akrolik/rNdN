@@ -36,15 +36,26 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	LoadInstructionBase(const Register<T> *destination, const Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
+	LoadInstructionBase(Register<T> *destination, Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
+
+	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }
-	void SetDestination(const Register<T> *destination) { m_destination = destination; }
+	Register<T> *GetDestination() { return m_destination; }
+	void SetDestination(Register<T> *destination) { m_destination = destination; }
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }
-	void SetAddress(const Address<B, T, S> *address) { m_address = address; }
+	Address<B, T, S> *GetAddress() { return m_address; }
+	void SetAddress(Address<B, T, S> *address) { m_address = address; }
 
-	std::vector<const Operand *> Operands() const override
+	// Formatting
+
+	std::vector<const Operand *> GetOperands() const override
+	{
+		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
+	}
+
+	std::vector<Operand *> GetOperands() override
 	{
 		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
@@ -58,8 +69,8 @@ protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
 
-	const Register<T> *m_destination = nullptr;
-	const Address<B, T, S> *m_address = nullptr;
+	Register<T> *m_destination = nullptr;
+	Address<B, T, S> *m_address = nullptr;
 };
 
 template<Bits B, class T, class S, LoadSynchronization M = LoadSynchronization::Weak>
@@ -92,14 +103,19 @@ public:
 		return ".<unknown>";
 	}
 
-	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All) : LoadInstructionBase<B, T, S>(reg, address), m_cacheOperator(cacheOperator) {}
+	LoadInstruction(Register<T> *reg, Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All)
+		: LoadInstructionBase<B, T, S>(reg, address), m_cacheOperator(cacheOperator) {}
+
+	// Properties
 
 	CacheOperator GetCacheOperator() const { return m_cacheOperator; }
 	void SetCacheOperator(CacheOperator cacheOperator) { m_cacheOperator = cacheOperator; }
 
+	// Formatting
+
 	static std::string Mnemonic() { return "ld"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		std::string code = Mnemonic() + S::Name();
 		if (m_cacheOperator != CacheOperator::All)
@@ -121,9 +137,11 @@ class LoadInstruction<B, T, S, LoadSynchronization::Volatile> : public LoadInstr
 public:
 	using LoadInstructionBase<B, T, S>::LoadInstructionBase;
 
+	// Formatting
+
 	static std::string Mnemonic() { return "ld"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
 		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
@@ -138,13 +156,16 @@ class LoadInstruction<B, T, S, LoadSynchronization::Relaxed> : public LoadInstru
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
+	LoadInstruction(Register<T> *reg, Address<B, T, S> *address, Scope scope)
+		: LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "ld"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ".relaxed" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
+		return Mnemonic() + ".relaxed" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
 protected:
@@ -157,13 +178,16 @@ class LoadInstruction<B, T, S, LoadSynchronization::Acquire> : public LoadInstru
 public:
 	using Scope = ScopeModifier<>::Scope;
 
-	LoadInstruction(const Register<T> *reg, const Address<B, T, S> *address, Scope scope) : LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
+	LoadInstruction(Register<T> *reg, Address<B, T, S> *address, Scope scope)
+		: LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
+
+	// Formatting
 
 	static std::string Mnemonic() { return "ld"; }
 
-	std::string OpCode() const override
+	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ".acquire" + ScopeModifier<>::OpCodeModifier() + S::Name() + T::Name();
+		return Mnemonic() + ".acquire" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
 protected:
@@ -171,8 +195,7 @@ protected:
 };
 
 DispatchImplementation_DataAtomic(LoadInstruction, ({
-	const auto atomic = GetAtomic();
-	switch (atomic)
+	switch (GetAtomic())
 	{
 		case LoadSynchronization::Weak:
 			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Weak>(visitor);

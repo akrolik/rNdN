@@ -8,7 +8,7 @@ template<template<Bits> class T, Bits DB, Bits SB>
 class ExtendAdapter : public Adapter<T, T, DB, SB>
 {
 public:
-	ExtendAdapter(const TypedOperand<T<SB>> *operand) : Adapter<T, T, DB, SB>(operand) {}
+	ExtendAdapter(TypedOperand<T<SB>> *operand) : Adapter<T, T, DB, SB>(operand) {}
 
 	json ToJSON() const override
 	{

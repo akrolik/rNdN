@@ -14,9 +14,14 @@ namespace PTX {
 class Program : public Node
 {
 public:
-	void AddModule(const Module *module) { m_modules.push_back(module); }
+	// Properties
 
-	const std::vector<const Module *>& GetModules() const { return m_modules; }
+	std::vector<const Module *> GetModules() const
+	{
+		return std::vector<const Module *>(std::begin(m_modules), std::end(m_modules));
+	}
+	std::vector<Module *>& GetModules() { return m_modules; }
+	void AddModule(Module *module) { m_modules.push_back(module); }
 
 	const Function *GetEntryFunction(const std::string& name) const
 	{
@@ -29,24 +34,19 @@ public:
 		}
 		Utils::Logger::LogError("Cannot find entry fuction '" + name);
 	}
-
-	std::string ToString(unsigned int indentation) const override
+	Function *GetEntryFunction(const std::string& name)
 	{
-		std::string code = "";
-
-		bool first = true;
-		for (const auto& module : m_modules)
+		for (auto& module : m_modules)
 		{
-			if (!first)
+			if (module->ContainsEntryFunction(name))
 			{
-				code += "\n\n";
+				return module->GetEntryFunction(name);
 			}
-			first = false;
-			code += module->ToString(0);
 		}
-
-		return code;
+		Utils::Logger::LogError("Cannot find entry fuction '" + name);
 	}
+
+	// Formatting
 
 	json ToJSON() const override
 	{
@@ -60,6 +60,21 @@ public:
 
 	// Visitors
 
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		if (visitor.VisitIn(this))
+		{
+			for (auto& module : m_modules)
+			{
+				module->Accept(visitor);
+			}
+		}
+		visitor.VisitOut(this);
+	}
+
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
 		if (visitor.VisitIn(this))
@@ -72,8 +87,8 @@ public:
 		visitor.VisitOut(this);
 	}
 
-private:
-	std::vector<const Module *> m_modules;
+protected:
+	std::vector<Module *> m_modules;
 };
 
 }

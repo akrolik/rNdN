@@ -62,7 +62,7 @@ public:
 
 	// The output of a reduction function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	const PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
 	{
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
@@ -89,7 +89,7 @@ public:
 		return targetRegister;
 	}
 
-	void Generate(const PTX::Register<T> *targetRegister, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(PTX::Register<T> *targetRegister, const std::vector<HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
@@ -103,7 +103,7 @@ public:
 		OperandCompressionGenerator compGenerator(this->m_builder);
 		auto compress = compGenerator.GetCompressionRegister(arguments.at(0));
 
-		const PTX::TypedOperand<T> *src = nullptr;
+		PTX::TypedOperand<T> *src = nullptr;
 		if (m_reductionOp == ReductionOperation::Length)
 		{
 			// No compression, we can use the active data size
@@ -187,7 +187,7 @@ public:
 		}
 	}
 
-	void GenerateShuffleReduction(const PTX::Register<T> *target, std::int32_t activeWarps)
+	void GenerateShuffleReduction(PTX::Register<T> *target, std::int32_t activeWarps)
 	{
 		// Warp shuffle the values down, reducing at each level until a single value is computed, log_2(WARP_SZ)
 
@@ -218,7 +218,7 @@ public:
 		}
 	}
 
-	void GenerateShuffleBlock(const PTX::Register<T> *target)
+	void GenerateShuffleBlock(PTX::Register<T> *target)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto globalResources = this->m_builder.GetGlobalResources();
@@ -265,7 +265,7 @@ public:
 
 		// End the if statement
 
-		this->m_builder.AddStatement(labelWarp);
+		this->m_builder.AddStatement(new PTX::LabelStatement(labelWarp));
 
 		// Synchronize all values in shared memory from across warps
 
@@ -310,7 +310,7 @@ public:
 
 		// End the if statement
 
-		this->m_builder.AddStatement(labelBlock);
+		this->m_builder.AddStatement(new PTX::LabelStatement(labelBlock));
 
 		if (inputOptions.IsListGeometry())
 		{
@@ -326,7 +326,7 @@ public:
 		resources->SetReductionRegister(target, RegisterReductionGranularity::Block, GetRegisterReductionOperation(m_reductionOp));
 	}
 
-	void GenerateShuffleWarp(const PTX::Register<T> *target)
+	void GenerateShuffleWarp(PTX::Register<T> *target)
 	{
 		// Generate the shuffle for each warp
 
@@ -339,7 +339,7 @@ public:
 		resources->SetReductionRegister(target, RegisterReductionGranularity::Warp, GetRegisterReductionOperation(m_reductionOp));
 	}
 
-	void GenerateShared(const PTX::Register<T> *target)
+	void GenerateShared(PTX::Register<T> *target)
 	{
 		// Fetch generation state and options
 
@@ -408,7 +408,7 @@ public:
 				GenerateSharedReduction(target, sharedThreadAddress, i);
 			}
 
-			this->m_builder.AddStatement(label);
+			this->m_builder.AddStatement(new PTX::LabelStatement(label));
 			if (i > warpSize)
 			{
 				// If we still have >1 warps running, synchronize the group since they may not be in lock-step
@@ -479,7 +479,7 @@ private:
 		}
 	}
 	
-	const PTX::Value<T> *GenerateNullValue(ReductionOperation reductionOp) const
+	PTX::Value<T> *GenerateNullValue(ReductionOperation reductionOp) const
 	{
 		switch (reductionOp)
 		{
@@ -496,7 +496,7 @@ private:
 		}
 	}
 
-	void GenerateSharedReduction(const PTX::Register<T> *target, const PTX::Address<B, T, PTX::SharedSpace> *address, unsigned int offset)
+	void GenerateSharedReduction(PTX::Register<T> *target, PTX::Address<B, T, PTX::SharedSpace> *address, unsigned int offset)
 	{
 		// Load the 2 values for this stage of the reduction into registers using the provided offset. Volatile
 		// reads/writes are used to ensure synchronization
@@ -533,7 +533,7 @@ private:
 		}
 	}
 
-	const std::pair<const PTX::Register<T>*, const PTX::Register<PTX::PredicateType> *> GenerateReductionInstruction(const PTX::Register<T> *target, const PTX::Register<T> *offsetVal)
+	const std::pair<PTX::Register<T>*, PTX::Register<PTX::PredicateType> *> GenerateReductionInstruction(PTX::Register<T> *target, PTX::Register<T> *offsetVal)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

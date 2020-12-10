@@ -81,7 +81,7 @@ void libr3d3::CreateFunction_set(PTX::Module *module, const std::string& typeNam
 	// Allocate registers
 
 	auto addressRegisterDeclaration = new PTX::RegisterDeclaration<PTX::UIntType<B>>("rd_a", 4);
-	kernel->AddStatement(addressRegisterDeclaration);
+	kernel->AddStatement(new PTX::DeclarationStatement(addressRegisterDeclaration));
 
 	auto addressRegister0 = addressRegisterDeclaration->GetVariable("rd_a", 0);
 	auto addressRegister1 = addressRegisterDeclaration->GetVariable("rd_a", 1);
@@ -89,11 +89,11 @@ void libr3d3::CreateFunction_set(PTX::Module *module, const std::string& typeNam
 	auto addressRegister3 = addressRegisterDeclaration->GetVariable("rd_a", 3);
 
 	auto valueRegisterDeclaration = new PTX::RegisterDeclaration<T>("v", 1);
-	kernel->AddStatement(valueRegisterDeclaration);
+	kernel->AddStatement(new PTX::DeclarationStatement(valueRegisterDeclaration));
 	auto valueRegister = valueRegisterDeclaration->GetVariable("v", 0);
 
 	auto indexRegisterDeclaration = new PTX::RegisterDeclaration<PTX::UInt32Type>("r_i", 5);
-	kernel->AddStatement(indexRegisterDeclaration);
+	kernel->AddStatement(new PTX::DeclarationStatement(indexRegisterDeclaration));
 
 	auto indexRegister0 = indexRegisterDeclaration->GetVariable("r_i", 0);
 	auto indexRegister1 = indexRegisterDeclaration->GetVariable("r_i", 1);
@@ -102,7 +102,7 @@ void libr3d3::CreateFunction_set(PTX::Module *module, const std::string& typeNam
 	auto indexRegister4 = indexRegisterDeclaration->GetVariable("r_i", 4);
 
 	auto predicateRegisterDeclaration = new PTX::RegisterDeclaration<PTX::PredicateType>("p", 1);
-	kernel->AddStatement(predicateRegisterDeclaration);
+	kernel->AddStatement(new PTX::DeclarationStatement(predicateRegisterDeclaration));
 	auto predicateRegister = predicateRegisterDeclaration->GetVariable("p", 0);
 
 	// Load parameters
@@ -168,7 +168,7 @@ void libr3d3::CreateFunction_set(PTX::Module *module, const std::string& typeNam
 
 	// End kernel with return
 
-	kernel->AddStatement(endLabel);
+	kernel->AddStatement(new PTX::LabelStatement(endLabel));
 	kernel->AddStatement(new PTX::ReturnInstruction());
   
 	module->AddDeclaration(kernel);
