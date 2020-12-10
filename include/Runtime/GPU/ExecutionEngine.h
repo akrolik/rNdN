@@ -8,6 +8,7 @@
 
 #include "CUDA/Constant.h"
 #include "CUDA/KernelInvocation.h"
+#include "CUDA/Kernel.h"
 
 #include "PTX/Tree/Tree.h"
 
@@ -29,7 +30,7 @@ public:
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
 
 private:
-	std::pair<unsigned int, unsigned int> GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const;
+	std::pair<unsigned int, unsigned int> GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions, const CUDA::Kernel& kernel) const;
 
 	template<typename T>
 	CUDA::TypedConstant<T> *AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;

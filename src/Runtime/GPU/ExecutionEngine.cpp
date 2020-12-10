@@ -114,7 +114,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 	// Configure the runtime thread layout
 
-	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, kernelOptions);
+	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, kernelOptions, kernel);
 	invocation.SetBlockShape(blockSize, 1, 1);
 	invocation.SetGridShape(blockCount, 1, 1);
 
@@ -417,15 +417,12 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	return {returnBuffers};
 }
 
-std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions) const
+std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions, const CUDA::Kernel& kernel) const
 {
 	// Compute the block size and count based on the kernel, input and target configurations
 	// We assume that all sizes are known at this point
 
-	auto& gpu = m_runtime.GetGPUManager();
-	auto& device = gpu.GetCurrentDevice();
-
-	const auto maxBlockSize = device->GetMaxThreadsDimension(0);
+	const auto maxBlockSize = kernel.GetMaxThreads();
 
 	const auto threadGeometry = runtimeOptions->ThreadGeometry;
 	if (const auto vectorGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::VectorShape>(threadGeometry))
