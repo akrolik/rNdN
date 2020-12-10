@@ -49,7 +49,7 @@ struct FlowAnalysisSet : public std::unordered_set<const typename T::Type *, typ
 {
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
-		os << std::string(level * Utils::Logger::IndentString, ' ');
+		os << std::string(level * Utils::Logger::IndentSize, ' ');
 		auto first = true;
 		for (const auto& val : *this)
 		{
@@ -98,7 +98,7 @@ struct FlowAnalysisMap : public std::unordered_map<const typename K::Type *, con
 				os << std::endl;
 			}
 			first = false;
-			os << std::string(level * Utils::Logger::IndentString, ' ');
+			os << std::string(level * Utils::Logger::IndentSize, ' ');
 			K::Print(os, pair.first);
 			os << "->";
 			V::Print(os, pair.second);
@@ -141,15 +141,15 @@ struct FlowAnalysisPair : public std::pair<T1, T2>
 
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
-		os << std::string(level * Utils::Logger::IndentString, ' ');
+		os << std::string(level * Utils::Logger::IndentSize, ' ');
 		os << "<" << std::endl;
 		this->first.Print(os, level + 1);
 		os << std::endl;
-		os << std::string(level * Utils::Logger::IndentString, ' ');
+		os << std::string(level * Utils::Logger::IndentSize, ' ');
 		os << "," << std::endl;
 		this->second.Print(os, level + 1);
 		os << std::endl;
-		os << std::string(level * Utils::Logger::IndentString, ' ');
+		os << std::string(level * Utils::Logger::IndentSize, ' ');
 		os << ">";
 	}
 };

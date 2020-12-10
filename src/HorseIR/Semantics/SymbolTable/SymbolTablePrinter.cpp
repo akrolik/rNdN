@@ -8,7 +8,7 @@ namespace HorseIR {
 
 void SymbolTablePrinter::Indent()
 {
-	m_string << std::string(m_indent * Utils::Logger:IndentSize, ' ');
+	m_string << std::string(m_indent * Utils::Logger::IndentSize, ' ');
 }
 
 std::string SymbolTablePrinter::PrettyString(const Program *program)
