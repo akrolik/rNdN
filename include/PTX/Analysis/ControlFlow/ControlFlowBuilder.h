@@ -46,6 +46,7 @@ public:
 
 	bool VisitIn(Statement *statement) override;
 	bool VisitIn(InstructionStatement *statement) override;
+	bool VisitIn(LabelStatement *statement) override;
 
 private:
 	const BasicBlock *m_previousBlock = nullptr;

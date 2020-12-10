@@ -165,5 +165,12 @@ bool ControlFlowBuilder::VisitIn(InstructionStatement *statement)
 	return false;
 }
 
+bool ControlFlowBuilder::VisitIn(LabelStatement *statement)
+{
+	// Do nothing
+
+	return false;
+}
+
 }
 }
