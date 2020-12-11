@@ -105,7 +105,7 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 
 			// Nesting disables shared memory
 
-			if (Utils::Options::GetSortKind() == Utils::Options::SortKind::SharedSort && !nested)
+			if (Utils::Options::GetAlgorithm_SortKind() == Utils::Options::SortKind::SharedSort && !nested)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new FunctionLiteral(new Identifier(sortFunctionShared->GetName())));
@@ -138,7 +138,7 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 			operands.push_back(new FunctionLiteral(new Identifier(initFunction->GetName())));
 			operands.push_back(new FunctionLiteral(new Identifier(sortFunction->GetName())));
 
-			if (Utils::Options::GetSortKind() == Utils::Options::SortKind::SharedSort)
+			if (Utils::Options::GetAlgorithm_SortKind() == Utils::Options::SortKind::SharedSort)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new FunctionLiteral(new Identifier(sortFunctionShared->GetName())));
@@ -171,7 +171,7 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 			operands.push_back(new FunctionLiteral(new Identifier(initFunction->GetName())));
 			operands.push_back(new FunctionLiteral(new Identifier(sortFunction->GetName())));
 
-			if (Utils::Options::GetSortKind() == Utils::Options::SortKind::SharedSort)
+			if (Utils::Options::GetAlgorithm_SortKind() == Utils::Options::SortKind::SharedSort)
 			{
 				auto sortFunctionShared = GenerateSortFunction(dataType, orderLiteral, true);
 				operands.push_back(new FunctionLiteral(new Identifier(sortFunctionShared->GetName())));
@@ -201,7 +201,7 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 			std::vector<Operand *> operands;
 
 			auto isHashing = false;
-			switch (Utils::Options::GetJoinKind())
+			switch (Utils::Options::GetAlgorithm_JoinKind())
 			{
 				case Utils::Options::JoinKind::LoopJoin:
 				{

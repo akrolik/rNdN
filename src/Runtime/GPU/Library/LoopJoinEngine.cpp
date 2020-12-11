@@ -33,7 +33,7 @@ ListBuffer *LoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
 	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(1));
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Join initialization offsets: " + offsetsBuffer->DebugDump());
 		Utils::Logger::LogDebug("Join initialization count: " + countBuffer->DebugDump());
@@ -44,7 +44,7 @@ ListBuffer *LoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
 	auto joinBuffers = engine.Execute(joinFunction, {arguments.at(2), arguments.at(3), offsetsBuffer, countBuffer});
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Join indexes: " + joinBuffers.at(0)->DebugDump());
 	}

@@ -68,7 +68,7 @@ DictionaryBuffer *GroupEngine::Group(const std::vector<DataBuffer *>& arguments)
 		Utils::Logger::LogError("Keys and values size mismatch forming @group dictionary [" + std::to_string(keysSize) + " != " + std::to_string(valuesSize) + "]");
 	}
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Group dictionary buffer: [entries = " + std::to_string(keysSize) + "]");
 
@@ -83,7 +83,7 @@ DictionaryBuffer *GroupEngine::Group(const std::vector<DataBuffer *>& arguments)
 	auto listBuffer = ConstructListBuffer(indexBuffer, valuesBuffer);
 	auto dictionaryBuffer = new DictionaryBuffer(keysBuffer, listBuffer);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Group dictionary: " + dictionaryBuffer->DebugDump());
 	}
@@ -102,7 +102,7 @@ DictionaryBuffer *GroupEngine::Group(const std::vector<DataBuffer *>& arguments)
 
 ListBuffer *GroupEngine::ConstructListBuffer(TypedVectorBuffer<std::int64_t> *indexBuffer, TypedVectorBuffer<std::int64_t> *valuesBuffer) const
 {
-	switch (Utils::Options::GetGroupKind())
+	switch (Utils::Options::GetAlgorithm_GroupKind())
 	{
 		case Utils::Options::GroupKind::CompressedGroup:
 		{
@@ -129,7 +129,7 @@ ListBuffer *GroupEngine::ConstructListBuffer(TypedVectorBuffer<std::int64_t> *in
 				auto entryType = new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64);
 				auto entryBuffer = new TypedVectorBuffer<std::int64_t>(entryType, size);
 
-				if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+				if (Utils::Options::IsDebug_Print())
 				{
 					Utils::Logger::LogDebug("Initializing entry " + std::to_string(entryIndex) + " buffer: [" + entryBuffer->Description() + "]");
 				}

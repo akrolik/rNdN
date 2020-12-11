@@ -30,9 +30,11 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	auto cfg = cfgBuilder.GetGraph();
 	// function->SetControlFlowGraph(cfg);
 
-	//TODO: Printing flags
-	Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
-	Utils::Logger::LogInfo(cfg->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
+	if (Utils::Options::IsBackend_PrintCFG())
+	{
+		Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
+		Utils::Logger::LogInfo(cfg->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
+	}
 
 	// Allocate registers
 
@@ -53,7 +55,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Dump the SASS program to stdout
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_sass))
+	if (Utils::Options::IsBackend_PrintSASS())
 	{
 		Utils::Logger::LogInfo("Generated SASS function: " + sassFunction->GetName());
 		Utils::Logger::LogInfo(sassFunction->ToString(), 0, true, Utils::Logger::NoPrefix);
@@ -61,9 +63,9 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Optimize the generated SASS program
 
-	//TODO: Split option for optimization
-	if (Utils::Options::Get<>(Utils::Options::Opt_Optimize))
+	if (Utils::Options::IsOptimize_SASS())
 	{
+		//TODO: SASS Optimizer API
 		// Optimize(sassFunction);
 	}
 

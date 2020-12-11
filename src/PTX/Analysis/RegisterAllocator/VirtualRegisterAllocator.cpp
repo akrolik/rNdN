@@ -1,6 +1,7 @@
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace PTX {
 namespace Analysis {
@@ -9,9 +10,11 @@ void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *funct
 {
 	function->Accept(*this);
 
-	//TODO: Add printing flags
-	Utils::Logger::LogInfo("Register Allocation: " + function->GetName());
-	Utils::Logger::LogInfo(m_allocation->ToString());
+	if (Utils::Options::IsBackend_PrintAnalysis())
+	{
+		Utils::Logger::LogInfo("Register Allocation: " + function->GetName());
+		Utils::Logger::LogInfo(m_allocation->ToString());
+	}
 }
 
 // Functions

@@ -2345,7 +2345,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 				{
-					const auto shift = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Algo_hash_size);
+					const auto shift = Utils::Options::GetAlgorithm_HashSize();
 					const auto powerSize = Utils::Math::Power2(constantSize->GetValue()) << shift;
 
 					const auto valueShape = new VectorShape(new Shape::ConstantSize(powerSize));
@@ -2367,7 +2367,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 					if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 					{
-						const auto shift = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Algo_hash_size);
+						const auto shift = Utils::Options::GetAlgorithm_HashSize();
 						const auto powerSize = Utils::Math::Power2(constantSize->GetValue()) << shift;
 
 						const auto valueShape = new VectorShape(new Shape::ConstantSize(powerSize));

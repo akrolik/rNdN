@@ -53,7 +53,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 		Utils::Logger::LogError("GPU join library unsupported buffer type " + leftBuffer->Description());
 	}
 
-	const auto shift = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Algo_hash_size);
+	const auto shift = Utils::Options::GetAlgorithm_HashSize();
 	const auto powerSize = Utils::Math::Power2(size) << shift;
 	const auto hashSize = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, powerSize);
 
@@ -63,7 +63,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto keysBuffer = hashBuffers.at(0);
 	auto valuesBuffer = hashBuffers.at(1);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Hash table keys: " + keysBuffer->DebugDump());
 		Utils::Logger::LogDebug("Hash table values: " + valuesBuffer->DebugDump());
@@ -77,7 +77,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
 	auto countBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(1));
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Join initialization offsets: " + offsetsBuffer->DebugDump());
 		Utils::Logger::LogDebug("Join initialization count: " + countBuffer->DebugDump());
@@ -88,7 +88,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
 	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction());
 	auto joinBuffers = engine.Execute(joinFunction, {keysBuffer, valuesBuffer, rightBuffer, offsetsBuffer, countBuffer});
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Join indexes: " + joinBuffers.at(0)->DebugDump());
 	}

@@ -3,7 +3,6 @@
 #include <set>
 #include <stack>
 
-#include "Frontend/Codegen/CodegenOptions.h"
 #include "Frontend/Codegen/InputOptions.h"
 #include "Frontend/Codegen/TargetOptions.h"
 #include "Frontend/Codegen/Resources/KernelAllocator.h"
@@ -20,7 +19,7 @@ namespace Codegen {
 class Builder
 {
 public:
-	Builder(const CodegenOptions& codegenOptions, const TargetOptions& targetOptions) : m_codegenOptions(codegenOptions), m_targetOptions(targetOptions) {}
+	Builder(const TargetOptions& targetOptions) : m_targetOptions(targetOptions) {}
 
 	std::string GetContextString(std::string string = "") const
 	{
@@ -164,7 +163,6 @@ public:
 
 	const HorseIR::Function *GetCurrentFunction() const { return m_currentFunction; }
 
-	const CodegenOptions& GetCodegenOptions() const { return m_codegenOptions; }
 	const TargetOptions& GetTargetOptions() const { return m_targetOptions; }
 
 	const InputOptions& GetInputOptions() const { return *m_inputOptions.at(m_currentFunction); }
@@ -189,7 +187,6 @@ private:
 		return m_scopes.top();
 	}
 
-	const CodegenOptions& m_codegenOptions;
 	const TargetOptions& m_targetOptions;
 	std::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;
 	std::unordered_map<const HorseIR::Function*, PTX::FileDirective *> m_files;

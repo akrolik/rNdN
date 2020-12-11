@@ -140,9 +140,9 @@ void Module::Compile()
 
 	// Log compilation info to stdout
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
+	if (Utils::Options::IsDebug_Print())
 	{
-		Utils::Logger::LogInfo(l_infoLog);
+		Utils::Logger::LogDebug(l_infoLog);
 	}
 }
 

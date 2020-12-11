@@ -30,7 +30,7 @@ namespace Runtime {
 
 std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::BuiltinFunction *function, const std::vector<DataBuffer *>& arguments)
 {
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Executing builtin function '" + function->GetName() + "'");
 	}
@@ -370,7 +370,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			const auto size = stringData.size();
 			CUDA::Vector<std::int8_t> likeData(size);
 
-			auto likeKind = Utils::Options::GetLikeKind();
+			auto likeKind = Utils::Options::GetAlgorithm_LikeKind();
 			if (likeKind == Utils::Options::LikeKind::OptLike)
 			{
 				for (auto i = 0u; i < size; ++i)

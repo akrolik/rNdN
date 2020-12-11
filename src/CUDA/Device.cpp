@@ -17,7 +17,7 @@ void Device::SetActive()
 {
 	checkRuntimeError(cudaSetDevice(m_index));
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Device " + std::to_string(m_index) + " selected");
 	}

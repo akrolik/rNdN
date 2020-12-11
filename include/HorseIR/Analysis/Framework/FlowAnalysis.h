@@ -194,7 +194,7 @@ public:
 
 		// Print results if needed
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+		if (Utils::Options::IsFrontend_PrintAnalysis())
 		{
 			PrintResults(function);
 		}

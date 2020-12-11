@@ -125,7 +125,7 @@ void ListCellBuffer::ResizeCells(unsigned int size)
 		}
 		m_shape = new HorseIR::Analysis::ListShape(new HorseIR::Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
 		}
@@ -218,7 +218,7 @@ bool ListCellBuffer::ReallocateGPUBuffer()
 		}
 		m_shape = new HorseIR::Analysis::ListShape(new HorseIR::Analysis::Shape::ConstantSize(m_cells.size()), cellShapes);
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("Resized list buffer [" + oldDescription + "] to [" + Description() + "]");
 		}

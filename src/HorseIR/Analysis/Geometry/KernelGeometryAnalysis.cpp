@@ -21,7 +21,7 @@ void KernelGeometryAnalysis::Analyze(const Function *function)
 		Utils::Logger::LogError("Unable to determine kernel geometry of empty kernel '" + function->GetName() + "'");
 	}
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::IsFrontend_PrintAnalysis())
 	{
 		auto string = "Kernel geometry '" + function->GetName() + "': " + ShapeUtils::ShapeString(m_operatingGeometry);
 		Utils::Logger::LogInfo(string);

@@ -91,7 +91,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	}
 	else
 	{
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("Using cached input options for kernel '" + function->GetName() + "'");
 		}
@@ -125,7 +125,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		const auto parameter = function->GetParameter(i);
 		const auto argument = arguments.at(i);
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("Initializing input argument: " + parameter->GetName() + " [" + argument->Description() + "]");
 		}
@@ -201,7 +201,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 				}
 			}
 
-			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			if (Utils::Options::IsDebug_Print())
 			{
 				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + description + " [" + returnBuffer->Description() + "]");
 			}
@@ -212,7 +212,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		{
 			returnBuffer = DataBuffer::CreateEmpty(type, shape);
 
-			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			if (Utils::Options::IsDebug_Print())
 			{
 				Utils::Logger::LogDebug("Initializing return argument: " + std::to_string(i) + " [" + returnBuffer->Description() + "]");
 			}
@@ -351,7 +351,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	{
 		const auto argument = arguments.at(i);
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("Initializing extra input argument: " + std::to_string(i) + " [" + argument->Description() + "]");
 		}
@@ -376,7 +376,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 	Utils::Chrono::End(timeKernel_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Kernel '" + function->GetName() + "' complete");
 	}
@@ -518,7 +518,7 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 template<typename T>
 CUDA::TypedConstant<T> *ExecutionEngine::AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const
 {
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Initializing constant input argument: " + description + " [" + std::to_string(sizeof(T)) + " bytes = " + std::to_string(value) + "]");
 	}
@@ -532,7 +532,7 @@ CUDA::TypedConstant<T> *ExecutionEngine::AllocateConstantParameter(CUDA::KernelI
 template<typename T>
 CUDA::ConstantBuffer *ExecutionEngine::AllocateConstantVectorParameter(CUDA::KernelInvocation &invocation, const CUDA::Vector<T>& values, const std::string& description) const
 {
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		std::string valDescription;
 		auto first = true;

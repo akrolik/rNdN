@@ -27,7 +27,7 @@ void Outliner::Outline(const Program *program)
 	m_outlinedProgram = nullptr;
 	program->Accept(*this);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_outline))
+	if (Utils::Options::IsFrontend_PrintOutline())
 	{
 		Utils::Logger::LogInfo("Outlined HorseIR program");
 

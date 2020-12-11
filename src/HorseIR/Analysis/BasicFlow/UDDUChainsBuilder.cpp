@@ -16,7 +16,7 @@ void UDDUChainsBuilder::Build(const Function *function)
 	function->Accept(*this);
 	Utils::Chrono::End(timeUDDU_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogInfo("UD/DU chains '" + function->GetName() + "'");
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);

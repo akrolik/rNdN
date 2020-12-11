@@ -15,7 +15,7 @@ void DataInitializationAnalysis::Analyze(const Function *function)
 	function->Accept(*this);
 	Utils::Chrono::End(timeDataInitialization_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::IsFrontend_PrintAnalysis())
 	{
 		Utils::Logger::LogInfo("Data initialization analysis");
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);

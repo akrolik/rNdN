@@ -138,7 +138,7 @@ void DataRegistry::LoadDebugData()
 
 		AddTable("debug", "debug_" + std::to_string(size), table);
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_load))
+		if (Utils::Options::IsDebug_Load())
 		{
 			Utils::Logger::LogInfo("Loaded table 'debug_" + std::to_string(size) + "'");
 		}
@@ -167,7 +167,7 @@ void DataRegistry::LoadTPCHData()
 
 std::string DataRegistry::GetTPCHPath(const std::string& table) const
 {
-	return Utils::Options::Get<std::string>(Utils::Options::Opt_Data_path_tpch) + "/" + table;
+	return Utils::Options::GetData_PathTPCH() + "/" + table;
 }
 
 std::int32_t DataRegistry::EpochTime(char *date) const
@@ -202,7 +202,7 @@ void DataRegistry::LoadTPCHNationTable()
 	const auto& regionForeignKey = regionTable->GetPrimaryKey();
 	const auto& regionForeignMap = regionTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'nation'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'nation'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(n_nationKey, n_name, n_regionKey, n_comment, n_end))
@@ -254,7 +254,7 @@ void DataRegistry::LoadTPCHRegionTable()
 	io::CSVReader<4, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("region.tbl"));
 	char *r_regionKey, *r_name, *r_comment, *r_end;
 
-	auto progress = Utils::Progress::Start("Loading table 'region'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'region'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(r_regionKey, r_name, r_comment, r_end))
@@ -312,7 +312,7 @@ void DataRegistry::LoadTPCHPartTable()
 	io::CSVReader<10, io::trim_chars<' ', '\t'>, io::no_quote_escape<'|'>> lineReader(GetTPCHPath("part.tbl"));
 	char *p_partKey, *p_name, *p_mfgr, *p_brand, *p_type, *p_size, *p_container, *p_retailPrice, *p_comment, *p_end;
 
-	auto progress = Utils::Progress::Start("Loading table 'part'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'part'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(
@@ -385,7 +385,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	const auto& nationForeignKey = nationTable->GetPrimaryKey();
 	const auto& nationForeignMap = nationTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'supplier'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'supplier'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(
@@ -460,7 +460,7 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	const auto& supplierForeignMap = supplierTable->GetPrimaryMap();
 	const auto& supplierForeignKey = supplierTable->GetPrimaryKey();
 
-	auto progress = Utils::Progress::Start("Loading table 'partsupp'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'partsupp'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(
@@ -533,7 +533,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	const auto& nationForeignMap = nationTable->GetPrimaryMap();
 	const auto& nationForeignKey = nationTable->GetPrimaryKey();
 
-	auto progress = Utils::Progress::Start("Loading table 'customer'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'customer'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(
@@ -612,7 +612,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	const auto& customerForeignKey = customerTable->GetPrimaryKey();
 	const auto& customerForeignMap = customerTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'orders'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'orders'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(
@@ -713,7 +713,7 @@ void DataRegistry::LoadTPCHLineItemTable()
 	const auto& orderForeignKey = orderTable->GetPrimaryKey();
 	const auto& orderForeignMap = orderTable->GetPrimaryMap();
 
-	auto progress = Utils::Progress::Start("Loading table 'lineitem'", Utils::Options::Present(Utils::Options::Opt_Print_load));
+	auto progress = Utils::Progress::Start("Loading table 'lineitem'", Utils::Options::IsDebug_Load());
 	auto count = 0u;
 
 	while (lineReader.read_row(

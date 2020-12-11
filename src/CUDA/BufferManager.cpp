@@ -10,15 +10,15 @@ namespace CUDA {
 
 void BufferManager::Initialize()
 {
-	if (Utils::Options::GetAllocatorKind() == Utils::Options::AllocatorKind::Linear)
+	if (Utils::Options::GetData_AllocatorKind() == Utils::Options::AllocatorKind::Linear)
 	{
 		auto timeData_start = Utils::Chrono::Start("Create data pages");
 
 		auto& instance = GetInstance();
 		auto& buffers = instance.m_gpuBuffers;
 
-		instance.m_pageSize = Utils::Options::Get<unsigned long long>(Utils::Options::Opt_Data_page_size);
-		auto pageCount = Utils::Options::Get<unsigned int>(Utils::Options::Opt_Data_page_count);
+		instance.m_pageSize = Utils::Options::GetData_PageSize();
+		auto pageCount = Utils::Options::GetData_PageCount();
 
 		for (auto i = 0u; i < pageCount; ++i)
 		{
@@ -55,7 +55,7 @@ void BufferManager::Destroy()
 
 Buffer *BufferManager::CreateBuffer(size_t size)
 {
-	switch (Utils::Options::GetAllocatorKind())
+	switch (Utils::Options::GetData_AllocatorKind())
 	{
 		case Utils::Options::AllocatorKind::CUDA:
 		{
@@ -78,7 +78,7 @@ Buffer *BufferManager::CreateBuffer(size_t size)
 
 ConstantBuffer *BufferManager::CreateConstantBuffer(size_t size)
 {
-	switch (Utils::Options::GetAllocatorKind())
+	switch (Utils::Options::GetData_AllocatorKind())
 	{
 		case Utils::Options::AllocatorKind::CUDA:
 		{

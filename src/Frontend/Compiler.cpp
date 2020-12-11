@@ -7,7 +7,6 @@
 #include "HorseIR/Analysis/Shape/ShapeAnalysis.h"
 
 #include "Frontend/Codegen/CodeGenerator.h"
-#include "Frontend/Codegen/CodegenOptions.h"
 #include "Frontend/Codegen/InputOptions.h"
 #include "Frontend/Codegen/TargetOptions.h"
 
@@ -40,14 +39,13 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 	// Generate 64-bit PTX code from the input HorseIR for the current device
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
+	if (Utils::Options::IsFrontend_PrintPTX())
 	{
 		Utils::Logger::LogSection("Generating PTX program");
 	}
 
 	// Collect the device properties for codegen
 
-	Codegen::CodegenOptions codegenOptions;
 	Codegen::TargetOptions targetOptions;
 	targetOptions.ComputeCapability = m_device->GetComputeCapability();
 	targetOptions.MaxBlockSize = m_device->GetMaxThreadsDimension(0);
@@ -56,16 +54,13 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 	// Initialize the geometry information for code generation
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
+	if (Utils::Options::IsFrontend_PrintPTX())
 	{
-		Utils::Logger::LogInfo("Codegen Options");
-		Utils::Logger::LogInfo(codegenOptions.ToString(), 1);
-
 		Utils::Logger::LogInfo("Target Options");
 		Utils::Logger::LogInfo(targetOptions.ToString(), 1);
 	}
 
-	Codegen::CodeGenerator<PTX::Bits::Bits64> codegen(codegenOptions, targetOptions);
+	Codegen::CodeGenerator<PTX::Bits::Bits64> codegen(targetOptions);
 
 	// Set the input options for each function
 
@@ -108,7 +103,7 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 	// Dump the PTX program or JSON string to stdout
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_ptx))
+	if (Utils::Options::IsFrontend_PrintPTX())
 	{
 		Utils::Logger::LogInfo("Generated PTX program");
 
@@ -127,7 +122,7 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 		}
 	}
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_json))
+	if (Utils::Options::IsFrontend_PrintJSON())
 	{
 		Utils::Logger::LogInfo("Generated PTX program (JSON)");
 		Utils::Logger::LogInfo(ptxProgram->ToJSON().dump(4), 0, true, Utils::Logger::NoPrefix);
@@ -135,7 +130,7 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 	// Optimize the generated PTX program
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Optimize))
+	if (Utils::Options::IsOptimize_PTX())
 	{
 		Optimize(ptxProgram);
 	}

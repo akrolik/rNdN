@@ -15,7 +15,7 @@ void KernelInvocation::AddParameter(Data &data)
 
 void KernelInvocation::Launch()
 {
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Kernel '" + m_kernel.GetName() + "' launched");
 		Utils::Logger::LogDebug(" - Grid: " + std::to_string(m_gridX) + " x " + std::to_string(m_gridY) + " x " + std::to_string(m_gridZ)); 

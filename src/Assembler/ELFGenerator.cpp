@@ -409,7 +409,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 	// Print ELF information
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_elf))
+	if (Utils::Options::IsBackend_PrintELF())
 	{
 		Utils::Logger::LogInfo("Asembled ELF file");
 
@@ -430,7 +430,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	std::ostream binaryStream(&buffer);
 	writer.save(binaryStream);
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Backend_dump))
+	if (Utils::Options::IsBackend_DumpELF())
 	{
 		writer.save("r3d3_dump.cubin");
 	}
@@ -443,7 +443,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 	Utils::Chrono::End(timeELF_start);
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Generate ELF binary, " + std::to_string(elfSize) + " bytes");
 	}

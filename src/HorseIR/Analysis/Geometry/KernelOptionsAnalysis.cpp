@@ -74,7 +74,7 @@ void KernelOptionsAnalysis::Analyze(const Function *function)
 		m_inputOptions->ListCellThreads = GetAverageCellSize(listShape);
 	}
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::IsFrontend_PrintAnalysis())
 	{
 		Utils::Logger::LogInfo("Input Options: " + function->GetName());
 		Utils::Logger::LogInfo(m_inputOptions->ToString(), 1);

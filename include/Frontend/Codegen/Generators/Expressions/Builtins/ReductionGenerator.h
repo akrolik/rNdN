@@ -22,6 +22,7 @@
 #include "PTX/Tree/Tree.h"
 
 #include "Utils/Math.h"
+#include "Utils/Options.h"
 
 namespace Frontend {
 namespace Codegen {
@@ -166,20 +167,19 @@ public:
 			this->m_builder.AddStatement(s2);
 		}
 
-		auto& codeOptions = this->m_builder.GetCodegenOptions();
-		switch (codeOptions.Reduction)
+		switch (Utils::Options::GetAlgorithm_ReductionKind())
 		{
-			case CodegenOptions::ReductionKind::ShuffleBlock:
+			case Utils::Options::ReductionKind::ShuffleBlock:
 			{
 				GenerateShuffleBlock(targetRegister);
 				break;
 			}
-			case CodegenOptions::ReductionKind::ShuffleWarp:
+			case Utils::Options::ReductionKind::ShuffleWarp:
 			{
 				GenerateShuffleWarp(targetRegister);
 				break;
 			}
-			case CodegenOptions::ReductionKind::Shared:
+			case Utils::Options::ReductionKind::Shared:
 			{
 				GenerateShared(targetRegister);
 				break;

@@ -15,7 +15,7 @@ void Platform::Initialize()
 	if (!m_initialized)
 	{
 		checkDriverResult(cuInit(0));
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("CUDA driver initialized");
 		}
@@ -36,7 +36,7 @@ void Platform::LoadDevices()
 		m_devices.push_back(std::move(device));
 	}
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Found " + std::to_string(count) + " connected devices");
 
@@ -73,7 +73,7 @@ void Platform::CreateContext(std::unique_ptr<Device>& device)
 	checkDriverResult(cuCtxCreate(&m_context, 0, device->GetDevice()));
 	checkDriverResult(cuCtxSetCurrent(m_context));
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		Utils::Logger::LogDebug("Created CUDA context for device " + std::to_string(device->GetIndex()));
 	}

@@ -39,11 +39,11 @@ int main(int argc, const char *argv[])
 
 	auto timeFile_start = Utils::Chrono::Start("File open");
 
-	if (!Utils::Options::Present(Utils::Options::Opt_File))
+	if (!Utils::Options::HasInputFile())
 	{
 		Utils::Logger::LogError("Missing filename (./r3d3 [options] filename), see --help");
 	}
-	auto filename = Utils::Options::Get<std::string>(Utils::Options::Opt_File);
+	auto filename = Utils::Options::GetInputFile();
 
 	yyin = fopen(filename.c_str(), "r");
 	if (yyin == nullptr)
@@ -64,7 +64,7 @@ int main(int argc, const char *argv[])
 
 	Utils::Chrono::End(timeParse_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_hir))
+	if (Utils::Options::IsFrontend_PrintHorseIR())
 	{
 		// Pretty print the input HorseIR program
 
@@ -78,7 +78,7 @@ int main(int argc, const char *argv[])
 
 	HorseIR::SemanticAnalysis::Analyze(program);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_hir_typed))
+	if (Utils::Options::IsFrontend_PrintHorseIRTyped())
 	{
 		// Pretty print the input HorseIR program
 
@@ -90,7 +90,7 @@ int main(int argc, const char *argv[])
 
 	Utils::Chrono::End(timeFrontend_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Optimize))
+	if (Utils::Options::IsOptimize_HorseIR())
 	{
 		// Execute the fixed point optimizer
 

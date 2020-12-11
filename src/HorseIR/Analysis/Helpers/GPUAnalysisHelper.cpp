@@ -301,7 +301,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		case BuiltinFunction::Primitive::Unique:
 		{
-			switch (Utils::Options::GetUniqueKind())
+			switch (Utils::Options::GetAlgorithm_UniqueKind())
 			{
 				case Utils::Options::UniqueKind::SortUnique:
 					return {Device::GPULibrary, Synchronization::None};

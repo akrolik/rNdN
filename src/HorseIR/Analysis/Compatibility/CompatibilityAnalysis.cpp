@@ -19,7 +19,7 @@ void CompatibilityAnalysis::Analyze(const FunctionDependencyOverlay *overlay)
 	overlay->Accept(*this);
 	Utils::Chrono::End(timeCompatibility_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_outline_graph))
+	if (Utils::Options::IsFrontend_PrintOutlineGraph())
 	{
 		Utils::Logger::LogInfo("Compatibility graph '" + std::string(overlay->GetName()) + "'");
 
@@ -33,7 +33,7 @@ DependencyOverlay *CompatibilityAnalysis::GetKernelOverlay(const DependencySubgr
 	// Get or create the kernel for the node
 
 	DependencyOverlay *kernelOverlay = nullptr;
-	if (Utils::Options::GetOutlineOptimization() != Utils::Options::OutlineOptimization::None)
+	if (Utils::Options::GetOptimize_Outline() != Utils::Options::OutlineOptimization::None)
 	{
 		kernelOverlay = GetSuccessorsKernelOverlay(subgraph, node);
 	}
@@ -620,7 +620,7 @@ void CompatibilityAnalysis::Visit(const FunctionDependencyOverlay *overlay)
 	auto bodyOverlay = m_currentOverlays.at(size - 1);
 	m_currentOverlays.pop_back();
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+	if (Utils::Options::IsDebug_Print())
 	{
 		auto kernelCount = 0u;
 		for (auto overlay : bodyOverlay->GetChildren())
@@ -631,13 +631,13 @@ void CompatibilityAnalysis::Visit(const FunctionDependencyOverlay *overlay)
 	}
 
 	//TODO: Make outliner hierarchical
-	if (Utils::Options::GetOutlineOptimization() == Utils::Options::OutlineOptimization::Full)
+	if (Utils::Options::GetOptimize_Outline() == Utils::Options::OutlineOptimization::Full)
 	{
 		// Optimize the functionn
 
 		Optimize(bodyOverlay);
 
-		if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+		if (Utils::Options::IsDebug_Print())
 		{
 			auto kernelCount = 0u;
 			for (auto overlay : bodyOverlay->GetChildren())

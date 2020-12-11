@@ -17,7 +17,7 @@ void DependencyAnalysis::Build(const Function *function)
 	function->Accept(*this);
 	Utils::Chrono::End(timeDependencies_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_outline_graph))
+	if (Utils::Options::IsFrontend_PrintOutlineGraph())
 	{
 		Utils::Logger::LogInfo("Dependency graph analysis '" + function->GetName() + "'");
 

@@ -28,7 +28,7 @@ void Runtime::LoadData()
 
 	m_dataRegistry.LoadDebugData();
 
-	if (Utils::Options::Present(Utils::Options::Opt_Data_load_tpch))
+	if (Utils::Options::IsData_LoadTPCH())
 	{
 		// TPC-H data for benchmarking
 

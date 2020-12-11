@@ -29,7 +29,7 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 	auto binaryProgram = new BinaryProgram();
 	binaryProgram->SetComputeCapability(program->GetComputeCapability());
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_assembled))
+	if (Utils::Options::IsBackend_PrintAssembled())
 	{
 		Utils::Logger::LogInfo("Assembled SASS program: sm_" + std::to_string(binaryProgram->GetComputeCapability()));
 	}
@@ -165,7 +165,7 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 
 	// Print assembled program with address and binary format
 
-	if (Utils::Options::Get<>(Utils::Options::Opt_Print_assembled))
+	if (Utils::Options::IsBackend_PrintAssembled())
 	{
 		Utils::Logger::LogInfo("Assembled SASS function: " + binaryFunction->GetName());
 

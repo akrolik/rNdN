@@ -36,7 +36,7 @@ void SemanticAnalysis::Analyze(Program *program)
 
 	Utils::Chrono::End(timeSymbols_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_symbol))
+	if (Utils::Options::IsFrontend_PrintSymbols())
 	{
 		// Pretty print the symbol table cactus stack
 
@@ -78,7 +78,7 @@ const Function *SemanticAnalysis::GetEntry(const Program *program)
 
 	Utils::Chrono::End(timeEntry_start);
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_analysis))
+	if (Utils::Options::IsFrontend_PrintAnalysis())
 	{
 		Utils::Logger::LogInfo("Found entry point '" + entry->GetName() + "'");
 	}

@@ -184,7 +184,7 @@ public:
 				// Allocate a new buffer and transfer the contents if substantially smaller than the allocated size
 
 				auto newBufferSize = sizeof(T) * size;
-				if (!m_gpuBuffer->IsAlias() && newBufferSize < m_gpuBuffer->GetAllocatedSize() * Utils::Options::Get<float>(Utils::Options::Opt_Data_resize))
+				if (!m_gpuBuffer->IsAlias() && newBufferSize < m_gpuBuffer->GetAllocatedSize() * Utils::Options::GetData_Resize())
 				{
 					// Copy active data range if needed, otherwise just reallocate
 
@@ -220,7 +220,7 @@ public:
 			delete m_shape;
 			m_shape = new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::ConstantSize(m_elementCount));
 
-			if (Utils::Options::Present(Utils::Options::Opt_Print_debug))
+			if (Utils::Options::IsDebug_Print())
 			{
 				Utils::Logger::LogDebug("Resized vector buffer [" + oldDescription + "] to [" + Description() + "]");
 			}

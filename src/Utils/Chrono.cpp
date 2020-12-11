@@ -20,7 +20,7 @@ void Chrono::Complete()
 	overall->End();
 	instance.m_timings.pop();
 
-	if (Utils::Options::Present(Utils::Options::Opt_Print_time))
+	if (Utils::Options::IsDebug_Time())
 	{
 		Utils::Logger::LogSection("Execution time");
 		Utils::Logger::LogTiming(overall);
