@@ -11,16 +11,18 @@ namespace SASS {
 class S2RInstruction : public PredicatedInstruction
 {
 public:
-	S2RInstruction(const Register *destination, const SpecialRegister *source)
+	S2RInstruction(Register *destination, SpecialRegister *source)
 		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source) {}
 
 	// Properties
 	
 	const Register *GetDestination() const { return m_destination; }
-	void SetDestination(const Register *destination) { m_destination = destination; }
+	Register *GetDestination() { return m_destination; }
+	void SetDestination(Register *destination) { m_destination = destination; }
 
 	const SpecialRegister *GetSource() const { return m_source; }
-	void SetSource(const SpecialRegister *source) { m_source = source; }
+	SpecialRegister *GetSource() { return m_source; }
+	void SetSource(SpecialRegister *source) { m_source = source; }
 	
 	// Formatting
 
@@ -44,8 +46,8 @@ public:
 	}
 
 private:
-	const Register *m_destination = nullptr;
-	const SpecialRegister *m_source = nullptr;
+	Register *m_destination = nullptr;
+	SpecialRegister *m_source = nullptr;
 };
 
 }

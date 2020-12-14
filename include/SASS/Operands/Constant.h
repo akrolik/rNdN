@@ -32,6 +32,7 @@ public:
 	{
 		return (m_bank << 19) + (m_address / sizeof(std::uint32_t));
 	}
+
 private:
 	std::uint32_t m_bank = 0;
 	std::uint32_t m_address = 0;

@@ -26,7 +26,7 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	DEPBARInstruction(Barrier barrier, const I8Immediate *value, Flags flags = Flags::None) : m_barrier(barrier), m_value(value), m_flags(flags) {}
+	DEPBARInstruction(Barrier barrier, I8Immediate *value, Flags flags = Flags::None) : m_barrier(barrier), m_value(value), m_flags(flags) {}
 
 	// Properties
 
@@ -34,7 +34,8 @@ public:
 	void SetBarrier(Barrier barrier) { m_barrier = barrier; }
 
 	const I8Immediate *GetValue() const { return m_value; }
-	void SetValue(const I8Immediate *value) { m_value = value; }
+	I8Immediate *GetValue() { return m_value; }
+	void SetValue(I8Immediate *value) { m_value = value; }
 
 	Flags GetFlags() const { return m_flags; }
 	void SetFlags(Flags flags) { m_flags = flags; }
@@ -94,7 +95,7 @@ public:
 
 private:
 	Barrier m_barrier;
-	const I8Immediate *m_value = nullptr;
+	I8Immediate *m_value = nullptr;
 	Flags m_flags = Flags::None;
 };
 

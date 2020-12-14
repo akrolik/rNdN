@@ -12,14 +12,15 @@ public:
 
 	// Predicate
 
-	void SetPredicate(const Predicate *predicate, bool negate = false)
+	const Predicate *GetPredicate() const { return m_predicate; }
+	Predicate *GetPredicate() { return m_predicate; }
+	bool GetNegatePredicate() const { return m_negatePredicate; }
+
+	void SetPredicate(Predicate *predicate, bool negate = false)
 	{
 		m_predicate = predicate;
 		m_negatePredicate = negate;
 	}
-
-	const Predicate *GetPredicate() const { return m_predicate; }
-	bool GetNegatePredicate() const { return m_negatePredicate; }
 
 	// Formatting
 
@@ -61,7 +62,7 @@ public:
 	}
 
 private:
-	const Predicate *m_predicate = nullptr;
+	Predicate *m_predicate = nullptr;
 	bool m_negatePredicate = false;
 };
 

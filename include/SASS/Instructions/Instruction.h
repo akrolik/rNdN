@@ -65,6 +65,7 @@ public:
 	// Scheduling
 
 	const SCHI& GetScheduling() const { return m_scheduling; }
+	SCHI& GetScheduling() { return m_scheduling; }
 	void SetScheduling(std::uint8_t stall, bool yield, std::uint8_t writeBarrier, std::uint8_t readBarrier, std::uint8_t waitBarriers, std::uint8_t reuse)
 	{
 		m_scheduling.SetScheduling(stall, yield, writeBarrier, readBarrier, waitBarriers, reuse);

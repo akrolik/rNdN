@@ -24,22 +24,26 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	DMNMXInstruction(const Register *destination, const Register *sourceA, const Composite *sourceB, const Predicate *sourceC, Flags flags = Flags::None)
+	DMNMXInstruction(Register *destination, Register *sourceA, Composite *sourceB, Predicate *sourceC, Flags flags = Flags::None)
 		: PredicatedInstruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_flags(flags) {}
 
 	// Properties
 
 	const Register *GetDestination() const { return m_destination; }
-	void SetDestination(const Register *destination) { m_destination = destination; }
+	Register *GetDestination() { return m_destination; }
+	void SetDestination(Register *destination) { m_destination = destination; }
 
 	const Register *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const Register *sourceA) { m_sourceA = sourceA; }
+	Register *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
 
 	const Composite *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const Composite *sourceB) { m_sourceB = sourceB; }
+	Composite *GetSourceB() { return m_sourceB; }
+	void SetSourceB(Composite *sourceB) { m_sourceB = sourceB; }
 
 	const Predicate *GetSourceC() const { return m_sourceC; }
-	void SetSourceC(const Predicate *sourceC) { m_sourceC = sourceC; }
+	Predicate *GetSourceC() { return m_sourceC; }
+	void SetSourceC(Predicate *sourceC) { m_sourceC = sourceC; }
 
 	Flags GetFlags() const { return m_flags; }
 	void SetFlags(Flags flags) { m_flags = flags; }
@@ -123,10 +127,10 @@ public:
 	}
 
 private:
-	const Register *m_destination = nullptr;
-	const Register *m_sourceA = nullptr;
-	const Composite *m_sourceB = nullptr;
-	const Predicate *m_sourceC = nullptr;
+	Register *m_destination = nullptr;
+	Register *m_sourceA = nullptr;
+	Composite *m_sourceB = nullptr;
+	Predicate *m_sourceC = nullptr;
 
 	Flags m_flags = Flags::None;
 };

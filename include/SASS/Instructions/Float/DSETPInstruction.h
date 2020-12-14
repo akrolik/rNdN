@@ -47,25 +47,30 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	DSETPInstruction(const Predicate *destinationA, const Predicate *destinationB, const Register *sourceA, const Composite *sourceB, const Predicate *sourceC, ComparisonOperator comparisonOperator, BooleanOperator booleanOperator, Flags flags = Flags::None)
+	DSETPInstruction(Predicate *destinationA, Predicate *destinationB, Register *sourceA, Composite *sourceB, Predicate *sourceC, ComparisonOperator comparisonOperator, BooleanOperator booleanOperator, Flags flags = Flags::None)
 		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_comparisonOperator(comparisonOperator), m_booleanOperator(booleanOperator), m_flags(flags) {}
 
 	// Properties
 
 	const Predicate *GetDestinationA() const { return m_destinationA; }
-	void SetDestinationA(const Predicate *destinationA) { m_destinationA = destinationA; }
+	Predicate *GetDestinationA() { return m_destinationA; }
+	void SetDestinationA(Predicate *destinationA) { m_destinationA = destinationA; }
 
 	const Predicate *GetDestinationB() const { return m_destinationB; }
-	void SetDestinationB(const Predicate *destinationB) { m_destinationB = destinationB; }
+	Predicate *GetDestinationB() { return m_destinationB; }
+	void SetDestinationB(Predicate *destinationB) { m_destinationB = destinationB; }
 
 	const Register *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const Register *sourceA) { m_sourceA = sourceA; }
+	Register *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
 
 	const Composite *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const Composite *sourceB) { m_sourceB = sourceB; }
+	Composite *GetSourceB() { return m_sourceB; }
+	void SetSourceB(Composite *sourceB) { m_sourceB = sourceB; }
 
 	const Predicate *GetSourceC() const { return m_sourceC; }
-	void SetSourceB(const Predicate *sourceC) { m_sourceC = sourceC; }
+	Predicate *GetSourceC() { return m_sourceC; }
+	void SetSourceB(Predicate *sourceC) { m_sourceC = sourceC; }
 
 	ComparisonOperator GetComparisonOperator() const { return m_comparisonOperator; }
 	void SetComparisonOperator(ComparisonOperator comparisonOperator) { m_comparisonOperator = comparisonOperator; }
@@ -190,11 +195,11 @@ public:
 	}
 
 private:
-	const Predicate *m_destinationA = nullptr;
-	const Predicate *m_destinationB = nullptr;
-	const Register *m_sourceA = nullptr;
-	const Composite *m_sourceB = nullptr;
-	const Predicate *m_sourceC = nullptr;
+	Predicate *m_destinationA = nullptr;
+	Predicate *m_destinationB = nullptr;
+	Register *m_sourceA = nullptr;
+	Composite *m_sourceB = nullptr;
+	Predicate *m_sourceC = nullptr;
 
 	ComparisonOperator m_comparisonOperator;
 	BooleanOperator m_booleanOperator;

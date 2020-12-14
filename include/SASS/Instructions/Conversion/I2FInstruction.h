@@ -51,16 +51,18 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	I2FInstruction(const Register *destination, const Composite *source, DestinationType destinationType, SourceType sourceType, Round round = Round::RN, Flags flags = Flags::None)
+	I2FInstruction(Register *destination, Composite *source, DestinationType destinationType, SourceType sourceType, Round round = Round::RN, Flags flags = Flags::None)
 		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_destinationType(destinationType), m_sourceType(sourceType), m_round(round), m_flags(flags) {}
 
 	// Properties
 
 	const Register *GetDestination() const { return m_destination; }
-	void SetDestination(const Register *destination) { m_destination = destination; }
+	Register *GetDestination() { return m_destination; }
+	void SetDestination(Register *destination) { m_destination = destination; }
 
 	const Composite *GetSource() const { return m_source; }
-	void SetSource(const Composite *source) { m_source = source; }
+	Composite *GetSource() { return m_source; }
+	void SetSource(Composite *source) { m_source = source; }
 
 	Flags GetFlags() const { return m_flags; }
 	void SetFlags(Flags flags) { m_flags = flags; }
@@ -171,8 +173,8 @@ public:
 	}
 
 private:
-	const Register *m_destination = nullptr;
-	const Composite *m_source = nullptr;
+	Register *m_destination = nullptr;
+	Composite *m_source = nullptr;
 
 	DestinationType m_destinationType;
 	SourceType m_sourceType;

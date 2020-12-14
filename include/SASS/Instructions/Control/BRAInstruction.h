@@ -19,12 +19,13 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	BRAInstruction(const BasicBlock *target, Flags flags = Flags::None) : m_target(target), m_flags(flags) {}
+	BRAInstruction(BasicBlock *target, Flags flags = Flags::None) : m_target(target), m_flags(flags) {}
 
 	// Properties
 
 	const BasicBlock *GetTarget() const { return m_target; }
-	void SetTarget(const BasicBlock *target) { m_target = target; }
+	BasicBlock *GetTarget() { return m_target; }
+	void SetTarget(BasicBlock *target) { m_target = target; }
 
 	std::size_t GetTargetAddress() const { return m_targetAddress; }
 	std::size_t GetCurrentAddress() const { return m_currentAddress; }
@@ -77,7 +78,7 @@ public:
 	}
 
 private:
-	const BasicBlock *m_target = nullptr;
+	BasicBlock *m_target = nullptr;
 
 	std::size_t m_targetAddress = 0;
 	std::size_t m_currentAddress = 0;

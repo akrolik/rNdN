@@ -11,12 +11,13 @@ namespace SASS {
 class Address : public Operand
 {
 public:
-	Address(const Register *base, std::int32_t offset = 0) : m_base(base), m_offset(offset) {}
+	Address(Register *base, std::int32_t offset = 0) : m_base(base), m_offset(offset) {}
 
 	// Properties
 
 	const Register *GetBase() const { return m_base; }
-	void SetBase(const Register *base) { m_base = base; }
+	Register *GetBase() { return m_base; }
+	void SetBase(Register *base) { m_base = base; }
 
 	std::int32_t GetOffset() const { return m_offset; }
 	void SetOffset(std::int32_t offset) { m_offset = offset; }
@@ -42,7 +43,7 @@ public:
 	}
 
 private:
-	const Register *m_base = nullptr;
+	Register *m_base = nullptr;
 	std::int32_t m_offset = 0;
 };
 

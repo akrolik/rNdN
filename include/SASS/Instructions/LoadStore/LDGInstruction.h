@@ -35,16 +35,18 @@ public:
 		I128 = 0x0006000000000000
 	};
 
-	LDGInstruction(const Register *destination, const Address *source, Type type, Cache cache = Cache::None, Flags flags = Flags::None)
+	LDGInstruction(Register *destination, Address *source, Type type, Cache cache = Cache::None, Flags flags = Flags::None)
 		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_type(type), m_cache(cache), m_flags(flags) {}
 
 	// Properties
 
 	const Register *GetDestination() const { return m_destination; }
-	void SetDestination(const Register *destination) { m_destination = destination; }
+	Register *GetDestination() { return m_destination; }
+	void SetDestination(Register *destination) { m_destination = destination; }
 
 	const Address *GetSource() const { return m_source; }
-	void SetSource(const Address *source) { m_source = source; }
+	Address *GetSource() { return m_source; }
+	void SetSource(Address *source) { m_source = source; }
 
 	Type GetType() const { return m_type; }
 	void SetType(Type type) { m_type = type; }
@@ -121,8 +123,8 @@ public:
 	}
 
 private:
-	const Register *m_destination = nullptr;
-	const Address *m_source = nullptr;
+	Register *m_destination = nullptr;
+	Address *m_source = nullptr;
 
 	Cache m_cache = Cache::None;
 	Type m_type;

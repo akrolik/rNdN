@@ -38,16 +38,18 @@ public:
 	     XOR = 0x0000000003800000
 	};
 
-	REDInstruction(const Address *destination, const Register *source, Type type, Mode mode, Flags flags = Flags::None)
+	REDInstruction(Address *destination, Register *source, Type type, Mode mode, Flags flags = Flags::None)
 		: PredicatedInstruction({destination, source}), m_destination(destination), m_source(source), m_type(type), m_mode(mode), m_flags(flags) {}
 
 	// Properties
 
 	const Address *GetDestination() const { return m_destination; }
-	void SetDestination(const Address *destination) { m_destination = destination; }
+	Address *GetDestination() { return m_destination; }
+	void SetDestination(Address *destination) { m_destination = destination; }
 
 	const Register *GetSource() const { return m_source; }
-	void SetSource(const Register *source) { m_source = source; }
+	Register *GetSource() { return m_source; }
+	void SetSource(Register *source) { m_source = source; }
 
 	Type GetType() const { return m_type; }
 	void SetType(Type type) { m_type = type; }
@@ -127,8 +129,8 @@ public:
 	}
 
 private:
-	const Address *m_destination = nullptr;
-	const Register *m_source = nullptr;
+	Address *m_destination = nullptr;
+	Register *m_source = nullptr;
 
 	Type m_type;
 	Mode m_mode;

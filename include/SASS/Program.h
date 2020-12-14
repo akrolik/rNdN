@@ -10,11 +10,23 @@ namespace SASS {
 class Program : public Node
 {
 public:
+	// Compute capability
+
 	unsigned int GetComputeCapability() const { return m_computeCapability; }
 	void SetComputeCapability(unsigned int computeCapability) { m_computeCapability = computeCapability; }
 
+	// Functions
+
+	std::vector<const Function *> GetFunctions() const
+	{
+		return { std::begin(m_functions), std::end(m_functions) };
+	}
+	std::vector<Function *>& GetFunctions() { return m_functions; }
+
 	void AddFunction(Function *function) { m_functions.push_back(function); }
-	const std::vector<Function *>& GetFunctions() const { return m_functions; }
+	void SetFunctions(const std::vector<Function *>& functions) { m_functions = functions; }
+
+	// Formatting
 
 	std::string ToString() const override
 	{

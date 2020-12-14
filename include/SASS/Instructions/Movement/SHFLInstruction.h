@@ -19,25 +19,30 @@ public:
 		BFLY = 0x00000000c0000000
 	};
 
-	SHFLInstruction(const Predicate *destinationA, const Register *destinationB, const Register *sourceA, const Composite *sourceB, const Composite *sourceC, ShuffleOperator shuffleOp)
+	SHFLInstruction(Predicate *destinationA, Register *destinationB, Register *sourceA, Composite *sourceB, Composite *sourceC, ShuffleOperator shuffleOp)
 		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_shuffleOp(shuffleOp) {}
 
 	// Properties
 
 	const Predicate *GetDestinationA() const { return m_destinationA; }
-	void SetDestinationA(const Predicate *destinationA) { m_destinationA = destinationA; }
+	Predicate *GetDestinationA() { return m_destinationA; }
+	void SetDestinationA(Predicate *destinationA) { m_destinationA = destinationA; }
 
 	const Register *GetDestinationB() const { return m_destinationB; }
-	void SetDestinationB(const Register *destinationB) { m_destinationB = destinationB; }
+	Register *GetDestinationB() { return m_destinationB; }
+	void SetDestinationB(Register *destinationB) { m_destinationB = destinationB; }
 
 	const Register *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const Register *sourceA) { m_sourceA = sourceA; }
+	Register *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
 
 	const Composite *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const Composite *sourceB) { m_sourceB = sourceB; }
+	Composite *GetSourceB() { return m_sourceB; }
+	void SetSourceB(Composite *sourceB) { m_sourceB = sourceB; }
 
 	const Composite *GetSourceC() const { return m_sourceC; }
-	void SetSourceC(const Composite *sourceC) { m_sourceC = sourceC; }
+	Composite *GetSourceC() { return m_sourceC; }
+	void SetSourceC(Composite *sourceC) { m_sourceC = sourceC; }
 
 	ShuffleOperator GetShuffleOp() const { return m_shuffleOp; }
 	void SetShuffleOp(ShuffleOperator shuffleOp) { m_shuffleOp = shuffleOp; }
@@ -136,11 +141,11 @@ public:
 	}
 
 private:
-	const Predicate *m_destinationA = nullptr;
-	const Register *m_destinationB = nullptr;
-	const Register *m_sourceA = nullptr;
-	const Composite *m_sourceB = nullptr;
-	const Composite *m_sourceC = nullptr;
+	Predicate *m_destinationA = nullptr;
+	Register *m_destinationB = nullptr;
+	Register *m_sourceA = nullptr;
+	Composite *m_sourceB = nullptr;
+	Composite *m_sourceC = nullptr;
 
 	ShuffleOperator m_shuffleOp;
 };

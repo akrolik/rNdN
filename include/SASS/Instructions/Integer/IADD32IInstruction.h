@@ -20,19 +20,22 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	IADD32IInstruction(const Register *destination, const Register *sourceA, const I32Immediate *sourceB, Flags flags = Flags::None)
+	IADD32IInstruction(Register *destination, Register *sourceA, I32Immediate *sourceB, Flags flags = Flags::None)
 		: PredicatedInstruction({destination, sourceA, sourceB}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_flags(flags) {}
 
 	// Properties
 
 	const Register *GetDestination() const { return m_destination; }
-	void SetDestination(const Register *destination) { m_destination = destination; }
+	Register *GetDestination() { return m_destination; }
+	void SetDestination(Register *destination) { m_destination = destination; }
 
 	const Register *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const Register *sourceA) { m_sourceA = sourceA; }
+	Register *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
 
 	const I32Immediate *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const I32Immediate *sourceB) { m_sourceB = sourceB; }
+	I32Immediate *GetSourceB() { return m_sourceB; }
+	void SetSourceB(I32Immediate *sourceB) { m_sourceB = sourceB; }
 	
 	Flags GetFlags() const { return m_flags; }
 	void SetFlags(Flags flags) { m_flags = flags; }
@@ -96,9 +99,9 @@ public:
 	}
 
 private:
-	const Register *m_destination = nullptr;
-	const Register *m_sourceA = nullptr;
-	const I32Immediate *m_sourceB = nullptr;
+	Register *m_destination = nullptr;
+	Register *m_sourceA = nullptr;
+	I32Immediate *m_sourceB = nullptr;
 
 	Flags m_flags = Flags::None;
 };

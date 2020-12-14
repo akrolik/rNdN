@@ -43,22 +43,26 @@ public:
 		PSL_CLO = 0x0004001000000000
 	};
 
-	XMADInstruction(const Register *destination, const Register *sourceA, const Composite *sourceB, const Register *sourceC, Mode mode = Mode::None, Flags flags = Flags::None, Type1 type1 = Type1::U16, Type2 type2 = Type2::U16)
+	XMADInstruction(Register *destination, Register *sourceA, Composite *sourceB, Register *sourceC, Mode mode = Mode::None, Flags flags = Flags::None, Type1 type1 = Type1::U16, Type2 type2 = Type2::U16)
 		: PredicatedInstruction({destination, sourceA, sourceB, sourceC}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_mode(mode), m_type1(type1), m_type2(type2), m_flags(flags) {}
 
 	// Properties
 
 	const Register *GetDestination() const { return m_destination; }
-	void SetDestination(const Register *destination) { m_destination = destination; }
+	Register *GetDestination() { return m_destination; }
+	void SetDestination(Register *destination) { m_destination = destination; }
 
 	const Register *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const Register *sourceA) { m_sourceA = sourceA; }
+	Register *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
 
 	const Composite *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const Composite *sourceB) { m_sourceB = sourceB; }
+	Composite *GetSourceB() { return m_sourceB; }
+	void SetSourceB(Composite *sourceB) { m_sourceB = sourceB; }
 
 	const Register *GetSourceC() const { return m_sourceC; }
-	void SetSourceC(const Register *sourceC) { m_sourceC = sourceC; }
+	Register *GetSourceC() { return m_sourceC; }
+	void SetSourceC(Register *sourceC) { m_sourceC = sourceC; }
 
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
@@ -149,7 +153,7 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		if (dynamic_cast<const Constant *>(m_sourceB))
+		if (dynamic_cast<Constant *>(m_sourceB))
 		{
 			return 0x4e00000000000000; // Constant
 		}
@@ -212,10 +216,10 @@ public:
 	}
 
 private:
-	const Register *m_destination = nullptr;
-	const Register *m_sourceA = nullptr;
-	const Composite *m_sourceB = nullptr;
-	const Register *m_sourceC = nullptr;
+	Register *m_destination = nullptr;
+	Register *m_sourceA = nullptr;
+	Composite *m_sourceB = nullptr;
+	Register *m_sourceC = nullptr;
 
 	Type1 m_type1 = Type1::U16;
 	Type2 m_type2 = Type2::U16;

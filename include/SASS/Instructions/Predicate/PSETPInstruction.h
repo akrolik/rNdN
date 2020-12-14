@@ -31,25 +31,30 @@ public:
 		XOR = 0x0000000002000000
 	};
 
-	PSETPInstruction(const Predicate *destinationA, const Predicate *destinationB, const Predicate *sourceA, const Predicate *sourceB, const Predicate *sourceC, BooleanOperator1 booleanOperator1, BooleanOperator2 booleanOperator2, Flags flags = Flags::None)
+	PSETPInstruction(Predicate *destinationA, Predicate *destinationB, Predicate *sourceA, Predicate *sourceB, Predicate *sourceC, BooleanOperator1 booleanOperator1, BooleanOperator2 booleanOperator2, Flags flags = Flags::None)
 		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_booleanOperator1(booleanOperator), m_booleanOperator2(booleanOperator2), m_flags(flags) {}
 
 	// Properties
 
 	const Predicate *GetDestinationA() const { return m_destinationA; }
-	void SetDestinationA(const Predicate *destinationA) { m_destinationA = destinationA; }
+	Predicate *GetDestinationA() { return m_destinationA; }
+	void SetDestinationA(Predicate *destinationA) { m_destinationA = destinationA; }
 
 	const Predicate *GetDestinationB() const { return m_destinationB; }
-	void SetDestinationB(const Predicate *destinationB) { m_destinationB = destinationB; }
+	Predicate *GetDestinationB() { return m_destinationB; }
+	void SetDestinationB(Predicate *destinationB) { m_destinationB = destinationB; }
 
 	const Predicate *GetSourceA() const { return m_sourceA; }
-	void SetSourceA(const Register *sourceA) { m_sourceA = sourceA; }
+	Predicate *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
 
 	const Predicate *GetSourceB() const { return m_sourceB; }
-	void SetSourceB(const Composite *sourceB) { m_sourceB = sourceB; }
+	Predicate *GetSourceB() { return m_sourceB; }
+	void SetSourceB(Composite *sourceB) { m_sourceB = sourceB; }
 
 	const Predicate *GetSourceC() const { return m_sourceC; }
-	void SetSourceB(const Predicate *sourceC) { m_sourceC = sourceC; }
+	Predicate *GetSourceC() { return m_sourceC; }
+	void SetSourceB(Predicate *sourceC) { m_sourceC = sourceC; }
 
 	BooleanOperator1 GetBooleanOperator1() const { return m_booleanOperator1; }
 	void SetBooleanOperator1(BooleanOperator1 booleanOperator1) { m_booleanOperator1 = booleanOperator1; }
@@ -143,11 +148,11 @@ public:
 	}
 
 private:
-	const Predicate *m_destinationA = nullptr;
-	const Predicate *m_destinationB = nullptr;
-	const Predicate *m_sourceA = nullptr;
-	const Predicate *m_sourceB = nullptr;
-	const Predicate *m_sourceC = nullptr;
+	Predicate *m_destinationA = nullptr;
+	Predicate *m_destinationB = nullptr;
+	Predicate *m_sourceA = nullptr;
+	Predicate *m_sourceB = nullptr;
+	Predicate *m_sourceC = nullptr;
 
 	BooleanOperator1 m_booleanOperator1;
 	BooleanOperator2 m_booleanOperator2;

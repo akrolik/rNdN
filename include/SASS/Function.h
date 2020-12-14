@@ -13,21 +13,38 @@ class Function : public Node
 public:
 	Function(const std::string& name) : m_name(name) {}
 	
-	// Function elements
+	// Function
 
 	const std::string& GetName() const { return m_name; }
+	void SetName(const std::string& name) { m_name = name; }
 
-	void AddParameter(std::size_t parameter) { m_parameters.push_back(parameter); }
-	const std::vector<std::size_t>& GetParameters() const { return m_parameters; }
+	// Parameters
+
 	std::size_t GetParametersCount() const { return m_parameters.size(); }
 
+	const std::vector<std::size_t>& GetParameters() const { return m_parameters; }
+	std::vector<std::size_t>& GetParameters() { return m_parameters; }
+
+	void AddParameter(std::size_t parameter) { m_parameters.push_back(parameter); }
+	void SetParameters(const std::vector<std::size_t>& parameters) { m_parameters = parameters; }
+
+	// Basic Blocks
+
+	std::vector<const BasicBlock *> GetBasicBlocks() const
+	{
+		return { std::begin(m_blocks), std::end(m_blocks) };
+	}
+	std::vector<BasicBlock *>& GetBasicBlocks() { return m_blocks; }
+
 	void AddBasicBlock(BasicBlock *block) { m_blocks.push_back(block); }
-	const std::vector<BasicBlock *>& GetBasicBlocks() const { return m_blocks; }
+	void SetBasicBlocks(const std::vector<BasicBlock *>& blocks) { m_blocks = blocks; }
+
+	// Registers
 
 	void SetRegisters(const std::size_t registers) { m_registers = registers; }
 	std::size_t GetRegisters() const { return m_registers; }
 
-	// Format
+	// Formatting
 
 	std::string ToString() const override
 	{
