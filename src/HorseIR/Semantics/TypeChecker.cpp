@@ -205,7 +205,12 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const Fun
 	
 	if (!TypeUtils::IsTypesAssignable(functionType->GetParameterTypes(), argumentTypes))
 	{
-		TypeError(function, argumentTypes);
+		std::vector<const Type *> parameterTypes;
+		for (const auto& parameter : function->GetParameters())
+		{
+			parameterTypes.push_back(parameter->GetType());
+		}
+		Utils::Logger::LogError("Incompatible arguments " + TypeUtils::TypeString(argumentTypes) + " for function '" + function->GetName() + "', requires " + TypeUtils::TypeString(parameterTypes));
 	}
 
 	std::vector<Type *> returnTypes;

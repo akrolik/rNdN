@@ -48,7 +48,7 @@ public:
 		}
 
 		std::vector<const Type *> parameterTypes;
-		for (const auto& parameterType : parameterTypes)
+		for (const auto& parameterType : m_parameterTypes)
 		{
 			parameterTypes.push_back(parameterType->Clone());
 		}
