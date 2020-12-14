@@ -62,7 +62,7 @@ public:
 
 	std::string Name() const override { return "ExpressionGenerator"; }
 
-	void Generate(const std::vector<HorseIR::LValue *>& targets, const HorseIR::Expression *expression)
+	void Generate(const std::vector<const HorseIR::LValue *>& targets, const HorseIR::Expression *expression)
 	{
 		m_targets = targets;
 		expression->Accept(*this);
@@ -80,7 +80,7 @@ public:
 		Generate(function, call->GetTypes(), call->GetArguments());
 	}
 
-	void Generate(const HorseIR::FunctionDeclaration *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const HorseIR::FunctionDeclaration *function, const std::vector<const HorseIR::Type *>& returnTypes, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		switch (function->GetKind())
 		{
@@ -96,7 +96,7 @@ public:
 		}
 	}
 
-	void Generate(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const HorseIR::BuiltinFunction *function, const std::vector<const HorseIR::Type *>& returnTypes, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		switch (function->GetPrimitive())
 		{
@@ -172,7 +172,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::BuiltinFunction *function, const std::vector<const HorseIR::Type *>& returnTypes, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		switch (function->GetPrimitive())
 		{
@@ -186,7 +186,7 @@ public:
 
 				const auto l_function = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(arguments.at(0)->GetType())->GetFunctionDeclaration();
 
-				std::vector<HorseIR::Operand *> l_arguments;
+				std::vector<const HorseIR::Operand *> l_arguments;
 				l_arguments.insert(std::begin(l_arguments), std::begin(arguments) + 1, std::end(arguments));
 
 				Generate(l_function, returnTypes, l_arguments);
@@ -377,7 +377,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateList(const HorseIR::BuiltinFunction *function, const std::vector<const HorseIR::Type *>& returnTypes, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		if (this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -390,13 +390,13 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::BuiltinFunction *function, const std::vector<HorseIR::Type *>& returnTypes, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateTuple(unsigned int index, const HorseIR::BuiltinFunction *function, const std::vector<const HorseIR::Type *>& returnTypes, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		Error("list-in-vector function @" + function->GetName());
 	}
 
 private:
-	std::vector<HorseIR::LValue *> m_targets;
+	std::vector<const HorseIR::LValue *> m_targets;
 };
 
 }

@@ -43,7 +43,7 @@ public:
 
 	// The output of a limit function handles the predicate itself. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

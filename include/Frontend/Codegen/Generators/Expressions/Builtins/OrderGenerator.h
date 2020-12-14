@@ -457,7 +457,7 @@ public:
 
 	std::string Name() const override { return "OrderGenerator"; }
 
-	void Generate(const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		const auto indexSize = HorseIR::TypeUtils::GetBitSize(arguments.at(0)->GetType());
 		const auto dataSize = HorseIR::TypeUtils::GetBitSize(arguments.at(1)->GetType());
@@ -489,7 +489,7 @@ public:
 	}
 
 	template<unsigned int SORT_CACHE_SIZE>
-	void Generate(const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

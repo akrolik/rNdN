@@ -56,12 +56,12 @@ public:
 
 	std::string Name() const override { return "ExternalBinaryGenerator"; }
 
-	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		if (m_binaryOp != ExternalBinaryOperation::Modulo)
 		{
@@ -103,12 +103,12 @@ public:
 
 	std::string Name() const override { return "ExternalBinaryGenerator"; }
 
-	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::BinaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	PTX::Register<PTX::FloatType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::FloatType<S>> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, PTX::FloatType<S>> opGen(this->m_builder);
 		auto src1 = opGen.GenerateRegister(arguments.at(0), OperandGenerator<B, PTX::FloatType<S>>::LoadKind::Vector);

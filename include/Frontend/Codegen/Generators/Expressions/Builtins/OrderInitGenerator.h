@@ -203,7 +203,7 @@ public:
 
 	std::string Name() const override { return "OrderInitGenerator"; }
 
-	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 

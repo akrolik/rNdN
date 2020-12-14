@@ -23,7 +23,7 @@ public:
 
 	// The output of the vector function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		OperandGenerator<B, T> opGen(this->m_builder);
 		auto src = opGen.GenerateOperand(arguments.at(1), OperandGenerator<B, T>::LoadKind::Vector);

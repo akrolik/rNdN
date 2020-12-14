@@ -54,19 +54,19 @@ public:
 
 	std::string Name() const override { return "RoundingGenerator"; }
 
-	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::IntType<S>> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
 		return m_targetRegister;
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		if constexpr(PTX::is_float_type<T>::value)
 		{
@@ -85,7 +85,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateList(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		if (this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -98,7 +98,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		BuiltinGenerator<B, PTX::IntType<S>>::Unimplemented("list-in-vector");
 	}

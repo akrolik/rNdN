@@ -510,12 +510,12 @@ public:
 
 	std::string Name() const override { return "InternalFindGenerator"; }
 
-	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		return OperandCompressionGenerator::UnaryCompressionRegister(this->m_builder, arguments);
 	}
 
-	PTX::Register<D> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	PTX::Register<D> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		// Initialize target register (@member->false, @index_of->0, @join_count->0)
 

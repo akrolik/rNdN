@@ -27,7 +27,7 @@ public:
 
 	// The output of a compresion function handles the predicate itself. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		// Update the resource generator with the compression information. @compress arguments:
 		//   0 - bool mask
@@ -108,7 +108,7 @@ public:
 
 private:
 	const HorseIR::LValue *m_target = nullptr;
-	std::vector<HorseIR::Operand *> m_arguments;
+	std::vector<const HorseIR::Operand *> m_arguments;
 
 	PTX::Register<T> *m_targetRegister = nullptr;
 	PTX::Register<PTX::PredicateType> *m_predicate = nullptr;

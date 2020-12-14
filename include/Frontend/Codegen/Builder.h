@@ -157,9 +157,14 @@ public:
 		m_scopes.pop();
 	}
 
-	RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
-	KernelAllocator *GetKernelResources() const { return m_kernelResources.at(m_currentKernel); }
-	ModuleAllocator *GetGlobalResources() const { return m_globalResources.at(m_currentModule); }
+	const RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
+	RegisterAllocator *GetLocalResources() { return m_localResources.at(GetCurrentBlock()); }
+
+	const KernelAllocator *GetKernelResources() const { return m_kernelResources.at(m_currentKernel); }
+	KernelAllocator *GetKernelResources() { return m_kernelResources.at(m_currentKernel); }
+
+	const ModuleAllocator *GetGlobalResources() const { return m_globalResources.at(m_currentModule); }
+	ModuleAllocator *GetGlobalResources() { return m_globalResources.at(m_currentModule); }
 
 	const HorseIR::Function *GetCurrentFunction() const { return m_currentFunction; }
 
@@ -173,19 +178,19 @@ public:
 		m_inputOptions[function] = inputOptions;
 	}
 
-	PTX::FileDirective *GetCurrentFile() const { return m_files.at(m_currentFunction); }
+	const PTX::FileDirective *GetCurrentFile() const { return m_files.at(m_currentFunction); }
+	PTX::FileDirective *GetCurrentFile() { return m_files.at(m_currentFunction); }
+
 	void SetFile(const HorseIR::Function *function, PTX::FileDirective *file)
 	{
 		m_files[function] = file;
 	}
 
+	const PTX::FunctionOptions& GetKernelOptions() const { return m_currentKernel->GetOptions(); }
 	PTX::FunctionOptions& GetKernelOptions() { return m_currentKernel->GetOptions(); }
 
 private:
-	PTX::StatementList *GetCurrentBlock() const
-	{
-		return m_scopes.top();
-	}
+	PTX::StatementList *GetCurrentBlock() const { return m_scopes.top(); }
 
 	const TargetOptions& m_targetOptions;
 	std::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;

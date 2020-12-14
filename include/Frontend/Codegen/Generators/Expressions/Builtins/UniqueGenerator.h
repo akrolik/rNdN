@@ -33,7 +33,7 @@ public:
 
 	std::string Name() const override { return "UniqueGenerator"; }
 
-	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<PTX::Int64Type> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		DispatchType(*this, arguments.at(0)->GetType(), target, arguments);
 
@@ -41,7 +41,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateVector(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto dataArgument = arguments.at(0);
@@ -99,7 +99,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateList(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		if (this->m_builder.GetInputOptions().IsVectorGeometry())
 		{
@@ -112,7 +112,7 @@ public:
 	}
 
 	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void GenerateTuple(unsigned int index, const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		BuiltinGenerator<B, PTX::Int64Type>::Unimplemented("list-in-vector");
 	}

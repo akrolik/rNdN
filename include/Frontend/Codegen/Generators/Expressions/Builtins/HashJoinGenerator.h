@@ -21,7 +21,7 @@ public:
 
 	std::string Name() const override { return "HashJoinGenerator"; }
 
-	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -80,19 +80,19 @@ public:
 	}
 
 	template<class T>
-	void GenerateVector(const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
+	void GenerateVector(const std::vector<const HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		GenerateHashLookup<T>(arguments, slot, startLabel);
 	}
 
 	template<class T>
-	void GenerateList(const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
+	void GenerateList(const std::vector<const HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		GenerateHashLookup<T>(arguments, slot, startLabel);
 	}
 	
 	template<class T>
-	void GenerateTuple(unsigned int index, const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
+	void GenerateTuple(unsigned int index, const std::vector<const HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		if (index == 0)
 		{
@@ -102,7 +102,7 @@ public:
 
 private:
 	template<class T>
-	void GenerateHashLookup(const std::vector<HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
+	void GenerateHashLookup(const std::vector<const HorseIR::Operand *>& arguments, PTX::Register<PTX::UInt32Type> *slot, PTX::Label *startLabel)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{

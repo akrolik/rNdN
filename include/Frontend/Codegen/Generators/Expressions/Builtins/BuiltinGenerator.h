@@ -21,12 +21,12 @@ class BuiltinGenerator : public Generator
 public:
 	using Generator::Generator;
 
-	virtual PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	virtual PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		Unimplemented();
 	}
 
-	PTX::Register<T> *GenerateTargetRegister(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	PTX::Register<T> *GenerateTargetRegister(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		// Depending on the input arguments, the output value may be compressed. If so,
 		// the generator must provide a single compression predicate
@@ -35,7 +35,7 @@ public:
 		return targetGenerator.Generate(target, GenerateCompressionPredicate(arguments));
 	}
 
-	virtual PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<HorseIR::Operand *>& arguments)
+	virtual PTX::Register<PTX::PredicateType> *GenerateCompressionPredicate(const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		// Default has no compression predicate
 

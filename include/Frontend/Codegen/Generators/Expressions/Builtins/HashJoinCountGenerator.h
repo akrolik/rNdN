@@ -24,7 +24,7 @@ public:
 
 	std::string Name() const override { return "HashJoinCountGenerator"; }
 
-	void Generate(const std::vector<HorseIR::LValue *>& targets, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		auto keyArgument = arguments.at(0);
 		auto dataArgument = arguments.at(1);

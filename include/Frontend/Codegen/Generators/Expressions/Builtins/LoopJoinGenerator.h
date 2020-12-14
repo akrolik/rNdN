@@ -21,10 +21,10 @@ public:
 
 	std::string Name() const override { return "LoopJoinGenerator"; }
 
-	void Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
-		std::vector<HorseIR::Operand *> functionArguments(std::begin(arguments), std::end(arguments) - 4);
-		std::vector<HorseIR::Operand *> dataArguments(std::begin(arguments) + functionArguments.size(), std::end(arguments));
+		std::vector<const HorseIR::Operand *> functionArguments(std::begin(arguments), std::end(arguments) - 4);
+		std::vector<const HorseIR::Operand *> dataArguments(std::begin(arguments) + functionArguments.size(), std::end(arguments));
 
 		std::vector<ComparisonOperation> joinOperations;
 		for (auto functionArgument : functionArguments)

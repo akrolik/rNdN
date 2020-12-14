@@ -63,7 +63,7 @@ public:
 
 	// The output of a reduction function has no compression predicate. We therefore do not implement GenerateCompressionPredicate in this subclass
 
-	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<HorseIR::Operand *>& arguments) override
+	PTX::Register<T> *Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments) override
 	{
 		auto targetRegister = this->GenerateTargetRegister(target, arguments);
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
@@ -90,7 +90,7 @@ public:
 		return targetRegister;
 	}
 
-	void Generate(PTX::Register<T> *targetRegister, const std::vector<HorseIR::Operand *>& arguments)
+	void Generate(PTX::Register<T> *targetRegister, const std::vector<const HorseIR::Operand *>& arguments)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
