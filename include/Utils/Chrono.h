@@ -25,7 +25,12 @@ public:
 		bool HasChildren() const { return (m_children.size() > 0); }
 		void AddChild(Timing *timing) { m_children.push_back(timing); }
 
-		const std::vector<Timing *>& GetChildren() const { return m_children; }
+		std::vector<const Timing *> GetChildren() const
+		{
+			return { std::begin(m_children), std::end(m_children) };
+		}
+		std::vector<Timing *>& GetChildren() { return m_children; }
+
 		const Timing *GetParent() const { return m_parent; }
 
 		virtual void Start() = 0;
