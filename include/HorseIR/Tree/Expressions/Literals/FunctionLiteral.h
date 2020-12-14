@@ -22,11 +22,19 @@ public:
 		return new FunctionLiteral(m_identifier->Clone());
 	}
 
-	Identifier *GetIdentifier() const { return m_identifier; }
+	// Identifier
+
+	const Identifier *GetIdentifier() const { return m_identifier; }
+	Identifier *GetIdentifier() { return m_identifier; }
+
 	void SetIdentifier(Identifier *identifier) { m_identifier = identifier; }
+
+	// Function
 
 	const FunctionDeclaration *GetFunction() const { return m_function; }
 	void SetFunction(const FunctionDeclaration *function) { m_function = function; }
+
+	// Operators
 
 	bool operator==(const FunctionLiteral& other) const
 	{
@@ -37,6 +45,8 @@ public:
 	{
 		return !(*this == other);
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

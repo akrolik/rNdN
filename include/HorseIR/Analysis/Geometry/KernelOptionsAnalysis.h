@@ -15,9 +15,7 @@ class KernelOptionsAnalysis : public ConstHierarchicalVisitor
 public:
 	KernelOptionsAnalysis(const ShapeAnalysis& shapeAnalysis) : m_shapeAnalysis(shapeAnalysis) {}
 
-	void Analyze(const Function *function);
-
-	Frontend::Codegen::InputOptions *GetInputOptions() const { return m_inputOptions; }
+	Frontend::Codegen::InputOptions *Analyze(const Function *function);
 
 	bool IsInOrder(const Function *function) const;
 

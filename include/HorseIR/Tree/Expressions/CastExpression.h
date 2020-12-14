@@ -21,11 +21,21 @@ public:
 		return new CastExpression(m_expression->Clone(), m_castType->Clone());
 	}
 
-	Expression *GetExpression() const { return m_expression; }
+	// Expression
+
+	const Expression *GetExpression() const { return m_expression; }
+	Expression *GetExpression() { return m_expression; }
+
 	void SetExpression(Expression *expression) { m_expression = expression; }
 
-	Type *GetCastType() const { return m_castType; }
+	// Type
+
+	const Type *GetCastType() const { return m_castType; }
+	Type *GetCastType() { return m_castType; }
+
 	void SetCastType(Type *castType) { m_castType = castType; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

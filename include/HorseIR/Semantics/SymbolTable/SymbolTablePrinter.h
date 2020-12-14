@@ -36,7 +36,7 @@ private:
 	unsigned int m_indent = 0;
 	std::stringstream m_string;
 
-	SymbolTable *m_currentSymbolTable = nullptr;
+	const SymbolTable *m_currentSymbolTable = nullptr;
 };
 
 }

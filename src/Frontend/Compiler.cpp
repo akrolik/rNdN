@@ -86,9 +86,9 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 			const auto& localShapeAnalysis = shapeAnalysis.GetAnalysis(function);
 
 			HorseIR::Analysis::KernelOptionsAnalysis optionsAnalysis(localShapeAnalysis);
-			optionsAnalysis.Analyze(function);
+			auto options = optionsAnalysis.Analyze(function);
 
-			codegen.SetInputOptions(function, optionsAnalysis.GetInputOptions());
+			codegen.SetInputOptions(function, options);
 		}
 	}
 

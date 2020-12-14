@@ -446,7 +446,7 @@ void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderingContext& con
 
 	for (auto childOverlay : sourceOverlay->GetChildren())
 	{
-		mergedOverlay->AddChild(childOverlay);
+		mergedOverlay->AddChild(const_cast<DependencyOverlay *>(childOverlay));
 	}
 
 	auto mergedNodes = mergedSubgraph->GetNodes();

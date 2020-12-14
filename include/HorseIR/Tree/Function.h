@@ -46,24 +46,57 @@ public:
 		return new Function(m_name, parameters, returnTypes, statements, m_kernel);
 	}
 
-	const std::vector<Parameter *>& GetParameters() const { return m_parameters; }
-	Parameter *GetParameter(unsigned int i) const { return m_parameters.at(i); }
-	size_t GetParameterCount() const { return m_parameters.size(); }
-	void SetParameters(const std::vector<Parameter *>& parameters) { m_parameters = parameters; }
+	// Parameters
 
-	const std::vector<Type *>& GetReturnTypes() const { return m_returnTypes; }
-	Type *GetReturnType(unsigned int i) const { return m_returnTypes.at(i); }
+	size_t GetParameterCount() const { return m_parameters.size(); }
+
+	std::vector<const Parameter *> GetParameters() const
+	{
+		return { std::begin(m_parameters), std::end(m_parameters) };
+	}
+	std::vector<Parameter *>& GetParameters() { return m_parameters; }
+
+	const Parameter *GetParameter(unsigned int i) const { return m_parameters.at(i); }
+	Parameter *GetParameter(unsigned int i) { return m_parameters.at(i); }
+
+	void SetParameters(const std::vector<Parameter *>& parameters) { m_parameters = parameters; }
+	
+	// Return type
+
 	size_t GetReturnCount() const { return m_returnTypes.size(); }
+	std::vector<const Type *> GetReturnTypes() const
+	{
+		return { std::begin(m_returnTypes), std::end(m_returnTypes) };
+	}
+	std::vector<Type *>& GetReturnTypes() { return m_returnTypes; }
+
+	const Type *GetReturnType(unsigned int i) const { return m_returnTypes.at(i); }
+	Type *GetReturnType(unsigned int i) { return m_returnTypes.at(i); }
+
 	void SetReturnType(const std::vector<Type *>& returnTypes) { m_returnTypes = returnTypes; }
 
-	const std::vector<Statement *>& GetStatements() const { return m_statements; }
+	// Statements
+
+	std::vector<const Statement *> GetStatements() const
+	{
+		return { std::begin(m_statements), std::end(m_statements) };
+	}
+	std::vector<Statement *>& GetStatements() { return m_statements; }
+
 	void SetStatements(const std::vector<Statement *>& statements) { m_statements = statements; }
+
+	// Other properties
 
 	bool IsKernel() const { return m_kernel; }
 	void SetKernel(bool kernel) { m_kernel = kernel; }
 
-	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	// Symbol table
+
+	const SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	SymbolTable *GetSymbolTable() { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

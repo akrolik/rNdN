@@ -43,6 +43,8 @@ public:
 		return new BasicType(m_basicKind);
 	}
 
+	// Basic kind
+
 	static std::string BasicKindString(BasicKind kind)
 	{
 		switch (kind)
@@ -88,6 +90,20 @@ public:
 
 	BasicKind GetBasicKind() const { return m_basicKind; }
 
+	// Operators
+
+	bool operator==(const BasicType& other) const
+	{
+		return (m_basicKind == other.m_basicKind);
+	}
+
+	bool operator!=(const BasicType& other) const
+	{
+		return (m_basicKind != other.m_basicKind);
+	}
+
+	// Visitors
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
@@ -101,16 +117,6 @@ public:
 	{
 		visitor.VisitIn(this);
 		visitor.VisitOut(this);
-	}
-
-	bool operator==(const BasicType& other) const
-	{
-		return (m_basicKind == other.m_basicKind);
-	}
-
-	bool operator!=(const BasicType& other) const
-	{
-		return (m_basicKind != other.m_basicKind);
 	}
 
 protected:

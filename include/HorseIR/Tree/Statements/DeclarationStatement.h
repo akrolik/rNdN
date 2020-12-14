@@ -25,8 +25,14 @@ public:
 		return new DeclarationStatement(m_declaration->Clone());
 	}
 
-	VariableDeclaration *GetDeclaration() const { return m_declaration; }
+	// Declaration
+
+	const VariableDeclaration *GetDeclaration() const { return m_declaration; }
+	VariableDeclaration *GetDeclaration() { return m_declaration; }
+
 	void SetDeclaration(VariableDeclaration *declaration) { m_declaration = declaration; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

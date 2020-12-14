@@ -42,9 +42,9 @@ private:
 
 	friend Synchronization operator|(Synchronization a, Synchronization b);
 
-	std::pair<Device, Synchronization> AnalyzeCall(const FunctionDeclaration *function, const std::vector<Operand *>& arguments, unsigned int index);
-	std::pair<Device, Synchronization> AnalyzeCall(const Function *function, const std::vector<Operand *>& arguments, unsigned int index);
-	std::pair<Device, Synchronization> AnalyzeCall(const BuiltinFunction *function, const std::vector<Operand *>& arguments, unsigned int index);
+	std::pair<Device, Synchronization> AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Operand *>& arguments, unsigned int index);
+	std::pair<Device, Synchronization> AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments, unsigned int index);
+	std::pair<Device, Synchronization> AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, unsigned int index);
 
 	unsigned int m_index = 0;
 	Device m_device = Device::CPU;

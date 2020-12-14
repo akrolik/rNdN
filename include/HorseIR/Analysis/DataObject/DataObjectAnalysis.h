@@ -75,9 +75,9 @@ public:
 private:
 	// Function call visitors
 
-	std::vector<const DataObject *> AnalyzeCall(const FunctionDeclaration *function, const std::vector<Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
-	std::vector<const DataObject *> AnalyzeCall(const Function *function, const std::vector<Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
-	std::vector<const DataObject *> AnalyzeCall(const BuiltinFunction *function, const std::vector<Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
+	std::vector<const DataObject *> AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
+	std::vector<const DataObject *> AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
+	std::vector<const DataObject *> AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
 
 	std::unordered_map<const Expression *, std::vector<const DataObject *>> m_expressionObjects;
 	std::unordered_map<const Parameter *, const DataObject *> m_parameterObjects;

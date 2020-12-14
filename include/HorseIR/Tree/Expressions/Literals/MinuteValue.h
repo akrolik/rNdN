@@ -20,11 +20,15 @@ public:
 		return new MinuteValue(m_hour, m_minute);
 	}
 
+	// Properties
+
 	std::uint8_t GetHour() const { return m_hour; }
 	void SetHour(std::uint8_t hour) { m_hour = hour; }
 
 	std::uint8_t GetMinute() const { return m_minute; }
 	void SetMinute(std::uint8_t minute) { m_minute = minute; }
+
+	// Formatting
 
 	std::int32_t GetEpochTime() const override
 	{
@@ -39,6 +43,8 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const MinuteValue& value);
+
+	// Operators
 
 	bool operator==(const MinuteValue& other) const
 	{

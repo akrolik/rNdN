@@ -28,11 +28,24 @@ public:
 		return new BlockStatement(statements);
 	}
 
-	const std::vector<Statement *>& GetStatements() const { return m_statements; }
+	// Statements
+
+	std::vector<const Statement *> GetStatements() const
+	{
+		return { std::begin(m_statements), std::end(m_statements) };
+	}
+	std::vector<Statement *>& GetStatements() { return m_statements; }
+
 	void SetStatements(const std::vector<Statement *>& statements) { m_statements = statements; }
 
-	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	// Symbol table
+
+	const SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	SymbolTable *GetSymbolTable() { return m_symbolTable; }
+
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
+	
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

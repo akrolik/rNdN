@@ -14,15 +14,20 @@ class LValue : virtual public Node
 public:
 	virtual LValue *Clone() const override = 0;
 
-	virtual Type *GetType() const = 0;
+	// Properties
 
-	SymbolTable::Symbol *GetSymbol() const { return m_symbol; }
-	void SetSymbol(SymbolTable::Symbol *symbol) { m_symbol = symbol; }
+	virtual const Type *GetType() const = 0;
+	virtual Type *GetType() = 0;
+
+	// Symbol table
+
+	const SymbolTable::Symbol *GetSymbol() const { return m_symbol; }
+	void SetSymbol(const SymbolTable::Symbol *symbol) { m_symbol = symbol; }
 
 protected:
 	LValue() {}
 
-	SymbolTable::Symbol *m_symbol = nullptr;
+	const SymbolTable::Symbol *m_symbol = nullptr;
 };
 
 }

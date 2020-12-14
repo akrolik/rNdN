@@ -15,10 +15,16 @@ public:
 		return new SymbolValue(m_name);
 	}
 
+	// Name
+
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 
+	// Formatting
+
 	friend std::ostream& operator<<(std::ostream& os, const SymbolValue& value);
+
+	// Operators
 
 	bool operator==(const SymbolValue& other) const
 	{

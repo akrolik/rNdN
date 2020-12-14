@@ -20,6 +20,8 @@ public:
 		return new TimeValue(m_hour, m_minute, m_second, m_millisecond);
 	}
 
+	// Properties
+
 	std::uint8_t GetHour() const { return m_hour; }
 	void SetHour(std::uint8_t hour) { m_hour = hour; }
 
@@ -31,6 +33,8 @@ public:
 
 	std::uint8_t GetMillisecond() const { return m_millisecond; }
 	void SetMillisecond(std::uint8_t millisecond) { m_millisecond = millisecond; }
+
+	// Formatting
 
 	std::int64_t GetExtendedEpochTime() const override
 	{
@@ -45,6 +49,8 @@ public:
 		stream << *this;
 		return stream.str();
 	}
+
+	// Operators
 
 	bool operator==(const TimeValue& other) const
 	{

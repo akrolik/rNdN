@@ -21,9 +21,7 @@ public:
 
 	// Transformation input and output
 
-	void Build(const Analysis::FunctionDependencyOverlay *overlay);
-
-	const std::vector<Function *>& GetFunctions() const { return m_functions; }
+	const std::vector<Function *>& Build(const Analysis::FunctionDependencyOverlay *overlay);
 
 	void Visit(const Statement *statement) override;
 	void Visit(const AssignStatement *assignS) override;

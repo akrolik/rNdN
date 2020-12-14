@@ -24,6 +24,8 @@ public:
 		return new TableType();
 	}
 
+	// Operators
+
 	bool operator==(const TableType& other) const
 	{
 		return true;
@@ -33,6 +35,8 @@ public:
 	{
 		return false;
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

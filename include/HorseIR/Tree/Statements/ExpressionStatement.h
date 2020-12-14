@@ -21,8 +21,14 @@ public:
 		return new ExpressionStatement(m_expression->Clone());
 	}
 
-	Expression *GetExpression() const { return m_expression; }
+	// Expression
+
+	const Expression *GetExpression() const { return m_expression; }
+	Expression *GetExpression() { return m_expression; }
+
 	void SetExpression(Expression *expression) { m_expression = expression; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

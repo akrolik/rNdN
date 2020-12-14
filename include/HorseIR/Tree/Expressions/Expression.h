@@ -13,7 +13,13 @@ class Expression : public Node
 public:
 	virtual Expression *Clone() const override = 0;
 
-	const std::vector<Type *>& GetTypes() const { return m_types; }
+	// Types
+
+	std::vector<const Type *> GetTypes() const
+	{
+		return { std::begin(m_types), std::end(m_types) };
+	}
+	std::vector<Type *>& GetTypes() { return m_types; }
 
 	void SetType(Type *type) { m_types = {type}; }
 	void SetTypes(const std::vector<Type *>& types) { m_types = types; }

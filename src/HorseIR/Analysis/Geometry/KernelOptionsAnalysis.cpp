@@ -13,7 +13,7 @@
 namespace HorseIR {
 namespace Analysis {
 
-void KernelOptionsAnalysis::Analyze(const Function *function)
+Frontend::Codegen::InputOptions *KernelOptionsAnalysis::Analyze(const Function *function)
 {
 	auto timeKernelOptions_start = Utils::Chrono::Start("Kernel options '" + function->GetName() + "'");
 
@@ -82,6 +82,8 @@ void KernelOptionsAnalysis::Analyze(const Function *function)
 
 	Utils::Chrono::End(timeCreateOptions_start);
 	Utils::Chrono::End(timeKernelOptions_start);
+
+	return m_inputOptions;
 }
 
 bool KernelOptionsAnalysis::IsInOrder(const Function *function) const

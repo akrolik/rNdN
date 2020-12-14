@@ -75,7 +75,7 @@ public:
 		TraverseStatements(function->GetStatements());
 	}
 
-	void TraverseStatements(const std::vector<Statement *>& statements) override
+	void TraverseStatements(const std::vector<const Statement *>& statements) override
 	{
 		// Traverse each statement, recording the in/out and propagating sets
 

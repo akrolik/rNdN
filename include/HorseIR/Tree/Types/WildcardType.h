@@ -23,6 +23,20 @@ public:
 		return new WildcardType();
 	}
 
+	// Operators
+
+	bool operator==(const WildcardType& other) const
+	{
+		return false;
+	}
+
+	bool operator!=(const WildcardType& other) const
+	{
+		return true;
+	}
+
+	// Visitors
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
@@ -36,16 +50,6 @@ public:
 	{
 		visitor.VisitIn(this);
 		visitor.VisitOut(this);
-	}
-
-	bool operator==(const WildcardType& other) const
-	{
-		return false;
-	}
-
-	bool operator!=(const WildcardType& other) const
-	{
-		return true;
 	}
 };
 

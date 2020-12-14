@@ -21,11 +21,19 @@ public:
 		return new DatetimeValue(m_date->Clone(), m_time->Clone());
 	}
 
-	DateValue *GetDate() const { return m_date; }
+	// Date
+
+	const DateValue *GetDate() const { return m_date; }
+	DateValue *GetDate() { return m_date; }
 	void SetDate(DateValue *date) { m_date = date; }
 
-	TimeValue *GetTime() const { return m_time; }
+	// Time
+
+	const TimeValue *GetTime() const { return m_time; }
+	TimeValue *GetTime() { return m_time; }
 	void SetTime(TimeValue *time) { m_time = time; }
+
+	// Formatting
 
 	std::int64_t GetExtendedEpochTime() const override
 	{
@@ -43,6 +51,8 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const DatetimeValue& value);
+
+	// Operators
 
 	bool operator==(const DatetimeValue& other) const
 	{

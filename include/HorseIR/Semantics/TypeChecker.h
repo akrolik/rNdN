@@ -48,17 +48,17 @@ public:
 	void VisitOut(EnumerationType *type) override;
 
 private:
-	Function *m_currentFunction = nullptr;
+	const Function *m_currentFunction = nullptr;
 
-	[[noreturn]] void TypeError(const FunctionDeclaration *function, const std::vector<Type *>& argumentTypes) const;
+	[[noreturn]] void TypeError(const FunctionDeclaration *function, const std::vector<const Type *>& argumentTypes) const;
 
-	std::vector<Type *> AnalyzeCall(const FunctionType *function, const std::vector<Type *>& argumentTypes) const;
-	std::vector<Type *> AnalyzeCall(const BuiltinFunction *function, const std::vector<Type *>& argumentTypes) const;
-	std::vector<Type *> AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<Type *>& argumentTypes) const;
+	std::vector<Type *> AnalyzeCall(const FunctionType *function, const std::vector<const Type *>& argumentTypes) const;
+	std::vector<Type *> AnalyzeCall(const BuiltinFunction *function, const std::vector<const Type *>& argumentTypes) const;
+	std::vector<Type *> AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<const Type *>& argumentTypes) const;
 
 	// Share join checking between GPU/CPU implementations
 
-	bool AnalyzeJoinArguments(const std::vector<Type *>& argumentTypes) const;
+	bool AnalyzeJoinArguments(const std::vector<const Type *>& argumentTypes) const;
 };
 
 }

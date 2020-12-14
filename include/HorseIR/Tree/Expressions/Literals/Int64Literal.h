@@ -25,6 +25,8 @@ public:
 		return new Int64Literal(m_values);
 	}
 
+	// Operators
+
 	bool operator==(const Int64Literal& other) const
 	{
 		return (m_values == other.m_values);
@@ -34,6 +36,8 @@ public:
 	{
 		return !(*this == other);
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

@@ -38,7 +38,7 @@ const DependencyOverlay *DependencySubgraphAnalysis::GetScopedOverlay(const Depe
 	return nullptr;
 }
 
-void DependencySubgraphAnalysis::ProcessOverlay(const DependencyOverlay *overlay, const DependencyOverlay *containerOverlay)
+void DependencySubgraphAnalysis::ProcessOverlay(DependencyOverlay *overlay, DependencyOverlay *containerOverlay)
 {
 	// Convenience variables for setting up the graphs
 
@@ -101,7 +101,7 @@ void DependencySubgraphAnalysis::ProcessOverlay(const DependencyOverlay *overlay
 		}
 	}
 
-	for (const auto& childOverlay : overlay->GetChildren())
+	for (auto& childOverlay : overlay->GetChildren())
 	{
 		ProcessOverlay(childOverlay, containerOverlay);
 	}

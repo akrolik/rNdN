@@ -302,7 +302,7 @@ public:
 	}
 
 	virtual void TraverseFunction(const Function *function, const F& initialFlow) = 0;
-	virtual void TraverseStatements(const std::vector<Statement *>& statements) = 0;
+	virtual void TraverseStatements(const std::vector<const Statement *>& statements) = 0;
 
 	virtual void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *falseBlock) = 0;
 	virtual std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) = 0;

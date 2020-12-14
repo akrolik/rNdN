@@ -22,7 +22,7 @@ public:
 
 private:
 	const DependencyOverlay *GetScopedOverlay(const DependencyOverlay *containerOverlay, const Statement *statement) const;
-	void ProcessOverlay(const DependencyOverlay *overlay, const DependencyOverlay *containerOverlay);
+	void ProcessOverlay(DependencyOverlay *overlay, DependencyOverlay *containerOverlay);
 };
 
 }

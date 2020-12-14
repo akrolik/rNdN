@@ -420,6 +420,13 @@ public:
 
 	BuiltinFunction(Primitive primitive) : FunctionDeclaration(FunctionDeclaration::Kind::Builtin, PrimitiveName(primitive)), m_primitive(primitive) {}
 
+	BuiltinFunction *Clone() const override
+	{
+		return new BuiltinFunction(m_primitive);
+	}
+
+	// Properties
+
 	Primitive GetPrimitive() const { return m_primitive; }
 
 	constexpr static int VariadicParameterCount = -1;
@@ -614,10 +621,7 @@ public:
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}
 
-	BuiltinFunction *Clone() const override
-	{
-		return new BuiltinFunction(m_primitive);
-	}
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

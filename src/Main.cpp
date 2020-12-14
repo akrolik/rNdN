@@ -101,9 +101,7 @@ int main(int argc, const char *argv[])
 	// Outliner
 
 	HorseIR::Transformation::Outliner outliner;
-	outliner.Outline(program);
-
-	auto outlinedProgram = outliner.GetOutlinedProgram();
+	auto outlinedProgram = outliner.Outline(program);
 
 	// Compile the program
 

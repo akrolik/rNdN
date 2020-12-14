@@ -29,8 +29,18 @@ public:
 		return new ListType(elementTypes);
 	}
 
-	const std::vector<Type *>& GetElementTypes() const { return m_elementTypes; }
+	// Element types
+
+	std::vector<const Type *> GetElementTypes() const
+	{
+		return { std::begin(m_elementTypes), std::end(m_elementTypes) };
+	}
+	std::vector<Type *>& GetElementTypes() { return m_elementTypes; }
+
 	void AddElementType(Type *elementType) { m_elementTypes.push_back(elementType); }
+	void SetElementTypes(const std::vector<Type *>& elementTypes) { m_elementTypes = elementTypes; }
+
+	// Operators
 
 	bool operator==(const ListType& other) const
 	{
@@ -45,6 +55,8 @@ public:
 	{
 		return !(*this == other);
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

@@ -14,14 +14,21 @@ class EnumerationType : public Type
 public:
 	constexpr static Type::Kind TypeKind = Type::Kind::Enumeration;
 
-	EnumerationType(Type *type) : Type(TypeKind), m_elementType(type) {}
+	EnumerationType(Type *elementType) : Type(TypeKind), m_elementType(elementType) {}
 
 	EnumerationType *Clone() const override
 	{
 		return new EnumerationType(m_elementType->Clone());
 	}
 
-	Type *GetElementType() const { return m_elementType; }
+	// Element type
+
+	const Type *GetElementType() const { return m_elementType; }
+	Type *GetElementType() { return m_elementType; }
+
+	void SetElementType(Type *elementType) { m_elementType = elementType; }
+
+	// Operators
 
 	bool operator==(const EnumerationType& other) const
 	{
@@ -32,6 +39,8 @@ public:
 	{
 		return (*m_elementType != *other.m_elementType);
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

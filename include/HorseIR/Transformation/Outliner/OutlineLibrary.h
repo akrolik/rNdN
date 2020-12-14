@@ -30,7 +30,7 @@ public:
 	void Visit(const CallExpression *call) override;
 
 private:
-	CallExpression *Outline(const BuiltinFunction *function, const std::vector<Operand *>& arguments, bool nested = false);
+	CallExpression *Outline(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, bool nested = false);
 
 	Function *GenerateInitFunction(const Type *dataType, const BooleanLiteral *orders, bool nested = false);
 	Function *GenerateSortFunction(const Type *dataType, const BooleanLiteral *orders, bool shared, bool nested = false);

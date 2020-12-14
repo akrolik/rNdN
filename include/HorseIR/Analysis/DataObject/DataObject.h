@@ -11,12 +11,12 @@ class DataObject
 {
 public:
 	DataObject() : m_objectID(m_index++) {}
-	DataObject(unsigned int objectID, Runtime::DataBuffer *buffer) : m_objectID(objectID), m_buffer(buffer) {}
+	DataObject(unsigned int objectID, const Runtime::DataBuffer *buffer) : m_objectID(objectID), m_buffer(buffer) {}
 
 	unsigned int GetObjectID() const { return m_objectID; }
 
-	void SetDataBuffer(Runtime::DataBuffer *buffer) { m_buffer = buffer; }
-	Runtime::DataBuffer *GetDataBuffer() const { return m_buffer; }
+	void SetDataBuffer(const Runtime::DataBuffer *buffer) { m_buffer = buffer; }
+	const Runtime::DataBuffer *GetDataBuffer() const { return m_buffer; }
 
 	bool operator==(const DataObject& other) const
 	{
@@ -34,7 +34,7 @@ public:
 
 private:
 	unsigned int m_objectID = 0;
-	Runtime::DataBuffer *m_buffer = nullptr;
+	const Runtime::DataBuffer *m_buffer = nullptr;
 
 	static unsigned int m_index;
 };

@@ -20,6 +20,8 @@ public:
 		return new SecondValue(m_hour, m_minute, m_second);
 	}
 
+	// Properties
+
 	std::uint8_t GetHour() const { return m_hour; }
 	void SetHour(std::uint8_t hour) { m_hour = hour; }
 
@@ -28,6 +30,8 @@ public:
 
 	std::uint8_t GetSecond() const { return m_second; }
 	void SetSecond(std::uint8_t second) { m_second = second; }
+
+	// Formatting
 
 	std::int32_t GetEpochTime() const override
 	{
@@ -42,6 +46,8 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const SecondValue& value);
+
+	// Operators
 
 	bool operator==(const SecondValue& other) const
 	{

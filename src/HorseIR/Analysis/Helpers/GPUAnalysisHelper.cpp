@@ -91,7 +91,7 @@ void GPUAnalysisHelper::Visit(const CallExpression *call)
 	m_synchronization = synchronization;
 }
 
-std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const FunctionDeclaration *function, const std::vector<Operand *>& arguments, unsigned int index)
+std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Operand *>& arguments, unsigned int index)
 {
 	switch (function->GetKind())
 	{
@@ -104,12 +104,12 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 	}
 }
 
-std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const Function *function, const std::vector<Operand *>& arguments, unsigned int index)
+std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments, unsigned int index)
 {
 	return {Device::CPU, Synchronization::None};
 }
 
-std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const BuiltinFunction *function, const std::vector<Operand *>& arguments, unsigned int index)
+std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, unsigned int index)
 {
 	switch (function->GetPrimitive())
 	{
@@ -365,7 +365,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			const auto type = arguments.at(0)->GetType();
 			const auto function = TypeUtils::GetType<FunctionType>(type)->GetFunctionDeclaration();
 
-			std::vector<Operand *> nestedArguments(std::begin(arguments) + 1, std::end(arguments));
+			std::vector<const Operand *> nestedArguments(std::begin(arguments) + 1, std::end(arguments));
 			return AnalyzeCall(function, nestedArguments, index - 1); // Nested function properties
 		}
 

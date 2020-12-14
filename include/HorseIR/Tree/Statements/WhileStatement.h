@@ -22,11 +22,21 @@ public:
 		return new WhileStatement(m_condition->Clone(), m_body->Clone());
 	}
 
-	Operand *GetCondition() const { return m_condition; }
-	void SetCondition(Operand *condition) { m_condition = condition; }
+	// Condition
 
-	BlockStatement *GetBody() const { return m_body; }
+	const Operand *GetCondition() const { return m_condition; }
+	Operand *GetCondition() { return m_condition; }
+
+	void SetCondition(Operand *condition) { m_condition = condition; }
+	
+	// Body
+
+	const BlockStatement *GetBody() const { return m_body; }
+	BlockStatement *GetBody() { return m_body; }
+
 	void SetBody(BlockStatement *body) { m_body = body; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

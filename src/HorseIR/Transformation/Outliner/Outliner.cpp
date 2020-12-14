@@ -19,7 +19,7 @@
 namespace HorseIR {
 namespace Transformation {
 
-void Outliner::Outline(const Program *program)
+Program *Outliner::Outline(const Program *program)
 {
 	auto timeOutliner_start = Utils::Chrono::Start("Outliner");
 
@@ -40,6 +40,8 @@ void Outliner::Outline(const Program *program)
 	SemanticAnalysis::Analyze(m_outlinedProgram);
 
 	Utils::Chrono::End(timeOutliner_start);
+
+	return m_outlinedProgram;
 }
 
 bool Outliner::VisitIn(const Program *program)
@@ -130,9 +132,8 @@ bool Outliner::VisitIn(const Function *function)
 	compatibilitySubgraphAnalysis.Analyze(compatibilityOverlay);
 
 	OutlineBuilder builder;
-	builder.Build(compatibilityOverlay);
+	auto outlinedFunctions = builder.Build(compatibilityOverlay);
 
-	auto outlinedFunctions = builder.GetFunctions();
 	m_outlinedContents.insert(std::begin(m_outlinedContents), new ImportDirective("GPU", "*"));
 	m_outlinedContents.insert(std::end(m_outlinedContents), std::begin(outlinedFunctions), std::end(outlinedFunctions));
 

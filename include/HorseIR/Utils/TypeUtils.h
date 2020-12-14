@@ -17,10 +17,10 @@ static std::string TypeString(const Type *type)
 	return TypeString({type});
 }
 
-static std::string TypeString(const std::vector<Type *>& types)
+static std::string TypeString(const std::vector<const Type *>& types)
 {
 	std::string s;
-	bool first = true;
+	auto first = true;
 	for (const auto type : types)
 	{
 		if (!first)
@@ -33,14 +33,33 @@ static std::string TypeString(const std::vector<Type *>& types)
 	return s;
 }
 
+static bool IsEmptyType(const std::vector<const Type *>& types)
+{
+	return (types.size() == 0);
+}
+
 static bool IsEmptyType(const std::vector<Type *>& types)
 {
 	return (types.size() == 0);
 }
 
+static bool IsSingleType(const std::vector<const Type *>& types)
+{
+	return (types.size() == 1);
+}
+
 static bool IsSingleType(const std::vector<Type *>& types)
 {
 	return (types.size() == 1);
+}
+
+static const Type *GetSingleType(const std::vector<const Type *>& types)
+{
+	if (types.size() == 1)
+	{
+		return types.at(0);
+	}
+	return nullptr;
 }
 
 static Type *GetSingleType(const std::vector<Type *>& types)
@@ -52,7 +71,7 @@ static Type *GetSingleType(const std::vector<Type *>& types)
 	return nullptr;
 }
 
-static bool IsTypesAssignable(const std::vector<Type *>& types1, const std::vector<Type *>& types2)
+static bool IsTypesAssignable(const std::vector<const Type *>& types1, const std::vector<const Type *>& types2)
 {
 	if (types1.size() != types2.size())
 	{
@@ -101,7 +120,7 @@ static bool IsTypesEqual(const Type *type1, const Type *type2)
 	return *type1 == *type2;
 }
 
-static bool IsTypesEqual(const std::vector<Type *>& types1, const std::vector<Type *>& types2, bool allowNull = false)
+static bool IsTypesEqual(const std::vector<const Type *>& types1, const std::vector<const Type *>& types2, bool allowNull = false)
 {
 	if (types1.size() != types2.size())
 	{
@@ -128,9 +147,9 @@ static bool IsTypesEqual(const std::vector<Type *>& types1, const std::vector<Ty
 	return true;
 }
 
-static bool IsReducibleTypes(const std::vector<Type *>& types)
+static bool IsReducibleTypes(const std::vector<const Type *>& types)
 {
-	Type *firstType = nullptr;
+	const Type *firstType = nullptr;
 	for (const auto type : types)
 	{
 		if (firstType == nullptr)
@@ -145,7 +164,7 @@ static bool IsReducibleTypes(const std::vector<Type *>& types)
 	return true;
 }
 
-static Type *GetReducedType(const std::vector<Type *>& types)
+static const Type *GetReducedType(const std::vector<const Type *>& types)
 {
 	if (IsReducibleTypes(types))
 	{

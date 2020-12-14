@@ -116,7 +116,7 @@ void DataObjectAnalysis::Visit(const CallExpression *call)
 	m_expressionObjects[call] = AnalyzeCall(call->GetFunctionLiteral()->GetFunction(), call->GetArguments(), argumentObjects);
 }
 
-std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const FunctionDeclaration *function, const std::vector<Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
+std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
 {
 	switch (function->GetKind())
 	{
@@ -129,7 +129,7 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const FunctionDe
 	}
 }
 
-std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const Function *function, const std::vector<Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
+std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
 {
 	// Collect the input data objects for the function
 
@@ -154,7 +154,7 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const Function *
 	return dataAnalysis->GetReturnObjects();
 }
 
-std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
+std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects)
 {
 	switch (function->GetPrimitive())
 	{

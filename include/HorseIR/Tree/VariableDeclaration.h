@@ -24,12 +24,18 @@ public:
 		return new VariableDeclaration(m_name, m_type->Clone());
 	}
 
+	// Name
+
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 
 	// LValue
-	Type *GetType() const override { return m_type; }
+
+	const Type *GetType() const override { return m_type; }
+	Type *GetType() override { return m_type; }
 	void SetType(Type *type) { m_type = type; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

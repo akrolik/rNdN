@@ -30,15 +30,29 @@ public:
 		return new Module(m_name, contents);
 	}
 
+	// Name
+
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
+	
+	// Contents
 
-	const std::vector<ModuleContent *>& GetContents() const { return m_contents; }
+	std::vector<const ModuleContent *> GetContents() const
+	{
+		return { std::begin(m_contents), std::end(m_contents) };
+	}
+	std::vector<ModuleContent *>& GetContents() { return m_contents; }
+
 	void AddContent(ModuleContent *content) { m_contents.push_back(content); }
 	void SetContents(const std::vector<ModuleContent *>& contents) { m_contents = contents; }
 
-	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	// Symbol table
+
+	const SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	SymbolTable *GetSymbolTable() { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

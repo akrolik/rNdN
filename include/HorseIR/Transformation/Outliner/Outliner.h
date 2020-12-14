@@ -12,8 +12,7 @@ class Outliner : public ConstHierarchicalVisitor
 public:
 	// Transformation input/output
 
-	void Outline(const Program *program);
-	Program *GetOutlinedProgram() const { return m_outlinedProgram; }
+	Program *Outline(const Program *program);
 
 	// Visitors
 

@@ -111,7 +111,7 @@ bool GeometryAnalysis::VisitIn(const CallExpression *call)
 	return false;
 }
 
-const Shape *GeometryAnalysis::AnalyzeCall(const FunctionDeclaration *function, const std::vector<Operand *>& arguments)
+const Shape *GeometryAnalysis::AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Operand *>& arguments)
 {
 	switch (function->GetKind())
 	{
@@ -124,14 +124,14 @@ const Shape *GeometryAnalysis::AnalyzeCall(const FunctionDeclaration *function, 
 	}
 }
 
-const Shape *GeometryAnalysis::AnalyzeCall(const Function *function, const std::vector<Operand *>& arguments)
+const Shape *GeometryAnalysis::AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments)
 {
 	// Without interprocedural analysis, assume the function operates on an unknown geometry
 
 	return new WildcardShape();
 }
 
-const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<Operand *>& arguments)
+const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments)
 {
 	const auto& inShapes = m_shapeAnalysis.GetInSet(m_currentStatement);
 	const auto& outShapes = m_shapeAnalysis.GetOutSet(m_currentStatement);

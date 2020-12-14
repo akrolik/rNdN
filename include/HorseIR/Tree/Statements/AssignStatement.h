@@ -29,12 +29,25 @@ public:
 		return new AssignStatement(targets, m_expression->Clone());
 	}
 
-	const std::vector<LValue *>& GetTargets() const { return m_targets; }
+	// Targets
+
+	std::vector<const LValue *> GetTargets() const
+	{
+		return { std::begin(m_targets), std::end(m_targets) };
+	}
+	std::vector<LValue *>& GetTargets() { return m_targets; }
+
 	unsigned int GetTargetCount() const { return m_targets.size(); }
 	void SetTargets(const std::vector<LValue *>& targets) { m_targets = targets; }
 
-	Expression *GetExpression() const { return m_expression; }
+	// Expression
+
+	const Expression *GetExpression() const { return m_expression; }
+	Expression *GetExpression() { return m_expression; }
+
 	void SetExpression(Expression *expression) { m_expression = expression; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

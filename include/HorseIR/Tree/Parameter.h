@@ -19,6 +19,8 @@ public:
 		return new Parameter(m_name, m_type->Clone());
 	}
 
+	// Visitors
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

@@ -110,11 +110,11 @@ public:
 private:
 	// Function call visitors
 
-	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments);
-	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments);
-	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments);
+	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
+	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
+	std::pair<std::vector<const Shape *>, std::vector<const Shape *>> AnalyzeCall(const BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
 
-	bool AnalyzeJoinArguments(const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments);
+	bool AnalyzeJoinArguments(const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
 
 	// Static checks for sizes
 
@@ -131,7 +131,7 @@ private:
 	// Checks for values
 
 	template<class T>
-	std::pair<bool, T> GetConstantArgument(const std::vector<Operand *>& arguments, unsigned int index) const;
+	std::pair<bool, T> GetConstantArgument(const std::vector<const Operand *>& arguments, unsigned int index) const;
 
 	// Utility error function
 

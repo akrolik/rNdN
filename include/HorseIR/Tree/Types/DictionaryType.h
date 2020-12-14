@@ -23,8 +23,21 @@ public:
 		return new DictionaryType(m_keyType->Clone(), m_valueType->Clone());
 	}
 
-	Type *GetKeyType() const { return m_keyType; }
-	Type *GetValueType() const { return m_valueType; }
+	// Key type
+
+	const Type *GetKeyType() const { return m_keyType; }
+	Type *GetKeyType() { return m_keyType; }
+
+	void SetKeyType(Type *keyType) { m_keyType = keyType; }
+
+	// Value type
+
+	const Type *GetValueType() const { return m_valueType; }
+	Type *GetValueType() { return m_valueType; }
+
+	void SetValueType(Type *valueType) { m_valueType = valueType; }
+
+	// Operators
 
 	bool operator==(const DictionaryType& other) const
 	{
@@ -35,6 +48,8 @@ public:
 	{
 		return (*m_keyType != *other.m_keyType || *m_valueType != *other.m_valueType);
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

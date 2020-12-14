@@ -9,11 +9,13 @@
 namespace HorseIR {
 namespace Transformation {
 
-void OutlineBuilder::Build(const Analysis::FunctionDependencyOverlay *overlay)
+const std::vector<Function *>& OutlineBuilder::Build(const Analysis::FunctionDependencyOverlay *overlay)
 {
 	auto timeBuilder_start = Utils::Chrono::Start("Outline builder '" + std::string(overlay->GetName()) + "'");
 	overlay->Accept(*this);
 	Utils::Chrono::End(timeBuilder_start);
+
+	return m_functions;
 }
 
 void OutlineBuilder::Visit(const Statement *statement)

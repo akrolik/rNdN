@@ -31,8 +31,13 @@ public:
 
 	const DependencyGraph *GetGraph() const { return m_graph; }
 
-	DependencySubgraph *GetSubgraph() const { return m_subgraph; }
+	// Subgraph
+
+	const DependencySubgraph *GetSubgraph() const { return m_subgraph; }
+	DependencySubgraph *GetSubgraph() { return m_subgraph; }
 	void SetSubgraph(DependencySubgraph *subgraph) { m_subgraph = subgraph; }
+
+	// Parent
 
 	DependencyOverlay *GetParent() const { return m_parent; }
 	void SetParent(DependencyOverlay *parent)
@@ -44,8 +49,16 @@ public:
 		}
 	}
 
-	const std::vector<DependencyOverlay *>& GetChildren() const { return m_children; }
-	DependencyOverlay *GetChild(unsigned int index) const { return m_children.at(index); }
+	// Children
+
+	std::vector<const DependencyOverlay *> GetChildren() const
+	{
+		return { std::begin(m_children), std::end(m_children) };
+	}
+	std::vector<DependencyOverlay *>& GetChildren() { return m_children; }
+
+	const DependencyOverlay *GetChild(unsigned int index) const { return m_children.at(index); }
+	DependencyOverlay *GetChild(unsigned int index) { return m_children.at(index); }
 
 	void SetChildren(const std::vector<DependencyOverlay *>& children)
 	{
@@ -68,10 +81,14 @@ public:
 		m_children.erase(std::remove(m_children.begin(), m_children.end(), child), m_children.end());
 	}
 
+	// Statements
+
 	const std::unordered_set<const Statement *>& GetStatements() const { return m_statements; }
 	void InsertStatement(const Statement *statement) { m_statements.insert(statement); }
 
 	bool ContainsStatement(const Statement *statement) const { return m_statements.find(statement) != m_statements.end(); }
+
+	// Properties
 
 	bool IsReducible() const
 	{
@@ -83,6 +100,8 @@ public:
 
 	bool IsSynchronizedOut() const { return m_synchronizedOut; }
 	void SetSynchronizedOut(bool synchronizedOut) { m_synchronizedOut = synchronizedOut; }
+
+	// Visitors
 
 	virtual void Accept(DependencyOverlayVisitor& visitor) { visitor.Visit(this); }
 	virtual void Accept(DependencyOverlayConstVisitor& visitor) const { visitor.Visit(this); }
@@ -121,7 +140,8 @@ public:
 
 	std::string_view GetName() const override { return m_node->GetName(); }
 
-	DependencyOverlay *GetBody() const { return m_children.at(0); }
+	const DependencyOverlay *GetBody() const { return m_children.at(0); }
+	DependencyOverlay *GetBody() { return m_children.at(0); }
 
 	void Accept(DependencyOverlayVisitor& visitor) { visitor.Visit(this); }
 	void Accept(DependencyOverlayConstVisitor& visitor) const { visitor.Visit(this); }
@@ -134,8 +154,11 @@ public:
 
 	std::string_view GetName() const override { return "If"sv; }
 
-	DependencyOverlay *GetTrueBranch() const { return m_children.at(0); }
-	DependencyOverlay *GetElseBranch() const { return m_children.at(1); }
+	const DependencyOverlay *GetTrueBranch() const { return m_children.at(0); }
+	DependencyOverlay *GetTrueBranch() { return m_children.at(0); }
+
+	const DependencyOverlay *GetElseBranch() const { return m_children.at(1); }
+	DependencyOverlay *GetElseBranch() { return m_children.at(1); }
 
 	bool HasElseBranch() const { return (m_children.size() > 1); }
 
@@ -150,7 +173,8 @@ public:
 
 	std::string_view GetName() const override { return "While"sv; }
 
-	DependencyOverlay *GetBody() const { return m_children.at(0); }
+	const DependencyOverlay *GetBody() const { return m_children.at(0); }
+	DependencyOverlay *GetBody() { return m_children.at(0); }
 
 	void Accept(DependencyOverlayVisitor& visitor) { visitor.Visit(this); }
 	void Accept(DependencyOverlayConstVisitor& visitor) const { visitor.Visit(this); }
@@ -163,7 +187,8 @@ public:
 
 	std::string_view GetName() const override { return "Repeat"sv; }
 
-	DependencyOverlay *GetBody() const { return m_children.at(0); }
+	const DependencyOverlay *GetBody() const { return m_children.at(0); }
+	DependencyOverlay *GetBody() { return m_children.at(0); }
 
 	void Accept(DependencyOverlayVisitor& visitor) { visitor.Visit(this); }
 	void Accept(DependencyOverlayConstVisitor& visitor) const { visitor.Visit(this); }

@@ -22,16 +22,30 @@ public:
 		return new IfStatement(m_condition->Clone(), m_trueBlock->Clone(), (m_elseBlock == nullptr) ? nullptr : m_elseBlock->Clone());
 	}
 
-	Operand *GetCondition() const { return m_condition; }
+	// Condition
+
+	const Operand *GetCondition() const { return m_condition; }
+	Operand *GetCondition() { return m_condition; }
+
 	void SetCondition(Operand *condition) { m_condition = condition; }
 
-	BlockStatement *GetTrueBlock() const { return m_trueBlock; }
+	// True branch
+
+	const BlockStatement *GetTrueBlock() const { return m_trueBlock; }
+	BlockStatement *GetTrueBlock() { return m_trueBlock; }
+
 	void SetTrueBlock(BlockStatement *block) { m_trueBlock = block; }
+
+	// Else branch
 
 	bool HasElseBranch() const { return m_elseBlock != nullptr; }
 
-	BlockStatement *GetElseBlock() const { return m_elseBlock; }
+	const BlockStatement *GetElseBlock() const { return m_elseBlock; }
+	BlockStatement *GetElseBlock() { return m_elseBlock; }
+
 	void SetElseBlock(BlockStatement *block) { m_elseBlock = block; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

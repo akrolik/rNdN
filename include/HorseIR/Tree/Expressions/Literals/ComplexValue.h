@@ -14,13 +14,21 @@ public:
 		return new ComplexValue(m_real, m_imaginary);
 	}
 
+	// Real portion
+
 	double GetReal() const { return m_real; }
 	void SetReal(double real) { m_real = real; }
+
+	// Imaginary portion
 
 	double GetImaginary() const { return m_imaginary; }
 	void SetImaginary(double imag) { m_imaginary = imag; }
 
+	// Formatting
+
 	friend std::ostream& operator<<(std::ostream& os, const ComplexValue& value);
+
+	// Operators
 
 	bool operator==(const ComplexValue& other) const
 	{

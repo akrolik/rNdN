@@ -64,7 +64,7 @@ void OutlineLibrary::Visit(const CallExpression *call)
 	}
 }
 
-CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const std::vector<Operand *>& arguments, bool nested)
+CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, bool nested)
 {
 	switch (function->GetPrimitive())
 	{

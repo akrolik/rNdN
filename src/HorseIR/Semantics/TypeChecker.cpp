@@ -19,8 +19,8 @@ void TypeChecker::VisitOut(GlobalDeclaration *global)
 {
 	// Check the expression type matches the declaration type
 
-	const auto& expressionTypes = global->GetExpression()->GetTypes();
-	const auto declarationType = global->GetDeclaration()->GetType();
+	const auto& expressionTypes = static_cast<const GlobalDeclaration *>(global)->GetExpression()->GetTypes();
+	const auto declarationType = static_cast<const GlobalDeclaration *>(global)->GetDeclaration()->GetType();
 	if (!TypeUtils::IsTypesAssignable({declarationType}, expressionTypes))
 	{
 		Utils::Logger::LogError("Expression type " + TypeUtils::TypeString(expressionTypes) + " does not match declaration type " + TypeUtils::TypeString(declarationType));
@@ -44,12 +44,12 @@ void TypeChecker::VisitOut(AssignStatement *assign)
 {
 	// Assemble the expression and target LValue types
 
-	std::vector<Type *> targetTypes;
+	std::vector<const Type *> targetTypes;
 	for (const auto target : assign->GetTargets())
 	{
 		targetTypes.push_back(target->GetType());
 	}
-	const auto& expressionTypes = assign->GetExpression()->GetTypes();
+	const auto& expressionTypes = static_cast<const AssignStatement *>(assign)->GetExpression()->GetTypes();
 
 	// Check that the expression and destination types match, allowing for runtime checks
 
@@ -66,7 +66,7 @@ void TypeChecker::VisitOut(AssignStatement *assign)
 		{
 			if (TypeUtils::IsType<WildcardType>(target->GetType()))
 			{
-				node->SetType(expressionTypes.at(index++));
+				node->SetType(expressionTypes.at(index++)->Clone());
 			}
 		}
 		else
@@ -80,7 +80,7 @@ void TypeChecker::VisitOut(ExpressionStatement *expressionS)
 {
 	// Check the expression in the statement has no type (void only)
 
-	const auto& expressionTypes = expressionS->GetExpression()->GetTypes();
+	const auto& expressionTypes = static_cast<const ExpressionStatement *>(expressionS)->GetExpression()->GetTypes();
 	if (!TypeUtils::IsEmptyType(expressionTypes))
 	{
 		Utils::Logger::LogError("Expression statement must have no type, received " + TypeUtils::TypeString(expressionTypes));
@@ -91,7 +91,7 @@ void TypeChecker::VisitOut(IfStatement *ifS)
 {
 	// Check the condition is a boolean type
 
-	const auto conditionType = ifS->GetCondition()->GetType();
+	const auto conditionType = static_cast<const IfStatement *>(ifS)->GetCondition()->GetType();
 	if (!TypeUtils::IsBooleanType(conditionType))
 	{
 		Utils::Logger::LogError("If condition must be a boolean type, received " + TypeUtils::TypeString(conditionType));
@@ -102,7 +102,7 @@ void TypeChecker::VisitOut(WhileStatement *whileS)
 {
 	// Check the condition is a boolean type
 
-	const auto conditionType = whileS->GetCondition()->GetType();
+	const auto conditionType = static_cast<const WhileStatement *>(whileS)->GetCondition()->GetType();
 	if (!TypeUtils::IsBooleanType(conditionType))
 	{
 		Utils::Logger::LogError("While condition must be a boolean type, received " + TypeUtils::TypeString(conditionType));
@@ -113,7 +113,7 @@ void TypeChecker::VisitOut(RepeatStatement *repeatS)
 {
 	// Check the condition is an integer type
 
-	const auto conditionType = repeatS->GetCondition()->GetType();
+	const auto conditionType = static_cast<const RepeatStatement *>(repeatS)->GetCondition()->GetType();
 	if (!TypeUtils::IsIntegerType(conditionType))
 	{
 		Utils::Logger::LogError("Repeat condition must be an integer type, received " + TypeUtils::TypeString(conditionType));
@@ -127,7 +127,7 @@ void TypeChecker::VisitOut(ReturnStatement *ret)
 	// The input value of a cast may not yet have a type, in which case we defer
 	// checking to the interpreter. Otherwise perform a static check
 
-	std::vector<Type *> operandTypes;
+	std::vector<const Type *> operandTypes;
 	for (const auto operand : ret->GetOperands())
 	{
 		operandTypes.push_back(operand->GetType());
@@ -147,14 +147,14 @@ void TypeChecker::VisitOut(CastExpression *cast)
 	// The input value of a cast may not yet have a type, in which case we defer
 	// checking to the interpreter. Otherwise perform a static check
 
-	const auto& expressionTypes = cast->GetExpression()->GetTypes();
-	const auto castType = cast->GetCastType();
+	const auto& expressionTypes = static_cast<const CastExpression *>(cast)->GetExpression()->GetTypes();
+	const auto castType = static_cast<const CastExpression *>(cast)->GetCastType();
 	if (TypeUtils::IsSingleType(expressionTypes))
 	{
 		const auto expressionType = TypeUtils::GetSingleType(expressionTypes);
 		if (TypeUtils::IsType<WildcardType>(expressionType) || TypeUtils::IsCastable(castType, expressionType))
 		{
-			cast->SetTypes({castType});
+			cast->SetTypes({castType->Clone()});
 			return;
 		}
 	}
@@ -169,7 +169,7 @@ void TypeChecker::VisitOut(CallExpression *call)
 
 	// Construct the list of argument types, decomposing lists (for future compatibility), and checking void
 
-	std::vector<Type *> argumentTypes;
+	std::vector<const Type *> argumentTypes;
 	for (const auto argument : call->GetArguments())
 	{
 		argumentTypes.push_back(argument->GetType());
@@ -181,7 +181,7 @@ void TypeChecker::VisitOut(CallExpression *call)
 	call->SetTypes(returnTypes);
 }
 
-std::vector<Type *> TypeChecker::AnalyzeCall(const FunctionType *functionType, const std::vector<Type *>& argumentTypes) const
+std::vector<Type *> TypeChecker::AnalyzeCall(const FunctionType *functionType, const std::vector<const Type *>& argumentTypes) const
 {
 	switch (functionType->GetFunctionKind())
 	{
@@ -194,12 +194,12 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const FunctionType *functionType, c
 	}
 }
 
-[[noreturn]] void TypeChecker::TypeError(const FunctionDeclaration *function, const std::vector<Type *>& argumentTypes) const
+[[noreturn]] void TypeChecker::TypeError(const FunctionDeclaration *function, const std::vector<const Type *>& argumentTypes) const
 {
 	Utils::Logger::LogError("Incompatible arguments " + TypeUtils::TypeString(argumentTypes) + " for function '" + function->GetName() + "'");
 }
 
-std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<Type *>& argumentTypes) const
+std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const FunctionType *functionType, const std::vector<const Type *>& argumentTypes) const
 {
 	// Check the arguments are equal with the parameters, allowing for runtime checks
 	
@@ -207,10 +207,16 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const Function *function, const Fun
 	{
 		TypeError(function, argumentTypes);
 	}
-	return functionType->GetReturnTypes();
+
+	std::vector<Type *> returnTypes;
+	for (const auto& returnType : functionType->GetReturnTypes())
+	{
+		returnTypes.push_back(returnType->Clone());
+	}
+	return returnTypes;
 }
 
-std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, const std::vector<Type *>& argumentTypes) const
+std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Type *>& argumentTypes) const
 {
 	// Check the argument count against function
 
@@ -233,7 +239,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsRealType(inputType));
-			return {inputType};
+			return {inputType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Negate:
 		{
@@ -243,13 +249,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			{
 				return {new BasicType(BasicType::BasicKind::Int16)};
 			}
-			return {inputType};
+			return {inputType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Conjugate:
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsComplexType(inputType));
-			return {inputType};
+			return {inputType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Reciprocal:
 		{
@@ -273,7 +279,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsNumericType(inputType));
 			if (TypeUtils::IsComplexType(inputType))
 			{
-				return {inputType};
+				return {inputType->Clone()};
 			}
 			if (TypeUtils::IsExtendedType(inputType))
 			{
@@ -285,7 +291,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsBooleanType(inputType));
-			return {inputType};
+			return {inputType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Logarithm:
 		case BuiltinFunction::Primitive::Logarithm2:
@@ -343,11 +349,11 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			else if (TypeUtils::IsIntegerType(inputType0) && TypeUtils::IsCalendarType(inputType1))
 			{
-				return {inputType1};
+				return {inputType1->Clone()};
 			}
 			else if (TypeUtils::IsCalendarType(inputType0) && TypeUtils::IsIntegerType(inputType1))
 			{
-				return {inputType0};
+				return {inputType0->Clone()};
 			}
 			break;
 		}
@@ -361,7 +367,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			else if (TypeUtils::IsCalendarType(inputType0) && TypeUtils::IsIntegerType(inputType1))
 			{
-				return {inputType0};
+				return {inputType0->Clone()};
 			}
 			else if (TypeUtils::IsTypesEqual(inputType0, inputType1) && TypeUtils::IsCalendarType(inputType0))
 			{
@@ -414,7 +420,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
 			Require(TypeUtils::IsBooleanType(inputType0) && TypeUtils::IsBooleanType(inputType1));
-			return {inputType0};
+			return {inputType0->Clone()};
 		}
 
 		// Algebraic Unary
@@ -437,13 +443,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsType<ListType>(inputType));
-			return {inputType};
+			return {inputType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Reverse:
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsType<BasicType>(inputType));
-			return {inputType};
+			return {inputType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Where:
 		{
@@ -476,7 +482,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			else if (TypeUtils::IsTypesEqual(inputType0, inputType1) && TypeUtils::IsType<BasicType>(inputType0))
 			{
-				return {inputType0};
+				return {inputType0->Clone()};
 			}
 			else if (TypeUtils::IsType<ListType>(inputType0) || TypeUtils::IsType<ListType>(inputType1))
 			{
@@ -485,18 +491,30 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				const auto listType0 = TypeUtils::GetType<ListType>(inputType0);
 				const auto listType1 = TypeUtils::GetType<ListType>(inputType1);
 
-				const auto& elementTypes0 = (listType0 == nullptr) ? std::vector<Type *>({inputType0}) : listType0->GetElementTypes();
-				const auto& elementTypes1 = (listType1 == nullptr) ? std::vector<Type *>({inputType1}) : listType1->GetElementTypes();
+				const auto& elementTypes0 = (listType0 == nullptr) ? std::vector<const Type *>({inputType0}) : listType0->GetElementTypes();
+				const auto& elementTypes1 = (listType1 == nullptr) ? std::vector<const Type *>({inputType1}) : listType1->GetElementTypes();
 
 				if (!TypeUtils::IsSingleType(elementTypes0) && !TypeUtils::IsSingleType(elementTypes1))
 				{
-					std::vector<Type *> elementTypes = elementTypes0;
-					elementTypes.insert(std::begin(elementTypes), std::begin(elementTypes1), std::end(elementTypes1));
+					std::vector<Type *> elementTypes;
+					for (const auto& elementType : elementTypes0)
+					{
+						elementTypes.push_back(elementType->Clone());
+					}
+					for (const auto& elementType : elementTypes1)
+					{
+						elementTypes.push_back(elementType->Clone());
+					}
 					return {new ListType(elementTypes)};
 				}
 				else if (TypeUtils::IsSingleType(elementTypes0) && TypeUtils::IsTypesEqual(elementTypes0, elementTypes1))
 				{
-					return {new ListType(elementTypes0)};
+					std::vector<Type *> elementTypes;
+					for (const auto& elementType : elementTypes0)
+					{
+						elementTypes.push_back(elementType->Clone());
+					}
+					return {new ListType(elementTypes)};
 				}
 				return {new ListType(new WildcardType())};
 			}
@@ -506,7 +524,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 				const auto enumElementType = TypeUtils::GetType<EnumerationType>(inputType0)->GetElementType();
 				Require(TypeUtils::IsTypesEqual(enumElementType, inputType1));
-				return {inputType0};
+				return {inputType0->Clone()};
 			}
 			break;
 		}
@@ -520,11 +538,11 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			{
 				if (TypeUtils::IsSingleType(listType->GetElementTypes()))
 				{
-					return {inputType1};
+					return {inputType1->Clone()};
 				}
 				return {new ListType(new WildcardType())};
 			}
-			return {new ListType({inputType1})};
+			return {new ListType({inputType1->Clone()})};
 		}
 		case BuiltinFunction::Primitive::Like:
 		{
@@ -538,7 +556,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto predicateType = argumentTypes.at(0);
 			const auto dataType = argumentTypes.at(1);
 			Require(TypeUtils::IsBooleanType(predicateType) && TypeUtils::IsType<BasicType>(dataType));
-			return {dataType};
+			return {dataType->Clone()};
 		}
 		case BuiltinFunction::Primitive::Random_k:
 		{
@@ -564,7 +582,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
 			Require(TypeUtils::IsIntegerType(inputType0) && TypeUtils::IsType<BasicType>(inputType1));
-			return {inputType1};
+			return {inputType1->Clone()};
 		}
 		case BuiltinFunction::Primitive::Order:
 		{
@@ -597,7 +615,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
 			Require(TypeUtils::IsIntegerType(inputType0) && TypeUtils::IsType<BasicType>(inputType1));
-			return {inputType1};
+			return {inputType1->Clone()};
 		}
 
 		// Reduction
@@ -611,7 +629,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			Require(TypeUtils::IsRealType(inputType));
 			if (TypeUtils::IsFloatType(inputType))
 			{
-				return {inputType};
+				return {inputType->Clone()};
 			}
 			if (TypeUtils::IsBasicType(inputType, BasicType::BasicKind::Int64))
 			{
@@ -634,7 +652,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsRealType(inputType));
-			return {inputType};
+			return {inputType->Clone()};
 		}
 
 		// List
@@ -649,7 +667,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			if (const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes()))
 			{
 				Require(TypeUtils::IsType<BasicType>(elementType));
-				return {elementType};
+				return {elementType->Clone()};
 			}
 			break;
 		}
@@ -659,15 +677,20 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			if (const auto elementType = TypeUtils::GetReducedType(argumentTypes))
 			{
-				return {new ListType(elementType)};
+				return {new ListType(elementType->Clone())};
 			}
-			return {new ListType(argumentTypes)};
+			std::vector<Type *> elementTypes;
+			for (const auto& argumentType : argumentTypes)
+			{
+				elementTypes.push_back(argumentType->Clone());
+			}
+			return {new ListType(elementTypes)};
 		}
 		case BuiltinFunction::Primitive::ToList:
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsType<BasicType>(inputType));
-			return {new ListType(inputType)};
+			return {new ListType(inputType->Clone())};
 		}
 		case BuiltinFunction::Primitive::Each:
 		{
@@ -823,7 +846,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType1 = argumentTypes.at(1);
 			const auto inputType2 = argumentTypes.at(2);
 			Require(TypeUtils::IsCalendarType(inputType0) && TypeUtils::IsIntegerType(inputType1) && TypeUtils::IsSymbolType(inputType2));
-			return {inputType0};
+			return {inputType0->Clone()};
 		}
 		case BuiltinFunction::Primitive::DatetimeDifference:
 		{
@@ -849,13 +872,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				const auto elementType = TypeUtils::GetReducedType(listType->GetElementTypes());
 				Require(elementType != nullptr && TypeUtils::IsType<BasicType>(elementType));
 			}
-			return {new EnumerationType(inputType0)};
+			return {new EnumerationType(inputType0->Clone())};
 		}
 		case BuiltinFunction::Primitive::Dictionary:
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);
-			return {new DictionaryType(inputType0, inputType1)};
+			return {new DictionaryType(inputType0->Clone(), inputType1->Clone())};
 		}
 		case BuiltinFunction::Primitive::Table:
 		{
@@ -885,21 +908,21 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				const auto keyType = dictionaryType->GetKeyType();
 				if (TypeUtils::IsType<BasicType>(keyType) || TypeUtils::IsType<ListType>(keyType))
 				{
-					return {keyType};
+					return {keyType->Clone()};
 				}
-				return {new ListType(keyType)};
+				return {new ListType(keyType->Clone())};
 			}
 			else if (TypeUtils::IsType<TableType>(inputType))
 			{
-				return {TypeUtils::GetType<TableType>(inputType)->GetKeyType()};
+				return {TypeUtils::GetType<TableType>(inputType)->GetKeyType()->Clone()};
 			}
 			else if (TypeUtils::IsType<EnumerationType>(inputType))
 			{
-				return {TypeUtils::GetType<EnumerationType>(inputType)->GetElementType()};
+				return {TypeUtils::GetType<EnumerationType>(inputType)->GetElementType()->Clone()};
 			}
 			else if (TypeUtils::IsType<KeyedTableType>(inputType))
 			{
-				return {TypeUtils::GetType<KeyedTableType>(inputType)->GetKeyType()};
+				return {TypeUtils::GetType<KeyedTableType>(inputType)->GetKeyType()->Clone()};
 			}
 			break;
 		}
@@ -912,13 +935,13 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				const auto valueType = dictionaryType->GetValueType();
 				if (TypeUtils::IsType<ListType>(valueType))
 				{
-					return {valueType};
+					return {valueType->Clone()};
 				}
-				return {new ListType(valueType)};
+				return {new ListType(valueType->Clone())};
 			}
 			else if (TypeUtils::IsType<TableType>(inputType))
 			{
-				return {TypeUtils::GetType<TableType>(inputType)->GetValueType()};
+				return {TypeUtils::GetType<TableType>(inputType)->GetValueType()->Clone()};
 			}
 			else if (TypeUtils::IsType<EnumerationType>(inputType))
 			{
@@ -926,7 +949,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			}
 			else if (TypeUtils::IsType<KeyedTableType>(inputType))
 			{
-				return {TypeUtils::GetType<KeyedTableType>(inputType)->GetValueType()};
+				return {TypeUtils::GetType<KeyedTableType>(inputType)->GetValueType()->Clone()};
 			}
 			break;
 		}
@@ -940,7 +963,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		{
 			const auto inputType = argumentTypes.at(0);
 			Require(TypeUtils::IsType<EnumerationType>(inputType));
-			return {TypeUtils::GetType<EnumerationType>(inputType)->GetElementType()};
+			return {TypeUtils::GetType<EnumerationType>(inputType)->GetElementType()->Clone()};
 		}
 		case BuiltinFunction::Primitive::ColumnValue:
 		{
@@ -974,11 +997,11 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			if (TypeUtils::IsType<BasicType>(inputType0))
 			{
-				return {inputType0};
+				return {inputType0->Clone()};
 			}
 			else if (const auto listType0 = TypeUtils::GetType<ListType>(inputType0))
 			{
-				return {TypeUtils::GetReducedType(listType0->GetElementTypes())};
+				return {TypeUtils::GetReducedType(listType0->GetElementTypes())->Clone()};
 			}
 			break;
 		}
@@ -988,7 +1011,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType1 = argumentTypes.at(1);
 			const auto inputType2 = argumentTypes.at(2);
 			Require(TypeUtils::IsType<BasicType>(inputType0) && TypeUtils::IsIntegerType(inputType1) && TypeUtils::IsAssignableType(inputType0, inputType2));
-			return {inputType0};
+			return {inputType0->Clone()};
 		}
 
 		// Other
@@ -1010,7 +1033,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto inputType1 = argumentTypes.at(1);
 			Require(TypeUtils::IsCharacterType(inputType0));
 			Require(TypeUtils::IsIntegerType(inputType1));
-			return {inputType0};
+			return {inputType0->Clone()};
 		}
 
 		// GPU
@@ -1105,7 +1128,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			Require(TypeUtils::IsBooleanType(inputType1));
 
-			return {new BasicType(BasicType::BasicKind::Int64), inputType0};
+			return {new BasicType(BasicType::BasicKind::Int64), inputType0->Clone()};
 		}
 		case BuiltinFunction::Primitive::GPUOrder:
 		case BuiltinFunction::Primitive::GPUOrderShared:
@@ -1310,7 +1333,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto callTypes1 = AnalyzeCall(functionType1, {inputType2, inputType3, callTypes0.at(0), callTypes0.at(1)});
 			Require(TypeUtils::IsType<ListType>(callTypes1.at(0)));
 
-			const auto listCallType1 = TypeUtils::GetType<ListType>(callTypes1.at(0));
+			const auto listCallType1 = static_cast<const ListType *>(TypeUtils::GetType<ListType>(callTypes1.at(0)));
 			const auto elementCallType1 = TypeUtils::GetReducedType(listCallType1->GetElementTypes());
 			Require(TypeUtils::IsBasicType(elementCallType1, BasicType::BasicKind::Int64));
 
@@ -1323,7 +1346,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 		}
 		case BuiltinFunction::Primitive::GPULoopJoin:
 		{
-			std::vector<Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 2);
+			std::vector<const Type *> joinTypes(std::begin(argumentTypes), std::end(argumentTypes) - 2);
 			Require(AnalyzeJoinArguments(joinTypes));
 
 			const auto offsetsType = argumentTypes.at(argumentTypes.size() - 2);
@@ -1382,7 +1405,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			const auto callTypes2 = AnalyzeCall(functionType2, {callTypes0.at(0), callTypes0.at(1), inputType4, callTypes1.at(0), callTypes1.at(1)});
 			Require(TypeUtils::IsType<ListType>(callTypes2.at(0)));
 
-			const auto listCallType2 = TypeUtils::GetType<ListType>(callTypes2.at(0));
+			const auto listCallType2 = static_cast<const ListType *>(TypeUtils::GetType<ListType>(callTypes2.at(0)));
 			const auto elementCallType2 = TypeUtils::GetReducedType(listCallType2->GetElementTypes());
 			Require(TypeUtils::IsBasicType(elementCallType2, BasicType::BasicKind::Int64));
 
@@ -1398,7 +1421,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 				Require(TypeUtils::ForallElements(listType, TypeUtils::IsType<BasicType>));
 			}
 
-			return {inputType, new BasicType(BasicType::BasicKind::Int64)};
+			return {inputType->Clone(), new BasicType(BasicType::BasicKind::Int64)};
 		}
 		case BuiltinFunction::Primitive::GPUHashJoinCount:
 		{
@@ -1490,7 +1513,7 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 	TypeError(function, argumentTypes);
 }
 
-bool TypeChecker::AnalyzeJoinArguments(const std::vector<Type *>& argumentTypes) const
+bool TypeChecker::AnalyzeJoinArguments(const std::vector<const Type *>& argumentTypes) const
 {
 #define RequireJoin(x) if (!(x)) return false
 
@@ -1594,7 +1617,7 @@ void TypeChecker::VisitOut(Identifier *identifier)
 			break;
 		}
 		case SymbolTable::Symbol::Kind::Variable:
-			identifier->SetType(dynamic_cast<const VariableDeclaration *>(symbol->node)->GetType());
+			identifier->SetType(dynamic_cast<const VariableDeclaration *>(symbol->node)->GetType()->Clone());
 			break;
 		case SymbolTable::Symbol::Kind::Module:
 			Utils::Logger::LogError("Module '" + PrettyPrinter::PrettyString(identifier) + "' used as a variable or function");
@@ -1612,14 +1635,14 @@ void TypeChecker::VisitOut(FunctionLiteral *literal)
 {
 	// Propagate the function from the literal expression to the expression type
 
-	literal->SetType(literal->GetIdentifier()->GetType());
+	literal->SetType(literal->GetIdentifier()->GetType()->Clone());
 }
 
 void TypeChecker::VisitOut(EnumerationType *type)
 {
 	// Ensure the enum element type is legal, not enforced in the parser
 
-	const auto elementType = type->GetElementType();
+	const auto elementType = static_cast<const EnumerationType *>(type)->GetElementType();
 	if (TypeUtils::IsType<BasicType>(elementType))
 	{
 		return;

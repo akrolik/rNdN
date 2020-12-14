@@ -32,7 +32,7 @@ public:
 	{
 		// Assemble parameter types
 
-		for (const auto parameter : function->GetParameters())
+		for (auto& parameter : function->GetParameters())
 		{
 			m_parameterTypes.push_back(parameter->GetType());
 		}
@@ -41,13 +41,13 @@ public:
 
 	FunctionType *Clone() const override
 	{
-		std::vector<Type *> returnTypes;
+		std::vector<const Type *> returnTypes;
 		for (const auto& returnType : m_returnTypes)
 		{
 			returnTypes.push_back(returnType->Clone());
 		}
 
-		std::vector<Type *> parameterTypes;
+		std::vector<const Type *> parameterTypes;
 		for (const auto& parameterType : parameterTypes)
 		{
 			parameterTypes.push_back(parameterType->Clone());
@@ -56,11 +56,17 @@ public:
 		return new FunctionType(m_functionKind, m_function, returnTypes, parameterTypes);
 	}
 
+	// Function
+
 	FunctionKind GetFunctionKind() const { return m_functionKind; }
 	const FunctionDeclaration *GetFunctionDeclaration() const { return m_function; }
 
-	const std::vector<Type *>& GetReturnTypes() const { return m_returnTypes; }
-	const std::vector<Type *>& GetParameterTypes() const { return m_parameterTypes; }
+	// Types
+
+	const std::vector<const Type *>& GetReturnTypes() const { return m_returnTypes; }
+	const std::vector<const Type *>& GetParameterTypes() const { return m_parameterTypes; }
+
+	// Operators
 
 	bool operator==(const FunctionType& other) const
 	{
@@ -87,6 +93,8 @@ public:
 		return !(*this == other);
 	}
 
+	// Visitors
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 
@@ -103,13 +111,13 @@ public:
 	}
 
 protected:
-	FunctionType(FunctionKind functionKind, const FunctionDeclaration *function, const std::vector<Type *>& returnTypes, const std::vector<Type *>& parameterTypes) : Type(TypeKind), m_functionKind(functionKind), m_function(function), m_returnTypes(returnTypes), m_parameterTypes(parameterTypes) {}
+	FunctionType(FunctionKind functionKind, const FunctionDeclaration *function, const std::vector<const Type *>& returnTypes, const std::vector<const Type *>& parameterTypes) : Type(TypeKind), m_functionKind(functionKind), m_function(function), m_returnTypes(returnTypes), m_parameterTypes(parameterTypes) {}
 
 	FunctionKind m_functionKind = FunctionKind::Undefined;
 	const FunctionDeclaration *m_function = nullptr;
 
-	std::vector<Type *> m_returnTypes;
-	std::vector<Type *> m_parameterTypes;
+	std::vector<const Type *> m_returnTypes;
+	std::vector<const Type *> m_parameterTypes;
 };
 
 }

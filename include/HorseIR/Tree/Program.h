@@ -30,12 +30,24 @@ public:
 		return new Program(modules);
 	}
 
-	const std::vector<Module *>& GetModules() const { return m_modules; }
+	// Contents
+
+	std::vector<const Module *> GetModules() const
+	{
+		return { std::begin(m_modules), std::end(m_modules) };
+	}
+	std::vector<Module *>& GetModules() { return m_modules; }
+
 	void AddModule(Module *module) { m_modules.push_back(module); }
 	void SetModules(const std::vector<Module *> modules) { m_modules = modules; }
 
-	SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	// Symbol table
+
+	const SymbolTable *GetSymbolTable() const { return m_symbolTable; }
+	SymbolTable *GetSymbolTable() { return m_symbolTable; }
 	void SetSymbolTable(SymbolTable *symbolTable) { m_symbolTable = symbolTable; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

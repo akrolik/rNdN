@@ -22,6 +22,22 @@ public:
 		return new KeyedTableType();
 	}
 
+	// Key type
+
+	const Type *GetKeyType() const { return m_elementTypes.at(0); }
+	Type *GetKeyType() { return m_elementTypes.at(0); }
+
+	void SetKeyType(Type *type) { m_elementTypes.at(0) = type; }
+
+	// Value type
+
+	const Type *GetValueType() const { return m_elementTypes.at(1); }
+	Type *GetValueType() { return m_elementTypes.at(1); }
+
+	void SetValueType(Type *type) { m_elementTypes.at(1) = type; }
+
+	// Operators
+
 	bool operator==(const KeyedTableType& other) const
 	{
 		return true;
@@ -32,8 +48,7 @@ public:
 		return false;
 	}
 
-	Type *GetKeyType() const { return m_elementTypes.at(0); }
-	Type *GetValueType() const { return m_elementTypes.at(1); }
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

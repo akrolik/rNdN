@@ -31,6 +31,8 @@ public:
 		return new DateLiteral(values);
 	}
 
+	// Operators
+
 	bool operator==(const DateLiteral& other) const
 	{
 		return std::equal(
@@ -44,6 +46,8 @@ public:
 	{
 		return !(*this == other);
 	}
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

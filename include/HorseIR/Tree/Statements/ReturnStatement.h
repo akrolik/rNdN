@@ -28,10 +28,19 @@ public:
 		return new ReturnStatement(operands);
 	}
 
+	// Operands
+
 	unsigned int GetOperandsCount() const { return m_operands.size(); }
 
-	const std::vector<Operand *>& GetOperands() const { return m_operands; }
+	std::vector<const Operand *> GetOperands() const
+	{
+		return { std::begin(m_operands), std::begin(m_operands) };
+	}
+	std::vector<Operand *>& GetOperands() { return m_operands; }
+
 	void SetOperands(const std::vector<Operand *>& operands) { m_operands = operands; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

@@ -12,6 +12,8 @@ class Node
 public:
 	virtual Node *Clone() const = 0;
 
+	// Visitors
+
 	virtual void Accept(Visitor &visitor) = 0;
 	virtual void Accept(ConstVisitor &visitor) const = 0;
 

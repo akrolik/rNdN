@@ -291,7 +291,7 @@ bool ShapeAnalysis::CheckStaticTabular(const ListShape *listShape) const
 }
 
 template<class T>
-std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<Operand *>& arguments, unsigned int index) const
+std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<const Operand *>& arguments, unsigned int index) const
 {
 	// Return {found, value}
 
@@ -391,7 +391,7 @@ std::pair<bool, T> ShapeAnalysis::GetConstantArgument(const std::vector<Operand 
 	return {false, 0};
 }
 
-std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis::AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments)
+std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis::AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments)
 {
 	switch (function->GetKind())
 	{
@@ -404,7 +404,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	}
 }
 
-std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis::AnalyzeCall(const Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments)
+std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis::AnalyzeCall(const Function *function, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments)
 {
 	// Collect the input shapes for the function
 
@@ -432,7 +432,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	return {returnShapes, returnShapes};
 }
 
-std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments)
+std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments)
 {
 	switch (function->GetPrimitive())
 	{
@@ -2213,7 +2213,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			// Output: List<2, {Vector<m>}>
 
 			std::vector<const Shape *> joinShapes(std::begin(argumentShapes), std::end(argumentShapes) - 2);
-			std::vector<Operand *> joinArguments(std::begin(arguments), std::end(arguments) - 2);
+			std::vector<const Operand *> joinArguments(std::begin(arguments), std::end(arguments) - 2);
 
 			Require(AnalyzeJoinArguments(joinShapes, joinArguments));
 
@@ -2517,7 +2517,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 	ShapeError(function, argumentShapes);
 }         
 
-bool ShapeAnalysis::AnalyzeJoinArguments(const std::vector<const Shape *>& argumentShapes, const std::vector<Operand *>& arguments)
+bool ShapeAnalysis::AnalyzeJoinArguments(const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments)
 {
 #define RequireJoin(x) if (!(x)) return false
 

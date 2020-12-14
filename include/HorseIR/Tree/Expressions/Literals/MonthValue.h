@@ -20,11 +20,15 @@ public:
 		return new MonthValue(m_year, m_month);
 	}
 
+	// Properties
+
 	std::uint16_t GetYear() const { return m_year; }
 	void SetYear(std::uint16_t year) { m_year = year; }
 
 	std::uint8_t GetMonth() const { return m_month; }
 	void SetMonth(std::uint8_t month) { m_month = month; }
+
+	// Formatting
 
 	std::int32_t GetEpochTime() const override
 	{
@@ -39,6 +43,8 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const MonthValue& value);
+
+	// Operators
 
 	bool operator==(const MonthValue& other) const
 	{

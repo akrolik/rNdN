@@ -24,11 +24,17 @@ public:
 		return new GlobalDeclaration(m_declaration->Clone(), m_expression->Clone());
 	}
 
-	VariableDeclaration *GetDeclaration() const { return m_declaration; }
+	// Properties
+
+	const VariableDeclaration *GetDeclaration() const { return m_declaration; }
+	VariableDeclaration *GetDeclaration() { return m_declaration; }
 	void SetDeclaration(VariableDeclaration *declaration) { m_declaration = declaration; }
 
-	Operand *GetExpression() const { return m_expression; }
+	const Operand *GetExpression() const { return m_expression; }
+	Operand *GetExpression() { return m_expression; }
 	void SetExpression(Operand *expression) { m_expression = expression; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

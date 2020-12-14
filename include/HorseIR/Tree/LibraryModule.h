@@ -24,6 +24,8 @@ public:
 		return new LibraryModule(m_name, contents);
 	}
 
+	// Visitors
+
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
 

@@ -15,6 +15,8 @@ public:
 	};
 
 	FunctionDeclaration(Kind kind, const std::string& name) : m_kind(kind), m_name(name) {}
+
+	// Properties
 	
 	Kind GetKind() const { return m_kind; }
 

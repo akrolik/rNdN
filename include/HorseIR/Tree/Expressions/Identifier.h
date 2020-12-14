@@ -26,8 +26,9 @@ public:
 		return new Identifier(m_module, m_name);
 	}
 
-	bool HasModule() const { return (m_module != ""); }
+	// Module properties
 
+	bool HasModule() const { return (m_module != ""); }
 	std::string GetFullName() const { return m_module + "." + m_name; }
 
 	const std::string& GetModule() const { return m_module; }
@@ -37,7 +38,11 @@ public:
 	void SetName(const std::string& name) { m_name = name; }
 
 	// LValue
-	Type *GetType() const override { return Operand::GetType(); }
+
+	const Type *GetType() const override { return Operand::GetType(); }
+	Type *GetType() override { return Operand::GetType(); }
+
+	// Operators
 
 	bool operator==(const Identifier& other) const
 	{
@@ -48,6 +53,8 @@ public:
 	{
 		return !(*this == other);
 	}
+
+	// Visitors
 	
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }

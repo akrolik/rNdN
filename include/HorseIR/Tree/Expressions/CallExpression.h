@@ -30,12 +30,27 @@ public:
 		return new CallExpression(m_literal->Clone(), arguments);
 	}
 
-	FunctionLiteral *GetFunctionLiteral() const { return m_literal; }
+	// Function literal
+
+	const FunctionLiteral *GetFunctionLiteral() const { return m_literal; }
+	FunctionLiteral *GetFunctionLiteral() { return m_literal; }
+
 	void SetFunctionLiteral(FunctionLiteral *literal) { m_literal = literal; }
 
-	const std::vector<Operand *>& GetArguments() const { return m_arguments; }
-	Operand *GetArgument(unsigned int index) const { return m_arguments.at(index); }
+	// Arguments
+
+	std::vector<const Operand *> GetArguments() const
+	{
+		return { std::begin(m_arguments), std::end(m_arguments) };
+	}
+	std::vector<Operand *>& GetArguments() { return m_arguments; }
+
+	const Operand *GetArgument(unsigned int index) const { return m_arguments.at(index); }
+	Operand *GetArgument(unsigned int index) { return m_arguments.at(index); }
+
 	void SetArguments(const std::vector<Operand *>& arguments) { m_arguments = arguments; }
+
+	// Visitors
 
 	void Accept(Visitor &visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor &visitor) const override { visitor.Visit(this); }
