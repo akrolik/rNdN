@@ -9,12 +9,23 @@ namespace Assembler {
 class BinaryProgram
 {
 public:
+	// Compute capability
+
 	unsigned int GetComputeCapability() const { return m_computeCapability; }
 	void SetComputeCapability(unsigned int computeCapability) { m_computeCapability = computeCapability; }
 
-	void AddFunction(BinaryFunction *function) { m_functions.push_back(function); }
-	const std::vector<BinaryFunction *>& GetFunctions() const { return m_functions; }
+	// Functions
+
+	std::vector<const BinaryFunction *> GetFunctions() const
+	{
+		return { std::begin(m_functions), std::end(m_functions) };
+	}
+	std::vector<BinaryFunction *>& GetFunctions() { return m_functions; }
+
 	unsigned int GetFunctionCount() const { return m_functions.size(); }
+
+	void AddFunction(BinaryFunction *function) { m_functions.push_back(function); }
+	void SetFunctions(const std::vector<BinaryFunction *>& functions) { m_functions = functions; }
 
 private:
 	unsigned int m_computeCapability = 0;

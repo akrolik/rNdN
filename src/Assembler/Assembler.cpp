@@ -64,7 +64,7 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 	//    (b) EXIT instructions
 	//    (c) CTAID instructions
 
-	std::vector<SASS::Instruction *> linearProgram;
+	std::vector<const SASS::Instruction *> linearProgram;
 	for (const auto block : function->GetBasicBlocks())
 	{
 		// Insert instructions from the basic block
@@ -126,28 +126,29 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 	for (auto i = 0u; i < linearProgram.size(); ++i)
 	{
 		auto instruction = linearProgram.at(i);
-		if (auto branchInstruction = dynamic_cast<SASS::BRAInstruction *>(instruction))
+		if (auto _branchInstruction = dynamic_cast<const SASS::BRAInstruction *>(instruction))
 		{
-			auto unpaddedIndex = blockIndex.at(branchInstruction->GetTarget());
+			auto unpaddedIndex = blockIndex.at(_branchInstruction->GetTarget());
 			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
 
+			auto branchInstruction = const_cast<SASS::BRAInstruction *>(_branchInstruction);
 			branchInstruction->SetTargetAddress(
 				paddedIndex * sizeof(std::uint64_t),
 				i * sizeof(std::uint64_t)
 			);
 		}
-		else if (auto exitInstruction = dynamic_cast<SASS::EXITInstruction *>(instruction))
+		else if (auto exitInstruction = dynamic_cast<const SASS::EXITInstruction *>(instruction))
 		{
 			binaryFunction->AddExitOffset(i * sizeof(std::uint64_t));
 		}
-		else if (auto s2rInstruction = dynamic_cast<SASS::S2RInstruction *>(instruction))
+		else if (auto s2rInstruction = dynamic_cast<const SASS::S2RInstruction *>(instruction))
 		{
 			if (s2rInstruction->GetSource()->GetKind() == SASS::SpecialRegister::Kind::SR_CTAID_X)
 			{
 				binaryFunction->AddS2RCTAIDOffset(i * sizeof(std::uint64_t));
 			}
 		}
-		else if (auto coopInstruction = dynamic_cast<SASS::SHFLInstruction *>(instruction))
+		else if (auto coopInstruction = dynamic_cast<const SASS::SHFLInstruction *>(instruction))
 		{
 			binaryFunction->AddCoopOffset(i * sizeof(std::uint64_t));
 		}

@@ -12,6 +12,7 @@ public:
 	BinaryFunction(const std::string& name) : m_name(name) {}
 
 	const std::string& GetName() const { return m_name; }
+	void SetName(const std::string& name) { m_name = name; }
 
 	// Number of registers in text
 
@@ -20,42 +21,52 @@ public:
 
 	// Parameters (specified by size)
 
+	const std::vector<std::size_t>& GetParameters() const { return m_parameters; }
+
+	std::size_t GetParametersCount() const { return m_parameters.size(); }
+	std::size_t GetParametersSize() const { return m_parametersSize; }
+
 	void AddParameter(std::size_t parameter)
 	{
 		m_parameters.push_back(parameter);
 		m_parametersSize += parameter;
 	}
-	const std::vector<std::size_t>& GetParameters() const { return m_parameters; }
-	std::size_t GetParametersCount() const { return m_parameters.size(); }
-	std::size_t GetParametersSize() const { return m_parametersSize; }
+	void SetParameters(const std::vector<std::size_t>& parameters) { m_parameters = parameters; }
 
 	// Binary text
+
+	const char *GetText() const { return m_text; }
+	std::size_t GetSize() const { return m_size; }
 
 	void SetText(char *text, std::size_t size)
 	{
 		m_text = text;
 		m_size = size;
 	}
-	char *GetText() const { return m_text; }
-	std::size_t GetSize() const { return m_size; }
 	
 	// S2R CTAID instruction offsets
 
-	void AddS2RCTAIDOffset(std::size_t ctaOffset) { m_ctaOffsets.push_back(ctaOffset); }
 	const std::vector<std::size_t>& GetS2RCTAIDOffsets() const { return m_ctaOffsets; }
 	std::size_t GetS2RCTAIDOffsetsCount() const { return m_ctaOffsets.size(); }
 
+	void AddS2RCTAIDOffset(std::size_t ctaOffset) { m_ctaOffsets.push_back(ctaOffset); }
+	void SetS2RCTAIDOffsets(const std::vector<std::size_t>& ctaOffsets) { m_ctaOffsets = ctaOffsets; }
+
 	// Exit offsets
 
-	void AddExitOffset(std::size_t exitOffset) { m_exitOffsets.push_back(exitOffset); }
 	const std::vector<std::size_t>& GetExitOffsets() const { return m_exitOffsets; }
 	std::size_t GetExitOffsetsCount() const { return m_exitOffsets.size(); }
 
+	void AddExitOffset(std::size_t exitOffset) { m_exitOffsets.push_back(exitOffset); }
+	void SetExitOffsets(const std::vector<std::size_t>& exitOffsets) { m_exitOffsets = exitOffsets; }
+
 	// Coop offsets
 
-	void AddCoopOffset(std::size_t coopOffset) { m_coopOffsets.push_back(coopOffset); }
 	const std::vector<std::size_t>& GetCoopOffsets() const { return m_coopOffsets; }
 	std::size_t GetCoopOffsetsCount() const { return m_coopOffsets.size(); }
+
+	void AddCoopOffset(std::size_t coopOffset) { m_coopOffsets.push_back(coopOffset); }
+	void SetCoopOffsets(const std::vector<std::size_t>& coopOffsets) { m_coopOffsets = coopOffsets; }
 
 private:
 	std::string m_name;
