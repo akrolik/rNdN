@@ -16,7 +16,7 @@ public:
 
 	std::vector<const Operand *> GetOperands() const
 	{
-		return std::vector<const Operand *>(std::begin(m_operands), std::end(m_operands));
+		return { std::begin(m_operands), std::end(m_operands) };
 	}
 	std::vector<Operand *>& GetOperands() { return m_operands; }
 

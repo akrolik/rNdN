@@ -20,7 +20,7 @@ public:
 
 	std::vector<const Label *> GetLabels() const
 	{
-		return std::vector<const Label *>(std::begin(m_labels), std::end(m_labels));
+		return { std::begin(m_labels), std::end(m_labels) };
 	}
 	std::vector<Label *>& GetLabels() { return m_labels; }
 	void SetLabels(const std::vector<Label *>& labels) { m_labels = labels; }

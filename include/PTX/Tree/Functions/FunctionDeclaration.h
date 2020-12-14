@@ -25,7 +25,7 @@ public:
 
 	std::vector<const VariableDeclaration *> GetParameters() const override
 	{
-		return std::vector<const VariableDeclaration *>(std::begin(m_parameters), std::end(m_parameters));
+		return { std::begin(m_parameters), std::end(m_parameters) };
 	}
 	std::vector<VariableDeclaration *>& GetParameters() override { return m_parameters; }
 
@@ -118,7 +118,7 @@ public:
 
 	std::vector<const VariableDeclaration *> GetParameters() const override
 	{
-		return std::vector<const VariableDeclaration *>(std::begin(m_parameters), std::end(m_parameters));
+		return { std::begin(m_parameters), std::end(m_parameters) };
 	}
 	std::vector<VariableDeclaration *>& GetParameters() override { return m_parameters; }
 

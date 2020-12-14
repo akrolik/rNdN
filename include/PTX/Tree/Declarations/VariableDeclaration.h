@@ -104,7 +104,11 @@ public:
 		AddNames(prefix, count);
 	}
 
-	const std::vector<NameSet *>& GetNames() const { return m_names; }
+	std::vector<const NameSet *> GetNames() const
+	{
+		return { std::begin(m_names), std::end(m_names) };
+	}
+	std::vector<NameSet *>& GetNames() { return m_names; }
 
 	// Formatting
 

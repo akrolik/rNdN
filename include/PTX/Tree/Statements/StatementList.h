@@ -13,7 +13,7 @@ public:
 
 	std::vector<const Statement *> GetStatements() const
 	{
-		return std::vector<const Statement *>(std::begin(m_statements), std::end(m_statements));
+		return { std::begin(m_statements), std::end(m_statements) };
 	}
 	std::vector<Statement *>& GetStatements() { return m_statements; }
 

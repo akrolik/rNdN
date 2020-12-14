@@ -5,10 +5,11 @@ namespace Analysis {
 
 // API
 
-void ControlFlowAccumulator::Analyze(FunctionDefinition<VoidType> *function)
+ControlFlowGraph *ControlFlowAccumulator::Analyze(FunctionDefinition<VoidType> *function)
 {
 	m_graph = new ControlFlowGraph(function);
 	function->Accept(*this);
+	return m_graph;
 }
 
 // Statements
@@ -107,16 +108,16 @@ bool ControlFlowAccumulator::VisitIn(LabelStatement *statement)
 
 // Builder API
 
-void ControlFlowBuilder::Analyze(FunctionDefinition<VoidType> *function)
+ControlFlowGraph *ControlFlowBuilder::Analyze(FunctionDefinition<VoidType> *function)
 {
 	ControlFlowAccumulator accumulator;
-	accumulator.Analyze(function);
+	m_graph = accumulator.Analyze(function);
 
-	m_graph = accumulator.GetGraph();
 	m_labelMap = accumulator.GetLabelMap();
 	m_statementMap = accumulator.GetStatementMap();
 
 	function->Accept(*this);
+	return m_graph;
 }
 
 // Statements

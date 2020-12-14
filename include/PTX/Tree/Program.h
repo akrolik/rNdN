@@ -18,7 +18,7 @@ public:
 
 	std::vector<const Module *> GetModules() const
 	{
-		return std::vector<const Module *>(std::begin(m_modules), std::end(m_modules));
+		return { std::begin(m_modules), std::end(m_modules) };
 	}
 	std::vector<Module *>& GetModules() { return m_modules; }
 	void AddModule(Module *module) { m_modules.push_back(module); }

@@ -13,9 +13,7 @@ class ControlFlowAccumulator : public HierarchicalVisitor
 public:
 	// API
 
-	void Analyze(FunctionDefinition<VoidType> *function);
-
-	ControlFlowGraph *GetGraph() const { return m_graph; }
+	ControlFlowGraph *Analyze(FunctionDefinition<VoidType> *function);
 
 	const std::unordered_map<const Label *, const BasicBlock *>& GetLabelMap() const { return m_labelMap; }
 	const std::unordered_map<const Statement *, const BasicBlock *>& GetStatementMap() const { return m_statementMap; }
@@ -39,8 +37,7 @@ class ControlFlowBuilder : public HierarchicalVisitor
 public:
 	// API
 
-	void Analyze(FunctionDefinition<VoidType> *function);
-	ControlFlowGraph *GetGraph() const { return m_graph; }
+	ControlFlowGraph *Analyze(FunctionDefinition<VoidType> *function);
 	
 	// Statements
 

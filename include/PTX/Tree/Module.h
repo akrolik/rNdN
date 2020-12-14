@@ -49,7 +49,7 @@ public:
 
 	const std::unordered_map<std::string, const Function *> GetEntryFunctions() const
 	{
-		return std::unordered_map<std::string, const Function *>(std::begin(m_entryFunctions), std::end(m_entryFunctions));
+		return { std::begin(m_entryFunctions), std::end(m_entryFunctions) };
 	}
 	std::unordered_map<std::string, Function *>& GetEntryFunctions() { return m_entryFunctions; }
 
@@ -67,7 +67,7 @@ public:
 
 	std::vector<const Directive *> GetDirectives() const
 	{
-		return std::vector<const Directive *>(std::begin(m_directives), std::end(m_directives));
+		return { std::begin(m_directives), std::end(m_directives) };
 	}
 	std::vector<Directive *>& GetDirectives() { return m_directives; }
 
@@ -93,7 +93,7 @@ public:
 
 	std::vector<const Declaration *> GetDeclarations() const
 	{
-		return std::vector<const Declaration *>(std::begin(m_declarations), std::end(m_declarations));
+		return { std::begin(m_declarations), std::end(m_declarations) };
 	}
 	std::vector<Declaration *>& GetDeclarations() { return m_declarations; }
 
