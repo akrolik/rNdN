@@ -33,8 +33,11 @@ public:
 
 	// Keys/values
 
-	VectorBuffer *GetKeys() const { return m_keys; }
-	ListBuffer *GetValues() const { return m_values; }
+	const VectorBuffer *GetKeys() const { return m_keys; }
+	VectorBuffer *GetKeys() { return m_keys; }
+
+	const ListBuffer *GetValues() const { return m_values; }
+	ListBuffer *GetValues() { return m_values; }
 
 	// CPU/GPU management
 

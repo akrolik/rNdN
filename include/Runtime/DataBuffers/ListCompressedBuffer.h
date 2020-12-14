@@ -23,8 +23,12 @@ public:
 
 	// Cells
 
-	const std::vector<DataBuffer *>& GetCells() const override;
-	DataBuffer *GetCell(unsigned int index) const override;
+	std::vector<const DataBuffer *> GetCells() const override;
+	std::vector<DataBuffer *>& GetCells() override;
+
+	const DataBuffer *GetCell(unsigned int index) const override;
+	DataBuffer *GetCell(unsigned int index) override;
+
 	size_t GetCellCount() const override;
 
 	// Sizing
@@ -37,8 +41,10 @@ public:
 	void ValidateGPU() const override;
 
 	CUDA::Buffer *GetGPUWriteBuffer() override;
-	CUDA::Buffer *GetGPUReadBuffer() const override;
-	CUDA::Buffer *GetGPUSizeBuffer() const override;
+	const CUDA::Buffer *GetGPUReadBuffer() const override;
+
+	const CUDA::Buffer *GetGPUSizeBuffer() const override;
+	CUDA::Buffer *GetGPUSizeBuffer() override;
 
 	size_t GetGPUBufferSize() const override { return m_dataAddresses->GetGPUBufferSize(); }
 
@@ -65,8 +71,8 @@ private:
 
 	void AllocateCells() const;
 
-	const TypedVectorBuffer<CUdeviceptr> *m_dataAddresses = nullptr;
-	const TypedVectorBuffer<CUdeviceptr> *m_sizeAddresses = nullptr;
+	TypedVectorBuffer<CUdeviceptr> *m_dataAddresses = nullptr;
+	TypedVectorBuffer<CUdeviceptr> *m_sizeAddresses = nullptr;
 	const TypedVectorBuffer<std::int32_t> *m_sizes = nullptr;
 	VectorBuffer *m_values = nullptr;
 

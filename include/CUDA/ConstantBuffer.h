@@ -28,8 +28,8 @@ public:
 	void SetCPUBuffer(const void *buffer) { m_CPUBuffer = buffer; }
 	bool HasCPUBuffer () const { return (m_CPUBuffer != nullptr); }
 
-	CUdeviceptr& GetGPUBuffer() { return m_GPUBuffer; }
-	void *GetAddress() override { return &m_GPUBuffer; }
+	CUdeviceptr GetGPUBuffer() const { return m_GPUBuffer; }
+	const void *GetAddress() const override { return &m_GPUBuffer; }
 
 	bool IsAlias() const { return m_alias; }
 

@@ -6,7 +6,7 @@
 
 namespace CUDA {
 
-void Buffer::Copy(Buffer *destination, Buffer *source, size_t size, size_t destinationOffset, size_t sourceOffset)
+void Buffer::Copy(Buffer *destination, const Buffer *source, size_t size, size_t destinationOffset, size_t sourceOffset)
 {
 	std::string description = "CUDA copy ";
 	if (source->GetTag() != "")

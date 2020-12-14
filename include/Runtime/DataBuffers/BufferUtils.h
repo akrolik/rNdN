@@ -51,6 +51,24 @@ static T *GetBuffer(DataBuffer *buffer, bool assert = true)
 }
 
 template<class T>
+static const TypedVectorBuffer<T> *GetVectorBuffer(const DataBuffer *buffer, bool assert = true)
+{
+	if (const auto vectorBuffer = GetBuffer<VectorBuffer>(buffer, assert))
+	{
+		if (vectorBuffer->m_typeid == typeid(T))
+		{
+			return static_cast<const TypedVectorBuffer<T> *>(vectorBuffer);
+		}
+	}
+
+	if (assert)
+	{
+		Utils::Logger::LogError("Cannot convert buffer " + buffer->Description() + " to TypedVector");
+	}
+	return nullptr;
+}
+
+template<class T>
 static TypedVectorBuffer<T> *GetVectorBuffer(DataBuffer *buffer, bool assert = true)
 {
 	if (auto vectorBuffer = GetBuffer<VectorBuffer>(buffer, assert))

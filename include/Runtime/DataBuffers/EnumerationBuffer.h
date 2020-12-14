@@ -32,9 +32,14 @@ public:
 
 	// Keys/values
 
-	VectorBuffer *GetKeys() const { return m_keys; }
-	VectorBuffer *GetValues() const { return m_values; }
-	TypedVectorBuffer<std::int64_t> *GetIndexes() const { return m_indexes; }
+	const VectorBuffer *GetKeys() const { return m_keys; }
+	VectorBuffer *GetKeys() { return m_keys; }
+
+	const VectorBuffer *GetValues() const { return m_values; }
+	VectorBuffer *GetValues() { return m_values; }
+
+	const TypedVectorBuffer<std::int64_t> *GetIndexes() const { return m_indexes; }
+	TypedVectorBuffer<std::int64_t> *GetIndexes() { return m_indexes; }
 
 	unsigned int GetElementCount() const { return m_values->GetElementCount(); }
 

@@ -83,9 +83,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		shapeAnalysis.Analyze(function, inputShapes);
 
 		HorseIR::Analysis::KernelOptionsAnalysis optionsAnalysis(shapeAnalysis);
-		optionsAnalysis.Analyze(function);
-
-		m_optionsCache[function] = std::move(optionsAnalysis.GetInputOptions());
+		m_optionsCache[function] = optionsAnalysis.Analyze(function);
 
 		Utils::Chrono::End(timeAnalysis_start);
 	}

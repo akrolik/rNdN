@@ -21,8 +21,12 @@ public:
 
 	// Cells
 
-	const std::vector<DataBuffer *>& GetCells() const override { return m_cells; }
-	DataBuffer *GetCell(unsigned int index) const override { return m_cells.at(index); }
+	std::vector<const DataBuffer *> GetCells() const override { return { std::begin(m_cells), std::end(m_cells) }; }
+	std::vector<DataBuffer *>& GetCells() override { return m_cells; }
+
+	const DataBuffer *GetCell(unsigned int index) const override { return m_cells.at(index); }
+	DataBuffer *GetCell(unsigned int index) override { return m_cells.at(index); }
+
 	size_t GetCellCount() const override { return m_cells.size(); }
 
 	// Sizing
@@ -35,8 +39,10 @@ public:
 	void ValidateGPU() const override;
 
 	CUDA::Buffer *GetGPUWriteBuffer() override;
-	CUDA::Buffer *GetGPUReadBuffer() const override;
-	CUDA::Buffer *GetGPUSizeBuffer() const override;
+	const CUDA::Buffer *GetGPUReadBuffer() const override;
+
+	const CUDA::Buffer *GetGPUSizeBuffer() const override;
+	CUDA::Buffer *GetGPUSizeBuffer() override;
 
 	size_t GetGPUBufferSize() const override;
 

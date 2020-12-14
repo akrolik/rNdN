@@ -65,7 +65,7 @@ public:
 
 	// GPU buffers
 
-	CUDA::Constant *GetGPUReadBuffer() const override
+	const CUDA::Constant *GetGPUReadBuffer() const override
 	{
 		ValidateGPU();
 		return m_gpuBuffer;

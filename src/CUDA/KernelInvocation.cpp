@@ -8,7 +8,7 @@
 
 namespace CUDA {
 
-void KernelInvocation::AddParameter(Data &data)
+void KernelInvocation::AddParameter(const Data &data)
 {
 	m_parameters.push_back(data.GetAddress());
 }

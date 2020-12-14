@@ -32,8 +32,11 @@ public:
 
 	// Keys/values
 
-	TableBuffer *GetKey() const { return m_key; }
-	TableBuffer *GetValue() const { return m_value; }
+	const TableBuffer *GetKey() const { return m_key; }
+	TableBuffer *GetKey() { return m_key; }
+
+	const TableBuffer *GetValue() const { return m_value; }
+	TableBuffer *GetValue() { return m_value; }
 
 	// CPU/GPU management
 

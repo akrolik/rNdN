@@ -430,9 +430,13 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 		}
 		m_environment.Insert(literal, new TypedVectorBuffer<double>(new TypedVectorData<double>(basicType, std::move(vector))));
 	}	
+	else if constexpr(std::is_convertible<T, HorseIR::ComplexValue *>::value)
+	{
+		//TODO: Complex value storage
+	}	
 	else
 	{
-		auto& values = literal->GetValues();
+		auto values = literal->GetValues();
 		CUDA::Vector<T> vector(std::begin(values), std::end(values));
 		m_environment.Insert(literal, new TypedVectorBuffer<T>(new TypedVectorData<T>(basicType, std::move(vector))));
 	}

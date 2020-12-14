@@ -12,7 +12,7 @@ namespace CUDA {
 class Buffer : public Data
 {
 public:
-	static void Copy(Buffer *destination, Buffer *source, size_t size, size_t destinationOffset = 0, size_t sourceOffset = 0);
+	static void Copy(Buffer *destination, const Buffer *source, size_t size, size_t destinationOffset = 0, size_t sourceOffset = 0);
 
 	Buffer(size_t size) : m_buffer(size) {}
 	Buffer(CUdeviceptr buffer, size_t size) : m_buffer(buffer, size) {}
@@ -35,8 +35,8 @@ public:
 	}
 	bool HasCPUBuffer () const { return (m_CPUBuffer != nullptr); }
 
-	CUdeviceptr& GetGPUBuffer() { return m_buffer.GetGPUBuffer(); }
-	void *GetAddress() override { return m_buffer.GetAddress(); }
+	CUdeviceptr GetGPUBuffer() const { return m_buffer.GetGPUBuffer(); }
+	const void *GetAddress() const override { return m_buffer.GetAddress(); }
 
 	bool IsAlias() const { return m_buffer.IsAlias(); }
 

@@ -29,7 +29,7 @@ DictionaryBuffer::DictionaryBuffer(VectorBuffer *keys, ListBuffer *values) : Dat
 	m_shape = new HorseIR::Analysis::DictionaryShape(keysShape, valuesShape);
 
 	auto keysType = keys->GetType()->Clone();
-	auto valuesType = HorseIR::TypeUtils::GetReducedType(values->GetType()->GetElementTypes());
+	auto valuesType = HorseIR::TypeUtils::GetReducedType(values->GetType()->GetElementTypes())->Clone();
 	m_type = new HorseIR::DictionaryType(keysType, valuesType);
 }
 

@@ -168,7 +168,7 @@ CUDA::Buffer *ListCellBuffer::GetGPUWriteBuffer()
 	return m_gpuBuffer;
 }
 
-CUDA::Buffer *ListCellBuffer::GetGPUReadBuffer() const
+const CUDA::Buffer *ListCellBuffer::GetGPUReadBuffer() const
 {
 	ValidateGPU();
 	for (auto i = 0u; i < m_cells.size(); ++i)
@@ -178,7 +178,13 @@ CUDA::Buffer *ListCellBuffer::GetGPUReadBuffer() const
 	return m_gpuBuffer;
 }
 
-CUDA::Buffer *ListCellBuffer::GetGPUSizeBuffer() const
+const CUDA::Buffer *ListCellBuffer::GetGPUSizeBuffer() const
+{
+	ValidateGPU();
+	return m_gpuSizeBuffer;
+}
+
+CUDA::Buffer *ListCellBuffer::GetGPUSizeBuffer()
 {
 	ValidateGPU();
 	return m_gpuSizeBuffer;

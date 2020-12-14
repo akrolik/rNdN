@@ -5,7 +5,7 @@ namespace CUDA {
 class Data
 {
 public:
-	virtual void *GetAddress() = 0;
+	virtual const void *GetAddress() const = 0;
 };
 
 }

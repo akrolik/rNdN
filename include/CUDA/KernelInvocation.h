@@ -28,7 +28,7 @@ public:
 		m_gridZ = z;
 	}
 
-	void AddParameter(Data &value);
+	void AddParameter(const Data &value);
 
 	void SetDynamicSharedMemorySize(unsigned int bytes) { m_dynamicSharedMemorySize = bytes; }
 
@@ -48,7 +48,7 @@ private:
 	unsigned int m_dynamicSharedMemorySize = 0;
 	unsigned int m_paramIndex = 0;
 
-	std::vector<void *> m_parameters;
+	std::vector<const void *> m_parameters;
 };
 
 }

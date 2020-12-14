@@ -44,7 +44,7 @@ public:
 	// GPU/CPU buffer management
 
 	virtual CUDA::Buffer *GetGPUWriteBuffer() override = 0;
-	virtual CUDA::Buffer *GetGPUReadBuffer() const override = 0;
+	virtual const CUDA::Buffer *GetGPUReadBuffer() const override = 0;
 
 	virtual VectorData *GetCPUWriteBuffer() = 0;
 	virtual const VectorData *GetCPUReadBuffer() const = 0;
@@ -255,7 +255,7 @@ public:
 		return m_gpuBuffer;
 	}
 
-	CUDA::Buffer *GetGPUReadBuffer() const override
+	const CUDA::Buffer *GetGPUReadBuffer() const override
 	{
 		ValidateGPU();
 		return m_gpuBuffer;
@@ -266,7 +266,7 @@ public:
 		return (sizeof(T) * m_gpuSize);
 	}
 
-	CUDA::Buffer *GetGPUSizeBuffer() const override
+	const CUDA::Buffer *GetGPUSizeBuffer() const override
 	{
 		return m_gpuSizeBuffer;
 	}

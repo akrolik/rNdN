@@ -137,13 +137,25 @@ void ListCompressedBuffer::SetTag(const std::string& tag)
 	m_values->SetTag((tag == "") ? "" : tag + "_values");
 }
 
-const std::vector<DataBuffer *>& ListCompressedBuffer::GetCells() const
+std::vector<const DataBuffer *> ListCompressedBuffer::GetCells() const
+{
+	AllocateCells();
+	return { std::begin(m_cells), std::end(m_cells) };
+}
+
+std::vector<DataBuffer *>& ListCompressedBuffer::GetCells()
 {
 	AllocateCells();
 	return m_cells;
 }
 
-DataBuffer *ListCompressedBuffer::GetCell(unsigned int index) const
+const DataBuffer *ListCompressedBuffer::GetCell(unsigned int index) const
+{
+	AllocateCells();
+	return m_cells.at(index);
+}
+
+DataBuffer *ListCompressedBuffer::GetCell(unsigned int index)
 {
 	AllocateCells();
 	return m_cells.at(index);
@@ -178,20 +190,26 @@ CUDA::Buffer *ListCompressedBuffer::GetGPUWriteBuffer()
 {
 	ValidateGPU();
 	m_values->GetGPUWriteBuffer();
-	return m_dataAddresses->GetGPUReadBuffer();
+	return m_dataAddresses->GetGPUWriteBuffer();
 }
 
-CUDA::Buffer *ListCompressedBuffer::GetGPUReadBuffer() const
+const CUDA::Buffer *ListCompressedBuffer::GetGPUReadBuffer() const
 {
 	ValidateGPU();
 	m_values->GetGPUReadBuffer();
 	return m_dataAddresses->GetGPUReadBuffer();
 }
 
-CUDA::Buffer *ListCompressedBuffer::GetGPUSizeBuffer() const
+const CUDA::Buffer *ListCompressedBuffer::GetGPUSizeBuffer() const
 {
 	m_sizes->ValidateGPU();
 	return m_sizeAddresses->GetGPUReadBuffer();
+}
+
+CUDA::Buffer *ListCompressedBuffer::GetGPUSizeBuffer()
+{
+	m_sizes->ValidateGPU();
+	return m_sizeAddresses->GetGPUWriteBuffer();
 }
 
 std::string ListCompressedBuffer::Description() const

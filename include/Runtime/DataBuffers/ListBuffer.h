@@ -25,8 +25,12 @@ public:
 
 	// Cells
 
-	virtual const std::vector<DataBuffer *>& GetCells() const = 0;
-	virtual DataBuffer *GetCell(unsigned int index) const = 0;
+	virtual std::vector<const DataBuffer *> GetCells() const = 0;
+	virtual std::vector<DataBuffer *>& GetCells() = 0;
+
+	virtual const DataBuffer *GetCell(unsigned int index) const = 0;
+	virtual DataBuffer *GetCell(unsigned int index) = 0;
+
 	virtual size_t GetCellCount() const = 0;
 
 	// Sizing

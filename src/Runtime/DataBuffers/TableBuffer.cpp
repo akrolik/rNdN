@@ -72,7 +72,16 @@ void TableBuffer::SetTag(const std::string& tag)
 	}
 }
 
-ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
+const ColumnBuffer *TableBuffer::GetColumn(const std::string& name) const
+{
+	if (m_columnMap.find(name) == m_columnMap.end())
+	{
+		Utils::Logger::LogError("Column '" + name + "' not found");
+	}
+	return m_columnMap.at(name);
+}
+
+ColumnBuffer *TableBuffer::GetColumn(const std::string& name)
 {
 	if (m_columnMap.find(name) == m_columnMap.end())
 	{

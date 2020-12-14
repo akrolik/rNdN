@@ -15,7 +15,7 @@ class TypedConstant : public Constant
 public:
 	TypedConstant(const T& value) : m_value(value) {}
 
-	void *GetAddress() override { return &m_value; }
+	const void *GetAddress() const override { return &m_value; }
 
 	T GetValue() const { return m_value; }
 	size_t GetSize() const { return sizeof(T); }

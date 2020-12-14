@@ -79,8 +79,10 @@ public:
 	virtual void ValidateGPU() const;
 	
 	virtual CUDA::Data *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
-	virtual CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
-	virtual CUDA::Buffer *GetGPUSizeBuffer() const { CPUOnlyBuffer(); }
+	virtual const CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
+
+	virtual const CUDA::Buffer *GetGPUSizeBuffer() const { CPUOnlyBuffer(); }
+	virtual CUDA::Buffer *GetGPUSizeBuffer() { CPUOnlyBuffer(); }
 
 	virtual size_t GetGPUBufferSize() const { CPUOnlyBuffer(); }
 
