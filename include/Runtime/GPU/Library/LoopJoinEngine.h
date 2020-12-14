@@ -16,7 +16,7 @@ class LoopJoinEngine
 public:
 	LoopJoinEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	ListBuffer *Join(const std::vector<DataBuffer *>& arguments);
+	ListBuffer *Join(const std::vector<const DataBuffer *>& arguments);
 
 private:
 	const HorseIR::Function *GetFunction(const HorseIR::FunctionDeclaration *function) const;

@@ -10,7 +10,7 @@
 namespace Runtime {
 namespace GPU {
 
-TypedVectorBuffer<std::int64_t> *UniqueEngine::Unique(const std::vector<DataBuffer *>& arguments)
+TypedVectorBuffer<std::int64_t> *UniqueEngine::Unique(const std::vector<const DataBuffer *>& arguments)
 {
 	// Perform the sort using the sort engine
 
@@ -18,7 +18,7 @@ TypedVectorBuffer<std::int64_t> *UniqueEngine::Unique(const std::vector<DataBuff
 
 	auto isShared = (arguments.size() == 5);
 
-	std::vector<DataBuffer *> sortBuffers;
+	std::vector<const DataBuffer *> sortBuffers;
 	sortBuffers.push_back(arguments.at(0)); // Init
 	sortBuffers.push_back(arguments.at(1)); // Sort
 	if (isShared)

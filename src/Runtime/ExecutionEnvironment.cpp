@@ -22,38 +22,19 @@ void ExecutionEnvironment::Insert(const HorseIR::Expression *expression, const s
 	context.expressionMap[expression] = objects;
 }
 
-const DataBuffer *ExecutionEnvironment::Get(const HorseIR::SymbolTable::Symbol *symbol) const
+DataBuffer *ExecutionEnvironment::Get(const HorseIR::SymbolTable::Symbol *symbol) const
 {
 	auto& context = m_functionContexts.top();
 	return context.variableMap.at(symbol);
 }
 
-DataBuffer *ExecutionEnvironment::Get(const HorseIR::SymbolTable::Symbol *symbol)
-{
-	auto& context = m_functionContexts.top();
-	return context.variableMap.at(symbol);
-}
-
-const DataBuffer *ExecutionEnvironment::Get(const HorseIR::Operand *operand) const
+DataBuffer *ExecutionEnvironment::Get(const HorseIR::Operand *operand) const
 {
 	auto& context = m_functionContexts.top();
 	return context.expressionMap.at(operand).at(0);
 }
 
-DataBuffer *ExecutionEnvironment::Get(const HorseIR::Operand *operand)
-{
-	auto& context = m_functionContexts.top();
-	return context.expressionMap.at(operand).at(0);
-}
-
-std::vector<const DataBuffer *> ExecutionEnvironment::Get(const HorseIR::Expression *expression) const
-{
-	auto& context = m_functionContexts.top();
-	auto& expressions = context.expressionMap.at(expression);
-	return { std::begin(expressions), std::end(expressions) };
-}
-
-std::vector<DataBuffer *>& ExecutionEnvironment::Get(const HorseIR::Expression *expression)
+const std::vector<DataBuffer *>& ExecutionEnvironment::Get(const HorseIR::Expression *expression) const
 {
 	auto& context = m_functionContexts.top();
 	return context.expressionMap.at(expression);

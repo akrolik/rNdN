@@ -21,7 +21,7 @@ const HorseIR::Function *HashJoinEngine::GetFunction(const HorseIR::FunctionDecl
 	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
 }
 
-ListBuffer *HashJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
+ListBuffer *HashJoinEngine::Join(const std::vector<const DataBuffer *>& arguments)
 {
 	// Arguments:
 	//   0 - Hash function

@@ -16,7 +16,7 @@ class GroupEngine
 public:
 	GroupEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	DictionaryBuffer *Group(const std::vector<DataBuffer *>& arguments);
+	DictionaryBuffer *Group(const std::vector<const DataBuffer *>& arguments);
 
 private:
 	const HorseIR::Function *GetFunction(const HorseIR::FunctionDeclaration *function) const;

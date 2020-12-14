@@ -17,14 +17,9 @@ public:
 	void Insert(const HorseIR::Operand *operand, DataBuffer *buffer);
 	void Insert(const HorseIR::Expression *expression, const std::vector<DataBuffer *>& buffers);
 
-	const DataBuffer *Get(const HorseIR::SymbolTable::Symbol *symbol) const;
-	DataBuffer *Get(const HorseIR::SymbolTable::Symbol *symbol);
-
-	const DataBuffer *Get(const HorseIR::Operand *operand) const;
-	DataBuffer *Get(const HorseIR::Operand *operand);
-
-	std::vector<const DataBuffer *> Get(const HorseIR::Expression *expression) const;
-	std::vector<DataBuffer *>& Get(const HorseIR::Expression *expression);
+	DataBuffer *Get(const HorseIR::SymbolTable::Symbol *symbol) const;
+	DataBuffer *Get(const HorseIR::Operand *operand) const;
+	const std::vector<DataBuffer *>& Get(const HorseIR::Expression *expression) const;
 
 	void PushStackFrame(const HorseIR::Function *function);
 	std::vector<DataBuffer *> PopStackFrame();

@@ -27,7 +27,7 @@ class ExecutionEngine
 public:
 	ExecutionEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments);
+	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<const DataBuffer *>& arguments);
 
 private:
 	std::pair<unsigned int, unsigned int> GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions, const CUDA::Kernel& kernel) const;

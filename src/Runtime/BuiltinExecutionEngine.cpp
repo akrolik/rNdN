@@ -49,7 +49,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
 
-			std::vector<VectorBuffer *> sortBuffers;
+			std::vector<const VectorBuffer *> sortBuffers;
 			if (auto listSort = BufferUtils::GetBuffer<ListBuffer>(arguments.at(0), false))
 			{
 				for (auto buffer : listSort->GetCells())
@@ -512,7 +512,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			// GPU sort!
 
 			GPU::SortEngine sortEngine(m_runtime, m_program);
-			auto [indexBuffer, dataBuffer] = sortEngine.Sort(arguments);
+			auto [indexBuffer, dataBuffer] = sortEngine.Sort({ std::begin(arguments), std::end(arguments) });
 
 			// Data buffers can be deallocated as they are unused in a simple sort
 
@@ -524,28 +524,28 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			// GPU group!
 
 			GPU::GroupEngine groupEngine(m_runtime, m_program);
-			return {groupEngine.Group(arguments)};
+			return {groupEngine.Group({ std::begin(arguments), std::end(arguments) })};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
 		{
 			// GPU unique!
 
 			GPU::UniqueEngine uniqueEngine(m_runtime, m_program);
-			return {uniqueEngine.Unique(arguments)};
+			return {uniqueEngine.Unique({ std::begin(arguments), std::end(arguments) })};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
 		{
 			// GPU loop join!
 
 			GPU::LoopJoinEngine joinEngine(m_runtime, m_program);
-			return {joinEngine.Join(arguments)};
+			return {joinEngine.Join({ std::begin(arguments), std::end(arguments) })};
 		}
 		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
 		{
 			// GPU hash join!
 
 			GPU::HashJoinEngine joinEngine(m_runtime, m_program);
-			return {joinEngine.Join(arguments)};
+			return {joinEngine.Join({ std::begin(arguments), std::end(arguments) })};
 		}
 		default:
 		{

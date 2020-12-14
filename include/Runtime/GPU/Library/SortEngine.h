@@ -17,7 +17,7 @@ class SortEngine
 public:
 	SortEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> Sort(const std::vector<DataBuffer *>& arguments);
+	std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> Sort(const std::vector<const DataBuffer *>& arguments);
 
 private:
 	const HorseIR::Function *GetFunction(const HorseIR::FunctionDeclaration *function) const;

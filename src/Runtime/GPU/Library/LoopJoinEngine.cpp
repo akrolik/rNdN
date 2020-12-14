@@ -19,7 +19,7 @@ const HorseIR::Function *LoopJoinEngine::GetFunction(const HorseIR::FunctionDecl
 	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
 }
 
-ListBuffer *LoopJoinEngine::Join(const std::vector<DataBuffer *>& arguments)
+ListBuffer *LoopJoinEngine::Join(const std::vector<const DataBuffer *>& arguments)
 {
 	// Get the execution engine for the count/join functions
 

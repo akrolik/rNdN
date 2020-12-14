@@ -24,7 +24,7 @@ const HorseIR::Function *GroupEngine::GetFunction(const HorseIR::FunctionDeclara
 	Utils::Logger::LogError("GPU group library cannot execute function '" + function->GetName() + "'");
 }
 
-DictionaryBuffer *GroupEngine::Group(const std::vector<DataBuffer *>& arguments)
+DictionaryBuffer *GroupEngine::Group(const std::vector<const DataBuffer *>& arguments)
 {
 	// Perform the sort using the sort engine
 
@@ -32,7 +32,7 @@ DictionaryBuffer *GroupEngine::Group(const std::vector<DataBuffer *>& arguments)
 
 	auto isShared = (arguments.size() == 5);
 
-	std::vector<DataBuffer *> sortBuffers;
+	std::vector<const DataBuffer *> sortBuffers;
 	sortBuffers.push_back(arguments.at(0)); // Init
 	sortBuffers.push_back(arguments.at(1)); // Sort
 	if (isShared)

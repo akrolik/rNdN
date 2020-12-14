@@ -271,6 +271,11 @@ public:
 		return m_gpuSizeBuffer;
 	}
 
+	CUDA::Buffer *GetGPUSizeBuffer() override
+	{
+		return m_gpuSizeBuffer;
+	}
+
 	bool ReallocateGPUBuffer() override
 	{
 		// Only resize from the GPU data size if the data is GPU resident

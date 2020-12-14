@@ -16,7 +16,7 @@ class UniqueEngine
 public:
 	UniqueEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
 
-	TypedVectorBuffer<std::int64_t> *Unique(const std::vector<DataBuffer *>& arguments);
+	TypedVectorBuffer<std::int64_t> *Unique(const std::vector<const DataBuffer *>& arguments);
 
 private:
 	Runtime& m_runtime;

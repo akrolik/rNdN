@@ -21,7 +21,7 @@ const HorseIR::Function *SortEngine::GetFunction(const HorseIR::FunctionDeclarat
 	Utils::Logger::LogError("GPU sort library cannot execute function '" + function->GetName() + "'");
 }
 
-std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(const std::vector<DataBuffer *>& arguments)
+std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(const std::vector<const DataBuffer *>& arguments)
 {
 	// Get the execution engine for the init/sort functions
 
@@ -31,7 +31,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(cons
 
 	auto isShared = BufferUtils::IsBuffer<FunctionBuffer>(arguments.at(2));
 
-	std::vector<DataBuffer *> initSortBuffers(std::begin(arguments) + 2 + isShared, std::end(arguments));
+	std::vector<const DataBuffer *> initSortBuffers(std::begin(arguments) + 2 + isShared, std::end(arguments));
 
 	auto initFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
 	auto initBuffers = engine.Execute(initFunction, initSortBuffers);
@@ -64,7 +64,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(cons
 
 			// Collect the input bufers for sorting: (index, data), [order], stage, substage
 
-			std::vector<DataBuffer *> sortBuffers(initBuffers);
+			std::vector<const DataBuffer *> sortBuffers(std::begin(initBuffers), std::end(initBuffers));
 			if (arguments.size() == (4 + isShared))
 			{
 				sortBuffers.push_back(arguments.at(3 + isShared));

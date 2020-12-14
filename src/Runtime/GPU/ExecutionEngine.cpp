@@ -23,7 +23,7 @@
 namespace Runtime {
 namespace GPU {
 
-std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<DataBuffer *>& arguments)
+std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *function, const std::vector<const DataBuffer *>& arguments)
 {
 	// Get the input options used for codegen
 	
