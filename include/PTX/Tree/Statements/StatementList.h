@@ -37,6 +37,10 @@ public:
 		m_statements.insert(std::begin(m_statements) + index, std::begin(statements), std::end(statements));
 	}
 
+	void SetStatements(const std::vector<Statement *>& statements) { m_statements = statements; }
+
+	std::size_t GetSize() const { return m_statements.size(); }
+
 	// Formatting
 
 	json ToJSON() const override

@@ -10,7 +10,7 @@ namespace PTX {
 class PrettyPrinter : public ConstVisitor
 {
 public:
-	static std::string PrettyString(const Node *node);
+	static std::string PrettyString(const Node *node, bool quick = false);
 
 	// Structure
 
@@ -49,6 +49,7 @@ protected:
 	std::stringstream m_string;
 	unsigned int m_indent = 0;
 
+	bool m_quick = false;
 	bool m_definition = false;
 };
 

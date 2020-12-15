@@ -19,6 +19,7 @@ namespace PTX {
 
 #include "PTX/Tree/Program.h"
 #include "PTX/Tree/Module.h"
+#include "PTX/Tree/BasicBlock.h"
 
 // Directives
 

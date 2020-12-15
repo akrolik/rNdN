@@ -71,7 +71,7 @@ bool ControlFlowAccumulator::VisitIn(Statement *statement)
 			// Insert edges
 
 			m_graph->InsertEdge(inBlock, predBlock);
-			m_graph->InsertEdge(inBlock, m_currentBlock);
+			m_graph->InsertEdge(inBlock, m_currentBlock, predicate, !negate);
 			m_graph->InsertEdge(predBlock, m_currentBlock);
 
 			m_index++;
@@ -146,7 +146,9 @@ bool ControlFlowBuilder::VisitIn(InstructionStatement *statement)
 	if (auto branchInstruction = dynamic_cast<BranchInstruction *>(statement))
 	{
 		auto statementBlock = m_statementMap.at(statement);
-		m_graph->InsertEdge(statementBlock, m_labelMap.at(branchInstruction->GetLabel()));
+		auto [predicate, negate] = branchInstruction->GetPredicate();
+
+		m_graph->InsertEdge(statementBlock, m_labelMap.at(branchInstruction->GetLabel()), predicate, negate);
 
 		// Predicated branches have an edge to the next block
 

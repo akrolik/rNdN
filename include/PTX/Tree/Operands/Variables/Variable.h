@@ -4,6 +4,7 @@
 
 #include "PTX/Tree/StateSpace.h"
 #include "PTX/Tree/Type.h"
+#include "PTX/Tree/Declarations/NameSet.h"
 
 namespace PTX {
 

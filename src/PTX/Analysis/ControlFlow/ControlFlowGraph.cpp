@@ -3,6 +3,9 @@
 #include <regex>
 #include <unordered_map>
 
+#include "PTX/Tree/Tree.h"
+#include "PTX/Utils/PrettyPrinter.h"
+
 namespace PTX {
 namespace Analysis {
 
@@ -21,9 +24,30 @@ std::string ControlFlowGraph::ToDOTString() const
 	for (const auto& node : GetNodes())
 	{
 		indexMap[node] = index;
-
 		auto name = "n_" + std::to_string(index);
-		auto label = std::regex_replace(node->ToDOTString(), std::regex("\""), "\\\"");
+
+		const auto& statements = node->GetStatements();
+		std::string statementString;
+		if (statements.size() == 0)
+		{
+			statementString = "%empty%";
+		}
+		else if (statements.size() <= 3)
+		{
+			for (const auto& statement : statements)
+			{
+				statementString += PrettyPrinter::PrettyString(statement, true) + "\\l";
+			}
+		}
+		else
+		{
+			statementString += PrettyPrinter::PrettyString(statements.at(0), true) + "\\l";
+			statementString += PrettyPrinter::PrettyString(statements.at(1), true) + "\\l";
+			statementString += "[...]\\l";
+			statementString += PrettyPrinter::PrettyString(statements.back(), true) + "\\l";
+		}
+
+		auto label = std::regex_replace(statementString, std::regex("\""), "\\\"");
 
 		string += "\tsubgraph cluster_" + std::to_string(index) + "{\n";
 		string += "\t\t" + name + "[label=\"" + label + "\", shape=plaintext]\n"; 
@@ -43,8 +67,14 @@ std::string ControlFlowGraph::ToDOTString() const
 			auto nodeIndex = std::to_string(indexMap[node]);
 			auto successorIndex = std::to_string(indexMap[successor]);
 
+			std::string label = " ";
+			if (auto [predicate, negate] = GetEdgeData(node, successor); predicate != nullptr)
+			{
+				label = ((negate) ? "!" : "") + predicate->ToString();
+			}
+
 			string += "\tn_" + nodeIndex + " -> n_" + successorIndex;
-			string += " [ltail=cluster_" + nodeIndex + ",lhead=cluster_" + successorIndex + ",label=\" \"];\n";
+			string += " [ltail=cluster_" + nodeIndex + ",lhead=cluster_" + successorIndex + ",label=\"" + label + "\"];\n";
 		}
 	}
 

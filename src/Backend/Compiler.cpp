@@ -27,8 +27,9 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	PTX::Analysis::ControlFlowBuilder cfgBuilder;
 	auto cfg = cfgBuilder.Analyze(function);
 
-	//TODO: Setting CFG
-	// function->SetControlFlowGraph(cfg);
+	function->SetControlFlowGraph(cfg);
+	function->SetBasicBlocks(cfg->GetNodes());
+	function->InvalidateStatements();
 
 	if (Utils::Options::IsBackend_PrintCFG())
 	{

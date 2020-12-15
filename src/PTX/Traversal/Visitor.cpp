@@ -23,6 +23,11 @@ void Visitor::Visit(Module *module)
 	Visit(static_cast<Node*>(module));
 }
 
+void Visitor::Visit(BasicBlock *block)
+{
+	Visit(static_cast<Node*>(block));
+}
+
 // Functions
 
 void Visitor::Visit(Function *function)

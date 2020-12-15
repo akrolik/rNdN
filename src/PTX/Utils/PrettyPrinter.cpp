@@ -7,10 +7,11 @@
 
 namespace PTX {
 
-std::string PrettyPrinter::PrettyString(const Node *node)
+std::string PrettyPrinter::PrettyString(const Node *node, bool quick)
 {
 	PrettyPrinter printer;
 	printer.m_string.str("");
+	printer.m_quick = quick;
 	node->Accept(printer);
 	return printer.m_string.str();
 }
@@ -237,7 +238,7 @@ void PrettyPrinter::Visit(const InstructionStatement *statement)
 	}
 	m_string << ";";
 
-	if (dynamic_cast<const BranchInstruction *>(statement))
+	if (!m_quick && dynamic_cast<const BranchInstruction *>(statement))
 	{
 		m_string << std::endl;
 	}

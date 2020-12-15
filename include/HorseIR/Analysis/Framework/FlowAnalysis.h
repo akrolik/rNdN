@@ -155,9 +155,6 @@ struct FlowAnalysisPair : public std::pair<T1, T2>
 };
 
 template<class F>
-class FlowAnalysisPrinter;
-
-template<class F>
 class FlowAnalysis : public ConstVisitor, public StatementAnalysis
 {
 public:

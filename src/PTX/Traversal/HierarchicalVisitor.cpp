@@ -28,6 +28,11 @@ bool HierarchicalVisitor::VisitIn(Module *module)
 	return VisitIn(static_cast<Node*>(module));
 }
 
+bool HierarchicalVisitor::VisitIn(BasicBlock *block)
+{
+	return VisitIn(static_cast<Node*>(block));
+}
+
 void HierarchicalVisitor::VisitOut(Program *program)
 {
 	VisitOut(static_cast<Node*>(program));
@@ -36,6 +41,11 @@ void HierarchicalVisitor::VisitOut(Program *program)
 void HierarchicalVisitor::VisitOut(Module *module)
 {
 	VisitOut(static_cast<Node*>(module));
+}
+
+void HierarchicalVisitor::VisitOut(BasicBlock *block)
+{
+	VisitOut(static_cast<Node*>(block));
 }
 
 // Functions

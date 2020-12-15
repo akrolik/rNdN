@@ -15,8 +15,8 @@ public:
 
 	ControlFlowGraph *Analyze(FunctionDefinition<VoidType> *function);
 
-	const std::unordered_map<const Label *, const BasicBlock *>& GetLabelMap() const { return m_labelMap; }
-	const std::unordered_map<const Statement *, const BasicBlock *>& GetStatementMap() const { return m_statementMap; }
+	const std::unordered_map<const Label *, BasicBlock *>& GetLabelMap() const { return m_labelMap; }
+	const std::unordered_map<const Statement *, BasicBlock *>& GetStatementMap() const { return m_statementMap; }
 
 	// Statements
 
@@ -28,8 +28,8 @@ private:
 	BasicBlock *m_currentBlock = nullptr;
 
 	ControlFlowGraph *m_graph = nullptr;
-	std::unordered_map<const Label *, const BasicBlock *> m_labelMap;
-	std::unordered_map<const Statement *, const BasicBlock *> m_statementMap;
+	std::unordered_map<const Label *, BasicBlock *> m_labelMap;
+	std::unordered_map<const Statement *, BasicBlock *> m_statementMap;
 };
 
 class ControlFlowBuilder : public HierarchicalVisitor
@@ -46,11 +46,11 @@ public:
 	bool VisitIn(LabelStatement *statement) override;
 
 private:
-	const BasicBlock *m_previousBlock = nullptr;
+	BasicBlock *m_previousBlock = nullptr;
 
 	ControlFlowGraph *m_graph = nullptr;
-	std::unordered_map<const Label *, const BasicBlock *> m_labelMap;
-	std::unordered_map<const Statement *, const BasicBlock *> m_statementMap;
+	std::unordered_map<const Label *, BasicBlock *> m_labelMap;
+	std::unordered_map<const Statement *, BasicBlock *> m_statementMap;
 };
 
 }

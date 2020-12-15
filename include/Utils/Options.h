@@ -346,6 +346,7 @@ private:
 			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("ptxas"))
 			(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 			(Opt_Backend_print_analysis, "Print backend analyses")
+			(Opt_Backend_print_cfg, "Print control-flow graph")
 			(Opt_Backend_print_sass, "Print generated SASS code")
 			(Opt_Backend_print_assembled, "Print assembled SASS code")
 			(Opt_Backend_print_elf, "Print generated ELF file")

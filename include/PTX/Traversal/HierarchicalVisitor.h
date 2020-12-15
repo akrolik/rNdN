@@ -6,6 +6,7 @@ class Node;
 
 class Program;
 class Module;
+class BasicBlock;
 
 // Type used for functions
 class VoidType;
@@ -43,9 +44,11 @@ public:
 
 	virtual bool VisitIn(Program *program);
 	virtual bool VisitIn(Module *module);
+	virtual bool VisitIn(BasicBlock *block);
 
 	virtual void VisitOut(Program *program);
 	virtual void VisitOut(Module *module);
+	virtual void VisitOut(BasicBlock *block);
 
 	// Functions
 
