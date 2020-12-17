@@ -3,6 +3,8 @@
 #include <sstream>
 #include <utility>
 
+#include "Analysis/FlowValue.h"
+
 #include "HorseIR/Analysis/Framework/ForwardAnalysis.h"
 
 #include "HorseIR/Analysis/DataObject/DataObjectAnalysis.h"
@@ -32,9 +34,9 @@ struct ShapeAnalysisValue
 	}
 };
 
-using ShapeAnalysisProperties = FlowAnalysisPair<
-	FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>, 
-	FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>
+using ShapeAnalysisProperties = ::Analysis::Pair<
+	::Analysis::Map<SymbolObject, ShapeAnalysisValue>, 
+	::Analysis::Map<SymbolObject, ShapeAnalysisValue>
 >;
  
 class ShapeAnalysis : public ForwardAnalysis<ShapeAnalysisProperties>
@@ -77,8 +79,8 @@ public:
 
 	// Shape utilities for propagation
 
-	void KillShapes(const SymbolTable *symbolTable, FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& outMap) const;
-	void MergeShapes(FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& outMap, const FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& otherMap) const;
+	void KillShapes(const SymbolTable *symbolTable, ::Analysis::Map<SymbolObject, ShapeAnalysisValue>& outMap) const;
+	void MergeShapes(::Analysis::Map<SymbolObject, ShapeAnalysisValue>& outMap, const ::Analysis::Map<SymbolObject, ShapeAnalysisValue>& otherMap) const;
 
 	const Shape *GetShape(const Operand *operand) const;
 	const Shape *GetWriteShape(const Operand *operand) const;

@@ -3,6 +3,8 @@
 #include <sstream>
 #include <unordered_set>
 
+#include "Analysis/FlowValue.h"
+
 #include "HorseIR/Analysis/Framework/ForwardAnalysis.h"
 
 #include "HorseIR/Analysis/Utils/SymbolObject.h"
@@ -12,10 +14,10 @@
 namespace HorseIR {
 namespace Analysis {
 
-struct DependencyAccessValue : FlowAnalysisValue<std::unordered_set<const Statement *>>
+struct DependencyAccessValue : ::Analysis::Value<std::unordered_set<const Statement *>>
 {
 	using Type = std::unordered_set<const Statement *>;
-	using FlowAnalysisValue<Type>::Equals;
+	using ::Analysis::Value<Type>::Equals;
 
 	static void Print(std::ostream& os, const Type *val)
 	{
@@ -34,9 +36,9 @@ struct DependencyAccessValue : FlowAnalysisValue<std::unordered_set<const Statem
 	}
 };
 
-using DependencyAccessProperties = FlowAnalysisPair<
-	FlowAnalysisMap<SymbolObject, DependencyAccessValue>,
-	FlowAnalysisMap<SymbolObject, DependencyAccessValue>
+using DependencyAccessProperties = ::Analysis::Pair<
+	::Analysis::Map<SymbolObject, DependencyAccessValue>,
+	::Analysis::Map<SymbolObject, DependencyAccessValue>
 >;
 
 class DependencyAccessAnalysis : public ForwardAnalysis<DependencyAccessProperties>

@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "Analysis/FlowValue.h"
+
 #include "HorseIR/Analysis/Framework/BackwardAnalysis.h"
 #include "HorseIR/Analysis/Utils/SymbolObject.h"
 
@@ -10,7 +12,7 @@
 namespace HorseIR {
 namespace Analysis {
 
-using LiveVariablesProperties = FlowAnalysisSet<SymbolObject>;
+using LiveVariablesProperties = ::Analysis::Set<SymbolObject>;
 
 class LiveVariables : public BackwardAnalysis<LiveVariablesProperties>
 {

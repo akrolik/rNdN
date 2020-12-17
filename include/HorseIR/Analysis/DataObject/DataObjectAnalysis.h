@@ -5,6 +5,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "Analysis/FlowValue.h"
+
 #include "HorseIR/Analysis/Framework/ForwardAnalysis.h"
 
 #include "HorseIR/Analysis/DataObject/DataObject.h"
@@ -15,10 +17,10 @@
 namespace HorseIR {
 namespace Analysis {
 
-struct DataObjectValue : FlowAnalysisValue<DataObject>
+struct DataObjectValue : ::Analysis::Value<DataObject>
 {
 	using Type = DataObject;
-	using FlowAnalysisValue<Type>::Equals;
+	using ::Analysis::Value<Type>::Equals;
 
 	static void Print(std::ostream& os, const Type *val)
 	{
@@ -26,7 +28,7 @@ struct DataObjectValue : FlowAnalysisValue<DataObject>
 	}
 };
 
-using DataObjectProperties = FlowAnalysisMap<SymbolObject, DataObjectValue>; 
+using DataObjectProperties = ::Analysis::Map<SymbolObject, DataObjectValue>; 
 
 class DataObjectAnalysis : public ForwardAnalysis<DataObjectProperties>
 {

@@ -98,7 +98,7 @@ void ShapeAnalysis::Visit(const BlockStatement *blockS)
 	KillShapes(symbolTable, m_currentOutSet.second);
 }
 
-void ShapeAnalysis::KillShapes(const SymbolTable *symbolTable, FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& outMap) const
+void ShapeAnalysis::KillShapes(const SymbolTable *symbolTable, ::Analysis::Map<SymbolObject, ShapeAnalysisValue>& outMap) const
 {
 	auto it = outMap.begin();
 	while (it != outMap.end())
@@ -2761,7 +2761,7 @@ ShapeAnalysis::Properties ShapeAnalysis::Merge(const Properties& s1, const Prope
 	return outSet;
 }
 
-void ShapeAnalysis::MergeShapes(FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& outMap, const FlowAnalysisMap<SymbolObject, ShapeAnalysisValue>& otherMap) const
+void ShapeAnalysis::MergeShapes(::Analysis::Map<SymbolObject, ShapeAnalysisValue>& outMap, const ::Analysis::Map<SymbolObject, ShapeAnalysisValue>& otherMap) const
 {
 	for (const auto& [symbol, shape] : otherMap)
 	{

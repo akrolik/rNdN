@@ -2,16 +2,18 @@
 
 #include <sstream>
 
+#include "Analysis/FlowValue.h"
+
 #include "HorseIR/Semantics/SymbolTable/SymbolTable.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
 namespace HorseIR {
 namespace Analysis {
 
-struct SymbolObject : FlowAnalysisPointerValue<SymbolTable::Symbol>
+struct SymbolObject : ::Analysis::PointerValue<SymbolTable::Symbol>
 {
 	using Type = SymbolTable::Symbol;
-	using FlowAnalysisPointerValue<Type>::Equals;
+	using ::Analysis::PointerValue<Type>::Equals;
 
 	struct Hash
 	{
