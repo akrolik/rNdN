@@ -32,6 +32,7 @@ public:
 	static constexpr char const *Opt_Backend = "backend";
 	static constexpr char const *Opt_Backend_dump_elf = "backend-dump-elf";
 	static constexpr char const *Opt_Backend_print_analysis = "backend-print-analysis";
+	static constexpr char const *Opt_Backend_print_analysis_block = "backend-print-analysis-block";
 	static constexpr char const *Opt_Backend_print_cfg = "backend-print-cfg";
 	static constexpr char const *Opt_Backend_print_sass = "backend-print-sass";
 	static constexpr char const *Opt_Backend_print_assembled = "backend-print-assembled";
@@ -139,6 +140,7 @@ public:
 
 	static bool IsBackend_DumpELF() { return Present(Opt_Backend_dump_elf); }
 	static bool IsBackend_PrintAnalysis() { return Present(Opt_Backend_print_analysis); }
+	static bool IsBackend_PrintAnalysisBlock() { return Present(Opt_Backend_print_analysis_block); }
 	static bool IsBackend_PrintCFG() { return Present(Opt_Backend_print_cfg); }
 	static bool IsBackend_PrintSASS() { return Present(Opt_Backend_print_sass); }
 	static bool IsBackend_PrintAssembled() { return Present(Opt_Backend_print_assembled); }
@@ -346,6 +348,7 @@ private:
 			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("ptxas"))
 			(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 			(Opt_Backend_print_analysis, "Print backend analyses")
+			(Opt_Backend_print_analysis_block, "Print backend analyses in basic blocks mode")
 			(Opt_Backend_print_cfg, "Print control-flow graph")
 			(Opt_Backend_print_sass, "Print generated SASS code")
 			(Opt_Backend_print_assembled, "Print assembled SASS code")
