@@ -185,7 +185,7 @@ public:
 	virtual void Visit(const BarrierInstruction *instruction) {} // Untyped
 	virtual void Visit(const _BarrierReductionInstruction *instruction) {}
 	virtual void Visit(const BarrierWarpInstruction *instruction) {} // Untyped
-	virtual void Visit(const FenceInstruction *instruction) {}
+	virtual void Visit(const FenceInstruction *instruction) {} // Untyped
 	virtual void Visit(const _MatchInstruction *instruction) {}
 	virtual void Visit(const MemoryBarrierInstruction *instruction) {} // Untyped
 	virtual void Visit(const _ReductionInstruction *instruction) {}

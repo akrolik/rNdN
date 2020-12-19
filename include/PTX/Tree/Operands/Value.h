@@ -5,12 +5,20 @@
 
 #include "PTX/Tree/Operands/Operand.h"
 
+#include "PTX/Traversal/InstructionDispatch.h"
+
 namespace PTX {
 
-template<class T>
-class Value : public TypedOperand<T>
+DispatchInterface(Value)
+
+template<class T, bool Assert = true>
+class Value : DispatchInherit(Value), public TypedOperand<T>
 {
 public:
+	REQUIRE_TYPE_PARAM(Value,
+		REQUIRE_BASE(T, ScalarType)
+	);
+
 	Value(typename T::SystemType value) : m_value(value) {}
 
 	// Properties
@@ -55,9 +63,17 @@ public:
 		return j;
 	}
 
-private:
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	typename T::SystemType m_value;
 };
+
+DispatchImplementation(Value)
 
 using BoolValue = Value<PredicateType>;
 

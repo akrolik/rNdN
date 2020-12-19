@@ -14,12 +14,14 @@ public:
 	const std::string& GetInstruction() const { return m_instruction; }
 	void SetInstruction(const std::string& instruction) { m_instruction = instruction; }
 
-	// Formatting
+	// OpCode
 
 	std::string GetOpCode() const override
 	{
 		return m_instruction;
 	}
+
+	// Operands
 
 	std::vector<const Operand *> GetOperands() const override
 	{

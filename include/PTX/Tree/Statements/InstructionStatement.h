@@ -10,9 +10,12 @@ namespace PTX {
 class InstructionStatement : public Statement
 {
 public:
-	// Properties
+	// OpCode
 
 	virtual std::string GetOpCode() const = 0;
+
+	// Operands
+
 	virtual std::vector<const Operand *> GetOperands() const = 0;
 	virtual std::vector<Operand *> GetOperands() = 0;
 

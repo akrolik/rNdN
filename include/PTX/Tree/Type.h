@@ -54,7 +54,12 @@ struct Type {
 	virtual ~Type() = default;
 };
 
-struct VoidType : Type { static std::string Name() { return ""; } };
+struct VoidType : Type
+{
+	using SystemType = bool;
+
+	static std::string Name() { return ""; }
+};
 
 struct DataType : Type {};
 
@@ -171,7 +176,7 @@ struct BitTypeBase : ScalarType
 };
 
 template<>
-struct BitTypeBase<Bits::Bits1, 1> : Type
+struct BitTypeBase<Bits::Bits1, 1> : ScalarType
 {
 	constexpr static Bits TypeBits = Bits::Bits1;
 

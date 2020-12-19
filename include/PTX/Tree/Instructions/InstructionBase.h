@@ -20,7 +20,7 @@ public:
 	Register<D> *GetDestination() { return m_destination; }
 	void SetDestination(Register<D> *destination) { m_destination = destination; }
 
-	// Formatting
+	// Operands
 
 	std::vector<const Operand *> GetOperands() const override
 	{
@@ -52,7 +52,7 @@ public:
 	TypedOperand<S> *GetSource() { return m_source; }
 	void SetSource(TypedOperand<S> *source) { m_source = source; }
 
-	// Formatting
+	// Operands
 
 	std::vector<const Operand *> GetOperands() const override
 	{
@@ -89,7 +89,7 @@ public:
 	TypedOperand<S2> *GetSourceB() { return m_sourceB; }
 	void SetSourceB(TypedOperand<S2> *source) { m_sourceB = source; }
 
-	// Formatting
+	// Operands
 
 	std::vector<const Operand *> GetOperands() const override
 	{
@@ -131,7 +131,7 @@ public:
 	TypedOperand<S3> *GetSourceC() { return m_sourceC; }
 	void SetSourceC(TypedOperand<S3> *source) { m_sourceC = source; }
 
-	// Formatting
+	// Operands
 
 	std::vector<const Operand *> GetOperands() const override
 	{
@@ -178,7 +178,7 @@ public:
 	TypedOperand<S4> *GetSourceD() { return m_sourceD; }
 	void SetSourceD(TypedOperand<S4> *source) { m_sourceD = source; }
 
-	// Formatting
+	// Operands
 
 	std::vector<const Operand *> GetOperands() const override
 	{
