@@ -4,10 +4,16 @@
 
 namespace PTX {
 
-template<class T>
-class Constant : public TypedOperand<T>
+DispatchInterface(Constant)
+
+template<class T, bool Assert = true>
+class Constant : DispatchInherit(Constant), public TypedOperand<T, Assert>
 {
 public:
+	REQUIRE_TYPE_PARAM(Value,
+		REQUIRE_BASE(T, ScalarType)
+	);
+
 	Constant(const std::string& name) : m_name(name) {}
 
 	// Properties
@@ -30,8 +36,17 @@ public:
 		return j;
 	}
 
-private:
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+
 	std::string m_name;
 };
+
+DispatchImplementation(Constant)
 
 }

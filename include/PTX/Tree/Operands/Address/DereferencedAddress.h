@@ -6,12 +6,14 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S = AddressableSpace>
-class DereferencedAddress : public TypedOperand<T>
+DispatchInterface_Data(DereferencedAddress)
+
+template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
+class DereferencedAddress : DispatchInherit(DereferencedAddress), public TypedOperand<T, Assert>
 {
 public:
 	REQUIRE_TYPE_PARAM(DereferencedAddress,
-		REQUIRE_BASE(T, Type)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(DereferencedAddress,
 		REQUIRE_BASE(S, AddressableSpace)
@@ -40,9 +42,20 @@ public:
 		return j;
 	}
 
-private:
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	Address<B, T, S> *m_address = nullptr;
 };
+
+DispatchImplementation_Data(DereferencedAddress)
 
 template<class T, class S>
 using DereferencedAddress32 = DereferencedAddress<Bits::Bits32, T, S>;

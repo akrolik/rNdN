@@ -31,20 +31,10 @@ public:
 
 	// Visitors
 
-	void Accept(Visitor& visitor) override { visitor.Visit(this); }
-	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+	using Operand::Accept;
 
-	void Accept(HierarchicalVisitor& visitor) override
-	{
-		visitor.VisitIn(this);
-		visitor.VisitOut(this);
-	}
-
-	void Accept(ConstHierarchicalVisitor& visitor) const override
-	{
-		visitor.VisitIn(this);
-		visitor.VisitOut(this);
-	}
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
 
 private:
 	std::string m_name;

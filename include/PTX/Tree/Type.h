@@ -801,7 +801,7 @@ struct VectorProperties
 	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
 };
 
-template<class T, VectorSize V>
+template<class T, VectorSize V, bool Assert = true>
 struct VectorType : ValueType
 {
 	REQUIRE_TYPE_PARAM(VectorType, 

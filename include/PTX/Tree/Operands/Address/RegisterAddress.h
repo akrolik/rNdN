@@ -7,17 +7,12 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S = AddressableSpace>
-class RegisterAddress : public Address<B, T, S>
+DispatchInterface_Data(RegisterAddress)
+
+template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
+class RegisterAddress : DispatchInherit(RegisterAddress), public Address<B, T, S, Assert>
 {
 public:
-	REQUIRE_TYPE_PARAM(RegisterAddress,
-		REQUIRE_BASE(T, ValueType)
-	);
-	REQUIRE_SPACE_PARAM(RegisterAddress,
-		REQUIRE_BASE(S, AddressableSpace)
-	);
-
 	RegisterAddress(Register<PointerType<B, T, S>> *variable, int offset = 0) : m_variable(variable), m_offset(offset) {}
 
 	// Properties
@@ -29,7 +24,7 @@ public:
 	int GetOffset() const { return m_offset; }
 	void SetOffset(int offset) { m_offset = offset; }
 
-	RegisterAddress<B, T, S> *CreateOffsetAddress(int offset) const override
+	RegisterAddress<B, T, S, Assert> *CreateOffsetAddress(int offset) const override
 	{
 		return new RegisterAddress(m_variable, m_offset + offset);
 	}
@@ -60,10 +55,21 @@ public:
 		return j;
 	}
 
-private:
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	Register<PointerType<B, T, S>> *m_variable;
 	int m_offset = 0;
 };
+
+DispatchImplementation_Data(RegisterAddress)
 
 template<class T, class S = AddressableSpace>
 using RegisterAddress32 = RegisterAddress<Bits::Bits32, T, S>;

@@ -10,6 +10,13 @@ class BitAdapter : public Adapter<BitType, C, B>
 {
 public:
 	BitAdapter(TypedOperand<C<B>> *operand) : Adapter<BitType, C, B>(operand) {}
+
+	json ToJSON() const override
+	{
+		json j = Adapter<BitType, C, B>::ToJSON();
+		j["kind"] = "PTX::BitAdapter";
+		return j;
+	}
 };
 
 template<template<Bits> class C>

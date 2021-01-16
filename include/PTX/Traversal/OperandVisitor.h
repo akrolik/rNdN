@@ -17,7 +17,12 @@ class _DereferencedAddress;
 class _MemoryAddress;
 class _RegisterAddress;
 
-class _AddressableVariable;
+class _ConstVariable;
+class _GlobalVariable;
+class _LocalVariable;
+class _ParameterVariable;
+class _SharedVariable;
+
 class _Register;
 class _SinkRegister;
 class _IndexedRegister;
@@ -31,7 +36,7 @@ public:
 	virtual void Visit(Label *label) {}
 	virtual void Visit(_BracedOperand *operand) {}
 	virtual void Visit(_Constant *constant) {}
-	virtual void Visit(const _Value *value) {}
+	virtual void Visit(_Value *value) {}
 
 	// Extended
 
@@ -49,7 +54,14 @@ public:
 
 	// Variables
 
-	virtual void Visit(_AddressableVariable *variable) {}
+	virtual void Visit(_ConstVariable *variable) {}
+	virtual void Visit(_GlobalVariable *variable) {}
+	virtual void Visit(_LocalVariable *variable) {}
+	virtual void Visit(_ParameterVariable *variable) {}
+	virtual void Visit(_SharedVariable *variable) {}
+
+	// Registers
+
 	virtual void Visit(_Register *reg) {}
 	virtual void Visit(_SinkRegister *reg) {}
 	virtual void Visit(_IndexedRegister *reg) {}

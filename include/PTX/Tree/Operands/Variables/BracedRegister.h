@@ -6,8 +6,10 @@
 
 namespace PTX {
 
-template<class T, VectorSize V>
-class BracedRegister : public Register<VectorType<T, V>>
+DispatchInterface_Vector(BracedRegister)
+
+template<class T, VectorSize V, bool Assert = true>
+class BracedRegister : DispatchInherit(BracedRegister), public Register<VectorType<T, V, Assert>, Assert>
 {
 public:
 	REQUIRE_TYPE_PARAM(BracedRegister,
@@ -16,7 +18,7 @@ public:
 
 	constexpr static int ElementCount = VectorProperties<V>::ElementCount;
 
-	BracedRegister(const std::array<Register<T> *, ElementCount>& registers) : Register<VectorType<T, V>>(new NameSet(""), 0), m_registers(registers) {}
+	BracedRegister(const std::array<Register<T> *, ElementCount>& registers) : Register<VectorType<T, V, Assert>, Assert>(new NameSet(""), 0), m_registers(registers) {}
 
 	// Properties
 
@@ -45,20 +47,23 @@ public:
 	json ToJSON() const override
 	{
 		json j;
-
 		j["type"] = VectorType<T, V>::Name();
 		j["space"] = RegisterSpace::Name();
 		for (const auto& reg : m_registers)
 		{
 			j["registers"].push_back(reg->ToJSON());
 		}
-
 		return j;
 	}
 
-private:
+protected:
+	DispatchMember_Type(T);
+	DispatchMember_Vector(V);
+
 	const std::array<Register<T> *, ElementCount> m_registers;
 };
+
+DispatchImplementation_Vector(BracedRegister)
 
 template<class T>
 using Braced2Register = BracedRegister<T, VectorSize::Vector2>;

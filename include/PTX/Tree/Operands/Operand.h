@@ -3,7 +3,9 @@
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Node.h"
 
+#include "PTX/Traversal/Dispatch.h"
 #include "PTX/Traversal/OperandVisitor.h"
+#include "PTX/Traversal/ConstOperandVisitor.h"
 
 namespace PTX {
 
@@ -29,11 +31,11 @@ public:
 		visitor.VisitOut(this);
 	}
 
-	//TODO: Remove default
-	virtual void Accept(OperandVisitor& visitor) const {}
+	virtual void Accept(OperandVisitor& visitor) = 0;
+	virtual void Accept(ConstOperandVisitor& visitor) const = 0;
 };
 
-template<class T>
+template<class T, bool Assert = true>
 class TypedOperand : public virtual Operand
 {
 public:

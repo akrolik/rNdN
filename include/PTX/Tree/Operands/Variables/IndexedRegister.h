@@ -5,8 +5,10 @@
 
 namespace PTX {
 
-template<class T, VectorSize V>
-class IndexedRegister : public VariableAdapter<T, VectorType<T, V>, RegisterSpace>
+DispatchInterface_Vector(IndexedRegister)
+
+template<class T, VectorSize V, bool Assert = true>
+class IndexedRegister : DispatchInherit(IndexedRegister), public VariableAdapter<T, VectorType<T, V, Assert>, RegisterSpace, Assert>
 {
 public:
 	REQUIRE_TYPE_PARAM(IndexedRegister,
@@ -14,7 +16,7 @@ public:
 	);
 
 	IndexedRegister(Register<VectorType<T, V>> *variable, VectorElement vectorElement)
-		: VariableAdapter<T, VectorType<T, V>, RegisterSpace>(variable), m_vectorElement(vectorElement) {}
+		: VariableAdapter<T, VectorType<T, V, Assert>, RegisterSpace, Assert>(variable), m_vectorElement(vectorElement) {}
 
 	// Properties
 
@@ -37,9 +39,19 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(static_cast<_IndexedRegister *>(this)); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(static_cast<const _IndexedRegister *>(this)); }
+
 protected:
+	DispatchMember_Type(T);
+	DispatchMember_Vector(V);
+
 	VectorElement m_vectorElement;
 };
+
+DispatchImplementation_Vector(IndexedRegister)
 
 template<class T>
 using IndexedRegister2 = IndexedRegister<T, VectorSize::Vector2>;

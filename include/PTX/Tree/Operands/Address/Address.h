@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-template<Bits B, class T, class S = AddressableSpace>
+template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
 class Address : public Operand
 {
 public:
@@ -15,7 +15,7 @@ public:
 		REQUIRE_BASE(S, AddressableSpace)
 	);
 
-	virtual Address<B, T, S> *CreateOffsetAddress(int offset) const = 0;
+	virtual Address<B, T, S, Assert> *CreateOffsetAddress(int offset) const = 0;
 };
 
 template<class T, class S>

@@ -4,13 +4,9 @@
 
 namespace PTX {
 
-template<template<Bits> class T, Bits B>
-class BitAdapter;
-
 template<template<Bits> class D, template<Bits> class S, Bits BD, Bits BS = BD>
 class Adapter : public TypedOperand<D<BD>>
 {
-	friend class BitAdapter<S, BD>;
 public:
 	std::string ToString() const { return m_operand->ToString(); }
 
@@ -23,6 +19,11 @@ public:
 		j["operand"] = m_operand->ToJSON();
 		return j;
 	}
+
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { m_operand->Accept(visitor); }
+	void Accept(ConstOperandVisitor& visitor) const override { m_operand->Accept(visitor); }
 
 protected:
 	Adapter(TypedOperand<S<BS>> *operand) : m_operand(operand) {}

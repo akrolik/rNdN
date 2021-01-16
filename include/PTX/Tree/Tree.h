@@ -75,7 +75,13 @@ namespace PTX {
 // Variables
 
 #include "PTX/Tree/Operands/Variables/Variable.h"
-#include "PTX/Tree/Operands/Variables/AddressableVariable.h"
+
+#include "PTX/Tree/Operands/Variables/ConstVariable.h"
+#include "PTX/Tree/Operands/Variables/GlobalVariable.h"
+#include "PTX/Tree/Operands/Variables/LocalVariable.h"
+#include "PTX/Tree/Operands/Variables/ParameterVariable.h"
+#include "PTX/Tree/Operands/Variables/SharedVariable.h"
+
 #include "PTX/Tree/Operands/Variables/Register.h"
 #include "PTX/Tree/Operands/Variables/BracedRegister.h"
 #include "PTX/Tree/Operands/Variables/SinkRegister.h"

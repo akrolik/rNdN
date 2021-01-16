@@ -30,6 +30,9 @@ public:
 		return j;
 	}
 
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+
 private:
 	Operand *m_operand = nullptr;
 };

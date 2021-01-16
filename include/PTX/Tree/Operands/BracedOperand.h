@@ -6,8 +6,10 @@
 
 namespace PTX {
 
-template<class T, VectorSize V>
-class BracedOperand : public TypedOperand<VectorType<T, V>>
+DispatchInterface_Vector(BracedOperand)
+
+template<class T, VectorSize V, bool Assert = true>
+class BracedOperand : DispatchInherit(BracedOperand), public TypedOperand<VectorType<T, V, Assert>, Assert>
 {
 public:
 	REQUIRE_TYPE_PARAM(BracedOperand,
@@ -54,9 +56,19 @@ public:
 	}
 
 
-private:
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(T);
+	DispatchMember_Vector(V);
+
 	std::array<TypedOperand<T> *, ElementCount> m_operands;
 };
+
+DispatchImplementation_Vector(BracedOperand)
 
 template<class T>
 using Braced2Operand = BracedOperand<T, VectorSize::Vector2>;

@@ -27,6 +27,11 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { m_address->Accept(visitor); }
+	void Accept(ConstOperandVisitor& visitor) const override { m_address->Accept(visitor); }
+
 protected:
 	Address<B, S, SP> *m_address = nullptr;
 };

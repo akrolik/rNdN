@@ -8,27 +8,23 @@
 
 namespace PTX {
 
-template<class T, class S>
-class TypedVariableDeclaration;
-
-template<class TD, class TS, class S>
+template<class TD, class TS, class S, bool Assert>
 class VariableAdapter;
 
-template<class T, class S>
+template<class T, class S, bool Assert = true>
 class VariableBase : public virtual Operand
 {
-	friend class TypedVariableDeclaration<T, S>;
-
-	template<class T1, class T2, class T3>
+	template<class _TD, class _TS, class _S, bool _Assert>
 	friend class VariableAdapter;
-
+  
+public:
 	REQUIRE_TYPE_PARAM(Variable,
-		REQUIRE_BASE(T, Type)
+		REQUIRE_BASE(T, DataType)
 	);
 	REQUIRE_SPACE_PARAM(Variable,
 		REQUIRE_BASE(S, StateSpace)
 	);	
-public:
+
 	using VariableType = T;
 	using VariableSpace = S;
 
@@ -63,11 +59,11 @@ protected:
 	unsigned int m_nameIndex = 0;
 };
 
-template<class T, class S, typename Enabled = void>
-class Variable : public VariableBase<T, S>
+template<class T, class S, bool Assert = true>
+class Variable : public VariableBase<T, S, Assert>
 {
 public:
-	using VariableBase<T, S>::VariableBase;
+	using VariableBase<T, S, Assert>::VariableBase;
 };
 
 }

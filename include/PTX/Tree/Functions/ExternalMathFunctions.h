@@ -2,7 +2,7 @@
 
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Functions/FunctionDeclaration.h"
-#include "PTX/Tree/Operands/Variables/AddressableVariable.h"
+#include "PTX/Tree/Operands/Variables/ParameterVariable.h"
 
 namespace PTX {
 namespace ExternalMathFunctions {
