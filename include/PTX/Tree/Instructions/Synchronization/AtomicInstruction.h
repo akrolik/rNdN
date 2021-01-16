@@ -12,7 +12,7 @@ namespace PTX {
 
 DispatchInterface_Data(AtomicInstruction)
 
-template<Bits B, class T, class S = AddressableSpace>
+template<Bits B, class T, class S = AddressableSpace, bool Assert = true>
 class AtomicInstruction : DispatchInherit(AtomicInstruction), public PredicatedInstruction, public ScopeModifier<false>
 {
 public:
@@ -130,8 +130,6 @@ protected:
 	typename T::AtomicOperation m_operation;
 	Synchronization m_synchronization = Synchronization::None;
 };
-
-DispatchImplementation_Data(AtomicInstruction)
 
 template<class T, class S>
 using Atomic32Instruction = AtomicInstruction<Bits::Bits32, T, S>;

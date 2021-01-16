@@ -65,8 +65,6 @@ protected:
 	Address<B, T> *m_address = nullptr;
 };
 
-DispatchImplementation_Data(IsSpaceInstruction);
-
 template<class T, class S>
 using IsSpace32Instruction = IsSpaceInstruction<Bits::Bits32, T, S>;
 template<class T, class S>

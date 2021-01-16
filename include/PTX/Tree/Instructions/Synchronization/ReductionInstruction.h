@@ -107,8 +107,6 @@ protected:
 	Synchronization m_synchronization = Synchronization::None;
 };
 
-DispatchImplementation(ReductionInstruction)
-
 template<class T, class S>
 using Reduction32Instruction = ReductionInstruction<Bits::Bits32, T, S>;
 template<class T, class S>

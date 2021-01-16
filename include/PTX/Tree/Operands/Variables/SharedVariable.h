@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, bool Assert = true>
 using SharedVariable = Variable<T, SharedSpace, Assert>;
 
-DispatchInterface(SharedVariable)
+DispatchInterface_Using(SharedVariable)
 
 template<class T, bool Assert>
 class Variable<T, SharedSpace, Assert> : DispatchInherit(SharedVariable), public VariableBase<T, SharedSpace, Assert>
@@ -26,7 +26,5 @@ protected:
 
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(SharedVariable)
 
 }

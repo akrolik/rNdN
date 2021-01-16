@@ -51,8 +51,6 @@ protected:
 	VectorElement m_vectorElement;
 };
 
-DispatchImplementation_Vector(IndexedRegister)
-
 template<class T>
 using IndexedRegister2 = IndexedRegister<T, VectorSize::Vector2>;
 template<class T>

@@ -62,8 +62,6 @@ protected:
 	Address<B, T, AddressableSpace> *m_address = nullptr;
 };
 
-DispatchImplementation_Data(PrefetchUniformInstruction)
-
 template<class T>
 using PrefetchUniform32Instruction = PrefetchUniformInstruction<Bits::Bits32, T, AddressableSpace>;
 template<class T>

@@ -21,6 +21,4 @@ protected:
 	DispatchMember_Type(T);
 };
 
-DispatchImplementation(SinkRegister)
-
 }

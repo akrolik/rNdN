@@ -60,6 +60,4 @@ protected:
 	DispatchMember_Type2(S);
 };
 
-DispatchImplementation_2(ConvertInstruction)
-
 }

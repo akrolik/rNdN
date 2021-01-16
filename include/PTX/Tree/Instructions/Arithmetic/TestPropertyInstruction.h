@@ -73,6 +73,4 @@ protected:
 	Property m_property;
 };
 
-DispatchImplementation(TestPropertyInstruction)
-
 }

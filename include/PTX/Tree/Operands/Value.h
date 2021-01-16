@@ -72,8 +72,6 @@ protected:
 	typename T::SystemType m_value;
 };
 
-DispatchImplementation(Value)
-
 using BoolValue = Value<PredicateType>;
 
 template<Bits B>

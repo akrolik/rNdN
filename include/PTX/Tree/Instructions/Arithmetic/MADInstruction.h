@@ -100,7 +100,5 @@ public:
 protected:
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(MADInstruction)
  
 }

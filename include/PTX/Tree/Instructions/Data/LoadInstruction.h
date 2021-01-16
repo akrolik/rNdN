@@ -17,10 +17,8 @@ enum class LoadSynchronization {
 	Acquire
 };
 
-DispatchInterface_DataAtomic(LoadInstruction, LoadSynchronization)
-
 template<Bits B, class T, class S, bool Assert = true>
-class LoadInstructionBase : DispatchInherit(LoadInstruction), public PredicatedInstruction
+class LoadInstructionBase : public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(LoadInstruction,
@@ -58,22 +56,15 @@ public:
 		return { m_destination, new DereferencedAddress<B, T, S>(m_address) };
 	}
 
-	// Visitors
-
-	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
-	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
-
 protected:
-	DispatchMember_Bits(B);
-	DispatchMember_Type(T);
-	DispatchMember_Space(S);
-
 	Register<T> *m_destination = nullptr;
 	Address<B, T, S> *m_address = nullptr;
 };
 
-template<Bits B, class T, class S, LoadSynchronization M = LoadSynchronization::Weak>
-class LoadInstruction : public LoadInstructionBase<B, T, S>
+DispatchInterface_DataAtomic(LoadInstruction, LoadSynchronization)
+
+template<Bits B, class T, class S, LoadSynchronization M = LoadSynchronization::Weak, bool Assert = true>
+class LoadInstruction : DispatchInherit(LoadInstruction), public LoadInstructionBase<B, T, S, Assert>
 {
 public:
 	enum class CacheOperator {
@@ -124,17 +115,25 @@ public:
 		return code + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(LoadSynchronization, M);
 
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 
-template<Bits B, class T, class S>
-class LoadInstruction<B, T, S, LoadSynchronization::Volatile> : public LoadInstructionBase<B, T, S>
+template<Bits B, class T, class S, bool Assert>
+class LoadInstruction<B, T, S, LoadSynchronization::Volatile, Assert> : DispatchInherit(LoadInstruction), public LoadInstructionBase<B, T, S, Assert>
 {
 public:
-	using LoadInstructionBase<B, T, S>::LoadInstructionBase;
+	using LoadInstructionBase<B, T, S, Assert>::LoadInstructionBase;
 
 	// Formatting
 
@@ -145,18 +144,26 @@ public:
 		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(LoadSynchronization, LoadSynchronization::Volatile);
 };
 
-template<Bits B, class T, class S>
-class LoadInstruction<B, T, S, LoadSynchronization::Relaxed> : public LoadInstructionBase<B, T, S>, public ScopeModifier<>
+template<Bits B, class T, class S, bool Assert>
+class LoadInstruction<B, T, S, LoadSynchronization::Relaxed, Assert> : DispatchInherit(LoadInstruction), public LoadInstructionBase<B, T, S, Assert>, public ScopeModifier<>
 {
 public:
 	using Scope = ScopeModifier<>::Scope;
 
 	LoadInstruction(Register<T> *reg, Address<B, T, S> *address, Scope scope)
-		: LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
+		: LoadInstructionBase<B, T, S, Assert>(reg, address), ScopeModifier<>(scope) {}
 
 	// Formatting
 
@@ -167,18 +174,26 @@ public:
 		return Mnemonic() + ".relaxed" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(LoadSynchronization, LoadSynchronization::Relaxed);
 };
 
-template<Bits B, class T, class S>
-class LoadInstruction<B, T, S, LoadSynchronization::Acquire> : public LoadInstructionBase<B, T, S>, public ScopeModifier<>
+template<Bits B, class T, class S, bool Assert>
+class LoadInstruction<B, T, S, LoadSynchronization::Acquire, Assert> : DispatchInherit(LoadInstruction), public LoadInstructionBase<B, T, S, Assert>, public ScopeModifier<>
 {
 public:
 	using Scope = ScopeModifier<>::Scope;
 
 	LoadInstruction(Register<T> *reg, Address<B, T, S> *address, Scope scope)
-		: LoadInstructionBase<B, T, S>(reg, address), ScopeModifier<>(scope) {}
+		: LoadInstructionBase<B, T, S, Assert>(reg, address), ScopeModifier<>(scope) {}
 
 	// Formatting
 
@@ -189,7 +204,15 @@ public:
 		return Mnemonic() + ".acquire" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(LoadSynchronization, LoadSynchronization::Acquire);
 };
 

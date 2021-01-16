@@ -43,6 +43,4 @@ protected:
 	DispatchMember_Type(T);
 };
 
-DispatchImplementation(NegateInstruction)
- 
 }

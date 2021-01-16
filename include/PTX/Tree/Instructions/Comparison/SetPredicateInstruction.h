@@ -160,6 +160,4 @@ protected:
 	DispatchMember_Type(Float16Type);
 };
 
-DispatchImplementation(SetPredicateInstruction)
-
 }

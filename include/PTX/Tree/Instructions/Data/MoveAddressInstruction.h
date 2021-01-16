@@ -66,6 +66,4 @@ protected:
 	MemoryAddress<B, T, S> *m_source = nullptr;
 };
 
-DispatchImplementation_Data(MoveAddressInstruction)
-
 }

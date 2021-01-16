@@ -246,8 +246,6 @@ protected:
 	}
 };
 
-DispatchImplementation_Space(TypedVariableDeclaration)
-
 //TODO: Initialized dispatch
 
 template<class T, class S>

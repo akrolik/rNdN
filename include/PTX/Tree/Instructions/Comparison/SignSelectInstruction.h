@@ -49,6 +49,4 @@ protected:
 	DispatchMember_Type2(T);
 };
 
-DispatchImplementation_2(SignSelectInstruction)
-
 }

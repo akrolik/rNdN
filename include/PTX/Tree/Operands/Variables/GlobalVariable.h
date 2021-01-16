@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, bool Assert = true>
 using GlobalVariable = Variable<T, GlobalSpace, Assert>;
 
-DispatchInterface(GlobalVariable)
+DispatchInterface_Using(GlobalVariable)
 
 template<class T, bool Assert>
 class Variable<T, GlobalSpace, Assert> : DispatchInherit(GlobalVariable), public VariableBase<T, GlobalSpace, Assert>
@@ -26,7 +26,5 @@ protected:
 
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(GlobalVariable)
 
 }

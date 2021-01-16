@@ -36,7 +36,5 @@ public:
 protected:
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(BitFieldExtractInstruction)
  
 }

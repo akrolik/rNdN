@@ -70,8 +70,6 @@ protected:
 	int m_offset = 0;
 };
 
-DispatchImplementation_Data(MemoryAddress)
-
 template<class T, class S = AddressableSpace>
 using MemoryAddress32 = MemoryAddress<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>

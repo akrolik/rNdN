@@ -68,8 +68,6 @@ protected:
 	std::array<TypedOperand<T> *, ElementCount> m_operands;
 };
 
-DispatchImplementation_Vector(BracedOperand)
-
 template<class T>
 using Braced2Operand = BracedOperand<T, VectorSize::Vector2>;
 template<class T>

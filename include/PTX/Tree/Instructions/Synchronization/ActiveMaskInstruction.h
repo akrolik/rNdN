@@ -6,7 +6,7 @@ namespace PTX {
 
 DispatchInterface(ActiveMaskInstruction)
 
-template<class T>
+template<class T, bool Assert = true>
 class ActiveMaskInstruction : DispatchInherit(ActiveMaskInstruction), public InstructionBase_0<T>
 {
 public:
@@ -33,7 +33,5 @@ public:
 protected:
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(ActiveMaskInstruction)
 
 }

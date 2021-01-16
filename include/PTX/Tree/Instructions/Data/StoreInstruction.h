@@ -17,10 +17,8 @@ enum class StoreSynchronization {
 	Release
 };
 
-DispatchInterface_DataAtomic(StoreInstruction, StoreSynchronization)
-
 template<Bits B, class T, class S, bool Assert = true>
-class StoreInstructionBase : DispatchInherit(StoreInstruction), public PredicatedInstruction
+class StoreInstructionBase : public PredicatedInstruction
 {
 public:
 	REQUIRE_TYPE_PARAM(StoreInstruction,
@@ -58,22 +56,15 @@ public:
 		return { new DereferencedAddress<B, T, S>(m_address), m_source };
 	}
 
-	// Visitors
-
-	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
-	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
-
 protected:
-	DispatchMember_Bits(B);
-	DispatchMember_Type(T);
-	DispatchMember_Space(S);
-
 	Address<B, T, S> *m_address = nullptr;
 	Register<T> *m_source = nullptr;
 };
 
+DispatchInterface_DataAtomic(StoreInstruction, StoreSynchronization)
+
 template<Bits B, class T, class S, StoreSynchronization M = StoreSynchronization::Weak, bool Assert = true>
-class StoreInstruction : public StoreInstructionBase<B, T, S, Assert>
+class StoreInstruction : DispatchInherit(StoreInstruction), public StoreInstructionBase<B, T, S, Assert>
 {
 public:
 	enum class CacheOperator {
@@ -121,14 +112,22 @@ public:
 		return code + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(StoreSynchronization, M);
 
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 
 template<Bits B, class T, class S, bool Assert>
-class StoreInstruction<B, T, S, StoreSynchronization::Volatile, Assert> : public StoreInstructionBase<B, T, S, Assert>
+class StoreInstruction<B, T, S, StoreSynchronization::Volatile, Assert> : DispatchInherit(StoreInstruction), public StoreInstructionBase<B, T, S, Assert>
 {
 public:
 	using StoreInstructionBase<B, T, S, Assert>::StoreInstructionBase;
@@ -142,12 +141,20 @@ public:
 		return Mnemonic() + ".volatile" + S::Name() + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(StoreSynchronization, StoreSynchronization::Volatile);
 };
 
 template<Bits B, class T, class S, bool Assert>
-class StoreInstruction<B, T, S, StoreSynchronization::Relaxed, Assert> : public StoreInstructionBase<B, T, S, Assert>, public ScopeModifier<>
+class StoreInstruction<B, T, S, StoreSynchronization::Relaxed, Assert> : DispatchInherit(StoreInstruction), public StoreInstructionBase<B, T, S, Assert>, public ScopeModifier<>
 {
 public:
 	using Scope = ScopeModifier<>::Scope;
@@ -164,12 +171,20 @@ public:
 		return Mnemonic() + ".relaxed" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(StoreSynchronization, StoreSynchronization::Relaxed);
 };
 
 template<Bits B, class T, class S, bool Assert>
-class StoreInstruction<B, T, S, StoreSynchronization::Release, Assert> : public StoreInstructionBase<B, T, S, Assert>, public ScopeModifier<>
+class StoreInstruction<B, T, S, StoreSynchronization::Release, Assert> : DispatchInherit(StoreInstruction), public StoreInstructionBase<B, T, S, Assert>, public ScopeModifier<>
 {
 public:
 	using Scope = ScopeModifier<>::Scope;
@@ -186,7 +201,15 @@ public:
 		return Mnemonic() + ".release" + ScopeModifier<>::GetOpCodeModifier() + S::Name() + T::Name();
 	}
 
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Bits(B);
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
 	DispatchMember_Atomic(StoreSynchronization, StoreSynchronization::Release);
 };
 

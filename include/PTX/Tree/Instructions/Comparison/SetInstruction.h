@@ -84,6 +84,4 @@ protected:
 	typename T::ComparisonOperator m_comparator;
 };
 
-DispatchImplementation_2(SetInstruction)
-
 }

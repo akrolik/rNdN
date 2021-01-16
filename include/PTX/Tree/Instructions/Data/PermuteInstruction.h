@@ -9,7 +9,7 @@ namespace PTX {
 
 DispatchInterface(PermuteInstruction)
 
-template<class T>
+template<class T, bool Assert = true>
 class PermuteInstruction : DispatchInherit(PermuteInstruction), public InstructionBase_3<T>
 {
 public:
@@ -76,7 +76,5 @@ protected:
 
 	Mode m_mode;
 };
-
-DispatchImplementation(PermuteInstruction)
 
 }

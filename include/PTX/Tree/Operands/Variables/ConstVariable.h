@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, bool Assert = true>
 using ConstVariable = Variable<T, ConstSpace, Assert>;
 
-DispatchInterface(ConstVariable)
+DispatchInterface_Using(ConstVariable)
 
 template<class T, bool Assert>
 class Variable<T, ConstSpace, Assert> : DispatchInherit(ConstVariable), public VariableBase<T, ConstSpace, Assert>
@@ -26,7 +26,5 @@ protected:
 
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(ConstVariable)
 
 }

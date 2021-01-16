@@ -64,8 +64,6 @@ protected:
 	TypedOperand<T> *m_source = nullptr;
 };
 
-DispatchImplementation_Vector(UnpackInstruction)
-
 template<class T>
 using Unpack2Instruction = UnpackInstruction<T, VectorSize::Vector2>;
 template<class T>

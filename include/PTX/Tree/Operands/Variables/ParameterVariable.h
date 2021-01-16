@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, bool Assert = true>
 using ParameterVariable = Variable<T, ParameterSpace, Assert>;
 
-DispatchInterface(ParameterVariable)
+DispatchInterface_Using(ParameterVariable)
 
 template<class T, bool Assert>
 class Variable<T, ParameterSpace, Assert> : DispatchInherit(ParameterVariable), public VariableBase<T, ParameterSpace, Assert>
@@ -26,7 +26,5 @@ protected:
 
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(ParameterVariable)
 
 }

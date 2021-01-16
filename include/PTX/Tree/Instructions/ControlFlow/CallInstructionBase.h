@@ -11,7 +11,7 @@ namespace PTX {
 
 DispatchInterface(CallInstructionBase)
 
-template<class R>
+template<class R, bool Assert = true>
 class CallInstructionBase : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
 {
 public:
@@ -80,8 +80,8 @@ protected:
 	R *m_returnVariable = nullptr;
 };
 
-template<>
-class CallInstructionBase<VoidType> : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
+template<bool Assert>
+class CallInstructionBase<VoidType, Assert> : DispatchInherit(CallInstructionBase), public PredicatedInstruction, public UniformModifier
 {
 public:
 	CallInstructionBase(Function *function, bool uniform) : UniformModifier(uniform), m_function(function) {}
@@ -141,7 +141,5 @@ protected:
 
 	Function *m_function = nullptr;
 };
-
-DispatchImplementation(CallInstructionBase)
 
 }

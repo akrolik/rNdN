@@ -89,6 +89,4 @@ protected:
 	DispatchMember_Type(Float64Type);
 };
 
-DispatchImplementation(RootInstruction)
-
 }

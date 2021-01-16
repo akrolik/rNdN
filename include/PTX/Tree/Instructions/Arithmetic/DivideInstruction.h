@@ -123,7 +123,5 @@ public:
 protected:
 	DispatchMember_Type(Float64Type);
 };
-
-DispatchImplementation(DivideInstruction)
  
 }

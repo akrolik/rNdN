@@ -35,6 +35,4 @@ protected:
 	DispatchMember_Type(T);
 };
 
-DispatchImplementation(Log2Instruction)
-
 }

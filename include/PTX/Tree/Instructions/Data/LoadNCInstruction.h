@@ -101,8 +101,6 @@ protected:
 	CacheOperator m_cacheOperator = CacheOperator::All;
 };
 
-DispatchImplementation_Data(LoadNCInstruction)
-
 template<class T>
 using LoadNC32Instruction = LoadNCInstruction<Bits::Bits32, T, GlobalSpace>;
 template<class T>

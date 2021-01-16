@@ -69,8 +69,6 @@ protected:
 	int m_offset = 0;
 };
 
-DispatchImplementation_Data(RegisterAddress)
-
 template<class T, class S = AddressableSpace>
 using RegisterAddress32 = RegisterAddress<Bits::Bits32, T, S>;
 template<class T, class S = AddressableSpace>

@@ -55,8 +55,6 @@ protected:
 	Address<B, T, S> *m_address = nullptr;
 };
 
-DispatchImplementation_Data(DereferencedAddress)
-
 template<class T, class S>
 using DereferencedAddress32 = DereferencedAddress<Bits::Bits32, T, S>;
 template<class T, class S>

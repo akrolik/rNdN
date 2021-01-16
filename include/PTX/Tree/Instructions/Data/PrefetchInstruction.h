@@ -88,8 +88,6 @@ protected:
 	Level m_level;
 };
 
-DispatchImplementation_Data(PrefetchInstruction)
-
 template<class T, class S>
 using Prefetch32Instruction = PrefetchInstruction<Bits::Bits32, T, S>;
 template<class T, class S>

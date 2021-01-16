@@ -77,8 +77,6 @@ protected:
 	Address<B, T, S> *m_source = nullptr;
 };
 
-DispatchImplementation_Data2(ConvertAddressInstruction)
-
 template<class T, class D, class S>
 using ConvertAddress32Instruction = ConvertAddressInstruction<Bits::Bits32, T, D, S>;
 template<class T, class D, class S>

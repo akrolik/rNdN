@@ -6,7 +6,7 @@ namespace PTX {
 
 DispatchInterface(FunnelShiftInstruction)
 
-template<class T>
+template<class T, bool Assert = true>
 class FunnelShiftInstruction : DispatchInherit(FunnelShiftInstruction), public InstructionBase_3<T, T, T, UInt32Type>
 {
 public:
@@ -72,7 +72,5 @@ protected:
 	Direction m_direction;
 	Mode m_mode;
 };
-
-DispatchImplementation(FunnelShiftInstruction)
 
 }

@@ -47,6 +47,4 @@ protected:
 	std::string m_name;
 };
 
-DispatchImplementation(Constant)
-
 }

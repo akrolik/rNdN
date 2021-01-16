@@ -64,8 +64,6 @@ protected:
 	BracedOperand<PackType, V> *m_source = nullptr;
 };
 
-DispatchImplementation_Vector(PackInstruction)
-
 template<class T>
 using Pack2Instruction = PackInstruction<T, VectorSize::Vector2>;
 template<class T>

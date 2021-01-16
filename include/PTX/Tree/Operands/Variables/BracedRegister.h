@@ -63,8 +63,6 @@ protected:
 	const std::array<Register<T> *, ElementCount> m_registers;
 };
 
-DispatchImplementation_Vector(BracedRegister)
-
 template<class T>
 using Braced2Register = BracedRegister<T, VectorSize::Vector2>;
 template<class T>

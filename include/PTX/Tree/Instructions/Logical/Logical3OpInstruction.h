@@ -72,6 +72,4 @@ protected:
 	std::uint8_t m_immLut = 0x00;
 };
 
-DispatchImplementation(Logical3OpInstruction)
-
 }

@@ -34,6 +34,4 @@ protected:
 	DispatchMember_Type(T);
 };
 
-DispatchImplementation(MultiplyWideInstruction)
- 
 }

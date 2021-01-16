@@ -93,8 +93,6 @@ public:
 	static std::string Mnemonic() { return "vote.sync"; }
 };
 
-DispatchImplementation(VoteInstruction)
-
 template<>
 class VoteInstruction<Bit32Type> : public VoteInstructionBase<Bit32Type>
 {

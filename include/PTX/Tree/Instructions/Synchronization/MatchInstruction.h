@@ -154,7 +154,4 @@ protected:
 	uint32_t m_memberMask = 0;
 };
 
-DispatchImplementation(MatchAllInstruction)
-DispatchImplementation(MatchAnyInstruction)
-
 }

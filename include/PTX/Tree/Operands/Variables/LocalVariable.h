@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, bool Assert = true>
 using LocalVariable = Variable<T, LocalSpace, Assert>;
 
-DispatchInterface(LocalVariable)
+DispatchInterface_Using(LocalVariable)
 
 template<class T, bool Assert>
 class Variable<T, LocalSpace, Assert> : DispatchInherit(LocalVariable), public VariableBase<T, LocalSpace, Assert>
@@ -26,7 +26,5 @@ protected:
 
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(LocalVariable)
 
 }

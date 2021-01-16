@@ -180,6 +180,4 @@ protected:
 	Operation m_operation;
 };
 
-DispatchImplementation(BarrierReductionInstruction)
-
 }

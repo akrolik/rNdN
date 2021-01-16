@@ -11,7 +11,7 @@ namespace PTX {
 
 DispatchInterface(ShuffleInstruction)
 
-template<class T>
+template<class T, bool Assert = true>
 class ShuffleInstruction : DispatchInherit(ShuffleInstruction), public PredicatedInstruction
 {
 public:
@@ -137,7 +137,5 @@ protected:
 
 	Mode m_mode;
 };
-
-DispatchImplementation(ShuffleInstruction)
 
 }

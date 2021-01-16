@@ -71,8 +71,6 @@ protected:
 	Address<B, T, S> *m_address = nullptr;
 };
 
-DispatchImplementation_Data(LoadUniformInstruction)
-
 template<class T, class S>
 using LoadUniform32Instruction = LoadUniformInstruction<Bits::Bits32, T, S>;
 template<class T, class S>

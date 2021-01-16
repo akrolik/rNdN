@@ -49,6 +49,4 @@ protected:
 	bool m_shiftAmount = false;
 };
 
-DispatchImplementation(BitFindInstruction)
-
 }

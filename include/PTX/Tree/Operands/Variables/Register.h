@@ -9,7 +9,7 @@ namespace PTX {
 template<class T, bool Assert = true>
 using Register = Variable<T, RegisterSpace, Assert>;
 
-DispatchInterface(Register)
+DispatchInterface_Using(Register)
 
 template<class T, bool Assert>
 class Variable<T, RegisterSpace, Assert> : DispatchInherit(Register), public VariableBase<T, RegisterSpace, Assert>, public TypedOperand<T, Assert>
@@ -29,7 +29,5 @@ protected:
 
 	DispatchMember_Type(T);
 };
-
-DispatchImplementation(Register)
 
 }
