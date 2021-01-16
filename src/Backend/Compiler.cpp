@@ -2,6 +2,8 @@
 
 #include "Backend/CodeGenerator.h"
 
+#include "PTX/Analysis/BasicFlow/LiveVariables.h"
+#include "PTX/Analysis/BasicFlow/ReachingDefinitions.h"
 #include "PTX/Analysis/ControlFlow/ControlFlowBuilder.h"
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 
@@ -36,6 +38,14 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 		Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
 		Utils::Logger::LogInfo(cfg->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
 	}
+
+	//TODO: testing
+
+	PTX::Analysis::LiveVariables liveVariables;
+	liveVariables.Analyze(function);
+
+	// PTX::Analysis::ReachingDefinitions reachingDefs;
+	// reachingDefs.Analyze(function);
 
 	// Allocate registers
 
