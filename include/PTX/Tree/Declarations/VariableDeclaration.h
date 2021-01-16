@@ -9,11 +9,15 @@
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/StateSpace.h"
 
+#include "PTX/Traversal/Dispatch.h"
+
 #include "Utils/Logger.h"
 
 namespace PTX {
 
-class VariableDeclaration : public Declaration
+DispatchInterface_Space(TypedVariableDeclaration)
+
+class VariableDeclaration : DispatchInherit(TypedVariableDeclaration), public Declaration
 {
 public:
 	using Declaration::Declaration;
@@ -121,18 +125,7 @@ public:
 		visitor.VisitOut(this);
 	}
 
-	// Dispatch
-
-	//TODO: Dispatch
-	template<class V> bool DispatchIn(V& visitor) const;
-	template<class V, class S> bool DispatchIn(V& visitor) const;
-	template<class V> void DispatchOut(V& visitor) const;
-
 protected:
-	//TODO: Dispatch
-	virtual const Type *GetType() const = 0;
-	virtual const StateSpace *GetStateSpace() const = 0;
-
 	std::vector<NameSet *> m_names;
 };
 
@@ -171,16 +164,16 @@ protected:
 	unsigned int m_alignment = DefaultAlignment;
 };
 
-template<class T, class S>
+template<class T, class S, bool Assert = true>
 class TypedVariableDeclaration : public TypedVariableDeclarationBase<T, S>
 {
 public:
 	REQUIRE_TYPE_PARAM(VariableDeclaration,
-		REQUIRE_BASE(T, Type)
+		REQUIRE_BASE(T, DataType)
 	);
 
 	REQUIRE_SPACE_PARAM(VariableDeclaration,
-		REQUIRE_BASE(S, StateSpace)
+		REQUIRE_BASE(S, StateSpace) && !REQUIRE_EXACT(S, AddressableSpace)
 	);
 
 	using TypedVariableDeclarationBase<T, S>::TypedVariableDeclarationBase;
@@ -229,6 +222,9 @@ public:
 	}
 
 protected:
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	std::string VariableNames() const
 	{
 		std::string code;
@@ -248,69 +244,11 @@ protected:
 		}
 		return code;
 	}
-
-	//TODO: Dispatch
-	const T *GetType() const override { return &m_type; }
-	const S *GetStateSpace() const override { return &m_space; }
-
-	T m_type;
-	S m_space;
 };
 
-//TODO: Update dispatch code
-template<class V>
-bool VariableDeclaration::DispatchIn(V& visitor) const
-{
-#define VD_SpaceDispatch(x) if (dynamic_cast<const x*>(space)) { return DispatchIn<V,x>(visitor); }
+DispatchImplementation_Space(TypedVariableDeclaration)
 
-	const auto space = GetStateSpace();
-	VD_SpaceDispatch(RegisterSpace);
-	VD_SpaceDispatch(LocalSpace);
-	VD_SpaceDispatch(GlobalSpace);
-	VD_SpaceDispatch(SharedSpace);
-	VD_SpaceDispatch(ConstSpace);
-	VD_SpaceDispatch(ParameterSpace);
-	return true;
-}
-
-template<class V, class S>
-bool VariableDeclaration::DispatchIn(V& visitor) const
-{
-#define VD_TypeDispatch(x) if (dynamic_cast<const x*>(type)) { return visitor.VisitIn(static_cast<const TypedVariableDeclaration<x, S>*>(this)); }
-
-	const auto type = GetType();
-
-	// Int
-	VD_TypeDispatch(IntType<Bits::Bits8>);
-	VD_TypeDispatch(IntType<Bits::Bits16>);
-	VD_TypeDispatch(IntType<Bits::Bits32>);
-	VD_TypeDispatch(IntType<Bits::Bits64>);
-
-	// UInt
-	VD_TypeDispatch(UIntType<Bits::Bits8>);
-	VD_TypeDispatch(UIntType<Bits::Bits16>);
-	VD_TypeDispatch(UIntType<Bits::Bits32>);
-	VD_TypeDispatch(UIntType<Bits::Bits64>);
-
-	// Float
-	VD_TypeDispatch(FloatType<Bits::Bits16>);
-	VD_TypeDispatch(FloatType<Bits::Bits32>);
-	VD_TypeDispatch(FloatType<Bits::Bits64>);
-
-	// Bit
-	VD_TypeDispatch(BitType<Bits::Bits1>);
-	VD_TypeDispatch(BitType<Bits::Bits8>);
-	VD_TypeDispatch(BitType<Bits::Bits16>);
-	VD_TypeDispatch(BitType<Bits::Bits32>);
-	VD_TypeDispatch(BitType<Bits::Bits64>);
-
-	return true;
-}
-
-template<class V>
-void VariableDeclaration::DispatchOut(V& visitor) const
-{
-}
+//TODO: Initialized dispatch
 
 template<class T, class S>
 class InitializedVariableDeclaration : public TypedVariableDeclaration<T, S>

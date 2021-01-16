@@ -4,8 +4,6 @@
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 #include "PTX/Tree/Instructions/Modifiers/RoundingModifier.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface(ReciprocalInstruction)
@@ -26,6 +24,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
@@ -58,6 +57,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
@@ -90,6 +90,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

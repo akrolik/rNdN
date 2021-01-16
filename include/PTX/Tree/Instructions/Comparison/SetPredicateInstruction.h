@@ -11,8 +11,6 @@
 #include "PTX/Tree/Operands/Extended/DualOperand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface(SetPredicateInstruction)
@@ -106,6 +104,7 @@ public:
 		return operands;
 	}
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
@@ -154,6 +153,7 @@ public:
 
 	// Visitor
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

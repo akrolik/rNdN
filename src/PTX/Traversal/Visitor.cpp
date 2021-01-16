@@ -118,9 +118,4 @@ void Visitor::Visit(Operand *operand)
 	Visit(static_cast<Node*>(operand));
 }
 
-void Visitor::Visit(Label *label)
-{
-	Visit(static_cast<Operand*>(label));
-}
-
 }

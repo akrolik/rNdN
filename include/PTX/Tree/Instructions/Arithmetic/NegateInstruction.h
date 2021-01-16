@@ -3,8 +3,6 @@
 #include "PTX/Tree/Instructions/InstructionBase.h"
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface(NegateInstruction)
@@ -38,6 +36,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

@@ -7,8 +7,6 @@
 #include "PTX/Tree/Operands/Extended/ListOperand.h"
 #include "PTX/Tree/Operands/Extended/StringOperand.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface(CallInstructionBase)
@@ -70,6 +68,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
@@ -132,6 +131,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

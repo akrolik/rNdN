@@ -22,8 +22,9 @@ public:
 	// Declarations
 
 	bool VisitIn(const PTX::VariableDeclaration *declaration) override;
+
 	template<class T, class S>
-	bool VisitIn(const PTX::TypedVariableDeclaration<T, S> *declaration);
+	void Visit(const PTX::TypedVariableDeclaration<T, S> *declaration);
 
 private:
 	SASS::Function *m_function = nullptr;

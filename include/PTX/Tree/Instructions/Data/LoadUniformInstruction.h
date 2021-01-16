@@ -7,8 +7,6 @@
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface_Data(LoadUniformInstruction)
@@ -61,6 +59,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

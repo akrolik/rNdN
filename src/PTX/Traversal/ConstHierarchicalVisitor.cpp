@@ -213,19 +213,9 @@ bool ConstHierarchicalVisitor::VisitIn(const Operand *operand)
 	return VisitIn(static_cast<const Node*>(operand));
 }
 
-bool ConstHierarchicalVisitor::VisitIn(const Label *label)
-{
-	return VisitIn(static_cast<const Operand*>(label));
-}
-
 void ConstHierarchicalVisitor::VisitOut(const Operand *operand)
 {
 	VisitOut(static_cast<const Node*>(operand));
-}
-
-void ConstHierarchicalVisitor::VisitOut(const Label *label)
-{
-	VisitOut(static_cast<const Operand*>(label));
 }
 
 }

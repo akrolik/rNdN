@@ -8,8 +8,6 @@
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 enum class StoreSynchronization {
@@ -62,6 +60,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
@@ -195,16 +194,16 @@ DispatchImplementation_DataAtomic(StoreInstruction, ({
 	switch (GetAtomic())
 	{
 		case StoreSynchronization::Weak:
-			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Weak>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Weak>(visitor);
 			break;
 		case StoreSynchronization::Volatile:
-			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Volatile>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Volatile>(visitor);
 			break;
 		case StoreSynchronization::Relaxed:
-			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Relaxed>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Relaxed>(visitor);
 			break;
 		case StoreSynchronization::Release:
-			InstructionDispatch_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Release>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Release>(visitor);
 			break;
 	}
 }))

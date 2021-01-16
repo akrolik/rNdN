@@ -8,8 +8,6 @@
 #include "PTX/Tree/Operands/Address/DereferencedAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 enum class LoadSynchronization {
@@ -62,6 +60,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
@@ -198,16 +197,16 @@ DispatchImplementation_DataAtomic(LoadInstruction, ({
 	switch (GetAtomic())
 	{
 		case LoadSynchronization::Weak:
-			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Weak>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Weak>(visitor);
 			break;
 		case LoadSynchronization::Volatile:
-			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Volatile>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Volatile>(visitor);
 			break;
 		case LoadSynchronization::Relaxed:
-			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Relaxed>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Relaxed>(visitor);
 			break;
 		case LoadSynchronization::Acquire:
-			InstructionDispatch_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Acquire>(visitor);
+			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Acquire>(visitor);
 			break;
 	}
 }))

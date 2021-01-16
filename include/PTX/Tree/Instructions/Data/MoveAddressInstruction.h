@@ -5,8 +5,6 @@
 #include "PTX/Tree/Operands/Address/MemoryAddress.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface_Data(MoveAddressInstruction)
@@ -56,6 +54,7 @@ public:
 
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

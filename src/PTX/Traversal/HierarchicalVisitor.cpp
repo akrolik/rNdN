@@ -213,19 +213,9 @@ bool HierarchicalVisitor::VisitIn(Operand *operand)
 	return VisitIn(static_cast<Node*>(operand));
 }
 
-bool HierarchicalVisitor::VisitIn(Label *label)
-{
-	return VisitIn(static_cast<Operand*>(label));
-}
-
 void HierarchicalVisitor::VisitOut(Operand *operand)
 {
 	VisitOut(static_cast<Node*>(operand));
-}
-
-void HierarchicalVisitor::VisitOut(Label *label)
-{
-	VisitOut(static_cast<Operand*>(label));
 }
 
 }

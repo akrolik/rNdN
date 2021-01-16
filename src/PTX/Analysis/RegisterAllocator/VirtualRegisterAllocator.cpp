@@ -31,11 +31,12 @@ bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *funct
 
 bool VirtualRegisterAllocator::VisitIn(const VariableDeclaration *declaration)
 {
-	return declaration->DispatchIn(*this);
+	declaration->Dispatch(*this);
+	return false;
 }
 
 template<class T, class S>
-bool VirtualRegisterAllocator::VisitIn(const TypedVariableDeclaration<T, S> *declaration)
+void VirtualRegisterAllocator::Visit(const TypedVariableDeclaration<T, S> *declaration)
 {
 	if constexpr(std::is_same<S, RegisterSpace>::value)
 	{
@@ -57,7 +58,6 @@ bool VirtualRegisterAllocator::VisitIn(const TypedVariableDeclaration<T, S> *dec
 			}
 		}
 	}
-	return false;
 }
 
 }

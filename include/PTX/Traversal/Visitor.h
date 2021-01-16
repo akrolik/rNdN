@@ -30,7 +30,6 @@ class InstructionStatement;
 class LabelStatement;
 
 class Operand;
-class Label;
 
 class Visitor
 {
@@ -75,7 +74,6 @@ public:
 	// Operands
 
 	virtual void Visit(Operand *operand); // Dispatch
-	virtual void Visit(Label *label);
 };
 
 }

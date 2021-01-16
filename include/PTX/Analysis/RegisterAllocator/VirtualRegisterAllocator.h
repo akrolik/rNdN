@@ -23,8 +23,9 @@ public:
 	// Declarations
 
 	bool VisitIn(const VariableDeclaration *declaration) override;
+
 	template<class T, class S>
-	bool VisitIn(const TypedVariableDeclaration<T, S> *declaration);
+	void Visit(const TypedVariableDeclaration<T, S> *declaration);
 
 private:
 	std::uint8_t m_registerOffset = 0;

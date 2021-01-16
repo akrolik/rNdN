@@ -6,8 +6,6 @@
 #include "PTX/Tree/Operands/Operand.h"
 #include "PTX/Tree/Operands/Variables/Register.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface(BarrierReductionInstruction)
@@ -84,8 +82,10 @@ public:
 		}
 		return operands;
 	}
+
 	// Visitors
 
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:                

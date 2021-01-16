@@ -4,8 +4,6 @@
 
 #include "PTX/Tree/Operands/Variables/BracedRegister.h"
 
-#include "PTX/Traversal/InstructionDispatch.h"
-
 namespace PTX {
 
 DispatchInterface_Vector(UnpackInstruction)
@@ -55,6 +53,7 @@ public:
 
 	// Visitors
 	
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:

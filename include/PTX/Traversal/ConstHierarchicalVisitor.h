@@ -30,7 +30,6 @@ class InstructionStatement;
 class LabelStatement;
 
 class Operand;
-class Label;
 
 class ConstHierarchicalVisitor
 {
@@ -99,10 +98,7 @@ public:
 	// Operands
 
 	virtual bool VisitIn(const Operand *operand); // Dispatch
-	virtual bool VisitIn(const Label *label);
-
 	virtual void VisitOut(const Operand *operand); // Dispatch
-	virtual void VisitOut(const Label *label);
 };
 
 }

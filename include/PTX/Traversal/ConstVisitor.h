@@ -30,7 +30,6 @@ class InstructionStatement;
 class LabelStatement;
 
 class Operand;
-class Label;
 
 class ConstVisitor
 {
@@ -75,7 +74,6 @@ public:
 	// Operands
 
 	virtual void Visit(const Operand *operand); // Dispatch
-	virtual void Visit(const Label *label);
 };
 
 }

@@ -149,11 +149,12 @@ void CodeGenerator::VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *funct
 
 bool CodeGenerator::VisitIn(const PTX::VariableDeclaration *declaration)
 {
-	return declaration->DispatchIn(*this);
+	declaration->Dispatch(*this);
+	return false;
 }
 
 template<class T, class S>
-bool CodeGenerator::VisitIn(const PTX::TypedVariableDeclaration<T, S> *declaration)
+void CodeGenerator::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration)
 {
 	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 	{
