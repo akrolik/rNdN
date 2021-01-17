@@ -2,19 +2,20 @@
 
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 
-#include "PTX/Tree/Operands/Extended/HexOperand.h"
+#include "PTX/Tree/Operands/Constants/Value.h"
 
 namespace PTX {
 
 class BarrierWarpInstruction : public PredicatedInstruction
 {
 public:
-	BarrierWarpInstruction(std::uint32_t memberMask) : m_memberMask(memberMask) {}
+	BarrierWarpInstruction(UInt32Value *memberMask) : m_memberMask(memberMask) {}
 
 	// Properties
 
-	std::uint32_t GetMemberMask() const { return m_memberMask; }
-	void SetMemberMask(std::uint32_t memberMask) { m_memberMask = memberMask; }
+	const UInt32Value *GetMemberMask() const { return m_memberMask; }
+	UInt32Value *GetMemberMask() { return m_memberMask; }
+	void SetMemberMask(UInt32Value *memberMask) { m_memberMask = memberMask; }
 
 	// Formatting
 
@@ -27,12 +28,12 @@ public:
 
 	std::vector<const Operand *> GetOperands() const override
 	{
-		return { new HexOperand(m_memberMask) };
+		return { m_memberMask };
 	}
 
 	std::vector<Operand *> GetOperands() override
 	{
-		return { new HexOperand(m_memberMask) };
+		return { m_memberMask };
 	}
 
 	// Visitors
@@ -41,7 +42,7 @@ public:
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
-	std::uint32_t m_memberMask = 0;
+	UInt32Value *m_memberMask = nullptr;
 };
 
 }

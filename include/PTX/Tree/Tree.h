@@ -59,15 +59,17 @@ namespace PTX {
 
 #include "PTX/Tree/Operands/Operand.h"
 #include "PTX/Tree/Operands/Label.h"
-#include "PTX/Tree/Operands/BracedOperand.h"
-#include "PTX/Tree/Operands/Constant.h"
-#include "PTX/Tree/Operands/SpecialConstants.h"
-#include "PTX/Tree/Operands/Value.h"
+
+// Constants
+
+#include "PTX/Tree/Operands/Constants/Constant.h"
+#include "PTX/Tree/Operands/Constants/SpecialConstants.h"
+#include "PTX/Tree/Operands/Constants/Value.h"
 
 // Extended operand formats
 
+#include "PTX/Tree/Operands/Extended/BracedOperand.h"
 #include "PTX/Tree/Operands/Extended/DualOperand.h"
-#include "PTX/Tree/Operands/Extended/HexOperand.h"
 #include "PTX/Tree/Operands/Extended/InvertedOperand.h"
 #include "PTX/Tree/Operands/Extended/ListOperand.h"
 #include "PTX/Tree/Operands/Extended/StringOperand.h"
@@ -75,17 +77,19 @@ namespace PTX {
 // Variables
 
 #include "PTX/Tree/Operands/Variables/Variable.h"
-
 #include "PTX/Tree/Operands/Variables/ConstVariable.h"
 #include "PTX/Tree/Operands/Variables/GlobalVariable.h"
 #include "PTX/Tree/Operands/Variables/LocalVariable.h"
 #include "PTX/Tree/Operands/Variables/ParameterVariable.h"
 #include "PTX/Tree/Operands/Variables/SharedVariable.h"
 
-#include "PTX/Tree/Operands/Variables/Register.h"
-#include "PTX/Tree/Operands/Variables/BracedRegister.h"
-#include "PTX/Tree/Operands/Variables/SinkRegister.h"
-#include "PTX/Tree/Operands/Variables/IndexedRegister.h"
+// Registers
+
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/SpecialRegister.h"
+#include "PTX/Tree/Operands/Variables/Registers/BracedRegister.h"
+#include "PTX/Tree/Operands/Variables/Registers/SinkRegister.h"
+#include "PTX/Tree/Operands/Variables/Registers/IndexedRegister.h"
 
 // Addresses
 
@@ -195,8 +199,9 @@ namespace PTX {
 #include "PTX/Tree/Instructions/Data/LoadInstruction.h"
 #include "PTX/Tree/Instructions/Data/LoadNCInstruction.h"
 #include "PTX/Tree/Instructions/Data/LoadUniformInstruction.h"
-#include "PTX/Tree/Instructions/Data/MoveAddressInstruction.h"
 #include "PTX/Tree/Instructions/Data/MoveInstruction.h"
+#include "PTX/Tree/Instructions/Data/MoveAddressInstruction.h"
+#include "PTX/Tree/Instructions/Data/MoveSpecialInstruction.h"
 #include "PTX/Tree/Instructions/Data/PackInstruction.h"
 #include "PTX/Tree/Instructions/Data/PermuteInstruction.h"
 #include "PTX/Tree/Instructions/Data/PrefetchInstruction.h"

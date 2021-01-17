@@ -5,6 +5,8 @@
 
 #include "PTX/Tree/Operands/Operand.h"
 
+#include "Utils/Format.h"
+
 namespace PTX {
 
 DispatchInterface(Value)
@@ -48,16 +50,18 @@ public:
 			}
 			return stream.str();
 		}
+		else if constexpr(is_int_type<T>::value)
+		{
+			return Utils::Format::HexString(m_value);
+		}
 		return std::to_string(m_value);
 	}
 
 	json ToJSON() const override
 	{
 		json j;
-
 		j["type"] = T::Name();
 		j["value"] = m_value;
-
 		return j;
 	}
 

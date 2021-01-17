@@ -2,7 +2,7 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 
-#include "PTX/Tree/Operands/Extended/HexOperand.h"
+#include "PTX/Tree/Operands/Constants/Value.h"
 
 namespace PTX {
 
@@ -16,13 +16,14 @@ public:
 		REQUIRE_EXACT(T, Bit32Type)
 	);
 
-	Logical3OpInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, std::uint8_t immLut)
+	Logical3OpInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, UInt8Value *immLut)
 		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
 	// Properties
 
-	std::uint8_t GetLookup() const { return m_immLut; }
-	void SetLookup(std::uint8_t lookup) { m_immLut = lookup; }
+	const UInt8Value *GetLookup() const { return m_immLut; }
+	UInt8Value *GetLookup() { return m_immLut; }
+	void SetLookup(UInt8Value *lookup) { m_immLut = lookup; }
 	
 	// Formatting
 
@@ -36,14 +37,14 @@ public:
 	std::vector<const Operand *> GetOperands() const override
 	{
 		auto operands = InstructionBase_3<T>::Operands();
-		operands.push_back(new HexOperand(m_immLut));
+		operands.push_back(m_immLut);
 		return operands;
 	}
 
 	std::vector<Operand *> GetOperands() override
 	{
 		auto operands = InstructionBase_3<T>::Operands();
-		operands.push_back(new HexOperand(m_immLut));
+		operands.push_back(m_immLut);
 		return operands;
 	}
 
@@ -69,7 +70,7 @@ protected:
 	// compute the value of
 	//        0xF0 & 0xCC & 0xAA = 0x80
 
-	std::uint8_t m_immLut = 0x00;
+	UInt8Value *m_immLut = nullptr;
 };
 
 }

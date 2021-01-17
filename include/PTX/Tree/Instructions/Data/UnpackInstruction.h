@@ -2,7 +2,7 @@
 
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 
-#include "PTX/Tree/Operands/Variables/BracedRegister.h"
+#include "PTX/Tree/Operands/Variables/Registers/BracedRegister.h"
 
 namespace PTX {
 

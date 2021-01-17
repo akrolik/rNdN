@@ -4,16 +4,23 @@
 
 namespace PTX {
 
-class InvertedOperand : public Operand
+DispatchInterface(InvertedOperand)
+
+template<class T, bool Assert = true>
+class InvertedOperand : DispatchInherit(InvertedOperand), public TypedOperand<T, Assert>
 {
 public:
-	InvertedOperand(Operand *operand) : m_operand(operand) {}
+	REQUIRE_TYPE_PARAM(InvertedOperand,
+		REQUIRE_EXACT(T, PredicateType)
+	);
+
+	InvertedOperand(TypedOperand<T> *operand) : m_operand(operand) {}
 
 	// Properties
 
-	const Operand *GetOperand() const { return m_operand; }
-	Operand *GetOperand() { return m_operand; }
-	void SetOperand(Operand *operand) { m_operand = operand; }
+	const TypedOperand<T> *GetOperand() const { return m_operand; }
+	TypedOperand<T> *GetOperand() { return m_operand; }
+	void SetOperand(TypedOperand<T> *operand) { m_operand = operand; }
 
 	// Formatting
 
@@ -33,8 +40,10 @@ public:
 	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
 
-private:
-	Operand *m_operand = nullptr;
+protected:
+	DispatchMember_Type(T);
+
+	TypedOperand<T> *m_operand = nullptr;
 };
 
 }

@@ -60,8 +60,9 @@ class _IsSpaceInstruction;
 class _LoadInstruction;
 class _LoadNCInstruction;
 class _LoadUniformInstruction;
-class _MoveAddressInstruction;
 class _MoveInstruction;
+class _MoveAddressInstruction;
+class _MoveSpecialInstruction;
 class _PackInstruction;
 class _PermuteInstruction;
 class _PrefetchInstruction;
@@ -159,8 +160,9 @@ public:
 	virtual void Visit(const _LoadInstruction *instruction) {}
 	virtual void Visit(const _LoadNCInstruction *instruction) {}
 	virtual void Visit(const _LoadUniformInstruction *instruction) {}
-	virtual void Visit(const _MoveAddressInstruction *instruction) {}
 	virtual void Visit(const _MoveInstruction *instruction) {}
+	virtual void Visit(const _MoveAddressInstruction *instruction) {}
+	virtual void Visit(const _MoveSpecialInstruction *instruction) {}
 	virtual void Visit(const _PackInstruction *instruction) {}
 	virtual void Visit(const _PermuteInstruction *instruction) {}
 	virtual void Visit(const _PrefetchInstruction *instruction) {}

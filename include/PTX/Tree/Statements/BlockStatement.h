@@ -2,7 +2,6 @@
 
 #include "PTX/Tree/Statements/Statement.h"
 #include "PTX/Tree/Statements/StatementList.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
 
 namespace PTX {
 

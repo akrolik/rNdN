@@ -119,13 +119,13 @@ void libr3d3::CreateFunction_set(PTX::Module *module, const std::string& typeNam
 	
 	// Compute index
 
-	auto indexed_tid = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
-	auto indexed_ntid = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
-	auto indexed_ctaid = new PTX::IndexedRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
+	auto indexed_tid = new PTX::IndexedSpecialRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_tid->GetVariable("%tid"), PTX::VectorElement::X);
+	auto indexed_ntid = new PTX::IndexedSpecialRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ntid->GetVariable("%ntid"), PTX::VectorElement::X);
+	auto indexed_ctaid = new PTX::IndexedSpecialRegister4<PTX::UInt32Type>(PTX::SpecialRegisterDeclaration_ctaid->GetVariable("%ctaid"), PTX::VectorElement::X);
 
-	kernel->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(indexRegister1, indexed_tid));
-	kernel->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(indexRegister2, indexed_ntid));
-	kernel->AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(indexRegister3, indexed_ctaid));
+	kernel->AddStatement(new PTX::MoveSpecialInstruction<PTX::UInt32Type>(indexRegister1, indexed_tid));
+	kernel->AddStatement(new PTX::MoveSpecialInstruction<PTX::UInt32Type>(indexRegister2, indexed_ntid));
+	kernel->AddStatement(new PTX::MoveSpecialInstruction<PTX::UInt32Type>(indexRegister3, indexed_ctaid));
 
 	kernel->AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
 		indexRegister4, indexRegister2, indexRegister3, indexRegister1, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower

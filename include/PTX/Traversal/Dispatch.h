@@ -3,25 +3,21 @@
 namespace PTX {
 
 #define DispatchSpace(space) \
+	_DispatchSpace(space, SpecialRegisterSpace); \
 	_DispatchSpace(space, RegisterSpace); \
-	_DispatchSpace(space, LocalSpace); \
 	_DispatchSpace(space, GlobalSpace); \
 	_DispatchSpace(space, SharedSpace); \
-	_DispatchSpace(space, ConstSpace); \
 	_DispatchSpace(space, ParameterSpace); \
 	_DispatchSpace(space, AddressableSpace); \
 
 #define COMMA ,
 #define DispatchPointer_Bits(type, T, S) \
-	_DispatchType(type, Pointer32Type<T COMMA S>); \
 	_DispatchType(type, Pointer64Type<T COMMA S>);
 
 #define DispatchPointer_Space(type, T) \
 	DispatchPointer_Bits(type, T, AddressableSpace); \
-	DispatchPointer_Bits(type, T, LocalSpace); \
 	DispatchPointer_Bits(type, T, GlobalSpace); \
 	DispatchPointer_Bits(type, T, SharedSpace); \
-	DispatchPointer_Bits(type, T, ConstSpace); \
 	DispatchPointer_Bits(type, T, ParameterSpace);
 
 #define DispatchPointer(type) \
@@ -33,8 +29,6 @@ namespace PTX {
 	DispatchPointer_Space(type, UInt16Type); \
 	DispatchPointer_Space(type, UInt32Type); \
 	DispatchPointer_Space(type, UInt64Type); \
-	DispatchPointer_Space(type, Float16Type); \
-	DispatchPointer_Space(type, Float16x2Type); \
 	DispatchPointer_Space(type, Float32Type); \
 	DispatchPointer_Space(type, Float64Type); \
 	DispatchPointer_Space(type, PredicateType); \
@@ -43,7 +37,28 @@ namespace PTX {
 	DispatchPointer_Space(type, Bit32Type); \
 	DispatchPointer_Space(type, Bit64Type);
 
+#define DispatchVector_Size(type, T) \
+	_DispatchType(type, VectorType<T COMMA VectorSize::Vector4>)
+
+#define DispatchVector(type) \
+	DispatchVector_Size(type, Int8Type); \
+	DispatchVector_Size(type, Int16Type); \
+	DispatchVector_Size(type, Int32Type); \
+	DispatchVector_Size(type, Int64Type); \
+	DispatchVector_Size(type, UInt8Type); \
+	DispatchVector_Size(type, UInt16Type); \
+	DispatchVector_Size(type, UInt32Type); \
+	DispatchVector_Size(type, UInt64Type); \
+	DispatchVector_Size(type, Float32Type); \
+	DispatchVector_Size(type, Float64Type); \
+	DispatchVector_Size(type, PredicateType); \
+	DispatchVector_Size(type, Bit8Type); \
+	DispatchVector_Size(type, Bit16Type); \
+	DispatchVector_Size(type, Bit32Type); \
+	DispatchVector_Size(type, Bit64Type);
+
 #define DispatchType(type) \
+	DispatchVector(type); \
 	DispatchPointer(type); \
 	_DispatchType(type, VoidType); \
 	_DispatchType(type, Int8Type); \
@@ -54,8 +69,6 @@ namespace PTX {
 	_DispatchType(type, UInt16Type); \
 	_DispatchType(type, UInt32Type); \
 	_DispatchType(type, UInt64Type); \
-	_DispatchType(type, Float16Type); \
-	_DispatchType(type, Float16x2Type); \
 	_DispatchType(type, Float32Type); \
 	_DispatchType(type, Float64Type); \
 	_DispatchType(type, PredicateType); \
@@ -163,6 +176,60 @@ public:
 
 protected:
 	virtual const Type *GetType() const = 0;
+	virtual const VectorSize GetVectorSize() const = 0;
+};
+
+template<template<class, class, VectorSize, bool = true> class C>
+class Dispatcher_VectorSpace
+{
+public:
+	template<class V>
+	void Dispatch(V& visitor) const
+	{
+		const auto vectorSize = GetVectorSize();
+		if (vectorSize == VectorSize::Vector2)
+		{
+			Dispatch<V, VectorSize::Vector2>(visitor);
+		}
+		else if (vectorSize == VectorSize::Vector4)
+		{
+			Dispatch<V, VectorSize::Vector4>(visitor);
+		}
+	}
+
+	template<class V, VectorSize E>
+	void Dispatch(V& visitor) const
+	{
+#define _DispatchSpace(space, S) \
+		if (dynamic_cast<const S*>(space)) { \
+			return Dispatch<V, S, E>(visitor); \
+		}
+
+		const auto space = GetStateSpace();
+		DispatchSpace(space);
+
+#undef _DispatchSpace
+	}
+
+	template<class V, class S, VectorSize E>
+	void Dispatch(V& visitor) const
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<T, S, E, false>::TypeSupported && C<T, S, E, false>::SpaceSupported) { \
+			if (dynamic_cast<const T*>(type)) { \
+				return visitor.Visit(static_cast<const C<T, S, E>*>(this)); \
+			} \
+		}
+
+		const auto type = GetType();
+		DispatchType(type)
+
+#undef _DispatchType
+	}
+
+protected:
+	virtual const Type *GetType() const = 0;
+	virtual const StateSpace *GetStateSpace() const = 0;
 	virtual const VectorSize GetVectorSize() const = 0;
 };
 
@@ -399,6 +466,10 @@ protected:
 #define DispatchInterface_Vector(x) \
 	template<class T, VectorSize V, bool Assert> class x; \
 	class _##x : public Dispatcher_Vector<x> {};
+
+#define DispatchInterface_VectorSpace(x) \
+	template<class T, class S, VectorSize V, bool Assert> class x; \
+	class _##x : public Dispatcher_VectorSpace<x> {};
 
 #define DispatchInterface_Space(x) \
 	template<class T, class S, bool Assert> class x; \

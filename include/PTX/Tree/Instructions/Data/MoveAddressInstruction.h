@@ -3,7 +3,7 @@
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 
 #include "PTX/Tree/Operands/Address/MemoryAddress.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 namespace PTX {
 

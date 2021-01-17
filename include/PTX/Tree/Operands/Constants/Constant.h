@@ -10,7 +10,7 @@ template<class T, bool Assert = true>
 class Constant : DispatchInherit(Constant), public TypedOperand<T, Assert>
 {
 public:
-	REQUIRE_TYPE_PARAM(Value,
+	REQUIRE_TYPE_PARAM(Constant,
 		REQUIRE_BASE(T, ScalarType)
 	);
 

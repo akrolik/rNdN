@@ -3,7 +3,7 @@
 #include "PTX/Tree/Operands/Address/Address.h"
 
 #include "PTX/Tree/StateSpace.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 namespace PTX {
 

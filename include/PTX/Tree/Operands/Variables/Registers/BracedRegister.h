@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 #include "PTX/Tree/Type.h"
 
@@ -22,7 +22,15 @@ public:
 
 	// Properties
 
-	const std::array<const Register<T> *, ElementCount>& GetRegisters() const { return m_registers; }
+	const std::array<const Register<T> *, ElementCount> GetRegisters() const
+	{
+		std::array<const Register<T> *, ElementCount> array;
+		for (auto i = 0u; i < ElementCount; ++i)
+		{
+			array[i] = m_registers[i];
+		}
+		return array;
+	}
 	std::array<Register<T> *, ElementCount>& GetRegisters() { return m_registers; }
 	void SetRegisters(const std::array<Register<T> *, ElementCount>& registers) { m_registers = registers; }
 
@@ -55,6 +63,11 @@ public:
 		}
 		return j;
 	}
+
+	// Visitors
+
+	void Accept(OperandVisitor& visitor) override { visitor.Visit(static_cast<_BracedRegister *>(this)); }
+	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(static_cast<const _BracedRegister *>(this)); }
 
 protected:
 	DispatchMember_Type(T);

@@ -4,7 +4,7 @@
 
 #include "PTX/Tree/BasicBlock.h"
 #include "PTX/Tree/Operands/Label.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 #include "PTX/Tree/Type.h"
 
 #include <stack>

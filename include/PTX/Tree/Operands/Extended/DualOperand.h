@@ -4,20 +4,28 @@
 
 namespace PTX {
 
-class DualOperand : public Operand
+DispatchInterface_2(DualOperand)
+
+template<class T1, class T2, bool Assert = true>
+class DualOperand : DispatchInherit(DualOperand), public Operand
 {
 public:
-	DualOperand(Operand *operandP, Operand *operandQ) : m_operandP(operandP), m_operandQ(operandQ) {}
+	REQUIRE_TYPE_PARAMS(DualOperand,
+		REQUIRE_BASE(T1, Type),
+		REQUIRE_BASE(T2, Type)
+	)
+
+	DualOperand(TypedOperand<T1> *operandP, TypedOperand<T2> *operandQ) : m_operandP(operandP), m_operandQ(operandQ) {}
 
 	// Properties
 
-	const Operand *GetOperandP() const { return m_operandP; }
-	Operand *GetOperandP() { return m_operandP; }
-	void SetOperandP(Operand *operandP) { m_operandP = operandP; }
+	const TypedOperand<T1> *GetOperandP() const { return m_operandP; }
+	TypedOperand<T1> *GetOperandP() { return m_operandP; }
+	void SetOperandP(TypedOperand<T1> *operandP) { m_operandP = operandP; }
 
-	const Operand *GetOperandQ() const { return m_operandQ; }
-	Operand *GetOperandQ() { return m_operandQ; }
-	void SetOperandQ(Operand *operandQ) { m_operandQ = operandQ; }
+	const TypedOperand<T2> *GetOperandQ() const { return m_operandQ; }
+	TypedOperand<T2> *GetOperandQ() { return m_operandQ; }
+	void SetOperandQ(TypedOperand<T2> *operandQ) { m_operandQ = operandQ; }
 
 	// Formatting
 
@@ -39,8 +47,11 @@ public:
 	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
 
 private:
-	Operand *m_operandP = nullptr;
-	Operand *m_operandQ = nullptr;
+	DispatchMember_Type1(T1);
+	DispatchMember_Type2(T2);
+
+	TypedOperand<T1> *m_operandP = nullptr;
+	TypedOperand<T2> *m_operandQ = nullptr;
 };
 
 }

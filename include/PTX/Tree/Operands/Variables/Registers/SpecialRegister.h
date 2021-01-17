@@ -7,17 +7,16 @@
 namespace PTX {
 
 template<class T, bool Assert = true>
-using Register = Variable<T, RegisterSpace, Assert>;
+using SpecialRegister = Variable<T, SpecialRegisterSpace, Assert>;
 
-DispatchInterface_Using(Register)
+DispatchInterface_Using(SpecialRegister)
 
 template<class T, bool Assert>
-class Variable<T, RegisterSpace, Assert> : DispatchInherit(Register), public VariableBase<T, RegisterSpace, Assert>, public TypedOperand<T, Assert>
+class Variable<T, SpecialRegisterSpace, Assert> : DispatchInherit(SpecialRegister), public VariableBase<T, SpecialRegisterSpace, Assert>
 {
 	friend class TypedVariableDeclaration<T, SpecialRegisterSpace>;
-	friend class TypedVariableDeclaration<T, RegisterSpace>;
 public:
-	constexpr static bool TypeSupported = VariableBase<T, RegisterSpace, Assert>::TypeSupported;
+	constexpr static bool TypeSupported = VariableBase<T, SpecialRegisterSpace, Assert>::TypeSupported;
 
 	// Visitors
 
@@ -25,7 +24,7 @@ public:
 	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
 
 protected:
-	using VariableBase<T, RegisterSpace, Assert>::VariableBase;
+	using VariableBase<T, SpecialRegisterSpace, Assert>::VariableBase;
 
 	DispatchMember_Type(T);
 };

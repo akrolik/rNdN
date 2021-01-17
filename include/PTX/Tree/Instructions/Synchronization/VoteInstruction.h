@@ -4,9 +4,9 @@
 
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Operands/Operand.h"
-#include "PTX/Tree/Operands/Extended/HexOperand.h"
+#include "PTX/Tree/Operands/Constants/Value.h"
 #include "PTX/Tree/Operands/Extended/InvertedOperand.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 namespace PTX {
 
@@ -16,7 +16,8 @@ template<class T>
 class VoteInstructionBase : DispatchInherit(VoteInstruction), public PredicatedInstruction
 {
 public:
-	VoteInstructionBase(Register<T> *destination, TypedOperand<PredicateType> *sourcePredicate, uint32_t memberMask, bool negateSourcePredicate = false) : m_destination(destination), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_memberMask(memberMask) {}
+	VoteInstructionBase(Register<T> *destination, TypedOperand<PredicateType> *sourcePredicate, UInt32Value *memberMask, bool negateSourcePredicate = false)
+		: m_destination(destination), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_memberMask(memberMask) {}
 
 	// Properties
 
@@ -31,8 +32,9 @@ public:
 	bool GetNegateSourcePredicate() const { return m_negateSourcePredicate; }
 	void SetNegateSourcePredicate(bool negateSourcePredicate) { m_negateSourcePredicate = negateSourcePredicate; }
 
-	uint32_t GetMemberMask() const { return m_memberMask; }
-	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+	const UInt32Value *GetMemberMask() const { return m_memberMask; }
+	UInt32Value *GetMemberMask() { return m_memberMask; }
+	void SetMemberMask(UInt32Value *memberMask) { m_memberMask = memberMask; }
 	
 	// Formatting
 
@@ -48,7 +50,7 @@ public:
 		{
 			operands.push_back(m_sourcePredicate);
 		}
-		operands.push_back(new HexOperand(m_memberMask));
+		operands.push_back(m_memberMask);
 		return operands;
 	}
 
@@ -64,7 +66,7 @@ public:
 		{
 			operands.push_back(m_sourcePredicate);
 		}
-		operands.push_back(new HexOperand(m_memberMask));
+		operands.push_back(m_memberMask);
 		return operands;
 	}
 
@@ -79,7 +81,7 @@ protected:
 	Register<T> *m_destination = nullptr;
 	TypedOperand<PredicateType> *m_sourcePredicate = nullptr;
 	bool m_negateSourcePredicate = false;
-	uint32_t m_memberMask = 0;
+	UInt32Value *m_memberMask = nullptr;
 };
 
 template<class T, bool Assert = true>
@@ -133,7 +135,8 @@ public:
 		return ".<unknown>";
 	}
 
-	VoteInstruction(Register<PredicateType> *destination, TypedOperand<PredicateType> *sourcePredicate, uint32_t memberMask, Mode mode, bool negateSourcePredicate = false) : VoteInstructionBase<PredicateType>(destination, sourcePredicate, negateSourcePredicate, memberMask), m_mode(mode) {}
+	VoteInstruction(Register<PredicateType> *destination, TypedOperand<PredicateType> *sourcePredicate, UInt32Value *memberMask, Mode mode, bool negateSourcePredicate = false)
+		: VoteInstructionBase<PredicateType>(destination, sourcePredicate, memberMask, negateSourcePredicate), m_mode(mode) {}
 
 	// Properties
 

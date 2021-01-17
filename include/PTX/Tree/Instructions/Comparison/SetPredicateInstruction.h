@@ -9,7 +9,7 @@
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Operands/Operand.h"
 #include "PTX/Tree/Operands/Extended/DualOperand.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 namespace PTX {
 

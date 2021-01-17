@@ -4,9 +4,9 @@
 
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Operands/Operand.h"
+#include "PTX/Tree/Operands/Constants/Value.h"
 #include "PTX/Tree/Operands/Extended/DualOperand.h"
-#include "PTX/Tree/Operands/Extended/HexOperand.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 namespace PTX {
 
@@ -21,10 +21,10 @@ public:
 		REQUIRE_EXACT(T, Bit32Type, Bit64Type)
 	);
 
-	MatchAllInstruction(Register<Bit32Type> *destination, TypedOperand<T> *source, uint32_t memberMask)
+	MatchAllInstruction(Register<Bit32Type> *destination, TypedOperand<T> *source, UInt32Value *memberMask)
 		: MatchAllInstruction(destination, nullptr, source, memberMask) {}
 
-	MatchAllInstruction(Register<Bit32Type> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *source, uint32_t memberMask)
+	MatchAllInstruction(Register<Bit32Type> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *source, UInt32Value *memberMask)
 		: m_destinationD(destinationD), m_destinationP(destinationP), m_source(source), m_memberMask(memberMask) {}
 
 	// Properties
@@ -41,8 +41,9 @@ public:
 	TypedOperand<T> *GetSource() { return m_source; }
 	void SetSource(TypedOperand<T> *source) { m_source = source; }
 
-	uint32_t GetMemberMask() const { return m_memberMask; }
-	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+	const UInt32Value *GetMemberMask() const { return m_memberMask; }
+	UInt32Value *GetMemberMask() { return m_memberMask; }
+	void SetMemberMask(UInt32Value *memberMask) { m_memberMask = memberMask; }
 
 	// Formatting
 
@@ -65,7 +66,7 @@ public:
 			operands.push_back(new DualOperand(m_destinationD, m_destinationP));
 		}
 		operands.push_back(m_source);
-		operands.push_back(new HexOperand(m_memberMask));
+		operands.push_back(m_memberMask);
 		return operands;
 	}
 	
@@ -81,7 +82,7 @@ public:
 			operands.push_back(new DualOperand(m_destinationD, m_destinationP));
 		}
 		operands.push_back(m_source);
-		operands.push_back(new HexOperand(m_memberMask));
+		operands.push_back(m_memberMask);
 		return operands;
 	}
 	
@@ -95,7 +96,7 @@ protected:
 	Register<Bit32Type> *m_destinationD = nullptr;
 	Register<PredicateType> *m_destinationP = nullptr;
 	TypedOperand<T> *m_source = nullptr;
-	uint32_t m_memberMask = 0;
+	UInt32Value *m_memberMask = nullptr;
 };
 
 template<class T, bool Assert = true>
@@ -106,7 +107,7 @@ public:
 		REQUIRE_EXACT(T, Bit32Type, Bit64Type)
 	);
 
-	MatchAnyInstruction(Register<Bit32Type> *destination, TypedOperand<T> *source, uint32_t memberMask)
+	MatchAnyInstruction(Register<Bit32Type> *destination, TypedOperand<T> *source, UInt32Value *memberMask)
 		: m_destination(destination), m_source(source), m_memberMask(memberMask) {}
 
 	// Properties
@@ -119,8 +120,9 @@ public:
 	TypedOperand<T> *GetSource() { return m_source; }
 	void SetSource(TypedOperand<T> *source) { m_source = source; }
 
-	uint32_t GetMemberMask() const { return m_memberMask; }
-	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+	const UInt32Value *GetMemberMask() const { return m_memberMask; }
+	UInt32Value *GetMemberMask() { return m_memberMask; }
+	void SetMemberMask(UInt32Value *memberMask) { m_memberMask = memberMask; }
 
 	// Formatting
 
@@ -133,12 +135,12 @@ public:
 
 	std::vector<const Operand *> GetOperands() const override
 	{
-		return { m_destination, m_source, new HexOperand(m_memberMask) };
+		return { m_destination, m_source, m_memberMask };
 	}
 
 	std::vector<Operand *> GetOperands() override
 	{
-		return { m_destination, m_source, new HexOperand(m_memberMask) };
+		return { m_destination, m_source, m_memberMask };
 	}
 
 	// Visitors
@@ -151,7 +153,7 @@ protected:
 
 	Register<Bit32Type> *m_destination = nullptr;
 	TypedOperand<T> *m_source = nullptr;
-	uint32_t m_memberMask = 0;
+	UInt32Value *m_memberMask = nullptr;
 };
 
 }

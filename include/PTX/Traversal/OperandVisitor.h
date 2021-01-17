@@ -3,13 +3,13 @@
 namespace PTX {
 
 class Label;
-class _BracedOperand;
+
 class _Constant;
 class _Value;
 
-class DualOperand;
-class HexOperand;
-class InvertedOperand;
+class _BracedOperand;
+class _DualOperand;
+class _InvertedOperand;
 class ListOperand;
 class StringOperand;
 
@@ -24,6 +24,7 @@ class _ParameterVariable;
 class _SharedVariable;
 
 class _Register;
+class _SpecialRegister;
 class _SinkRegister;
 class _IndexedRegister;
 class _BracedRegister;
@@ -31,41 +32,42 @@ class _BracedRegister;
 class OperandVisitor
 {
 public:
+	virtual void Visit(Label *label) = 0;
+
 	// Constants
 
-	virtual void Visit(Label *label) {}
-	virtual void Visit(_BracedOperand *operand) {}
-	virtual void Visit(_Constant *constant) {}
-	virtual void Visit(_Value *value) {}
+	virtual void Visit(_Constant *constant) = 0;
+	virtual void Visit(_Value *value) = 0;
 
 	// Extended
 
-	virtual void Visit(DualOperand *operand) {}
-	virtual void Visit(HexOperand *operand) {}
-	virtual void Visit(InvertedOperand *operand) {}
-	virtual void Visit(ListOperand *operand) {}
-	virtual void Visit(StringOperand *operand) {}
+	virtual void Visit(_BracedOperand *operand) = 0;
+	virtual void Visit(_DualOperand *operand) = 0;
+	virtual void Visit(_InvertedOperand *operand) = 0;
+	virtual void Visit(ListOperand *operand) = 0;
+	virtual void Visit(StringOperand *operand) = 0;
 
 	// Address
 
-	virtual void Visit(_DereferencedAddress *address) {}
-	virtual void Visit(_MemoryAddress *address) {}
-	virtual void Visit(_RegisterAddress *address) {}
+	virtual void Visit(_DereferencedAddress *address) = 0;
+	virtual void Visit(_MemoryAddress *address) = 0;
+	virtual void Visit(_RegisterAddress *address) = 0;
 
 	// Variables
 
-	virtual void Visit(_ConstVariable *variable) {}
-	virtual void Visit(_GlobalVariable *variable) {}
-	virtual void Visit(_LocalVariable *variable) {}
-	virtual void Visit(_ParameterVariable *variable) {}
-	virtual void Visit(_SharedVariable *variable) {}
+	virtual void Visit(_ConstVariable *variable) = 0;
+	virtual void Visit(_GlobalVariable *variable) = 0;
+	virtual void Visit(_LocalVariable *variable) = 0;
+	virtual void Visit(_ParameterVariable *variable) = 0;
+	virtual void Visit(_SharedVariable *variable) = 0;
 
 	// Registers
 
-	virtual void Visit(_Register *reg) {}
-	virtual void Visit(_SinkRegister *reg) {}
-	virtual void Visit(_IndexedRegister *reg) {}
-	virtual void Visit(_BracedRegister *reg) {}
+	virtual void Visit(_Register *reg) = 0;
+	virtual void Visit(_SpecialRegister *reg) = 0;
+	virtual void Visit(_SinkRegister *reg) = 0;
+	virtual void Visit(_IndexedRegister *reg) = 0;
+	virtual void Visit(_BracedRegister *reg) = 0;
 };
 
 }

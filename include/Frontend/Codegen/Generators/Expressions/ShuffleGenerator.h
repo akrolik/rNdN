@@ -46,10 +46,10 @@ public:
 
 			this->m_builder.AddStatement(new PTX::Unpack2Instruction<PTX::Bit64Type>(bracedInput, valueBit));
 			this->m_builder.AddStatement(new PTX::ShuffleInstruction(
-				temp3, temp1, new PTX::UInt32Value(offset), new PTX::UInt32Value(bound), memberMask, mode
+				temp3, temp1, new PTX::UInt32Value(offset), new PTX::UInt32Value(bound), new PTX::UInt32Value(memberMask), mode
 			));
 			this->m_builder.AddStatement(new PTX::ShuffleInstruction(
-				temp4, temp2, new PTX::UInt32Value(offset), new PTX::UInt32Value(bound), memberMask, mode
+				temp4, temp2, new PTX::UInt32Value(offset), new PTX::UInt32Value(bound), new PTX::UInt32Value(memberMask), mode
 			));
 			this->m_builder.AddStatement(new PTX::Pack2Instruction<PTX::Bit64Type>(tempBit, bracedOutput));
 		}
@@ -60,7 +60,7 @@ public:
 			auto tempBit = conversion.ConvertSource<PTX::Bit32Type, T>(temp);
 
 			this->m_builder.AddStatement(new PTX::ShuffleInstruction(
-				tempBit, valueBit, new PTX::UInt32Value(offset), new PTX::UInt32Value(bound), memberMask, mode
+				tempBit, valueBit, new PTX::UInt32Value(offset), new PTX::UInt32Value(bound), new PTX::UInt32Value(memberMask), mode
 			));
 		}
 		return temp;                                                                       

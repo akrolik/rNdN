@@ -3,9 +3,9 @@
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 
 #include "PTX/Tree/Operands/Operand.h"
+#include "PTX/Tree/Operands/Constants/Value.h"
 #include "PTX/Tree/Operands/Extended/DualOperand.h"
-#include "PTX/Tree/Operands/Extended/HexOperand.h"
-#include "PTX/Tree/Operands/Variables/Register.h"
+#include "PTX/Tree/Operands/Variables/Registers/Register.h"
 
 namespace PTX {
 
@@ -42,9 +42,9 @@ public:
 		return ".<unknown>";
 	}
 
-	ShuffleInstruction(Register<T> *destinationD, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode)
+	ShuffleInstruction(Register<T> *destinationD, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, UInt32Value *memberMask, Mode mode)
 		: m_destinationD(destinationD), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
-	ShuffleInstruction(Register<T> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, uint32_t memberMask, Mode mode)
+	ShuffleInstruction(Register<T> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, UInt32Value *memberMask, Mode mode)
 		: m_destinationD(destinationD), m_destinationP(destinationP), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
 
 	// Properties
@@ -72,8 +72,9 @@ public:
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
 
-	uint32_t GetMemberMask() const { return m_memberMask; }
-	void SetMemberMask(uint32_t memberMask) { m_memberMask = memberMask; }
+	const UInt32Value *GetMemberMask() const { return m_memberMask; }
+	UInt32Value *GetMemberMask() { return m_memberMask; }
+	void SetMemberMask(UInt32Value *memberMask) { m_memberMask = memberMask; }
 
 	// Formatting
 
@@ -98,7 +99,7 @@ public:
 		operands.push_back(m_sourceA);
 		operands.push_back(m_sourceB);
 		operands.push_back(m_sourceC);
-		operands.push_back(new HexOperand(m_memberMask));
+		operands.push_back(m_memberMask);
 		return operands;
 	}
 
@@ -116,7 +117,7 @@ public:
 		operands.push_back(m_sourceA);
 		operands.push_back(m_sourceB);
 		operands.push_back(m_sourceC);
-		operands.push_back(new HexOperand(m_memberMask));
+		operands.push_back(m_memberMask);
 		return operands;
 	}
 
@@ -133,7 +134,7 @@ protected:
 	TypedOperand<T> *m_sourceA = nullptr;
 	TypedOperand<UInt32Type> *m_sourceB = nullptr;
 	TypedOperand<UInt32Type> *m_sourceC = nullptr;
-	uint32_t m_memberMask = 0;
+	UInt32Value *m_memberMask = nullptr;
 
 	Mode m_mode;
 };

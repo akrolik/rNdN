@@ -34,16 +34,16 @@ public:
 		return GenerateSpecialRegister(PTX::SpecialRegisterDeclaration_nctaid->GetVariable("%nctaid"), element);
 	}
 
-	PTX::Register<PTX::UInt32Type> *GenerateSpecialRegister(PTX::Register<PTX::Vector4Type<PTX::UInt32Type>> *specialRegister, PTX::VectorElement element)
+	PTX::Register<PTX::UInt32Type> *GenerateSpecialRegister(PTX::SpecialRegister<PTX::Vector4Type<PTX::UInt32Type>> *specialRegister, PTX::VectorElement element)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
 		// We cannot operate directly on special registers, so they must first be copied to a user defined register
 
-		auto indexedRegister = new PTX::IndexedRegister4<PTX::UInt32Type>(specialRegister, element);
+		auto indexedRegister = new PTX::IndexedSpecialRegister4<PTX::UInt32Type>(specialRegister, element);
 		auto valueRegister = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(valueRegister, indexedRegister));
+		this->m_builder.AddStatement(new PTX::MoveSpecialInstruction<PTX::UInt32Type>(valueRegister, indexedRegister));
 
 		return valueRegister;
 	}

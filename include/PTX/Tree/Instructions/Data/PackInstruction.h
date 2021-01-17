@@ -2,7 +2,7 @@
 
 #include "PTX/Tree/Instructions/PredicatedInstruction.h"
 
-#include "PTX/Tree/Operands/BracedOperand.h"
+#include "PTX/Tree/Operands/Extended/BracedOperand.h"
 
 namespace PTX {
 

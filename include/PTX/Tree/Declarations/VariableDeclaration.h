@@ -164,6 +164,9 @@ protected:
 	unsigned int m_alignment = DefaultAlignment;
 };
 
+template<class T, class S, bool Assert>
+class Variable;
+
 template<class T, class S, bool Assert = true>
 class TypedVariableDeclaration : public TypedVariableDeclarationBase<T, S>
 {
@@ -180,13 +183,13 @@ public:
 
 	// Properties
 
-	typename S::template VariableType<T> *GetVariable(const std::string& name, unsigned int index = 0) const
+	Variable<T, S, Assert> *GetVariable(const std::string& name, unsigned int index = 0) const
 	{
 		for (const auto &set : this->m_names)
 		{
 			if (set->GetName() == name)
 			{
-				return new typename S::template VariableType<T>(set, index);
+				return new Variable<T, S, Assert>(set, index);
 			}
 		}
 		Utils::Logger::LogError("PTX::Variable(" + name + ") not found in PTX::VariableDeclaration");

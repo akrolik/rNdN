@@ -808,7 +808,9 @@ struct VectorType : ValueType
 		REQUIRE_BASE(T, ScalarType)
 	);
 
+	using SystemType = typename T::SystemType;
 	using ElementType = T;
+	constexpr static Bits TypeBits = T::TypeBits;
 
 	static std::string Name() { return ".v" + std::to_string(VectorProperties<V>::ElementCount) + " " + T::Name(); }
 };

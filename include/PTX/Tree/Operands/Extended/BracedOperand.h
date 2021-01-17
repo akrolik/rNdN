@@ -22,9 +22,17 @@ public:
 
 	// Properties
 
-	const std::array<const TypedOperand<T> *, ElementCount>& GetElements() const { return m_operands; }
-	std::array<TypedOperand<T> *, ElementCount>& GetElements() { return m_operands; }
-	void SetElements(const std::array<TypedOperand<T> *, ElementCount>& operands) { m_operands = operands; }
+	const std::array<const TypedOperand<T> *, ElementCount> GetOperands() const
+	{
+		std::array<const TypedOperand<T> *, ElementCount> array;
+		for (auto i = 0u; i < ElementCount; ++i)
+		{
+			array[i] = m_operands[i];
+		}
+		return array;
+	}
+	std::array<TypedOperand<T> *, ElementCount>& GetOperands() { return m_operands; }
+	void SetOperands(const std::array<TypedOperand<T> *, ElementCount>& operands) { m_operands = operands; }
 
 	// Formatting
 
