@@ -9,14 +9,25 @@ void LiveVariables::Visit(const InstructionStatement *statement)
 
 	m_currentInSet = m_currentOutSet;
 
+	// Assume the first operand is the destination
+
 	m_destination = true;
 	for (const auto operand : statement->GetOperands())
 	{
 		operand->Accept(static_cast<ConstOperandDispatcher&>(*this));
 		m_destination = false;
 	}
+}
 
-	//TODO: Predicated instructions
+void LiveVariables::Visit(const PredicatedInstruction *instruction)
+{
+	ConstVisitor::Visit(instruction);
+
+	if (auto [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
+	{
+		m_destination = false;
+		predicate->Accept(static_cast<ConstOperandDispatcher&>(*this));
+	}
 }
 
 template<Bits B, class T, class S>
@@ -28,12 +39,6 @@ void LiveVariables::Visit(const DereferencedAddress<B, T, S> *address)
 	address->GetAddress()->Accept(static_cast<ConstOperandDispatcher&>(*this));
 
 	m_destination = destination;
-}
-
-template<Bits B, class T, class S>
-void LiveVariables::Visit(const RegisterAddress<B, T, S> *address)
-{
-	address->GetRegister()->Accept(static_cast<ConstOperandDispatcher&>(*this));
 }
 
 template<class T>

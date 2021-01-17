@@ -39,14 +39,13 @@ public:
 	// Visitors
 
 	void Visit(const InstructionStatement *statement) override;
+	void Visit(const PredicatedInstruction *instruction) override;
 
 	// Operand dispatch
 
 	using ConstOperandDispatcher<LiveVariables>::Visit;
 
 	template<Bits B, class T, class S> void Visit(const DereferencedAddress<B, T, S> *address);
-	template<Bits B, class T, class S> void Visit(const RegisterAddress<B, T, S> *address);
-
 	template<class T> void Visit(const PTX::Register<T> *reg);
 
 	// Flow
