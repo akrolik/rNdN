@@ -29,6 +29,8 @@ class DirectiveStatement;
 class InstructionStatement;
 class LabelStatement;
 
+class PredicatedInstruction;
+
 class Operand;
 
 class Visitor
@@ -70,6 +72,10 @@ public:
 	virtual void Visit(DirectiveStatement *statement);
 	virtual void Visit(InstructionStatement *statement); // Dispatch
 	virtual void Visit(LabelStatement *statement);
+
+	// Instructions
+
+	virtual void Visit(PredicatedInstruction *instruction);
 
 	// Operands
 

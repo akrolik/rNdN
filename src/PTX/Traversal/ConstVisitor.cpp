@@ -111,6 +111,13 @@ void ConstVisitor::Visit(const LabelStatement *statement)
 	Visit(static_cast<const Statement*>(statement));
 }
 
+// Instructions
+
+void ConstVisitor::Visit(const PredicatedInstruction *instruction)
+{
+	Visit(static_cast<const InstructionStatement*>(instruction));
+}
+
 // Operands
 
 void ConstVisitor::Visit(const Operand *operand)

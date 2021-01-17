@@ -206,6 +206,18 @@ void HierarchicalVisitor::VisitOut(LabelStatement *statement)
 	VisitOut(static_cast<Statement*>(statement));
 }
 
+// Instructions
+
+bool HierarchicalVisitor::VisitIn(PredicatedInstruction *instruction)
+{
+	return VisitIn(static_cast<InstructionStatement*>(instruction));
+}
+
+void HierarchicalVisitor::VisitOut(PredicatedInstruction *instruction)
+{
+	VisitOut(static_cast<InstructionStatement*>(instruction));
+}
+
 // Operands
 
 bool HierarchicalVisitor::VisitIn(Operand *operand)

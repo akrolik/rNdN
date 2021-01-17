@@ -111,6 +111,13 @@ void Visitor::Visit(LabelStatement *statement)
 	Visit(static_cast<Statement*>(statement));
 }
 
+// Instructions
+
+void Visitor::Visit(PredicatedInstruction *instruction)
+{
+	Visit(static_cast<InstructionStatement*>(instruction));
+}
+
 // Operands
 
 void Visitor::Visit(Operand *operand)

@@ -206,6 +206,18 @@ void ConstHierarchicalVisitor::VisitOut(const LabelStatement *statement)
 	VisitOut(static_cast<const Statement*>(statement));
 }
 
+// Instructions
+
+bool ConstHierarchicalVisitor::VisitIn(const PredicatedInstruction *instruction)
+{
+	return VisitIn(static_cast<const InstructionStatement*>(instruction));
+}
+
+void ConstHierarchicalVisitor::VisitOut(const PredicatedInstruction *instruction)
+{
+	VisitOut(static_cast<const InstructionStatement*>(instruction));
+}
+
 // Operands
 
 bool ConstHierarchicalVisitor::VisitIn(const Operand *operand)
