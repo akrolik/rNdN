@@ -338,9 +338,18 @@ public:
 
 				// Ensure the thread is within bounds for loading data
 
+				auto value = resources->AllocateRegister<S>(name);
+
 				PTX::Label *sizeLabel = nullptr;
 				if (m_boundsCheck)
 				{
+					// Initial value, used to init register for analyses
+
+					MoveGenerator<S> moveGenerator(this->m_builder);
+					moveGenerator.Generate(value, new PTX::Value<S>(0));
+
+					// Bounds checking
+
 					DataSizeGenerator<B> sizeGenerator(this->m_builder);
 					auto size = (isCell) ? sizeGenerator.GenerateSize(parameter, m_cellIndex) : sizeGenerator.GenerateSize(parameter);
 
@@ -354,7 +363,6 @@ public:
 				// Load the value from the global space
 				
 				ValueLoadGenerator<B, S> loadGenerator(this->m_builder);
-				PTX::Register<S> *value = nullptr;
 
 				auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
 				if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
