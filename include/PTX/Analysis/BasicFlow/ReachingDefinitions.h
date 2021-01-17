@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Analysis/Framework/ForwardAnalysis.h"
+#include "PTX/Traversal/ConstOperandDispatcher.h"
 #include "PTX/Utils/PrettyPrinter.h"
 
 #include "Analysis/FlowValue.h"
@@ -51,13 +52,19 @@ struct ReachingDefinitionsValue : ::Analysis::Value<std::unordered_set<const Ins
 
 using ReachingDefinitionsProperties = ::Analysis::Map<ReachingDefinitionsKey, ReachingDefinitionsValue>; 
 
-class ReachingDefinitions : public ForwardAnalysis<ReachingDefinitionsProperties>
+class ReachingDefinitions : public ForwardAnalysis<ReachingDefinitionsProperties>, public ConstOperandDispatcher<ReachingDefinitions>
 {
 public:
 	using Properties = ReachingDefinitionsProperties;
 	using ForwardAnalysis<ReachingDefinitionsProperties>::ForwardAnalysis;
 
 	void Visit(const InstructionStatement *statement) override;
+
+	// Operand dispatch
+
+	using ConstOperandDispatcher<ReachingDefinitions>::Visit;
+
+	template<class T> void Visit(const PTX::Register<T> *reg);
 
 	// Flow
 
@@ -67,6 +74,9 @@ public:
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
 
 	std::string Name() const override { return "Reaching definitions"; }
+
+private:
+	const InstructionStatement *m_currentStatement = nullptr;
 };
 
 }

@@ -8,6 +8,7 @@ void ReachingDefinitions::Visit(const InstructionStatement *statement)
 	// Copy input to output directly
 
 	m_currentOutSet = m_currentInSet;
+	m_currentStatement = statement;
 
 	// Assume the first operand is the destination
 
@@ -15,13 +16,20 @@ void ReachingDefinitions::Visit(const InstructionStatement *statement)
 	if (operands.size() > 0)
 	{
 		const auto& destination = operands.at(0);
-
-		// Add the instruction statement to the map
-
-		auto key = new ReachingDefinitionsKey::Type(destination->ToString());
-		auto value = new ReachingDefinitionsValue::Type({statement});
-		m_currentOutSet[key] = value;
+		destination->Accept(static_cast<ConstOperandDispatcher&>(*this));
 	}
+
+	m_currentStatement = nullptr;
+}
+
+template<class T>
+void ReachingDefinitions::Visit(const Register<T> *reg)
+{
+	// Add the instruction statement to the map
+
+	auto key = new ReachingDefinitionsKey::Type(reg->GetName());
+	auto value = new ReachingDefinitionsValue::Type({m_currentStatement});
+	m_currentOutSet[key] = value;
 }
 
 ReachingDefinitions::Properties ReachingDefinitions::InitialFlow() const
