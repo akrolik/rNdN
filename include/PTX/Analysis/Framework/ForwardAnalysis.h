@@ -16,7 +16,12 @@ public:
 		const auto cfg = function->GetControlFlowGraph();
 		const auto temporaryFlow = this->TemporaryFlow();
 
-		//TODO: Parameters traversal
+		// Traverse parameters
+
+		for (const auto parameter : function->GetParameters())
+		{
+			parameter->Accept(*this);
+		}
 
 		// Initialize worklist with start nodes
 

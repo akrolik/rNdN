@@ -68,11 +68,29 @@ public:
 	// Visitors
 
 	virtual void Visit(const Node *node) = 0;
-	virtual void Visit(const InstructionStatement *statement) = 0;
 
-	void Visit(const BlockStatement *statement)
+	void Visit(const BlockStatement *statement) override
 	{
 		TraverseStatements(statement->GetStatements());
+	}
+
+	void Visit(const DeclarationStatement *statement) override
+	{
+		statement->GetDeclaration()->Accept(*this);
+	}
+
+	void Visit(const InstructionStatement *statement) override
+	{
+		for (const auto& operand : statement->GetOperands())
+		{
+			operand->Accept(*this);
+			PropagateNext();
+		}
+	}
+
+	void Visit(const LabelStatement *statement) override
+	{
+		statement->GetLabel()->Accept(*this);
 	}
 
 	// Accessors
