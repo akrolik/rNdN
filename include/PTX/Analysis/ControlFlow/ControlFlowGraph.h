@@ -26,19 +26,18 @@ public:
 
 	// Nodes
 
-	void InsertNode(const ControlFlowNode& node, const Label *label)
+	void InsertNode(const ControlFlowNode& node)
 	{
 		Utils::Graph<ControlFlowNode>::InsertNode(node);
 
-		m_labelMap[label] = node;
+		m_labelMap[node->GetLabel()] = node;
 	}
 
 	ControlFlowNode GetNode(const Label *label) const { return m_labelMap.at(label); }
 
 	void RemoveNode(const ControlFlowNode& node) override
 	{
-		//TODO: Erase BB map
-		// m_labelMap.erase(node);
+		m_labelMap.erase(node->GetLabel());
 
 		Utils::Graph<ControlFlowNode>::RemoveNode(node);
 	}
@@ -102,8 +101,7 @@ public:
 
 			function(node);
 
-			// Add successors to the stack, firstly the fallthrough edge (no predicate)
-			// then the branching edge
+			// Add successors to the stack, firstly the fallthrough edge (no predicate) then the branching edge
 
 			const auto& successors = GetSuccessors(node);
 			std::vector<ControlFlowNode> successorsVec(std::begin(successors), std::end(successors));

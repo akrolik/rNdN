@@ -21,6 +21,7 @@ public:
 	// Statements
 
 	bool VisitIn(Statement *statement) override;
+	bool VisitIn(PredicatedInstruction *instruction) override;
 	bool VisitIn(LabelStatement *statement) override;
 	
 private:
@@ -42,7 +43,7 @@ public:
 	// Statements
 
 	bool VisitIn(Statement *statement) override;
-	bool VisitIn(InstructionStatement *statement) override;
+	bool VisitIn(PredicatedInstruction *instruction) override;
 	bool VisitIn(LabelStatement *statement) override;
 
 private:

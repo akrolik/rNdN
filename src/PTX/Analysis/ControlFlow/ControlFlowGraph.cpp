@@ -32,7 +32,7 @@ std::string ControlFlowGraph::ToDOTString() const
 		{
 			statementString = "%empty%";
 		}
-		else if (statements.size() <= 3)
+		else if (statements.size() <= 4)
 		{
 			for (const auto& statement : statements)
 			{
@@ -44,6 +44,7 @@ std::string ControlFlowGraph::ToDOTString() const
 			statementString += PrettyPrinter::PrettyString(statements.at(0), true) + "\\l";
 			statementString += PrettyPrinter::PrettyString(statements.at(1), true) + "\\l";
 			statementString += "[...]\\l";
+			statementString += PrettyPrinter::PrettyString(statements.at(statements.size() - 2), true) + "\\l";
 			statementString += PrettyPrinter::PrettyString(statements.back(), true) + "\\l";
 		}
 
@@ -67,14 +68,16 @@ std::string ControlFlowGraph::ToDOTString() const
 			auto nodeIndex = std::to_string(indexMap[node]);
 			auto successorIndex = std::to_string(indexMap[successor]);
 
+			std::string properties;
 			std::string label = " ";
 			if (auto [predicate, negate] = GetEdgeData(node, successor); predicate != nullptr)
 			{
 				label = ((negate) ? "!" : "") + predicate->ToString();
+				properties = ",weight=0";
 			}
 
 			string += "\tn_" + nodeIndex + " -> n_" + successorIndex;
-			string += " [ltail=cluster_" + nodeIndex + ",lhead=cluster_" + successorIndex + ",label=\"" + label + "\"];\n";
+			string += " [ltail=cluster_" + nodeIndex + ",lhead=cluster_" + successorIndex + ",label=\"" + label + "\"" + properties + "];\n";
 		}
 	}
 
