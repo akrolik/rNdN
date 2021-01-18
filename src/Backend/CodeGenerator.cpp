@@ -149,8 +149,13 @@ void CodeGenerator::VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *funct
 
 bool CodeGenerator::VisitIn(const PTX::VariableDeclaration *declaration)
 {
-	declaration->Dispatch(*this);
+	declaration->Accept(static_cast<ConstDeclarationVisitor&>(*this));
 	return false;
+}
+
+void CodeGenerator::Visit(const PTX::_TypedVariableDeclaration *declaration)
+{
+	declaration->Dispatch(*this);
 }
 
 template<class T, class S>

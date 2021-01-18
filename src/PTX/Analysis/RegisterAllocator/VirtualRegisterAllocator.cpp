@@ -21,9 +21,12 @@ void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *funct
 
 bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *function)
 {
+	// Register allocation
+
 	m_registerOffset = 1; // R0 reserved for dummy
 	m_predicateOffset = 0;
 	m_allocation = new RegisterAllocation();
+
 	return true;
 }
 
@@ -31,8 +34,13 @@ bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *funct
 
 bool VirtualRegisterAllocator::VisitIn(const VariableDeclaration *declaration)
 {
-	declaration->Dispatch(*this);
+	declaration->Accept(static_cast<ConstDeclarationVisitor&>(*this));
 	return false;
+}
+
+void VirtualRegisterAllocator::Visit(const _TypedVariableDeclaration *declaration)
+{
+	declaration->Dispatch(*this);
 }
 
 template<class T, class S>

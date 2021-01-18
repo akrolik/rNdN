@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Traversal/ConstHierarchicalVisitor.h"
+#include "PTX/Traversal/ConstDeclarationVisitor.h"
 
 #include <unordered_map>
 
@@ -10,7 +11,7 @@
 namespace PTX {
 namespace Analysis {
 
-class VirtualRegisterAllocator : public ConstHierarchicalVisitor
+class VirtualRegisterAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
 {
 public:
 	void Analyze(const FunctionDefinition<VoidType> *program);
@@ -26,6 +27,7 @@ public:
 
 	template<class T, class S>
 	void Visit(const TypedVariableDeclaration<T, S> *declaration);
+	void Visit(const _TypedVariableDeclaration *declaration) override;
 
 private:
 	std::uint8_t m_registerOffset = 0;

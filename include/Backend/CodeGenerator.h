@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PTX/Traversal/ConstHierarchicalVisitor.h"
+#include "PTX/Traversal/ConstDeclarationVisitor.h"
 
 #include "PTX/Tree/Tree.h"
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
@@ -9,7 +10,7 @@
 
 namespace Backend {
 
-class CodeGenerator : public PTX::ConstHierarchicalVisitor
+class CodeGenerator : public PTX::ConstHierarchicalVisitor, public PTX::ConstDeclarationVisitor
 {
 public:
 	SASS::Function *Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation);
@@ -25,6 +26,8 @@ public:
 
 	template<class T, class S>
 	void Visit(const PTX::TypedVariableDeclaration<T, S> *declaration);
+	void Visit(const PTX::_TypedVariableDeclaration *declaration) override;
+
 
 private:
 	SASS::Function *m_function = nullptr;

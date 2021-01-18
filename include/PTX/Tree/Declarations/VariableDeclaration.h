@@ -9,15 +9,15 @@
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/StateSpace.h"
 
+#include "PTX/Traversal/ConstDeclarationVisitor.h"
+#include "PTX/Traversal/DeclarationVisitor.h"
 #include "PTX/Traversal/Dispatch.h"
 
 #include "Utils/Logger.h"
 
 namespace PTX {
 
-DispatchInterface_Space(TypedVariableDeclaration)
-
-class VariableDeclaration : DispatchInherit(TypedVariableDeclaration), public Declaration
+class VariableDeclaration : public Declaration
 {
 public:
 	using Declaration::Declaration;
@@ -125,6 +125,9 @@ public:
 		visitor.VisitOut(this);
 	}
 
+	virtual void Accept(DeclarationVisitor& visitor) = 0;
+	virtual void Accept(ConstDeclarationVisitor& visitor) const = 0;
+
 protected:
 	std::vector<NameSet *> m_names;
 };
@@ -167,8 +170,10 @@ protected:
 template<class T, class S, bool Assert>
 class Variable;
 
+DispatchInterface_Space(TypedVariableDeclaration)
+
 template<class T, class S, bool Assert = true>
-class TypedVariableDeclaration : public TypedVariableDeclarationBase<T, S>
+class TypedVariableDeclaration : DispatchInherit(TypedVariableDeclaration), public TypedVariableDeclarationBase<T, S>
 {
 public:
 	REQUIRE_TYPE_PARAM(VariableDeclaration,
@@ -224,6 +229,11 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(DeclarationVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstDeclarationVisitor& visitor) const { visitor.Visit(this); }
+
 protected:
 	DispatchMember_Type(T);
 	DispatchMember_Space(S);
@@ -249,10 +259,10 @@ protected:
 	}
 };
 
-//TODO: Initialized dispatch
+DispatchInterface_Space(InitializedVariableDeclaration)
 
-template<class T, class S>
-class InitializedVariableDeclaration : public TypedVariableDeclaration<T, S>
+template<class T, class S, bool Assert = true>
+class InitializedVariableDeclaration : DispatchInherit(InitializedVariableDeclaration), public TypedVariableDeclaration<T, S>
 {
 public:
 	REQUIRE_TYPE_PARAM(VariableDeclaration,
@@ -296,7 +306,15 @@ public:
 		return j;
 	}
 
+	// Visitors
+
+	void Accept(DeclarationVisitor& visitor) override { visitor.Visit(static_cast<_InitializedVariableDeclaration *>(this)); }
+	void Accept(ConstDeclarationVisitor& visitor) const { visitor.Visit(static_cast<const _InitializedVariableDeclaration *>(this)); }
+
 protected:
+	DispatchMember_Type(T);
+	DispatchMember_Space(S);
+
 	std::vector<typename T::SystemType> m_initializer;
 };
 
