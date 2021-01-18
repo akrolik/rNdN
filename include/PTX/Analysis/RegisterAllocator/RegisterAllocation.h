@@ -17,7 +17,7 @@ public:
 	{
 		m_registerMap[name] = {reg, range};
 
-		auto maxReg = reg + range + 1;
+		auto maxReg = reg + (range - 1);
 		if (maxReg > m_count)
 		{
 			m_count = maxReg;
@@ -62,7 +62,7 @@ public:
 
 	std::string ToString() const
 	{
-		std::string string = "  - Registers = " + std::to_string(m_count);
+		std::string string = "  - Registers = " + std::to_string(m_count) + " + [R0 dummy]";
 		for (const auto& [name, pair] : m_registerMap)
 		{
 			string += "\n    - " + name + "->";
@@ -76,7 +76,7 @@ public:
 			}
 
 			auto first = true;
-			for (auto i = 0; i < range; ++i)
+			for (auto i = 0u; i < range; ++i)
 			{
 				if (!first)
 				{
@@ -92,7 +92,7 @@ public:
 			}
 		}
 
-		string += "\n  - Predicates";
+		string += "\n  - Predicates = " + std::to_string(m_predicateMap.size());
 		for (const auto& [name, reg] : m_predicateMap)
 		{
 			string += "\n    - " + name + "->P" + std::to_string(reg);
