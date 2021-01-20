@@ -33,7 +33,7 @@ bool ControlFlowAccumulator::VisitIn(Statement *statement)
 bool ControlFlowAccumulator::VisitIn(PredicatedInstruction *instruction)
 {
 	// 2. Leader after branch/return instruction
-	if (dynamic_cast<BranchInstruction *>(instruction) || dynamic_cast<ReturnInstruction(instruction))
+	if (dynamic_cast<BranchInstruction *>(instruction) || dynamic_cast<ReturnInstruction *>(instruction))
 	{
 		// Add instruction, then end the current block
 
