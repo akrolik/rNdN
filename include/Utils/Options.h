@@ -30,6 +30,7 @@ public:
 	static constexpr char const *Opt_Frontend_print_json = "frontend-print-json";
 
 	static constexpr char const *Opt_Backend = "backend";
+	static constexpr char const *Opt_Backend_reg_alloc = "backend-reg-alloc";
 	static constexpr char const *Opt_Backend_dump_elf = "backend-dump-elf";
 	static constexpr char const *Opt_Backend_print_analysis = "backend-print-analysis";
 	static constexpr char const *Opt_Backend_print_analysis_block = "backend-print-analysis-block";
@@ -124,7 +125,7 @@ public:
 		r3d3
 	};
 
-	static BackendKind GetBackendKind()
+	static BackendKind GetBackend_Kind()
 	{
 		auto backend = Get<std::string>(Opt_Backend);
 		if (backend == "ptxas")
@@ -136,6 +137,25 @@ public:
 			return BackendKind::r3d3;
 		}
 		Utils::Logger::LogError("Unknown backend '" + backend + "'");
+	}
+
+	enum class BackendRegisterAllocator {
+		Virtual,
+		LinearScan
+	};
+
+	static BackendRegisterAllocator GetBackend_RegisterAllocator()
+	{
+		auto allocator = Get<std::string>(Opt_Backend_reg_alloc);
+		if (allocator == "virtual")
+		{
+			return BackendRegisterAllocator::Virtual;
+		}
+		else if (allocator == "linear")
+		{
+			return BackendRegisterAllocator::LinearScan;
+		}
+		Utils::Logger::LogError("Unknown register allocator '" + allocator + "'");
 	}
 
 	static bool IsBackend_DumpELF() { return Present(Opt_Backend_dump_elf); }
@@ -346,6 +366,7 @@ private:
 		;
 		m_options.add_options("Backend")
 			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("ptxas"))
+			(Opt_Backend_reg_alloc, "Register allocation algorithm [virtual|linear]", cxxopts::value<std::string>()->default_value("virtual"))
 			(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 			(Opt_Backend_print_analysis, "Print backend analyses")
 			(Opt_Backend_print_analysis_block, "Print backend analyses in basic blocks mode")

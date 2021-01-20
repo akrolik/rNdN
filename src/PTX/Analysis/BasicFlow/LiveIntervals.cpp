@@ -1,0 +1,76 @@
+#include "PTX/Analysis/BasicFlow/LiveIntervals.h"
+
+namespace PTX {
+namespace Analysis {
+
+void LiveIntervals::Analyze(const FunctionDefinition<VoidType> *function)
+{
+	auto timeIntervals_start = Utils::Chrono::Start("Live intervals '" + function->GetName() + "'");
+	function->Accept(*this);
+	Utils::Chrono::End(timeIntervals_start);
+
+	if (Utils::Options::IsBackend_PrintAnalysis())
+	{
+		Utils::Logger::LogInfo("LiveIntervals '" + function->GetName() + "'");
+		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
+	}
+}
+
+bool LiveIntervals::VisitIn(const InstructionStatement *statement)
+{
+	// Construct live ranges
+
+	for (const auto& element : m_liveVariables.GetOutSet(statement))
+	{
+		auto name = *element;
+		if (m_liveIntervals.find(name) == m_liveIntervals.end())
+		{
+			// New live range
+
+			m_liveIntervals[name] = { m_statementIndex, m_statementIndex };
+		}
+		else
+		{
+			// Existing live range, extend
+
+			m_liveIntervals[name].second = m_statementIndex;
+		}
+	}
+
+	// Increment index for intervals
+
+	m_statementIndex++;
+	return false;
+}
+
+std::string LiveIntervals::DebugString() const
+{
+	std::vector<std::tuple<std::string, unsigned int, unsigned int>> sortedIntervals;
+	for (const auto& [name, interval] : m_liveIntervals)
+	{
+		sortedIntervals.push_back({ name, interval.first, interval.second });
+	}
+	
+	// Sort live intervals by start position
+
+	std::sort(sortedIntervals.begin(), sortedIntervals.end(), [](auto &left, auto &right)
+	{
+		return std::get<1>(left) < std::get<1>(right);
+	});
+
+	std::string string;
+	auto first = true;
+	for (const auto& [name, start, end] : sortedIntervals)
+	{
+		if (!first)
+		{
+			string += "\n";
+		}
+		first = false;
+		string += "  - " + name + " -> [" + std::to_string(start) + "," + std::to_string(end) + "]";
+	}
+	return string;
+}
+
+}
+}

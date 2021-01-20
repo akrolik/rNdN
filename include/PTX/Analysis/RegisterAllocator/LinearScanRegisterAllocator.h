@@ -3,15 +3,20 @@
 #include "PTX/Traversal/ConstHierarchicalVisitor.h"
 #include "PTX/Traversal/ConstDeclarationVisitor.h"
 
+#include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
 #include "PTX/Tree/Tree.h"
+
+#include <unordered_map>
 
 namespace PTX {
 namespace Analysis {
 
-class VirtualRegisterAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
+class LinearScanRegisterAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
 {
 public:
+	LinearScanRegisterAllocator(const LiveIntervals& liveIntervals) : m_liveIntervals(liveIntervals) {}
+
 	// Public API
 
 	void Analyze(const FunctionDefinition<VoidType> *function);
@@ -19,7 +24,7 @@ public:
 
 	// Functions
 
-	bool VisitIn(const FunctionDefinition<VoidType> *function) override;
+	void VisitOut(const FunctionDefinition<VoidType> *function) override;
 
 	// Declarations
 
@@ -30,9 +35,10 @@ public:
 	void Visit(const _TypedVariableDeclaration *declaration) override;
 
 private:
-	std::uint8_t m_registerOffset = 0;
-	std::uint8_t m_predicateOffset = 0;
+	const LiveIntervals& m_liveIntervals;
+
 	RegisterAllocation *m_allocation = nullptr;
+	std::unordered_map<std::string, Bits> m_registerBits;
 };
 
 }

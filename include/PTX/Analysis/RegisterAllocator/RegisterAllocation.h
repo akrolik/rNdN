@@ -11,16 +11,19 @@ namespace Analysis {
 class RegisterAllocation
 {
 public:
+	constexpr static unsigned int MaxRegister = 255;
+	constexpr static unsigned int MaxPredicate = 7;
+
 	// Registers
 
 	void AddRegister(const std::string& name, std::uint8_t reg, std::uint8_t range = 1)
 	{
 		m_registerMap[name] = {reg, range};
 
-		auto maxReg = reg + (range - 1);
-		if (maxReg > m_count)
+		auto maxRegister = reg + (range - 1);
+		if (maxRegister > m_registerCount)
 		{
-			m_count = maxReg;
+			m_registerCount = maxRegister;
 		}
 	}
 
@@ -39,6 +42,12 @@ public:
 	void AddPredicate(const std::string& name, std::uint8_t reg)
 	{
 		m_predicateMap[name] = reg;
+
+		auto maxPredicate = reg + 1;
+		if (maxPredicate > m_predicateCount)
+		{
+			m_predicateCount = maxPredicate;
+		}
 	}
 
 	bool ContainsPredicate(const std::string& name)
@@ -53,16 +62,21 @@ public:
 
 	// Counts
 
-	std::uint8_t GetCount() const
+	std::uint8_t GetRegisterCount() const
 	{
-		return m_count;
+		return m_registerCount;
+	}
+
+	std::uint8_t GetPredicateCount() const
+	{
+		return m_predicateCount;
 	}
 
 	// Formatting
 
 	std::string ToString() const
 	{
-		std::string string = "  - Registers = " + std::to_string(m_count) + " + [R0 dummy]";
+		std::string string = "  - Registers = " + std::to_string(m_registerCount) + " + [R0 dummy]";
 		for (const auto& [name, pair] : m_registerMap)
 		{
 			string += "\n    - " + name + "->";
@@ -92,7 +106,7 @@ public:
 			}
 		}
 
-		string += "\n  - Predicates = " + std::to_string(m_predicateMap.size());
+		string += "\n  - Predicates = " + std::to_string(m_predicateCount);
 		for (const auto& [name, reg] : m_predicateMap)
 		{
 			string += "\n    - " + name + "->P" + std::to_string(reg);
@@ -104,7 +118,8 @@ private:
 	std::unordered_map<std::string, std::pair<std::uint8_t, std::uint8_t>> m_registerMap;
 	std::unordered_map<std::string, std::uint8_t> m_predicateMap;
 
-	std::uint8_t m_count = 0;
+	std::uint8_t m_registerCount = 0;
+	std::uint8_t m_predicateCount = 0;
 };
 
 }

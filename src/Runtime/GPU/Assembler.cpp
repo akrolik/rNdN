@@ -27,7 +27,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 		}
 		else
 		{
-			switch (Utils::Options::GetBackendKind())
+			switch (Utils::Options::GetBackend_Kind())
 			{
 				case Utils::Options::BackendKind::ptxas:
 				{

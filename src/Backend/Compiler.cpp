@@ -2,10 +2,12 @@
 
 #include "Backend/CodeGenerator.h"
 
+#include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
 #include "PTX/Analysis/BasicFlow/ReachingDefinitions.h"
 #include "PTX/Analysis/ControlFlow/ControlFlowBuilder.h"
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
+#include "PTX/Analysis/RegisterAllocator/LinearScanRegisterAllocator.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -40,19 +42,12 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	}
 
 	//TODO: Testing analysis framework
-
-	PTX::Analysis::LiveVariables liveVariables;
-	liveVariables.Analyze(function);
-
-	PTX::Analysis::ReachingDefinitions reachingDefs;
-	reachingDefs.Analyze(function);
+	// PTX::Analysis::ReachingDefinitions reachingDefs;
+	// reachingDefs.Analyze(function);
 
 	// Allocate registers
 
-	PTX::Analysis::VirtualRegisterAllocator allocator;
-	allocator.Analyze(function);
-
-	auto allocation = allocator.GetRegisterAllocation();
+	auto allocation = AllocateRegisters(function);
 
 	// Generate SASS code from 64-bit PTX code
 
@@ -83,6 +78,34 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	m_program->AddFunction(sassFunction);
 
 	return false;
+}
+
+const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function)
+{
+	switch (Utils::Options::GetBackend_RegisterAllocator())
+	{
+		case Utils::Options::BackendRegisterAllocator::Virtual:
+		{
+			PTX::Analysis::VirtualRegisterAllocator allocator;
+			allocator.Analyze(function);
+
+			return allocator.GetRegisterAllocation();
+		}
+		case Utils::Options::BackendRegisterAllocator::LinearScan:
+		{
+			PTX::Analysis::LiveVariables liveVariables;
+			liveVariables.Analyze(function);
+
+			PTX::Analysis::LiveIntervals liveIntervals(liveVariables);
+			liveIntervals.Analyze(function);
+
+			PTX::Analysis::LinearScanRegisterAllocator allocator(liveIntervals);
+			allocator.Analyze(function);
+
+			return allocator.GetRegisterAllocation();
+		}
+	}
+	Utils::Logger::LogError("Unknown register allocation scheme");
 }
 
 }

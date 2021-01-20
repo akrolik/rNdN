@@ -8,7 +8,9 @@ namespace Analysis {
 
 void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *function)
 {
+	auto timeAllocation_start = Utils::Chrono::Start("Register allocation '" + function->GetName() + "'");
 	function->Accept(*this);
+	Utils::Chrono::End(timeAllocation_start);
 
 	if (Utils::Options::IsBackend_PrintAnalysis())
 	{
