@@ -3,12 +3,15 @@
 #include "PTX/Traversal/ConstHierarchicalVisitor.h"
 #include "PTX/Traversal/ConstDeclarationVisitor.h"
 
-#include "PTX/Tree/Tree.h"
+#include "Backend/Codegen/Builder.h"
+
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
+#include "PTX/Tree/Tree.h"
 
 #include "SASS/SASS.h"
 
 namespace Backend {
+namespace Codegen {
 
 class CodeGenerator : public PTX::ConstHierarchicalVisitor, public PTX::ConstDeclarationVisitor
 {
@@ -17,7 +20,7 @@ public:
 
 	// Functions
 
-	bool VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function) override;
+	// bool VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function) override;
 	void VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *function) override;
 
 	// Declarations
@@ -28,10 +31,18 @@ public:
 	void Visit(const PTX::TypedVariableDeclaration<T, S> *declaration);
 	void Visit(const PTX::_TypedVariableDeclaration *declaration) override;
 
+	// Basic Block
+	
+	bool VisitIn(const PTX::BasicBlock *block) override;
+	void VisitOut(const PTX::BasicBlock *block) override;
+
+	// Statements
+
+	bool VisitIn(const PTX::InstructionStatement *statement) override;
 
 private:
-	SASS::Function *m_function = nullptr;
-	const PTX::Analysis::RegisterAllocation *m_allocation = nullptr;
+	Builder m_builder;
 };
 
+}
 }

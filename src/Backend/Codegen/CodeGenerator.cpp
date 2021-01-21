@@ -1,31 +1,30 @@
-#include "Backend/CodeGenerator.h"
+#include "Backend/Codegen/CodeGenerator.h"
+
+#include "Backend/Codegen/Generators/InstructionGenerator.h"
 
 namespace Backend {
+namespace Codegen {
 
 // Public API
 
 SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation)
 {
-	m_allocation = allocation;
+	auto sassFunction = m_builder.CreateFunction(function->GetName(), allocation);
 	function->Accept(*this);
-	return m_function;
+	m_builder.CloseFunction();
+	return sassFunction;
 }
 
 // Functions
 
-bool CodeGenerator::VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function)
-{
-	m_function = new SASS::Function(function->GetName());
-	m_function->SetRegisters(m_allocation->GetCount());
-	return true;
-}
-
 void CodeGenerator::VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *function)
 {
+	return;
+
 	//TODO: Generate SASS program
 
 	auto sassBlock0 = new SASS::BasicBlock("BB0");
-	m_function->AddBasicBlock(sassBlock0);
+	// m_function->AddBasicBlock(sassBlock0);
 
 	// /*0008*/                   MOV R1, c[0x0][0x20] ;
 	// /*0010*/                   S2R R4, SR_CTAID.X ;
@@ -139,7 +138,6 @@ void CodeGenerator::VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *funct
 	auto inst14 = new SASS::EXITInstruction();
 
 	inst13->SetScheduling(1, true, 7, 7, 0, 0);
-	inst14->SetScheduling(15, true, 7, 7, 0, 0);
 
 	sassBlock0->AddInstruction(inst13);
 	sassBlock0->AddInstruction(inst14);
@@ -163,9 +161,31 @@ void CodeGenerator::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration
 {
 	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 	{
-		m_function->AddParameter(PTX::BitSize<T::TypeBits>::NumBytes);
+		m_builder.AddParameter(PTX::BitSize<T::TypeBits>::NumBytes);
 	}
+}
+
+// Basic Block
+
+bool CodeGenerator::VisitIn(const PTX::BasicBlock *block)
+{
+	m_builder.CreateBasicBlock(block->GetLabel()->GetName());
+	return true;
+}
+
+void CodeGenerator::VisitOut(const PTX::BasicBlock *block)
+{
+	m_builder.CloseBasicBlock();
+}
+
+// Statements
+
+bool CodeGenerator::VisitIn(const PTX::InstructionStatement *statement)
+{
+	InstructionGenerator generator(m_builder);
+	statement->Accept(generator);
 	return false;
 }
 
+}
 }

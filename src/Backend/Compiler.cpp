@@ -1,6 +1,6 @@
 #include "Backend/Compiler.h"
 
-#include "Backend/CodeGenerator.h"
+#include "Backend/Codegen/CodeGenerator.h"
 
 #include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
@@ -53,7 +53,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS generation: " + function->GetName());
 
-	CodeGenerator codegen;
+	Codegen::CodeGenerator codegen;
 	auto sassFunction = codegen.Generate(function, allocation);
 
 	Utils::Chrono::End(timeSASS_start);
