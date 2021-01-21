@@ -7,6 +7,8 @@
 
 #include "Utils/Format.h"
 
+#include <string>
+
 namespace SASS {
 
 class BRAInstruction : public PredicatedInstruction
@@ -19,13 +21,12 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	BRAInstruction(BasicBlock *target, Flags flags = Flags::None) : m_target(target), m_flags(flags) {}
+	BRAInstruction(const std::string& target, Flags flags = Flags::None) : m_target(target), m_flags(flags) {}
 
 	// Properties
 
-	const BasicBlock *GetTarget() const { return m_target; }
-	BasicBlock *GetTarget() { return m_target; }
-	void SetTarget(BasicBlock *target) { m_target = target; }
+	const std::string& GetTarget() const { return m_target; }
+	void SetTarget(const std::string &target) { m_target = target; }
 
 	std::size_t GetTargetAddress() const { return m_targetAddress; }
 	std::size_t GetCurrentAddress() const { return m_currentAddress; }
@@ -54,7 +55,7 @@ public:
 
 	std::string Operands() const override
 	{
-		return "`(" + m_target->GetName() + ") [" + Utils::Format::HexString(m_targetAddress, 4) + "]";
+		return "`(" + m_target + ") [" + Utils::Format::HexString(m_targetAddress, 4) + "]";
 	}
 
 	// Binary
@@ -78,7 +79,7 @@ public:
 	}
 
 private:
-	BasicBlock *m_target = nullptr;
+	std::string m_target;
 
 	std::size_t m_targetAddress = 0;
 	std::size_t m_currentAddress = 0;

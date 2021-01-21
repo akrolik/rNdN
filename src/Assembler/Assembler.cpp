@@ -52,7 +52,7 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		binaryFunction->AddParameter(parameter);
 	}
 
-	std::unordered_map<const SASS::BasicBlock *, unsigned int> blockIndex;
+	std::unordered_map<std::string, unsigned int> blockIndex;
 	auto blockOffset = 0u;
 
 	// 1. Sequence basic blocks, create linear sequence of instruction
@@ -74,18 +74,19 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 
 		// Keep track of the start address to resolve branches
 
-		blockIndex.insert({block, blockOffset});
+		blockIndex.insert({block->GetName(), blockOffset});
 		blockOffset += instructions.size();
 	}
 
 	// Insert self-loop
 
-	auto selfBlock = new SASS::BasicBlock("_END");
-	auto selfBranch = new SASS::BRAInstruction(selfBlock);
+	auto selfName = "_END";
+	auto selfBlock = new SASS::BasicBlock(selfName);
+	auto selfBranch = new SASS::BRAInstruction(selfName);
 	selfBranch->SetScheduling(15, true, 7, 7, 0, 0);
 
 	linearProgram.push_back(selfBranch);
-	blockIndex.insert({selfBlock, blockOffset++});
+	blockIndex.insert({selfName, blockOffset++});
 
 	// Padding to multiple of 6
 
