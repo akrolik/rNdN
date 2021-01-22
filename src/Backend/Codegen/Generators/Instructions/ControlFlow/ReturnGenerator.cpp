@@ -5,7 +5,7 @@ namespace Codegen {
 
 void ReturnGenerator::Generate(const PTX::ReturnInstruction *instruction)
 {
-	this->m_builder.AddInstruction(new SASS::EXITInstruction());
+	this->AddInstruction(new SASS::EXITInstruction());
 }
 
 }

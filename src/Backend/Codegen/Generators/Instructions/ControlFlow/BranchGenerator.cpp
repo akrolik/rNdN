@@ -5,15 +5,20 @@ namespace Codegen {
 
 void BranchGenerator::Generate(const PTX::BranchInstruction *instruction)
 {
-	//TODO: Predicated
+	// Predicated instruction
+
+	this->SetPredicatedInstruction(instruction);
+
+	// Generate branch instruction
+
 	auto name = instruction->GetLabel()->GetName();
 	if (instruction->GetUniform())
 	{
-		this->m_builder.AddInstruction(new SASS::BRAInstruction(name, SASS::BRAInstruction::Flags::U));
+		this->AddInstruction(new SASS::BRAInstruction(name, SASS::BRAInstruction::Flags::U));
 	}
 	else
 	{
-		this->m_builder.AddInstruction(new SASS::BRAInstruction(name));
+		this->AddInstruction(new SASS::BRAInstruction(name));
 	}
 }
 

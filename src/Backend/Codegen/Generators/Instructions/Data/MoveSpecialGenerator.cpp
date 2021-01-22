@@ -20,7 +20,7 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	SpecialRegisterGenerator specialGenerator(this->m_builder);
 	auto source = specialGenerator.Generate(instruction->GetSource());
 
-	this->m_builder.AddInstruction(new SASS::S2RInstruction(destination, source));
+	this->AddInstruction(new SASS::S2RInstruction(destination, source));
 }
 
 }
