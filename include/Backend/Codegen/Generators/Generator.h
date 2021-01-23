@@ -14,10 +14,9 @@ class Generator
 public:
 	Generator(Builder& builder) : m_builder(builder) {}
 
-	[[noreturn]] void Error(const std::string& error)
+	[[noreturn]] void Error(const std::string& message)
 	{
-		//TODO: error message
-		Utils::Logger::LogError("");
+		Utils::Logger::LogError(Name() + ": Unable to generate " + message);
 	}
 
 	virtual std::string Name() const = 0;
