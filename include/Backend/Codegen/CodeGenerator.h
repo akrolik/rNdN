@@ -18,11 +18,6 @@ class CodeGenerator : public PTX::ConstHierarchicalVisitor, public PTX::ConstDec
 public:
 	SASS::Function *Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation);
 
-	// Functions
-
-	// bool VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function) override;
-	void VisitOut(const PTX::FunctionDefinition<PTX::VoidType> *function) override;
-
 	// Declarations
 
 	bool VisitIn(const PTX::VariableDeclaration *declaration) override;
