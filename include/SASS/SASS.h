@@ -28,6 +28,7 @@ namespace SASS {
 #include "SASS/Instructions/Conversion/F2IInstruction.h"
 #include "SASS/Instructions/Conversion/I2FInstruction.h"
 
+#include "SASS/Instructions/Integer/BFEInstruction.h"
 #include "SASS/Instructions/Integer/IADDInstruction.h"
 #include "SASS/Instructions/Integer/IADD3Instruction.h"
 #include "SASS/Instructions/Integer/IADD32IInstruction.h"
