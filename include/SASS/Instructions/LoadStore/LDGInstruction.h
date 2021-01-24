@@ -21,7 +21,7 @@ public:
 	enum class Cache : std::uint64_t {
 		None = 0x0,
 		CG   = 0x0000400000000000,
-		CS   = 0x0000800000000000,
+		CI   = 0x0000800000000000,
 		CV   = 0x0000c00000000000
 	};
 
@@ -67,7 +67,7 @@ public:
 		switch (m_cache)
 		{
 			case Cache::CG: code += ".CG"; break;
-			case Cache::CS: code += ".CS"; break;
+			case Cache::CI: code += ".CI"; break;
 			case Cache::CV: code += ".CV"; break;
 		}
 		if (m_flags & Flags::E)
