@@ -220,16 +220,16 @@ DispatchImplementation_DataAtomic(LoadInstruction, ({
 	switch (GetAtomic())
 	{
 		case LoadSynchronization::Weak:
-			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Weak>(visitor);
+			Dispatcher_DataAtomic<LoadSynchronization, LoadInstruction>::Dispatch<V, LoadSynchronization::Weak>(visitor);
 			break;
 		case LoadSynchronization::Volatile:
-			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Volatile>(visitor);
+			Dispatcher_DataAtomic<LoadSynchronization, LoadInstruction>::Dispatch<V, LoadSynchronization::Volatile>(visitor);
 			break;
 		case LoadSynchronization::Relaxed:
-			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Relaxed>(visitor);
+			Dispatcher_DataAtomic<LoadSynchronization, LoadInstruction>::Dispatch<V, LoadSynchronization::Relaxed>(visitor);
 			break;
 		case LoadSynchronization::Acquire:
-			Dispatcher_DataAtomic::Dispatch<V, LoadInstruction, LoadSynchronization::Acquire>(visitor);
+			Dispatcher_DataAtomic<LoadSynchronization, LoadInstruction>::Dispatch<V, LoadSynchronization::Acquire>(visitor);
 			break;
 	}
 }))

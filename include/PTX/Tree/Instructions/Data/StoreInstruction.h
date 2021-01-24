@@ -217,16 +217,16 @@ DispatchImplementation_DataAtomic(StoreInstruction, ({
 	switch (GetAtomic())
 	{
 		case StoreSynchronization::Weak:
-			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Weak>(visitor);
+			Dispatcher_DataAtomic<StoreSynchronization, StoreInstruction>::Dispatch<V, StoreSynchronization::Weak>(visitor);
 			break;
 		case StoreSynchronization::Volatile:
-			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Volatile>(visitor);
+			Dispatcher_DataAtomic<StoreSynchronization, StoreInstruction>::Dispatch<V, StoreSynchronization::Volatile>(visitor);
 			break;
 		case StoreSynchronization::Relaxed:
-			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Relaxed>(visitor);
+			Dispatcher_DataAtomic<StoreSynchronization, StoreInstruction>::Dispatch<V, StoreSynchronization::Relaxed>(visitor);
 			break;
 		case StoreSynchronization::Release:
-			Dispatcher_DataAtomic::Dispatch<V, StoreInstruction, StoreSynchronization::Release>(visitor);
+			Dispatcher_DataAtomic<StoreSynchronization, StoreInstruction>::Dispatch<V, StoreSynchronization::Release>(visitor);
 			break;
 	}
 }))
