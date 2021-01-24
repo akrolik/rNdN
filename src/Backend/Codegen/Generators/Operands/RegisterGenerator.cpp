@@ -5,14 +5,21 @@
 namespace Backend {
 namespace Codegen {
 
-SASS::Register *RegisterGenerator::Generate(const PTX::Operand *operand)
+std::pair<SASS::Register *, SASS::Register *> RegisterGenerator::Generate(const PTX::Operand *operand)
 {
+	// Clear
+
+	m_register = nullptr;
+	m_registerHi = nullptr;
+
+	// Generate register
+
 	operand->Accept(*this);
 	if (m_register == nullptr)
 	{
 		Error("register for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
 	}
-	return m_register;
+	return { m_register, m_registerHi };
 }
 
 void RegisterGenerator::Visit(const PTX::_Register *reg)
@@ -35,8 +42,15 @@ void RegisterGenerator::Visit(const PTX::Register<T> *reg)
 	const auto& name = reg->GetName();
 	if (allocations->ContainsRegister(name))
 	{
-		const auto& [allocation, _] = allocations->GetRegister(name);
+		const auto& [allocation, range] = allocations->GetRegister(name);
 		m_register = new SASS::Register(allocation);
+
+		// Extended datatypes
+		
+		if (range == 2)
+		{
+			m_registerHi = new SASS::Register(allocation + 1);
+		}
 	}
 }
 

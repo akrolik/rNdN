@@ -38,6 +38,7 @@ private:
 	void GenerateS2R(SASS::SpecialRegister *source);
 
 	SASS::Register *m_destination = nullptr;
+	SASS::Register *m_destinationHi = nullptr;
 };
 
 }

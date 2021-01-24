@@ -16,7 +16,10 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	// Generate destination
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	m_destination = registerGenerator.Generate(instruction->GetDestination());
+	auto [destination, destinationHi] = registerGenerator.Generate(instruction->GetDestination());
+
+	m_destination = destination;
+	m_destinationHi = destinationHi;
 
 	// Generate instruction depending on source
 
@@ -152,9 +155,7 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 		if (name == PTX::SpecialRegisterName_gridid)
 		{
 			this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x28)));
-			this->AddInstruction(new SASS::MOVInstruction(
-				new SASS::Register(m_destination->GetValue() + 1), new SASS::Constant(0x0, 0x2c)
-			));
+			this->AddInstruction(new SASS::MOVInstruction(m_destinationHi, new SASS::Constant(0x0, 0x2c)));
 		}
 		else if (name == PTX::SpecialRegisterName_clock64)
 		{

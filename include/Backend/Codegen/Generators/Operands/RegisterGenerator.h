@@ -6,6 +6,8 @@
 #include "PTX/Tree/Tree.h"
 #include "SASS/SASS.h"
 
+#include <utility>
+
 namespace Backend {
 namespace Codegen {
 
@@ -18,7 +20,7 @@ public:
 
 	// Generators
 
-	SASS::Register *Generate(const PTX::Operand *operand);
+	std::pair<SASS::Register *, SASS::Register *> Generate(const PTX::Operand *operand);
 
 	// Registers
 
@@ -33,6 +35,7 @@ public:
 
 private:
 	SASS::Register *m_register = nullptr;
+	SASS::Register *m_registerHi = nullptr;
 };
 
 }
