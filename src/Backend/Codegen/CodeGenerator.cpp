@@ -33,7 +33,19 @@ void CodeGenerator::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration
 {
 	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 	{
-		m_builder.AddParameter(PTX::BitSize<T::TypeBits>::NumBytes);
+		const auto names = declaration->GetNames();
+		if (names.size() != 1)
+		{
+			Utils::Logger::LogError("Parameters must only declare a single variable");
+		}
+
+		const auto name = names.at(0);
+		if (name->GetCount() != 1)
+		{
+			Utils::Logger::LogError("Parameters must only declare a single variable");
+		}
+
+		m_builder.AddParameter(name->GetName(), PTX::BitSize<T::TypeBits>::NumBytes);
 	}
 }
 

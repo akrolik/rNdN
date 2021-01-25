@@ -8,6 +8,7 @@ namespace SASS {
 // Utils
 
 #include "SASS/BinaryUtils.h"
+#include "SASS/Constants.h"
 
 // Structure
 

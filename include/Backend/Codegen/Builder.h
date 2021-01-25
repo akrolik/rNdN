@@ -4,6 +4,8 @@
 
 #include "SASS/SASS.h"
 
+#include <unordered_map>
+
 namespace Backend {
 namespace Codegen {
 
@@ -20,7 +22,8 @@ public:
 	SASS::Function *CreateFunction(const std::string& name, const PTX::Analysis::RegisterAllocation *allocation);
 	void CloseFunction();
 
-	void AddParameter(std::size_t parameter);
+	void AddParameter(const std::string& name, std::size_t size);
+	std::size_t GetParameter(const std::string& name) const;
 
 	// Basic Blocks
 
@@ -34,6 +37,9 @@ public:
 private:
 	SASS::Function *m_currentFunction = nullptr;
 	SASS::BasicBlock *m_currentBlock = nullptr;
+
+	std::unordered_map<std::string, std::size_t> m_parameterAllocation;
+	std::size_t m_parameterOffset = 0;
 
 	const PTX::Analysis::RegisterAllocation *m_registerAllocation = nullptr;
 };
