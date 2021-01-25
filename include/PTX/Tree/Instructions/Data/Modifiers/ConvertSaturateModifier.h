@@ -11,7 +11,7 @@ public:
 
 template<class D, class S>
 class ConvertSaturateModifier<D, S, std::enable_if_t<
-	(is_int_type<D>::value && is_int_type<S>::value && D::BitSize < S::BitSize) || is_float_type<D>::value>>
+	(is_int_type<D>::value && is_int_type<S>::value && BitSize<D::TypeBits>::NumBits < BitSize<S::TypeBits>::NumBits) || is_float_type<D>::value>>
 {
 public:
 	constexpr static bool Enabled = true;
