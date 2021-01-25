@@ -21,9 +21,17 @@ namespace SASS {
 	{ \
 		return static_cast<x::Flags>(static_cast<std::uint64_t>(a) & static_cast<std::uint64_t>(b)); \
 	} \
+	inline x::Flags& operator&=(x::Flags& a, x::Flags b) \
+	{ \
+		    return a = a & b; \
+	} \
 	inline x::Flags operator|(x::Flags a, x::Flags b) \
 	{ \
 		return static_cast<x::Flags>(static_cast<std::uint64_t>(a) | static_cast<std::uint64_t>(b)); \
+	} \
+	inline x::Flags& operator|=(x::Flags& a, x::Flags b) \
+	{ \
+		    return a = a | b; \
 	}
 
 class BinaryUtils
