@@ -68,5 +68,19 @@ void RegisterGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 	//TODO: Indexed registers
 }
 
+void RegisterGenerator::Visit(const PTX::_Value *value)
+{
+	value->Dispatch(*this);
+}
+
+template<class T>
+void RegisterGenerator::Visit(const PTX::Value<T> *value)
+{
+	if (value->GetValue() == 0)
+	{
+		m_register = SASS::RZ;
+	}
+}
+
 }
 }

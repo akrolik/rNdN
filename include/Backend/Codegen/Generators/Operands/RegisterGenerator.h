@@ -34,6 +34,12 @@ public:
 	template<class T, class S, PTX::VectorSize V>
 	void Visit(const PTX::IndexedRegister<T, S, V> *reg);
 
+	// Values
+
+	void Visit(const PTX::_Value *value);
+
+	template<class T>
+	void Visit(const PTX::Value<T> *value);
 private:
 	SASS::Register *m_register = nullptr;
 	SASS::Register *m_registerHi = nullptr;
