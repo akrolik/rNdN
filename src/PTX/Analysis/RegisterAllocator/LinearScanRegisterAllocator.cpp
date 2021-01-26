@@ -161,7 +161,7 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 		{
 			intervalRange = (DynamicBitSize::GetByte(intervalBits) + 3) / 4;
 
-			for (auto i = 0; i < RegisterAllocation::MaxRegister; ++i)
+			for (auto i = 0; i < RegisterAllocation::MaxRegister; i += intervalRange)
 			{
 				// Check to make sure register range fits at this position
 				// -1 to account for current position in range
