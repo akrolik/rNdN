@@ -43,7 +43,7 @@ public:
 	// Data 
 
 	void Visit(const PTX::_ConvertInstruction *instruction) override;
-	void Visit(const PTX::_ConvertAddressInstruction *instruction) override;
+	void Visit(const PTX::_ConvertToAddressInstruction *instruction) override;
 	void Visit(const PTX::_LoadInstruction *instruction) override;
 	void Visit(const PTX::_LoadNCInstruction *instruction) override;
 	// void Visit(const PTX::_MoveInstruction *instruction) override;

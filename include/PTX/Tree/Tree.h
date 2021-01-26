@@ -194,6 +194,7 @@ namespace PTX {
 #include "PTX/Tree/Instructions/Data/Modifiers/ConvertSaturateModifier.h"
 
 #include "PTX/Tree/Instructions/Data/ConvertAddressInstruction.h"
+#include "PTX/Tree/Instructions/Data/ConvertToAddressInstruction.h"
 #include "PTX/Tree/Instructions/Data/ConvertInstruction.h"
 #include "PTX/Tree/Instructions/Data/IsSpaceInstruction.h"
 #include "PTX/Tree/Instructions/Data/LoadInstruction.h"

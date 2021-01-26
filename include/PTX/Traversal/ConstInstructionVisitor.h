@@ -55,6 +55,7 @@ class ReturnInstruction;
 // Data
 
 class _ConvertAddressInstruction;
+class _ConvertToAddressInstruction;
 class _ConvertInstruction;
 class _IsSpaceInstruction;
 class _LoadInstruction;
@@ -155,6 +156,7 @@ public:
 	// Data
 
 	virtual void Visit(const _ConvertAddressInstruction *instruction) {}
+	virtual void Visit(const _ConvertToAddressInstruction *instruction) {}
 	virtual void Visit(const _ConvertInstruction *instruction) {}
 	virtual void Visit(const _IsSpaceInstruction *instruction) {}
 	virtual void Visit(const _LoadInstruction *instruction) {}
