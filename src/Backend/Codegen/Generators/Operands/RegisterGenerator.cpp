@@ -22,6 +22,14 @@ std::pair<SASS::Register *, SASS::Register *> RegisterGenerator::Generate(const 
 	return { m_register, m_registerHi };
 }
 
+SASS::Register *RegisterGenerator::GenerateTemporary(std::uint8_t index)
+{
+	const auto& allocations = this->m_builder.GetRegisterAllocation();
+	auto allocation = allocations->GetTemporaryRegister(index);
+
+	return new SASS::Register(allocation);
+}
+
 void RegisterGenerator::Visit(const PTX::_Register *reg)
 {
 	reg->Dispatch(*this);

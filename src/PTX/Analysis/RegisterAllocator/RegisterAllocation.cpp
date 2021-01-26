@@ -3,6 +3,23 @@
 namespace PTX {
 namespace Analysis {
 
+// Scratch/temporary registers
+
+void RegisterAllocation::SetTemporaryRegisters(std::uint8_t reg, std::uint8_t count)
+{
+	m_temporaryStart = reg;
+	m_temporaryCount = count;
+}
+
+std::uint8_t RegisterAllocation::GetTemporaryRegister(std::uint8_t index) const
+{
+	if (index >= m_temporaryCount)
+	{
+		//TODO: Error
+	}
+	return m_temporaryStart + index;
+}
+
 // Registers
 
 void RegisterAllocation::AddRegister(const std::string& name, std::uint8_t reg, std::uint8_t range)

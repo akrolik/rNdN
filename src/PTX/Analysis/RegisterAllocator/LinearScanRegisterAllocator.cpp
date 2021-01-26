@@ -47,12 +47,19 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 	std::array<bool, RegisterAllocation::MaxPredicate> predicateMap{};
 	std::array<bool, RegisterAllocation::MaxRegister> registerMap{};
-	registerMap[0] = true; // Dummy R0
+
+	auto temporaryCount = 6u; // Dummy R0-R5
+	for (auto i = 0u; i < temporaryCount; ++i)
+	{
+		registerMap[i] = true;
+	}
+	m_allocation->SetTemporaryRegisters(0, temporaryCount);
 
 	// For each live interval, perform allocation
 
 	for (const auto& [intervalName, intervalStart, intervalEnd] : liveIntervals)
 	{
+		//TODO: Update debug code
 		// std::cout << intervalName << std::endl;
 		// std::cout << "  - Input register map:";
 		// for (auto i = 0; i < 20; ++i)

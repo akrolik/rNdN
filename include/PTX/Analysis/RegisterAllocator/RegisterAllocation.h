@@ -14,6 +14,11 @@ public:
 	constexpr static unsigned int MaxRegister = 255;
 	constexpr static unsigned int MaxPredicate = 7;
 
+	// Scratch/temporary registers
+
+	void SetTemporaryRegisters(std::uint8_t reg, std::uint8_t count);
+	std::uint8_t GetTemporaryRegister(std::uint8_t index) const;
+
 	// Registers
 
 	void AddRegister(const std::string& name, std::uint8_t reg, std::uint8_t range = 1);
@@ -38,6 +43,9 @@ public:
 private:
 	std::unordered_map<std::string, std::pair<std::uint8_t, std::uint8_t>> m_registerMap;
 	std::unordered_map<std::string, std::uint8_t> m_predicateMap;
+
+	std::uint8_t m_temporaryStart = 0;
+	std::uint8_t m_temporaryCount = 0;
 
 	std::uint8_t m_registerCount = 0;
 	std::uint8_t m_predicateCount = 0;
