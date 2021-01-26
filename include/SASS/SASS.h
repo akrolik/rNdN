@@ -28,6 +28,7 @@ namespace SASS {
 
 #include "SASS/Instructions/Conversion/F2IInstruction.h"
 #include "SASS/Instructions/Conversion/I2FInstruction.h"
+#include "SASS/Instructions/Conversion/I2IInstruction.h"
 
 #include "SASS/Instructions/Integer/BFEInstruction.h"
 #include "SASS/Instructions/Integer/IADDInstruction.h"
@@ -35,6 +36,7 @@ namespace SASS {
 #include "SASS/Instructions/Integer/IADD32IInstruction.h"
 #include "SASS/Instructions/Integer/ISCADDInstruction.h"
 #include "SASS/Instructions/Integer/ISETPInstruction.h"
+#include "SASS/Instructions/Integer/LOPInstruction.h"
 #include "SASS/Instructions/Integer/POPCInstruction.h"
 #include "SASS/Instructions/Integer/SHLInstruction.h"
 #include "SASS/Instructions/Integer/SHRInstruction.h"
