@@ -40,7 +40,7 @@ class TypedOperand : public virtual Operand
 {
 public:
 	REQUIRE_TYPE_PARAM(Operand,
-		REQUIRE_BASE(T, Type)
+		REQUIRE_BASE(T, DataType)
 	);
 };
 

@@ -50,12 +50,19 @@ enum class Bits : int {
 struct Type {
 	static std::string Name() { return ".<unknown>"; }
 
+	using SystemType = std::nullptr_t;
+	using WideType = std::nullptr_t;
+
+	using ComparisonOperator = std::nullptr_t;
+
 	// Polymorphism
 	virtual ~Type() = default;
 };
 
 struct VoidType : Type
 {
+	constexpr static Bits TypeBits = Bits::Bits1;
+
 	using SystemType = bool;
 
 	static std::string Name() { return ""; }

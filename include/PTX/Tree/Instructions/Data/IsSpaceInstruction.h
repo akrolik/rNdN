@@ -14,10 +14,10 @@ class IsSpaceInstruction : DispatchInherit(IsSpaceInstruction), public Predicate
 {
 public:
 	REQUIRE_TYPE_PARAM(IsSpaceInstruction,
-		REQUIRE_BASE(T, Type)
+		REQUIRE_BASE(T, DataType)
 	);
 	REQUIRE_SPACE_PARAM(IsSpaceInstruction,
-		REQUIRE_BASE(S, AddressableSpace)
+		REQUIRE_BASE(S, AddressableSpace) && !REQUIRE_EXACT(S, AddressableSpace)
 	);
 
 	IsSpaceInstruction(Register<PredicateType> *destination, Address<B, T> *address) : m_destination(destination), m_address(address) {}

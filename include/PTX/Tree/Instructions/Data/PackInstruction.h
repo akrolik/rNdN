@@ -13,8 +13,11 @@ class PackInstruction : DispatchInherit(PackInstruction), public PredicatedInstr
 {
 public:
 	REQUIRE_TYPE_PARAM(PackInstruction,
-		REQUIRE_EXACT(T,
+		V == VectorSize::Vector2 && REQUIRE_EXACT(T,
 			Bit16Type, Bit32Type, Bit64Type
+		) ||
+		V == VectorSize::Vector4 && REQUIRE_EXACT(T,
+			Bit32Type, Bit64Type
 		)
 	);
 

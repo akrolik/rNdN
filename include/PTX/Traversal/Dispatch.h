@@ -38,6 +38,7 @@ namespace PTX {
 	DispatchPointer_Space(type, Bit64Type);
 
 #define DispatchVector_Size(type, T) \
+	_DispatchType(type, VectorType<T COMMA VectorSize::Vector2>) \
 	_DispatchType(type, VectorType<T COMMA VectorSize::Vector4>)
 
 #define DispatchVector(type) \

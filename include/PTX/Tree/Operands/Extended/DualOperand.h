@@ -11,8 +11,8 @@ class DualOperand : DispatchInherit(DualOperand), public Operand
 {
 public:
 	REQUIRE_TYPE_PARAMS(DualOperand,
-		REQUIRE_BASE(T1, Type),
-		REQUIRE_BASE(T2, Type)
+		REQUIRE_BASE(T1, DataType),
+		REQUIRE_BASE(T2, DataType)
 	)
 
 	DualOperand(TypedOperand<T1> *operandP, TypedOperand<T2> *operandQ) : m_operandP(operandP), m_operandQ(operandQ) {}
