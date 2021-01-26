@@ -366,7 +366,7 @@ private:
 		;
 		m_options.add_options("Backend")
 			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("ptxas"))
-			(Opt_Backend_reg_alloc, "Register allocation algorithm [virtual|linear]", cxxopts::value<std::string>()->default_value("virtual"))
+			(Opt_Backend_reg_alloc, "Register allocation algorithm [virtual|linear]", cxxopts::value<std::string>()->default_value("linear"))
 			(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 			(Opt_Backend_print_analysis, "Print backend analyses")
 			(Opt_Backend_print_analysis_block, "Print backend analyses in basic blocks mode")
