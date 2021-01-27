@@ -1,9 +1,22 @@
 #include "Backend/Codegen/Generators/InstructionGenerator.h"
 
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/AddGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/MADGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyWideGenerator.h"
+
+#include "Backend/Codegen/Generators/Instructions/Comparison/SetPredicateGenerator.h"
+
 #include "Backend/Codegen/Generators/Instructions/ControlFlow/BranchGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/ControlFlow/ReturnGenerator.h"
 
+#include "Backend/Codegen/Generators/Instructions/Data/ConvertGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/ConvertToAddressGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/LoadGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/LoadNCGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/MoveSpecialGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/PackGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/StoreGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/UnpackGenerator.h"
 
 namespace Backend {
 namespace Codegen {
@@ -12,25 +25,28 @@ namespace Codegen {
 
 void InstructionGenerator::Visit(const PTX::_AddInstruction *instruction)
 {
-	// add.u64 $ud4, %ud_$data$t1, $ud5;
-	// add.s16 $rs0, $rs1, 0x1;
+	AddGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_MADInstruction *instruction)
 {
-	// mad.lo.u32 $u3, $u1, $u2, $u0;
+	MADGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_MultiplyWideInstruction *instruction)
 {
-	// mul.wide.u32 $ud5, $u3, 0x1;
+	MultiplyWideGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 // Comparison
 
 void InstructionGenerator::Visit(const PTX::_SetPredicateInstruction *instruction)
 {
-	// setp.ge.u32 $p0, $u3, %u_$size$t1;
+	SetPredicateGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 // Control Flow
@@ -51,25 +67,26 @@ void InstructionGenerator::Visit(const PTX::ReturnInstruction *instruction)
 
 void InstructionGenerator::Visit(const PTX::_ConvertInstruction *instruction)
 {
-	// cvt.s16.s8 $rs1, %rc_t1$vector;
-	// cvt.s8.s16 %rc_t2, $rs0;
+	ConvertGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
-void InstructionGenerator::Visit(const PTX::_ConvertAddressInstruction *instruction)
+void InstructionGenerator::Visit(const PTX::_ConvertToAddressInstruction *instruction)
 {
-	// cvta.to.global.u64 %ud_$data$t1, $ud0;
+	ConvertToAddressGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_LoadInstruction *instruction)
 {
-	// ld.param.u32 %u_$geometry$size, [$geometry$size];
-	// ld.param.u64 $ud0, [t1];
-	// ld.global.s8 %rc_t1$vector, [$ud4];
+	LoadGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_LoadNCInstruction *instruction)
 {
-	// ld.global.nc.u32 %u_$size$t1, [%ud_$data$$size$t1];
+	LoadNCGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_MoveSpecialInstruction *instruction)
@@ -80,17 +97,20 @@ void InstructionGenerator::Visit(const PTX::_MoveSpecialInstruction *instruction
 
 void InstructionGenerator::Visit(const PTX::_PackInstruction *instruction)
 {
-	// mov.b16 $bs, {0x0, 0};
+	PackGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_StoreInstruction *instruction)
 {
-	// st.global.s8 [$ud6], %rc_t2;
+	StoreGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 void InstructionGenerator::Visit(const PTX::_UnpackInstruction *instruction)
 {
-	// mov.b16 {%rc_t1$vector, _}, $bs;
+	UnpackGenerator generator(this->m_builder);
+	generator.Generate(instruction);
 }
 
 }

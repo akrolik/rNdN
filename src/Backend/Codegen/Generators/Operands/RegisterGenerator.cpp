@@ -17,7 +17,9 @@ std::pair<SASS::Register *, SASS::Register *> RegisterGenerator::Generate(const 
 	operand->Accept(*this);
 	if (m_register == nullptr)
 	{
-		Error("register for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
+		//TODO: Temporarily use the first scratch register for unallocated variables
+		// Error("register for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
+		return { new SASS::Register(0), nullptr };
 	}
 	return { m_register, m_registerHi };
 }
@@ -80,6 +82,7 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 	{
 		m_register = SASS::RZ;
 	}
+	//TODO: Other values
 }
 
 }

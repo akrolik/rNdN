@@ -7,6 +7,8 @@ void BranchGenerator::Generate(const PTX::BranchInstruction *instruction)
 {
 	// Predicated instruction
 
+	//TODO: Branches unsupported
+	return;
 	this->SetPredicatedInstruction(instruction);
 
 	// Generate branch instruction
