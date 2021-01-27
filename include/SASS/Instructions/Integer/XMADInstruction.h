@@ -17,7 +17,7 @@ public:
 		CC    = 0x0000800000000000,
 		CBCC  = 0x0010000000000000,
 		H1_A  = 0x0020000000000000,
-		H1_B  = 0x0000000800000000,
+		H1_B  = 0x0000000800000000 //TODO: Does not work with immediates
 	};
 
 	SASS_FLAGS_FRIEND()
@@ -147,18 +147,13 @@ public:
 
 	// Binary
 
-	// XMAD R19, R17, c[0x0] [0x8], R0 ;                  /* 0x4e 000000002 7 11 13 */
-	// XMAD.MRG R20, R17, c[0x0] [0x8].H1, RZ ;           /* 0x4f 107f80002 7 11 14 */
-	// XMAD.PSL.CBCC R17, R17.H1, R20.H1, R19 ;           /* 0x5b 3009980 14 7 11 11 */
-
 	std::uint64_t BinaryOpCode() const override
 	{
 		if (dynamic_cast<Constant *>(m_sourceB))
 		{
-			return 0x4e00000000000000; // Constant
+			return BinaryUtils::OpCodeComposite(0x5e00000000000000, m_sourceB); // Constant
 		}
-		//TODO: Immediate
-		return 0x5b00000000000000; // Register
+		return BinaryUtils::OpCodeComposite(0x5b00000000000000, m_sourceB); // Register, Immediate
 	}
 
 	std::uint64_t BinaryOpModifiers() const override

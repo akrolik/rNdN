@@ -43,11 +43,27 @@ public:
 	{
 		if (dynamic_cast<const Constant *>(operand))
 		{
-			return (opCode & 0xefffffffffffffff);
+			opCode ^= static_cast<std::uint64_t>(0x10) << 56;
 		}
 		else if (dynamic_cast<const Immediate *>(operand))
 		{
-			//TODO: Immediate op code
+			auto shortCode = (opCode >> 56);
+			if (shortCode == 0x5c)
+			{
+				opCode ^= static_cast<std::uint64_t>(0x64) << 56;
+			}
+			else if (shortCode == 0x5b)
+			{
+				opCode ^= static_cast<std::uint64_t>(0x6d) << 56;
+			}
+			else if (shortCode == 0x59)
+			{
+				opCode ^= static_cast<std::uint64_t>(0x6b) << 56;
+			}
+			else if (shortCode == 0x58)
+			{
+				opCode ^= static_cast<std::uint64_t>(0x68) << 56;
+			}
 		}
 		return opCode;
 	}

@@ -60,12 +60,12 @@ public:
 		// Barrier
 		switch (m_barrier)
 		{
-			case Barrier::SB0: code += ".SB0"; break;
-			case Barrier::SB1: code += ".SB1"; break;
-			case Barrier::SB2: code += ".SB2"; break;
-			case Barrier::SB3: code += ".SB3"; break;
-			case Barrier::SB4: code += ".SB4"; break;
-			case Barrier::SB5: code += ".SB5"; break;
+			case Barrier::SB0: code += "SB0"; break;
+			case Barrier::SB1: code += "SB1"; break;
+			case Barrier::SB2: code += "SB2"; break;
+			case Barrier::SB3: code += "SB3"; break;
+			case Barrier::SB4: code += "SB4"; break;
+			case Barrier::SB5: code += "SB5"; break;
 		}
 		code += ", ";
 
