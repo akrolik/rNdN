@@ -159,7 +159,7 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 		}
 		else if (name == PTX::SpecialRegisterName_clock64)
 		{
-			//TODO: Clock 64
+			//TODO: SR Clock 64-bit
 
 			// MOV R4, RZ ;
 			// CS2R R0, SR_CLOCKHI ;
@@ -173,7 +173,7 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 		}
 		else if (name == PTX::SpecialRegisterName_pm0_64)
 		{
-			//TODO: PM 64-bit
+			//TODO: SR PM 64-bit
 
 			// CS2R R0, SR_PM_HI0 ;
 			// CS2R R2, SR_PM0 ;
@@ -189,7 +189,7 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 		else if (name == PTX::SpecialRegisterName_pm7_64) {}
 		else if (name == PTX::SpecialRegisterName_globaltimer)
 		{
-			//TODO: Global timer 64
+			//TODO: SR Global timer 64-bit
 
 			// CS2R R0, SR_GLOBALTIMERHI ;
 			// CS2R R2, SR_GLOBALTIMERLO ;
@@ -239,21 +239,25 @@ void MoveSpecialGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 		}
 		else if (name == PTX::SpecialRegisterName_ntid)
 		{
+			// %ntid.x: c[0x0][0x8]
+			// %ntid.y: c[0x0][0xc]
+			// %ntid.z: c[0x0][0x10]
+
 			switch (reg->GetVectorElement())
 			{
 				case PTX::VectorElement::X:
 				{
-					GenerateS2R(new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_NTID_X));
+					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x8)));
 					break;
 				}
 				case PTX::VectorElement::Y:
 				{
-					GenerateS2R(new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_NTID_Y));
+					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xc)));
 					break;
 				}
 				case PTX::VectorElement::Z:
 				{
-					GenerateS2R(new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_NTID_Z));
+					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x10)));
 					break;
 				}
 			}
@@ -281,22 +285,25 @@ void MoveSpecialGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 		}
 		else if (name == PTX::SpecialRegisterName_nctaid)
 		{
-			// Alternative, load from constant space: c[0x0][0x14] (X)
+			// %nctaid.x: c[0x0][0x14]
+			// %nctaid.y: c[0x0][0x18]
+			// %nctaid.z: c[0x0][0x1c]
+
 			switch (reg->GetVectorElement())
 			{
 				case PTX::VectorElement::X:
 				{
-					GenerateS2R(new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_NCTAID_X));
+					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x14)));
 					break;
 				}
 				case PTX::VectorElement::Y:
 				{
-					GenerateS2R(new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_NCTAID_Y));
+					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x18)));
 					break;
 				}
 				case PTX::VectorElement::Z:
 				{
-					GenerateS2R(new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_NCTAID_Z));
+					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x1c)));
 					break;
 				}
 			}
