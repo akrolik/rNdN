@@ -31,7 +31,7 @@ public:
 
 	// Comparison
 
-	// void Visit(const PTX::_SelectInstruction *instruction) override;
+	void Visit(const PTX::_SelectInstruction *instruction) override;
 	void Visit(const PTX::_SetPredicateInstruction *instruction) override;
 
 	// Control Flow

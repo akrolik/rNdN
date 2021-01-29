@@ -6,6 +6,7 @@
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyWideGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/RemainderGenerator.h"
 
+#include "Backend/Codegen/Generators/Instructions/Comparison/SelectGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Comparison/SetPredicateGenerator.h"
 
 #include "Backend/Codegen/Generators/Instructions/ControlFlow/BranchGenerator.h"
@@ -56,6 +57,12 @@ void InstructionGenerator::Visit(const PTX::_RemainderInstruction *instruction)
 }
 
 // Comparison
+
+void InstructionGenerator::Visit(const PTX::_SelectInstruction *instruction)
+{
+	SelectGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
 
 void InstructionGenerator::Visit(const PTX::_SetPredicateInstruction *instruction)
 {
