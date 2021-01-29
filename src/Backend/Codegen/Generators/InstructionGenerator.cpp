@@ -16,6 +16,7 @@
 #include "Backend/Codegen/Generators/Instructions/Data/ConvertToAddressGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/LoadGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/LoadNCGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/MoveGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/MoveSpecialGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/PackGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/StoreGenerator.h"
@@ -107,6 +108,12 @@ void InstructionGenerator::Visit(const PTX::_LoadInstruction *instruction)
 void InstructionGenerator::Visit(const PTX::_LoadNCInstruction *instruction)
 {
 	LoadNCGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_MoveInstruction *instruction)
+{
+	MoveGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 
