@@ -33,28 +33,32 @@ SASS::LDGInstruction::Type LoadGenerator::InstructionType()
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
-		return SASS::LDGInstruction::Type::I32;
+		return SASS::LDGInstruction::Type::X32;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		return SASS::LDGInstruction::Type::I64;
+		return SASS::LDGInstruction::Type::X64;
 	}
-	Error("load.nc for type " + T::Name());
+	Error("load for type " + T::Name());
 }
 
 template<PTX::Bits B, class T, class S, PTX::LoadSynchronization A>
 void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 {
+	// Types: *, Vector (exclude Float16(x2))
+	// Spaces: *
+	// Modifiers: --
+
 	// Generate destination operand
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destinationHi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
 
 	//TODO: Instruction Load<T> types, modifiers, spaces, atomics
 	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 	{
 		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [address, addressHi] = compositeGenerator.Generate(instruction->GetAddress());
+		auto [address, address_Hi] = compositeGenerator.Generate(instruction->GetAddress());
 
 		// Generate instruction
 
@@ -64,7 +68,7 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(destinationHi, addressHi));
+			this->AddInstruction(new SASS::MOVInstruction(destination_Hi, address_Hi));
 		}
 	}
 	else if constexpr(std::is_same<S, PTX::GlobalSpace>::value)

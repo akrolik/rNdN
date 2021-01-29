@@ -14,27 +14,28 @@ void MADGenerator::Generate(const PTX::_MADInstruction *instruction)
 template<class T>
 void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 {
-	// Setup operands
+	// Types:
+	//   - Int16, Int32, Int64
+	//   - UInt16, UInt32, UInt64
+	//   - Float32, Float64
+	// Modifiers:
+	//   - Carry: Int32, Int64, UInt32, UInt64
+	//   - Half: Int16, Int32, Int64, UInt16, UInt32, UInt64
+	//   - FlushSubnormal: Float32
+	//   - Rounding: Float32, Float64
+	//   - Saturate: Int32, Float32
+
+	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	const auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	const auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	const auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
-	const auto [sourceC, sourceC_Hi] = registerGenerator.Generate(instruction->GetSourceC());
+	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
+	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+	auto [sourceC, sourceC_Hi] = registerGenerator.Generate(instruction->GetSourceC());
 
 	// Generate instruction
-	//  - Types:
-	//  	- Int16, Int32, Int64
-	//  	- UInt16, UInt32, UInt64
-	//  	- Float32, Float64
-	//  - Modifiers:
-	//  	- Half: Int16, Int32, Int64, UInt16, UInt32, UInt64
-	//  	- Saturate: Int32, Float32
-	//  	- Rounding: Float32, Float64
-	//  	- FlushSubnormal: Float32
-	//  	- Carry: Int32, Int64, UInt32, UInt64
 
 	//TODO: Instruction MAD<T> types/modifiers
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)

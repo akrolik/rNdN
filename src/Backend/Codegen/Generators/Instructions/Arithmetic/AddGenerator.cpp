@@ -14,25 +14,26 @@ void AddGenerator::Generate(const PTX::_AddInstruction *instruction)
 template<class T>
 void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 {
-	// Setup operands
+	// Types:
+	//   - Int16, Int32, Int64
+	//   - UInt16, UInt32, UInt64
+	//   - Float16, Float16x2, Float32, Float64
+	// Modifiers:
+	//   - Carry: Int32, Int64, UInt32, UInt64
+	//   - FlushSubnormal: Float16, Float16x2, Float32
+	//   - Rounding: Float16, Float16x2, Float32, Float64
+	//   - Saturate: Int32, Float16, Float16x2, Float32
+
+	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	const auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	const auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	const auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
+	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
 
 	// Generate instruction
-	//  - Types:
-	//  	- Int16, Int32, Int64
-	//  	- UInt16, UInt32, UInt64
-	//  	- Float16, Float16x2, Float32, Float64
-	//  - Modifiers:
-	//  	- Saturate: Int32, Float16, Float16x2, Float32
-	//  	- Rounding: Float16, Float16x2, Float32, Float64
-	//  	- FlushSubnormal: Float16, Float16x2, Float32
-	//  	- Carry: Int32, Int64, UInt32, UInt64
 
 	//TODO: Instruction Add<T> types/modifiers
 	if constexpr(std::is_same<T, PTX::Int16Type>::value)

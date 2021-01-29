@@ -13,6 +13,12 @@ void MoveSpecialGenerator::Generate(const PTX::_MoveSpecialInstruction *instruct
 template<class T>
 void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instruction)
 {
+	// Types:
+	//   - Bit32
+	//   - UInt32, UInt64
+	//   - Vector2<UInt32>, Vector4<UInt32>
+	// Modifies: --
+
 	// Generate destination
 
 	RegisterGenerator registerGenerator(this->m_builder);

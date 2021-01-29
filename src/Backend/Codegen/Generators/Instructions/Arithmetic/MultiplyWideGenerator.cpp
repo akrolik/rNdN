@@ -14,20 +14,21 @@ void MultiplyWideGenerator::Generate(const PTX::_MultiplyWideInstruction *instru
 template<class T>
 void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruction)
 {
-	// Setup operands
+	// Types:
+	//   - Int16, Int32
+	//   - UInt16, UInt32
+	// Modifiers: --
+
+	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	const auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	const auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	const auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
+	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
 
 	// Generate instruction
-	//  - Types:
-	//  	- Int16, Int32
-	//  	- UInt16, UInt32
-	//  - Modifiers: --
 
 	//TODO: Instruction MultiplyWide<T> types
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)

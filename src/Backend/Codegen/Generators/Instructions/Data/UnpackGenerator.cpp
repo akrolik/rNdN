@@ -13,16 +13,23 @@ void UnpackGenerator::Generate(const PTX::_UnpackInstruction *instruction)
 template<class T, PTX::VectorSize V>
 void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 {
+	// Types:
+	//   - Bit16, Bit32, Bit64
+	// Vector
+	//   - Vector2
+	//   - Vector4
+
 	// Generate source register
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [source, sourceHi] = registerGenerator.Generate(instruction->GetSource());
+	auto [source, source_Hi] = registerGenerator.Generate(instruction->GetSource());
 
 	// Destination decomposition, split below
 
 	auto destinations = instruction->GetDestination()->GetRegisters();
 
-	//TODO: Instruction Unpack<T, V> types and vectors
+	// Generate instruction
+
 	if constexpr(V == PTX::VectorSize::Vector2)
 	{
 		// Generate destination registers
@@ -30,10 +37,12 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 		auto [destinationA, destinationA_Hi] = registerGenerator.Generate(destinations.at(0));
 		auto [destinationB, destinationB_Hi] = registerGenerator.Generate(destinations.at(1));
 
+		// Temporary necessary for register reuse
+
+		auto temp0 = registerGenerator.GenerateTemporary(0);
+
 		if constexpr(std::is_same<T, PTX::Bit16Type>::value)
 		{
-			auto temp0 = registerGenerator.GenerateTemporary(0);
-
 			this->AddInstruction(new SASS::SHRInstruction(temp0, source, new SASS::I32Immediate(0x8)));
 			this->AddInstruction(new SASS::LOPInstruction(
 				destinationA, source, new SASS::I32Immediate(0xffff), SASS::LOPInstruction::BooleanOperator::AND
@@ -42,10 +51,15 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
+			//TODO: UnpackInstruction Vector2<Bit32Type>
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
 		}
+	}
+	else if constexpr(V == PTX::VectorSize::Vector4)
+	{
+		//TODO: UnpackInstruction Vector4<Bit16Type/Bit32Type/Bit64Type>
 	}
 }
 

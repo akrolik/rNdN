@@ -32,11 +32,11 @@ SASS::LDGInstruction::Type LoadNCGenerator::InstructionType()
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
-		return SASS::LDGInstruction::Type::I32;
+		return SASS::LDGInstruction::Type::X32;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		return SASS::LDGInstruction::Type::I64;
+		return SASS::LDGInstruction::Type::X64;
 	}
 	Error("load.nc for type " + T::Name());
 }
@@ -44,12 +44,16 @@ SASS::LDGInstruction::Type LoadNCGenerator::InstructionType()
 template<PTX::Bits B, class T, class S>
 void LoadNCGenerator::Visit(const PTX::LoadNCInstruction<B, T, S> *instruction)
 {
+	// Types: *, Vector (exclude Float16(x2))
+	// Spaces: Global
+	// Modifiers: --
+
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
 		// Generate operands
 
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destinationHi] = registerGenerator.Generate(instruction->GetDestination());
+		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
 
 		AddressGenerator addressGenerator(this->m_builder);
 		auto address = addressGenerator.Generate(instruction->GetAddress());

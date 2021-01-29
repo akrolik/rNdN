@@ -64,27 +64,28 @@ E ConvertGenerator::GetConversionType()
 template<class D, class S>
 void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 {
-	// Setup operands
+	// Types<D/S>:
+	//   - Int8, Int16, Int32, Int64
+	//   - UInt8, UInt16, UInt32, UInt64
+	//   - Float16, Float32, Float64
+	// Modifiers:
+	//   - ConvertSaturate:
+	//       - D = Float16, Float32, Float64
+	//       - D = (U)Int*, S = (U)Int*, Size<D> < Size<S>
+	//   - ConvertRounding:
+	//       - D = (U)Int*, D = Float16, Float32, Float64
+	//       - D == S == Float*
+	//   - ConvertFlushSubnormal: Float32<D/S>
+
+	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	const auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
 
 	CompositeGenerator compositeGenerator(this->m_builder);
-	const auto [source, source_Hi] = compositeGenerator.Generate(instruction->GetSource());
+	auto [source, source_Hi] = compositeGenerator.Generate(instruction->GetSource());
 
 	// Generate instruction
-	//  - Types<D/S>:
-	//  	- Int8, Int16, Int32, Int64
-	//  	- UInt8, UInt16, UInt32, UInt64
-	//  	- Float16, Float32, Float64
-	//  - Modifiers:
-	//  	- ConvertSaturate:
-	//  	    - D = Float16, Float32, Float64
-	//  	    - D = (U)Int*, S = (U)Int*, Size<D> < Size<S>
-	//  	- ConvertRounding:
-	//  	    - D = (U)Int*, D = Float16, Float32, Float64
-	//  	    - D == S == Float*
-	//  	- ConvertFlushSubnormal: Float32<D/S>
 
 	//TODO: Instruction Convert<D, S> types, modifiers
 	if constexpr(PTX::is_int_type<D>::value && PTX::is_int_type<S>::value)

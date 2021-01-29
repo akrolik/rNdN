@@ -44,10 +44,14 @@ SASS::STGInstruction::Type StoreGenerator::InstructionType()
 template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
 void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 {
+	// Types: *, Vector (exclude Float16(x2))
+	// Spaces: *
+	// Modifiers: --
+
 	// Generate source operand
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [source, sourceHi] = registerGenerator.Generate(instruction->GetSource());
+	auto [source, source_Hi] = registerGenerator.Generate(instruction->GetSource());
 
 	//TODO: Instruction Store<T> types, modifiers, atomics
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
