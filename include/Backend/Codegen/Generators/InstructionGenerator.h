@@ -70,7 +70,7 @@ public:
 
 	// void Visit(const PTX::_AtomicInstruction *instruction) override;
 	// void Visit(const PTX::_BarrierInstruction *instruction) override;
-	// void Visit(const PTX::_ReductionInstruction *instruction) override;
+	void Visit(const PTX::_ReductionInstruction *instruction) override;
 };
 
 }

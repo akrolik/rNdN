@@ -28,6 +28,8 @@
 #include "Backend/Codegen/Generators/Instructions/Logical/OrGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Logical/XorGenerator.h"
 
+#include "Backend/Codegen/Generators/Instructions/Synchronization/ReductionGenerator.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -174,6 +176,12 @@ void InstructionGenerator::Visit(const PTX::_OrInstruction *instruction)
 void InstructionGenerator::Visit(const PTX::_XorInstruction *instruction)
 {
 	XorGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_ReductionInstruction *instruction)
+{
+	ReductionGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 
