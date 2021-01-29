@@ -4,6 +4,7 @@
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MADGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyWideGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/RemainderGenerator.h"
 
 #include "Backend/Codegen/Generators/Instructions/Comparison/SetPredicateGenerator.h"
 
@@ -45,6 +46,12 @@ void InstructionGenerator::Visit(const PTX::_MultiplyInstruction *instruction)
 void InstructionGenerator::Visit(const PTX::_MultiplyWideInstruction *instruction)
 {
 	MultiplyWideGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_RemainderInstruction *instruction)
+{
+	RemainderGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 

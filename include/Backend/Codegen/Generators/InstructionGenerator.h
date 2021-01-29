@@ -26,7 +26,7 @@ public:
 	void Visit(const PTX::_MultiplyWideInstruction *instruction) override;
 	// void Visit(const PTX::_NegateInstruction *instruction) override;
 	// void Visit(const PTX::_ReciprocalInstruction *instruction) override;
-	// void Visit(const PTX::_RemainderInstruction *instruction) override;
+	void Visit(const PTX::_RemainderInstruction *instruction) override;
 	// void Visit(const PTX::_SubtractInstruction *instruction) override;
 
 	// Comparison
