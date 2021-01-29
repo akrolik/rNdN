@@ -21,6 +21,19 @@ public:
 
 	template<class T>
 	void Visit(const PTX::SetPredicateInstruction<T> *instruction);
+
+private:
+	template<class T>
+	SASS::ISETPInstruction::ComparisonOperator IInstructionComparisonOperator(typename T::ComparisonOperator comparisonOperator);
+
+	template<class T>
+	SASS::ISETPInstruction::BooleanOperator IInstructionBooleanOperator(typename PTX::SetPredicateInstruction<T>::BoolOperator boolOperator);
+
+	template<class T>
+	SASS::DSETPInstruction::ComparisonOperator DInstructionComparisonOperator(typename T::ComparisonOperator comparisonOperator);
+
+	template<class T>
+	SASS::DSETPInstruction::BooleanOperator DInstructionBooleanOperator(typename PTX::SetPredicateInstruction<T>::BoolOperator boolOperator);
 };
 
 }
