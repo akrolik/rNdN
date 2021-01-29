@@ -45,6 +45,10 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 		this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB, SASS::IADDInstruction::Flags::CC));
 		this->AddInstruction(new SASS::IADDInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, SASS::IADDInstruction::Flags::X));
 	}
+	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
+	{
+		this->AddInstruction(new SASS::DADDInstruction(destination, sourceA, sourceB));
+	}
 }
 
 }

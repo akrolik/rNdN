@@ -50,6 +50,9 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
+			this->AddInstruction(new SASS::MOVInstruction(temp0, sourceA));
+			this->AddInstruction(new SASS::MOVInstruction(destination_Hi, sourceB));
+			this->AddInstruction(new SASS::MOVInstruction(destination, temp0));
 		}
 	}
 	else if constexpr(V == PTX::VectorSize::Vector4)
