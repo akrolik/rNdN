@@ -56,10 +56,10 @@ public:
 
 	// Logical
 
-	// void Visit(const PTX::_AndInstruction *instruction) override;
-	// void Visit(const PTX::_NotInstruction *instruction) override;
-	// void Visit(const PTX::_OrInstruction *instruction) override;
-	// void Visit(const PTX::_XorInstruction *instruction) override;
+	void Visit(const PTX::_AndInstruction *instruction) override;
+	void Visit(const PTX::_NotInstruction *instruction) override;
+	void Visit(const PTX::_OrInstruction *instruction) override;
+	void Visit(const PTX::_XorInstruction *instruction) override;
 
 	// Shift
 

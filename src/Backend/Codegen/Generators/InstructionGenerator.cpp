@@ -23,6 +23,11 @@
 #include "Backend/Codegen/Generators/Instructions/Data/StoreGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/UnpackGenerator.h"
 
+#include "Backend/Codegen/Generators/Instructions/Logical/AndGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Logical/NotGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Logical/OrGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Logical/XorGenerator.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -145,6 +150,30 @@ void InstructionGenerator::Visit(const PTX::_StoreInstruction *instruction)
 void InstructionGenerator::Visit(const PTX::_UnpackInstruction *instruction)
 {
 	UnpackGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_AndInstruction *instruction)
+{
+	AndGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_NotInstruction *instruction)
+{
+	NotGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_OrInstruction *instruction)
+{
+	OrGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_XorInstruction *instruction)
+{
+	XorGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 
