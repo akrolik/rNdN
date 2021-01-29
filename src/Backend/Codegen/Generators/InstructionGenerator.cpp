@@ -19,6 +19,7 @@
 #include "Backend/Codegen/Generators/Instructions/Data/MoveGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/MoveSpecialGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/PackGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Data/ShuffleGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/StoreGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Data/UnpackGenerator.h"
 
@@ -126,6 +127,12 @@ void InstructionGenerator::Visit(const PTX::_MoveSpecialInstruction *instruction
 void InstructionGenerator::Visit(const PTX::_PackInstruction *instruction)
 {
 	PackGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_ShuffleInstruction *instruction)
+{
+	ShuffleGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 

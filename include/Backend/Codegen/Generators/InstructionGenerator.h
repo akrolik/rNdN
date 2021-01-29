@@ -50,7 +50,7 @@ public:
 	// void Visit(const PTX::_MoveAddressInstruction *instruction) override;
 	void Visit(const PTX::_MoveSpecialInstruction *instruction) override;
 	void Visit(const PTX::_PackInstruction *instruction) override;
-	// void Visit(const PTX::_ShuffleInstruction *instruction) override;
+	void Visit(const PTX::_ShuffleInstruction *instruction) override;
 	void Visit(const PTX::_StoreInstruction *instruction) override;
 	void Visit(const PTX::_UnpackInstruction *instruction) override;
 
