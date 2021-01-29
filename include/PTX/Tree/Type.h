@@ -54,6 +54,7 @@ struct Type {
 	using WideType = std::nullptr_t;
 
 	using ComparisonOperator = std::nullptr_t;
+	using ReductionOperation = std::nullptr_t;
 
 	// Polymorphism
 	virtual ~Type() = default;

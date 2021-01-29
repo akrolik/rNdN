@@ -14,6 +14,20 @@ public:
 		Xor
 	};
 
+	static std::string BoolOperatorString(BoolOperator boolOperator)
+	{
+		switch (boolOperator)
+		{
+			case BoolOperator::And:
+				return ".and";
+			case BoolOperator::Or:
+				return ".or";
+			case BoolOperator::Xor:
+				return ".xor";
+		}
+		return ".<unknown>";
+	}
+
 	PredicateModifier() {}
 	PredicateModifier(Register<PredicateType> *sourcePredicate, BoolOperator boolOperator, bool negateSourcePredicate = false) : m_sourcePredicate(sourcePredicate), m_boolOperator(boolOperator), m_negateSourcePredicate(negateSourcePredicate) {}
 
@@ -35,16 +49,7 @@ public:
 	{
 		if (m_sourcePredicate != nullptr)
 		{
-			switch (m_boolOperator)
-			{
-				case BoolOperator::And:
-					return ".and";
-				case BoolOperator::Or:
-					return ".or";
-				case BoolOperator::Xor:
-					return ".xor";
-			}
-			return ".<unknown>";
+			return BoolOperatorString(m_boolOperator);
 		}
 		return "";
 	}
