@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Backend/Codegen/Generators/Generator.h"
+#include "PTX/Traversal/ConstOperandVisitor.h"
 
 #include "PTX/Tree/Tree.h"
 #include "SASS/SASS.h"
@@ -8,7 +9,7 @@
 namespace Backend {
 namespace Codegen {
 
-class PredicateGenerator : public Generator
+class PredicateGenerator : public Generator, public PTX::ConstOperandVisitor
 {
 public:
 	using Generator::Generator;
@@ -17,7 +18,24 @@ public:
 
 	// Generators
 
-	SASS::Predicate *Generate(const PTX::Register<PTX::PredicateType> *reg);
+	SASS::Predicate *Generate(const PTX::Operand *operand);
+
+	// Registers
+
+	void Visit(const PTX::_Register *reg) override;
+
+	template<class T>
+	void Visit(const PTX::Register<T> *reg);
+
+	// Values
+
+	void Visit(const PTX::_Value *value);
+
+	template<class T>
+	void Visit(const PTX::Value<T> *value);
+
+private:
+	SASS::Predicate *m_predicate = nullptr;
 };
 
 }
