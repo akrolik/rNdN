@@ -2,6 +2,7 @@
 
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/AddGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MADGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyWideGenerator.h"
 
 #include "Backend/Codegen/Generators/Instructions/Comparison/SetPredicateGenerator.h"
@@ -32,6 +33,12 @@ void InstructionGenerator::Visit(const PTX::_AddInstruction *instruction)
 void InstructionGenerator::Visit(const PTX::_MADInstruction *instruction)
 {
 	MADGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_MultiplyInstruction *instruction)
+{
+	MultiplyGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 

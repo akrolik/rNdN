@@ -22,7 +22,7 @@ public:
 	// void Visit(const PTX::_CountLeadingZerosInstruction *instruction) override;
 	// void Visit(const PTX::_DivideInstruction *instruction) override;
 	void Visit(const PTX::_MADInstruction *instruction) override;
-	// void Visit(const PTX::_MultiplyInstruction *instruction) override;
+	void Visit(const PTX::_MultiplyInstruction *instruction) override;
 	void Visit(const PTX::_MultiplyWideInstruction *instruction) override;
 	// void Visit(const PTX::_NegateInstruction *instruction) override;
 	// void Visit(const PTX::_ReciprocalInstruction *instruction) override;
