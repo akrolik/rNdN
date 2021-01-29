@@ -49,18 +49,42 @@ void CompositeGenerator::Visit(const PTX::Register<T> *reg)
 	}
 }
 
+void CompositeGenerator::Visit(const PTX::_Constant *constant)
+{
+	constant->Dispatch(*this);
+}
+
 void CompositeGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
 }
 
 template<class T>
+void CompositeGenerator::Visit(const PTX::Constant<T> *constant)
+{
+	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+	{
+		// Architecture property
+
+		if (constant->GetName() == "WARP_SZ")
+		{
+			m_composite = new SASS::I32Immediate(32);
+		}
+	}
+}
+
+template<class T>
 void CompositeGenerator::Visit(const PTX::Value<T> *value)
 {
-	//TODO: Composite Value<T> types
 	if constexpr(PTX::is_int_type<T>::value && PTX::BitSize<T::TypeBits>::NumBits <= 32)
 	{
 		m_composite = new SASS::I32Immediate(value->GetValue());
+	}
+	else
+	{
+		//TODO: Composite Value<T> types
+		m_composite = new SASS::Constant(0x2, 0x0);
+		m_compositeHi = new SASS::Constant(0x2, 0x0 + 0x4);
 	}
 }
 
@@ -79,7 +103,7 @@ void CompositeGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 
 	// Extended datatypes
 
-	if (T::TypeBits == PTX::Bits::Bits64)
+	if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
 		m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
 	}

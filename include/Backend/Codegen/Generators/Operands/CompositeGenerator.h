@@ -31,7 +31,11 @@ public:
 
 	// Values
 
+	void Visit(const PTX::_Constant *constant) override;
 	void Visit(const PTX::_Value *value) override;
+
+	template<class T>
+	void Visit(const PTX::Constant<T> *constant);
 
 	template<class T>
 	void Visit(const PTX::Value<T> *value);
