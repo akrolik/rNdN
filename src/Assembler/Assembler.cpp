@@ -246,7 +246,13 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 			auto mnemonic = instruction->ToString();
 			auto binary = "/* " + Utils::Format::HexString(instruction->ToBinary(), 16) + " */";
 
-			std::string spacing(40 - mnemonic.length(), ' ');
+			auto indent = 4;
+			auto length = mnemonic.length();
+			if (length < 48)
+			{
+				indent = 48 - length;
+			}
+			std::string spacing(indent, ' ');
 			Utils::Logger::LogInfo(address + mnemonic + spacing + binary, 0, true, Utils::Logger::NoPrefix);
 		}
 	}
