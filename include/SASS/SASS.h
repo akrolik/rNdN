@@ -60,6 +60,8 @@ namespace SASS {
 #include "SASS/Instructions/Movement/SELInstruction.h"
 #include "SASS/Instructions/Movement/SHFLInstruction.h"
 
+#include "SASS/Instructions/Predicate/PSETPInstruction.h"
+
 // Operands
 
 #include "SASS/Operands/Operand.h"

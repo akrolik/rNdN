@@ -21,18 +21,18 @@ public:
 
 	enum class BooleanOperator1 : std::uint64_t {
 		AND = 0x0000000000000000,
-		OR  = 0x0000200000000000,
-		XOR = 0x0000400000000000
-	};
-
-	enum class BooleanOperator2 : std::uint64_t {
-		AND = 0x0000000000000000,
 		OR  = 0x0000000001000000,
 		XOR = 0x0000000002000000
 	};
 
+	enum class BooleanOperator2 : std::uint64_t {
+		AND = 0x0000000000000000,
+		OR  = 0x0000200000000000,
+		XOR = 0x0000400000000000
+	};
+
 	PSETPInstruction(Predicate *destinationA, Predicate *destinationB, Predicate *sourceA, Predicate *sourceB, Predicate *sourceC, BooleanOperator1 booleanOperator1, BooleanOperator2 booleanOperator2, Flags flags = Flags::None)
-		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_booleanOperator1(booleanOperator), m_booleanOperator2(booleanOperator2), m_flags(flags) {}
+		: PredicatedInstruction({destinationA, destinationB, sourceA, sourceB, sourceC}), m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_booleanOperator1(booleanOperator1), m_booleanOperator2(booleanOperator2), m_flags(flags) {}
 
 	// Properties
 
@@ -46,15 +46,15 @@ public:
 
 	const Predicate *GetSourceA() const { return m_sourceA; }
 	Predicate *GetSourceA() { return m_sourceA; }
-	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
+	void SetSourceA(Predicate *sourceA) { m_sourceA = sourceA; }
 
 	const Predicate *GetSourceB() const { return m_sourceB; }
 	Predicate *GetSourceB() { return m_sourceB; }
-	void SetSourceB(Composite *sourceB) { m_sourceB = sourceB; }
+	void SetSourceB(Predicate *sourceB) { m_sourceB = sourceB; }
 
 	const Predicate *GetSourceC() const { return m_sourceC; }
 	Predicate *GetSourceC() { return m_sourceC; }
-	void SetSourceB(Predicate *sourceC) { m_sourceC = sourceC; }
+	void SetSourceC(Predicate *sourceC) { m_sourceC = sourceC; }
 
 	BooleanOperator1 GetBooleanOperator1() const { return m_booleanOperator1; }
 	void SetBooleanOperator1(BooleanOperator1 booleanOperator1) { m_booleanOperator1 = booleanOperator1; }
@@ -72,13 +72,13 @@ public:
 	std::string OpModifiers() const override
 	{
 		std::string code;
-		switch (m_booleanOperator2)
+		switch (m_booleanOperator1)
 		{
 			case BooleanOperator1::AND: code += ".AND"; break;
 			case BooleanOperator1::OR: code += ".OR"; break;
 			case BooleanOperator1::XOR: code += ".XOR"; break;
 		}
-		switch (m_booleanOperator1)
+		switch (m_booleanOperator2)
 		{
 			case BooleanOperator2::AND: code += ".AND"; break;
 			case BooleanOperator2::OR: code += ".OR"; break;
@@ -139,7 +139,6 @@ public:
 
 	std::uint64_t BinaryOperands() const override
 	{
-		// pred?PSETP$bool2$bool $p3, $p0, $p12, $p29, $p39
 		return BinaryUtils::OperandPredicate3(m_destinationA) |
 		       BinaryUtils::OperandPredicate0(m_destinationB) |
 		       BinaryUtils::OperandPredicate12(m_sourceA) |
@@ -159,6 +158,6 @@ private:
 	Flags m_flags = Flags::None;
 };
 
-SASS_FLAGS_INLINE(DSETPInstruction)
+SASS_FLAGS_INLINE(PSETPInstruction)
 
 }

@@ -19,23 +19,24 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	enum class Type : std::uint64_t {
-	     None = 0x0,
-	     S32  = 0x0000000000100000,
-	     U64  = 0x0000000000200000,
-	     F32  = 0x0000000000300000,
-	     F16  = 0x0000000000400000,
-	     S64  = 0x0000000000500000
+		U32 = 0x0000000000000000,
+		S32 = 0x0000000000100000,
+		U64 = 0x0000000000200000,
+		F32 = 0x0000000000300000,
+		F16 = 0x0000000000400000,
+		S64 = 0x0000000000500000,
+		F64 = 0x0000000000600000
 	};
 
 	enum class Mode : std::uint64_t {
-	     ADD = 0x0000000000000000,
-	     MIN = 0x0000000000800000,
-	     MAX = 0x0000000001000000,
-	     INC = 0x0000000001800000,
-	     DEC = 0x0000000002000000,
-	     AND = 0x0000000002800000,
-	     OR  = 0x0000000003000000,
-	     XOR = 0x0000000003800000
+		ADD = 0x0000000000000000,
+		MIN = 0x0000000000800000,
+		MAX = 0x0000000001000000,
+		INC = 0x0000000001800000,
+		DEC = 0x0000000002000000,
+		AND = 0x0000000002800000,
+		OR  = 0x0000000003000000,
+		XOR = 0x0000000003800000
 	};
 
 	REDInstruction(Address *destination, Register *source, Type type, Mode mode, Flags flags = Flags::None)
@@ -84,6 +85,7 @@ public:
 		}
 		switch (m_type)
 		{
+			// case Type::U32: code += ".U32"; break; // Default
 			case Type::S32: code += ".S32"; break;
 			case Type::U64: code += ".U64"; break;
 			case Type::F32: code += ".F32.FTZ.RN"; break;
