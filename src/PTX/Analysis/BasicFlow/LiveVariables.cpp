@@ -55,8 +55,6 @@ void LiveVariables::Visit(const Register<T> *reg)
 	}
 }
 
-//TODO: Indexed registers
-
 LiveVariables::Properties LiveVariables::InitialFlow() const
 {
 	// Initial flow is the empty set, no variables are live!

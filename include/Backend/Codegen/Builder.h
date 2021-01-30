@@ -1,10 +1,9 @@
 #pragma once
 
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
+#include "PTX/Analysis/SpaceAllocator/SpaceAllocation.h"
 
 #include "SASS/SASS.h"
-
-#include <unordered_map>
 
 namespace Backend {
 namespace Codegen {
@@ -17,13 +16,17 @@ public:
 	const PTX::Analysis::RegisterAllocation *GetRegisterAllocation() const { return m_registerAllocation; }
 	void SetRegisterAllocation(const PTX::Analysis::RegisterAllocation *allocation) { m_registerAllocation = allocation; }
 
+	// Space Allocation
+
+	const PTX::Analysis::SpaceAllocation *GetSpaceAllocation() const { return m_spaceAllocation; }
+	void SetSpaceAllocation(const PTX::Analysis::SpaceAllocation *allocation) { m_spaceAllocation = allocation; }
+
 	// Function
 
-	SASS::Function *CreateFunction(const std::string& name, const PTX::Analysis::RegisterAllocation *allocation);
+	SASS::Function *CreateFunction(const std::string& name);
 	void CloseFunction();
 
-	void AddParameter(const std::string& name, std::size_t size);
-	std::size_t GetParameter(const std::string& name) const;
+	void AddParameter(std::size_t size);
 
 	// Basic Blocks
 
@@ -38,10 +41,8 @@ private:
 	SASS::Function *m_currentFunction = nullptr;
 	SASS::BasicBlock *m_currentBlock = nullptr;
 
-	std::unordered_map<std::string, std::size_t> m_parameterAllocation;
-	std::size_t m_parameterOffset = 0;
-
 	const PTX::Analysis::RegisterAllocation *m_registerAllocation = nullptr;
+	const PTX::Analysis::SpaceAllocation *m_spaceAllocation = nullptr;
 };
 
 }

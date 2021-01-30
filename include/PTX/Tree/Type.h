@@ -878,6 +878,7 @@ struct ArrayType : DataType
 
 	using SystemType = typename T::SystemType;
 	using ElementType = T;
+	constexpr static unsigned int ElementCount = N;
 	constexpr static Bits TypeBits = T::TypeBits;
 
 	static std::string TypePrefix() { return std::string("a$") + T::TypePrefix(); }

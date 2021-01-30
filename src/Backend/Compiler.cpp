@@ -9,6 +9,7 @@
 #include "PTX/Analysis/ControlFlow/ControlFlowBuilder.h"
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 #include "PTX/Analysis/RegisterAllocator/LinearScanRegisterAllocator.h"
+#include "PTX/Analysis/SpaceAllocator/SpaceAllocator.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -48,14 +49,21 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Allocate registers
 
-	auto allocation = AllocateRegisters(function);
+	auto registerAllocation = AllocateRegisters(function);
+
+	// Allocate spaces (shared, parameters)
+	
+	PTX::Analysis::SpaceAllocator spaceAllocator;
+	spaceAllocator.Analyze(function);
+
+	auto spaceAllocation = spaceAllocator.GetSpaceAllocation();
 
 	// Generate SASS code from 64-bit PTX code
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS generation: " + function->GetName());
 
 	Codegen::CodeGenerator codegen;
-	auto sassFunction = codegen.Generate(function, allocation);
+	auto sassFunction = codegen.Generate(function, registerAllocation, spaceAllocation);
 
 	Scheduler scheduler;
 	scheduler.Schedule(sassFunction);

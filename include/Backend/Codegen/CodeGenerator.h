@@ -6,6 +6,7 @@
 #include "Backend/Codegen/Builder.h"
 
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
+#include "PTX/Analysis/SpaceAllocator/SpaceAllocation.h"
 #include "PTX/Tree/Tree.h"
 
 #include "SASS/SASS.h"
@@ -16,7 +17,7 @@ namespace Codegen {
 class CodeGenerator : public PTX::ConstHierarchicalVisitor, public PTX::ConstDeclarationVisitor
 {
 public:
-	SASS::Function *Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation);
+	SASS::Function *Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::SpaceAllocation *spaceAllocation);
 
 	// Declarations
 

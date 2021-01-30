@@ -1,16 +1,12 @@
 #include "Backend/Codegen/Builder.h"
 
+#include "Utils/Logger.h"
+
 namespace Backend {
 namespace Codegen {
 
-SASS::Function *Builder::CreateFunction(const std::string& name, const PTX::Analysis::RegisterAllocation *allocation)
+SASS::Function *Builder::CreateFunction(const std::string& name)
 {
-	// Initialize allocators
-
-	m_registerAllocation = allocation;
-	m_parameterAllocation.clear();
-	m_parameterOffset = SASS::CBANK_ParametersOffset;
-
 	// Create function
 
 	m_currentFunction = new SASS::Function(name);
@@ -23,20 +19,12 @@ void Builder::CloseFunction()
 {
 	m_currentFunction = nullptr;
 	m_registerAllocation = nullptr;
-	m_parameterAllocation.clear();
-	m_parameterOffset = 0x0;
+	m_spaceAllocation = nullptr;
 }
 
-void Builder::AddParameter(const std::string& name, std::size_t size)
+void Builder::AddParameter(std::size_t size)
 {
-	m_parameterAllocation[name] = m_parameterOffset;
-	m_parameterOffset += size;
 	m_currentFunction->AddParameter(size);
-}
-
-std::size_t Builder::GetParameter(const std::string& name) const
-{
-	return m_parameterAllocation.at(name);
 }
 
 // Basic Blocks

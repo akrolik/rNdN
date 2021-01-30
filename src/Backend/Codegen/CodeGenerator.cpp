@@ -7,10 +7,20 @@ namespace Codegen {
 
 // Public API
 
-SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *allocation)
+SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::SpaceAllocation *spaceAllocation)
 {
-	auto sassFunction = m_builder.CreateFunction(function->GetName(), allocation);
+	// Setup codegen builder
+
+	auto sassFunction = m_builder.CreateFunction(function->GetName());
+	m_builder.SetRegisterAllocation(registerAllocation);
+	m_builder.SetSpaceAllocation(spaceAllocation);
+
+	// Traverse function
+
 	function->Accept(*this);
+
+	// Close function and return
+
 	m_builder.CloseFunction();
 	return sassFunction;
 }
@@ -33,19 +43,7 @@ void CodeGenerator::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration
 {
 	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 	{
-		const auto names = declaration->GetNames();
-		if (names.size() != 1)
-		{
-			Utils::Logger::LogError("Parameters must only declare a single variable");
-		}
-
-		const auto name = names.at(0);
-		if (name->GetCount() != 1)
-		{
-			Utils::Logger::LogError("Parameters must only declare a single variable");
-		}
-
-		m_builder.AddParameter(name->GetName(), PTX::BitSize<T::TypeBits>::NumBytes);
+		m_builder.AddParameter(PTX::BitSize<T::TypeBits>::NumBytes);
 	}
 }
 
