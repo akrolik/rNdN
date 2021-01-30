@@ -23,16 +23,29 @@ void AndGenerator::Visit(const PTX::AndInstruction<T> *instruction)
 		// Generate operands
 
 		PredicateGenerator predicateGenerator(this->m_builder);
-		auto destination = predicateGenerator.Generate(instruction->GetDestination());
-		auto sourceA = predicateGenerator.Generate(instruction->GetSourceA());
-		auto sourceB = predicateGenerator.Generate(instruction->GetSourceB());
+		auto destination = predicateGenerator.Generate(instruction->GetDestination()).first;
+		auto [sourceA, sourceA_Not] = predicateGenerator.Generate(instruction->GetSourceA());
+		auto [sourceB, sourceB_Not] = predicateGenerator.Generate(instruction->GetSourceB());
+
+		// Flags
+
+		auto flags = SASS::PSETPInstruction::Flags::None;
+		if (sourceA_Not)
+		{
+			flags |= SASS::PSETPInstruction::Flags::NOT_A;
+		}
+		if (sourceB_Not)
+		{
+			flags |= SASS::PSETPInstruction::Flags::NOT_B;
+		}
 
 		// Generate instruction
 
 		this->AddInstruction(new SASS::PSETPInstruction(
 			destination, SASS::PT, sourceA, sourceB, SASS::PT,
 			SASS::PSETPInstruction::BooleanOperator1::AND,
-			SASS::PSETPInstruction::BooleanOperator2::AND
+			SASS::PSETPInstruction::BooleanOperator2::AND,
+			flags
 		));
 	}
 	//TODO: Instruction And<T> types (LOP)

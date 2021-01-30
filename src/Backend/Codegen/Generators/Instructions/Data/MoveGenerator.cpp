@@ -28,15 +28,24 @@ void MoveGenerator::Visit(const PTX::MoveInstruction<T> *instruction)
 		// Generate operands
 
 		PredicateGenerator predicateGenerator(this->m_builder);
-		auto destination = predicateGenerator.Generate(instruction->GetDestination());
-		auto source = predicateGenerator.Generate(instruction->GetSource());
+		auto destination = predicateGenerator.Generate(instruction->GetDestination()).first;
+		auto [source, source_Not] = predicateGenerator.Generate(instruction->GetSource());
+
+		// Flags
+
+		auto flags = SASS::PSETPInstruction::Flags::None;
+		if (source_Not)
+		{
+			flags |= SASS::PSETPInstruction::Flags::NOT_A;
+		}
 
 		// Generate instruction
 
 		this->AddInstruction(new SASS::PSETPInstruction(
 			destination, SASS::PT, source, SASS::PT, SASS::PT,
 			SASS::PSETPInstruction::BooleanOperator1::AND,
-			SASS::PSETPInstruction::BooleanOperator2::AND
+			SASS::PSETPInstruction::BooleanOperator2::AND,
+			flags
 		));
 	}
 	else

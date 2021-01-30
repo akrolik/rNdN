@@ -32,14 +32,22 @@ void SelectGenerator::Visit(const PTX::SelectInstruction<T> *instruction)
 	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
 
 	PredicateGenerator predicateGenerator(this->m_builder);
-	auto sourceC = predicateGenerator.Generate(instruction->GetSourceC());
+	auto [sourceC, sourceC_Not] = predicateGenerator.Generate(instruction->GetSourceC());
+
+	// Flags
+
+	auto flags = SASS::SELInstruction::Flags::None;
+	if (sourceC_Not)
+	{
+		flags |= SASS::SELInstruction::Flags::NOT_C;
+	}
 
 	// Generate instruction
 
-	this->AddInstruction(new SASS::SELInstruction(destination, sourceA, sourceB, sourceC));
+	this->AddInstruction(new SASS::SELInstruction(destination, sourceA, sourceB, sourceC, flags));
 	if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		this->AddInstruction(new SASS::SELInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, sourceC));
+		this->AddInstruction(new SASS::SELInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, sourceC, flags));
 	}
 }
 

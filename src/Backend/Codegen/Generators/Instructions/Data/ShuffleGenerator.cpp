@@ -29,7 +29,7 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 		auto [destinationD, destinationD_Hi] = registerGenerator.Generate(instruction->GetDestination());
 
 		auto destinationP_opt = instruction->GetDestinationP();
-		auto destinationP = (destinationP_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(destinationP_opt);
+		auto destinationP = (destinationP_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(destinationP_opt).first;
 
 		auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
 		auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());

@@ -10,8 +10,10 @@ void PredicatedInstructionGenerator::SetPredicatedInstruction(const PTX::Predica
 	if (const auto& [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
 	{
 		PredicateGenerator predicateGenerator(this->m_builder);
-		m_predicate = predicateGenerator.Generate(predicate);
-		m_negatePredicate = negate;
+		auto [predicateReg, predicate_Not] = predicateGenerator.Generate(predicate);
+
+		m_predicate = predicateReg;
+		m_negatePredicate = negate ^ predicate_Not;
 	}
 }
 

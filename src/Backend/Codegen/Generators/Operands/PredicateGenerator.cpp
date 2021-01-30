@@ -5,11 +5,12 @@
 namespace Backend {
 namespace Codegen {
 
-SASS::Predicate *PredicateGenerator::Generate(const PTX::Operand *operand)
+std::pair<SASS::Predicate *, bool> PredicateGenerator::Generate(const PTX::Operand *operand)
 {
 	// Clear
 
 	m_predicate = nullptr;
+	m_negatePredicate = false;
 
 	// Generate predicate
 
@@ -18,7 +19,7 @@ SASS::Predicate *PredicateGenerator::Generate(const PTX::Operand *operand)
 	{
 		Error("predicate for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
 	}
-	return m_predicate;
+	return { m_predicate, m_negatePredicate };
 }
 
 
@@ -43,6 +44,7 @@ void PredicateGenerator::Visit(const PTX::Register<T> *reg)
 
 			const auto& allocation = allocations->GetPredicate(name);
 			m_predicate = new SASS::Predicate(allocation);
+			m_negatePredicate = false;
 		}
 	}
 }
@@ -55,11 +57,13 @@ void PredicateGenerator::Visit(const PTX::_Value *value)
 template<class T>
 void PredicateGenerator::Visit(const PTX::Value<T> *value)
 {
-	if (value->GetValue() == true)
+	if constexpr(std::is_same<T, PTX::PredicateType>::value)
 	{
+		// Use the built-in PT register for true/false values
+
 		m_predicate = SASS::PT;
+		m_negatePredicate = (value->GetValue() == false);
 	}
-	//TODO: Other values
 }
 
 }

@@ -6,6 +6,8 @@
 #include "PTX/Tree/Tree.h"
 #include "SASS/SASS.h"
 
+#include <utility>
+
 namespace Backend {
 namespace Codegen {
 
@@ -18,7 +20,7 @@ public:
 
 	// Generators
 
-	SASS::Predicate *Generate(const PTX::Operand *operand);
+	std::pair<SASS::Predicate *, bool> Generate(const PTX::Operand *operand);
 
 	// Registers
 
@@ -36,6 +38,7 @@ public:
 
 private:
 	SASS::Predicate *m_predicate = nullptr;
+	bool m_negatePredicate = false;
 };
 
 }

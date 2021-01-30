@@ -23,8 +23,16 @@ void NotGenerator::Visit(const PTX::NotInstruction<T> *instruction)
 		// Generate operands
 
 		PredicateGenerator predicateGenerator(this->m_builder);
-		auto destination = predicateGenerator.Generate(instruction->GetDestination());
-		auto source = predicateGenerator.Generate(instruction->GetSource());
+		auto destination = predicateGenerator.Generate(instruction->GetDestination()).first;
+		auto [source, source_Not] = predicateGenerator.Generate(instruction->GetSource());
+
+		// Flags
+
+		auto flags = SASS::PSETPInstruction::Flags::NOT_A;
+		if (source_Not)
+		{
+			flags = SASS::PSETPInstruction::Flags::None;
+		}
 
 		// Generate instruction
 
@@ -32,7 +40,7 @@ void NotGenerator::Visit(const PTX::NotInstruction<T> *instruction)
 			destination, SASS::PT, source, SASS::PT, SASS::PT,
 			SASS::PSETPInstruction::BooleanOperator1::AND,
 			SASS::PSETPInstruction::BooleanOperator2::AND,
-			SASS::PSETPInstruction::Flags::NOT_A
+			flags
 		));
 	}
 	//TODO: Instruction Not<T> types/modifiers

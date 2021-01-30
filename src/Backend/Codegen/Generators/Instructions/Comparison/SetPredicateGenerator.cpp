@@ -219,12 +219,12 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 	// Generate operands
 
 	PredicateGenerator predicateGenerator(this->m_builder);
-	auto destinationA = predicateGenerator.Generate(instruction->GetDestination());
+	auto destinationA = predicateGenerator.Generate(instruction->GetDestination()).first;
 
 	// Optional destination Q predicate
 
 	auto destinationB_opt = instruction->GetDestinationQ();
-	auto destinationB = (destinationB_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(destinationB_opt);
+	auto destinationB = (destinationB_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(destinationB_opt).first;
 
 	RegisterGenerator registerGenerator(this->m_builder);
 	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
@@ -235,7 +235,7 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 	// Optional source C predicate
 
 	auto sourceC_opt = instruction->GetSourcePredicate();
-	auto sourceC = (sourceC_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(sourceC_opt);
+	auto [sourceC, sourceC_Not] = (sourceC_opt == nullptr) ? std::make_pair(SASS::PT, false) : predicateGenerator.Generate(sourceC_opt);
 
 	// Generate instruction
 
@@ -249,7 +249,7 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 		// Flags
 
 		auto flags = SASS::ISETPInstruction::Flags::None;
-		if (instruction->GetNegateSourcePredicate())
+		if (instruction->GetNegateSourcePredicate() ^ sourceC_Not)
 		{
 			flags |= SASS::ISETPInstruction::Flags::NOT_C;
 		}
