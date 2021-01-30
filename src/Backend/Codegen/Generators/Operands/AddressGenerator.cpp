@@ -42,14 +42,14 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		//TODO: Rellocatable ELF globals
 
 		auto temp0 = this->m_builder.AllocateTemporaryRegister();
-		this->AddInstruction(new SASS::MOV32IInstruction(temp0, new SASS::I32Immediate(0x0)));
+		this->m_builder.AddInstruction(new SASS::MOV32IInstruction(temp0, new SASS::I32Immediate(0x0)));
 
 		// Extended addresses (64-bit)
 
 		if constexpr(B == PTX::Bits::Bits64)
 		{
 			auto temp1 = this->m_builder.AllocateTemporaryRegister();
-			this->AddInstruction(new SASS::MOV32IInstruction(temp1, new SASS::I32Immediate(0x0)));
+			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(temp1, new SASS::I32Immediate(0x0)));
 		}
 
 		// Form the address with the offset

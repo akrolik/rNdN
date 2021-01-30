@@ -57,6 +57,7 @@ namespace SASS {
 #include "SASS/Instructions/Misc/S2RInstruction.h"
 
 #include "SASS/Instructions/Movement/MOVInstruction.h"
+#include "SASS/Instructions/Movement/MOV32IInstruction.h"
 #include "SASS/Instructions/Movement/SELInstruction.h"
 #include "SASS/Instructions/Movement/SHFLInstruction.h"
 
