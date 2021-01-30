@@ -39,15 +39,15 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 
 		// Temporary necessary for register reuse
 
-		auto temp0 = registerGenerator.GenerateTemporary(0);
+		auto temp = this->m_builder.AllocateTemporaryRegister();
 
 		if constexpr(std::is_same<T, PTX::Bit16Type>::value)
 		{
-			this->AddInstruction(new SASS::SHRInstruction(temp0, source, new SASS::I32Immediate(0x8)));
+			this->AddInstruction(new SASS::SHRInstruction(temp, source, new SASS::I32Immediate(0x8)));
 			this->AddInstruction(new SASS::LOPInstruction(
 				destinationA, source, new SASS::I32Immediate(0xffff), SASS::LOPInstruction::BooleanOperator::AND
 			));
-			this->AddInstruction(new SASS::MOVInstruction(destinationB, temp0));
+			this->AddInstruction(new SASS::MOVInstruction(destinationB, temp));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
@@ -55,9 +55,9 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(temp0, source));
+			this->AddInstruction(new SASS::MOVInstruction(temp, source));
 			this->AddInstruction(new SASS::MOVInstruction(destinationB, source_Hi));
-			this->AddInstruction(new SASS::MOVInstruction(destinationA, temp0));
+			this->AddInstruction(new SASS::MOVInstruction(destinationA, temp));
 		}
 	}
 	else if constexpr(V == PTX::VectorSize::Vector4)

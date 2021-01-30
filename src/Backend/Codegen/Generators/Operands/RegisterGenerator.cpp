@@ -19,17 +19,9 @@ std::pair<SASS::Register *, SASS::Register *> RegisterGenerator::Generate(const 
 	{
 		//TODO: Temporarily use the first scratch register for unallocated variables
 		// Error("register for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
-		return { new SASS::Register(0), nullptr };
+		return { this->m_builder.AllocateTemporaryRegister(), nullptr };
 	}
 	return { m_register, m_registerHi };
-}
-
-SASS::Register *RegisterGenerator::GenerateTemporary(std::uint8_t index)
-{
-	const auto& allocations = this->m_builder.GetRegisterAllocation();
-	auto allocation = allocations->GetTemporaryRegister(index);
-
-	return new SASS::Register(allocation);
 }
 
 void RegisterGenerator::Visit(const PTX::_Register *reg)

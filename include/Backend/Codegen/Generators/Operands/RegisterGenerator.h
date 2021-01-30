@@ -21,7 +21,6 @@ public:
 	// Generators
 
 	std::pair<SASS::Register *, SASS::Register *> Generate(const PTX::Operand *operand);
-	SASS::Register *GenerateTemporary(std::uint8_t index);
 
 	// Registers
 

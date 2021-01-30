@@ -267,8 +267,8 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 		{
 			// Temporary variables for conversions to 32-bit
 
-			auto temp0 = registerGenerator.GenerateTemporary(0);
-			auto temp1 = registerGenerator.GenerateTemporary(1);
+			auto temp0 = this->m_builder.AllocateTemporaryRegister();
+			auto temp1 = this->m_builder.AllocateTemporaryRegister();
 
 			if constexpr(PTX::is_unsigned_int_type<T>::value)
 			{

@@ -48,33 +48,10 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 	std::array<bool, RegisterAllocation::MaxPredicate> predicateMap{};
 	std::array<bool, RegisterAllocation::MaxRegister> registerMap{};
 
-	auto temporaryCount = 6u; // Dummy R0-R5
-	for (auto i = 0u; i < temporaryCount; ++i)
-	{
-		registerMap[i] = true;
-	}
-	m_allocation->SetTemporaryRegisters(0, temporaryCount);
-
 	// For each live interval, perform allocation
 
 	for (const auto& [intervalName, intervalStart, intervalEnd] : liveIntervals)
 	{
-		//TODO: Update debug code
-		// std::cout << intervalName << std::endl;
-		// std::cout << "  - Input register map:";
-		// for (auto i = 0; i < 20; ++i)
-		// {
-		// 	std::cout << " " << registerMap[i];
-		// }
-		// std::cout << std::endl;
-
-		// std::cout << "  - Input active set:";
-		// for (const auto& [end, reg, range] : activeIntervals)
-		// {
-		// 	std::cout << " (" << end << ", " << (unsigned int)reg << ", " << (unsigned int)range << ")";
-		// }
-		// std::cout << std::endl;
-
 		// Free expired intervals
 
 		for (auto it = std::begin(activeIntervals); it != std::end(activeIntervals); /* do nothing */)
@@ -99,7 +76,6 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 			}
 			else
 			{
-				// std::cout << "  - Free register range: " << (unsigned int)activeRegister << ", " << (unsigned int)activeRange << std::endl;
 				for (auto i = activeRegister; i < activeRegister + activeRange; ++i)
 				{
 					registerMap[i] = false;
@@ -110,20 +86,6 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 			
 			activeIntervals.erase(it);
 		}
-
-		// std::cout << "  - Clean register map:";
-		// for (auto i = 0; i < 20; ++i)
-		// {
-		// 	std::cout << " " << registerMap[i];
-		// }
-		// std::cout << std::endl;
-
-		// std::cout << "  - Clean active set:";
-		// for (const auto& [end, reg, range] : activeIntervals)
-		// {
-		// 	std::cout << " (" << end << ", " << (unsigned int)reg << ", " << (unsigned int)range << ")";
-		// }
-		// std::cout << std::endl;
 
 		// Assign register to variable, taking sizes into account
 
@@ -203,16 +165,7 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 				registerMap[i] = true;
 			}
 			m_allocation->AddRegister(intervalName, intervalRegister, intervalRange);
-
-			// std::cout << "  - Allocate register range: " << (unsigned int)intervalRegister << ", " << (unsigned int)intervalRange << std::endl;
 		}
-
-		// std::cout << "  - Allocated register map:";
-		// for (auto i = 0; i < 20; ++i)
-		// {
-		// 	std::cout << " " << registerMap[i];
-		// }
-		// std::cout << std::endl;
 
 		// Add interval to active set, sorting by increasing end point
 

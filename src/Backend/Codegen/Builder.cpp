@@ -10,13 +10,15 @@ SASS::Function *Builder::CreateFunction(const std::string& name)
 	// Create function
 
 	m_currentFunction = new SASS::Function(name);
-	m_currentFunction->SetRegisters(m_registerAllocation->GetRegisterCount());
-
 	return m_currentFunction;
 }
 
 void Builder::CloseFunction()
 {
+	// Set register count
+
+	m_currentFunction->SetRegisters(m_registerAllocation->GetRegisterCount() + m_temporaryMax);
+
 	m_currentFunction = nullptr;
 	m_registerAllocation = nullptr;
 	m_spaceAllocation = nullptr;
@@ -46,6 +48,34 @@ void Builder::CloseBasicBlock()
 void Builder::AddInstruction(SASS::Instruction *instruction)
 {
 	m_currentBlock->AddInstruction(instruction);
+}
+
+// Temporary Registers
+
+SASS::Register *Builder::AllocateTemporaryRegister()
+{
+	// Find next free register
+
+	auto offset = m_registerAllocation->GetRegisterCount();
+	auto allocation = m_temporaryCount + offset;
+	if (allocation >= PTX::Analysis::RegisterAllocation::MaxRegister)
+	{
+		Utils::Logger::LogError("Temporary register exceeded maximum register count (" + std::to_string(PTX::Analysis::RegisterAllocation::MaxRegister) + ") for function '" + m_currentFunction->GetName() + "'");
+	}
+	m_temporaryCount++;
+
+	// Maintain high water mark for total registers
+
+	if (m_temporaryCount > m_temporaryMax)
+	{
+		m_temporaryMax = m_temporaryCount;
+	}
+	return new SASS::Register(allocation);
+}
+
+void Builder::ClearTemporaryRegisters()
+{
+	m_temporaryCount = 0;
 }
 
 }

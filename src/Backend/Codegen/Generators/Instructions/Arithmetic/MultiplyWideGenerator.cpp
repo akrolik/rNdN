@@ -44,14 +44,14 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 		//   XMAD.PSL.CBCC D1, S1.H1, TMP2.H1, TMP1 ;
 		//   IADD3.RS D2, TMP0, TMP3, TMP4 ;
 
-		auto temp0 = registerGenerator.GenerateTemporary(0);
-		auto temp1 = registerGenerator.GenerateTemporary(1);
-		auto temp2 = registerGenerator.GenerateTemporary(2);
-		auto temp3 = registerGenerator.GenerateTemporary(3);
-		auto temp4 = registerGenerator.GenerateTemporary(4);
+		auto temp0 = this->m_builder.AllocateTemporaryRegister();
+		auto temp1 = this->m_builder.AllocateTemporaryRegister();
+		auto temp2 = this->m_builder.AllocateTemporaryRegister();
+		auto temp3 = this->m_builder.AllocateTemporaryRegister();
+		auto temp4 = this->m_builder.AllocateTemporaryRegister();
 
 		//TODO: Generate sourceB as register if is immediate
-		auto temp5_tmp = registerGenerator.GenerateTemporary(5);
+		auto temp5_tmp = this->m_builder.AllocateTemporaryRegister();
 		this->AddInstruction(new SASS::MOVInstruction(temp5_tmp, sourceB));
 		auto sourceB = temp5_tmp;
 

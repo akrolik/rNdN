@@ -48,16 +48,16 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 			//   XMAD.MRG TMP0, S1, S2.H1, RZ ;
 			//   XMAD.PSL.CBCC D, S1.H1, TMP0.H1, D ;
 
-			auto temp0 = registerGenerator.GenerateTemporary(0);
+			auto temp = this->m_builder.AllocateTemporaryRegister();
 
 			this->AddInstruction(new SASS::XMADInstruction(
 				destination, sourceA, sourceB, sourceC
 			));
 			this->AddInstruction(new SASS::XMADInstruction(
-				temp0, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::MRG, SASS::XMADInstruction::Flags::H1_B
+				temp, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::MRG, SASS::XMADInstruction::Flags::H1_B
 			));
 			this->AddInstruction(new SASS::XMADInstruction(
-				destination, sourceA, temp0, destination, SASS::XMADInstruction::Mode::PSL,
+				destination, sourceA, temp, destination, SASS::XMADInstruction::Mode::PSL,
 				SASS::XMADInstruction::Flags::CBCC | SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
 			));
 		}

@@ -64,6 +64,12 @@ void CodeGenerator::VisitOut(const PTX::BasicBlock *block)
 
 bool CodeGenerator::VisitIn(const PTX::InstructionStatement *statement)
 {
+	// Clear all allocated temporary registers
+
+	m_builder.ClearTemporaryRegisters();
+
+	// Generate instruction
+
 	InstructionGenerator generator(m_builder);
 	statement->Accept(generator);
 	return false;

@@ -37,12 +37,20 @@ public:
 
 	void AddInstruction(SASS::Instruction *instruction);
 
+	// Temporary Registers
+
+	SASS::Register *AllocateTemporaryRegister();
+	void ClearTemporaryRegisters();
+
 private:
 	SASS::Function *m_currentFunction = nullptr;
 	SASS::BasicBlock *m_currentBlock = nullptr;
 
 	const PTX::Analysis::RegisterAllocation *m_registerAllocation = nullptr;
 	const PTX::Analysis::SpaceAllocation *m_spaceAllocation = nullptr;
+
+	std::uint8_t m_temporaryCount = 0;
+	std::uint8_t m_temporaryMax = 0;
 };
 
 }
