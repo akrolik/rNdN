@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace Assembler {
@@ -18,6 +19,11 @@ public:
 
 	void SetRegisters(const std::size_t registers) { m_registers = registers; }
 	std::size_t GetRegisters() const { return m_registers; }
+
+	// Number of barriers (high water mark)
+
+	std::size_t GetBarriers() const { return m_barriers; }
+	void SetBarriers(std::size_t barriers) { m_barriers = barriers; }
 
 	// Parameters (specified by size)
 
@@ -68,9 +74,23 @@ public:
 	void AddCoopOffset(std::size_t coopOffset) { m_coopOffsets.push_back(coopOffset); }
 	void SetCoopOffsets(const std::vector<std::size_t>& coopOffsets) { m_coopOffsets = coopOffsets; }
 
+	// Thread Properties
+
+	std::tuple<std::size_t, std::size_t, std::size_t> GetRequiredThreads() const { return m_requiredThreads; }
+	void SetRequiredThreads(std::size_t dimX, std::size_t dimY = 1, std::size_t dimZ = 1) { m_requiredThreads = { dimX, dimY, dimZ }; }
+
+	std::tuple<std::size_t, std::size_t, std::size_t> GetMaxThreads() const { return m_maxThreads; }
+	void SetMaxThreads(std::size_t dimX, std::size_t dimY = 1, std::size_t dimZ = 1) { m_maxThreads = { dimX, dimY, dimZ }; }
+
+	// CTAID Z Dimension
+
+	bool GetCTAIDZUsed() const { return m_ctaidzUsed; }
+	void SetCTAIDZUsed(bool ctaidzUsed) { m_ctaidzUsed = ctaidzUsed; }
+
 private:
 	std::string m_name;
 	std::size_t m_registers = 0;
+	std::size_t m_barriers = 0;
 
 	std::vector<std::size_t> m_parameters;
 	std::size_t m_parametersSize = 0;
@@ -81,6 +101,11 @@ private:
 	std::vector<std::size_t> m_ctaOffsets;
 	std::vector<std::size_t> m_exitOffsets;
 	std::vector<std::size_t> m_coopOffsets;
+
+	std::tuple<std::size_t, std::size_t, std::size_t> m_requiredThreads;
+	std::tuple<std::size_t, std::size_t, std::size_t> m_maxThreads;
+
+	bool m_ctaidzUsed = false;
 };
 
 }

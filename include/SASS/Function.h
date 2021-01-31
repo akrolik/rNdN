@@ -44,6 +44,19 @@ public:
 	void SetRegisters(const std::size_t registers) { m_registers = registers; }
 	std::size_t GetRegisters() const { return m_registers; }
 
+	// Threads
+	
+	std::tuple<std::size_t, std::size_t, std::size_t> GetRequiredThreads() const { return m_requiredThreads; }
+	void SetRequiredThreads(std::size_t dimX, std::size_t dimY = 1, std::size_t dimZ = 1) { m_requiredThreads = { dimX, dimY, dimZ }; }
+
+	std::tuple<std::size_t, std::size_t, std::size_t> GetMaxThreads() const { return m_maxThreads; }
+	void SetMaxThreads(std::size_t dimX, std::size_t dimY = 1, std::size_t dimZ = 1) { m_maxThreads = { dimX, dimY, dimZ }; }
+
+	// CTAID Z Dimension
+
+	bool GetCTAIDZUsed() const { return m_ctaidzUsed; }
+	void SetCTAIDZUsed(bool ctaidzUsed) { m_ctaidzUsed = ctaidzUsed; }
+
 	// Formatting
 
 	std::string ToString() const override
@@ -65,6 +78,15 @@ public:
 			code += "\n";
 		}
 		code += "//  - Registers: " + std::to_string(m_registers) + "\n";
+		if (auto [dimX, dimY, dimZ] = m_requiredThreads; dimX > 0)
+		{
+			code += "//  - Required Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
+		}
+		if (auto [dimX, dimY, dimZ] = m_maxThreads; dimX > 0)
+		{
+			code += "//  - Max Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
+		}
+		code += "//  - CTAIDZ Used: " + std::string((m_ctaidzUsed) ? "True" : "False") + "\n";
 		code += ".text." + m_name + ":\n";
 		for (const auto& block : m_blocks)
 		{
@@ -78,6 +100,12 @@ private:
 	std::vector<std::size_t> m_parameters;
 	std::vector<BasicBlock *> m_blocks;
 	std::size_t m_registers = 0;
+
+	std::tuple<std::size_t, std::size_t, std::size_t> m_requiredThreads;
+	std::tuple<std::size_t, std::size_t, std::size_t> m_maxThreads;
+
+	bool m_ctaidzUsed = false;
+
 };
 
 };

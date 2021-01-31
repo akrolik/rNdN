@@ -90,8 +90,10 @@ public:
 
 	static std::uint64_t OperandComposite(const Composite *value) { return Format(value->ToBinary(), 20, 0xffffff); }
 
+	static std::uint64_t OperandLiteral8W4(const I32Immediate *value) { return Format(value->ToBinary(), 8, 0x7); }
 	static std::uint64_t OperandLiteral20W6(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0x3f); }
 	static std::uint64_t OperandLiteral20W8(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0xff); }
+	static std::uint64_t OperandLiteral20W12(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xfff); }
 	static std::uint64_t OperandLiteral20W24(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xffffff); }
 	static std::uint64_t OperandLiteral20W32(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xffffffff); }
 

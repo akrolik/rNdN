@@ -23,6 +23,9 @@
 #define STO_CUDA_CONSTANT 0x80
 #define STT_CUDA_OBJECT 0xd
 
+#define SHI_REGISTERS(x) (x << 20)
+#define SHF_BARRIERS(x) (x << 20)
+
 #define SZ_SHORT 2
 #define SZ_WORD 4
 
@@ -335,10 +338,10 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			//     Value:  0x10
 			//
 			//     /*0000*/        .byte   0x04, 0x28
-			//     /*0000*/        .short  (.L_2 - .L_1)
+			//     /*0002*/        .short  (.L_2 - .L_1)
 			// .L_1:
 			//     /*0004*/        .word   0x00000010
-			// .L_2
+			// .L_2:
 
 			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
 			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_COOP_GROUP_INSTR_OFFSETS});
@@ -350,11 +353,67 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			}
 		}
 
+		if (auto [dimX, dimY, dimZ] = function->GetRequiredThreads(); dimX > 0)
+		{
+			// EIATTR_REQNTID
+			//     Format: EIFMT_SVAL
+			//     Value:  0x400 0x1 0x1
+			//
+			//     /*0000*/        .byte   0x04, 0x10
+			//     /*0002*/        .short  (.L_28 - .L_27)
+			// .L_1:
+			//     /*0004*/        .word   0x00000400
+			//     /*0008*/        .word   0x00000001
+			//     /*000c*/        .word   0x00000001
+			// .L_2:
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_REQNTID});
+			AppendBytes(functionInfoBuffer, DecomposeShort(3*SZ_WORD)); // Size
+			AppendBytes(functionInfoBuffer, DecomposeWord(dimX));       // Dimension X
+			AppendBytes(functionInfoBuffer, DecomposeWord(dimY));       // Dimension Y
+			AppendBytes(functionInfoBuffer, DecomposeWord(dimZ));       // Dimension Z
+		}
+		else if (auto [dimX, dimY, dimZ] = function->GetMaxThreads(); dimX > 0)
+		{
+			// EIATTR_MAX_THREADS
+			//     Format: EIFMT_SVAL
+			//     Value: 0x400 0x1 0x1
+			//
+			//     /*0000*/        .byte   0x04, 0x05
+			//     /*0002*/        .short  (.L_28 - .L_27)
+			// .L_1:
+			//     /*0004*/        .word   0x00000400
+			//     /*0008*/        .word   0x00000001
+			//     /*000c*/        .word   0x00000001
+			// .L_2:
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_MAX_THREADS});
+			AppendBytes(functionInfoBuffer, DecomposeShort(3*SZ_WORD)); // Size
+			AppendBytes(functionInfoBuffer, DecomposeWord(dimX));       // Dimension X
+			AppendBytes(functionInfoBuffer, DecomposeWord(dimY));       // Dimension Y
+			AppendBytes(functionInfoBuffer, DecomposeWord(dimZ));       // Dimension Z
+		}
+
+		if (function->GetCTAIDZUsed())
+		{
+			// EIATTR_CTAIDZ_USED
+			//     Format: EIFMT_NVAL
+			//
+			//     /*0080*/        .byte   0x01, 0x04
+			//     .zero           2
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_NVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_CTAIDZ_USED});
+			AppendBytes(functionInfoBuffer, {0, 0}); // Zero
+		}
+
 		functionInfoSection->set_data(functionInfoBuffer.data(), functionInfoBuffer.size());
 
 		// Add constant data section:
-		// 	- 0x140 base
-		// 	- Space for each parameter
+		//   - 0x140 base
+		//   - Space for each parameter
 
 		auto dataSize = ELF_SREG_SIZE + function->GetParametersSize();
 		auto data = new char[dataSize](); // Zero initialized
@@ -369,10 +428,10 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 		auto textSection = writer.sections.add(".text." + function->GetName());
 		textSection->set_type(SHT_PROGBITS);
-		textSection->set_flags(SHF_ALLOC | SHF_EXECINSTR);
+		textSection->set_flags(SHF_BARRIERS(function->GetBarriers()) | SHF_ALLOC | SHF_EXECINSTR);
 		textSection->set_addr_align(0x20);
 		textSection->set_link(symbolSection->get_index());
-		textSection->set_info(function->GetRegisters() << 20 + textSymbol);
+		textSection->set_info(SHI_REGISTERS(function->GetRegisters()) + textSymbol);
 		textSection->set_data(function->GetText(), function->GetSize());
 
 		// Link info/data sections to .text

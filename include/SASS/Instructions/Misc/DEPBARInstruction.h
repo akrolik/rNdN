@@ -15,7 +15,7 @@ public:
 		LE   = 0x0000000020000000
 	};
 
-	enum Barrier : std::uint64_t {
+	enum class Barrier : std::uint64_t {
 		SB0 = 0x0000000000000000,
 		SB1 = 0x0000000004000000,
 		SB2 = 0x0000000008000000,

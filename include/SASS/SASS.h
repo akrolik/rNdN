@@ -49,10 +49,12 @@ namespace SASS {
 #include "SASS/Instructions/Float/MUFUInstruction.h"
 
 #include "SASS/Instructions/LoadStore/LDGInstruction.h"
+#include "SASS/Instructions/LoadStore/MEMBARInstruction.h"
 #include "SASS/Instructions/LoadStore/REDInstruction.h"
 #include "SASS/Instructions/LoadStore/STGInstruction.h"
 
 #include "SASS/Instructions/Misc/DEPBARInstruction.h"
+#include "SASS/Instructions/Misc/BARInstruction.h"
 #include "SASS/Instructions/Misc/NOPInstruction.h"
 #include "SASS/Instructions/Misc/S2RInstruction.h"
 
