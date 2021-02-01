@@ -46,7 +46,7 @@ public:
 	using ConstOperandDispatcher<LiveVariables>::Visit;
 
 	template<Bits B, class T, class S> void Visit(const DereferencedAddress<B, T, S> *address);
-	template<class T> void Visit(const PTX::Register<T> *reg);
+	template<class T> void Visit(const Register<T> *reg);
 
 	// Flow
 

@@ -64,7 +64,7 @@ public:
 
 	using ConstOperandDispatcher<ReachingDefinitions>::Visit;
 
-	template<class T> void Visit(const PTX::Register<T> *reg);
+	template<class T> void Visit(const Register<T> *reg);
 
 	// Flow
 
