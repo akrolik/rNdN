@@ -14,6 +14,11 @@ public:
 	unsigned int GetComputeCapability() const { return m_computeCapability; }
 	void SetComputeCapability(unsigned int computeCapability) { m_computeCapability = computeCapability; }
 
+	// Shared memory
+
+	bool GetDynamicSharedMemory() const { return m_dynamicSharedMemory; }
+	void SetDynamicSharedMemory(bool dynamicSharedMemory) { m_dynamicSharedMemory = dynamicSharedMemory; }
+
 	// Functions
 
 	std::vector<const BinaryFunction *> GetFunctions() const
@@ -29,6 +34,7 @@ public:
 
 private:
 	unsigned int m_computeCapability = 0;
+	bool m_dynamicSharedMemory = false;
 	std::vector<BinaryFunction *> m_functions;
 };
 

@@ -81,7 +81,6 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 	auto symbolSection = writer.sections.add(".symtab");
 	symbolSection->set_type(SHT_SYMTAB);
-	symbolSection->set_info(3 * program->GetFunctionCount()); // NV: Ignores global symbols
 	symbolSection->set_link(stringSection->get_index());
 	symbolSection->set_addr_align(0x8);
 	symbolSection->set_entry_size(writer.get_default_entry_size(SHT_SYMTAB));
@@ -96,18 +95,39 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	infoSection->set_addr_align(0x4);
 	infoSection->set_link(symbolSection->get_index());
 
+	// Construct segments for text and shared data sections
+
+	auto phdrSegment = writer.segments.add();
+	phdrSegment->set_type(PT_PHDR);
+	phdrSegment->set_flags(PF_X | PF_R);
+	phdrSegment->set_align(0x8);
+
+	auto textSegment = writer.segments.add();
+	textSegment->set_type(PT_LOAD);
+	textSegment->set_flags(PF_X | PF_R);
+	textSegment->set_align(0x8);
+
+	auto sharedSegment = writer.segments.add();
+	sharedSegment->set_type(PT_LOAD);
+	sharedSegment->set_flags(PF_R | PF_W);
+	sharedSegment->set_align(0x8);
+
+	// Info buffer for accumulating properties
+
 	std::vector<char> infoBuffer;
 
 	// Maintain a symbol offset for connecting the .text to the symbol (Nvidia requirement)
 
+	auto symbolCount = 0u;
 	auto symbolOffset = 0u;
 
 	// Add functions .data and .text sections
 
 	for (const auto& function : program->GetFunctions())
 	{
-		auto textSymbol = symbolOffset + 4;
-		auto dataSymbol = symbolOffset + 2;
+		auto allocateSharedMemory = (program->GetDynamicSharedMemory() || function->GetSharedMemorySize() > 0);
+		auto textSymbol = symbolOffset + 4 + allocateSharedMemory;
+		auto dataSymbol = symbolOffset + 2 + allocateSharedMemory;
 
 		// Add custom Nvidia info
 
@@ -424,6 +444,8 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		dataSection->set_addr_align(0x4);
 		dataSection->set_data(data, dataSize);
 
+		textSegment->add_section_index(dataSection->get_index(), dataSection->get_addr_align());
+
 		// Add .text section for the function body
 
 		auto textSection = writer.sections.add(".text." + function->GetName());
@@ -434,6 +456,23 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		textSection->set_info(SHI_REGISTERS(function->GetRegisters()) + textSymbol);
 		textSection->set_data(function->GetText(), function->GetSize());
 
+		textSegment->add_section_index(textSection->get_index(), textSection->get_addr_align());
+
+		// Add shared variables section
+
+		ELFIO::section *sharedSection = nullptr;
+		if (allocateSharedMemory)
+		{
+			sharedSection = writer.sections.add(".nv.shared." + function->GetName());
+			sharedSection->set_type(SHT_NOBITS);
+			sharedSection->set_flags(SHF_WRITE | SHF_ALLOC);
+			sharedSection->set_addr_align(0x10);
+			sharedSection->set_info(textSection->get_index());
+			sharedSection->set_size(function->GetSharedMemorySize());
+
+			sharedSegment->add_section_index(sharedSection->get_index(), sharedSection->get_addr_align());
+		}
+
 		// Link info/data sections to .text
 
 		dataSection->set_info(textSection->get_index());
@@ -441,6 +480,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 		// Update symbol table:
 		//   - .text
+		//   [- .nv.shared]
 		//   - .nv.constant0
 		//   - _param
 		//   - Global .text symbol
@@ -448,19 +488,31 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		symbolWriter.add_symbol(stringWriter,
 			textSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, textSection->get_index()
 		);
+		if (sharedSection != nullptr)
+		{
+			symbolWriter.add_symbol(stringWriter,
+				sharedSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, sharedSection->get_index()
+			);
+			symbolOffset++;
+			symbolCount++;
+		}
 		symbolWriter.add_symbol(stringWriter,
 			dataSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, dataSection->get_index()
 		);
 		symbolWriter.add_symbol(stringWriter,
 			"_param", ELF_SREG_SIZE, function->GetParametersSize(), STB_LOCAL, STT_CUDA_OBJECT, STV_INTERNAL| STO_CUDA_CONSTANT, dataSection->get_index()
 		);
-
 		symbolWriter.add_symbol(stringWriter,
 			function->GetName().c_str(), 0x00000000, textSection->get_size(), STB_GLOBAL, STT_FUNC, STV_DEFAULT | STO_CUDA_ENTRY, textSection->get_index()
 		);
 
+		symbolCount += 3;
 		symbolOffset += 4;
 	}
+
+	// Update the symbol count
+
+	symbolSection->set_info(symbolCount); // NV: Ignores global symbols
 
 	// Set full info, contains data for all functions
 

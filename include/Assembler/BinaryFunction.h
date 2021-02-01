@@ -87,6 +87,11 @@ public:
 	bool GetCTAIDZUsed() const { return m_ctaidzUsed; }
 	void SetCTAIDZUsed(bool ctaidzUsed) { m_ctaidzUsed = ctaidzUsed; }
 
+	// Shared Memory
+
+	std::size_t GetSharedMemorySize() const { return m_sharedMemorySize; }
+	void SetSharedMemorySize(std::size_t size) { m_sharedMemorySize = size; }
+
 private:
 	std::string m_name;
 	std::size_t m_registers = 0;
@@ -106,6 +111,8 @@ private:
 	std::tuple<std::size_t, std::size_t, std::size_t> m_maxThreads;
 
 	bool m_ctaidzUsed = false;
+
+	std::size_t m_sharedMemorySize = 0;
 };
 
 }

@@ -58,19 +58,40 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 	}
 	else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
 	{
-		const auto& allocations = this->m_builder.GetSpaceAllocation();
-
-		// Verify shared variable allocated
-
 		const auto& name = address->GetVariable()->GetName();
-		if (allocations->ContainsSharedVariable(name))
+		auto variableAddress = 0x0;
+		auto variableFound = false;
+
+		// Check if shared variable locally allocated
+
+		const auto& localAllocations = this->m_builder.GetLocalSpaceAllocation();
+		if (localAllocations->ContainsSharedMemory(name))
+		{
+			variableAddress = localAllocations->GetSharedMemoryOffset(name);
+		}
+		else
+		{
+			// Check if shared variable globally (module) allocated
+
+			const auto& globalAllocations = this->m_builder.GetGlobalSpaceAllocation();
+			if (globalAllocations->ContainsSharedMemory(name))
+			{
+				variableAddress = globalAllocations->GetSharedMemoryOffset(name);
+			}
+			else if (globalAllocations->ContainsDynamicSharedMemory(name))
+			{
+				// Dynamic shared memory is module allocated but offset by local space
+
+				variableAddress = localAllocations->GetDynamicSharedMemoryOffset();
+			}
+		}
+
+		if (variableFound)
 		{
 			// For shared variables, use an absolute address computed as the variable location + offset
 
-			auto variable = allocations->GetSharedVariableOffset(name);
 			auto offset = address->GetOffset();
-
-			m_address = new SASS::Address(SASS::RZ, variable + offset);
+			m_address = new SASS::Address(SASS::RZ, variableAddress + offset);
 		}
 	}
 }

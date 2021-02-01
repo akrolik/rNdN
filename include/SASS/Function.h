@@ -57,6 +57,11 @@ public:
 	bool GetCTAIDZUsed() const { return m_ctaidzUsed; }
 	void SetCTAIDZUsed(bool ctaidzUsed) { m_ctaidzUsed = ctaidzUsed; }
 
+	// Shared Memory
+
+	std::size_t GetSharedMemorySize() const { return m_sharedMemorySize; }
+	void SetSharedMemorySize(std::size_t size) { m_sharedMemorySize = size; }
+
 	// Formatting
 
 	std::string ToString() const override
@@ -64,7 +69,7 @@ public:
 		std::string code = "// " + m_name + "\n";
 		if (m_parameters.size() > 0)
 		{
-			code += "//  - Parameters (bytes): ";
+			code += "// - Parameters (bytes): ";
 			auto first = true;
 			for (const auto parameter : m_parameters)
 			{
@@ -77,16 +82,17 @@ public:
 			}
 			code += "\n";
 		}
-		code += "//  - Registers: " + std::to_string(m_registers) + "\n";
+		code += "// - Registers: " + std::to_string(m_registers) + "\n";
 		if (auto [dimX, dimY, dimZ] = m_requiredThreads; dimX > 0)
 		{
-			code += "//  - Required Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
+			code += "// - Required Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
 		}
 		if (auto [dimX, dimY, dimZ] = m_maxThreads; dimX > 0)
 		{
-			code += "//  - Max Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
+			code += "// - Max Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
 		}
-		code += "//  - CTAIDZ Used: " + std::string((m_ctaidzUsed) ? "True" : "False") + "\n";
+		code += "// - CTAIDZ Used: " + std::string((m_ctaidzUsed) ? "True" : "False") + "\n";
+		code += "// - Shared Memory: " + std::to_string(m_sharedMemorySize) + " bytes\n";
 		code += ".text." + m_name + ":\n";
 		for (const auto& block : m_blocks)
 		{
@@ -106,6 +112,7 @@ private:
 
 	bool m_ctaidzUsed = false;
 
+	std::size_t m_sharedMemorySize = 0;
 };
 
 };

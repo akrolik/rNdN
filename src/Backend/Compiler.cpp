@@ -9,7 +9,8 @@
 #include "PTX/Analysis/ControlFlow/ControlFlowBuilder.h"
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 #include "PTX/Analysis/RegisterAllocator/LinearScanRegisterAllocator.h"
-#include "PTX/Analysis/SpaceAllocator/SpaceAllocator.h"
+#include "PTX/Analysis/SpaceAllocator/LocalSpaceAllocator.h"
+#include "PTX/Analysis/SpaceAllocator/GlobalSpaceAllocator.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -22,6 +23,19 @@ SASS::Program *Compiler::Compile(PTX::Program *program)
 	m_program = new SASS::Program();
 	program->Accept(*this);
 	return m_program;
+}
+
+bool Compiler::VisitIn(PTX::Module *module)
+{
+	// Allocate spaces (global, shared)
+	
+	PTX::Analysis::GlobalSpaceAllocator spaceAllocator;
+	spaceAllocator.Analyze(module);
+
+	m_globalSpaceAllocation = spaceAllocator.GetSpaceAllocation();
+	m_program->SetDynamicSharedMemory(m_globalSpaceAllocation->GetDynamicSharedMemory());
+
+	return true;
 }
 
 bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
@@ -53,7 +67,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Allocate spaces (shared, parameters)
 	
-	PTX::Analysis::SpaceAllocator spaceAllocator;
+	PTX::Analysis::LocalSpaceAllocator spaceAllocator(m_globalSpaceAllocation);
 	spaceAllocator.Analyze(function);
 
 	auto spaceAllocation = spaceAllocator.GetSpaceAllocation();
@@ -62,7 +76,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS generation: " + function->GetName());
 
-	Codegen::CodeGenerator codegen;
+	Codegen::CodeGenerator codegen(m_globalSpaceAllocation);
 	auto sassFunction = codegen.Generate(function, registerAllocation, spaceAllocation);
 
 	Scheduler scheduler;

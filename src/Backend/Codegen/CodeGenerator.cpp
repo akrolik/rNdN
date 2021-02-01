@@ -7,13 +7,13 @@ namespace Codegen {
 
 // Public API
 
-SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::SpaceAllocation *spaceAllocation)
+SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::LocalSpaceAllocation *spaceAllocation)
 {
 	// Setup codegen builder
 
 	auto sassFunction = m_builder.CreateFunction(function->GetName());
 	m_builder.SetRegisterAllocation(registerAllocation);
-	m_builder.SetSpaceAllocation(spaceAllocation);
+	m_builder.SetLocalSpaceAllocation(spaceAllocation);
 
 	// Traverse function
 

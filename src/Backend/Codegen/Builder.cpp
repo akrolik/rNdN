@@ -18,10 +18,11 @@ void Builder::CloseFunction()
 	// Set register count
 
 	m_currentFunction->SetRegisters(m_registerAllocation->GetRegisterCount() + m_temporaryMax);
+	m_currentFunction->SetSharedMemorySize(m_localSpaceAllocation->GetSharedMemorySize() + m_globalSpaceAllocation->GetSharedMemorySize());
 
 	m_currentFunction = nullptr;
 	m_registerAllocation = nullptr;
-	m_spaceAllocation = nullptr;
+	m_localSpaceAllocation = nullptr;
 }
 
 void Builder::AddParameter(std::size_t size)

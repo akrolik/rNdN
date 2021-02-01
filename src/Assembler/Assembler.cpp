@@ -28,10 +28,12 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 
 	auto binaryProgram = new BinaryProgram();
 	binaryProgram->SetComputeCapability(program->GetComputeCapability());
+	binaryProgram->SetDynamicSharedMemory(program->GetDynamicSharedMemory());
 
 	if (Utils::Options::IsBackend_PrintAssembled())
 	{
 		Utils::Logger::LogInfo("Assembled SASS program: sm_" + std::to_string(binaryProgram->GetComputeCapability()));
+		Utils::Logger::LogInfo(" - Dynamic Shared Memory: " + std::string(binaryProgram->GetDynamicSharedMemory() ? "True" : "False"));
 	}
 
 	for (const auto& function : program->GetFunctions())
@@ -209,6 +211,10 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		binaryFunction->SetMaxThreads(dimX, dimY, dimZ);
 	}
 
+	// Shared memory
+
+	binaryFunction->SetSharedMemorySize(function->GetSharedMemorySize());
+
 	// Print assembled program with address and binary format
 
 	if (Utils::Options::IsBackend_PrintAssembled())
@@ -303,6 +309,10 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		}
 
 		Utils::Logger::LogInfo(" - CTAIDZ Used: " + std::string((function->GetCTAIDZUsed()) ? "True" : "False"));
+
+		// Shared memory
+
+		Utils::Logger::LogInfo(" - Shared Memory: " + std::to_string(function->GetSharedMemorySize()) + " bytes");
 
 		// Print assembled program with address and binary format
 
