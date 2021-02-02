@@ -20,9 +20,9 @@ public:
 
 	enum class Cache : std::uint64_t {
 		None = 0x0,
-		CG = 0x0000400000000000,
-		CS = 0x0000800000000000,
-		WT = 0x0000c00000000000
+		CG   = 0x0000400000000000,
+		CS   = 0x0000800000000000,
+		WT   = 0x0000c00000000000
 	};
 
 	enum class Type : std::uint64_t {
@@ -30,9 +30,9 @@ public:
 		S8   = 0x0001000000000000,
 		U16  = 0x0002000000000000,
 		S16  = 0x0003000000000000,
-		I32  = 0x0004000000000000,
-		I64  = 0x0005000000000000,
-		I128 = 0x0006000000000000
+		X32  = 0x0004000000000000,
+		X64  = 0x0005000000000000,
+		X128 = 0x0006000000000000
 	};
 
 	STGInstruction(Address *destination, Register *source, Type type, Cache cache = Cache::None, Flags flags = Flags::None)
@@ -80,9 +80,9 @@ public:
 			case Type::S8: code += ".S8"; break;
 			case Type::U16: code += ".U16"; break;
 			case Type::S16: code += ".S16"; break;
-			case Type::I32: code += ".I32"; break;
-			case Type::I64: code += ".I64"; break;
-			case Type::I128: code += ".I128"; break;
+			// case Type::X32: code += ".32"; break;
+			case Type::X64: code += ".64"; break;
+			case Type::X128: code += ".128"; break;
 		}
 		return code;
 	}

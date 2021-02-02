@@ -32,11 +32,11 @@ SASS::STGInstruction::Type StoreGenerator::InstructionType()
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
-		return SASS::STGInstruction::Type::I32;
+		return SASS::STGInstruction::Type::X32;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		return SASS::STGInstruction::Type::I64;
+		return SASS::STGInstruction::Type::X64;
 	}
 	Error("store for type " + T::Name());
 }
