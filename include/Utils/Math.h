@@ -37,6 +37,12 @@ static T1 RoundUp(T1 value, T2 multiple)
 	return ((value + multiple - 1) / multiple) * multiple;
 }
 
+template<typename T1, typename T2>
+static T1 DivUp(T1 value, T2 multiple)
+{
+	return (value + multiple - 1) / multiple;
+}
+
 };
 
 }

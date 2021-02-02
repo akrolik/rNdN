@@ -6,6 +6,8 @@
 
 #include "SASS/SASS.h"
 
+#include "Utils/Math.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -54,26 +56,27 @@ public:
 	{
 		auto offset = m_constantMemory.size();
 		auto bytes = reinterpret_cast<const unsigned char *>(&data);
-
-		if constexpr(sizeof(data) == 8)
+		if constexpr(std::is_same<T, double>::value)
 		{
-			m_constantMemory.push_back(bytes[3]);
-			m_constantMemory.push_back(bytes[2]);
-			m_constantMemory.push_back(bytes[1]);
-			m_constantMemory.push_back(bytes[0]);
-			m_constantMemory.push_back(bytes[7]);
-			m_constantMemory.push_back(bytes[6]);
-			m_constantMemory.push_back(bytes[5]);
-			m_constantMemory.push_back(bytes[4]);
+			// Double values are word-reversed
+
+			auto WORD_SIZE = 4;
+			auto words = Utils::Math::DivUp(sizeof(T), WORD_SIZE);
+			for (int i = words - 1; i >= 0; --i)
+			{
+				for (auto j = 0; j < WORD_SIZE && j < sizeof(T); ++j)
+				{
+					m_constantMemory.push_back(bytes[i * WORD_SIZE + j]);
+				}
+			}
 		}
 		else
 		{
-			for (int i = sizeof(data) - 1; i >= 0; --i)
+			for (auto i = 0; i < sizeof(T); ++i)
 			{
 				m_constantMemory.push_back(bytes[i]);
 			}
 		}
-
 		return offset;
 	}
 
