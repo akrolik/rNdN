@@ -34,6 +34,11 @@ void RegisterGenerator::Visit(const PTX::_IndexedRegister *reg)
 	reg->Dispatch(*this);
 }
 
+void RegisterGenerator::Visit(const PTX::_SinkRegister *reg)
+{
+	reg->Dispatch(*this);
+}
+
 template<class T>
 void RegisterGenerator::Visit(const PTX::Register<T> *reg)
 {
@@ -62,9 +67,26 @@ void RegisterGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 	//TODO: Indexed registers
 }
 
+template<class T>
+void RegisterGenerator::Visit(const PTX::SinkRegister<T> *reg)
+{
+	//TODO: Sink register
+}
+
+void RegisterGenerator::Visit(const PTX::_Constant *constant)
+{
+	constant->Dispatch(*this);
+}
+
 void RegisterGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
+}
+
+template<class T>
+void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
+{
+	//TODO: Constant
 }
 
 template<class T>
@@ -74,7 +96,10 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 	{
 		m_register = SASS::RZ;
 	}
-	//TODO: Other values
+	// if constexpr(PTX::TypeBits == PTX::Bits::Bits64)
+	// {
+	// 	//TODO: Move other values into register
+	// }
 }
 
 }

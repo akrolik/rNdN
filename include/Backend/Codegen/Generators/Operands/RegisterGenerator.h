@@ -26,19 +26,27 @@ public:
 
 	void Visit(const PTX::_Register *reg) override;
 	void Visit(const PTX::_IndexedRegister *reg) override;
+	void Visit(const PTX::_SinkRegister *reg) override;
 
-	template<class T>
-	void Visit(const PTX::Register<T> *reg);
+	template<class T> void Visit(const PTX::Register<T> *reg);
 
 	template<class T, class S, PTX::VectorSize V>
 	void Visit(const PTX::IndexedRegister<T, S, V> *reg);
 
+	template<class T>
+	void Visit(const PTX::SinkRegister<T> *reg);
+
 	// Values
 
+	void Visit(const PTX::_Constant *constant);
 	void Visit(const PTX::_Value *value);
 
 	template<class T>
+	void Visit(const PTX::Constant<T> *value);
+
+	template<class T>
 	void Visit(const PTX::Value<T> *value);
+
 private:
 	SASS::Register *m_register = nullptr;
 	SASS::Register *m_registerHi = nullptr;
