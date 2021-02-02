@@ -36,14 +36,17 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 	// Generate instruction
 
 	//TODO: Instruction Add<T> types/modifiers
-	if constexpr(std::is_same<T, PTX::Int16Type>::value)
+	if constexpr(PTX::is_int_type<T>::value)
 	{
-		this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB));
-	}
-	else if constexpr(std::is_same<T, PTX::UInt64Type>::value)
-	{
-		this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB, SASS::IADDInstruction::Flags::CC));
-		this->AddInstruction(new SASS::IADDInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, SASS::IADDInstruction::Flags::X));
+		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
+		{
+			this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB));
+		}
+		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB, SASS::IADDInstruction::Flags::CC));
+			this->AddInstruction(new SASS::IADDInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, SASS::IADDInstruction::Flags::X));
+		}
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
