@@ -25,9 +25,13 @@ public:
 	// Registers
 
 	void Visit(const PTX::_Register *reg) override;
+	void Visit(const PTX::_IndexedRegister *reg) override;
 
 	template<class T>
 	void Visit(const PTX::Register<T> *reg);
+
+	template<class T, class S, PTX::VectorSize V>
+	void Visit(const PTX::IndexedRegister<T, S, V> *reg);
 
 	// Values
 

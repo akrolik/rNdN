@@ -1,5 +1,7 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 
+#include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
+
 #include "PTX/Utils/PrettyPrinter.h"
 
 namespace Backend {
@@ -27,26 +29,29 @@ void CompositeGenerator::Visit(const PTX::_Register *reg)
 	reg->Dispatch(*this);
 }
 
+void CompositeGenerator::Visit(const PTX::_IndexedRegister *reg)
+{
+	reg->Dispatch(*this);
+}
+
 template<class T>
 void CompositeGenerator::Visit(const PTX::Register<T> *reg)
 {
-	const auto& allocations = this->m_builder.GetRegisterAllocation();
+	RegisterGenerator registerGenerator(this->m_builder);
+	auto [regLo, regHi] = registerGenerator.Generate(reg);
 
-	// Verify register allocated
+	m_composite = regLo;
+	m_compositeHi = regHi;
+}
 
-	const auto& name = reg->GetName();
-	if (allocations->ContainsRegister(name))
-	{
-		const auto& [allocation, range] = allocations->GetRegister(name);
-		m_composite = new SASS::Register(allocation);
+template<class T, class S, PTX::VectorSize V>
+void CompositeGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
+{
+	RegisterGenerator registerGenerator(this->m_builder);
+	auto [regLo, regHi] = registerGenerator.Generate(reg);
 
-		// Extended datatypes
-
-		if (range == 2)
-		{
-			m_compositeHi = new SASS::Register(allocation + 1);
-		}
-	}
+	m_composite = regLo;
+	m_compositeHi = regHi;
 }
 
 void CompositeGenerator::Visit(const PTX::_Constant *constant)
