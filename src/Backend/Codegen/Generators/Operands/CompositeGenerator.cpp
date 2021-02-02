@@ -117,16 +117,22 @@ void CompositeGenerator::Visit(const PTX::_MemoryAddress *address)
 template<PTX::Bits B, class T, class S>
 void CompositeGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 {
+	const auto& allocations = this->m_builder.GetLocalSpaceAllocation();
+
+	// Verify parameter allocated
+
 	const auto& name = address->GetVariable()->GetName();
-	auto offset = this->m_builder.GetParameter(name);
-
-	m_composite = new SASS::Constant(0x0, offset);
-
-	// Extended datatypes
-
-	if constexpr(T::TypeBits == PTX::Bits::Bits64)
+	if (allocations->ContainsParameter(name))
 	{
-		m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
+		auto offset = allocations->GetParameterOffset(name);
+		m_composite = new SASS::Constant(0x0, offset);
+
+		// Extended datatypes
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
+		}
 	}
 }
 
