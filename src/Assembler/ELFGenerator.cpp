@@ -126,7 +126,9 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	for (const auto& function : program->GetFunctions())
 	{
 		auto allocateSharedMemory = (program->GetDynamicSharedMemory() || function->GetSharedMemorySize() > 0);
-		auto textSymbol = symbolOffset + 4 + allocateSharedMemory;
+		auto allocateConstantMemory = (function->GetConstantMemorySize() > 0);
+
+		auto textSymbol = symbolOffset + 4 + allocateSharedMemory + allocateConstantMemory;
 		auto dataSymbol = symbolOffset + 2 + allocateSharedMemory;
 
 		// Add custom Nvidia info
@@ -446,6 +448,28 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 		textSegment->add_section_index(dataSection->get_index(), dataSection->get_addr_align());
 
+		// Add constant variables section
+
+		ELFIO::section *constSection = nullptr;
+		if (allocateConstantMemory)
+		{
+			// Copy constant data
+
+			auto constSize = function->GetConstantMemorySize();
+			auto constData = new char[constSize]();
+			std::memcpy(constData, function->GetConstantMemory().data(), constSize * sizeof(char));
+
+			// Allocate section
+
+			constSection = writer.sections.add(".nv.constant2." + function->GetName());
+			constSection->set_type(SHT_PROGBITS);
+			constSection->set_flags(SHF_ALLOC);
+			constSection->set_addr_align(0x4);
+			constSection->set_data(constData, constSize);
+
+			textSegment->add_section_index(constSection->get_index(), constSection->get_addr_align());
+		}
+
 		// Add .text section for the function body
 
 		auto textSection = writer.sections.add(".text." + function->GetName());
@@ -477,11 +501,16 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 		dataSection->set_info(textSection->get_index());
 		functionInfoSection->set_info(textSection->get_index());
+		if (constSection != nullptr)
+		{
+			constSection->set_info(textSection->get_index());
+		}
 
 		// Update symbol table:
 		//   - .text
-		//   [- .nv.shared]
+		//  [- .nv.shared]
 		//   - .nv.constant0
+		//  [- .nv.constant2]
 		//   - _param
 		//   - Global .text symbol
 
@@ -499,6 +528,14 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		symbolWriter.add_symbol(stringWriter,
 			dataSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, dataSection->get_index()
 		);
+		if (constSection != nullptr)
+		{
+			symbolWriter.add_symbol(stringWriter,
+				constSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, constSection->get_index()
+			);
+			symbolOffset++;
+			symbolCount++;
+		}
 		symbolWriter.add_symbol(stringWriter,
 			"_param", ELF_SREG_SIZE, function->GetParametersSize(), STB_LOCAL, STT_CUDA_OBJECT, STV_INTERNAL| STO_CUDA_CONSTANT, dataSection->get_index()
 		);
@@ -506,7 +543,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			function->GetName().c_str(), 0x00000000, textSection->get_size(), STB_GLOBAL, STT_FUNC, STV_DEFAULT | STO_CUDA_ENTRY, textSection->get_index()
 		);
 
-		symbolCount += 3;
+		symbolCount += 3; // Does not count global .text section
 		symbolOffset += 4;
 	}
 

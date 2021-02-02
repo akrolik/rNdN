@@ -215,6 +215,10 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 
 	binaryFunction->SetSharedMemorySize(function->GetSharedMemorySize());
 
+	// Constant memory
+
+	binaryFunction->SetConstantMemory(function->GetConstantMemory());
+
 	// Print assembled program with address and binary format
 
 	if (Utils::Options::IsBackend_PrintAssembled())
@@ -313,6 +317,10 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		// Shared memory
 
 		Utils::Logger::LogInfo(" - Shared Memory: " + std::to_string(function->GetSharedMemorySize()) + " bytes");
+
+		// Constant memory
+
+		Utils::Logger::LogInfo(" - Constant Memory: " + std::to_string(function->GetConstantMemorySize()) + " bytes");
 
 		// Print assembled program with address and binary format
 

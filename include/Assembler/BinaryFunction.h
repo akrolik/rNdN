@@ -92,6 +92,13 @@ public:
 	std::size_t GetSharedMemorySize() const { return m_sharedMemorySize; }
 	void SetSharedMemorySize(std::size_t size) { m_sharedMemorySize = size; }
 
+	// Constant Memory
+
+	std::size_t GetConstantMemorySize() const { return m_constantMemory.size(); }
+	const std::vector<char>& GetConstantMemory() const { return m_constantMemory; }
+
+	void SetConstantMemory(const std::vector<char>& constantMemory) { m_constantMemory = constantMemory; }
+
 private:
 	std::string m_name;
 	std::size_t m_registers = 0;
@@ -113,6 +120,7 @@ private:
 	bool m_ctaidzUsed = false;
 
 	std::size_t m_sharedMemorySize = 0;
+	std::vector<char> m_constantMemory;
 };
 
 }

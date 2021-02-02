@@ -76,15 +76,36 @@ void CompositeGenerator::Visit(const PTX::Constant<T> *constant)
 template<class T>
 void CompositeGenerator::Visit(const PTX::Value<T> *value)
 {
-	if constexpr(PTX::is_int_type<T>::value && PTX::BitSize<T::TypeBits>::NumBits <= 32)
+	if (value->GetValue() == 0)
 	{
-		m_composite = new SASS::I32Immediate(value->GetValue());
+		m_composite = SASS::RZ;
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			m_compositeHi = SASS::RZ;
+		}
 	}
 	else
 	{
-		//TODO: Composite Value<T> types
-		m_composite = new SASS::Constant(0x2, 0x0);
-		m_compositeHi = new SASS::Constant(0x2, 0x0 + 0x4);
+		//TODO: Decide which Value<T> types are loading using MOV, constant 0x2, and immediates
+
+		if constexpr(PTX::is_int_type<T>::value && PTX::BitSize<T::TypeBits>::NumBits < 32)
+		{
+			m_composite = new SASS::I32Immediate(value->GetValue());
+		}
+		else
+		{
+			// Allocate space in constant memory
+
+			auto offset = this->m_builder.AddConstantMemory(value->GetValue());
+
+			// Create composite value (hi for 64-bit types)
+
+			m_composite = new SASS::Constant(0x2, offset);
+			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			{
+				m_compositeHi = new SASS::Constant(0x2, offset + 0x4);
+			}
+		}
 	}
 }
 

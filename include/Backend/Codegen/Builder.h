@@ -47,6 +47,36 @@ public:
 	SASS::Register *AllocateTemporaryRegister();
 	void ClearTemporaryRegisters();
 
+	// Constant Memory
+
+	template<class T>
+	std::size_t AddConstantMemory(T data)
+	{
+		auto offset = m_constantMemory.size();
+		auto bytes = reinterpret_cast<const unsigned char *>(&data);
+
+		if constexpr(sizeof(data) == 8)
+		{
+			m_constantMemory.push_back(bytes[3]);
+			m_constantMemory.push_back(bytes[2]);
+			m_constantMemory.push_back(bytes[1]);
+			m_constantMemory.push_back(bytes[0]);
+			m_constantMemory.push_back(bytes[7]);
+			m_constantMemory.push_back(bytes[6]);
+			m_constantMemory.push_back(bytes[5]);
+			m_constantMemory.push_back(bytes[4]);
+		}
+		else
+		{
+			for (int i = sizeof(data) - 1; i >= 0; --i)
+			{
+				m_constantMemory.push_back(bytes[i]);
+			}
+		}
+
+		return offset;
+	}
+
 private:
 	SASS::Function *m_currentFunction = nullptr;
 	SASS::BasicBlock *m_currentBlock = nullptr;
@@ -57,6 +87,8 @@ private:
 
 	std::uint8_t m_temporaryCount = 0;
 	std::uint8_t m_temporaryMax = 0;
+
+	std::vector<char> m_constantMemory;
 };
 
 }
