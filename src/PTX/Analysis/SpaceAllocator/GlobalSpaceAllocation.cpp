@@ -5,7 +5,26 @@ namespace Analysis {
 
 // Global Memory
 
-//TODO: Global memory
+void GlobalSpaceAllocation::AddGlobalMemory(const std::string& name, std::size_t size)
+{
+	m_globalMemoryMap[name] = { m_globalMemorySize, size };
+	m_globalMemorySize +=  size;
+}
+
+bool GlobalSpaceAllocation::ContainsGlobalMemory(const std::string& name) const
+{
+	return m_globalMemoryMap.find(name) != m_globalMemoryMap.end();
+}
+
+std::size_t GlobalSpaceAllocation::GetGlobalMemoryOffset(const std::string& name) const
+{
+	return m_globalMemoryMap.at(name).first;
+}
+
+std::size_t GlobalSpaceAllocation::GetGlobalMemorySize(const std::string& name) const
+{
+	return m_globalMemoryMap.at(name).second;
+}
 
 // Shared Memory
 
@@ -40,7 +59,10 @@ bool GlobalSpaceAllocation::ContainsDynamicSharedMemory(const std::string& name)
 std::string GlobalSpaceAllocation::ToString() const
 {
 	std::string string = "  - Global Memory";
-	//TODO: Global memory
+	for (const auto& [name, info] : m_globalMemoryMap)
+	{
+		string += "\n    - " + name + "->{" + Utils::Format::HexString(info.first) + "," + Utils::Format::HexString(info.second) + "}";
+	}
 	string += "\n  - Shared Memory = " + std::to_string(m_sharedMemorySize) + " bytes";
 	for (const auto& [name, offset] : m_sharedMemoryMap)
 	{

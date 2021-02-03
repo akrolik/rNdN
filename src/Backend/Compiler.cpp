@@ -38,6 +38,40 @@ bool Compiler::VisitIn(PTX::Module *module)
 	return true;
 }
 
+bool Compiler::VisitIn(PTX::VariableDeclaration *declaration)
+{
+	declaration->Accept(static_cast<PTX::ConstDeclarationVisitor&>(*this));
+	return false;
+}
+
+void Compiler::Visit(const PTX::_TypedVariableDeclaration *declaration)
+{
+	declaration->Dispatch(*this);
+}
+
+template<class T, class S>
+void Compiler::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration)
+{
+	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+	{
+		for (const auto& name : declaration->GetNames())
+		{
+			for (auto i = 0u; i < name->GetCount(); ++i)
+			{
+				const auto string = name->GetName(i);
+				if (!m_globalSpaceAllocation->ContainsGlobalMemory(string))
+				{
+					Utils::Logger::LogError("Global variable '" + string + "' is not allocated");
+				}
+
+				const auto offset = m_globalSpaceAllocation->GetGlobalMemoryOffset(string);
+				const auto size = m_globalSpaceAllocation->GetGlobalMemorySize(string);
+				m_program->AddGlobalVariable(new SASS::GlobalVariable(string, offset, size));
+			}
+		}
+	}
+}
+
 bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Backend codegen: " + function->GetName());

@@ -5,6 +5,7 @@
 
 #include "SASS/Node.h"
 #include "SASS/BasicBlock.h"
+#include "SASS/Relocation.h"
 
 namespace SASS {
 
@@ -46,10 +47,10 @@ public:
 
 	// Threads
 	
-	std::tuple<std::size_t, std::size_t, std::size_t> GetRequiredThreads() const { return m_requiredThreads; }
+	const std::tuple<std::size_t, std::size_t, std::size_t>& GetRequiredThreads() const { return m_requiredThreads; }
 	void SetRequiredThreads(std::size_t dimX, std::size_t dimY = 1, std::size_t dimZ = 1) { m_requiredThreads = { dimX, dimY, dimZ }; }
 
-	std::tuple<std::size_t, std::size_t, std::size_t> GetMaxThreads() const { return m_maxThreads; }
+	const std::tuple<std::size_t, std::size_t, std::size_t>& GetMaxThreads() const { return m_maxThreads; }
 	void SetMaxThreads(std::size_t dimX, std::size_t dimY = 1, std::size_t dimZ = 1) { m_maxThreads = { dimX, dimY, dimZ }; }
 
 	// CTAID Z Dimension
@@ -67,6 +68,17 @@ public:
 	std::size_t GetConstantMemorySize() const { return m_constantMemory.size(); }
 	const std::vector<char>& GetConstantMemory() const { return m_constantMemory; }
 	void SetConstantMemory(const std::vector<char>& constantMemory) { m_constantMemory = constantMemory; }
+
+	// Relocations
+
+	const std::vector<const Relocation *> GetRelocations() const
+	{
+		return { std::begin(m_relocations), std::end(m_relocations) };
+	}
+	std::vector<Relocation *>& GetRelocations() { return m_relocations; }
+
+	void AddRelocation(Relocation *relocation) { m_relocations.push_back(relocation); }
+	void SetRelocations(const std::vector<Relocation *>& relocations) { m_relocations = relocations; }
 
 	// Formatting
 
@@ -100,6 +112,11 @@ public:
 		code += "// - CTAIDZ Used: " + std::string((m_ctaidzUsed) ? "True" : "False") + "\n";
 		code += "// - Shared Memory: " + std::to_string(m_sharedMemorySize) + " bytes\n";
 		code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
+		for (const auto& relocation : m_relocations)
+		{
+			code += relocation->ToString() + "\n";
+
+		}
 		code += ".text." + m_name + ":\n";
 		for (const auto& block : m_blocks)
 		{
@@ -121,6 +138,8 @@ private:
 
 	std::size_t m_sharedMemorySize = 0;
 	std::vector<char> m_constantMemory;
+
+	std::vector<Relocation *> m_relocations;
 };
 
 };

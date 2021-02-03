@@ -1,6 +1,7 @@
 #include "Assembler/ELFGenerator.h"
 
 #include <sstream>
+#include <unordered_map>
 
 #include "Libraries/elfio/elfio.hpp"
 #include "Libraries/elfio/elfio_dump.hpp"
@@ -25,6 +26,9 @@
 
 #define SHI_REGISTERS(x) (x << 20)
 #define SHF_BARRIERS(x) (x << 20)
+
+#define R_CUDA_ABS32_HI_20 0x2c
+#define R_CUDA_ABS32_LO_20 0x2b
 
 #define SZ_SHORT 2
 #define SZ_WORD 4
@@ -88,7 +92,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	ELFIO::string_section_accessor stringWriter(stringSection);
 	ELFIO::symbol_section_accessor symbolWriter(writer, symbolSection);
 
-	// Custom Nvidia info section with memory limits (regs, stack, frame) for each function
+	// Custom NVIDIA info section with memory limits (regs, stack, frame) for each function
 
 	auto infoSection = writer.sections.add(".nv.info");
 	infoSection->set_type(SHT_LOPROC);
@@ -107,19 +111,54 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	textSegment->set_flags(PF_X | PF_R);
 	textSegment->set_align(0x8);
 
-	auto sharedSegment = writer.segments.add();
-	sharedSegment->set_type(PT_LOAD);
-	sharedSegment->set_flags(PF_R | PF_W);
-	sharedSegment->set_align(0x8);
+	auto dataSegment = writer.segments.add();
+	dataSegment->set_type(PT_LOAD);
+	dataSegment->set_flags(PF_R | PF_W);
+	dataSegment->set_align(0x8);
+
+	// Maintain a symbol offset for connecting the .text to the symbol (NVIDIA requirement)
+
+	auto symbolCount = 0u;
+	auto symbolOffset = 0u;
+
+	// Global variables
+
+	std::unordered_map<std::string, ELFIO::Elf_Word> globalSymbolMap;
+	if (program->GetGlobalVariableCount() > 0)
+	{
+		// Add NVIDIA global section that will contain all variables
+
+		auto globalSection = writer.sections.add(".nv.global");
+		globalSection->set_type(SHT_NOBITS);
+		globalSection->set_flags(SHF_ALLOC | SHF_WRITE);
+		globalSection->set_addr_align(0x4); //TODO: Alignment depends on variables
+
+		dataSegment->add_section_index(globalSection->get_index(), globalSection->get_addr_align());
+
+		symbolWriter.add_symbol(stringWriter,
+			".nv.global", 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, globalSection->get_index()
+		);
+
+		// Add a symbol object for each global variable
+
+		std::size_t totalSize = 0;
+		for (const auto& [name, offset, size] : program->GetGlobalVariables())
+		{
+			auto index = symbolWriter.add_symbol(stringWriter,
+				name.c_str(), offset, size, STB_LOCAL, STT_OBJECT, STV_DEFAULT, globalSection->get_index()
+			);
+			globalSymbolMap[name] = index;
+			totalSize += size;
+		}
+		globalSection->set_size(totalSize);
+
+		symbolCount += program->GetGlobalVariableCount() + 1;
+		symbolOffset += program->GetGlobalVariableCount() + 1;
+	}
 
 	// Info buffer for accumulating properties
 
 	std::vector<char> infoBuffer;
-
-	// Maintain a symbol offset for connecting the .text to the symbol (Nvidia requirement)
-
-	auto symbolCount = 0u;
-	auto symbolOffset = 0u;
 
 	// Add functions .data and .text sections
 
@@ -131,7 +170,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		auto textSymbol = symbolOffset + 4 + allocateSharedMemory + allocateConstantMemory;
 		auto dataSymbol = symbolOffset + 2 + allocateSharedMemory;
 
-		// Add custom Nvidia info
+		// Add custom NVIDIA info
 
 		// EIATTR_REGCOUNT
 		//     Format: EIFMT_SVAL
@@ -201,7 +240,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		AppendBytes(infoBuffer, DecomposeWord(textSymbol)); // Function index
 		AppendBytes(infoBuffer, DecomposeWord(0));          // Value
 
-		// Custom Nvidia info section for function properties (params, exits, s2rctaid)
+		// Custom NVIDIA info section for function properties (params, exits, s2rctaid)
 
 		auto functionInfoSection = writer.sections.add(".nv.info." + function->GetName());
 		functionInfoSection->set_type(SHT_LOPROC);
@@ -494,7 +533,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			sharedSection->set_info(textSection->get_index());
 			sharedSection->set_size(function->GetSharedMemorySize());
 
-			sharedSegment->add_section_index(sharedSection->get_index(), sharedSection->get_addr_align());
+			dataSegment->add_section_index(sharedSection->get_index(), sharedSection->get_addr_align());
 		}
 
 		// Link info/data sections to .text
@@ -504,6 +543,32 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		if (constSection != nullptr)
 		{
 			constSection->set_info(textSection->get_index());
+		}
+
+		// Create relocation section for .text
+
+		if (function->GetRelocationsCount() > 0)
+		{
+			auto relocationSection = writer.sections.add(".rel.text." + function->GetName());
+			relocationSection->set_type(SHT_REL);
+			relocationSection->set_info(textSection->get_index());
+			relocationSection->set_link(symbolSection->get_index());
+			relocationSection->set_addr_align(0x4);
+			relocationSection->set_entry_size(writer.get_default_entry_size(SHT_REL));
+
+			ELFIO::relocation_section_accessor relocationWriter(writer, relocationSection);
+			for (const auto& [name, address, kind] : function->GetRelocations())
+			{
+				auto symbolIndex = globalSymbolMap.at(name);
+				if (kind == BinaryFunction::RelocationKind::ABS32_LO_20)
+				{
+					relocationWriter.add_entry(address, symbolIndex, (unsigned char)R_CUDA_ABS32_LO_20);
+				}
+				else if (kind == BinaryFunction::RelocationKind::ABS32_HI_20)
+				{
+					relocationWriter.add_entry(address, symbolIndex, (unsigned char)R_CUDA_ABS32_HI_20);
+				}
+			}
 		}
 
 		// Update symbol table:

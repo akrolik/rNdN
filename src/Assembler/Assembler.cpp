@@ -1,5 +1,6 @@
 #include "Assembler/Assembler.h"
 
+#include <algorithm>
 #include <cstring>
 #include <unordered_map>
 #include <vector>
@@ -30,11 +31,14 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 	binaryProgram->SetComputeCapability(program->GetComputeCapability());
 	binaryProgram->SetDynamicSharedMemory(program->GetDynamicSharedMemory());
 
-	if (Utils::Options::IsBackend_PrintAssembled())
+	// Global variables
+
+	for (const auto& globalVariable : program->GetGlobalVariables())
 	{
-		Utils::Logger::LogInfo("Assembled SASS program: sm_" + std::to_string(binaryProgram->GetComputeCapability()));
-		Utils::Logger::LogInfo(" - Dynamic Shared Memory: " + std::string(binaryProgram->GetDynamicSharedMemory() ? "True" : "False"));
+		binaryProgram->AddGlobalVariable(globalVariable->GetName(), globalVariable->GetOffset(), globalVariable->GetSize());
 	}
+
+	// Assemble each function to binary
 
 	for (const auto& function : program->GetFunctions())
 	{
@@ -42,6 +46,14 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 	}
 
 	Utils::Chrono::End(timeAssembler_start);
+
+	// Print assembled program with address and binary format
+
+	if (Utils::Options::IsBackend_PrintAssembled())
+	{
+		Utils::Logger::LogInfo("Assembled SASS program");
+		Utils::Logger::LogInfo(binaryProgram->ToString(), 0, true, Utils::Logger::NoPrefix);
+	}
 
 	return binaryProgram;
 }
@@ -124,7 +136,7 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		linearProgram.insert(std::begin(linearProgram) + i, new SASS::SCHIInstruction(assembled));
 	}
 
-	// Resolve branches and collect special instructions for Nvidia ELF
+	// Resolve branches and collect special instructions for NVIDIA ELF
 
 	constexpr auto MAX_BARRIERS = 16u;
 	auto barriers = 0u;
@@ -182,6 +194,36 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		}
 	}
 
+	// Build relocations, resolving the address of each relocated instruction
+
+	for (const auto& relocation : function->GetRelocations())
+	{
+		auto it = std::find(std::begin(linearProgram), std::end(linearProgram), relocation->GetInstruction());
+		auto index = it - linearProgram.begin();
+		auto address = index * sizeof(std::uint64_t);
+
+		BinaryFunction::RelocationKind kind;
+		switch (relocation->GetKind())
+		{
+			case SASS::Relocation::Kind::ABS32_LO_20:
+			{
+				kind = BinaryFunction::RelocationKind::ABS32_LO_20;
+				break;
+			}
+			case SASS::Relocation::Kind::ABS32_HI_20:
+			{
+				kind = BinaryFunction::RelocationKind::ABS32_HI_20;
+				break;
+			}
+			default:
+			{
+				Utils::Logger::LogError("Unknown relocation kind '" + SASS::Relocation::KindString(relocation->GetKind()) + "'");
+			}
+		}
+
+		binaryFunction->AddRelocation(relocation->GetName(), address, kind);
+	}
+
 	// Setup barriers
 
 	if (barriers > MAX_BARRIERS)
@@ -199,6 +241,7 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 	}
 	binaryFunction->SetText((char *)binary, sizeof(std::uint64_t) * linearProgram.size());
 	binaryFunction->SetRegisters(function->GetRegisters());
+	binaryFunction->SetLinearProgram(linearProgram);
 
 	// Thread information
 
@@ -218,130 +261,6 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 	// Constant memory
 
 	binaryFunction->SetConstantMemory(function->GetConstantMemory());
-
-	// Print assembled program with address and binary format
-
-	if (Utils::Options::IsBackend_PrintAssembled())
-	{
-		Utils::Logger::LogInfo("Assembled SASS function: " + binaryFunction->GetName());
-
-		// Metadata memory formatting
-
-		if (binaryFunction->GetParametersCount() > 0)
-		{
-			std::string metadata = " - Parameters (bytes): ";
-			auto first = true;
-			for (const auto parameter : binaryFunction->GetParameters())
-			{
-				if (!first)
-				{
-					metadata += ", ";
-				}
-				first = false;
-				metadata += std::to_string(parameter);
-			}
-			Utils::Logger::LogInfo(metadata);
-		}
-		Utils::Logger::LogInfo(" - Registers: " + std::to_string(binaryFunction->GetRegisters()));
-		Utils::Logger::LogInfo(" - Barriers: " + std::to_string(binaryFunction->GetBarriers()));
-
-		// Metadata offsets formatting
-
-		if (binaryFunction->GetS2RCTAIDOffsetsCount() > 0)
-		{
-			std::string metadata = " - S2RCTAID Offsets: ";
-			auto first = true;
-			for (const auto offset : binaryFunction->GetS2RCTAIDOffsets())
-			{
-				if (!first)
-				{
-					metadata += ", ";
-				}
-				first = false;
-				metadata += Utils::Format::HexString(offset, 4);
-			}
-			Utils::Logger::LogInfo(metadata);
-		}
-		if (binaryFunction->GetExitOffsetsCount() > 0)
-		{
-			std::string metadata = " - Exit Offsets: ";
-			auto first = true;
-			for (const auto offset : binaryFunction->GetExitOffsets())
-			{
-				if (!first)
-				{
-					metadata += ", ";
-				}
-				first = false;
-				metadata += Utils::Format::HexString(offset, 4);
-			}
-			Utils::Logger::LogInfo(metadata);
-		}
-		if (binaryFunction->GetCoopOffsetsCount() > 0)
-		{
-			std::string metadata = " - Coop Offsets: ";
-			auto first = true;
-			for (const auto offset : binaryFunction->GetCoopOffsets())
-			{
-				if (!first)
-				{
-					metadata += ", ";
-				}
-				first = false;
-				metadata += Utils::Format::HexString(offset, 4);
-			}
-			Utils::Logger::LogInfo(metadata);
-		}
-
-		// Thread metadata
-
-		if (auto [dimX, dimY, dimZ] = function->GetRequiredThreads(); dimX > 0)
-		{
-			std::string metadata = " - Required Threads: ";
-			metadata += std::to_string(dimX) + ", ";
-			metadata += std::to_string(dimY) + ", ";
-			metadata += std::to_string(dimZ);
-			Utils::Logger::LogInfo(metadata);
-		}
-		else if (auto [dimX, dimY, dimZ] = function->GetMaxThreads(); dimX > 0)
-		{
-			std::string metadata = " - Max Threads: ";
-			metadata += std::to_string(dimX) + ", ";
-			metadata += std::to_string(dimY) + ", ";
-			metadata += std::to_string(dimZ);
-			Utils::Logger::LogInfo(metadata);
-		}
-
-		Utils::Logger::LogInfo(" - CTAIDZ Used: " + std::string((function->GetCTAIDZUsed()) ? "True" : "False"));
-
-		// Shared memory
-
-		Utils::Logger::LogInfo(" - Shared Memory: " + std::to_string(function->GetSharedMemorySize()) + " bytes");
-
-		// Constant memory
-
-		Utils::Logger::LogInfo(" - Constant Memory: " + std::to_string(function->GetConstantMemorySize()) + " bytes");
-
-		// Print assembled program with address and binary format
-
-		for (auto i = 0u; i < linearProgram.size(); ++i)
-		{
-			auto instruction = linearProgram.at(i);
-
-			auto address = "/* " + Utils::Format::HexString(i * sizeof(std::uint64_t), 4) + " */    ";
-			auto mnemonic = instruction->ToString();
-			auto binary = "/* " + Utils::Format::HexString(instruction->ToBinary(), 16) + " */";
-
-			auto indent = 4;
-			auto length = mnemonic.length();
-			if (length < 48)
-			{
-				indent = 48 - length;
-			}
-			std::string spacing(indent, ' ');
-			Utils::Logger::LogInfo(address + mnemonic + spacing + binary, 0, true, Utils::Logger::NoPrefix);
-		}
-	}
 
 	return binaryFunction;
 }

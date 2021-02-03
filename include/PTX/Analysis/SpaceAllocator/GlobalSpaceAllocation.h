@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 #include "SASS/SASS.h"
 
@@ -13,7 +14,13 @@ class GlobalSpaceAllocation
 {
 public:
 	// Global Memory
-	//TODO: Global variables
+
+	void AddGlobalMemory(const std::string& name, std::size_t size);
+	bool ContainsGlobalMemory(const std::string& name) const;
+
+	std::size_t GetGlobalMemoryOffset(const std::string& name) const;
+	std::size_t GetGlobalMemorySize(const std::string& name) const;
+	std::size_t GetGlobalMemorySize() const { return m_globalMemorySize; }
 
 	// Shared Memory
 
@@ -33,6 +40,9 @@ public:
 	std::string ToString() const;
 
 private:
+	std::unordered_map<std::string, std::pair<std::size_t, std::size_t>> m_globalMemoryMap; // { offset, size }
+	std::size_t m_globalMemorySize = 0;
+
 	std::unordered_set<std::string> m_dynamicSharedMemorySet;
 	std::unordered_map<std::string, std::size_t> m_sharedMemoryMap;
 	std::size_t m_sharedMemorySize = 0;

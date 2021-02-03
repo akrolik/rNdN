@@ -36,29 +36,38 @@ void AddressGenerator::Visit(const PTX::_RegisterAddress *address)
 template<PTX::Bits B, class T, class S>
 void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 {
+	const auto& name = address->GetVariable()->GetName();
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
-		// Global addresses are initially zero and relocated at runtime
-		//TODO: Rellocatable ELF globals
-
-		auto temp0 = this->m_builder.AllocateTemporaryRegister();
-		this->m_builder.AddInstruction(new SASS::MOV32IInstruction(temp0, new SASS::I32Immediate(0x0)));
-
-		// Extended addresses (64-bit)
-
-		if constexpr(B == PTX::Bits::Bits64)
+		const auto& globalAllocations = this->m_builder.GetGlobalSpaceAllocation();
+		if (globalAllocations->ContainsGlobalMemory(name))
 		{
-			auto temp1 = this->m_builder.AllocateTemporaryRegister();
-			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(temp1, new SASS::I32Immediate(0x0)));
+			// Global addresses are initially zero and relocated at runtime
+
+			auto temp0 = this->m_builder.AllocateTemporaryRegister();
+			auto inst0 = new SASS::MOV32IInstruction(temp0, new SASS::I32Immediate(0x0));
+
+			this->m_builder.AddInstruction(inst0);
+			this->m_builder.AddRelocation(inst0, name, SASS::Relocation::Kind::ABS32_LO_20);
+
+			// Extended addresses (64-bit)
+
+			if constexpr(B == PTX::Bits::Bits64)
+			{
+				auto temp1 = this->m_builder.AllocateTemporaryRegister();
+				auto inst1 = new SASS::MOV32IInstruction(temp1, new SASS::I32Immediate(0x0));
+
+				this->m_builder.AddInstruction(inst1);
+				this->m_builder.AddRelocation(inst1, name, SASS::Relocation::Kind::ABS32_HI_20);
+			}
+
+			// Form the address with the offset
+
+			m_address = new SASS::Address(temp0, address->GetOffset());
 		}
-
-		// Form the address with the offset
-
-		m_address = new SASS::Address(temp0, address->GetOffset());
 	}
 	else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
 	{
-		const auto& name = address->GetVariable()->GetName();
 		auto variableAddress = 0x0;
 		auto variableFound = false;
 

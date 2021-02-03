@@ -49,6 +49,10 @@ public:
 	SASS::Register *AllocateTemporaryRegister();
 	void ClearTemporaryRegisters();
 
+	// Relocations
+
+	void AddRelocation(const SASS::Instruction *instruction, const std::string& name, SASS::Relocation::Kind kind);
+
 	// Constant Memory
 
 	template<class T>

@@ -45,7 +45,7 @@ void GlobalSpaceAllocator::Visit(const TypedVariableDeclaration<T, S> *declarati
 			const auto string = name->GetName(i);
 			if constexpr(std::is_same<S, GlobalSpace>::value)
 			{
-				//TODO: Global variables
+				m_allocation->AddGlobalMemory(string, BitSize<T::TypeBits>::NumBytes);
 			}
 			else if constexpr(std::is_same<S, SharedSpace>::value)
 			{

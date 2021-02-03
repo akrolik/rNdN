@@ -81,5 +81,12 @@ void Builder::ClearTemporaryRegisters()
 	m_temporaryCount = 0;
 }
 
+// Relocations
+
+void Builder::AddRelocation(const SASS::Instruction *instruction, const std::string& name, SASS::Relocation::Kind kind)
+{
+	m_currentFunction->AddRelocation(new SASS::Relocation(instruction, name, kind));
+}
+
 }
 }

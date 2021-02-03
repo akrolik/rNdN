@@ -5,6 +5,10 @@
 #include <tuple>
 #include <vector>
 
+#include "SASS/SASS.h"
+
+#include "Utils/Format.h"
+
 namespace Assembler {
 
 class BinaryFunction
@@ -49,6 +53,9 @@ public:
 		m_text = text;
 		m_size = size;
 	}
+
+	const std::vector<const SASS::Instruction *>& GetLinearProgram() const { return m_linearProgram; }
+	void SetLinearProgram(const std::vector<const SASS::Instruction *>& linearProgram) { m_linearProgram = linearProgram; }
 	
 	// S2R CTAID instruction offsets
 
@@ -99,6 +106,171 @@ public:
 
 	void SetConstantMemory(const std::vector<char>& constantMemory) { m_constantMemory = constantMemory; }
 
+	// Relocations
+
+	enum class RelocationKind {
+		ABS32_LO_20,
+		ABS32_HI_20
+	};
+
+	static std::string RelocationKindString(RelocationKind kind)
+	{
+		switch (kind)
+		{
+			case RelocationKind::ABS32_LO_20:
+				return "ABS32_LO_20";
+			case RelocationKind::ABS32_HI_20:
+				return "ABS32_HI_20";
+		}
+		return "<unknown>";
+	}
+	
+	const std::vector<std::tuple<std::string, std::size_t, RelocationKind>>& GetRelocations() const { return m_relocations; }
+	std::size_t GetRelocationsCount() const { return m_relocations.size(); }
+
+	void AddRelocation(const std::string& name, std::size_t address, RelocationKind kind) { m_relocations.push_back({ name, address, kind }); }
+	void SetRelocations(const std::vector<std::tuple<std::string, std::size_t, RelocationKind>>& relocations) { m_relocations = relocations; }
+
+	// Formatting
+
+	std::string ToString() const
+	{
+		std::string code;
+		code += "// Binary SASS Function: " + m_name + "\n";
+
+		// Metadata memory formatting
+
+		if (m_parameters.size() > 0)
+		{
+			code += "// - Parameters (bytes): ";
+			auto first = true;
+			for (const auto parameter : m_parameters)
+			{
+				if (!first)
+				{
+					code += ", ";
+				}
+				first = false;
+				code += std::to_string(parameter);
+			}
+			code += "\n";
+		}
+		code += "// - Registers: " + std::to_string(m_registers) + "\n";
+		code += "// - Barriers: " + std::to_string(m_barriers) + "\n";
+
+		// Metadata offsets formatting
+
+		if (m_ctaOffsets.size() > 0)
+		{
+			code += "// - S2RCTAID Offsets: ";
+			auto first = true;
+			for (const auto offset : m_ctaOffsets)
+			{
+				if (!first)
+				{
+					code += ", ";
+				}
+				first = false;
+				code += Utils::Format::HexString(offset, 4);
+			}
+			code += "\n";
+		}
+		if (m_exitOffsets.size() > 0)
+		{
+			code += "// - Exit Offsets: ";
+			auto first = true;
+			for (const auto offset : m_exitOffsets)
+			{
+				if (!first)
+				{
+					code += ", ";
+				}
+				first = false;
+				code += Utils::Format::HexString(offset, 4);
+			}
+			code += "\n";
+		}
+		if (m_coopOffsets.size() > 0)
+		{
+			code += "// - Coop Offsets: ";
+			auto first = true;
+			for (const auto offset : m_coopOffsets)
+			{
+				if (!first)
+				{
+					code += ", ";
+				}
+				first = false;
+				code += Utils::Format::HexString(offset, 4);
+			}
+			code += "\n";
+		}
+
+		// Thread metadata
+
+		if (auto [dimX, dimY, dimZ] = m_requiredThreads; dimX > 0)
+		{
+			code += "// - Required Threads: ";
+			code += std::to_string(dimX) + ", ";
+			code += std::to_string(dimY) + ", ";
+			code += std::to_string(dimZ);
+			code += "\n";
+		}
+		else if (auto [dimX, dimY, dimZ] = m_maxThreads; dimX > 0)
+		{
+			code += "// - Max Threads: ";
+			code += std::to_string(dimX) + ", ";
+			code += std::to_string(dimY) + ", ";
+			code += std::to_string(dimZ);
+			code += "\n";
+		}
+
+		code += "// - CTAIDZ Used: " + std::string(m_ctaidzUsed ? "True" : "False") + "\n";
+
+		// Shared memory
+
+		code += "// - Shared Memory: " + std::to_string(m_sharedMemorySize) + " bytes\n";
+
+		// Constant memory
+
+		code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
+
+		// Relocations
+
+		for (const auto& [name, address, kind] : m_relocations)
+		{
+			code += ".reloc " + name + " " + RelocationKindString(kind) + " (" + Utils::Format::HexString(address) + ")\n";
+		}
+
+		// Print assembled program with address and binary format
+
+		auto first = true;
+		for (auto i = 0u; i < m_linearProgram.size(); ++i)
+		{
+			auto instruction = m_linearProgram.at(i);
+
+			auto address = "/* " + Utils::Format::HexString(i * sizeof(std::uint64_t), 4) + " */    ";
+			auto mnemonic = instruction->ToString();
+			auto binary = "/* " + Utils::Format::HexString(instruction->ToBinary(), 16) + " */";
+
+			auto indent = 4;
+			auto length = mnemonic.length();
+			if (length < 48)
+			{
+				indent = 48 - length;
+			}
+			std::string spacing(indent, ' ');
+
+			if (!first)
+			{
+				code += "\n";
+			}
+			first = false;
+			code += address + mnemonic + spacing + binary;
+		}
+		return code;
+	}
+
 private:
 	std::string m_name;
 	std::size_t m_registers = 0;
@@ -107,6 +279,7 @@ private:
 	std::vector<std::size_t> m_parameters;
 	std::size_t m_parametersSize = 0;
 
+	std::vector<const SASS::Instruction *> m_linearProgram;
 	char *m_text = nullptr;
 	std::size_t m_size = 0;
 
@@ -121,6 +294,8 @@ private:
 
 	std::size_t m_sharedMemorySize = 0;
 	std::vector<char> m_constantMemory;
+
+	std::vector<std::tuple<std::string, std::size_t, RelocationKind>> m_relocations;
 };
 
 }

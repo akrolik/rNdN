@@ -16,6 +16,9 @@ namespace SASS {
 #include "SASS/Function.h"
 #include "SASS/BasicBlock.h"
 
+#include "SASS/GlobalVariable.h"
+#include "SASS/Relocation.h"
+
 // Instructions
 
 #include "SASS/Instructions/Instruction.h"
