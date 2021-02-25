@@ -26,7 +26,13 @@ namespace SASS {
 #include "SASS/Instructions/SCHIInstruction.h"
 
 #include "SASS/Instructions/Control/BRAInstruction.h"
+#include "SASS/Instructions/Control/BRKInstruction.h"
+#include "SASS/Instructions/Control/CONTInstruction.h"
 #include "SASS/Instructions/Control/EXITInstruction.h"
+#include "SASS/Instructions/Control/PBKInstruction.h"
+#include "SASS/Instructions/Control/PCNTInstruction.h"
+#include "SASS/Instructions/Control/RETInstruction.h"
+#include "SASS/Instructions/Control/SSYInstruction.h"
 #include "SASS/Instructions/Control/SYNCInstruction.h"
 
 #include "SASS/Instructions/Conversion/F2IInstruction.h"
@@ -56,6 +62,7 @@ namespace SASS {
 #include "SASS/Instructions/LoadStore/REDInstruction.h"
 #include "SASS/Instructions/LoadStore/STGInstruction.h"
 
+#include "SASS/Instructions/Misc/CS2RInstruction.h"
 #include "SASS/Instructions/Misc/DEPBARInstruction.h"
 #include "SASS/Instructions/Misc/BARInstruction.h"
 #include "SASS/Instructions/Misc/NOPInstruction.h"

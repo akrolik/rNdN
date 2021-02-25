@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Instructions/PredicatedInstruction.h"
+#include "SASS/Instructions/Instruction.h"
 
 #include "SASS/BinaryUtils.h"
 
@@ -10,17 +10,10 @@
 
 namespace SASS {
 
-class BRAInstruction : public PredicatedInstruction
+class DivergenceInstruction : public Instruction
 {
 public:
-	enum Flags : std::uint64_t {
-		None = 0,
-		U    = 0x0000000000000080
-	};
-
-	SASS_FLAGS_FRIEND()
-
-	BRAInstruction(const std::string& target, Flags flags = Flags::None) : m_target(target), m_flags(flags) {}
+	DivergenceInstruction(const std::string& target) : m_target(target) {}
 
 	// Properties
 
@@ -36,21 +29,7 @@ public:
 		m_currentAddress = currentAddress;
 	}
 
-	Flags GetFlags() const { return m_flags; }
-	void SetFlags(Flags flags) { m_flags = flags; }
-
 	// Formatting
-
-	std::string OpCode() const override { return "BRA"; }
-
-	std::string OpModifiers() const override
-	{
-		if (m_flags & Flags::U)
-		{
-			return ".U";
-		}
-		return "";
-	}
 
 	std::string Operands() const override
 	{
@@ -58,16 +37,6 @@ public:
 	}
 
 	// Binary
-
-	std::uint64_t BinaryOpCode() const override
-	{
-		return 0xe24000000000000f;
-	}
-
-	std::uint64_t BinaryOpModifiers() const override
-	{
-		return BinaryUtils::OpModifierFlags(m_flags);
-	}
 
 	std::uint64_t BinaryOperands() const override
 	{
@@ -82,10 +51,6 @@ private:
 
 	std::size_t m_targetAddress = 0;
 	std::size_t m_currentAddress = 0;
-
-	Flags m_flags = Flags::None;
 };
-
-SASS_FLAGS_INLINE(BRAInstruction)
 
 }

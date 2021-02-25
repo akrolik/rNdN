@@ -75,8 +75,12 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 	// 4. Add 1 SCHI instruction for every 3 regular instructions (now padded to multiple of 8)
 	// 5. Resolve branch targets
 	//    (a) BRA instructions
-	//    (b) EXIT instructions
-	//    (c) CTAID instructions
+	//    (b) SSY/PBK/PCNT instructions
+	// 6. ELF properties
+	//    (a) EXIT instructions
+	//    (b) CTAID instructions
+	//    (c) BAR instructions
+	//    (d) SHFL instructions
 
 	std::vector<const SASS::Instruction *> linearProgram;
 	for (const auto block : function->GetBasicBlocks())
@@ -136,10 +140,8 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		linearProgram.insert(std::begin(linearProgram) + i, new SASS::SCHIInstruction(assembled));
 	}
 
-	// Resolve branches and collect special instructions for NVIDIA ELF
+	// Resolve branches and control reconvergence instructions
 
-	constexpr auto MAX_BARRIERS = 16u;
-	auto barriers = 0u;
 	for (auto i = 0u; i < linearProgram.size(); ++i)
 	{
 		auto instruction = linearProgram.at(i);
@@ -154,7 +156,27 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 				i * sizeof(std::uint64_t)
 			);
 		}
-		else if (auto exitInstruction = dynamic_cast<const SASS::EXITInstruction *>(instruction))
+		else if (auto _divInstruction = dynamic_cast<const SASS::DivergenceInstruction *>(instruction))
+		{
+			auto unpaddedIndex = blockIndex.at(_divInstruction->GetTarget());
+			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+
+			auto divInstruction = const_cast<SASS::DivergenceInstruction *>(_divInstruction);
+			divInstruction->SetTargetAddress(
+				paddedIndex * sizeof(std::uint64_t),
+				i * sizeof(std::uint64_t)
+			);
+		}
+	}
+	
+	// Collect special NVIDIA ELF properties
+
+	constexpr auto MAX_BARRIERS = 16u;
+	auto barriers = 0u;
+	for (auto i = 0u; i < linearProgram.size(); ++i)
+	{
+		auto instruction = linearProgram.at(i);
+		if (auto exitInstruction = dynamic_cast<const SASS::EXITInstruction *>(instruction))
 		{
 			binaryFunction->AddExitOffset(i * sizeof(std::uint64_t));
 		}
