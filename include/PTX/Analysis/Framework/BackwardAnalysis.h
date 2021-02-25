@@ -12,11 +12,6 @@ template<class F>
 class BackwardAnalysis : public FlowAnalysis<F, BackwardControlAnalysis>
 {
 public:
-	void TraverseBlock(const BasicBlock *block) override
-	{
-		TraverseStatements(block->GetStatements());
-	}
-
 	void TraverseStatements(const std::vector<const Statement *>& statements) override
 	{
 		for (auto it = statements.rbegin(); it != statements.rend(); ++it)

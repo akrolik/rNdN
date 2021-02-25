@@ -17,6 +17,11 @@ class FlowAnalysis : public A<F>, public ConstVisitor
 public:
 	// Analysis framework
 
+	void TraverseBlock(const BasicBlock *block) override
+	{
+		TraverseStatements(block->GetStatements());
+	}
+
 	virtual void TraverseStatements(const std::vector<const Statement *>& statements) = 0;
 
 	virtual void PropagateNext() = 0;
