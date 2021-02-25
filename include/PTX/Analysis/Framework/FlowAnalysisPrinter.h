@@ -30,6 +30,11 @@ public:
 	{
 		std::string indent = Indent();
 
+		if (m_string.str().length() > 0)
+		{
+			m_string << std::endl;
+		}
+
 		m_string << indent << "------------------------------------------------" << std::endl;
 		m_string << indent << PrettyPrinter::PrettyString(statement, true) << std::endl;
 		m_string << indent << "------------------------------------------------" << std::endl;

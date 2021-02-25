@@ -92,7 +92,7 @@ void FlowAnalysis<F, A>::PrintResults(const FunctionDefinition<VoidType> *functi
 	}
 	else
 	{
-		Utils::Logger::LogInfo(Name() + " " + function->GetName());
+		Utils::Logger::LogInfo(Name() + ": " + function->GetName());
 
 		auto string = FlowAnalysisPrinter<F, A>::PrettyString(*this, function);
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);

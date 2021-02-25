@@ -120,7 +120,7 @@ namespace Analysis {
 template<class F>
 void ControlFlowAnalysis<F>::PrintResults(const FunctionDefinition<VoidType> *function) const
 {
-	Utils::Logger::LogInfo(Name() + " " + function->GetName());
+	Utils::Logger::LogInfo(Name() + ": " + function->GetName());
 
 	auto string = ControlFlowAnalysisPrinter<F>::PrettyString(*this, function);
 	Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);
