@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PTX/Analysis/Framework/BackwardControlAnalysis.h"
 #include "PTX/Analysis/Framework/FlowAnalysis.h"
 
 #include "PTX/Analysis/ControlFlow/ControlFlowGraph.h"
@@ -8,94 +9,15 @@ namespace PTX {
 namespace Analysis {
 
 template<class F>
-class BackwardAnalysis : public FlowAnalysis<F>
+class BackwardAnalysis : public FlowAnalysis<F, BackwardControlAnalysis>
 {
 public:
-	void TraverseFunction(const FunctionDefinition<VoidType> *function, const F& initialFlow) override
-	{
-		const auto cfg = function->GetControlFlowGraph();
-		const auto temporaryFlow = this->TemporaryFlow();
-
-		// Initialize worklist with end nodes
-
-		for (const auto node : cfg->GetNodes())
-		{
-			if (cfg->GetOutDegree(node) == 0)
-			{
-				this->PushWorklist(node);
-				this->SetOutSet(node, initialFlow);
-			}
-			else
-			{
-				this->SetOutSet(node, temporaryFlow);
-			}
-		}
-
-		// Traverse worklist in order
-
-		while (!this->IsEmptyWorklist())
-		{
-			const auto node = this->PopWorklist();
-
-			if (!this->ContainsInSet(node))
-			{
-				// If this is the first iteration, travese the block and all predecessors
-
-				TraverseBlock(node);
-
-				const auto newInSet = this->GetInSet(node);
-
-				for (const auto predecessor : cfg->GetPredecessors(node))
-				{
-					const auto& predecessorOutSet = this->GetOutSet(predecessor);
-					const auto mergedOutSet = this->Merge(newInSet, predecessorOutSet);
-
-					this->SetOutSet(predecessor, mergedOutSet);
-					this->PushWorklist(predecessor);
-				}
-			}
-			else
-			{
-				// For further iterations, save the old inset for comparison
-
-				const auto oldInSet = this->GetInSet(node);
-
-				TraverseBlock(node);
-
-				const auto newInSet = this->GetInSet(node);
-
-				// Only process the predecessors if the inset has changed
-
-				if (oldInSet != newInSet)
-				{
-					for (const auto predecessor : cfg->GetPredecessors(node))
-					{
-						const auto& predecessorOutSet = this->GetOutSet(predecessor);
-						const auto mergedOutSet = this->Merge(newInSet, predecessorOutSet);
-
-						// Proccess changed predecessors
-
-						if (mergedOutSet != predecessorOutSet)
-						{
-							this->SetOutSet(predecessor, mergedOutSet);
-							this->PushWorklist(predecessor);
-						}
-					}
-				}
-			}
-		}
-	}
-
 	void TraverseBlock(const BasicBlock *block) override
 	{
-		this->m_currentOutSet = this->GetOutSet(block);
-
 		TraverseStatements(block->GetStatements());
-
-		this->SetInSet(block, this->m_currentInSet);
 	}
 
-	void TraverseStatements(const std::vector<const Statement *>& statements)
+	void TraverseStatements(const std::vector<const Statement *>& statements) override
 	{
 		for (auto it = statements.rbegin(); it != statements.rend(); ++it)
 		{

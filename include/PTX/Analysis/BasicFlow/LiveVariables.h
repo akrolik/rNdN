@@ -50,8 +50,8 @@ public:
 
 	// Flow
 
-	Properties InitialFlow() const override;
-	Properties TemporaryFlow() const override;
+	Properties InitialFlow(const FunctionDefinition<VoidType> *function) const override;
+	Properties TemporaryFlow(const FunctionDefinition<VoidType> *function) const override;
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
 

@@ -35,6 +35,8 @@ struct Value
 template<typename T>
 struct Set : public std::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>
 {
+	using std::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>::unordered_set;
+
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
 		os << std::string(level * Utils::Logger::IndentSize, ' ');

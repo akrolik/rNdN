@@ -55,14 +55,14 @@ void LiveVariables::Visit(const Register<T> *reg)
 	}
 }
 
-LiveVariables::Properties LiveVariables::InitialFlow() const
+LiveVariables::Properties LiveVariables::InitialFlow(const FunctionDefinition<VoidType> *function) const
 {
 	// Initial flow is the empty set, no variables are live!
 
 	return {};
 }
 
-LiveVariables::Properties LiveVariables::TemporaryFlow() const
+LiveVariables::Properties LiveVariables::TemporaryFlow(const FunctionDefinition<VoidType> *function) const
 {
 	// Initial flow is the empty set, no variables are live!
 

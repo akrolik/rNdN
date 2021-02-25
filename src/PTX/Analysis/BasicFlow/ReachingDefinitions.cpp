@@ -32,12 +32,12 @@ void ReachingDefinitions::Visit(const Register<T> *reg)
 	m_currentOutSet[key] = value;
 }
 
-ReachingDefinitions::Properties ReachingDefinitions::InitialFlow() const
+ReachingDefinitions::Properties ReachingDefinitions::InitialFlow(const FunctionDefinition<VoidType> *function) const
 {
 	return {};
 }
 
-ReachingDefinitions::Properties ReachingDefinitions::TemporaryFlow() const
+ReachingDefinitions::Properties ReachingDefinitions::TemporaryFlow(const FunctionDefinition<VoidType> *function) const
 {
 	return {};
 }
