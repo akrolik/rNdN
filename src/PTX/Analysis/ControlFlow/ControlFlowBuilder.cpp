@@ -14,14 +14,34 @@ ControlFlowGraph *ControlFlowAccumulator::Analyze(FunctionDefinition<VoidType> *
 
 // Statements
 
+BasicBlock *ControlFlowAccumulator::CreateBlock()
+{
+	return CreateBlock("_BB" + std::to_string(m_index++));
+}
+
+BasicBlock *ControlFlowAccumulator::CreateBlock(const std::string& name)
+{
+	auto label = new Label(name);
+	auto block = new BasicBlock(label);
+	m_graph->InsertNode(block);
+
+	// First basic block is an entry node
+
+	if (m_entry)
+	{
+		m_graph->SetEntryNode(block);
+		m_entry = false;
+	}
+
+	return block;
+}
+
 bool ControlFlowAccumulator::VisitIn(Statement *statement)
 {
 	// 1. Leader for first statement. May also occur for new blocks throughout
 	if (m_currentBlock == nullptr)
 	{
-		auto label = new Label("_BB" + std::to_string(m_index++));
-		m_currentBlock = new BasicBlock(label);
-		m_graph->InsertNode(m_currentBlock);
+		m_currentBlock = CreateBlock();
 	}
 
 	m_currentBlock->AddStatement(statement);
@@ -38,12 +58,22 @@ bool ControlFlowAccumulator::VisitIn(PredicatedInstruction *instruction)
 		// Add instruction, then end the current block
 
 		HierarchicalVisitor::VisitIn(instruction);
+
+		if (dynamic_cast<ReturnInstruction *>(instruction))
+		{
+			m_graph->AddExitNode(m_currentBlock);
+		}
 		m_currentBlock = nullptr;
 	}
 
 	// 3. False branch if predicated instruction
 	else if (auto [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
 	{
+		if (m_currentBlock == nullptr)
+		{
+			m_currentBlock = CreateBlock();
+		}
+
 		auto label = new Label("_PRED" + std::to_string(m_index));
 		auto labelEnd = new Label("_PEND" + std::to_string(m_index));
 
@@ -107,6 +137,14 @@ bool ControlFlowAccumulator::VisitIn(LabelStatement *statement)
 		}
 	}
 	m_currentBlock = labelBlock;
+
+	// Program starts with a label, entry node special case
+
+	if (m_entry)
+	{
+		m_graph->SetEntryNode(m_currentBlock);
+		m_entry = false;
+	}
 
 	return false;
 }

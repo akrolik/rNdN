@@ -66,6 +66,24 @@ public:
 		Utils::Graph<ControlFlowNode>::RemoveEdge(source, destination);
 	}
 
+	// Single entry node
+
+	bool IsEntryNode(const ControlFlowNode& node) const { return m_entryNode == node; }
+	const ControlFlowNode& GetEntryNode() const { return m_entryNode; }
+
+	void SetEntryNode(const ControlFlowNode& entryNode) { m_entryNode = entryNode; }
+
+	// Collection of exit nodes
+
+	bool IsExitNode(const ControlFlowNode& node) const
+	{
+		return (m_exitNodes.find(node) != m_exitNodes.end());
+	}
+	const std::unordered_set<ControlFlowNode>& GetExitNodes() const { return m_exitNodes; }
+
+	void SetExitNodes(const std::unordered_set<ControlFlowNode>& exitNodes) { m_exitNodes = exitNodes; }
+	void AddExitNode(const ControlFlowNode& exitNode) { m_exitNodes.insert(exitNode); }
+
 	// Ordering
 
 	template <typename F> 
@@ -161,6 +179,9 @@ private:
 	using EdgeHash = typename Utils::Graph<ControlFlowNode>::EdgeHash;
 
 	std::unordered_map<EdgeType, std::pair<const Register<PredicateType> *, bool>, EdgeHash> m_edgeData;
+
+	ControlFlowNode m_entryNode = nullptr;
+	std::unordered_set<ControlFlowNode> m_exitNodes;
 };
 
 }

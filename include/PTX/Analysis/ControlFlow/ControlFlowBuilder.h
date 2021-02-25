@@ -25,6 +25,10 @@ public:
 	bool VisitIn(LabelStatement *statement) override;
 	
 private:
+	BasicBlock *CreateBlock();
+	BasicBlock *CreateBlock(const std::string& name);
+
+	bool m_entry = true;
 	unsigned int m_index = 0u;
 	BasicBlock *m_currentBlock = nullptr;
 
