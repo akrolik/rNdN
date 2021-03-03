@@ -58,28 +58,25 @@ public:
 	template<class T>
 	std::size_t AddConstantMemory(T data)
 	{
-		auto offset = m_constantMemory.size();
-		auto bytes = reinterpret_cast<const unsigned char *>(&data);
-		if constexpr(std::is_same<T, double>::value)
-		{
-			// Double values are word-reversed
+		// Must be aligned for the type
 
-			auto WORD_SIZE = 4;
-			auto words = Utils::Math::DivUp(sizeof(T), WORD_SIZE);
-			for (int i = words - 1; i >= 0; --i)
+		auto align = m_constantMemory.size() % sizeof(T);
+		if (align > 0)
+		{
+			auto adjust = sizeof(T) - align;
+			for (auto i = 0; i < adjust; ++i)
 			{
-				for (auto j = 0; j < WORD_SIZE && j < sizeof(T); ++j)
-				{
-					m_constantMemory.push_back(bytes[i * WORD_SIZE + j]);
-				}
+				m_constantMemory.push_back(0);
 			}
 		}
-		else
+		
+		// Insert data into constant memory
+
+		auto offset = m_constantMemory.size();
+		auto bytes = reinterpret_cast<const unsigned char *>(&data);
+		for (auto i = 0; i < sizeof(T); ++i)
 		{
-			for (auto i = 0; i < sizeof(T); ++i)
-			{
-				m_constantMemory.push_back(bytes[i]);
-			}
+			m_constantMemory.push_back(bytes[i]);
 		}
 		return offset;
 	}
