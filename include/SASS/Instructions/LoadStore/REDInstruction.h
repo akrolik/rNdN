@@ -91,6 +91,7 @@ public:
 			case Type::F32: code += ".F32.FTZ.RN"; break;
 			case Type::F16: code += ".F16x2.FTZ.RN"; break;
 			case Type::S64: code += ".S64"; break;
+			case Type::F64: code += ".F64.RN"; break;
 		}
 		return code;
 	}
