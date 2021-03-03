@@ -61,7 +61,7 @@ public:
 			for (const auto node2 : strictDominators)
 			{
 				const auto strictDominators2 = GetStrictDominators(node2);
-				if (strictDominators2.find(node1) == strictDominators2.end())
+				if (strictDominators2.find(node1) != strictDominators2.end())
 				{
 					dominatesAll = false;
 					break;

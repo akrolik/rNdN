@@ -61,7 +61,7 @@ public:
 			for (const auto node2 : strictPostDominators)
 			{
 				const auto strictPostDominators2 = GetStrictPostDominators(node2);
-				if (strictPostDominators2.find(node1) == strictPostDominators2.end())
+				if (strictPostDominators2.find(node1) != strictPostDominators2.end())
 				{
 					postDominatesAll = false;
 					break;
