@@ -9,6 +9,7 @@
 #include "PTX/Tree/Statements/Statement.h"
 
 #include "PTX/Analysis/ControlFlow/ControlFlowGraph.h"
+#include "PTX/Analysis/ControlFlow/StructuredGraph/StructuredGraph.h"
 
 namespace PTX {
 
@@ -23,6 +24,10 @@ public:
 	const Analysis::ControlFlowGraph *GetControlFlowGraph() const { return m_cfg; }
 	Analysis::ControlFlowGraph *GetControlFlowGraph() { return m_cfg; }
 	void SetControlFlowGraph(Analysis::ControlFlowGraph *cfg) { m_cfg = cfg; }
+
+	const Analysis::StructureNode *GetStructuredGraph() const { return m_structuredGraph; }
+	Analysis::StructureNode *GetStructuredGraph() { return m_structuredGraph; }
+	void SetStructuredGraph(Analysis::StructureNode *structuredGraph) { m_structuredGraph = structuredGraph; }
 
 	void InvalidateStatements() { m_statements.clear(); }
 
@@ -134,6 +139,7 @@ public:
 protected:
 	std::unordered_set<BasicBlock *> m_basicBlocks;
 	Analysis::ControlFlowGraph *m_cfg = nullptr;
+	Analysis::StructureNode *m_structuredGraph = nullptr;
 };
 
 }

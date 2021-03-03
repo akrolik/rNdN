@@ -1,5 +1,6 @@
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
 

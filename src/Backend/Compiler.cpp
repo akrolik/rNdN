@@ -5,12 +5,15 @@
 
 #include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
-#include "PTX/Analysis/BasicFlow/ReachingDefinitions.h"
 #include "PTX/Analysis/ControlFlow/ControlFlowBuilder.h"
+#include "PTX/Analysis/Dominator/DominatorAnalysis.h"
+#include "PTX/Analysis/Dominator/PostDominatorAnalysis.h"
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 #include "PTX/Analysis/RegisterAllocator/LinearScanRegisterAllocator.h"
 #include "PTX/Analysis/SpaceAllocator/LocalSpaceAllocator.h"
 #include "PTX/Analysis/SpaceAllocator/GlobalSpaceAllocator.h"
+
+#include "PTX/Transformation/Structurizer/Structurizer.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -85,16 +88,6 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	function->SetBasicBlocks(cfg->GetNodes());
 	function->InvalidateStatements();
 
-	if (Utils::Options::IsBackend_PrintCFG())
-	{
-		Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
-		Utils::Logger::LogInfo(cfg->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
-	}
-
-	//TODO: Testing analysis framework
-	// PTX::Analysis::ReachingDefinitions reachingDefs;
-	// reachingDefs.Analyze(function);
-
 	// Allocate registers
 
 	auto registerAllocation = AllocateRegisters(function);
@@ -105,6 +98,19 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	spaceAllocator.Analyze(function);
 
 	auto spaceAllocation = spaceAllocator.GetSpaceAllocation();
+
+	// Structurize CFG
+
+	PTX::Analysis::DominatorAnalysis dominatorAnalysis;
+	dominatorAnalysis.Analyze(function);
+
+	PTX::Analysis::PostDominatorAnalysis postDominatorAnalysis;
+	postDominatorAnalysis.Analyze(function);
+
+	PTX::Transformation::Structurizer structurizer(dominatorAnalysis, postDominatorAnalysis);
+	auto structuredGraph = structurizer.Structurize(function);
+
+	function->SetStructuredGraph(structuredGraph);
 
 	// Generate SASS code from 64-bit PTX code
 

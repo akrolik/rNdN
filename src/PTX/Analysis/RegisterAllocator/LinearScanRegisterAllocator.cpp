@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "Utils/Chrono.h"
+
 namespace PTX {
 namespace Analysis {
 
