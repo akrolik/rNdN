@@ -149,6 +149,10 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		{
 			auto unpaddedIndex = blockIndex.at(_branchInstruction->GetTarget());
 			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+			if (paddedIndex % 4 == 1)
+			{
+				paddedIndex--; // Begin at previous SCHI instruction
+			}
 
 			auto branchInstruction = const_cast<SASS::BRAInstruction *>(_branchInstruction);
 			branchInstruction->SetTargetAddress(
@@ -160,6 +164,10 @@ BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
 		{
 			auto unpaddedIndex = blockIndex.at(_divInstruction->GetTarget());
 			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+			if (paddedIndex % 4 == 1)
+			{
+				paddedIndex--; // Begin at previous SCHI instruction
+			}
 
 			auto divInstruction = const_cast<SASS::DivergenceInstruction *>(_divInstruction);
 			divInstruction->SetTargetAddress(
