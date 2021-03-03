@@ -24,9 +24,7 @@ public:
 		PASS_B = 0x0000060000000000
 	};
 
-	//TODO: Enable Z constructor
 	enum class PredicateZ : std::uint64_t {
-		None = 0x0007000000000000,
 		Z    = 0x0000200000000000,
 		NZ   = 0x0000300000000000
 	};
@@ -36,7 +34,17 @@ public:
 	LOPInstruction(Register *destination, Register *sourceA, Composite *sourceB, BooleanOperator booleanOperator, Flags flags = Flags::None)
 		: PredicatedInstruction({destination, sourceA, sourceB}), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_booleanOperator(booleanOperator), m_flags(flags) {}
 
+	LOPInstruction(Predicate *destinationP, PredicateZ predicateZ, Register *destination, Register *sourceA, Composite *sourceB, BooleanOperator booleanOperator, Flags flags = Flags::None)
+		: PredicatedInstruction({destination, sourceA, sourceB}), m_destinationP(destinationP), m_predicateZ(predicateZ), m_destination(destination), m_sourceA(sourceA), m_sourceB(sourceB), m_booleanOperator(booleanOperator), m_flags(flags) {}
+
 	// Properties
+
+	const Predicate *GetDestinationP() const { return m_destinationP; }
+	Predicate *GetDestinationP() { return m_destinationP; }
+	void SetDestinationP(Predicate *destinationP) { m_destinationP = destinationP; }
+
+	PredicateZ GetPredicateZ() const { return m_predicateZ; }
+	void SetPredicateZ(PredicateZ predicateZ) { m_predicateZ = predicateZ; }
 
 	const Register *GetDestination() const { return m_destination; }
 	Register *GetDestination() { return m_destination; }
@@ -63,7 +71,14 @@ public:
 	std::string OpModifiers() const override
 	{
 		std::string code;
-		//TODO: Z operand
+		if (m_destinationP != nullptr)
+		{
+			switch (m_predicateZ)
+			{
+				case PredicateZ::Z: code += ".Z"; break;
+				case PredicateZ::NZ: code += ".NZ"; break;
+			}
+		}
 		switch (m_booleanOperator)
 		{
 			case BooleanOperator::AND: code += ".AND"; break;
@@ -78,7 +93,12 @@ public:
 	{
 		std::string code;
 
-		//TODO: Z operand
+		// PredicateZ
+		if (m_destinationP != nullptr)
+		{
+			code += m_destinationP->ToString();
+			code += ", ";
+		}
 		
 		// Destination
 		code += m_destination->ToString();
@@ -115,27 +135,42 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_flags);
+		auto code = BinaryUtils::OpModifierFlags(m_flags) | BinaryUtils::OpModifierFlags(m_booleanOperator);
+		if (m_destinationP == nullptr)
+		{
+			code |= 0x0007000000000000;
+		}
+		else
+		{
+			code |= BinaryUtils::OpModifierFlags(m_predicateZ);
+		}
+		return code;
 	}
 
 	std::uint64_t BinaryOperands() const override
 	{
-		//TODO: Z operand
-		return BinaryUtils::OperandRegister0(m_destination) |
-		       BinaryUtils::OperandRegister8(m_sourceA) |
-		       BinaryUtils::OperandComposite(m_sourceB);
+		auto code = BinaryUtils::OperandRegister0(m_destination) |
+		            BinaryUtils::OperandRegister8(m_sourceA) |
+		            BinaryUtils::OperandComposite(m_sourceB);
+
+		if (m_destinationP != nullptr)
+		{
+			code |= BinaryUtils::OperandPredicate48(m_destinationP);
+		}
+		return code;
 	}
 
 private:
+	Predicate *m_destinationP = nullptr;
 	Register *m_destination = nullptr;
 	Register *m_sourceA = nullptr;
 	Composite *m_sourceB = nullptr;
 
 	BooleanOperator m_booleanOperator;
 	Flags m_flags = Flags::None;
+	PredicateZ m_predicateZ = PredicateZ::Z;
 };
 
 SASS_FLAGS_INLINE(LOPInstruction)
 
 }
-
