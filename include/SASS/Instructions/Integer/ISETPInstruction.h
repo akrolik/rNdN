@@ -140,14 +140,14 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		return BinaryUtils::OpCodeComposite(0x5b61000000000000, m_sourceB);
+		return BinaryUtils::OpCodeComposite(0x5b60000000000000, m_sourceB);
 	}
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
 		return BinaryUtils::OpModifierFlags(m_comparisonOperator) |
 		       BinaryUtils::OpModifierFlags(m_booleanOperator) |
-		       BinaryUtils::OpModifierFlags(m_flags);
+		       BinaryUtils::OpModifierFlags(m_flags) ^ Flags::U32; // Flipped bit pattern
 	}
 
 	std::uint64_t BinaryOperands() const override

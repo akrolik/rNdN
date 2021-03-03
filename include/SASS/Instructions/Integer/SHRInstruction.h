@@ -78,12 +78,12 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		return BinaryUtils::OpCodeComposite(0x5c29000000000000, m_sourceB);
+		return BinaryUtils::OpCodeComposite(0x5c28000000000000, m_sourceB);
 	}
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_flags);
+		return BinaryUtils::OpModifierFlags(m_flags) ^ Flags::U32; // Flip U32 bit
 	}
 
 	std::uint64_t BinaryOperands() const override
