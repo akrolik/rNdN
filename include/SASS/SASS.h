@@ -46,6 +46,7 @@ namespace SASS {
 #include "SASS/Instructions/Integer/ISCADDInstruction.h"
 #include "SASS/Instructions/Integer/ISETPInstruction.h"
 #include "SASS/Instructions/Integer/LOPInstruction.h"
+#include "SASS/Instructions/Integer/LOP32IInstruction.h"
 #include "SASS/Instructions/Integer/POPCInstruction.h"
 #include "SASS/Instructions/Integer/SHLInstruction.h"
 #include "SASS/Instructions/Integer/SHRInstruction.h"
