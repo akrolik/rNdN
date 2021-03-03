@@ -24,7 +24,7 @@
 #define STO_CUDA_CONSTANT 0x80
 #define STT_CUDA_OBJECT 0xd
 
-#define SHI_REGISTERS(x) (x << 20)
+#define SHI_REGISTERS(x) (x << 24)
 #define SHF_BARRIERS(x) (x << 20)
 
 #define R_CUDA_ABS32_HI_20 0x2c
