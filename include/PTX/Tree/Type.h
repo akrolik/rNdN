@@ -50,6 +50,19 @@ enum class Bits : int {
 struct Type {
 	static std::string Name() { return ".<unknown>"; }
 
+	enum class Kind {
+		Void,
+		Bit,
+		Int,
+		UInt,
+		Float,
+		Vector,
+		Array,
+		Pointer
+	};
+	virtual Kind GetKind() const = 0;
+	virtual Bits GetBits() const = 0;
+
 	using SystemType = std::nullptr_t;
 	using WideType = std::nullptr_t;
 
@@ -67,6 +80,9 @@ struct VoidType : Type
 	using SystemType = bool;
 
 	static std::string Name() { return ""; }
+
+	Type::Kind GetKind() const override { return Kind::Void; }
+	Bits GetBits() const override { return TypeBits; }
 };
 
 struct DataType : Type {};
@@ -118,6 +134,9 @@ struct BitTypeBase : ScalarType
 	constexpr static Bits TypeBits = B;
 
 	static std::string Name() { return ".b" + std::to_string(BitSize<B>::NumBits); }
+
+	Type::Kind GetKind() const override { return Kind::Bit; }
+	Bits GetBits() const override { return TypeBits; }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -189,6 +208,9 @@ struct BitTypeBase<Bits::Bits1, 1> : ScalarType
 	constexpr static Bits TypeBits = Bits::Bits1;
 
 	static std::string Name() { return ".pred"; }
+
+	Type::Kind GetKind() const override { return Kind::Bit; }
+	Bits GetBits() const override { return TypeBits; }
 };
 
 template<>
@@ -197,6 +219,9 @@ struct BitTypeBase<Bits::Bits8, 1> : ScalarType
 	constexpr static Bits TypeBits = Bits::Bits8;
 
 	static std::string Name() { return ".b" + std::to_string(BitSize<Bits::Bits8>::NumBits); }
+
+	Kind GetKind() const override { return Kind::Bit; }
+	Bits GetBits() const override { return TypeBits; }
 };
 
 template<Bits B, unsigned int N = 1> struct BitType : BitTypeBase<B, N> {};
@@ -262,6 +287,8 @@ struct IntTypeBase : BitType<B, N>
 	static_assert(N == 1, "PTX::IntType expects data packing of 1");
 
 	static std::string Name() { return ".s" + std::to_string(BitSize<B>::NumBits); }
+
+	Type::Kind GetKind() const override { return Type::Kind::Int; }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -389,6 +416,8 @@ struct UIntTypeBase : BitType<B, N>
 	static_assert(N == 1, "PTX::UIntType expects data packing of 1");
 
 	static std::string Name() { return ".u" + std::to_string(BitSize<B>::NumBits); }
+
+	Type::Kind GetKind() const override { return Type::Kind::UInt; }
 
 	enum class ComparisonOperator {
 		Equal,
@@ -536,6 +565,8 @@ struct FloatTypeBase : BitType<B, N>
 
 	static std::string Name() { return ".f" + std::to_string(BitSize<B>::NumBits); }
 
+	Type::Kind GetKind() const override { return Type::Kind::Float; }
+
 	enum class RoundingMode {
 		None,
 		Nearest,
@@ -661,6 +692,8 @@ struct FloatTypeBase<Bits::Bits16, N> : BitType<Bits::Bits16, N>
 		else
 			return ".f16x" + std::to_string(N);
 	}
+
+	Type::Kind GetKind() const override { return Type::Kind::Float; }
 
 	enum class RoundingMode {
 		None,
@@ -809,8 +842,14 @@ struct VectorProperties
 	constexpr static std::underlying_type<VectorSize>::type ElementCount = static_cast<std::underlying_type<VectorSize>::type>(V);
 };
 
+struct _VectorType : ValueType
+{
+	virtual VectorSize GetSize() const = 0;
+	virtual const Type *GetType() const = 0;
+};
+
 template<class T, VectorSize V, bool Assert = true>
-struct VectorType : ValueType
+struct VectorType : _VectorType
 {
 	REQUIRE_TYPE_PARAM(VectorType, 
 		REQUIRE_BASE(T, ScalarType)
@@ -821,6 +860,14 @@ struct VectorType : ValueType
 	constexpr static Bits TypeBits = T::TypeBits;
 
 	static std::string Name() { return ".v" + std::to_string(VectorProperties<V>::ElementCount) + " " + T::Name(); }
+
+	Type::Kind GetKind() const override { return Type::Kind::Vector; }
+	Bits GetBits() const override { return T::TypeBits; }
+
+	VectorSize GetSize() const override { return V; }
+	const Type *GetType() const override { return &m_type; }
+
+	T m_type;
 };
 
 template<class T>
@@ -911,14 +958,24 @@ struct ArrayType : DataType
 	}
 
 	static std::string Name() { return BaseName() + Dimensions(); }
+
+	Type::Kind GetKind() const override { return Type::Kind::Array; }
+	Bits GetBits() const override { return TypeBits; }
 };
 
 // @struct PointerType
 //
 // Representation of pointer (unsigned integer) types
 
+template<Bits B>
+struct _PointerType : UIntType<B>
+{
+	virtual const StateSpace *GetStateSpace() const = 0;
+	virtual const Type *GetType() const = 0;
+};
+
 template<Bits B, class T, class S = AddressableSpace>
-struct PointerType : UIntType<B>
+struct PointerType : _PointerType<B>
 {
 	REQUIRE_TYPE_PARAM(PointerType, 
 		REQUIRE_BASE(T, ValueType)
@@ -928,6 +985,14 @@ struct PointerType : UIntType<B>
 	);
 
 	static std::string Name() { return UIntType<B>::Name(); }
+
+	Type::Kind GetKind() const override { return Type::Kind::Pointer; }
+
+	const Type *GetType() const override { return &m_type; }
+	const StateSpace *GetStateSpace() const override { return &m_space; }
+
+	T m_type;
+	S m_space;
 };
 
 template<class T, class S = AddressableSpace>

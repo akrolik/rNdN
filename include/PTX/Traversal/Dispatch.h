@@ -1,82 +1,139 @@
 #pragma once
 
+#include "Utils/Logger.h"
+
 namespace PTX {
 
-#define DispatchSpace(space) \
-	_DispatchSpace(space, SpecialRegisterSpace); \
-	_DispatchSpace(space, RegisterSpace); \
-	_DispatchSpace(space, GlobalSpace); \
-	_DispatchSpace(space, SharedSpace); \
-	_DispatchSpace(space, ParameterSpace); \
-	_DispatchSpace(space, AddressableSpace); \
-
 #define COMMA ,
-#define DispatchPointer_Bits(type, T, S) \
-	_DispatchType(type, Pointer64Type<T COMMA S>);
 
-#define DispatchPointer_Space(type, T) \
-	DispatchPointer_Bits(type, T, AddressableSpace); \
-	DispatchPointer_Bits(type, T, GlobalSpace); \
-	DispatchPointer_Bits(type, T, SharedSpace); \
-	DispatchPointer_Bits(type, T, ParameterSpace);
+#define DispatchSpace(space) \
+	switch (space->GetKind()) { \
+		case StateSpace::Kind::Register: \
+			_DispatchSpace(space, RegisterSpace); break; \
+		case StateSpace::Kind::SpecialRegister: \
+			_DispatchSpace(space, SpecialRegisterSpace); break; \
+		case StateSpace::Kind::Addressable: \
+			_DispatchSpace(space, AddressableSpace); break; \
+		case StateSpace::Kind::Local: \
+			_DispatchSpace(space, LocalSpace); break; \
+		case StateSpace::Kind::Global: \
+			_DispatchSpace(space, GlobalSpace); break; \
+		case StateSpace::Kind::Shared: \
+			_DispatchSpace(space, SharedSpace); break; \
+		case StateSpace::Kind::Const: \
+			_DispatchSpace(space, ConstSpace); break; \
+		case StateSpace::Kind::Parameter: \
+			_DispatchSpace(space, ParameterSpace); break; \
+	} \
+	Utils::Logger::LogError("PTX::Dispatch unsupported space");
 
-#define DispatchPointer(type) \
-	DispatchPointer_Space(type, Int8Type); \
-	DispatchPointer_Space(type, Int16Type); \
-	DispatchPointer_Space(type, Int32Type); \
-	DispatchPointer_Space(type, Int64Type); \
-	DispatchPointer_Space(type, UInt8Type); \
-	DispatchPointer_Space(type, UInt16Type); \
-	DispatchPointer_Space(type, UInt32Type); \
-	DispatchPointer_Space(type, UInt64Type); \
-	DispatchPointer_Space(type, Float32Type); \
-	DispatchPointer_Space(type, Float64Type); \
-	DispatchPointer_Space(type, PredicateType); \
-	DispatchPointer_Space(type, Bit8Type); \
-	DispatchPointer_Space(type, Bit16Type); \
-	DispatchPointer_Space(type, Bit32Type); \
-	DispatchPointer_Space(type, Bit64Type);
+#define DispatchType_Void(type) \
+	if (type->GetKind() == Type::Kind::Void) { \
+		_DispatchType(type, VoidType); \
+	}
 
-#define DispatchVector_Size(type, T) \
-	_DispatchType(type, VectorType<T COMMA VectorSize::Vector2>) \
-	_DispatchType(type, VectorType<T COMMA VectorSize::Vector4>)
+#define DispatchType_Basic(type, f) \
+	switch (type->GetKind()) { \
+		case Type::Kind::Bit: { \
+			switch (type->GetBits()) { \
+				case Bits::Bits1: \
+					_DispatchType(type, f(PredicateType)); break; \
+				case Bits::Bits8: \
+					_DispatchType(type, f(Bit8Type)); break; \
+				case Bits::Bits16: \
+					_DispatchType(type, f(Bit16Type)); break; \
+				case Bits::Bits32: \
+					_DispatchType(type, f(Bit32Type)); break; \
+				case Bits::Bits64: \
+					_DispatchType(type, f(Bit64Type)); break; \
+			} \
+			break; \
+		} \
+		case Type::Kind::Int: { \
+			switch (type->GetBits()) { \
+				case Bits::Bits8: \
+					_DispatchType(type, f(Int8Type)); break; \
+				case Bits::Bits16: \
+					_DispatchType(type, f(Int16Type)); break; \
+				case Bits::Bits32: \
+					_DispatchType(type, f(Int32Type)); break; \
+				case Bits::Bits64: \
+					_DispatchType(type, f(Int64Type)); break; \
+			} \
+			break; \
+		} \
+		case Type::Kind::UInt: { \
+			switch (type->GetBits()) { \
+				case Bits::Bits8: \
+					_DispatchType(type, f(UInt8Type)); break; \
+				case Bits::Bits16: \
+					_DispatchType(type, f(UInt16Type)); break; \
+				case Bits::Bits32: \
+					_DispatchType(type, f(UInt32Type)); break; \
+				case Bits::Bits64: \
+					_DispatchType(type, f(UInt64Type)); break; \
+			} \
+			break; \
+		} \
+		case Type::Kind::Float: { \
+			switch (type->GetBits()) { \
+				case Bits::Bits32: \
+					_DispatchType(type, f(Float32Type)); break; \
+				case Bits::Bits64: \
+					_DispatchType(type, f(Float64Type)); break; \
+			} \
+			break; \
+		} \
+	}
 
-#define DispatchVector(type) \
-	DispatchVector_Size(type, Int8Type); \
-	DispatchVector_Size(type, Int16Type); \
-	DispatchVector_Size(type, Int32Type); \
-	DispatchVector_Size(type, Int64Type); \
-	DispatchVector_Size(type, UInt8Type); \
-	DispatchVector_Size(type, UInt16Type); \
-	DispatchVector_Size(type, UInt32Type); \
-	DispatchVector_Size(type, UInt64Type); \
-	DispatchVector_Size(type, Float32Type); \
-	DispatchVector_Size(type, Float64Type); \
-	DispatchVector_Size(type, PredicateType); \
-	DispatchVector_Size(type, Bit8Type); \
-	DispatchVector_Size(type, Bit16Type); \
-	DispatchVector_Size(type, Bit32Type); \
-	DispatchVector_Size(type, Bit64Type);
+#define DispatchExpand_Vector2(type) VectorType<type, VectorSize::Vector2>
+#define DispatchExpand_Vector4(type) VectorType<type, VectorSize::Vector4>
+
+#define DispatchType_Vector(type) \
+	if (type->GetKind() == Type::Kind::Vector) { \
+		const auto vtype = static_cast<const _VectorType *>(type); \
+		switch (vtype->GetSize()) { \
+			case VectorSize::Vector2: \
+				DispatchType_Basic(vtype->GetType(), DispatchExpand_Vector2); break; \
+			case VectorSize::Vector4: \
+				DispatchType_Basic(vtype->GetType(), DispatchExpand_Vector4); break; \
+		} \
+	}
+
+#define DispatchExpand_PointerAddressable(type) PointerType<Bits::Bits64, type, AddressableSpace>
+#define DispatchExpand_PointerLocal(type) PointerType<Bits::Bits64, type, LocalSpace>
+#define DispatchExpand_PointerGlobal(type) PointerType<Bits::Bits64, type, GlobalSpace>
+#define DispatchExpand_PointerShared(type) PointerType<Bits::Bits64, type, SharedSpace>
+#define DispatchExpand_PointerConst(type) PointerType<Bits::Bits64, type, ConstSpace>
+#define DispatchExpand_PointerParameter(type) PointerType<Bits::Bits64, type, ParameterSpace>
+
+#define DispatchType_Pointer(type) \
+	if (type->GetKind() == Type::Kind::Pointer && type->GetBits() == Bits::Bits64) { \
+		const auto ptype = static_cast<const _PointerType<Bits::Bits64> *>(type); \
+		switch (ptype->GetStateSpace()->GetKind()) { \
+			case StateSpace::Kind::Addressable: \
+				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerAddressable); break; \
+			case StateSpace::Kind::Local: \
+				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerLocal); break; \
+			case StateSpace::Kind::Global: \
+				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerGlobal); break; \
+			case StateSpace::Kind::Shared: \
+				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerShared); break; \
+			case StateSpace::Kind::Const: \
+				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerConst); break; \
+			case StateSpace::Kind::Parameter: \
+				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerParameter); break; \
+		} \
+	}
+
+#define DispatchExpand_Null(type) type
 
 #define DispatchType(type) \
-	DispatchVector(type); \
-	DispatchPointer(type); \
-	_DispatchType(type, VoidType); \
-	_DispatchType(type, Int8Type); \
-	_DispatchType(type, Int16Type); \
-	_DispatchType(type, Int32Type); \
-	_DispatchType(type, Int64Type); \
-	_DispatchType(type, UInt8Type); \
-	_DispatchType(type, UInt16Type); \
-	_DispatchType(type, UInt32Type); \
-	_DispatchType(type, UInt64Type); \
-	_DispatchType(type, Float32Type); \
-	_DispatchType(type, Float64Type); \
-	_DispatchType(type, PredicateType); \
-	_DispatchType(type, Bit8Type); \
-	_DispatchType(type, Bit16Type); \
-	_DispatchType(type, Bit32Type); \
-	_DispatchType(type, Bit64Type);
+	DispatchType_Basic(type, DispatchExpand_Null); \
+	DispatchType_Vector(type); \
+	DispatchType_Pointer(type); \
+	DispatchType_Void(type); \
+	Utils::Logger::LogError("PTX::Dispatch unsupported type");
 
 template<template<class, bool = true> class C>
 class Dispatcher
@@ -87,9 +144,7 @@ public:
 	{
 #define _DispatchType(type, T) \
 		if constexpr(C<T, false>::TypeSupported) { \
-			if (dynamic_cast<const T*>(type)) { \
-				return visitor.Visit(static_cast<const C<T>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<T>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -110,9 +165,7 @@ public:
 	void Dispatch(V& visitor) const
 	{
 #define _DispatchType(type, T1) \
-		if (dynamic_cast<const T1*>(type)) { \
-			return Dispatch<V, T1>(visitor); \
-		}
+		return Dispatch<V, T1>(visitor);
 
 		const auto type = GetType1();
 		DispatchType(type);
@@ -125,9 +178,7 @@ public:
 	{
 #define _DispatchType(type, T2) \
 		if constexpr(C<T1, T2, false>::TypeSupported) { \
-			if (dynamic_cast<const T2*>(type)) { \
-				return visitor.Visit(static_cast<const C<T1, T2>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<T1, T2>*>(this)); \
 		}
 
 		const auto type = GetType2();
@@ -164,9 +215,7 @@ public:
 	{
 #define _DispatchType(type, T) \
 		if constexpr(C<T, E, false>::TypeSupported) { \
-			if (dynamic_cast<const T*>(type)) { \
-				return visitor.Visit(static_cast<const C<T, E>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<T, E>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -202,9 +251,7 @@ public:
 	void Dispatch(V& visitor) const
 	{
 #define _DispatchSpace(space, S) \
-		if (dynamic_cast<const S*>(space)) { \
-			return Dispatch<V, S, E>(visitor); \
-		}
+		return Dispatch<V, S, E>(visitor);
 
 		const auto space = GetStateSpace();
 		DispatchSpace(space);
@@ -217,9 +264,7 @@ public:
 	{
 #define _DispatchType(type, T) \
 		if constexpr(C<T, S, E, false>::TypeSupported && C<T, S, E, false>::SpaceSupported) { \
-			if (dynamic_cast<const T*>(type)) { \
-				return visitor.Visit(static_cast<const C<T, S, E>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<T, S, E>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -242,9 +287,7 @@ public:
 	void Dispatch(V& visitor) const
 	{
 #define _DispatchSpace(space, S) \
-		if (dynamic_cast<const S*>(space)) { \
-			return Dispatch<V, S>(visitor); \
-		}
+		return Dispatch<V, S>(visitor);
 
 		const auto space = GetStateSpace();
 		DispatchSpace(space);
@@ -257,9 +300,7 @@ public:
 	{
 #define _DispatchType(type, T) \
 		if constexpr(C<T, S, false>::TypeSupported && C<T, S, false>::SpaceSupported) { \
-			if (dynamic_cast<const T*>(type)) { \
-				return visitor.Visit(static_cast<const C<T, S>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<T, S>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -295,9 +336,7 @@ public:
 	void Dispatch(V& visitor) const
 	{
 #define _DispatchSpace(space, S) \
-		if (dynamic_cast<const S*>(space)) { \
-			return Dispatch<V, B, S>(visitor); \
-		}
+		return Dispatch<V, B, S>(visitor);
 
 		const auto space = GetStateSpace();
 		DispatchSpace(space);
@@ -310,9 +349,7 @@ public:
 	{
 #define _DispatchType(type, T) \
 		if constexpr(C<B, T, S, false>::TypeSupported && C<B, T, S, false>::SpaceSupported) { \
-			if (dynamic_cast<const T*>(type)) { \
-				return visitor.Visit(static_cast<const C<B, T, S>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<B, T, S>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -349,9 +386,7 @@ public:
 	void Dispatch(V& visitor) const
 	{
 #define _DispatchSpace(space, S) \
-		if (dynamic_cast<const S*>(space)) { \
-			return Dispatch<V, B, S, AA>(visitor); \
-		}
+		return Dispatch<V, B, S, AA>(visitor);
 
 		const auto space = GetStateSpace();
 		DispatchSpace(space);
@@ -364,9 +399,7 @@ public:
 	{
 #define _DispatchType(type, T) \
 		if constexpr(C<B, T, S, AA, false>::TypeSupported && C<B, T, S, AA, false>::SpaceSupported) { \
-			if (dynamic_cast<const T*>(type)) { \
-				return visitor.Visit(static_cast<const C<B, T, S, AA>*>(this)); \
-			} \
+			return visitor.Visit(static_cast<const C<B, T, S, AA>*>(this)); \
 		}
 
 		const auto type = GetType();
