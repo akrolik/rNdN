@@ -40,6 +40,8 @@ public:
 	static constexpr char const *Opt_Backend_print_assembled = "backend-print-assembled";
 	static constexpr char const *Opt_Backend_print_elf = "backend-print-elf";
 
+	static constexpr char const *Opt_Link_external = "link-external";
+
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
 	static constexpr char const *Opt_Algo_sort = "algo-sort";
 	static constexpr char const *Opt_Algo_group = "algo-group";
@@ -66,7 +68,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Link", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -167,6 +169,10 @@ public:
 	static bool IsBackend_PrintSASS() { return Present(Opt_Backend_print_sass); }
 	static bool IsBackend_PrintAssembled() { return Present(Opt_Backend_print_assembled); }
 	static bool IsBackend_PrintELF() { return Present(Opt_Backend_print_elf); }
+
+	// Link
+
+	static bool IsLink_External() { return Present(Opt_Link_external); }
 
 	// Algorithm
 
@@ -377,6 +383,9 @@ private:
 			(Opt_Backend_print_sass, "Print generated SASS code")
 			(Opt_Backend_print_assembled, "Print assembled SASS code")
 			(Opt_Backend_print_elf, "Print generated ELF file")
+		;
+		m_options.add_options("Link")
+			(Opt_Link_external, "Link external libraries (libdevice)")
 		;
 		m_options.add_options("Algorithm")
 			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))

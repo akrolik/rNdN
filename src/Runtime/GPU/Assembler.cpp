@@ -72,9 +72,12 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 		}
 	}
 
-	for (const auto& module : m_gpuManager.GetExternalModules())
+	if (Utils::Options::IsLink_External())
 	{
-		cModule.AddExternalModule(module);
+		for (const auto& module : m_gpuManager.GetExternalModules())
+		{
+			cModule.AddExternalModule(module);
+		}
 	}
 
 	// Compile the module and geneate the cuBin
