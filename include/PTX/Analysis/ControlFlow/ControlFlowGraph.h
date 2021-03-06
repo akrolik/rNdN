@@ -89,80 +89,69 @@ public:
 	template <typename F> 
 	void LinearOrdering(F function) const
 	{
-		// Construct the linear sorting structure
-		//     Stack: store the current nodes 0 in-degree
-		//     Edges: count the in-degree of each node
+		// Construct DFA ordering structure
 
 		std::stack<ControlFlowNode> stack;
-		std::unordered_map<ControlFlowNode, unsigned int> edges;
+		std::unordered_set<ControlFlowNode> visited;
 
-		// Initialization with root nodes and count for incoming edges of each node
+		// Initialize with the entry node
 
-		for (auto& node : GetNodes())
+		if (m_entryNode == nullptr)
 		{
-			auto count = GetLinearInDegree(node);
-			if (count == 0)
-			{
-				stack.push(node);
-			}
-			edges.insert({node, count});
+			Utils::Logger::LogError("CFG ordering requires entry node");
 		}
 
-		// Perform the linear ordering
+		stack.push(m_entryNode);
 
 		while (!stack.empty())
 		{
-			auto& node = stack.top();
+			auto node = stack.top();
 			stack.pop();
 
-			// Apply the given function
-
-			function(node);
-
-			// Add successors to the stack, firstly the fallthrough edge (no predicate) then the branching edge
-
-			const auto& successors = GetSuccessors(node);
-			std::vector<ControlFlowNode> successorsVec(std::begin(successors), std::end(successors));
-
-			//TODO: Remove backedges
-
-			if (successorsVec.size() == 1)
+			if (visited.find(node) == visited.end())
 			{
-				const auto& successor = successorsVec.at(0);
-				edges.at(successor)--;
-				if (edges.at(successor) == 0)
+				// Apply the given function, exit if returned true
+
+				function(node);
+
+				// Maintain the visited structure and add successors
+
+				visited.insert(node);
+
+				// Add successors to the stack, firstly the fallthrough edge (no predicate) then the branching edge
+
+				const auto& successors = GetSuccessors(node);
+				std::vector<ControlFlowNode> successorsVec(std::begin(successors), std::end(successors));
+
+				if (successorsVec.size() == 1)
 				{
+					const auto& successor = successorsVec.at(0);
 					stack.push(successor);
 				}
-			}
-			else if (successorsVec.size() == 2)
-			{
-				const auto& successor0 = successorsVec.at(0);
-				const auto& successor1 = successorsVec.at(1);
-
-				edges.at(successor0)--;
-				edges.at(successor1)--;
-
-				if (const auto [predicate, _] = GetEdgeData(node, successor0); predicate == nullptr)
+				else if (successorsVec.size() == 2)
 				{
-					stack.push(successor0);
-					if (edges.at(successor1) == 0)
+					const auto& successor0 = successorsVec.at(0);
+					const auto& successor1 = successorsVec.at(1);
+
+					if (const auto& [predicate0, negate0] = GetEdgeData(node, successor0); predicate0 == nullptr)
 					{
 						stack.push(successor1);
-					}
-				}
-				else
-				{
-					stack.push(successor1);
-					if (edges.at(successor0) == 0)
-					{
 						stack.push(successor0);
 					}
+					else if (const auto& [predicate1, negate1] = GetEdgeData(node, successor1); predicate1 == nullptr)
+					{
+						stack.push(successor0);
+						stack.push(successor1);
+					}
+					else
+					{
+						Utils::Logger::LogError("CFG branching requires condition");
+					}
 				}
-			}
-			else if (successorsVec.size() > 2)
-			{
-				Utils::Logger::LogError("CFG basic block requires either 1 or 2 successors");
+				else if (successorsVec.size() > 2)
+				{
+					Utils::Logger::LogError("CFG nodes requires either 1 or 2 successors");
+				}
 			}
 		}
 	}

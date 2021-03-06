@@ -16,6 +16,7 @@ public:
 
 	void Visit(const Program *program) override;
 	void Visit(const Module *module) override;
+	void Visit(const BasicBlock *block) override;
 
 	// Functions
 

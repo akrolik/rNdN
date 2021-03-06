@@ -71,6 +71,22 @@ void PrettyPrinter::Visit(const Module *module)
 	}
 }
 
+void PrettyPrinter::Visit(const BasicBlock *block)
+{
+	m_string << std::endl;
+	block->GetLabel()->Accept(*this);
+	m_string << ":" << std::endl;
+
+	auto quick = m_quick;
+	m_quick = true;
+	for (const auto& statement : block->GetStatements())
+	{
+		statement->Accept(*this);
+		m_string << std::endl;
+	}
+	m_quick = quick;
+}
+
 void PrettyPrinter::Visit(const FunctionDeclaration<VoidType> *function)
 {
 	// Linking
@@ -135,10 +151,20 @@ void PrettyPrinter::Visit(const FunctionDefinition<VoidType> *function)
 
 	m_string << "{" << std::endl;
 	m_indent++;
-	for (const auto& statement : function->GetStatements())
+	if (const auto cfg = function->GetControlFlowGraph())
 	{
-		statement->Accept(*this);
-		m_string << std::endl;
+		cfg->LinearOrdering([&](Analysis::ControlFlowNode& block)
+		{
+			block->Accept(*this);
+		});
+	}
+	else
+	{
+		for (const auto& statement : function->GetStatements())
+		{
+			statement->Accept(*this);
+			m_string << std::endl;
+		}
 	}
 	m_indent--;
 	m_string << "}";
