@@ -23,8 +23,15 @@ namespace Backend {
 
 SASS::Program *Compiler::Compile(PTX::Program *program)
 {
+	auto timeCompiler_start = Utils::Chrono::Start("Backend compiler");
+
+	// Generate the program
+
 	m_program = new SASS::Program();
 	program->Accept(*this);
+
+	Utils::Chrono::End(timeCompiler_start);
+
 	return m_program;
 }
 
@@ -77,7 +84,7 @@ void Compiler::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration)
 
 bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 {
-	auto timeCodegen_start = Utils::Chrono::Start("Backend codegen: " + function->GetName());
+	auto timeCodegen_start = Utils::Chrono::Start("Backend compiler '" + function->GetName() + "'");
 
 	// Control-flow graph
 
@@ -114,7 +121,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Generate SASS code from 64-bit PTX code
 
-	auto timeSASS_start = Utils::Chrono::Start("SASS generation: " + function->GetName());
+	auto timeSASS_start = Utils::Chrono::Start("SASS codegen '" + function->GetName() + "'");
 
 	Codegen::CodeGenerator codegen(m_globalSpaceAllocation);
 	auto sassFunction = codegen.Generate(function, registerAllocation, spaceAllocation);

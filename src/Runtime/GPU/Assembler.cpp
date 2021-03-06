@@ -1,6 +1,7 @@
 #include "Runtime/GPU/Assembler.h"
 
 #include "Assembler/Assembler.h"
+#include "Assembler/ELFGenerator.h"
 #include "Backend/Compiler.h"
 
 #include "PTX/Utils/PrettyPrinter.h"
@@ -16,7 +17,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 	// Generate the CUDA module for the program with the program
 	// modules and linked external modules (libraries)
 
-	auto timeAssembler_start = Utils::Chrono::Start("CUDA Assembler");
+	auto timeAssembler_start = Utils::Chrono::Start("Assembler");
 
 	CUDA::Module cModule;
 	for (const auto& module : program->GetModules())
@@ -36,6 +37,8 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 				}
 				case Utils::Options::BackendKind::r3d3:
 				{
+					// Generate SASS for PTX program
+
 					auto& device = m_gpuManager.GetCurrentDevice();
 					auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
 
@@ -48,10 +51,21 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 					auto sassProgram = compiler.Compile(program);
 					sassProgram->SetComputeCapability(compute);
 
-					::Assembler::Assembler assembler;
-					auto binary = assembler.Assemble(sassProgram);
+					// Generate ELF binrary
 
-					cModule.AddELFModule(*binary);
+					auto timeBinary_start = Utils::Chrono::Start("Binary generator");
+
+					::Assembler::Assembler assembler;
+					auto binaryProgram = assembler.Assemble(sassProgram);
+
+					::Assembler::ELFGenerator elfGenerator;
+					auto elfProgram = elfGenerator.Generate(binaryProgram);
+
+					Utils::Chrono::End(timeBinary_start);
+
+					// Add finalized ELF binary to the module for linking
+
+					cModule.AddELFModule(*elfProgram);
 					break;
 				}
 			}

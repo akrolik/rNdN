@@ -28,6 +28,8 @@ void Module::AddPTXModule(const std::string& code)
 
 void Module::Compile()
 {
+	auto timeAssembler_start = Utils::Chrono::Start("CUDA assembler");
+
 	// Initialize the JIT options for the compile
 
 	auto timeCreate_start = Utils::Chrono::Start("Create");
@@ -144,6 +146,8 @@ void Module::Compile()
 	{
 		Utils::Logger::LogDebug(l_infoLog);
 	}
+
+	Utils::Chrono::End(timeAssembler_start);
 }
 
 }

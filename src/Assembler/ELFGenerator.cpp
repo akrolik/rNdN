@@ -58,7 +58,7 @@ void ELFGenerator::AppendBytes(std::vector<char>& buffer, const std::vector<char
 
 ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 {
-	auto timeELF_start = Utils::Chrono::Start("ELF Generator");
+	auto timeELF_start = Utils::Chrono::Start("ELF generator");
 
 	// Initialize properties of ELF file
 

@@ -89,7 +89,7 @@ public:
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
 
-	std::string Name() const override { return "Post-Dominators"; }
+	std::string Name() const override { return "Post-dominators"; }
 };
 
 }

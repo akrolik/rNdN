@@ -5,23 +5,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Assembler/ELFGenerator.h"
-
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
 
 namespace Assembler {
 
-ELFBinary *Assembler::Assemble(const SASS::Program *program)
-{
-	auto binaryProgram = AssembleProgram(program);
-
-	ELFGenerator elfGenerator;
-	return elfGenerator.Generate(binaryProgram);
-}
-
-BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
+BinaryProgram *Assembler::Assemble(const SASS::Program *program)
 {
 	auto timeAssembler_start = Utils::Chrono::Start("SASS assembler");
 
@@ -42,7 +32,7 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 
 	for (const auto& function : program->GetFunctions())
 	{
-		binaryProgram->AddFunction(AssembleFunction(function));
+		binaryProgram->AddFunction(Assemble(function));
 	}
 
 	Utils::Chrono::End(timeAssembler_start);
@@ -58,7 +48,7 @@ BinaryProgram *Assembler::AssembleProgram(const SASS::Program *program)
 	return binaryProgram;
 }
 
-BinaryFunction *Assembler::AssembleFunction(const SASS::Function *function)
+BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 {
 	auto binaryFunction = new BinaryFunction(function->GetName());
 	for (auto parameter : function->GetParameters())

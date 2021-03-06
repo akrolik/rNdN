@@ -23,7 +23,7 @@ namespace Frontend {
 
 PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 {
-	auto timeCodegen_start = Utils::Chrono::Start("Codegen");
+	auto timeCompiler_start = Utils::Chrono::Start("Frontend compiler");
 
 	// Get the entry function
 
@@ -94,12 +94,12 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 	// Generate the program
 
-	auto timePTX_start = Utils::Chrono::Start("PTX generation");
+	auto timePTX_start = Utils::Chrono::Start("PTX codegen");
 
 	auto ptxProgram = codegen.Generate(program);
 
 	Utils::Chrono::End(timePTX_start);
-	Utils::Chrono::End(timeCodegen_start);
+	Utils::Chrono::End(timeCompiler_start);
 
 	// Dump the PTX program or JSON string to stdout
 
