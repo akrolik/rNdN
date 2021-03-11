@@ -25,21 +25,21 @@ public:
 		B3   = 0x0000060000000000
 	};
 
-	enum class SourceType : std::uint64_t {
-		F32 = 0x0000000000000800,
-		F64 = 0x0000000000000c00
+	enum class DestinationType : std::uint64_t {
+		F32 = 0x0000000000000200,
+		F64 = 0x0000000000000300
 	};
 
-	enum class DestinationType : std::uint64_t {
-		S8  = 0x0000000000001000,
-		S16 = 0x0000000000001100,
-		S32 = 0x0000000000001200,
-		S64 = 0x0000000000001300,
+	enum class SourceType : std::uint64_t {
+		S8  = 0x0000000000002000,
+		S16 = 0x0000000000002400,
+		S32 = 0x0000000000002800,
+		S64 = 0x0000000000002c00,
 
 		U8  = 0x0000000000000000,
-		U16 = 0x0000000000000100,
-		U32 = 0x0000000000000200,
-		U64 = 0x0000000000000300
+		U16 = 0x0000000000000400,
+		U32 = 0x0000000000000800,
+		U64 = 0x0000000000000c00
 	};
 
 	enum class Round : std::uint64_t {
@@ -76,20 +76,20 @@ public:
 		std::string code;
 		switch (m_destinationType)
 		{
-			case DestinationType::S8: code += ".S8"; break;
-			case DestinationType::S16: code += ".S16"; break;
-			case DestinationType::S32: code += ".S32"; break;
-			case DestinationType::S64: code += ".S64"; break;
-
-			case DestinationType::U8: code += ".U8"; break;
-			case DestinationType::U16: code += ".U16"; break;
-			case DestinationType::U32: code += ".U32"; break;
-			case DestinationType::U64: code += ".U64"; break;
+			case DestinationType::F32: code += ".F32"; break;
+			case DestinationType::F64: code += ".F64"; break;
 		}
 		switch (m_sourceType)
 		{
-			case SourceType::F32: code += ".F32"; break;
-			case SourceType::F64: code += ".F64"; break;
+			case SourceType::S8: code += ".S8"; break;
+			case SourceType::S16: code += ".S16"; break;
+			case SourceType::S32: code += ".S32"; break;
+			case SourceType::S64: code += ".S64"; break;
+
+			case SourceType::U8: code += ".U8"; break;
+			case SourceType::U16: code += ".U16"; break;
+			case SourceType::U32: code += ".U32"; break;
+			case SourceType::U64: code += ".U64"; break;
 		}
 		switch (m_round)
 		{
