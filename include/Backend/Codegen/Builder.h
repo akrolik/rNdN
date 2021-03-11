@@ -53,6 +53,10 @@ public:
 
 	void AddRelocation(const SASS::Instruction *instruction, const std::string& name, SASS::Relocation::Kind kind);
 
+	// Indirect Branches
+
+	void AddIndirectBranch(const SASS::Instruction *instruction, const std::string& name);
+
 	// Constant Memory
 
 	template<class T>

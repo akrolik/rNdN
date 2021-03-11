@@ -131,6 +131,14 @@ public:
 	void AddRelocation(const std::string& name, std::size_t address, RelocationKind kind) { m_relocations.push_back({ name, address, kind }); }
 	void SetRelocations(const std::vector<std::tuple<std::string, std::size_t, RelocationKind>>& relocations) { m_relocations = relocations; }
 
+	// Indirect branches
+
+	const std::vector<std::pair<std::size_t, std::size_t>>& GetIndirectBranches() const { return m_indirectBranches; }
+	std::size_t GetIndirectBranchesCount() const { return m_indirectBranches.size(); }
+
+	void AddIndirectBranch(std::size_t offset, std::size_t target) { m_indirectBranches.push_back({ offset, target }); }
+	void SetIndirectBranches(const std::vector<std::pair<std::size_t, std::size_t>>& indirectBranches) { m_indirectBranches = indirectBranches; }
+
 	// Formatting
 
 	std::string ToString() const
@@ -242,6 +250,13 @@ public:
 			code += ".reloc " + name + " " + RelocationKindString(kind) + " (" + Utils::Format::HexString(address) + ")\n";
 		}
 
+		// Indirect branches
+
+		for (const auto& [offset, target] : m_indirectBranches)
+		{
+			code += ".branch " + Utils::Format::HexString(offset) + " -> " + Utils::Format::HexString(target) + ")\n";
+		}
+
 		// Print assembled program with address and binary format
 
 		auto first = true;
@@ -296,6 +311,7 @@ private:
 	std::vector<char> m_constantMemory;
 
 	std::vector<std::tuple<std::string, std::size_t, RelocationKind>> m_relocations;
+	std::vector<std::pair<std::size_t, std::size_t>> m_indirectBranches;
 };
 
 }

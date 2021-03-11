@@ -18,6 +18,7 @@ namespace SASS {
 
 #include "SASS/GlobalVariable.h"
 #include "SASS/Relocation.h"
+#include "SASS/IndirectBranch.h"
 
 // Instructions
 

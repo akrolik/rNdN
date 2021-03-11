@@ -470,6 +470,38 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			AppendBytes(functionInfoBuffer, {0, 0}); // Zero
 		}
 
+		if (auto count = function->GetIndirectBranchesCount(); count > 0)
+		{
+			// EIATTR_INDIRECT_BRANCH_TARGETS
+			//     Format: EIFMT_SVAL
+			// 
+			//     Offset of Indirect Branch: 0x48  Number of targets: 1
+			//     Targets: 0x70
+			//
+			//     /*0000*/        .byte   0x04, 0x34
+			//     /*0002*/        .short  (.L_2 - .L_1)
+			// .L_1:
+			//     /*0004*/        .word   .L_4@srel   (offset=0x48)
+			//     /*0008*/        .short  0x0         (?)
+			//     /*000a*/        .short  0x0         (?)
+			//     /*000c*/        .word   0x1         (target count=1)
+			//     /*0010*/        .word   .L_3@srel   (target=0x70)
+			// .L_2:
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_INDIRECT_BRANCH_TARGETS});
+			AppendBytes(functionInfoBuffer, DecomposeShort(count*(3*SZ_WORD+2*SZ_SHORT)));
+
+			for (const auto& [offset, target] : function->GetIndirectBranches())
+			{
+				AppendBytes(functionInfoBuffer, DecomposeWord(offset)); // Offset
+				AppendBytes(functionInfoBuffer, DecomposeShort(0));     // ?
+				AppendBytes(functionInfoBuffer, DecomposeShort(0));     // ?
+				AppendBytes(functionInfoBuffer, DecomposeWord(1));      // Target count
+				AppendBytes(functionInfoBuffer, DecomposeWord(target)); // Target
+			}
+		}
+
 		functionInfoSection->set_data(functionInfoBuffer.data(), functionInfoBuffer.size());
 
 		// Add constant data section:

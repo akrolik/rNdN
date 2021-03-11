@@ -244,6 +244,30 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		binaryFunction->AddRelocation(relocation->GetName(), address, kind);
 	}
 
+	// Build indirect branches, resolving the target of each SYNC instruction
+
+	for (const auto& indirectBranch : function->GetIndirectBranches())
+	{
+		// Compute offset of branch (SYNC) instruction
+
+		auto it = std::find(std::begin(linearProgram), std::end(linearProgram), indirectBranch->GetBranch());
+		auto offset = (it - linearProgram.begin())  * sizeof(std::uint64_t);
+
+		// Compute offset of target block
+
+		auto unpaddedIndex = blockIndex.at(indirectBranch->GetTarget());
+		auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+		if (paddedIndex % 4 == 1)
+		{
+			paddedIndex--; // Begin at previous SCHI instruction
+		}
+		auto target = paddedIndex * sizeof(std::uint64_t);
+
+		// Add indirect branch
+
+		binaryFunction->AddIndirectBranch(offset, target);
+	}
+
 	// Setup barriers
 
 	if (barriers > MAX_BARRIERS)

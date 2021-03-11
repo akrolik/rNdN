@@ -6,6 +6,7 @@
 #include "SASS/Node.h"
 #include "SASS/BasicBlock.h"
 #include "SASS/Relocation.h"
+#include "SASS/IndirectBranch.h"
 
 namespace SASS {
 
@@ -80,6 +81,17 @@ public:
 	void AddRelocation(Relocation *relocation) { m_relocations.push_back(relocation); }
 	void SetRelocations(const std::vector<Relocation *>& relocations) { m_relocations = relocations; }
 
+	// Indirect Branches
+
+	const std::vector<const IndirectBranch *> GetIndirectBranches() const
+	{
+		return { std::begin(m_indirectBranches), std::end(m_indirectBranches) };
+	}
+	std::vector<IndirectBranch *>& GetIndirectBranches() { return m_indirectBranches; }
+
+	void AddIndirectBranch(IndirectBranch *indirectBranch) { m_indirectBranches.push_back(indirectBranch); }
+	void SetIndirectBranches(const std::vector<IndirectBranch *>& indirectBranches) { m_indirectBranches = indirectBranches; }
+
 	// Formatting
 
 	std::string ToString() const override
@@ -115,7 +127,10 @@ public:
 		for (const auto& relocation : m_relocations)
 		{
 			code += relocation->ToString() + "\n";
-
+		}
+		for (const auto& indirectBranch : m_indirectBranches)
+		{
+			code += indirectBranch->ToString() + "\n";
 		}
 		code += ".text." + m_name + ":\n";
 		for (const auto& block : m_blocks)
@@ -140,6 +155,7 @@ private:
 	std::vector<char> m_constantMemory;
 
 	std::vector<Relocation *> m_relocations;
+	std::vector<IndirectBranch *> m_indirectBranches;
 };
 
 };

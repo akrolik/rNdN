@@ -88,5 +88,12 @@ void Builder::AddRelocation(const SASS::Instruction *instruction, const std::str
 	m_currentFunction->AddRelocation(new SASS::Relocation(instruction, name, kind));
 }
 
+// Indirect Branches
+
+void Builder::AddIndirectBranch(const SASS::Instruction *instruction, const std::string& name)
+{
+	m_currentFunction->AddIndirectBranch(new SASS::IndirectBranch(instruction, name));
+}
+
 }
 }
