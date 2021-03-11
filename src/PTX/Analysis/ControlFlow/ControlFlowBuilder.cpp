@@ -11,19 +11,8 @@ namespace Analysis {
 
 ControlFlowGraph *ControlFlowAccumulator::Analyze(FunctionDefinition<VoidType> *function)
 {
-	auto timeBuild_start = Utils::Chrono::Start("Control-flow builder '" + function->GetName() + "'");
-
 	m_graph = new ControlFlowGraph(function);
 	function->Accept(*this);
-
-	Utils::Chrono::End(timeBuild_start);
-
-	if (Utils::Options::IsBackend_PrintCFG())
-	{
-		Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
-		Utils::Logger::LogInfo(m_graph->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
-	}
-
 	return m_graph;
 }
 
@@ -168,13 +157,30 @@ bool ControlFlowAccumulator::VisitIn(LabelStatement *statement)
 
 ControlFlowGraph *ControlFlowBuilder::Analyze(FunctionDefinition<VoidType> *function)
 {
+	auto timeBuild_start = Utils::Chrono::Start("Control-flow builder '" + function->GetName() + "'");
+
+	// Accumulate statements into basic blocks
+
 	ControlFlowAccumulator accumulator;
 	m_graph = accumulator.Analyze(function);
+
+	// Add edges between blocks
 
 	m_labelMap = accumulator.GetLabelMap();
 	m_statementMap = accumulator.GetStatementMap();
 
 	function->Accept(*this);
+
+	Utils::Chrono::End(timeBuild_start);
+
+	// Debug printing
+
+	if (Utils::Options::IsBackend_PrintCFG())
+	{
+		Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
+		Utils::Logger::LogInfo(m_graph->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
+	}
+
 	return m_graph;
 }
 
