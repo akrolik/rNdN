@@ -83,55 +83,93 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 	structure->GetBlock()->Accept(*this);
 	auto branchBlock = m_endBlock;
 
+	auto ssyInstruction = new SASS::SSYInstruction("");
+	branchBlock->AddInstruction(ssyInstruction);
+
+	auto syncInstruction1 = new SASS::SYNCInstruction();
+	auto syncInstruction2 = new SASS::SYNCInstruction();
+
 	// Generate the condition to predicate threads
 
 	PredicateGenerator predicateGenerator(m_builder);
 	auto [predicate, negate] = predicateGenerator.Generate(structure->GetPredicate()); 
 
-	SASS::PredicatedInstruction *branchInstruction = nullptr;
-
 	if (auto trueStructure = structure->GetTrueBranch())
 	{
+		SASS::BRAInstruction *branchInstruction = nullptr;
+
 		if (auto falseStructure = structure->GetFalseBranch())
 		{
+			// If-Else pattern
+			// 
+			//     SSY L2
+			//  @P BRA L1
+			//     <False>
+			//     SYNC
+			// L1:
+			//     <True>
+			//     SYNC
+			// L2:
+
+			// Branch true threads
+
+			branchInstruction = new SASS::BRAInstruction("");
+			branchInstruction->SetPredicate(predicate, negate);
+
 			// Generate false structure
 
 			falseStructure->Accept(*this);
 
 			// Sync false threads
 
-			m_endBlock->AddInstruction(new SASS::SYNCInstruction());
+			m_endBlock->AddInstruction(syncInstruction1);
 		}
 		else
 		{
+			// Only true branch pattern
+			// 
+			//     SSY L1
+			// @!P SYNC
+			//     <True>
+			//     SYNC
+			// L1:
+
 			// Sync false threads
 
-			branchInstruction = new SASS::SYNCInstruction();
-			branchInstruction->SetPredicate(predicate, !negate);
+			syncInstruction1->SetPredicate(predicate, !negate);
+			branchBlock->AddInstruction(syncInstruction1);
 		}
 
 		// Generate true structure
 
 		trueStructure->Accept(*this);
+		auto trueBlock = m_beginBlock;
 
 		// Sync true threads
 
-		m_endBlock->AddInstruction(new SASS::SYNCInstruction());
+		m_endBlock->AddInstruction(syncInstruction2);
 
-		if (auto falseStructure = structure->GetFalseBranch())
+		// Patch true branch
+
+		if (branchInstruction != nullptr)
 		{
-			// Branch true threads
-
-			branchInstruction = new SASS::BRAInstruction(m_beginBlock->GetName());
-			branchInstruction->SetPredicate(predicate, negate);
+			branchInstruction->SetTarget(trueBlock->GetName());
 		}
 	}
 	else if (auto falseStructure = structure->GetFalseBranch())
 	{
+		// Only false branch pattern
+		// 
+		//     SSY L1
+		//  @P SYNC
+		//     <False>
+		//     SYNC
+		// L1:
+
 		// Sync true threads
 
-		branchInstruction = new SASS::SYNCInstruction();
-		branchInstruction->SetPredicate(predicate, negate);
+		syncInstruction1->SetPredicate(predicate, negate);
+		branchBlock->AddInstruction(syncInstruction1);
 
 		// Generate false structure
 
@@ -139,26 +177,97 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 
 		// Sync false threads
 
-		m_endBlock->AddInstruction(new SASS::SYNCInstruction());
+		m_endBlock->AddInstruction(syncInstruction2);
 	}
 
 	// Process next structure
 
 	PTX::Analysis::ConstStructuredGraphVisitor::Visit(structure);
-	branchBlock->AddInstruction(new SASS::SSYInstruction(m_beginBlock->GetName()));
-	branchBlock->AddInstruction(branchInstruction);
+
+	// Patch SSY reconvergence point
+
+	const auto& reconvergencePoint = m_beginBlock->GetName();
+
+	ssyInstruction->SetTarget(reconvergencePoint);
+	m_builder.AddIndirectBranch(syncInstruction1, reconvergencePoint);
+	m_builder.AddIndirectBranch(syncInstruction2, reconvergencePoint);
 
 	m_beginBlock = branchBlock;
 }
 
 void CodeGenerator::Visit(const PTX::Analysis::ExitStructure *structure)
 {
-	//TODO: Codegen exit structure
+	// Exit pattern
+	//
+	//     <Block>
+	//  @P SYNC
+	//     <Next>
+
+	structure->GetBlock()->Accept(*this);
+	auto block = m_endBlock;
+
+	// Generate the condition to predicate threads
+
+	auto [structurePredicate, structureNegate] = structure->GetPredicate();
+
+	PredicateGenerator predicateGenerator(m_builder);
+	auto [predicate, negate] = predicateGenerator.Generate(structurePredicate); 
+
+	// Predicate threads for exit
+
+	auto syncInstruction = new SASS::SYNCInstruction();
+	syncInstruction->SetPredicate(predicate, negate ^ structureNegate);
+
+	m_loopExits.push_back(syncInstruction);
+	m_endBlock->AddInstruction(syncInstruction);
+
+	// Process next structure
+
+	PTX::Analysis::ConstStructuredGraphVisitor::Visit(structure);
+
+	m_beginBlock = block;
 }
 
 void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 {
-	//TODO: Codegen loop structure
+	// Loop pattern
+	//
+	//     SSY L2
+	// L1:
+	//     <Body>
+	//     BRA L1
+	// L2: 
+	//     <Next>
+
+	auto ssyInstruction = new SASS::SSYInstruction("");
+	m_endBlock->AddInstruction(ssyInstruction);
+
+	// Process loop body
+
+	auto oldExits = m_loopExits;
+
+	structure->GetBody()->Accept(*this);
+	m_endBlock->AddInstruction(new SASS::BRAInstruction(m_beginBlock->GetName()));
+
+	auto headerBlock = m_beginBlock;
+	auto loopExits = m_loopExits;
+	m_loopExits = oldExits;
+
+	// Process next structure
+
+	PTX::Analysis::ConstStructuredGraphVisitor::Visit(structure);
+
+	// Patch header instruction and loop exit branches
+
+	auto reconvergencePoint = m_beginBlock->GetName();
+	ssyInstruction->SetTarget(reconvergencePoint);
+
+	for (auto loopExit : loopExits)
+	{
+		m_builder.AddIndirectBranch(loopExit, reconvergencePoint);
+	}
+
+	m_beginBlock = headerBlock;
 }
 
 void CodeGenerator::Visit(const PTX::Analysis::SequenceStructure *structure)

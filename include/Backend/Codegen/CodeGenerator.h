@@ -59,6 +59,8 @@ private:
 
 	SASS::BasicBlock *m_beginBlock = nullptr;
 	SASS::BasicBlock *m_endBlock = nullptr;
+
+	std::vector<SASS::Instruction *> m_loopExits;
 };
 
 }

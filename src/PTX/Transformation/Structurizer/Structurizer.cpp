@@ -35,6 +35,86 @@ Analysis::StructureNode *Structurizer::Structurize(const FunctionDefinition<Void
 	return structure;
 }
 
+std::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const
+{
+	std::unordered_set<const BasicBlock *> loopBlocks;
+
+	// DFS structure
+
+	std::stack<BasicBlock *> stack;
+	std::unordered_set<BasicBlock *> visited;
+
+	// Initialize with the latch node, header already visited (to terminate)
+
+	stack.push(latch);
+
+	visited.insert(header);
+	loopBlocks.insert(header);
+
+	while (!stack.empty())
+	{
+		auto node = stack.top();
+		stack.pop();
+
+		if (visited.find(node) == visited.end())
+		{
+			// All visited nodes are in the loop
+
+			loopBlocks.insert(node);
+
+			// Traverse CFG backwards
+
+			visited.insert(node);
+			for (auto predecessor : cfg->GetPredecessors(node))
+			{
+				stack.push(predecessor);
+			}
+		}
+	}
+
+	return loopBlocks;
+}
+
+BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const std::unordered_set<const BasicBlock *>& loopBlocks) const
+{
+	auto postDominators = m_postDominators.GetPostDominators(header);
+	for (auto loopBlock : loopBlocks)
+	{
+		postDominators.erase(loopBlock);
+	}
+
+	// The immediate post-dominator in the set is the exit block
+
+	for (const auto node1 : postDominators)
+	{
+		// Check that this node dominates all other strict dominators
+
+		auto dominatesAll = true;
+		for (const auto node2 : postDominators)
+		{
+			const auto strictDominators2 = m_postDominators.GetStrictPostDominators(node2);
+			if (strictDominators2.find(node1) != strictDominators2.end())
+			{
+				dominatesAll = false;
+				break;
+			}
+		}
+
+		// If all nodes dominated, this is our strict dominator
+
+		if (dominatesAll)
+		{
+			return const_cast<BasicBlock *>(node1);
+		}
+	}
+	return nullptr;
+}
+
+[[noreturn]] void Structurizer::Error(const std::string& message, const BasicBlock *block)
+{
+	Utils::Logger::LogError("Unsuported control-flow: " + message + " '" + block->GetLabel()->GetName() + "'");
+}
+
 Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGraph *cfg, BasicBlock *block, bool skipLoop)
 {
 	// Base case
@@ -44,33 +124,55 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 		return nullptr;
 	}
 
+	// Process loop context
+
+	if (!skipLoop)
+	{
+		auto foundLoop = false;
+
+		// Check each incoming edge for back-edges
+
+		for (const auto& predecessor : cfg->GetPredecessors(block))
+		{
+			const auto& dominators = m_dominators.GetDominators(predecessor);
+			if (dominators.find(block) != dominators.end())
+			{
+				// Only support a single back-edge
+
+				if (foundLoop)
+				{
+					Error("multiple back-edges", block);
+				}
+				foundLoop = true;
+
+				// Construct loop structure
+
+				auto header = block;
+				auto latch = predecessor;
+				auto loopBlocks = GetLoopBlocks(cfg, header, latch);
+				auto exit = GetLoopExit(header, loopBlocks);
+
+				// Recursively structurize the loop body
+
+				m_reconvergenceStack.push(new LoopContext(header, latch, exit, loopBlocks));
+				auto bodyStructure = Structurize(cfg, header, true);
+				m_reconvergenceStack.pop();
+
+				// Process the post dominator structure
+
+				auto nextStructure = Structurize(cfg, exit);
+				return new Analysis::LoopStructure(bodyStructure, nextStructure);
+			}
+		}
+	}
+
 	// Check for duplicated blocks caused by shared reconvergence point
 
 	if (m_processedNodes.find(block) != m_processedNodes.end())
 	{
-		Utils::Logger::LogError("Unsuported control-flow: unstructured");
+		Error("unstructured duplicate", block);
 	}
 	m_processedNodes.insert(block);
-
-	// Process loop context
-
-	//TODO: Loop structure
-	// if !skip_loop && has_incoming_back_edge(block) == 1:
-	if (!skipLoop)
-	{
-		Utils::Logger::LogError("Unsupported control-flow: loop");
-
-		// loop_blocks = get_loop_blocks(block)
-		// exit = get_immed_pdom(loop_blocks)
-		// latch = get_back_edge(block)
-
-		// reconvergence_stack.push(new LoopContext(block, exit, latch))
-		// body_struct = Structurize(block, true)
-		// reconvergence_stack.pop()
-
-		// exit_struct = Structurize(exit)
-		// return new Loop(body_struct, exit_struct)
-	}
 
 	// Get the next (IPDOM) structured block
 
@@ -122,7 +224,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 		}
 		else
 		{
-			Utils::Logger::LogError("Unsupported control-flow: condition missing");
+			Error("condition missing", block);
 		}
 
 		// If without else
@@ -147,42 +249,41 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 			if (block == loopContext->GetLatch())
 			{
-				if (trueBranch == exit && falseBranch == header)
+				if (trueBranch == nullptr && falseBranch == header)
 				{
-					return new Analysis::ExitStructure(block, condition, nullptr);
+					return new Analysis::ExitStructure(block, condition, false, nullptr);
 				}
-				else if (trueBranch == header && falseBranch == exit)
+				else if (trueBranch == header && falseBranch == nullptr)
 				{
-					return new Analysis::ExitStructure(block, condition, nullptr);
+					return new Analysis::ExitStructure(block, condition, true, nullptr);
 				}
-				Utils::Logger::LogError("Unsupported control-flow: unstructured");
+				Error("unstructured latch", block);
 			}
 			else
 			{
 				// Break special cases
 
-				//TODO: Check that other branch is within the loop
-				if (trueBranch == exit)
+				if (trueBranch == nullptr && loopContext->ContainsBlock(falseBranch))
 				{
 					auto falseStructure = Structurize(cfg, falseBranch);
-					return new Analysis::ExitStructure(block, condition, falseStructure);
+					return new Analysis::ExitStructure(block, condition, false, falseStructure);
 				}
-				else if (falseBranch == exit)
+				else if (falseBranch == nullptr && loopContext->ContainsBlock(trueBranch))
 				{
 					auto trueStructure = Structurize(cfg, trueBranch);
-					return new Analysis::ExitStructure(block, condition, trueStructure);
+					return new Analysis::ExitStructure(block, condition, true, trueStructure);
 				}
 				else if (postDominator == header)
 				{
 					// Do not support continue
 
-					Utils::Logger::LogError("Unsupported control-flow: continue");
+					Error("unstructured continue", block);
 				}
 				else if (postDominator == exit)
 				{
 					// Other breaks (usually those with blocks to execute)
 
-					Utils::Logger::LogError("Unsupported control-flow: unstructured break");
+					Error("unstructured break", block);
 				}
 
 				// Otherwise, this is a standard if-else (well-nested)
@@ -196,7 +297,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 			const auto trueDominators = m_dominators.GetDominators(trueBranch);
 			if (trueDominators.find(block) == trueDominators.end())
 			{
-				Utils::Logger::LogError("Unsupported control-flow: unstructured");
+				Error("unstructured true branch", block);
 			}
 		}
 
@@ -205,7 +306,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 			const auto falseDominators = m_dominators.GetDominators(falseBranch);
 			if (falseDominators.find(block) == falseDominators.end())
 			{
-				Utils::Logger::LogError("Unsupported control-flow: unstructured");
+				Error("unstructured false branch", block);
 			}
 		}
 

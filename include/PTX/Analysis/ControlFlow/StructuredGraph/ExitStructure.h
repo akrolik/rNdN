@@ -13,8 +13,8 @@ namespace Analysis {
 class ExitStructure : public StructureNode
 {
 public:
-	ExitStructure(const BasicBlock *block, const Register<PredicateType> *predicate, StructureNode *next)
-		: StructureNode(next), m_block(block), m_predicate(predicate) {}
+	ExitStructure(const BasicBlock *block, const Register<PredicateType> *predicate, bool negate, StructureNode *next)
+		: StructureNode(next), m_block(block), m_predicate(predicate), m_negate(negate) {}
 
 	// Basic block
 
@@ -23,8 +23,12 @@ public:
 	
 	// Branch predicate
 
-	const Register<PredicateType> *GetPredicate() const { return m_predicate; }
-	void SetPredicate(const Register<PredicateType> *predicate) { m_predicate = predicate; }
+	std::pair<const Register<PredicateType> *, bool> GetPredicate() const { return { m_predicate, m_negate }; }
+	void SetPredicate(const Register<PredicateType> *predicate, bool negate)
+	{
+		m_predicate = predicate;
+		m_negate = negate;
+	}
 
 	// Visitor
 
@@ -34,6 +38,7 @@ public:
 private:
 	const BasicBlock *m_block = nullptr;
 	const Register<PredicateType> *m_predicate = nullptr;
+	bool m_negate = false;
 };
 
 }
