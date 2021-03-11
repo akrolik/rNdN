@@ -219,8 +219,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	for (const auto& relocation : function->GetRelocations())
 	{
 		auto it = std::find(std::begin(linearProgram), std::end(linearProgram), relocation->GetInstruction());
-		auto index = it - linearProgram.begin();
-		auto address = index * sizeof(std::uint64_t);
+		auto address = (it - linearProgram.begin()) * sizeof(std::uint64_t);
 
 		BinaryFunction::RelocationKind kind;
 		switch (relocation->GetKind())

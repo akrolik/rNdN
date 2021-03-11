@@ -348,7 +348,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_MAXREG_COUNT});
 		AppendBytes(functionInfoBuffer, DecomposeShort(255)); // Value
 
-		if (function->GetS2RCTAIDOffsetsCount() > 0)
+		if (auto count = function->GetS2RCTAIDOffsetsCount(); count > 0)
 		{
 			// EIATTR_S2RCTAID_INSTR_OFFSETS
 			//     Format: EIFMT_SVAL
@@ -362,7 +362,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
 			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_S2RCTAID_INSTR_OFFSETS});
-			AppendBytes(functionInfoBuffer, DecomposeShort(function->GetS2RCTAIDOffsetsCount() * SZ_WORD)); // Size
+			AppendBytes(functionInfoBuffer, DecomposeShort(count * SZ_WORD)); // Size
 
 			for (const auto& ctaOffset : function->GetS2RCTAIDOffsets())
 			{
@@ -370,7 +370,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			}
 		}
 
-		if (function->GetExitOffsetsCount() > 0)
+		if (auto count = function->GetExitOffsetsCount(); count > 0)
 		{
 			// EIATTR_EXIT_INSTR_OFFSETS
 			//     Format: EIFMT_SVAL
@@ -384,7 +384,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
 			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_EXIT_INSTR_OFFSETS});
-			AppendBytes(functionInfoBuffer, DecomposeShort(function->GetExitOffsetsCount() * SZ_WORD)); // Size
+			AppendBytes(functionInfoBuffer, DecomposeShort(count * SZ_WORD)); // Size
 
 			for (const auto& exitOffset : function->GetExitOffsets())
 			{
@@ -392,7 +392,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			}
 		}
 
-		if (function->GetCoopOffsetsCount() > 0)
+		if (auto count = function->GetCoopOffsetsCount(); count > 0)
 		{
 			// EIATTR_COOP_GROUP_INSTR_OFFSETS
 			//     Format: EIFMT_SVAL
@@ -406,7 +406,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
 			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_COOP_GROUP_INSTR_OFFSETS});
-			AppendBytes(functionInfoBuffer, DecomposeShort(function->GetCoopOffsetsCount() * SZ_WORD)); // Size
+			AppendBytes(functionInfoBuffer, DecomposeShort(count * SZ_WORD)); // Size
 
 			for (const auto& coopOffset : function->GetCoopOffsets())
 			{
