@@ -361,7 +361,7 @@ public:
 				invocation.SetDynamicSharedMemorySize(0);
 				invocation.Launch();
 			}
-			else if (IsAllocatedOnGPU())
+			else if (IsAllocatedOnCPU())
 			{
 				auto data = GetCPUWriteBuffer();
 				for (auto i = 0u; i < m_elementCount; ++i)
