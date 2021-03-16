@@ -66,32 +66,40 @@ public:
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(uniquePredicate, new PTX::BoolValue(true)));
 		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(loopIndex, index, new PTX::UInt32Value(1)));
 
-		auto startLabel = this->m_builder.CreateLabel("START");
-		auto endLabel = this->m_builder.CreateLabel("END");
+		this->m_builder.AddIfStatement("UNIQUE_SKIP", [&]()
+		{
+			auto initPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				initPredicate, loopIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+			));
+			return std::make_tuple(initPredicate, false);
+		},
+		[&]()
+		{
+			OperandGenerator<B, T> operandGenerator(this->m_builder);
+			operandGenerator.SetBoundsCheck(false);
+			auto data = operandGenerator.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector);
 
-		auto initPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(initPredicate, loopIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, initPredicate));
+			this->m_builder.AddDoWhileLoop("UNIQUE", [&](Builder::LoopContext& loopContext)
+			{
+				auto nextData = operandGenerator.GenerateOperand(dataArgument, loopIndex, this->m_builder.UniqueIdentifier("unique"));
 
-		OperandGenerator<B, T> operandGenerator(this->m_builder);
-		operandGenerator.SetBoundsCheck(false);
-		auto data = operandGenerator.GenerateOperand(dataArgument, OperandGenerator<B, T>::LoadKind::Vector);
+				auto comparisonPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, ComparisonOperation::NotEqual);
+				comparisonGenerator.Generate(comparisonPredicate, data, nextData);
 
-		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
+				this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(uniquePredicate, uniquePredicate, comparisonPredicate));
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(loopIndex, loopIndex, new PTX::UInt32Value(1)));
 
-		auto nextData = operandGenerator.GenerateOperand(dataArgument, loopIndex, this->m_builder.UniqueIdentifier("unique"));
+				// Loop predicate
 
-		auto comparisonPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		ComparisonGenerator<B, PTX::PredicateType> comparisonGenerator(this->m_builder, ComparisonOperation::NotEqual);
-		comparisonGenerator.Generate(comparisonPredicate, data, nextData);
-
-		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(uniquePredicate, uniquePredicate, comparisonPredicate));
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(loopIndex, loopIndex, new PTX::UInt32Value(1)));
-
-		auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(endPredicate, loopIndex, size, PTX::UInt32Type::ComparisonOperator::Less));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, endPredicate));
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+				auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					endPredicate, loopIndex, size, PTX::UInt32Type::ComparisonOperator::Less
+				));
+				return std::make_tuple(endPredicate, false);
+			});
+		});
 
 		// Predicate the output using the unique predicate
 

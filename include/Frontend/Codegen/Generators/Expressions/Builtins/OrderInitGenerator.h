@@ -222,37 +222,37 @@ public:
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(arguments.at(0));
 
-		// Generate the if-else structure
-
-		auto elseLabel = this->m_builder.CreateLabel("ELSE");
-		auto endLabel = this->m_builder.CreateLabel("END");
-		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(elseLabel, predicate));
-
 		// Decompose the arguments into data and order
 
 		const auto& dataArgument = arguments.at(0);
 		const auto& orderArgument = arguments.at(1);
 
-		auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(orderArgument);
+		// Generate the if-else structure
 
-		// True branch (index < size), load the values into the target registers, skipping the index target
+		this->m_builder.AddIfElseStatement("ORDER_INIT", [&]()
+		{
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				predicate, index, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+			));
+			return std::make_tuple(predicate, false);
+		},
+		[&]()
+		{
+			// True branch (index < size), load the values into the target registers, skipping the index target
 
-		OrderInitValueGenerator<B> valueGenerator(this->m_builder);
-		valueGenerator.Generate(targets.at(1), dataArgument);
+			OrderInitValueGenerator<B> valueGenerator(this->m_builder);
+			valueGenerator.Generate(targets.at(1), dataArgument);
+		},
+		[&]()
+		{
+			// Else branch (index >= size), load the min/max values depending on sort
 
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
+			auto orderLiteral = HorseIR::LiteralUtils<std::int8_t>::GetLiteral(orderArgument);
 
-		// Else branch (index >= size), load the min/max values depending on sort
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(elseLabel));
-
-		OrderInitNullGenerator<B> nullGenerator(this->m_builder);
-		nullGenerator.Generate(targets.at(1), dataArgument, orderLiteral);
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+			OrderInitNullGenerator<B> nullGenerator(this->m_builder);
+			nullGenerator.Generate(targets.at(1), dataArgument, orderLiteral);
+		});
 	}
 };
 

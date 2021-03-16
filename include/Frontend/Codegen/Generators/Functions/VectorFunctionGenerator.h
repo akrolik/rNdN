@@ -75,36 +75,38 @@ public:
 			ThreadIndexGenerator<B> indexGenerator(this->m_builder);
 			auto localIndex = indexGenerator.GenerateLocalIndex();
 
-			auto local0Predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				local0Predicate, localIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
-			));
+			this->m_builder.AddIfStatement("BLOCK_INDEX", [&]()
+			{
+				auto local0Predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					local0Predicate, localIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+				));
+				return std::make_tuple(local0Predicate, false);
+			},
+			[&]()
+			{
+				// Atomically increment the global block index
 
-			auto blockIndexLabel = this->m_builder.CreateLabel("BLOCK_INDEX");
-			this->m_builder.AddStatement(new PTX::BranchInstruction(blockIndexLabel, local0Predicate));
+				AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
+				auto g_initBlocksAddress = addressGenerator.GenerateAddress(g_initBlocks);
 
-			// Atomically increment the global block index
+				auto blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(
+					blockIndex, g_initBlocksAddress, new PTX::UInt32Value(1), PTX::UInt32Type::AtomicOperation::Add
+				));
 
-			AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
-			auto g_initBlocksAddress = addressGenerator.GenerateAddress(g_initBlocks);
+				// Compute the block index, keeping it within range (the kernel may be executed multiple times)
 
-			auto blockIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(
-				blockIndex, g_initBlocksAddress, new PTX::UInt32Value(1), PTX::UInt32Type::AtomicOperation::Add
-			));
+				SpecialRegisterGenerator specialGenerator(this->m_builder);
+				auto nctaidx = specialGenerator.GenerateBlockCount();
 
-			// Compute the block index, keeping it within range (the kernel may be executed multiple times)
+				this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(blockIndex, blockIndex, nctaidx));
 
-			SpecialRegisterGenerator specialGenerator(this->m_builder);
-			auto nctaidx = specialGenerator.GenerateBlockCount();
+				// Store the unique block index for the entire block in shared member
 
-			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(blockIndex, blockIndex, nctaidx));
-
-			// Store the unique block index for the entire block in shared member
-
-			auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(s_blockIndexAddress, blockIndex));
-			this->m_builder.AddStatement(new PTX::LabelStatement(blockIndexLabel));
+				auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(s_blockIndexAddress, blockIndex));
+			});
 
 			// Synchronize the block index across all threads in the block
 			

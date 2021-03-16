@@ -249,23 +249,26 @@ public:
 		// Check if we are the first lane in the warp
 
 		auto predWarp = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto labelWarp = this->m_builder.CreateLabel("RED_WARP");
+		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+			predWarp, laneIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+		));
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predWarp, laneIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(labelWarp, predWarp));
-
-		// Store the value in shared memory
+		// Store address
 
 		auto warpIndex = indexGenerator.GenerateWarpIndex();
-
 		AddressGenerator<B, T> addressGenerator(this->m_builder);
 		auto sharedWarpAddress = addressGenerator.GenerateAddress(sharedMemory, warpIndex);
 
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedWarpAddress, target));
+		this->m_builder.AddIfStatement("RED_WARP", [&]()
+		{
+			return std::make_tuple(predWarp, false);
+		},
+		[&]()
+		{
+			// Store the value in shared memory
 
-		// End the if statement
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(labelWarp));
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedWarpAddress, target));
+		});
 
 		// Synchronize all values in shared memory from across warps
 
@@ -280,37 +283,42 @@ public:
 		auto cellWarp = resources->template AllocateTemporary<PTX::UInt32Type>();
 		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(cellWarp, warpid, new PTX::UInt32Value(cellWarps)));
 
-		auto predBlock = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto labelBlock = this->m_builder.CreateLabel("RED_BLOCK");
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predBlock, cellWarp, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(labelBlock, predBlock));
-
-		// Load the values back from the shared memory into the individual threads
-
-		auto sharedLaneAddress = addressGenerator.template GenerateAddress<PTX::SharedSpace>(sharedMemory, laneIndex);
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedLaneAddress));
-
-		ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
-		auto warpCount = geometryGenerator.GenerateWarpCount();
-
-		auto predActive = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predActive, laneIndex, warpCount, PTX::UInt32Type::ComparisonOperator::Less));
-		this->m_builder.AddStatement(new PTX::SelectInstruction<T>(target, target, GenerateNullValue(m_reductionOp), predActive));
-
-		// Reduce the individual values from all warps into 1 final value for the block.
-		// To handle multiple cells per block, only reduce in segments (# warps per cell)
-
-		GenerateShuffleReduction(target, cellWarps);
-
-		if (inputOptions.IsListGeometry())
+		this->m_builder.AddIfStatement("RED_BLOCK", [&]()
 		{
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedLaneAddress, target));
-		}
+			auto predBlock = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				predBlock, cellWarp, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+			));
+			return std::make_tuple(predBlock, false);
+		},
+		[&]()
+		{
+			// Load the values back from the shared memory into the individual threads
 
-		// End the if statement
+			AddressGenerator<B, T> addressGenerator(this->m_builder);
+			auto sharedLaneAddress = addressGenerator.template GenerateAddress<PTX::SharedSpace>(sharedMemory, laneIndex);
 
-		this->m_builder.AddStatement(new PTX::LabelStatement(labelBlock));
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace, PTX::LoadSynchronization::Volatile>(target, sharedLaneAddress));
+
+			ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+			auto warpCount = geometryGenerator.GenerateWarpCount();
+
+			auto predActive = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				predActive, laneIndex, warpCount, PTX::UInt32Type::ComparisonOperator::Less
+			));
+			this->m_builder.AddStatement(new PTX::SelectInstruction<T>(target, target, GenerateNullValue(m_reductionOp), predActive));
+
+			// Reduce the individual values from all warps into 1 final value for the block.
+			// To handle multiple cells per block, only reduce in segments (# warps per cell)
+
+			GenerateShuffleReduction(target, cellWarps);
+
+			if (inputOptions.IsListGeometry())
+			{
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace, PTX::StoreSynchronization::Volatile>(sharedLaneAddress, target));
+			}
+		});
 
 		if (inputOptions.IsListGeometry())
 		{
@@ -383,32 +391,38 @@ public:
 		{
 			// At each level, half the threads become inactive
 
-			auto pred = resources->template AllocateTemporary<PTX::PredicateType>();
-			auto guard = new PTX::UInt32Value(i - 1);
-
 			auto name = (i <= warpSize) ? "RED_STORE" : "RED_" + std::to_string(i);
-			auto label = this->m_builder.CreateLabel(name);
 
 			// Check to see if we are an active thread
 
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(pred, activeIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(label, pred));
-
-			if (i <= warpSize)
+			this->m_builder.AddIfStatement(name, [&]()
 			{
-				// Once the active thread count fits within a warp, reduce without synchronization
+				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				auto guard = new PTX::UInt32Value(i - 1);
 
-				for (unsigned int j = i; j >= 1; j >>= 1)
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					predicate, activeIndex, guard, PTX::UInt32Type::ComparisonOperator::Higher
+				));
+				
+				return std::make_tuple(predicate, false);
+			},
+			[&]()
+			{
+				if (i <= warpSize)
 				{
-					GenerateSharedReduction(target, sharedThreadAddress, j);
-				}
-			}
-			else
-			{
-				GenerateSharedReduction(target, sharedThreadAddress, i);
-			}
+					// Once the active thread count fits within a warp, reduce without synchronization
 
-			this->m_builder.AddStatement(new PTX::LabelStatement(label));
+					for (unsigned int j = i; j >= 1; j >>= 1)
+					{
+						GenerateSharedReduction(target, sharedThreadAddress, j);
+					}
+				}
+				else
+				{
+					GenerateSharedReduction(target, sharedThreadAddress, i);
+				}
+			});
+
 			if (i > warpSize)
 			{
 				// If we still have >1 warps running, synchronize the group since they may not be in lock-step

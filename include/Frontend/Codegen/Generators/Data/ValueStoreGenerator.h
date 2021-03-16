@@ -266,24 +266,25 @@ private:
 	template<class T>
 	void GenerateWriteReduction(RegisterReductionOperation reductionOp, PTX::TypedOperand<PTX::UInt32Type> *activeIndex, PTX::Register<T> *value, PTX::TypedOperand<PTX::UInt32Type> *writeIndex, unsigned int returnIndex)
 	{
-		// At the end of the partial reduction we only have a single active thread. Use it to store the final value
-
 		auto resources = this->m_builder.GetLocalResources();
 
-		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
+		// At the end of the partial reduction we only have a single active thread. Use it to store the final value
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, activeIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate));
+		this->m_builder.AddIfStatement("RET_" + std::to_string(returnIndex), [&]()
+		{
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				predicate, activeIndex, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+			));
+			return std::make_tuple(predicate, false);
+		},
+		[&]()
+		{
+			// Get the address of the write location depending on the indexing kind and the reduction operation
 
-		// Get the address of the write location depending on the indexing kind and the reduction operation
-
-		auto address = GenerateAddress<T>(returnIndex, writeIndex);
-		GenerateWriteReduction(reductionOp, address, value, returnIndex);
-
-		// End the function and return
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(label));
+			auto address = GenerateAddress<T>(returnIndex, writeIndex);
+			GenerateWriteReduction(reductionOp, address, value, returnIndex);
+		});
 	}
 
 	template<class T>
@@ -478,17 +479,21 @@ private:
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
 
-		auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
-		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddIfStatement("RET_" + std::to_string(returnIndex), [&]()
+		{
+			auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				sizePredicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+			));
+			return std::make_tuple(sizePredicate, false);
+		},
+		[&]()
+		{
+			// Store the value into global space
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(label, sizePredicate));
-
-		// Store the value into global space
-
-		auto address = GenerateAddress<T>(returnIndex, writeIndex);
-		this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-		this->m_builder.AddStatement(new PTX::LabelStatement(label));
+			auto address = GenerateAddress<T>(returnIndex, writeIndex);
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+		});
 	}
 
 	template<class T>
@@ -505,7 +510,6 @@ private:
 			// Before generating compressed output, see if the write is indexed - if so, no compressed necessary
 
 			auto writeIndex = resources->template GetIndexedRegister<T>(value);
-
 			if (writeIndex == nullptr)
 			{
 				// Generate the in-order global prefix sum!
@@ -535,14 +539,17 @@ private:
 
 			// Check for compression - this will mask outputs
 
-			auto label = this->m_builder.CreateLabel("RET_" + std::to_string(returnIndex));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate, true));
+			this->m_builder.AddIfStatement("RET_" + std::to_string(returnIndex), [&]()
+			{
+				return std::make_tuple(predicate, true);
+			},
+			[&]()
+			{
+				// Store the value at the place specified by the prefix sum
 
-			// Store the value at the place specified by the prefix sum
-
-			auto address = GenerateAddress<T>(returnIndex, writeIndex);
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-			this->m_builder.AddStatement(new PTX::LabelStatement(label));
+				auto address = GenerateAddress<T>(returnIndex, writeIndex);
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+			});
 		}
 		else
 		{

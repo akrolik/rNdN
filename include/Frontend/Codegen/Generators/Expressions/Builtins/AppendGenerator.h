@@ -50,21 +50,22 @@ public:
 		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateGlobalIndex();
 
-		auto offsetLabel = this->m_builder.CreateLabel("OFFSET");
-		auto offsetPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddIfStatement("OFFSET", [&]()
+		{
+			auto offsetPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				offsetPredicate, index, size0, PTX::UInt32Type::ComparisonOperator::Less
+			));
+			return std::make_tuple(offsetPredicate, false);
+		},
+		[&]()
+		{
+			auto indexOffset = resources->template AllocateTemporary<PTX::UInt32Type>();
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexOffset, index, size0));
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-			offsetPredicate, index, size0, PTX::UInt32Type::ComparisonOperator::Less
-		));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(offsetLabel, offsetPredicate));
-
-		auto indexOffset = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(indexOffset, index, size0));
-
-		auto data1 = opGen.GenerateOperand(arguments.at(1), indexOffset, this->m_builder.UniqueIdentifier("append"));
-		moveGenerator.Generate(targetRegister, data1);
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(offsetLabel));
+			auto data1 = opGen.GenerateOperand(arguments.at(1), indexOffset, this->m_builder.UniqueIdentifier("append"));
+			moveGenerator.Generate(targetRegister, data1);
+		});
 
 		return targetRegister;
 	}

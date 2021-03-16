@@ -319,53 +319,51 @@ public:
 		this->m_builder.AddStatement(new PTX::DivideInstruction<PTX::Int32Type>(days, src, new PTX::Int32Value(Utils::Date::SECONDS_PER_DAY)));
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int16Type>(year, new PTX::Int16Value(Utils::Date::UNIX_BASE_YEAR)));
 
-		auto startLabel = this->m_builder.CreateLabel("START");
-		auto endLabel = this->m_builder.CreateLabel("END");
-		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
-
-		auto leapPredicate_4 = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto leapPredicate_100 = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto leapPredicate_400 = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		auto rem_4 = resources->template AllocateTemporary<PTX::Int16Type>();
-		auto rem_100 = resources->template AllocateTemporary<PTX::Int16Type>();
-		auto rem_400 = resources->template AllocateTemporary<PTX::Int16Type>();
-
-		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(rem_4, year, new PTX::Int16Value(4)));
-		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(rem_100, year, new PTX::Int16Value(100)));
-		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(rem_400, year, new PTX::Int16Value(400)));
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
-			leapPredicate_4, rem_4, new PTX::Int16Value(0), PTX::Int16Type::ComparisonOperator::Equal
-		));
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
-			leapPredicate_100, rem_100, new PTX::Int16Value(0), PTX::Int16Type::ComparisonOperator::NotEqual
-		));
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
-			leapPredicate_400, rem_400, new PTX::Int16Value(0), PTX::Int16Type::ComparisonOperator::Equal
-		));
-
-		auto tempPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 		auto leapPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(tempPredicate, leapPredicate_4, leapPredicate_100));
-		this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(leapPredicate, tempPredicate, leapPredicate_400));
+		this->m_builder.AddInfiniteLoop("DATE", [&](Builder::LoopContext& loopContext)
+		{
+			auto leapPredicate_4 = resources->template AllocateTemporary<PTX::PredicateType>();
+			auto leapPredicate_100 = resources->template AllocateTemporary<PTX::PredicateType>();
+			auto leapPredicate_400 = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		auto yearDays = resources->template AllocateTemporary<PTX::Int32Type>();
-		this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(
-			yearDays, new PTX::Int32Value(Utils::Date::DAYS_PER_LYEAR), new PTX::Int32Value(Utils::Date::DAYS_PER_YEAR), leapPredicate
-		));
+			auto rem_4 = resources->template AllocateTemporary<PTX::Int16Type>();
+			auto rem_100 = resources->template AllocateTemporary<PTX::Int16Type>();
+			auto rem_400 = resources->template AllocateTemporary<PTX::Int16Type>();
 
-		auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(
-			endPredicate, days, yearDays, PTX::Int32Type::ComparisonOperator::Less
-		));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, endPredicate));
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(rem_4, year, new PTX::Int16Value(4)));
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(rem_100, year, new PTX::Int16Value(100)));
+			this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::Int16Type>(rem_400, year, new PTX::Int16Value(400)));
 
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int16Type>(year, year, new PTX::Int16Value(1)));
-		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::Int32Type>(days, days, yearDays));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
+				leapPredicate_4, rem_4, new PTX::Int16Value(0), PTX::Int16Type::ComparisonOperator::Equal
+			));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
+				leapPredicate_100, rem_100, new PTX::Int16Value(0), PTX::Int16Type::ComparisonOperator::NotEqual
+			));
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
+				leapPredicate_400, rem_400, new PTX::Int16Value(0), PTX::Int16Type::ComparisonOperator::Equal
+			));
+
+			auto tempPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(tempPredicate, leapPredicate_4, leapPredicate_100));
+			this->m_builder.AddStatement(new PTX::OrInstruction<PTX::PredicateType>(leapPredicate, tempPredicate, leapPredicate_400));
+
+			auto yearDays = resources->template AllocateTemporary<PTX::Int32Type>();
+			this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(
+				yearDays, new PTX::Int32Value(Utils::Date::DAYS_PER_LYEAR), new PTX::Int32Value(Utils::Date::DAYS_PER_YEAR), leapPredicate
+			));
+
+			auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(
+				endPredicate, days, yearDays, PTX::Int32Type::ComparisonOperator::Less
+			));
+			this->m_builder.AddBreakStatement(loopContext, endPredicate);
+
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int16Type>(year, year, new PTX::Int16Value(1)));
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::Int32Type>(days, days, yearDays));
+		});
 
 		return {days, leapPredicate};
 	}
@@ -398,54 +396,51 @@ public:
 
 		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int16Type>(month, new PTX::Int16Value(0)));
 
-		auto startLabel = this->m_builder.CreateLabel("START");
-		auto endLabel = this->m_builder.CreateLabel("END");
-		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
+		this->m_builder.AddInfiniteLoop("DATE", [&](Builder::LoopContext& loopContext)
+		{
+			auto febPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			auto febLeapPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		auto febPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto febLeapPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
+				febPredicate, month, new PTX::Int16Value(1), PTX::Int16Type::ComparisonOperator::Equal
+			));
+			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(febLeapPredicate, febPredicate, leapPredicate));
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(
-			febPredicate, month, new PTX::Int16Value(1), PTX::Int16Type::ComparisonOperator::Equal
-		));
-		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(febLeapPredicate, febPredicate, leapPredicate));
+			// Get month days from constant space
 
-		// Get month days from constant space
+			std::vector<std::int32_t> mdays({31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31});;
 
-		std::vector<std::int32_t> mdays({31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31});;
+			auto moduleResources = this->m_builder.GetGlobalResources();
+			auto c_months = new PTX::ArrayVariableAdapter<PTX::Int32Type, Utils::Date::MONTHS_PER_YEAR, PTX::ConstSpace>(
+				moduleResources->template AllocateConstVariable<PTX::ArrayType<PTX::Int32Type, Utils::Date::MONTHS_PER_YEAR>>("mdays", mdays)
+			);
 
-		auto moduleResources = this->m_builder.GetGlobalResources();
-		auto c_months = new PTX::ArrayVariableAdapter<PTX::Int32Type, Utils::Date::MONTHS_PER_YEAR, PTX::ConstSpace>(
-			moduleResources->template AllocateConstVariable<PTX::ArrayType<PTX::Int32Type, Utils::Date::MONTHS_PER_YEAR>>("mdays", mdays)
-		);
+			auto index = ConversionGenerator::ConvertSource<PTX::UInt32Type>(this->m_builder, month);
 
-		auto index = ConversionGenerator::ConvertSource<PTX::UInt32Type>(this->m_builder, month);
+			AddressGenerator<B, PTX::Int32Type> addressGenerator(this->m_builder);
+			auto c_monthAddress = addressGenerator.GenerateAddress(c_months, index);
 
-		AddressGenerator<B, PTX::Int32Type> addressGenerator(this->m_builder);
-		auto c_monthAddress = addressGenerator.GenerateAddress(c_months, index);
+			auto monthDays = resources->template AllocateTemporary<PTX::Int32Type>();
+			this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::Int32Type, PTX::ConstSpace>(monthDays, c_monthAddress));
 
-		auto monthDays = resources->template AllocateTemporary<PTX::Int32Type>();
-		this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::Int32Type, PTX::ConstSpace>(monthDays, c_monthAddress));
+			auto febMove = new PTX::MoveInstruction<PTX::Int32Type>(monthDays, new PTX::Int32Value(29));
+			febMove->SetPredicate(febLeapPredicate);
+			this->m_builder.AddStatement(febMove);
 
-		auto febMove = new PTX::MoveInstruction<PTX::Int32Type>(monthDays, new PTX::Int32Value(29));
-		febMove->SetPredicate(febLeapPredicate);
-		this->m_builder.AddStatement(febMove);
+			// Increment before, since the +1 value is used in the next iteration or on exit
 
-		// Increment before, since the +1 value is used in the next iteration or on exit
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int16Type>(month, month, new PTX::Int16Value(1)));
 
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int16Type>(month, month, new PTX::Int16Value(1)));
+			// Check if contained within the current month
 
-		// Check if contained within the current month
+			auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(
+				endPredicate, days, monthDays, PTX::Int32Type::ComparisonOperator::Less
+			));
+			this->m_builder.AddBreakStatement(loopContext, endPredicate);
 
-		auto endPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(
-			endPredicate, days, monthDays, PTX::Int32Type::ComparisonOperator::Less
-		));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, endPredicate));
-
-		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::Int32Type>(days, days, monthDays));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel));
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::Int32Type>(days, days, monthDays));
+		});
 
 		return days;
 	}

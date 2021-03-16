@@ -78,24 +78,25 @@ public:
 		auto lowerBound = resources->template AllocateTemporary<PTX::UInt32Type>();
 		auto upperBound = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-		auto switchPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(switchPredicate, limit, new PTX::Int32Value(0), PTX::Int32Type::ComparisonOperator::Less));
-
 		auto absLimit = resources->template AllocateTemporary<PTX::UInt32Type>();
 		this->m_builder.AddStatement(new PTX::AbsoluteInstruction<PTX::Int32Type>(new PTX::Signed32RegisterAdapter(absLimit), limit));
 
-		auto elseLabel = this->m_builder.CreateLabel("ELSE");
-		auto endLabel = this->m_builder.CreateLabel("END");
-
-		this->m_builder.AddStatement(new PTX::BranchInstruction(elseLabel, switchPredicate));
-
-		GeneratePositiveBounds(lowerBound, upperBound, size, absLimit);
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel));
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(elseLabel));
-		GenerateNegativeBounds(lowerBound, upperBound, size, absLimit);
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+		this->m_builder.AddIfElseStatement("LIMIT", [&]()
+		{
+			auto switchPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(
+				switchPredicate, limit, new PTX::Int32Value(0), PTX::Int32Type::ComparisonOperator::Less
+			));
+			return std::make_tuple(switchPredicate, false);
+		},
+		[&]()
+		{
+			GeneratePositiveBounds(lowerBound, upperBound, size, absLimit);
+		},
+		[&]()
+		{
+			GenerateNegativeBounds(lowerBound, upperBound, size, absLimit);
+		});
 
 		// Compute the data indexes that will be used for bounds checking
 

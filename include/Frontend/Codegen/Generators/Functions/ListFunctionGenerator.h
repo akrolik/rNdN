@@ -138,31 +138,38 @@ public:
 		//
 		//   END:
 
-		auto startLabel = this->m_builder.CreateLabel("START");
-		auto endLabel = this->m_builder.CreateLabel("END");
-		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddIfStatement("LIST_SKIP", [&]()
+		{
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+				predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+			));
+			return std::make_tuple(predicate, false);
+		},
+		[&]()
+		{
+			this->m_builder.AddDoWhileLoop("LIST", [&](Builder::LoopContext& loopContext)
+			{
+				// Construct the loop body according to the standard function generator
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicate, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate));
-		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
+				FunctionGenerator<B>::Visit(function);
 
-		// Construct the loop body according to the standard function generator
+				// Increment the thread index by the number of threads per cell
 
-		FunctionGenerator<B>::Visit(function);
+				this->m_builder.AddStatement(new PTX::CommentStatement("loop post"));
 
-		// Increment the thread index by the number of threads per cell
+				auto listThreads = geometryGenerator.GenerateListThreads();
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, listThreads));
 
-		this->m_builder.AddStatement(new PTX::CommentStatement("loop post"));
+				// Complete the loop structure
 
-		auto listThreads = geometryGenerator.GenerateListThreads();
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, listThreads));
-
-		// Complete the loop structure
-
-		auto predicateEnd = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(predicateEnd, index, bound, PTX::UInt32Type::ComparisonOperator::Less));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicateEnd));
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+				auto predicateEnd = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					predicateEnd, index, bound, PTX::UInt32Type::ComparisonOperator::Less
+				));
+				return std::make_tuple(predicateEnd, false);
+			});
+		});
 
 		// Lastly, end with a return instruction - this only generated at the end for body synchronization
 

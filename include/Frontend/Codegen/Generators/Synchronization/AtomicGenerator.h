@@ -29,25 +29,24 @@ public:
 		//   setp.ne.b32 %p, %value, 0
 		//   @%p bra ATOM
 
-		auto label = this->m_builder.CreateLabel("ATOM");
-		this->m_builder.AddStatement(new PTX::LabelStatement(label));
+		this->m_builder.AddDoWhileLoop("ATOM", [&](Builder::LoopContext& loopContext)
+		{
+			auto value = resources->template AllocateTemporary<PTX::Bit32Type>();
+			auto lockAddress = new PTX::MemoryAddress<B, PTX::Bit32Type, PTX::GlobalSpace>(lock);
 
-		auto value = resources->template AllocateTemporary<PTX::Bit32Type>();
-		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::Bit32Type, PTX::GlobalSpace>(
+				value, lockAddress,
+				new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(0)),
+				new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1)),
+				PTX::Bit32Type::AtomicOperation::CompareAndSwap
+			));
 
-		auto lockAddress = new PTX::MemoryAddress<B, PTX::Bit32Type, PTX::GlobalSpace>(lock);
-
-		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::Bit32Type, PTX::GlobalSpace>(
-			value, lockAddress,
-			new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(0)),
-			new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(1)),
-			PTX::Bit32Type::AtomicOperation::CompareAndSwap
-		));
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Bit32Type>(
-			predicate, value, new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(0)), PTX::Bit32Type::ComparisonOperator::NotEqual
-		));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(label, predicate));
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Bit32Type>(
+				predicate, value, new PTX::Bit32Adapter<PTX::UIntType>(new PTX::UInt32Value(0)), PTX::Bit32Type::ComparisonOperator::NotEqual
+			));
+			return std::make_tuple(predicate, false);
+		});
 	}
 
 	void GenerateUnlock(PTX::GlobalVariable<PTX::Bit32Type> *lock)
@@ -90,37 +89,43 @@ public:
 		auto old = resources->template AllocateTemporary<T>();
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(old, globalAddress));
 
-		auto startLabel = this->m_builder.CreateLabel("START");
-		auto endLabel = this->m_builder.CreateLabel("END");
-		auto predicate0 = resources->template AllocateTemporary<PTX::PredicateType>();
+		this->m_builder.AddIfStatement("ATOM_SKIP", [&]()
+		{
+			auto predicate0 = resources->template AllocateTemporary<PTX::PredicateType>();
+			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
+				predicate0, value, old, (min) ? T::ComparisonOperator::GreaterEqual : T::ComparisonOperator::LessEqual
+			));
+			return std::make_tuple(predicate0, false);
+		},
+		[&]()
+		{
+			this->m_builder.AddDoWhileLoop("ATOM", [&](Builder::LoopContext& loopContext)
+			{
+				auto assumed = resources->template AllocateTemporary<T>();
+				this->m_builder.AddStatement(new PTX::MoveInstruction<T>(assumed, old));
 
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate0, value, old, (min) ? T::ComparisonOperator::GreaterEqual : T::ComparisonOperator::LessEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, predicate0));
+				auto bitOld = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, old);
+				auto bitAddress = new PTX::AddressAdapter<B, BitType, T, PTX::GlobalSpace>(globalAddress);
+				auto bitAssumed = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, assumed);
+				auto bitValue = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, value);
 
-		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
+				this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
+					bitOld, bitAddress, bitAssumed, bitValue, BitType::AtomicOperation::CompareAndSwap
+				));
 
-		auto assumed = resources->template AllocateTemporary<T>();
-		this->m_builder.AddStatement(new PTX::MoveInstruction<T>(assumed, old));
+				auto predicate1 = resources->template AllocateTemporary<PTX::PredicateType>();
+				auto predicate2 = resources->template AllocateTemporary<PTX::PredicateType>();
+				auto predicate3 = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		auto bitOld = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, old);
-		auto bitAddress = new PTX::AddressAdapter<B, BitType, T, PTX::GlobalSpace>(globalAddress);
-		auto bitAssumed = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, assumed);
-		auto bitValue = ConversionGenerator::ConvertSource<BitType, T>(this->m_builder, value);
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate1, assumed, old, T::ComparisonOperator::NotEqual));
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
+					predicate2, value, old, (min) ? T::ComparisonOperator::Less : T::ComparisonOperator::Greater
+				));
+				this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate3, predicate1, predicate2));
 
-		this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
-			bitOld, bitAddress, bitAssumed, bitValue, BitType::AtomicOperation::CompareAndSwap
-		));
-
-		auto predicate1 = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto predicate2 = resources->template AllocateTemporary<PTX::PredicateType>();
-		auto predicate3 = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate1, assumed, old, T::ComparisonOperator::NotEqual));
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(predicate2, value, old, (min) ? T::ComparisonOperator::Less : T::ComparisonOperator::Greater));
-		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate3, predicate1, predicate2));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicate3));
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+				return std::make_tuple(predicate3, false);
+			});
+		});
 	}
 };
 

@@ -157,6 +157,113 @@ public:
 		m_scopes.pop();
 	}
 
+	// If-Else Structures
+
+	template<typename FP, typename F>
+	void AddIfStatement(const std::string& name, FP predicateFunction, F function)
+	{
+		auto label = CreateLabel(name + "_END");
+		auto [predicate, negate] = predicateFunction();
+
+		AddStatement(new PTX::BranchInstruction(label, predicate, negate));
+		function();
+		AddStatement(new PTX::LabelStatement(label));
+	}
+
+	template<typename FP, typename FT, typename FF>
+	void AddIfElseStatement(const std::string& name, FP predicateFunction, FT trueFunction, FF falseFunction)
+	{
+		auto elseLabel = CreateLabel(name + "_ELSE");
+		auto endLabel = CreateLabel(name + "_END");
+		auto [predicate, negate] = predicateFunction();
+
+		AddStatement(new PTX::BranchInstruction(elseLabel, predicate, negate));
+		trueFunction();
+		AddStatement(new PTX::BranchInstruction(endLabel));
+		AddStatement(new PTX::LabelStatement(elseLabel));
+		falseFunction();
+		AddStatement(new PTX::LabelStatement(endLabel));
+	}
+
+	// Loop Structures
+
+	struct LoopContext
+	{
+		LoopContext(PTX::Label *startLabel, PTX::Label *endLabel) : m_startLabel(startLabel), m_endLabel(endLabel) {}
+
+		PTX::Label *GetStartLabel() { return m_startLabel; }
+		PTX::Label *GetEndLabel() { return m_endLabel; }
+
+	private:
+		PTX::Label *m_startLabel = nullptr;
+		PTX::Label *m_endLabel = nullptr;
+	};
+
+	template<typename F>
+	void AddInfiniteLoop(const std::string& name, F bodyFunction)
+	{
+		auto startLabel = CreateLabel(name + "_START");
+		auto endLabel = CreateLabel(name + "_END");
+		LoopContext loopContext(startLabel, endLabel);
+
+		AddStatement(new PTX::LabelStatement(startLabel));
+		bodyFunction(loopContext);
+		AddStatement(new PTX::BranchInstruction(startLabel));
+		AddStatement(new PTX::LabelStatement(endLabel));
+	}
+
+	template<typename FC, typename FB>
+	void AddWhileLoop(const std::string& name, FC predicateFunction, FB bodyFunction)
+	{
+		auto startLabel = CreateLabel(name + "_START");
+		auto endLabel = CreateLabel(name + "_END");
+		LoopContext loopContext(startLabel, endLabel);
+
+		AddStatement(new PTX::LabelStatement(startLabel));
+		auto [predicate, negate] = predicateFunction();
+		AddStatement(new PTX::BranchInstruction(endLabel, predicate, negate));
+		bodyFunction(loopContext);
+		AddStatement(new PTX::BranchInstruction(startLabel));
+		AddStatement(new PTX::LabelStatement(endLabel));
+	}
+
+	template<typename F>
+	void AddDoWhileLoop(const std::string& name, F bodyFunction)
+	{
+		auto startLabel = CreateLabel(name + "_START");
+		auto endLabel = CreateLabel(name + "_END");
+		LoopContext loopContext(startLabel, endLabel);
+
+		AddStatement(new PTX::LabelStatement(startLabel));
+		auto [predicate, negate] = bodyFunction(loopContext);
+		AddStatement(new PTX::BranchInstruction(startLabel, predicate, negate));
+		AddStatement(new PTX::LabelStatement(endLabel));
+	}
+
+	void AddBreakStatement(LoopContext& context, PTX::Register<PTX::PredicateType> *predicate, bool negate = false)
+	{
+		AddStatement(new PTX::BranchInstruction(context.GetEndLabel(), predicate, negate));
+	}
+
+	void AddContinueStatement(LoopContext& context, PTX::Register<PTX::PredicateType> *predicate, bool negate = false)
+	{
+		AddStatement(new PTX::BranchInstruction(context.GetStartLabel(), predicate, negate));
+	}
+
+	template<typename FP, typename F>
+	void AddContinueStatement(LoopContext& context, FP predicateFunction, F function)
+	{
+		auto endLabel = CreateLabel("CONT_END");
+		auto [predicate, negate] = predicateFunction();
+
+		AddStatement(new PTX::BranchInstruction(endLabel, predicate, negate));
+		function();
+		AddStatement(new PTX::BranchInstruction(context.GetStartLabel()));
+		AddStatement(new PTX::LabelStatement(endLabel));
+	}
+
+	// Resources
+
 	const RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
 	RegisterAllocator *GetLocalResources() { return m_localResources.at(GetCurrentBlock()); }
 

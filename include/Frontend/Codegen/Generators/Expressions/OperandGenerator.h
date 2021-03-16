@@ -336,11 +336,37 @@ public:
 					dataIndex = (m_index == nullptr) ? GenerateIndex(parameter, m_loadKind) : m_index;
 				}
 
+				auto value = resources->AllocateRegister<S>(name);
+				auto loadFunction = [&]()
+				{
+					// Load the value from the global space
+					
+					ValueLoadGenerator<B, S> loadGenerator(this->m_builder);
+
+					auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
+					if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
+					{
+						auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, S>>(NameUtils::VariableName(parameter));
+						value = loadGenerator.GeneratePointer(name, kernelParameter, dataIndex);
+					}
+					else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(shape))
+					{
+						// The parameter is unindexed, the cell is added in the value generation
+
+						auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, S, PTX::GlobalSpace>>>(NameUtils::VariableName(parameter));
+						if (isCell)
+						{
+							value = loadGenerator.GeneratePointer(name, kernelParameter, m_cellIndex, dataIndex);
+						}
+						else
+						{
+							value = loadGenerator.GeneratePointer(name, kernelParameter, dataIndex);
+						}
+					}
+				};
+
 				// Ensure the thread is within bounds for loading data
 
-				auto value = resources->AllocateRegister<S>(name);
-
-				PTX::Label *sizeLabel = nullptr;
 				if (m_boundsCheck)
 				{
 					// Initial value, used to init register for analyses
@@ -353,44 +379,21 @@ public:
 					DataSizeGenerator<B> sizeGenerator(this->m_builder);
 					auto size = (isCell) ? sizeGenerator.GenerateSize(parameter, m_cellIndex) : sizeGenerator.GenerateSize(parameter);
 
-					sizeLabel = this->m_builder.CreateLabel("SIZE");
-					auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-
-					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, dataIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-					this->m_builder.AddStatement(new PTX::BranchInstruction(sizeLabel, sizePredicate));
-				}
-
-				// Load the value from the global space
-				
-				ValueLoadGenerator<B, S> loadGenerator(this->m_builder);
-
-				auto shape = this->m_builder.GetInputOptions().ParameterShapes.at(parameter);
-				if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(shape))
-				{
-					auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, S>>(NameUtils::VariableName(parameter));
-					value = loadGenerator.GeneratePointer(name, kernelParameter, dataIndex);
-				}
-				else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(shape))
-				{
-					// The parameter is unindexed, the cell is added in the value generation
-
-					auto kernelParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, S, PTX::GlobalSpace>>>(NameUtils::VariableName(parameter));
-					if (isCell)
+					this->m_builder.AddIfStatement("SIZE", [&]()
 					{
-						value = loadGenerator.GeneratePointer(name, kernelParameter, m_cellIndex, dataIndex);
-					}
-					else
-					{
-						value = loadGenerator.GeneratePointer(name, kernelParameter, dataIndex);
-					}
+						auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+						this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+							sizePredicate, dataIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+						));
+						return std::make_tuple(sizePredicate, false);
+					}, loadFunction);
 				}
-
-				if (m_boundsCheck)
+				else
 				{
-					// Completed determining size
-
-					this->m_builder.AddStatement(new PTX::LabelStatement(sizeLabel));
+					loadFunction();
 				}
+
+				// Propagate compression register
 
 				if (m_compressionRegister != nullptr)
 				{

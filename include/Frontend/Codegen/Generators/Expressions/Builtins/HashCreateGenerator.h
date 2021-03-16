@@ -129,70 +129,34 @@ public:
 
 	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments)
 	{
-		auto resources = this->m_builder.GetLocalResources();
 		auto dataArgument = arguments.at(0);
-
-		auto startLabel = this->m_builder.CreateLabel("START");
-		auto endLabel = this->m_builder.CreateLabel("END");
-
-		DataIndexGenerator<B> indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateDataIndex();
-
-		DataSizeGenerator<B> sizeGenerator(this->m_builder);
-		auto dataSize = sizeGenerator.GenerateSize(dataArgument);
-		auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(sizePredicate, index, dataSize, PTX::UInt32Type::ComparisonOperator::GreaterEqual));
-		this->m_builder.AddStatement(new PTX::BranchInstruction(endLabel, sizePredicate));
-
-		ParameterGenerator<B> parameterGenerator(this->m_builder);
-		auto capacityParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::HashtableSize);
-
-		ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
-		auto capacity = valueLoadGenerator.GenerateConstant(capacityParameter);
-
-		auto capacityM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
-		this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(capacityM1, capacity, new PTX::UInt32Value(1)));
-
-		InternalHashGenerator<B> hashGenerator(this->m_builder);
-		auto slot = hashGenerator.Generate(dataArgument);
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(startLabel));
-		this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
-			new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
-			new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
-			new PTX::Bit32RegisterAdapter<PTX::UIntType>(capacityM1)
-		));
-
-		DispatchType(*this, dataArgument->GetType(), slot, dataArgument, startLabel);
-
-		this->m_builder.AddStatement(new PTX::LabelStatement(endLabel));
+		DispatchType(*this, dataArgument->GetType(), dataArgument);
 	}
 	
 	template<class T>
-	void GenerateVector(PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel)
+	void GenerateVector(const HorseIR::Operand *operand)
 	{
-		GenerateHashInsert<T>(slot, operand, startLabel);
+		GenerateHashInsert<T>(operand);
 	}
 
 	template<class T>
-	void GenerateList(PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel)
+	void GenerateList(const HorseIR::Operand *operand)
 	{
-		GenerateHashInsert<T>(slot, operand, startLabel, true);
+		GenerateHashInsert<T>(operand, true);
 	}
 	
 	template<class T>
-	void GenerateTuple(unsigned int index, PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel)
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *operand)
 	{
 		if (index == 0)
 		{
-			GenerateHashInsert<T>(slot, operand, startLabel, true);
+			GenerateHashInsert<T>(operand, true);
 		}
 	}
 
 private:
 	template<class T>
-	void GenerateHashInsert(PTX::Register<PTX::UInt32Type> *slot, const HorseIR::Operand *operand, PTX::Label *startLabel, bool isCell = false)
+	void GenerateHashInsert(const HorseIR::Operand *operand, bool isCell = false)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
@@ -201,82 +165,125 @@ private:
 		}
 		else
 		{
-			using BitType = PTX::BitType<T::TypeBits>;
-
 			auto resources = this->m_builder.GetLocalResources();
-			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			auto previous = resources->template AllocateTemporary<BitType>();
-
-			auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
-			auto emptyRegister = resources->template AllocateTemporary<BitType>();
-			this->m_builder.AddStatement(new PTX::MoveInstruction<BitType>(emptyRegister, new PTX::BitAdapter(empty)));
-
-			// Check if the slot is already occupied
-
-			OperandGenerator<B, BitType> operandGenerator(this->m_builder);
-			operandGenerator.SetBoundsCheck(false);
-			auto value = operandGenerator.GenerateOperand(operand, OperandGenerator<B, BitType>::LoadKind::Vector);
-
-			// Get the address for the slot
-
 			auto kernelResources = this->m_builder.GetKernelResources();
-			PTX::Address<B, T, PTX::GlobalSpace> *address = nullptr;
-			if (isCell)
-			{
-				auto keyParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::ReturnName(0));
-				AddressGenerator<B, T> addressGenerator(this->m_builder);
-				address = addressGenerator.GenerateAddress(keyParameter, 0, slot);
-			}
-			else
-			{
-				auto keyParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(0));
-				AddressGenerator<B, T> addressGenerator(this->m_builder);
-				address = addressGenerator.GenerateAddress(keyParameter, slot);
-			}
-
-			auto bitAddress = new PTX::AddressAdapter<B, BitType, T, PTX::GlobalSpace>(address);
-
-			// Increment before jumping, so we can make the exit a straight shot
-
-			auto currentSlot = resources->template AllocateTemporary<PTX::UInt32Type>();
-			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(currentSlot, slot));
-			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
-
-			// Precheck value for empty, as CAS is expensive
-
-			auto prePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			auto prePrevious = resources->template AllocateTemporary<BitType>();
-
-			this->m_builder.AddStatement(new PTX::LoadInstruction<B, BitType, PTX::GlobalSpace>(prePrevious, bitAddress));
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(prePredicate, prePrevious, emptyRegister, BitType::ComparisonOperator::NotEqual));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, prePredicate));
-
-			// CAS!
-
-			this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
-				previous, bitAddress, emptyRegister, value, BitType::AtomicOperation::CompareAndSwap
-			));
-
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(predicate, previous, emptyRegister, BitType::ComparisonOperator::NotEqual));
-			this->m_builder.AddStatement(new PTX::BranchInstruction(startLabel, predicate));
-
-			// Insert other values
-
-			HashCreateInsertGenerator<B> insertGenerator(this->m_builder);
-			insertGenerator.Generate(operand, currentSlot);
-
-			// Store value (index)
-
-			auto valueParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::Int64Type>>(NameUtils::ReturnName(1));
-
-			AddressGenerator<B, PTX::Int64Type> valueAddressGenerator(this->m_builder);
-			auto valueAddress = valueAddressGenerator.GenerateAddress(valueParameter, currentSlot);
 
 			DataIndexGenerator<B> indexGenerator(this->m_builder);
 			auto index = indexGenerator.GenerateDataIndex();
-			auto index64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, index);
 
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(valueAddress, index64));
+			DataSizeGenerator<B> sizeGenerator(this->m_builder);
+			auto dataSize = sizeGenerator.GenerateSize(operand);
+
+			this->m_builder.AddIfStatement("HASH_SKIP", [&]()
+			{
+				auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					sizePredicate, index, dataSize, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+				));
+				return std::make_tuple(sizePredicate, false);
+			},
+			[&]()
+			{
+				ParameterGenerator<B> parameterGenerator(this->m_builder);
+				auto capacityParameter = parameterGenerator.template GenerateConstant<PTX::UInt32Type>(NameUtils::HashtableSize);
+
+				ValueLoadGenerator<B, PTX::UInt32Type> valueLoadGenerator(this->m_builder);
+				auto capacity = valueLoadGenerator.GenerateConstant(capacityParameter);
+
+				auto capacityM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(capacityM1, capacity, new PTX::UInt32Value(1)));
+
+				InternalHashGenerator<B> hashGenerator(this->m_builder);
+				auto slot = hashGenerator.Generate(operand);
+				auto currentSlot = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+				this->m_builder.AddDoWhileLoop("HASH", [&](Builder::LoopContext& loopContext)
+				{
+					this->m_builder.AddStatement(new PTX::AndInstruction<PTX::Bit32Type>(
+						new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
+						new PTX::Bit32RegisterAdapter<PTX::UIntType>(slot),
+						new PTX::Bit32RegisterAdapter<PTX::UIntType>(capacityM1)
+					));
+
+					using BitType = PTX::BitType<T::TypeBits>;
+
+					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto previous = resources->template AllocateTemporary<BitType>();
+
+					auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
+					auto emptyRegister = resources->template AllocateTemporary<BitType>();
+					this->m_builder.AddStatement(new PTX::MoveInstruction<BitType>(emptyRegister, new PTX::BitAdapter(empty)));
+
+					// Check if the slot is already occupied
+
+					OperandGenerator<B, BitType> operandGenerator(this->m_builder);
+					operandGenerator.SetBoundsCheck(false);
+					auto value = operandGenerator.GenerateOperand(operand, OperandGenerator<B, BitType>::LoadKind::Vector);
+
+					// Get the address for the slot
+
+					PTX::Address<B, T, PTX::GlobalSpace> *address = nullptr;
+					if (isCell)
+					{
+						auto keyParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::ReturnName(0));
+						AddressGenerator<B, T> addressGenerator(this->m_builder);
+						address = addressGenerator.GenerateAddress(keyParameter, 0, slot);
+					}
+					else
+					{
+						auto keyParameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::ReturnName(0));
+						AddressGenerator<B, T> addressGenerator(this->m_builder);
+						address = addressGenerator.GenerateAddress(keyParameter, slot);
+					}
+
+					auto bitAddress = new PTX::AddressAdapter<B, BitType, T, PTX::GlobalSpace>(address);
+
+					// Increment before jumping, so we can make the exit a straight shot
+
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(currentSlot, slot));
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
+
+					// Precheck value for empty, as CAS is expensive
+
+					auto prePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto prePrevious = resources->template AllocateTemporary<BitType>();
+
+					this->m_builder.AddStatement(new PTX::LoadInstruction<B, BitType, PTX::GlobalSpace>(prePrevious, bitAddress));
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(
+						prePredicate, prePrevious, emptyRegister, BitType::ComparisonOperator::NotEqual
+					));
+					this->m_builder.AddContinueStatement(loopContext, prePredicate);
+
+					// CAS!
+
+					this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
+						previous, bitAddress, emptyRegister, value, BitType::AtomicOperation::CompareAndSwap
+					));
+
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(
+						predicate, previous, emptyRegister, BitType::ComparisonOperator::NotEqual
+					));
+					return std::make_tuple(predicate, false);
+				});
+
+				// Insert other values
+
+				HashCreateInsertGenerator<B> insertGenerator(this->m_builder);
+				insertGenerator.Generate(operand, currentSlot);
+
+				// Store value (index)
+
+				auto valueParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::Int64Type>>(NameUtils::ReturnName(1));
+
+				AddressGenerator<B, PTX::Int64Type> valueAddressGenerator(this->m_builder);
+				auto valueAddress = valueAddressGenerator.GenerateAddress(valueParameter, currentSlot);
+
+				DataIndexGenerator<B> indexGenerator(this->m_builder);
+				auto index = indexGenerator.GenerateDataIndex();
+				auto index64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, index);
+
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(valueAddress, index64));
+			});
 		}
 	}
 };
