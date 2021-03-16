@@ -14,7 +14,7 @@ class ConvertToAddressInstruction : DispatchInherit(ConvertToAddressInstruction)
 {
 public:
 	REQUIRE_TYPE_PARAM(ConvertToAddressInstruction,
-		REQUIRE_BASE(T, DataType)
+		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(ConvertToAddressInstruction,
 		REQUIRE_BASE(S, AddressableSpace) && !REQUIRE_EXACT(S, AddressableSpace)
