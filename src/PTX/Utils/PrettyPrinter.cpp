@@ -147,7 +147,6 @@ void PrettyPrinter::Visit(const FunctionDefinition<VoidType> *function)
 {
 	m_definition = true;
 	ConstVisitor::Visit(function);
-	m_definition = false;
 
 	m_string << "{" << std::endl;
 	m_indent++;
@@ -168,11 +167,16 @@ void PrettyPrinter::Visit(const FunctionDefinition<VoidType> *function)
 	}
 	m_indent--;
 	m_string << "}";
+	m_definition = false;
 }
 
 void PrettyPrinter::Visit(const VariableDeclaration *declaration)
 {
 	m_string << declaration->ToString();
+	if (!m_definition)
+	{
+		m_string << ";";
+	}
 }
 
 void PrettyPrinter::Visit(const FileDirective *directive)
