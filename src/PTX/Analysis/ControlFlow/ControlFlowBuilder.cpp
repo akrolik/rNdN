@@ -221,6 +221,10 @@ bool ControlFlowBuilder::VisitIn(PredicatedInstruction *instruction)
 		{
 			m_previousBlock = statementBlock;
 		}
+		else
+		{
+			m_previousBlock = nullptr;
+		}
 	}
 	else if (instruction->HasPredicate())
 	{
@@ -246,6 +250,14 @@ bool ControlFlowBuilder::VisitIn(LabelStatement *statement)
 {
 	// Do nothing
 
+	auto label = statement->GetLabel();
+	auto statementBlock = m_labelMap.at(label);
+	if (m_previousBlock != nullptr && m_previousBlock != statementBlock)
+	{
+		m_previousBlock->AddStatement(new BranchInstruction(label));
+		m_graph->InsertEdge(m_previousBlock, statementBlock);
+	}
+	m_previousBlock = statementBlock;
 	return false;
 }
 
