@@ -47,7 +47,7 @@ namespace PTX {
 				case Bits::Bits64: \
 					_DispatchType(type, f(Bit64Type)); break; \
 			} \
-			break; \
+			Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::BitType"); \
 		} \
 		case Type::Kind::Int: { \
 			switch (type->GetBits()) { \
@@ -60,7 +60,7 @@ namespace PTX {
 				case Bits::Bits64: \
 					_DispatchType(type, f(Int64Type)); break; \
 			} \
-			break; \
+			Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::IntType"); \
 		} \
 		case Type::Kind::UInt: { \
 			switch (type->GetBits()) { \
@@ -73,7 +73,7 @@ namespace PTX {
 				case Bits::Bits64: \
 					_DispatchType(type, f(UInt64Type)); break; \
 			} \
-			break; \
+			Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::UIntType"); \
 		} \
 		case Type::Kind::Float: { \
 			switch (type->GetBits()) { \
@@ -82,7 +82,7 @@ namespace PTX {
 				case Bits::Bits64: \
 					_DispatchType(type, f(Float64Type)); break; \
 			} \
-			break; \
+			Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::FloatType"); \
 		} \
 	}
 
@@ -98,6 +98,7 @@ namespace PTX {
 			case VectorSize::Vector4: \
 				DispatchType_Basic(vtype->GetType(), DispatchExpand_Vector4); break; \
 		} \
+		Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::VectorType"); \
 	}
 
 #define DispatchExpand_PointerAddressable(type) PointerType<Bits::Bits64, type, AddressableSpace>
@@ -108,22 +109,37 @@ namespace PTX {
 #define DispatchExpand_PointerParameter(type) PointerType<Bits::Bits64, type, ParameterSpace>
 
 #define DispatchType_Pointer(type) \
-	if (type->GetKind() == Type::Kind::Pointer && type->GetBits() == Bits::Bits64) { \
-		const auto ptype = static_cast<const _PointerType<Bits::Bits64> *>(type); \
-		switch (ptype->GetStateSpace()->GetKind()) { \
-			case StateSpace::Kind::Addressable: \
-				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerAddressable); break; \
-			case StateSpace::Kind::Local: \
-				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerLocal); break; \
-			case StateSpace::Kind::Global: \
-				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerGlobal); break; \
-			case StateSpace::Kind::Shared: \
-				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerShared); break; \
-			case StateSpace::Kind::Const: \
-				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerConst); break; \
-			case StateSpace::Kind::Parameter: \
-				DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerParameter); break; \
+	if (type->GetKind() == Type::Kind::Pointer) { \
+		if (type->GetBits() == Bits::Bits64) { \
+			const auto ptype = static_cast<const _PointerType<Bits::Bits64> *>(type); \
+			switch (ptype->GetStateSpace()->GetKind()) { \
+				case StateSpace::Kind::Addressable: \
+					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerAddressable); break; \
+				case StateSpace::Kind::Local: \
+					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerLocal); break; \
+				case StateSpace::Kind::Global: \
+					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerGlobal); break; \
+				case StateSpace::Kind::Shared: \
+					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerShared); break; \
+				case StateSpace::Kind::Const: \
+					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerConst); break; \
+				case StateSpace::Kind::Parameter: \
+					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerParameter); break; \
+			} \
 		} \
+		Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::PointerType"); \
+	}
+
+#define DispatchExpand_Array32(type) ArrayType<type, 32>
+
+#define DispatchType_Array(type) \
+	if (type->GetKind() == Type::Kind::Array) { \
+		const auto atype = static_cast<const _ArrayType *>(type); \
+		switch (atype->GetDimension()) { \
+			case 32: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array32); break; \
+		} \
+		Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::ArrayType"); \
 	}
 
 #define DispatchExpand_Null(type) type
@@ -132,6 +148,7 @@ namespace PTX {
 	DispatchType_Basic(type, DispatchExpand_Null); \
 	DispatchType_Vector(type); \
 	DispatchType_Pointer(type); \
+	DispatchType_Array(type); \
 	DispatchType_Void(type); \
 	Utils::Logger::LogError("PTX::Dispatch unsupported type");
 

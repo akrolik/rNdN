@@ -912,12 +912,18 @@ struct is_array_type<ArrayType<T, N>> : std::true_type {};
 
 const unsigned int DynamicSize = 0;
 
+struct _ArrayType : DataType
+{
+	virtual unsigned int GetDimension() const = 0;
+	virtual const Type *GetType() const = 0;
+};
+
 // @struct ArrayType
 //
 // Representation of array types
 
 template<class T, unsigned int N>
-struct ArrayType : DataType
+struct ArrayType : _ArrayType
 {
 	REQUIRE_TYPE_PARAM(ArrayType,
 		REQUIRE_BASE(T, DataType)
@@ -961,6 +967,11 @@ struct ArrayType : DataType
 
 	Type::Kind GetKind() const override { return Type::Kind::Array; }
 	Bits GetBits() const override { return TypeBits; }
+
+	unsigned int GetDimension() const override { return N; }
+	const Type *GetType() const override { return &m_type; }
+
+	T m_type;
 };
 
 // @struct PointerType
