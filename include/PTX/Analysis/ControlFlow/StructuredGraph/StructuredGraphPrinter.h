@@ -12,7 +12,7 @@ namespace Analysis {
 class StructuredGraphPrinter : public ConstStructuredGraphVisitor
 {
 public:
-	static std::string PrettyString(const StructureNode *node);
+	static std::string PrettyString(const std::string& name, const StructureNode *node);
 
 	void Visit(const StructureNode *node) override;
 
@@ -24,6 +24,7 @@ public:
 private:
 	void Indent();
 	unsigned int m_indent = 0;
+	unsigned int m_index = 0;
 	std::stringstream m_string;
 
 	std::unordered_map<const StructureNode *, std::string> m_nameMap;

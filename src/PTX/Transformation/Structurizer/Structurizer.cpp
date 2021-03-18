@@ -28,7 +28,7 @@ Analysis::StructureNode *Structurizer::Structurize(const FunctionDefinition<Void
 	{
 		Utils::Logger::LogInfo("Structured control-flow graph: " + function->GetName());
 
-		auto structureString = Analysis::StructuredGraphPrinter::PrettyString(structure);
+		auto structureString = Analysis::StructuredGraphPrinter::PrettyString(function->GetName(), structure);
 		Utils::Logger::LogInfo(structureString, 0, true, Utils::Logger::NoPrefix);
 	}
 
@@ -154,6 +154,12 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 				// Recursively structurize the loop body
 
+				auto oldExits = m_exitStructures;
+				auto oldLatch = m_latchStructure;
+
+				m_exitStructures.clear();
+				m_latchStructure = nullptr;
+
 				m_reconvergenceStack.push(new LoopContext(header, latch, exit, loopBlocks));
 				auto bodyStructure = Structurize(cfg, header, true);
 				m_reconvergenceStack.pop();
@@ -161,7 +167,12 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 				// Process the post dominator structure
 
 				auto nextStructure = Structurize(cfg, exit);
-				return new Analysis::LoopStructure(bodyStructure, nextStructure);
+				auto loopStructure = new Analysis::LoopStructure(bodyStructure, m_exitStructures, m_latchStructure, nextStructure);
+
+				m_exitStructures = oldExits;
+				m_latchStructure = oldLatch;
+
+				return loopStructure;
 			}
 		}
 	}
@@ -251,11 +262,17 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 			{
 				if (trueBranch == nullptr && falseBranch == header)
 				{
-					return new Analysis::ExitStructure(block, condition, false, nullptr);
+					auto exitStructure = new Analysis::ExitStructure(block, condition, false, nullptr);
+					m_exitStructures.insert(exitStructure);
+					m_latchStructure = exitStructure;
+					return exitStructure;
 				}
 				else if (trueBranch == header && falseBranch == nullptr)
 				{
-					return new Analysis::ExitStructure(block, condition, true, nullptr);
+					auto exitStructure = new Analysis::ExitStructure(block, condition, true, nullptr);
+					m_exitStructures.insert(exitStructure);
+					m_latchStructure = exitStructure;
+					return exitStructure;
 				}
 				Error("unstructured latch", block);
 			}
@@ -266,12 +283,16 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 				if (trueBranch == nullptr && loopContext->ContainsBlock(falseBranch))
 				{
 					auto falseStructure = Structurize(cfg, falseBranch);
-					return new Analysis::ExitStructure(block, condition, false, falseStructure);
+					auto exitStructure = new Analysis::ExitStructure(block, condition, false, falseStructure);
+					m_exitStructures.insert(exitStructure);
+					return exitStructure;
 				}
 				else if (falseBranch == nullptr && loopContext->ContainsBlock(trueBranch))
 				{
 					auto trueStructure = Structurize(cfg, trueBranch);
-					return new Analysis::ExitStructure(block, condition, true, trueStructure);
+					auto exitStructure = new Analysis::ExitStructure(block, condition, true, trueStructure);
+					m_exitStructures.insert(exitStructure);
+					return exitStructure;
 				}
 				else if (postDominator == header)
 				{
@@ -335,7 +356,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 	{
 		if (block == loopContext->GetLatch())
 		{
-			return new Analysis::SequenceStructure(block, nullptr);
+			return m_latchStructure = new Analysis::SequenceStructure(block, nullptr);
 		}
 	}
 	else if (auto branchContext = dynamic_cast<const BranchContext *>(context))

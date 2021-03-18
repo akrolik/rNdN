@@ -72,6 +72,8 @@ private:
 
 	std::unordered_set<const BasicBlock *> m_processedNodes;
 	std::stack<const Context *> m_reconvergenceStack;
+	std::unordered_set<Analysis::ExitStructure *> m_exitStructures;
+	Analysis::StructureNode *m_latchStructure = nullptr;
 
 	// Analyses
 
