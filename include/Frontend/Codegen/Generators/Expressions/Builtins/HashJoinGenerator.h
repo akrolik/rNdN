@@ -123,7 +123,7 @@ private:
 					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(oldSlot, slot));
 					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
 
-					this->m_builder.AddContinueStatement(loopContext, [&]()
+					this->m_builder.AddIfStatement("MATCH", [&]()
 					{
 						return std::make_tuple(equalPredicate, true);
 					},

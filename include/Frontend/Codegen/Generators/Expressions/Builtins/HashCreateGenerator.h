@@ -207,9 +207,6 @@ private:
 
 					using BitType = PTX::BitType<T::TypeBits>;
 
-					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-					auto previous = resources->template AllocateTemporary<BitType>();
-
 					auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
 					auto emptyRegister = resources->template AllocateTemporary<BitType>();
 					this->m_builder.AddStatement(new PTX::MoveInstruction<BitType>(emptyRegister, new PTX::BitAdapter(empty)));
@@ -245,20 +242,21 @@ private:
 
 					// Precheck value for empty, as CAS is expensive
 
-					auto prePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-					auto prePrevious = resources->template AllocateTemporary<BitType>();
+					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto previous = resources->template AllocateTemporary<BitType>();
 
-					this->m_builder.AddStatement(new PTX::LoadInstruction<B, BitType, PTX::GlobalSpace>(prePrevious, bitAddress));
+					this->m_builder.AddStatement(new PTX::LoadInstruction<B, BitType, PTX::GlobalSpace>(previous, bitAddress));
 					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(
-						prePredicate, prePrevious, emptyRegister, BitType::ComparisonOperator::NotEqual
+						predicate, previous, emptyRegister, BitType::ComparisonOperator::Equal
 					));
-					this->m_builder.AddContinueStatement(loopContext, prePredicate);
 
 					// CAS!
 
-					this->m_builder.AddStatement(new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
+					auto atomicInstruction = new PTX::AtomicInstruction<B, BitType, PTX::GlobalSpace>(
 						previous, bitAddress, emptyRegister, value, BitType::AtomicOperation::CompareAndSwap
-					));
+					);
+					atomicInstruction->SetPredicate(predicate);
+					this->m_builder.AddStatement(atomicInstruction);
 
 					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<BitType>(
 						predicate, previous, emptyRegister, BitType::ComparisonOperator::NotEqual

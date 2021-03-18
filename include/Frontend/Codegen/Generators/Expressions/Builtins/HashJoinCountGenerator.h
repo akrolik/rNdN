@@ -122,17 +122,17 @@ private:
 					InternalHashEqualGenerator<B, T> equalGenerator(this->m_builder);
 					auto [equalPredicate, slotValue] = equalGenerator.Generate(dataOperand, keyOperand, slot);
 
-					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
-					this->m_builder.AddContinueStatement(loopContext, [&]()
-					{
-						return std::make_tuple(equalPredicate, true);
-					},
-					[&]()
-					{
-						this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(matches, matches, new PTX::Int64Value(1)));
-					});
+					// Pre-increment slot position
 
-					// Otherwise, check if we have reached the end of the search area
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
+
+					// Count number of matches
+
+					auto matchInstruction = new PTX::AddInstruction<PTX::Int64Type>(matches, matches, new PTX::Int64Value(1));
+					matchInstruction->SetPredicate(equalPredicate);
+					this->m_builder.AddStatement(matchInstruction);
+
+					// Check if we have reached the end of the search area
 
 					auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
 					auto emptyPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -140,6 +140,7 @@ private:
 					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
 						emptyPredicate, slotValue, empty, T::ComparisonOperator::NotEqual
 					));
+
 					return std::make_tuple(emptyPredicate, false);
 				});
 			});
