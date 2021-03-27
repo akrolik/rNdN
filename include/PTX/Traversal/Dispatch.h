@@ -144,6 +144,8 @@ namespace PTX {
 	}
 
 #define DispatchExpand_Array32(type) ArrayType<type, 32>
+#define DispatchExpand_Array1024(type) ArrayType<type, 1024>
+#define DispatchExpand_Array2048(type) ArrayType<type, 2048>
 
 #define DispatchType_Array(type) \
 	if (type->GetKind() == Type::Kind::Array) { \
@@ -151,6 +153,10 @@ namespace PTX {
 		switch (atype->GetDimension()) { \
 			case 32: \
 				DispatchType_Basic(atype->GetType(), DispatchExpand_Array32); break; \
+			case 1024: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array1024); break; \
+			case 2048: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array2048); break; \
 		} \
 		Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::ArrayType"); \
 	}
