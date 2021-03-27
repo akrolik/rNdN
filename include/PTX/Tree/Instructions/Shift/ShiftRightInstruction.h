@@ -12,7 +12,9 @@ class ShiftRightInstruction : DispatchInherit(ShiftRightInstruction), public Ins
 public:
 	REQUIRE_TYPE_PARAM(ShiftRightInstruction,
 		REQUIRE_EXACT(T,
-			Bit16Type, Bit32Type, Bit64Type
+			Bit16Type, Bit32Type, Bit64Type,
+			UInt16Type, UInt32Type, UInt64Type,
+			Int16Type, Int32Type, Int64Type
 		)
 	);
 

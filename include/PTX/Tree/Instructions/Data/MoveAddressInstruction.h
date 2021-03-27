@@ -17,7 +17,7 @@ public:
 		REQUIRE_BASE(T, ValueType)
 	);
 	REQUIRE_SPACE_PARAM(MoveAddressInstruction,
-		REQUIRE_BASE(S, AddressableSpace)
+		REQUIRE_BASE(S, AddressableSpace) && !REQUIRE_EXACT(S, AddressableSpace)
 	);
 
 	MoveAddressInstruction(Register<PointerType<B, T, S>> *destination, MemoryAddress<B, T, S> *source)
