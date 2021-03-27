@@ -6,6 +6,7 @@
 #include "SASS/Node.h"
 #include "SASS/BasicBlock.h"
 #include "SASS/Relocation.h"
+#include "SASS/SharedVariable.h"
 #include "SASS/IndirectBranch.h"
 
 namespace SASS {
@@ -61,12 +62,19 @@ public:
 
 	// Shared Memory
 
-	std::size_t GetSharedMemorySize() const { return m_sharedMemorySize; }
-	void SetSharedMemorySize(std::size_t size) { m_sharedMemorySize = size; }
+	const std::vector<const SharedVariable *> GetSharedVariables() const
+	{
+		return { std::begin(m_sharedVariables), std::end(m_sharedVariables) };
+	}
+	std::vector<SharedVariable *>& GetSharedVariables() { return m_sharedVariables; }
+
+	void AddSharedVariable(SharedVariable *sharedVariable) { m_sharedVariables.push_back(sharedVariable); }
+	void SetSharedVariables(const std::vector<SharedVariable *>& sharedVariables) { m_sharedVariables = sharedVariables; }
 
 	// Constant Memory
 
 	std::size_t GetConstantMemorySize() const { return m_constantMemory.size(); }
+
 	const std::vector<char>& GetConstantMemory() const { return m_constantMemory; }
 	void SetConstantMemory(const std::vector<char>& constantMemory) { m_constantMemory = constantMemory; }
 
@@ -97,9 +105,12 @@ public:
 	std::string ToString() const override
 	{
 		std::string code = "// " + m_name + "\n";
+
+		// Parameters constant space
+
 		if (m_parameters.size() > 0)
 		{
-			code += "// - Parameters (bytes): ";
+			code += "// - Parameters: ";
 			auto first = true;
 			for (const auto parameter : m_parameters)
 			{
@@ -112,7 +123,13 @@ public:
 			}
 			code += "\n";
 		}
+
+		// Register count
+
 		code += "// - Registers: " + std::to_string(m_registers) + "\n";
+
+		// Threads
+
 		if (auto [dimX, dimY, dimZ] = m_requiredThreads; dimX > 0)
 		{
 			code += "// - Required Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
@@ -121,17 +138,53 @@ public:
 		{
 			code += "// - Max Threads: " + std::to_string(dimX) + ", " + std::to_string(dimY) + ", " + std::to_string(dimZ) + "\n";
 		}
-		code += "// - CTAIDZ Used: " + std::string((m_ctaidzUsed) ? "True" : "False") + "\n";
-		code += "// - Shared Memory: " + std::to_string(m_sharedMemorySize) + " bytes\n";
-		code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
-		for (const auto& relocation : m_relocations)
+		if (m_ctaidzUsed)
 		{
-			code += relocation->ToString() + "\n";
+			code += "// - CTAIDZ\n";
 		}
-		for (const auto& indirectBranch : m_indirectBranches)
+
+		// Constant memory space
+
+		if (m_constantMemory.size() > 0)
 		{
-			code += indirectBranch->ToString() + "\n";
+			code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
 		}
+
+		// Shared variables
+
+		if (m_sharedVariables.size() > 0)
+		{
+			code += "// - Shared Memory:\n";
+			for (const auto& sharedVariable : m_sharedVariables)
+			{
+				code += sharedVariable->ToString() + "\n";
+			}
+		}
+
+		// Relocatable instructions (global/shared)
+
+		if (m_relocations.size() > 0)
+		{
+			code += "// - Relocations:\n";
+			for (const auto& relocation : m_relocations)
+			{
+				code += relocation->ToString() + "\n";
+			}
+		}
+
+		// Indirect branches (SSY/SYNC)
+
+		if (m_indirectBranches.size() > 0)
+		{
+			code += "// - Indirect Branches:\n";
+			for (const auto& indirectBranch : m_indirectBranches)
+			{
+				code += indirectBranch->ToString() + "\n";
+			}
+		}
+
+		// Function body
+
 		code += ".text." + m_name + ":\n";
 		for (const auto& block : m_blocks)
 		{
@@ -151,7 +204,8 @@ private:
 
 	bool m_ctaidzUsed = false;
 
-	std::size_t m_sharedMemorySize = 0;
+	std::vector<SharedVariable *> m_sharedVariables;
+
 	std::vector<char> m_constantMemory;
 
 	std::vector<Relocation *> m_relocations;

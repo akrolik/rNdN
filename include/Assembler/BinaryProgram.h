@@ -13,6 +13,12 @@ namespace Assembler {
 class BinaryProgram
 {
 public:
+	struct Variable {
+		std::string Name;
+		std::size_t Size;
+		std::size_t DataSize;
+	};
+
 	// Compute capability
 
 	unsigned int GetComputeCapability() const { return m_computeCapability; }
@@ -20,16 +26,33 @@ public:
 
 	// Global memory
 
-	const std::vector<std::tuple<std::string, std::size_t, std::size_t>>& GetGlobalVariables() const { return m_globalVariables; }
+	const std::vector<Variable>& GetGlobalVariables() const { return m_globalVariables; }
 	std::size_t GetGlobalVariableCount() const { return m_globalVariables.size(); }
 
-	void AddGlobalVariable(const std::string& name, std::size_t offset, std::size_t size) { m_globalVariables.push_back({ name, offset, size }); }
-	void SetGlobalVariables(const std::vector<std::tuple<std::string, std::size_t, std::size_t>>& globalVariables) { m_globalVariables = globalVariables; }
+	void AddGlobalVariable(const std::string& name, std::size_t size, std::size_t dataSize)
+	{
+		m_globalVariables.push_back({ name, size, dataSize });
+	}
+	void SetGlobalVariables(const std::vector<Variable>& globalVariables) { m_globalVariables = globalVariables; }
 
 	// Shared memory
 
-	bool GetDynamicSharedMemory() const { return m_dynamicSharedMemory; }
-	void SetDynamicSharedMemory(bool dynamicSharedMemory) { m_dynamicSharedMemory = dynamicSharedMemory; }
+	const std::vector<Variable>& GetSharedVariables() const { return m_sharedVariables; }
+	std::size_t GetSharedVariableCount() const { return m_sharedVariables.size(); }
+
+	void AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize)
+	{
+		m_sharedVariables.push_back({ name, size, dataSize });
+	}
+	void SetSharedVariables(const std::vector<Variable>& sharedVariables) { m_sharedVariables = sharedVariables; }
+
+	// Dynamic shared memory
+
+	const std::vector<std::string>& GetDynamicSharedVariables() const { return m_dynamicSharedVariables; }
+	std::size_t GetDynamicSharedVariableCount() const { return m_dynamicSharedVariables.size(); }
+
+	void AddDynamicSharedVariable(const std::string& name) { m_dynamicSharedVariables.push_back(name); }
+	void SetDynamicSharedVariables(const std::vector<std::string>& sharedVariables) { m_dynamicSharedVariables = sharedVariables; }
 
 	// Functions
 
@@ -49,10 +72,21 @@ public:
 		std::string code;
 		code += "// Binary SASS Program\n";
 		code += "// - Compute Capability: sm_" + std::to_string(m_computeCapability) + "\n";
-		code += "// - Dynamic Shared Memory: " + std::string(m_dynamicSharedMemory ? "True" : "False");
-		for (const auto& [name, offset, size] : m_globalVariables)
+		for (const auto& variable : m_globalVariables)
 		{
-			code += "\n.global " + name + "(offset=" + Utils::Format::HexString(offset) + ", size=" + Utils::Format::HexString(size) + ")";
+			code += "\n.global " + variable.Name + " { ";
+			code += "size=" + Utils::Format::HexString(variable.Size) + " bytes; ";
+			code += "datasize=" + Utils::Format::HexString(variable.DataSize) + " bytes }";
+		}
+		for (const auto& variable : m_sharedVariables)
+		{
+			code += "\n.shared " + variable.Name + " { ";
+			code += "size=" + Utils::Format::HexString(variable.Size) + " bytes; ";
+			code += "datasize=" + Utils::Format::HexString(variable.DataSize) + " bytes }";
+		}
+		for (const auto& variable : m_dynamicSharedVariables)
+		{
+			code += "\n.extern .shared " + variable;
 		}
 		for (const auto& function : m_functions)
 		{
@@ -63,8 +97,11 @@ public:
 
 private:
 	unsigned int m_computeCapability = 0;
-	bool m_dynamicSharedMemory = false;
-	std::vector<std::tuple<std::string, std::size_t, std::size_t>> m_globalVariables;
+
+	std::vector<Variable> m_globalVariables;
+	std::vector<Variable> m_sharedVariables;
+	std::vector<std::string> m_dynamicSharedVariables;
+
 	std::vector<BinaryFunction *> m_functions;
 };
 

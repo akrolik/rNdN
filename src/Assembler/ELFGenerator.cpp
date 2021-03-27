@@ -21,7 +21,10 @@
 #define EF_CUDA_64BIT_ADDRESS (0x4 << 8)
 
 #define STO_CUDA_ENTRY 0x10
+#define STO_CUDA_GLOBAL 0x20
+#define STO_CUDA_SHARED 0x40
 #define STO_CUDA_CONSTANT 0x80
+
 #define STT_CUDA_OBJECT 0xd
 
 #define SHI_REGISTERS(x) (x << 24)
@@ -29,6 +32,7 @@
 
 #define R_CUDA_ABS32_HI_20 0x2c
 #define R_CUDA_ABS32_LO_20 0x2b
+#define R_CUDA_ABS24_20 0x2d
 
 #define SZ_SHORT 2
 #define SZ_WORD 4
@@ -118,12 +122,9 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 	// Maintain a symbol offset for connecting the .text to the symbol (NVIDIA requirement)
 
-	auto symbolCount = 0u;
-	auto symbolOffset = 0u;
-
 	// Global variables
 
-	std::unordered_map<std::string, ELFIO::Elf_Word> globalSymbolMap;
+	std::unordered_map<std::string, ELFIO::Elf_Word> symbolMap;
 	if (program->GetGlobalVariableCount() > 0)
 	{
 		// Add NVIDIA global section that will contain all variables
@@ -142,18 +143,19 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		// Add a symbol object for each global variable
 
 		std::size_t totalSize = 0;
-		for (const auto& [name, offset, size] : program->GetGlobalVariables())
+		for (const auto& globalVariable : program->GetGlobalVariables())
 		{
+			auto name = globalVariable.Name;
+			auto offset = totalSize;
+			auto size = globalVariable.Size;
+
 			auto index = symbolWriter.add_symbol(stringWriter,
-				name.c_str(), offset, size, STB_LOCAL, STT_OBJECT, STV_DEFAULT, globalSection->get_index()
+				name.c_str(), offset, size, STB_LOCAL, STT_CUDA_OBJECT, STV_DEFAULT | STO_CUDA_GLOBAL, globalSection->get_index()
 			);
-			globalSymbolMap[name] = index;
+			symbolMap[name] = index;
 			totalSize += size;
 		}
 		globalSection->set_size(totalSize);
-
-		symbolCount += program->GetGlobalVariableCount() + 1;
-		symbolOffset += program->GetGlobalVariableCount() + 1;
 	}
 
 	// Info buffer for accumulating properties
@@ -164,11 +166,123 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 	for (const auto& function : program->GetFunctions())
 	{
-		auto allocateSharedMemory = (program->GetDynamicSharedMemory() || function->GetSharedMemorySize() > 0);
-		auto allocateConstantMemory = (function->GetConstantMemorySize() > 0);
+		// Custom NVIDIA info section for function properties (params, exits, s2rctaid)
 
-		auto textSymbol = symbolOffset + 4 + allocateSharedMemory + allocateConstantMemory;
-		auto dataSymbol = symbolOffset + 2 + allocateSharedMemory;
+		auto functionInfoSection = writer.sections.add(".nv.info." + function->GetName());
+		functionInfoSection->set_type(SHT_LOPROC);
+		functionInfoSection->set_addr_align(0x4);
+		functionInfoSection->set_link(symbolSection->get_index());
+
+		// Add constant data section:
+		//   - 0x140 base
+		//   - Space for each parameter
+
+		auto dataSize = ELF_SREG_SIZE + function->GetParametersSize();
+		auto data = new char[dataSize](); // Zero initialized
+
+		auto dataSection = writer.sections.add(".nv.constant0." + function->GetName());
+		dataSection->set_type(SHT_PROGBITS);
+		dataSection->set_flags(SHF_ALLOC);
+		dataSection->set_addr_align(0x4);
+		dataSection->set_data(data, dataSize);
+
+		auto dataSymbol = symbolWriter.add_symbol(stringWriter,
+			dataSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, dataSection->get_index()
+		);
+
+		// Add constant variables section
+
+		ELFIO::section *constSection = nullptr;
+		if (function->GetConstantMemorySize() > 0)
+		{
+			// Copy constant data
+
+			auto constSize = function->GetConstantMemorySize();
+			auto constData = new char[constSize]();
+			std::memcpy(constData, function->GetConstantMemory().data(), constSize * sizeof(char));
+
+			// Allocate section
+
+			constSection = writer.sections.add(".nv.constant2." + function->GetName());
+			constSection->set_type(SHT_PROGBITS);
+			constSection->set_flags(SHF_ALLOC);
+			constSection->set_addr_align(0x4);
+			constSection->set_data(constData, constSize);
+			// constSection->set_info(textSection->get_index());
+
+			symbolWriter.add_symbol(stringWriter,
+				constSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, constSection->get_index()
+			);
+		}
+
+		// Add shared variables section
+
+		ELFIO::section *sharedSection = nullptr;
+                if (function->GetSharedVariableCount() > 0)
+		{
+			sharedSection = writer.sections.add(".nv.shared." + function->GetName());
+			sharedSection->set_type(SHT_NOBITS);
+			sharedSection->set_flags(SHF_WRITE | SHF_ALLOC);
+			sharedSection->set_addr_align(0x8);
+
+			symbolWriter.add_symbol(stringWriter,
+				sharedSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, sharedSection->get_index()
+			);
+
+			std::size_t totalSize = 0;
+			for (const auto& variable : function->GetSharedVariables())
+			{
+				auto name = variable.Name;
+				auto size = variable.Size;
+				auto dataSize = variable.DataSize;
+
+				auto index = symbolWriter.add_symbol(stringWriter,
+					name.c_str(), dataSize, size, STB_LOCAL, STT_CUDA_OBJECT, STV_DEFAULT | STO_CUDA_SHARED, sharedSection->get_index()
+				);
+
+				symbolMap[name] = index;
+				totalSize += size;
+			}
+			sharedSection->set_size(totalSize);
+
+			dataSegment->add_section_index(sharedSection->get_index(), sharedSection->get_addr_align());
+		}
+
+		// Add .text section for the function body
+
+		auto textSection = writer.sections.add(".text." + function->GetName());
+		textSection->set_type(SHT_PROGBITS);
+		textSection->set_flags(SHF_BARRIERS(function->GetBarriers()) | SHF_ALLOC | SHF_EXECINSTR);
+		textSection->set_addr_align(0x20);
+		textSection->set_link(symbolSection->get_index());
+		textSection->set_data(function->GetText(), function->GetSize());
+
+		auto textSymbol = symbolWriter.add_symbol(stringWriter,
+			textSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, textSection->get_index()
+		);
+
+		textSection->set_info(SHI_REGISTERS(function->GetRegisters()) + textSymbol);
+
+		// Link data sections to .text
+
+		dataSection->set_info(textSection->get_index());
+		if (constSection != nullptr)
+		{
+			constSection->set_info(textSection->get_index());
+		}
+		if (sharedSection != nullptr)
+		{
+			sharedSection->set_info(textSection->get_index());
+		}
+
+		// Add sections to text segment
+
+		textSegment->add_section_index(textSection->get_index(), textSection->get_addr_align());
+		textSegment->add_section_index(dataSection->get_index(), dataSection->get_addr_align());
+		if (constSection != nullptr)
+		{
+			textSegment->add_section_index(constSection->get_index(), constSection->get_addr_align());
+		}
 
 		// Add custom NVIDIA info
 
@@ -240,12 +354,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		AppendBytes(infoBuffer, DecomposeWord(textSymbol)); // Function index
 		AppendBytes(infoBuffer, DecomposeWord(0));          // Value
 
-		// Custom NVIDIA info section for function properties (params, exits, s2rctaid)
-
-		auto functionInfoSection = writer.sections.add(".nv.info." + function->GetName());
-		functionInfoSection->set_type(SHT_LOPROC);
-		functionInfoSection->set_addr_align(0x4);
-		functionInfoSection->set_link(symbolSection->get_index());
+		// Add custom NVIDIA info (params, exits, s2rctaid)
 
 		std::vector<char> functionInfoBuffer;
 
@@ -492,90 +601,29 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_INDIRECT_BRANCH_TARGETS});
 			AppendBytes(functionInfoBuffer, DecomposeShort(count*(3*SZ_WORD+2*SZ_SHORT)));
 
-			for (const auto& [offset, target] : function->GetIndirectBranches())
+			for (const auto& branch : function->GetIndirectBranches())
 			{
-				AppendBytes(functionInfoBuffer, DecomposeWord(offset)); // Offset
-				AppendBytes(functionInfoBuffer, DecomposeShort(0));     // ?
-				AppendBytes(functionInfoBuffer, DecomposeShort(0));     // ?
-				AppendBytes(functionInfoBuffer, DecomposeWord(1));      // Target count
-				AppendBytes(functionInfoBuffer, DecomposeWord(target)); // Target
+				AppendBytes(functionInfoBuffer, DecomposeWord(branch.Offset)); // Offset
+				AppendBytes(functionInfoBuffer, DecomposeShort(0));            // ?
+				AppendBytes(functionInfoBuffer, DecomposeShort(0));            // ?
+				AppendBytes(functionInfoBuffer, DecomposeWord(1));             // Target count
+				AppendBytes(functionInfoBuffer, DecomposeWord(branch.Target)); // Target
 			}
 		}
 
 		functionInfoSection->set_data(functionInfoBuffer.data(), functionInfoBuffer.size());
-
-		// Add constant data section:
-		//   - 0x140 base
-		//   - Space for each parameter
-
-		auto dataSize = ELF_SREG_SIZE + function->GetParametersSize();
-		auto data = new char[dataSize](); // Zero initialized
-
-		auto dataSection = writer.sections.add(".nv.constant0." + function->GetName());
-		dataSection->set_type(SHT_PROGBITS);
-		dataSection->set_flags(SHF_ALLOC);
-		dataSection->set_addr_align(0x4);
-		dataSection->set_data(data, dataSize);
-
-		textSegment->add_section_index(dataSection->get_index(), dataSection->get_addr_align());
-
-		// Add constant variables section
-
-		ELFIO::section *constSection = nullptr;
-		if (allocateConstantMemory)
-		{
-			// Copy constant data
-
-			auto constSize = function->GetConstantMemorySize();
-			auto constData = new char[constSize]();
-			std::memcpy(constData, function->GetConstantMemory().data(), constSize * sizeof(char));
-
-			// Allocate section
-
-			constSection = writer.sections.add(".nv.constant2." + function->GetName());
-			constSection->set_type(SHT_PROGBITS);
-			constSection->set_flags(SHF_ALLOC);
-			constSection->set_addr_align(0x4);
-			constSection->set_data(constData, constSize);
-
-			textSegment->add_section_index(constSection->get_index(), constSection->get_addr_align());
-		}
-
-		// Add .text section for the function body
-
-		auto textSection = writer.sections.add(".text." + function->GetName());
-		textSection->set_type(SHT_PROGBITS);
-		textSection->set_flags(SHF_BARRIERS(function->GetBarriers()) | SHF_ALLOC | SHF_EXECINSTR);
-		textSection->set_addr_align(0x20);
-		textSection->set_link(symbolSection->get_index());
-		textSection->set_info(SHI_REGISTERS(function->GetRegisters()) + textSymbol);
-		textSection->set_data(function->GetText(), function->GetSize());
-
-		textSegment->add_section_index(textSection->get_index(), textSection->get_addr_align());
-
-		// Add shared variables section
-
-		ELFIO::section *sharedSection = nullptr;
-		if (allocateSharedMemory)
-		{
-			sharedSection = writer.sections.add(".nv.shared." + function->GetName());
-			sharedSection->set_type(SHT_NOBITS);
-			sharedSection->set_flags(SHF_WRITE | SHF_ALLOC);
-			sharedSection->set_addr_align(0x10);
-			sharedSection->set_info(textSection->get_index());
-			sharedSection->set_size(function->GetSharedMemorySize());
-
-			dataSegment->add_section_index(sharedSection->get_index(), sharedSection->get_addr_align());
-		}
-
-		// Link info/data sections to .text
-
-		dataSection->set_info(textSection->get_index());
 		functionInfoSection->set_info(textSection->get_index());
-		if (constSection != nullptr)
-		{
-			constSection->set_info(textSection->get_index());
-		}
+
+		// Update symbol table:
+		//   - _param
+		//   - Global .text symbol
+
+		symbolWriter.add_symbol(stringWriter,
+			"_param", ELF_SREG_SIZE, function->GetParametersSize(), STB_LOCAL, STT_CUDA_OBJECT, STV_INTERNAL| STO_CUDA_CONSTANT, dataSection->get_index()
+		);
+		symbolWriter.add_symbol(stringWriter,
+			function->GetName().c_str(), 0x00000000, textSection->get_size(), STB_GLOBAL, STT_FUNC, STV_DEFAULT | STO_CUDA_ENTRY, textSection->get_index()
+		);
 
 		// Create relocation section for .text
 
@@ -589,64 +637,35 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			relocationSection->set_entry_size(writer.get_default_entry_size(SHT_REL));
 
 			ELFIO::relocation_section_accessor relocationWriter(writer, relocationSection);
-			for (const auto& [name, address, kind] : function->GetRelocations())
+			for (const auto& relocation : function->GetRelocations())
 			{
-				auto symbolIndex = globalSymbolMap.at(name);
-				if (kind == BinaryFunction::RelocationKind::ABS32_LO_20)
+				auto symbolIndex = symbolMap.at(relocation.Name);
+				switch (relocation.Kind)
 				{
-					relocationWriter.add_entry(address, symbolIndex, (unsigned char)R_CUDA_ABS32_LO_20);
-				}
-				else if (kind == BinaryFunction::RelocationKind::ABS32_HI_20)
-				{
-					relocationWriter.add_entry(address, symbolIndex, (unsigned char)R_CUDA_ABS32_HI_20);
+					case BinaryFunction::RelocationKind::ABS24_20:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS24_20);
+						break;
+					}
+					case BinaryFunction::RelocationKind::ABS32_LO_20:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_LO_20);
+						break;
+					}
+					case BinaryFunction::RelocationKind::ABS32_HI_20:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_HI_20);
+						break;
+					}
 				}
 			}
 		}
 
-		// Update symbol table:
-		//   - .text
-		//  [- .nv.shared]
-		//   - .nv.constant0
-		//  [- .nv.constant2]
-		//   - _param
-		//   - Global .text symbol
-
-		symbolWriter.add_symbol(stringWriter,
-			textSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, textSection->get_index()
-		);
-		if (sharedSection != nullptr)
-		{
-			symbolWriter.add_symbol(stringWriter,
-				sharedSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, sharedSection->get_index()
-			);
-			symbolOffset++;
-			symbolCount++;
-		}
-		symbolWriter.add_symbol(stringWriter,
-			dataSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, dataSection->get_index()
-		);
-		if (constSection != nullptr)
-		{
-			symbolWriter.add_symbol(stringWriter,
-				constSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, constSection->get_index()
-			);
-			symbolOffset++;
-			symbolCount++;
-		}
-		symbolWriter.add_symbol(stringWriter,
-			"_param", ELF_SREG_SIZE, function->GetParametersSize(), STB_LOCAL, STT_CUDA_OBJECT, STV_INTERNAL| STO_CUDA_CONSTANT, dataSection->get_index()
-		);
-		symbolWriter.add_symbol(stringWriter,
-			function->GetName().c_str(), 0x00000000, textSection->get_size(), STB_GLOBAL, STT_FUNC, STV_DEFAULT | STO_CUDA_ENTRY, textSection->get_index()
-		);
-
-		symbolCount += 3; // Does not count global .text section
-		symbolOffset += 4;
 	}
 
 	// Update the symbol count
 
-	symbolSection->set_info(symbolCount); // NV: Ignores global symbols
+	symbolSection->set_info(symbolWriter.get_symbols_num()); // NV: Ignores global symbols
 
 	// Set full info, contains data for all functions
 

@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "SASS/SASS.h"
@@ -96,8 +95,20 @@ public:
 
 	// Shared Memory
 
-	std::size_t GetSharedMemorySize() const { return m_sharedMemorySize; }
-	void SetSharedMemorySize(std::size_t size) { m_sharedMemorySize = size; }
+	struct Variable {
+		std::string Name;
+		std::size_t Size;
+		std::size_t DataSize;
+	};
+
+	const std::vector<Variable>& GetSharedVariables() const { return m_sharedVariables; }
+	std::size_t GetSharedVariableCount() const { return m_sharedVariables.size(); }
+
+	void AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize)
+	{
+		m_sharedVariables.push_back({ name, size, dataSize });
+	}
+	void SetSharedVariables(const std::vector<Variable>& sharedVariables) { m_sharedVariables = sharedVariables; }
 
 	// Constant Memory
 
@@ -110,7 +121,8 @@ public:
 
 	enum class RelocationKind {
 		ABS32_LO_20,
-		ABS32_HI_20
+		ABS32_HI_20,
+		ABS24_20
 	};
 
 	static std::string RelocationKindString(RelocationKind kind)
@@ -121,23 +133,42 @@ public:
 				return "ABS32_LO_20";
 			case RelocationKind::ABS32_HI_20:
 				return "ABS32_HI_20";
+			case RelocationKind::ABS24_20:
+				return "ABS24_20";
 		}
 		return "<unknown>";
 	}
+
+	struct Relocation {
+		std::string Name;
+		std::size_t Address;
+		RelocationKind Kind;
+	};
 	
-	const std::vector<std::tuple<std::string, std::size_t, RelocationKind>>& GetRelocations() const { return m_relocations; }
+	const std::vector<Relocation>& GetRelocations() const { return m_relocations; }
 	std::size_t GetRelocationsCount() const { return m_relocations.size(); }
 
-	void AddRelocation(const std::string& name, std::size_t address, RelocationKind kind) { m_relocations.push_back({ name, address, kind }); }
-	void SetRelocations(const std::vector<std::tuple<std::string, std::size_t, RelocationKind>>& relocations) { m_relocations = relocations; }
+	void AddRelocation(const std::string& name, std::size_t address, RelocationKind kind)
+	{
+		m_relocations.push_back({ name, address, kind });
+	}
+	void SetRelocations(const std::vector<Relocation>& relocations) { m_relocations = relocations; }
 
 	// Indirect branches
 
-	const std::vector<std::pair<std::size_t, std::size_t>>& GetIndirectBranches() const { return m_indirectBranches; }
+	struct IndirectBranch {
+		std::size_t Offset;
+		std::size_t Target;
+	};
+
+	const std::vector<IndirectBranch>& GetIndirectBranches() const { return m_indirectBranches; }
 	std::size_t GetIndirectBranchesCount() const { return m_indirectBranches.size(); }
 
-	void AddIndirectBranch(std::size_t offset, std::size_t target) { m_indirectBranches.push_back({ offset, target }); }
-	void SetIndirectBranches(const std::vector<std::pair<std::size_t, std::size_t>>& indirectBranches) { m_indirectBranches = indirectBranches; }
+	void AddIndirectBranch(std::size_t offset, std::size_t target)
+	{
+		m_indirectBranches.push_back({ offset, target });
+	}
+	void SetIndirectBranches(const std::vector<IndirectBranch>& indirectBranches) { m_indirectBranches = indirectBranches; }
 
 	// Formatting
 
@@ -233,28 +264,51 @@ public:
 			code += "\n";
 		}
 
-		code += "// - CTAIDZ Used: " + std::string(m_ctaidzUsed ? "True" : "False") + "\n";
+		if (m_ctaidzUsed)
+		{
+			code += "// - CTAIDZ\n";
+		}
 
 		// Shared memory
 
-		code += "// - Shared Memory: " + std::to_string(m_sharedMemorySize) + " bytes\n";
+		if (m_sharedVariables.size() > 0)
+		{
+			code += "// - Shared Memory:\n";
+			for (const auto& variable : m_sharedVariables)
+			{
+				code += ".shared " + variable.Name + " { ";
+				code += "size=" + Utils::Format::HexString(variable.Size) + " bytes; ";
+				code += "datasize=" + Utils::Format::HexString(variable.DataSize) + " bytes }\n";
+			}
+		}
 
 		// Constant memory
 
-		code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
+		if (m_constantMemory.size() > 0)
+		{
+			code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
+		}
 
 		// Relocations
 
-		for (const auto& [name, address, kind] : m_relocations)
+		if (m_relocations.size() > 0)
 		{
-			code += ".reloc " + name + " " + RelocationKindString(kind) + " (" + Utils::Format::HexString(address) + ")\n";
+			code += "// - Relocations:\n";
+			for (const auto& relocation : m_relocations)
+			{
+				code += ".reloc " + relocation.Name + " " + RelocationKindString(relocation.Kind) + " (" + Utils::Format::HexString(relocation.Address) + ")\n";
+			}
 		}
 
 		// Indirect branches
 
-		for (const auto& [offset, target] : m_indirectBranches)
+		if (m_indirectBranches.size() > 0)
 		{
-			code += ".branch " + Utils::Format::HexString(offset) + " -> " + Utils::Format::HexString(target) + ")\n";
+			code += "// - Indirect Branches:\n";
+			for (const auto& branch : m_indirectBranches)
+			{
+				code += ".branch " + Utils::Format::HexString(branch.Offset) + " -> " + Utils::Format::HexString(branch.Target) + "\n";
+			}
 		}
 
 		// Print assembled program with address and binary format
@@ -307,11 +361,11 @@ private:
 
 	bool m_ctaidzUsed = false;
 
-	std::size_t m_sharedMemorySize = 0;
+	std::vector<Variable> m_sharedVariables;
 	std::vector<char> m_constantMemory;
 
-	std::vector<std::tuple<std::string, std::size_t, RelocationKind>> m_relocations;
-	std::vector<std::pair<std::size_t, std::size_t>> m_indirectBranches;
+	std::vector<Relocation> m_relocations;
+	std::vector<IndirectBranch> m_indirectBranches;
 };
 
 }

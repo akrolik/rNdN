@@ -5,6 +5,8 @@
 #include "SASS/Node.h"
 #include "SASS/Function.h"
 #include "SASS/GlobalVariable.h"
+#include "SASS/SharedVariable.h"
+#include "SASS/DynamicSharedVariable.h"
 
 namespace SASS {
 
@@ -29,8 +31,25 @@ public:
 
 	// Shared memory
 
-	bool GetDynamicSharedMemory() const { return m_dynamicSharedMemory; }
-	void SetDynamicSharedMemory(bool dynamicSharedMemory) { m_dynamicSharedMemory = dynamicSharedMemory; }
+	std::vector<const SharedVariable *> GetSharedVariables() const
+	{
+		return { std::begin(m_sharedVariables), std::end(m_sharedVariables) };
+	}
+	std::vector<SharedVariable *>& GetSharedVariables() { return m_sharedVariables; }
+
+	void AddSharedVariable(SharedVariable *sharedVariable) { m_sharedVariables.push_back(sharedVariable); }
+	void SetSharedVariables(const std::vector<SharedVariable *>& sharedVariables) { m_sharedVariables = sharedVariables; }
+
+	// Dynamic shared memory
+
+	std::vector<const DynamicSharedVariable *> GetDynamicSharedVariables() const
+	{
+		return { std::begin(m_dynamicSharedVariables), std::end(m_dynamicSharedVariables) };
+	}
+	std::vector<DynamicSharedVariable *>& GetDynamicSharedVariables() { return m_dynamicSharedVariables; }
+
+	void AddDynamicSharedVariable(DynamicSharedVariable *sharedVariable) { m_dynamicSharedVariables.push_back(sharedVariable); }
+	void SetDynamicSharedVariables(const std::vector<DynamicSharedVariable *>& sharedVariables) { m_dynamicSharedVariables = sharedVariables; }
 
 	// Functions
 
@@ -50,13 +69,43 @@ public:
 		std::string code;
 
 		code += "// SASS Program\n";
-		code += "//  - Compute Capability: sm_" + std::to_string(m_computeCapability) + "\n";
-		code += "//  - Dynamic Shared Memory: " + std::string(m_dynamicSharedMemory ? "True" : "False");
+		code += "// - Compute Capability: sm_" + std::to_string(m_computeCapability) + "\n";
+
+		// Global variables
 		
-		for (const auto& global : m_globalVariables)
+		if (m_globalVariables.size() > 0)
 		{
-			code += "\n" + global->ToString();
+			code += "// - Global Variables:\n";
+			for (const auto& global : m_globalVariables)
+			{
+				code += "\n" + global->ToString();
+			}
 		}
+
+		// Shared variables
+
+		if (m_sharedVariables.size() > 0)
+		{
+			code += "// - Shared Variables:\n";
+			for (const auto& shared : m_sharedVariables)
+			{
+				code += "\n" + shared->ToString();
+			}
+		}
+
+		// Dynamic shared variables
+
+		if (m_dynamicSharedVariables.size() > 0)
+		{
+			code += "// - Dynamic Shared Variables:\n";
+			for (const auto& shared : m_dynamicSharedVariables)
+			{
+				code += "\n" + shared->ToString();
+			}
+		}
+
+		// Functio body
+
 		for (const auto& function : m_functions)
 		{
 			code += "\n" + function->ToString();
@@ -67,9 +116,11 @@ public:
 
 private:
 	unsigned int m_computeCapability = 0;
-	bool m_dynamicSharedMemory = false;
 	std::vector<Function *> m_functions;
+
 	std::vector<GlobalVariable *> m_globalVariables;
+	std::vector<SharedVariable *> m_sharedVariables;
+	std::vector<DynamicSharedVariable *> m_dynamicSharedVariables;
 };
 
 };

@@ -18,18 +18,22 @@ void Builder::CloseFunction()
 	// Set register count
 
 	m_currentFunction->SetRegisters(m_registerAllocation->GetRegisterCount() + m_temporaryMax);
-	m_currentFunction->SetSharedMemorySize(m_localSpaceAllocation->GetSharedMemorySize() + m_globalSpaceAllocation->GetSharedMemorySize());
 	m_currentFunction->SetConstantMemory(m_constantMemory);
 
 	m_currentFunction = nullptr;
 	m_registerAllocation = nullptr;
-	m_localSpaceAllocation = nullptr;
+	m_parameterSpaceAllocation = nullptr;
 	m_constantMemory.clear();
 }
 
 void Builder::AddParameter(std::size_t size)
 {
 	m_currentFunction->AddParameter(size);
+}
+
+void Builder::AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize)
+{
+	m_currentFunction->AddSharedVariable(new SASS::SharedVariable(name, size, dataSize));
 }
 
 // Basic Blocks

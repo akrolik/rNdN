@@ -4,13 +4,13 @@
 
 namespace SASS {
 
-class GlobalVariable : public Variable
+class SharedVariable : public Variable
 {
 public:
 	using Variable::Variable;
 
 private:
-	std::string SpaceName() const override { return "global"; }
+	std::string SpaceName() const override { return "shared"; }
 };
 
 }

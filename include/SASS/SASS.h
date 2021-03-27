@@ -16,7 +16,11 @@ namespace SASS {
 #include "SASS/Function.h"
 #include "SASS/BasicBlock.h"
 
+#include "SASS/Variable.h"
 #include "SASS/GlobalVariable.h"
+#include "SASS/SharedVariable.h"
+#include "SASS/DynamicSharedVariable.h"
+
 #include "SASS/Relocation.h"
 #include "SASS/IndirectBranch.h"
 

@@ -12,6 +12,7 @@ class Relocation : public Node
 {
 public:
 	enum class Kind {
+		ABS24_20,
 		ABS32_LO_20,
 		ABS32_HI_20
 	};
@@ -20,6 +21,8 @@ public:
 	{
 		switch (kind)
 		{
+			case Kind::ABS24_20:
+				return "ABS24_20";
 			case Kind::ABS32_LO_20:
 				return "ABS32_LO_20";
 			case Kind::ABS32_HI_20:

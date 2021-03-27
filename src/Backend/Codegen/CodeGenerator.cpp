@@ -8,13 +8,13 @@ namespace Codegen {
 
 // Public API
 
-SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::LocalSpaceAllocation *spaceAllocation)
+SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::ParameterSpaceAllocation *parameterAllocation)
 {
 	// Setup codegen builder
 
 	auto sassFunction = m_builder.CreateFunction(function->GetName());
 	m_builder.SetRegisterAllocation(registerAllocation);
-	m_builder.SetLocalSpaceAllocation(spaceAllocation);
+	m_builder.SetParameterSpaceAllocation(parameterAllocation);
 
 	// Traverse function
 
@@ -58,9 +58,35 @@ void CodeGenerator::Visit(const PTX::_TypedVariableDeclaration *declaration)
 template<class T, class S>
 void CodeGenerator::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration)
 {
-	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
+	for (const auto& name : declaration->GetNames())
 	{
-		m_builder.AddParameter(PTX::BitSize<T::TypeBits>::NumBytes);
+		for (auto i = 0u; i < name->GetCount(); ++i)
+		{
+			const auto string = name->GetName(i);
+			const auto dataSize = PTX::BitSize<T::TypeBits>::NumBytes;
+
+			if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
+			{
+				// Add each parameter declaration to the parameter constant space
+
+				m_builder.AddParameter(dataSize);
+			}
+			else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+			{
+				// Add each shared declaration to the function
+
+				if constexpr(PTX::is_array_type<T>::value)
+				{
+					// Array sizes, only possible for shared spaces (not parameters)
+
+					m_builder.AddSharedVariable(string, T::ElementCount * dataSize, dataSize);
+				}
+				else
+				{
+					m_builder.AddSharedVariable(string, dataSize, dataSize);
+				}
+			}
+		}
 	}
 }
 

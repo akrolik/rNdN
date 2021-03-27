@@ -122,7 +122,7 @@ void CompositeGenerator::Visit(const PTX::_MemoryAddress *address)
 template<PTX::Bits B, class T, class S>
 void CompositeGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 {
-	const auto& allocations = this->m_builder.GetLocalSpaceAllocation();
+	const auto& allocations = this->m_builder.GetParameterSpaceAllocation();
 
 	// Verify parameter allocated
 

@@ -3,23 +3,21 @@
 #include "PTX/Traversal/ConstHierarchicalVisitor.h"
 #include "PTX/Traversal/ConstDeclarationVisitor.h"
 
-#include "PTX/Analysis/SpaceAllocator/GlobalSpaceAllocation.h"
-#include "PTX/Analysis/SpaceAllocator/LocalSpaceAllocation.h"
+#include "PTX/Analysis/SpaceAllocator/ParameterSpaceAllocation.h"
 #include "PTX/Tree/Tree.h"
 
 namespace PTX {
 namespace Analysis {
 
-class LocalSpaceAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
+class ParameterSpaceAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
 {
 public:
-	LocalSpaceAllocator(const GlobalSpaceAllocation *globalAllocation) : m_globalAllocation(globalAllocation) {}
-
 	void Analyze(const FunctionDefinition<VoidType> *function);
-	const LocalSpaceAllocation *GetSpaceAllocation() { return m_allocation; }
+	const ParameterSpaceAllocation *GetSpaceAllocation() { return m_allocation; }
 
 	// Declarations
 
+	bool VisitIn(const FunctionDefinition<VoidType> *function) override;
 	bool VisitIn(const VariableDeclaration *declaration) override;
 
 	template<class T, class S>
@@ -27,8 +25,7 @@ public:
 	void Visit(const _TypedVariableDeclaration *declaration) override;
 
 private:
-	const GlobalSpaceAllocation *m_globalAllocation = nullptr;
-	LocalSpaceAllocation *m_allocation = nullptr;
+	ParameterSpaceAllocation *m_allocation = nullptr;
 };
 
 }

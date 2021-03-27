@@ -19,13 +19,24 @@ BinaryProgram *Assembler::Assemble(const SASS::Program *program)
 
 	auto binaryProgram = new BinaryProgram();
 	binaryProgram->SetComputeCapability(program->GetComputeCapability());
-	binaryProgram->SetDynamicSharedMemory(program->GetDynamicSharedMemory());
 
 	// Global variables
 
 	for (const auto& globalVariable : program->GetGlobalVariables())
 	{
-		binaryProgram->AddGlobalVariable(globalVariable->GetName(), globalVariable->GetOffset(), globalVariable->GetSize());
+		binaryProgram->AddGlobalVariable(globalVariable->GetName(), globalVariable->GetSize(), globalVariable->GetDataSize());
+	}
+	
+	// Shared variables
+
+	for (const auto& sharedVariable : program->GetSharedVariables())
+	{
+		binaryProgram->AddSharedVariable(sharedVariable->GetName(), sharedVariable->GetSize(), sharedVariable->GetDataSize());
+	}
+
+	for (const auto& sharedVariable : program->GetDynamicSharedVariables())
+	{
+		binaryProgram->AddDynamicSharedVariable(sharedVariable->GetName());
 	}
 
 	// Assemble each function to binary
@@ -224,6 +235,11 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		BinaryFunction::RelocationKind kind;
 		switch (relocation->GetKind())
 		{
+			case SASS::Relocation::Kind::ABS24_20:
+			{
+				kind = BinaryFunction::RelocationKind::ABS24_20;
+				break;
+			}
 			case SASS::Relocation::Kind::ABS32_LO_20:
 			{
 				kind = BinaryFunction::RelocationKind::ABS32_LO_20;
@@ -299,7 +315,10 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 	// Shared memory
 
-	binaryFunction->SetSharedMemorySize(function->GetSharedMemorySize());
+	for (auto sharedVariable : function->GetSharedVariables())
+	{
+		binaryFunction->AddSharedVariable(sharedVariable->GetName(), sharedVariable->GetSize(), sharedVariable->GetDataSize());
+	}
 
 	// Constant memory
 

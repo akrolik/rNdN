@@ -1,8 +1,9 @@
 #pragma once
 
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
-#include "PTX/Analysis/SpaceAllocator/GlobalSpaceAllocation.h"
-#include "PTX/Analysis/SpaceAllocator/LocalSpaceAllocation.h"
+#include "PTX/Analysis/SpaceAllocator/ParameterSpaceAllocation.h"
+
+#include "PTX/Tree/Tree.h"
 
 #include "SASS/SASS.h"
 
@@ -14,8 +15,6 @@ namespace Codegen {
 class Builder
 {
 public:
-	Builder(const PTX::Analysis::GlobalSpaceAllocation *allocation) : m_globalSpaceAllocation(allocation) {}
-
 	// Register Allocation
 
 	const PTX::Analysis::RegisterAllocation *GetRegisterAllocation() const { return m_registerAllocation; }
@@ -23,10 +22,8 @@ public:
 
 	// Space Allocation
 
-	const PTX::Analysis::LocalSpaceAllocation *GetLocalSpaceAllocation() const { return m_localSpaceAllocation; }
-	void SetLocalSpaceAllocation(const PTX::Analysis::LocalSpaceAllocation *allocation) { m_localSpaceAllocation = allocation; }
-
-	const PTX::Analysis::GlobalSpaceAllocation *GetGlobalSpaceAllocation() const { return m_globalSpaceAllocation; }
+	const PTX::Analysis::ParameterSpaceAllocation *GetParameterSpaceAllocation() const { return m_parameterSpaceAllocation; }
+	void SetParameterSpaceAllocation(const PTX::Analysis::ParameterSpaceAllocation *allocation) { m_parameterSpaceAllocation = allocation; }
 
 	// Function
 
@@ -34,6 +31,7 @@ public:
 	void CloseFunction();
 
 	void AddParameter(std::size_t size);
+	void AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize);
 
 	// Basic Blocks
 
@@ -90,8 +88,7 @@ private:
 	SASS::BasicBlock *m_currentBlock = nullptr;
 
 	const PTX::Analysis::RegisterAllocation *m_registerAllocation = nullptr;
-	const PTX::Analysis::LocalSpaceAllocation *m_localSpaceAllocation = nullptr;
-	const PTX::Analysis::GlobalSpaceAllocation *m_globalSpaceAllocation = nullptr;
+	const PTX::Analysis::ParameterSpaceAllocation *m_parameterSpaceAllocation = nullptr;
 
 	std::uint8_t m_temporaryCount = 0;
 	std::uint8_t m_temporaryMax = 0;

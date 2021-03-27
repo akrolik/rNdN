@@ -10,8 +10,7 @@
 #include "PTX/Analysis/Dominator/PostDominatorAnalysis.h"
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 #include "PTX/Analysis/RegisterAllocator/LinearScanRegisterAllocator.h"
-#include "PTX/Analysis/SpaceAllocator/LocalSpaceAllocator.h"
-#include "PTX/Analysis/SpaceAllocator/GlobalSpaceAllocator.h"
+#include "PTX/Analysis/SpaceAllocator/ParameterSpaceAllocator.h"
 
 #include "PTX/Transformation/Structurizer/Structurizer.h"
 
@@ -35,19 +34,6 @@ SASS::Program *Compiler::Compile(PTX::Program *program)
 	return m_program;
 }
 
-bool Compiler::VisitIn(PTX::Module *module)
-{
-	// Allocate spaces (global, shared)
-	
-	PTX::Analysis::GlobalSpaceAllocator spaceAllocator;
-	spaceAllocator.Analyze(module);
-
-	m_globalSpaceAllocation = spaceAllocator.GetSpaceAllocation();
-	m_program->SetDynamicSharedMemory(m_globalSpaceAllocation->GetDynamicSharedMemory());
-
-	return true;
-}
-
 bool Compiler::VisitIn(PTX::VariableDeclaration *declaration)
 {
 	declaration->Accept(static_cast<PTX::ConstDeclarationVisitor&>(*this));
@@ -62,21 +48,45 @@ void Compiler::Visit(const PTX::_TypedVariableDeclaration *declaration)
 template<class T, class S>
 void Compiler::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration)
 {
-	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+	for (const auto& name : declaration->GetNames())
 	{
-		for (const auto& name : declaration->GetNames())
+		for (auto i = 0u; i < name->GetCount(); ++i)
 		{
-			for (auto i = 0u; i < name->GetCount(); ++i)
-			{
-				const auto string = name->GetName(i);
-				if (!m_globalSpaceAllocation->ContainsGlobalMemory(string))
-				{
-					Utils::Logger::LogError("Global variable '" + string + "' is not allocated");
-				}
+			const auto string = name->GetName(i);
+			const auto dataSize = PTX::BitSize<T::TypeBits>::NumBytes;
 
-				const auto offset = m_globalSpaceAllocation->GetGlobalMemoryOffset(string);
-				const auto size = m_globalSpaceAllocation->GetGlobalMemorySize(string);
-				m_program->AddGlobalVariable(new SASS::GlobalVariable(string, offset, size));
+			if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+			{
+				if constexpr(PTX::is_array_type<T>::value)
+				{
+					m_program->AddGlobalVariable(new SASS::GlobalVariable(string, dataSize * T::ElementCount, dataSize));
+				}
+				else
+				{
+					m_program->AddGlobalVariable(new SASS::GlobalVariable(string, dataSize, dataSize));
+				}
+			}
+			else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+			{
+				if (declaration->GetLinkDirective() == PTX::Declaration::LinkDirective::External)
+				{
+					// External shared memory is dynamically defined
+
+					m_program->AddDynamicSharedVariable(new SASS::DynamicSharedVariable(string));
+				}
+				else
+				{
+					// Add each shared declaration to the allocation
+
+					if constexpr(PTX::is_array_type<T>::value)
+					{
+						m_program->AddSharedVariable(new SASS::SharedVariable(string, dataSize * T::ElementCount, dataSize));
+					}
+					else
+					{
+						m_program->AddSharedVariable(new SASS::SharedVariable(string, dataSize, dataSize));
+					}
+				}
 			}
 		}
 	}
@@ -99,12 +109,12 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	auto registerAllocation = AllocateRegisters(function);
 
-	// Allocate spaces (shared, parameters)
+	// Allocate parameter space
 	
-	PTX::Analysis::LocalSpaceAllocator spaceAllocator(m_globalSpaceAllocation);
-	spaceAllocator.Analyze(function);
+	PTX::Analysis::ParameterSpaceAllocator parameterAllocator;
+	parameterAllocator.Analyze(function);
 
-	auto spaceAllocation = spaceAllocator.GetSpaceAllocation();
+	auto parameterAllocation = parameterAllocator.GetSpaceAllocation();
 
 	// Structurize CFG
 
@@ -123,8 +133,8 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS codegen '" + function->GetName() + "'");
 
-	Codegen::CodeGenerator codegen(m_globalSpaceAllocation);
-	auto sassFunction = codegen.Generate(function, registerAllocation, spaceAllocation);
+	Codegen::CodeGenerator codegen;
+	auto sassFunction = codegen.Generate(function, registerAllocation, parameterAllocation);
 
 	Scheduler scheduler;
 	scheduler.Schedule(sassFunction);
