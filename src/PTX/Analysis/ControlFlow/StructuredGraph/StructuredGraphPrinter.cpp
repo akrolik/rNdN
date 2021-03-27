@@ -44,12 +44,12 @@ void StructuredGraphPrinter::Visit(const StructureNode *node)
 
 void StructuredGraphPrinter::Visit(const BranchStructure *structure)
 {
-	auto name = "branch" + std::to_string(m_index++);
+	auto clusterName = "branch" + std::to_string(m_index++);
 
 	// Begin branch structure
 
 	Indent();
-	m_string << "subgraph cluster_" << name << " {" << std::endl;
+	m_string << "subgraph cluster_" << clusterName << " {" << std::endl;
 	m_indent++;
 
 	Indent();
@@ -60,6 +60,7 @@ void StructuredGraphPrinter::Visit(const BranchStructure *structure)
 	// Print main block
 
 	Indent();
+	auto name = structure->GetBlock()->GetLabel()->GetName();
 	m_string << "s_" << name << "[label=\"" << name << "\", shape=rectangle];" << std::endl;
 
 	m_nameMap[structure] = "s_" + name;
@@ -135,23 +136,31 @@ void StructuredGraphPrinter::Visit(const ExitStructure *structure)
 {
 	Indent();
 	auto name = structure->GetBlock()->GetLabel()->GetName();
-	m_string << "s_" << name << "[label=\"" << name << "\", shape=rectangle];" << std::endl;
+	m_string << "s_" << name << "[label=\"E_" << name << "\", shape=rectangle];" << std::endl;
 
 	m_nameMap[structure] = "s_" + name;
 
 	// Process next structure
 
 	ConstStructuredGraphVisitor::Visit(structure);
+	
+	// Add edge connecting block to the next
+
+	if (auto next = structure->GetNext())
+	{
+		Indent();
+		m_string << m_nameMap[structure] << " -> " << m_nameMap[next] << ";" << std::endl;
+	}
 }
 
 void StructuredGraphPrinter::Visit(const LoopStructure *structure)
 {
 	// Begin loop structure
 
-	auto name = "loop" + std::to_string(m_index++);
+	auto clusterName = "loop" + std::to_string(m_index++);
 
 	Indent();
-	m_string << "subgraph cluster_" << name << " {" << std::endl;
+	m_string << "subgraph cluster_" << clusterName << " {" << std::endl;
 	m_indent++;
 
 	Indent();

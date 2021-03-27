@@ -141,6 +141,7 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 
 			branchInstruction = new SASS::BRAInstruction("");
 			branchInstruction->SetPredicate(predicate, negate);
+			branchBlock->AddInstruction(branchInstruction);
 
 			// Generate false structure
 
@@ -271,6 +272,7 @@ void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 	// Process loop body
 
 	auto oldExits = m_loopExits;
+	m_loopExits.clear();
 
 	structure->GetBody()->Accept(*this);
 	m_endBlock->AddInstruction(new SASS::BRAInstruction(m_beginBlock->GetName()));

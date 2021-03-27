@@ -238,17 +238,6 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 			Error("condition missing", block);
 		}
 
-		// If without else
-
-		if (trueBranch == postDominator)
-		{
-			trueBranch = nullptr;
-		}
-		if (falseBranch == postDominator)
-		{
-			falseBranch = nullptr;
-		}
-
 		// Check for loop special case branching
 
 		if (auto loopContext = dynamic_cast<const LoopContext *>(context))
@@ -260,14 +249,14 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 			if (block == loopContext->GetLatch())
 			{
-				if (trueBranch == nullptr && falseBranch == header)
+				if (trueBranch == exit && falseBranch == header)
 				{
 					auto exitStructure = new Analysis::ExitStructure(block, condition, false, nullptr);
 					m_exitStructures.insert(exitStructure);
 					m_latchStructure = exitStructure;
 					return exitStructure;
 				}
-				else if (trueBranch == header && falseBranch == nullptr)
+				else if (trueBranch == header && falseBranch == exit)
 				{
 					auto exitStructure = new Analysis::ExitStructure(block, condition, true, nullptr);
 					m_exitStructures.insert(exitStructure);
@@ -280,14 +269,14 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 			{
 				// Break special cases
 
-				if (trueBranch == nullptr && loopContext->ContainsBlock(falseBranch))
+				if (trueBranch == exit && loopContext->ContainsBlock(falseBranch))
 				{
 					auto falseStructure = Structurize(cfg, falseBranch);
 					auto exitStructure = new Analysis::ExitStructure(block, condition, false, falseStructure);
 					m_exitStructures.insert(exitStructure);
 					return exitStructure;
 				}
-				else if (falseBranch == nullptr && loopContext->ContainsBlock(trueBranch))
+				else if (falseBranch == exit && loopContext->ContainsBlock(trueBranch))
 				{
 					auto trueStructure = Structurize(cfg, trueBranch);
 					auto exitStructure = new Analysis::ExitStructure(block, condition, true, trueStructure);
@@ -309,6 +298,17 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 				// Otherwise, this is a standard if-else (well-nested)
 			}
+		}
+
+		// If without else
+
+		if (trueBranch == postDominator)
+		{
+			trueBranch = nullptr;
+		}
+		if (falseBranch == postDominator)
+		{
+			falseBranch = nullptr;
 		}
 
 		// Targets must be within the structure, no other incoming edges
