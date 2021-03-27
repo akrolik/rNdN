@@ -17,7 +17,7 @@ std::pair<SASS::Predicate *, bool> PredicateGenerator::Generate(const PTX::Opera
 	operand->Accept(*this);
 	if (m_predicate == nullptr)
 	{
-		Error("predicate for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
+		Error(operand, "unsupported kind");
 	}
 	return { m_predicate, m_negatePredicate };
 }

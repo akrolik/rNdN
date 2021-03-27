@@ -19,7 +19,7 @@ std::pair<SASS::Composite *, SASS::Composite *> CompositeGenerator::Generate(con
 	operand->Accept(*this);
 	if (m_composite == nullptr)
 	{
-		Error("composite for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
+		Error(operand, "unsupported kind");
 	}
 	return { m_composite, m_compositeHi };
 }
@@ -71,11 +71,14 @@ void CompositeGenerator::Visit(const PTX::Constant<T> *constant)
 	{
 		// Architecture property
 
-		if (constant->GetName() == "WARP_SZ")
+		if (constant->GetName() == PTX::SpecialConstantName_WARP_SZ)
 		{
 			m_composite = new SASS::I32Immediate(32);
+			return;
 		}
 	}
+
+	Error(constant);
 }
 
 template<class T>
@@ -83,33 +86,43 @@ void CompositeGenerator::Visit(const PTX::Value<T> *value)
 {
 	if (value->GetValue() == 0)
 	{
+		//TODO: Decide whether zero is register or immediate
+
 		m_composite = SASS::RZ;
+		// m_composite = new SASS::I32Immediate(0);
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
 			m_compositeHi = SASS::RZ;
+			// m_compositeHi = new SASS::I32Immediate(0);
 		}
 	}
 	else
 	{
 		//TODO: Decide which Value<T> types are loading using MOV, constant 0x2, and immediates
 
-		if constexpr(PTX::is_int_type<T>::value && PTX::BitSize<T::TypeBits>::NumBits < 32)
+		if constexpr(PTX::is_int_type<T>::value)
 		{
-			m_composite = new SASS::I32Immediate(value->GetValue());
-		}
-		else
-		{
-			// Allocate space in constant memory
-
-			auto offset = this->m_builder.AddConstantMemory(value->GetValue());
-
-			// Create composite value (hi for 64-bit types)
-
-			m_composite = new SASS::Constant(0x2, offset);
-			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			if (value->GetValue() < 0xffffff)
 			{
-				m_compositeHi = new SASS::Constant(0x2, offset + 0x4);
+				m_composite = new SASS::I32Immediate(value->GetValue());
+				if constexpr(T::TypeBits == PTX::Bits::Bits64)
+				{
+					m_compositeHi = new SASS::I32Immediate(0x0);
+				}
+				return;
 			}
+		}
+
+		// Allocate space in constant memory
+
+		auto offset = this->m_builder.AddConstantMemory(value->GetValue());
+
+		// Create composite value (hi for 64-bit types)
+
+		m_composite = new SASS::Constant(0x2, offset);
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			m_compositeHi = new SASS::Constant(0x2, offset + 0x4);
 		}
 	}
 }

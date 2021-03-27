@@ -17,9 +17,7 @@ std::pair<SASS::Register *, SASS::Register *> RegisterGenerator::Generate(const 
 	operand->Accept(*this);
 	if (m_register == nullptr)
 	{
-		//TODO: Temporarily use the first scratch register for unallocated variables
-		// Error("register for operand '" + PTX::PrettyPrinter::PrettyString(operand) + "'");
-		return { this->m_builder.AllocateTemporaryRegister(), nullptr };
+		Error(operand, "unsupported kind");
 	}
 	return { m_register, m_registerHi };
 }
@@ -52,25 +50,42 @@ void RegisterGenerator::Visit(const PTX::Register<T> *reg)
 		const auto& [allocation, range] = allocations->GetRegister(name);
 		m_register = new SASS::Register(allocation);
 
-		// Extended datatypes
-		
-		if (range == 2)
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
-			m_registerHi = new SASS::Register(allocation + 1);
+			// Extended datatypes
+			
+			if (range == 2)
+			{
+				m_registerHi = new SASS::Register(allocation + 1);
+			}
 		}
+	}
+	else
+	{
+		// Non-allocated registers are given a temporary
+
+		auto [temp, tempHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
+
+		m_register = temp;
+		m_registerHi = tempHi;
 	}
 }
 
 template<class T, class S, PTX::VectorSize V>
 void RegisterGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 {
-	//TODO: Indexed registers
+	Error(reg);
 }
 
 template<class T>
 void RegisterGenerator::Visit(const PTX::SinkRegister<T> *reg)
 {
-	//TODO: Sink register
+	// Sink register given a temporary
+
+	auto [temp, tempHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
+
+	m_register = temp;
+	m_registerHi = tempHi;
 }
 
 void RegisterGenerator::Visit(const PTX::_Constant *constant)
@@ -86,7 +101,23 @@ void RegisterGenerator::Visit(const PTX::_Value *value)
 template<class T>
 void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
 {
-	//TODO: Constant
+	auto [reg, regHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
+
+	m_register = reg;
+	m_registerHi = regHi;
+		
+	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+	{
+		// Architecture property
+
+		if (constant->GetName() == PTX::SpecialConstantName_WARP_SZ)
+		{
+			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(32)));
+			return;
+		}
+	}
+
+	Error(constant);
 }
 
 template<class T>
@@ -96,10 +127,35 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 	{
 		m_register = SASS::RZ;
 	}
-	// if constexpr(PTX::TypeBits == PTX::Bits::Bits64)
-	// {
-	// 	//TODO: Move other values into register
-	// }
+	else
+	{
+		auto [reg, regHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
+
+		m_register = reg;
+		m_registerHi = regHi;
+		
+		if constexpr(PTX::is_int_type<T>::value && PTX::BitSize<T::TypeBits>::NumBits <= 32)
+		{
+			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(value->GetValue())));
+		}
+		else
+		{
+			// Allocate space in constant memory
+
+			auto offset = this->m_builder.AddConstantMemory(value->GetValue());
+
+			// Load value from constant space into registers (hi for 64-bit types)
+
+			auto constant = new SASS::Constant(0x2, offset);
+			this->m_builder.AddInstruction(new SASS::MOVInstruction(m_register, constant));
+
+			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			{
+				auto constantHi = new SASS::Constant(0x2, offset + 0x4);
+				this->m_builder.AddInstruction(new SASS::MOVInstruction(m_registerHi, constantHi));
+			}
+		}
+	}
 }
 
 }
