@@ -108,23 +108,36 @@ namespace PTX {
 #define DispatchExpand_PointerConst(type) PointerType<Bits::Bits64, type, ConstSpace>
 #define DispatchExpand_PointerParameter(type) PointerType<Bits::Bits64, type, ParameterSpace>
 
+#define DispatchExpand_PointerGlobal2(type) PointerType<Bits::Bits64, PointerType<Bits::Bits64, type, GlobalSpace>>
+
 #define DispatchType_Pointer(type) \
 	if (type->GetKind() == Type::Kind::Pointer) { \
 		if (type->GetBits() == Bits::Bits64) { \
 			const auto ptype = static_cast<const _PointerType<Bits::Bits64> *>(type); \
+			const auto vtype = static_cast<const _PointerType<Bits::Bits64> *>(ptype->GetType()); \
 			switch (ptype->GetStateSpace()->GetKind()) { \
 				case StateSpace::Kind::Addressable: \
-					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerAddressable); break; \
+					if (vtype->GetKind() == Type::Kind::Pointer) { \
+						if (vtype->GetBits() == Bits::Bits64) { \
+							const auto ptype2 = static_cast<const _PointerType<Bits::Bits64> *>(vtype); \
+							if (ptype2->GetStateSpace()->GetKind() == StateSpace::Kind::Global) { \
+									DispatchType_Basic(ptype2->GetType(), DispatchExpand_PointerGlobal2); \
+							} \
+						} \
+					} else { \
+						DispatchType_Basic(vtype, DispatchExpand_PointerAddressable); \
+					} \
+					break; \
 				case StateSpace::Kind::Local: \
-					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerLocal); break; \
+					DispatchType_Basic(vtype, DispatchExpand_PointerLocal); break; \
 				case StateSpace::Kind::Global: \
-					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerGlobal); break; \
+					DispatchType_Basic(vtype, DispatchExpand_PointerGlobal); break; \
 				case StateSpace::Kind::Shared: \
-					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerShared); break; \
+					DispatchType_Basic(vtype, DispatchExpand_PointerShared); break; \
 				case StateSpace::Kind::Const: \
-					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerConst); break; \
+					DispatchType_Basic(vtype, DispatchExpand_PointerConst); break; \
 				case StateSpace::Kind::Parameter: \
-					DispatchType_Basic(ptype->GetType(), DispatchExpand_PointerParameter); break; \
+					DispatchType_Basic(vtype, DispatchExpand_PointerParameter); break; \
 			} \
 		} \
 		Utils::Logger::LogError("PTX::Dispatch unsupported type PTX::PointerType"); \
