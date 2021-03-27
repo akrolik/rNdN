@@ -357,6 +357,8 @@ template<>
 struct IntTypeBase<Bits::Bits8, 1> : BitType<Bits::Bits8>
 {
 	static std::string Name() { return ".s" + std::to_string(BitSize<Bits::Bits8>::NumBits); }
+
+	Type::Kind GetKind() const override { return Type::Kind::Int; }
 };
 
 template<Bits B, unsigned int N = 1> struct IntType : IntTypeBase<B, N> {};
