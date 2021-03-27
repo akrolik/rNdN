@@ -44,7 +44,28 @@ public:
 
 	// Temporary Registers
 
-	SASS::Register *AllocateTemporaryRegister();
+	template<PTX::Bits B>
+	std::pair<SASS::Register *, SASS::Register *> AllocateTemporaryRegisterPair()
+	{
+		if constexpr(PTX::BitSize<B>::NumBits <= 32)
+		{
+			return { AllocateTemporaryRegister(), nullptr };
+		}
+		else
+		{
+			auto align = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+			return AllocateTemporaryRegisterPair(align);
+		}
+	}
+
+	std::pair<SASS::Register *, SASS::Register *> AllocateTemporaryRegisterPair(unsigned int align = 1)
+	{
+		auto reg0 = AllocateTemporaryRegister(align);
+		auto reg1 = AllocateTemporaryRegister();
+		return { reg0, reg1 };
+	}
+
+	SASS::Register *AllocateTemporaryRegister(unsigned int align = 1);
 	void ClearTemporaryRegisters();
 
 	// Relocations
