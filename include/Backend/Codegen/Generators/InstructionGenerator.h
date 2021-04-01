@@ -17,17 +17,17 @@ public:
 
 	// Arithmetic
 
-	// void Visit(const PTX::_AbsoluteInstruction *instruction) override;
+	void Visit(const PTX::_AbsoluteInstruction *instruction) override;
 	void Visit(const PTX::_AddInstruction *instruction) override;
-	// void Visit(const PTX::_CountLeadingZerosInstruction *instruction) override;
-	// void Visit(const PTX::_DivideInstruction *instruction) override;
+	void Visit(const PTX::_CountLeadingZerosInstruction *instruction) override;
+	void Visit(const PTX::_DivideInstruction *instruction) override;
 	void Visit(const PTX::_MADInstruction *instruction) override;
 	void Visit(const PTX::_MultiplyInstruction *instruction) override;
 	void Visit(const PTX::_MultiplyWideInstruction *instruction) override;
-	// void Visit(const PTX::_NegateInstruction *instruction) override;
-	// void Visit(const PTX::_ReciprocalInstruction *instruction) override;
+	void Visit(const PTX::_NegateInstruction *instruction) override;
+	void Visit(const PTX::_ReciprocalInstruction *instruction) override;
 	void Visit(const PTX::_RemainderInstruction *instruction) override;
-	// void Visit(const PTX::_SubtractInstruction *instruction) override;
+	void Visit(const PTX::_SubtractInstruction *instruction) override;
 
 	// Comparison
 
@@ -37,7 +37,7 @@ public:
 	// Control Flow
 
 	void Visit(const PTX::BranchInstruction *instruction) override;
-	// void Visit(const PTX::_CallInstruction *instruction) override;
+	void Visit(const PTX::_CallInstructionBase *instruction) override;
 	void Visit(const PTX::ReturnInstruction *instruction) override;
 
 	// Data 
@@ -47,7 +47,7 @@ public:
 	void Visit(const PTX::_LoadInstruction *instruction) override;
 	void Visit(const PTX::_LoadNCInstruction *instruction) override;
 	void Visit(const PTX::_MoveInstruction *instruction) override;
-	// void Visit(const PTX::_MoveAddressInstruction *instruction) override;
+	void Visit(const PTX::_MoveAddressInstruction *instruction) override;
 	void Visit(const PTX::_MoveSpecialInstruction *instruction) override;
 	void Visit(const PTX::_PackInstruction *instruction) override;
 	void Visit(const PTX::_ShuffleInstruction *instruction) override;
@@ -63,13 +63,13 @@ public:
 
 	// Shift
 
-	// void Visit(const PTX::_ShiftLeftInstruction *instruction) override;
-	// void Visit(const PTX::_ShiftRightInstruction *instruction) override;
+	void Visit(const PTX::_ShiftLeftInstruction *instruction) override;
+	void Visit(const PTX::_ShiftRightInstruction *instruction) override;
 
 	// Synchronization
 
-	// void Visit(const PTX::_AtomicInstruction *instruction) override;
-	// void Visit(const PTX::_BarrierInstruction *instruction) override;
+	void Visit(const PTX::_AtomicInstruction *instruction) override;
+	void Visit(const PTX::BarrierInstruction *instruction) override;
 	void Visit(const PTX::_ReductionInstruction *instruction) override;
 };
 

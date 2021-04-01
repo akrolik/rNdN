@@ -12,8 +12,8 @@ void ReductionGenerator::Generate(const PTX::_ReductionInstruction *instruction)
 	instruction->Dispatch(*this);
 }
 
-template<class T>
-SASS::REDInstruction::Type ReductionGenerator::InstructionType()
+template<PTX::Bits B, class T, class S>
+SASS::REDInstruction::Type ReductionGenerator::InstructionType(const PTX::ReductionInstruction<B, T, S> *instruction)
 {
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
@@ -43,15 +43,15 @@ SASS::REDInstruction::Type ReductionGenerator::InstructionType()
 	{
 		return SASS::REDInstruction::Type::F64;
 	}
-	Error("reduction for type " + T::Name());
+	Error(instruction, "unsupported type");
 }
 
-template<class T>
-SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(typename T::ReductionOperation operation)
+template<PTX::Bits B, class T, class S>
+SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(const PTX::ReductionInstruction<B, T, S> *instruction)
 {
 	if constexpr(PTX::is_bit_type<T>::value)
 	{
-		switch (operation)
+		switch (instruction->GetOperation())
 		{
 			case T::ReductionOperation::And:
 				return SASS::REDInstruction::Mode::AND;
@@ -63,14 +63,14 @@ SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(typename T::Reduc
 	}
 	else if constexpr(std::is_same<T, PTX::Float16x2Type>::value)
 	{
-		if (operation == T::ReductionOperation::Add)
+		if (instruction->GetOperation() == T::ReductionOperation::Add)
 		{
 			return SASS::REDInstruction::Mode::ADD;
 		}
 	}
 	else
 	{
-		switch (operation)
+		switch (instruction->GetOperation())
 		{
 			case T::ReductionOperation::Add:
 				return SASS::REDInstruction::Mode::ADD;
@@ -84,8 +84,7 @@ SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(typename T::Reduc
 				return SASS::REDInstruction::Mode::MAX;
 		}
 	}
-
-	Error("reduction for type " + T::ReductionOperationString(operation));
+	Error(instruction, "unsupported operation");
 }
 
 template<PTX::Bits B, class T, class S>
@@ -108,12 +107,12 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 	auto synchronization = instruction->GetSynchronization();
 	if (synchronization != PTX::ReductionInstruction<B, T, S>::Synchronization::None)
 	{
-		Error("reduction for synchronization " + PTX::ReductionInstruction<B, T, S>::SynchronizationString(synchronization));
+		Error(instruction, "unsupported synchronization modifier");
 	}
 	auto scope = instruction->GetScope(); 
 	if (scope != PTX::ReductionInstruction<B, T, S>::Scope::None)
 	{
-		Error("reduction for synchronization " + PTX::ReductionInstruction<B, T, S>::ScopeString(scope));
+		Error(instruction, "unsupported scope modifier");
 	}
 
 	// Generate operands
@@ -126,16 +125,21 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 
 	// Generate instruction
 
-	auto type = InstructionType<T>();
-	auto flags = SASS::REDInstruction::Flags::None;
-	if constexpr(B == PTX::Bits::Bits64)
+	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
-		flags = SASS::REDInstruction::Flags::E;
-	}
-	auto mode = InstructionMode<T>(instruction->GetOperation());
+		auto type = InstructionType(instruction);
+		auto flags = SASS::REDInstruction::Flags::None;
+		if constexpr(B == PTX::Bits::Bits64)
+		{
+			flags |= SASS::REDInstruction::Flags::E;
+		}
+		auto mode = InstructionMode(instruction);
 
-	this->AddInstruction(new SASS::REDInstruction(address, value, type, mode, flags));
-	this->AddInstruction(new SASS::DEPBARInstruction(SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE));
+		this->AddInstruction(new SASS::REDInstruction(address, value, type, mode, flags));
+		this->AddInstruction(new SASS::DEPBARInstruction(
+			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
+		));
+	}
 }
 
 }

@@ -15,11 +15,31 @@ void PredicatedInstructionGenerator::SetPredicatedInstruction(const PTX::Predica
 		m_predicate = predicateReg;
 		m_negatePredicate = negate ^ predicate_Not;
 	}
+	else
+	{
+		m_predicate = nullptr;
+		m_negatePredicate = false;
+	}
+
+	m_instruction = instruction;
 }
 
-void PredicatedInstructionGenerator::AddInstruction(SASS::PredicatedInstruction *instruction)
+void PredicatedInstructionGenerator::AddInstruction(SASS::PredicatedInstruction *instruction, SASS::Predicate *predicate, bool negatePredicate)
 {
-	instruction->SetPredicate(m_predicate, m_negatePredicate);
+	if (predicate != nullptr && m_predicate != nullptr)
+	{
+		Error(m_instruction, "internal implementation requires predicate");
+	}
+
+	if (m_predicate != nullptr)
+	{
+		instruction->SetPredicate(m_predicate, m_negatePredicate);
+	}
+	if (predicate != nullptr)
+	{
+		instruction->SetPredicate(predicate, negatePredicate);
+	}
+
 	this->m_builder.AddInstruction(instruction);
 }
 

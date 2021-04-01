@@ -13,11 +13,11 @@ void SetPredicateGenerator::Generate(const PTX::_SetPredicateInstruction *instru
 }
 
 template<class T>
-SASS::ISETPInstruction::ComparisonOperator SetPredicateGenerator::IInstructionComparisonOperator(typename T::ComparisonOperator comparisonOperator)
+SASS::ISETPInstruction::ComparisonOperator SetPredicateGenerator::IInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction)
 {
 	if constexpr(PTX::is_bit_type<T>::value)
 	{
-		switch (comparisonOperator)
+		switch (instruction->GetComparisonOperator())
 		{
 			case T::ComparisonOperator::Equal:
 			{
@@ -31,7 +31,7 @@ SASS::ISETPInstruction::ComparisonOperator SetPredicateGenerator::IInstructionCo
 	}
 	else if constexpr(PTX::is_unsigned_int_type<T>::value)
 	{
-		switch (comparisonOperator)
+		switch (instruction->GetComparisonOperator())
 		{
 			case T::ComparisonOperator::Equal:
 			{
@@ -63,9 +63,9 @@ SASS::ISETPInstruction::ComparisonOperator SetPredicateGenerator::IInstructionCo
 			}
 		}
 	}
-	else if constexpr(PTX::is_int_type<T>::value)
+	else if constexpr(PTX::is_signed_int_type<T>::value)
 	{
-		switch (comparisonOperator)
+		switch (instruction->GetComparisonOperator())
 		{
 			case T::ComparisonOperator::Equal:
 			{
@@ -93,15 +93,15 @@ SASS::ISETPInstruction::ComparisonOperator SetPredicateGenerator::IInstructionCo
 			}
 		}
 	}
-	Error("comparison operation " + T::ComparisonOperatorString(comparisonOperator));
+	Error(instruction, "unsupported comparison operation");
 }
 
 template<class T>
-SASS::DSETPInstruction::ComparisonOperator SetPredicateGenerator::DInstructionComparisonOperator(typename T::ComparisonOperator comparisonOperator)
+SASS::DSETPInstruction::ComparisonOperator SetPredicateGenerator::DInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction)
 {
-	if constexpr(PTX::is_float_type<T>::value)
+	if constexpr(PTX::is_float_type<T>::value && T::TypeBits == PTX::Bits::Bits64)
 	{
-		switch (comparisonOperator)
+		switch (instruction->GetComparisonOperator())
 		{
 			// Ordered
 			case T::ComparisonOperator::Equal:
@@ -166,15 +166,15 @@ SASS::DSETPInstruction::ComparisonOperator SetPredicateGenerator::DInstructionCo
 			}
 		}
 	}
-	Error("comparison operation " + T::ComparisonOperatorString(comparisonOperator));
+	Error(instruction, "unsupported comparison operation");
 }
 
 template<class T>
-SASS::ISETPInstruction::BooleanOperator SetPredicateGenerator::IInstructionBooleanOperator(typename PTX::SetPredicateInstruction<T>::BoolOperator boolOperator)
+SASS::ISETPInstruction::BooleanOperator SetPredicateGenerator::IInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction)
 {
 	// Boolean operation (for source C)
 
-	switch (boolOperator)
+	switch (instruction->GetBoolOperator())
 	{
 		case PTX::SetPredicateInstruction<T>::BoolOperator::And:
 			return SASS::ISETPInstruction::BooleanOperator::AND;
@@ -183,15 +183,15 @@ SASS::ISETPInstruction::BooleanOperator SetPredicateGenerator::IInstructionBoole
 		case PTX::SetPredicateInstruction<T>::BoolOperator::Xor:
 			return SASS::ISETPInstruction::BooleanOperator::XOR;
 	}
-	Error("boolean operation " + PTX::SetPredicateInstruction<T>::BoolOperatorString(boolOperator));
+	Error(instruction, "unsupported boolean operation");
 }
 	
 template<class T>
-SASS::DSETPInstruction::BooleanOperator SetPredicateGenerator::DInstructionBooleanOperator(typename PTX::SetPredicateInstruction<T>::BoolOperator boolOperator)
+SASS::DSETPInstruction::BooleanOperator SetPredicateGenerator::DInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction)
 {
 	// Boolean operation (for source C)
 
-	switch (boolOperator)
+	switch (instruction->GetBoolOperator())
 	{
 		case PTX::SetPredicateInstruction<T>::BoolOperator::And:
 			return SASS::DSETPInstruction::BooleanOperator::AND;
@@ -200,7 +200,7 @@ SASS::DSETPInstruction::BooleanOperator SetPredicateGenerator::DInstructionBoole
 		case PTX::SetPredicateInstruction<T>::BoolOperator::Xor:
 			return SASS::DSETPInstruction::BooleanOperator::XOR;
 	}
-	Error("boolean operation " + PTX::SetPredicateInstruction<T>::BoolOperatorString(boolOperator));
+	Error(instruction, "unsupported boolean operation");
 }
 	
 template<class T>
@@ -239,12 +239,12 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 
 	// Generate instruction
 
-	if constexpr(PTX::is_int_type<T>::value)
+	if constexpr(PTX::is_int_type<T>::value || PTX::is_bit_type<T>::value)
 	{
 		// Comparison/boolean operators
 
-		auto comparisonOperator = IInstructionComparisonOperator<T>(instruction->GetComparisonOperator());
-		auto booleanOperator = IInstructionBooleanOperator<T>(instruction->GetBoolOperator());
+		auto comparisonOperator = IInstructionComparisonOperator<T>(instruction);
+		auto booleanOperator = IInstructionBooleanOperator<T>(instruction);
 
 		// Flags
 
@@ -256,7 +256,7 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 
 		// All unsigned ints get flag (as the register size is always 32-bit)
 
-		if constexpr(PTX::is_unsigned_int_type<T>::value)
+		if constexpr(PTX::is_unsigned_int_type<T>::value || PTX::is_bit_type<T>::value)
 		{
 			flags |= SASS::ISETPInstruction::Flags::U32;
 		}
@@ -270,7 +270,7 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 			auto temp0 = this->m_builder.AllocateTemporaryRegister();
 			auto temp1 = this->m_builder.AllocateTemporaryRegister();
 
-			if constexpr(PTX::is_unsigned_int_type<T>::value)
+			if constexpr(PTX::is_unsigned_int_type<T>::value || PTX::is_bit_type<T>::value)
 			{
 				this->AddInstruction(new SASS::I2IInstruction(
 					temp0, sourceA, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
@@ -289,19 +289,31 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 				));
 			}
 
+			this->AddInstruction(new SASS::DEPBARInstruction(
+				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
+			));
+
 			sourceA = temp0;
 			sourceB = temp1;
 		}
 		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
 			// Dummy operation for carry bit, used in the ISETP instruction (.X flag)
-			//   IADD RZ.CC, R0, -R0
+			//   IADD RZ.CC, R0, -R1
 
 			this->AddInstruction(new SASS::IADDInstruction(
-				SASS::RZ, sourceA, sourceA, SASS::IADDInstruction::Flags::NEG_B | SASS::IADDInstruction::Flags::CC
+				SASS::RZ, sourceA, sourceB, SASS::IADDInstruction::Flags::NEG_B | SASS::IADDInstruction::Flags::CC
 			));
 
 			flags |= SASS::ISETPInstruction::Flags::X;
+
+			// Finally, the instruction
+
+			this->AddInstruction(new SASS::ISETPInstruction(
+				destinationA, destinationB, sourceA_Hi, sourceB_Hi, sourceC, comparisonOperator, booleanOperator, flags
+			));
+
+			return;
 		}
 		
 		// Finally, the instruction
@@ -314,8 +326,8 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 	{
 		// Comparison/boolean operators
 
-		auto comparisonOperator = DInstructionComparisonOperator<T>(instruction->GetComparisonOperator());
-		auto booleanOperator = DInstructionBooleanOperator<T>(instruction->GetBoolOperator());
+		auto comparisonOperator = DInstructionComparisonOperator<T>(instruction);
+		auto booleanOperator = DInstructionBooleanOperator<T>(instruction);
 
 		// Flags
 
@@ -330,8 +342,15 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 		this->AddInstruction(new SASS::DSETPInstruction(
 			destinationA, destinationB, sourceA, sourceB, sourceC, comparisonOperator, booleanOperator, flags
 		));
+
+		this->AddInstruction(new SASS::DEPBARInstruction(
+			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
+		));
 	}
-	//TODO: Comparison<T> instruction BitType/Float16(32)
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }

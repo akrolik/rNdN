@@ -24,16 +24,16 @@ public:
 
 private:
 	template<class T>
-	SASS::ISETPInstruction::ComparisonOperator IInstructionComparisonOperator(typename T::ComparisonOperator comparisonOperator);
+	SASS::ISETPInstruction::ComparisonOperator IInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
 	template<class T>
-	SASS::ISETPInstruction::BooleanOperator IInstructionBooleanOperator(typename PTX::SetPredicateInstruction<T>::BoolOperator boolOperator);
+	SASS::ISETPInstruction::BooleanOperator IInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
 	template<class T>
-	SASS::DSETPInstruction::ComparisonOperator DInstructionComparisonOperator(typename T::ComparisonOperator comparisonOperator);
+	SASS::DSETPInstruction::ComparisonOperator DInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
 	template<class T>
-	SASS::DSETPInstruction::BooleanOperator DInstructionBooleanOperator(typename PTX::SetPredicateInstruction<T>::BoolOperator boolOperator);
+	SASS::DSETPInstruction::BooleanOperator DInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
 };
 
 }

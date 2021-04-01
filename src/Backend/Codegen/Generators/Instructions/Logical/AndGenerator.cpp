@@ -1,6 +1,8 @@
 #include "Backend/Codegen/Generators/Instructions/Logical/AndGenerator.h"
 
+#include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
+#include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
 namespace Backend {
 namespace Codegen {
@@ -48,7 +50,26 @@ void AndGenerator::Visit(const PTX::AndInstruction<T> *instruction)
 			flags
 		));
 	}
-	//TODO: Instruction And<T> types (LOP)
+	else
+	{
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+		auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
+
+		CompositeGenerator compositeGenerator(this->m_builder);
+		auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+
+		this->AddInstruction(new SASS::LOPInstruction(
+			destination, sourceA, sourceB, SASS::LOPInstruction::BooleanOperator::AND
+		));
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			this->AddInstruction(new SASS::LOPInstruction(
+				destination_Hi, sourceA_Hi, sourceB_Hi, SASS::LOPInstruction::BooleanOperator::AND
+			));
+		}
+	}
 }
 
 }

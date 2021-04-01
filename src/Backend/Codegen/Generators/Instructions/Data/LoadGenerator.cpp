@@ -12,32 +12,32 @@ void LoadGenerator::Generate(const PTX::_LoadInstruction *instruction)
 	instruction->Dispatch(*this);
 }
 
-template<class T>
-SASS::LDGInstruction::Type LoadGenerator::InstructionType()
+template<typename I, class T>
+I LoadGenerator::InstructionType()
 {
-	if constexpr(std::is_same<T, PTX::UInt8Type>::value)
+	if constexpr(std::is_same<T, PTX::UInt8Type>::value || std::is_same<T, PTX::Bit8Type>::value)
 	{
-		return SASS::LDGInstruction::Type::U8;
+		return I::U8;
 	}
 	else if constexpr(std::is_same<T, PTX::Int8Type>::value)
 	{
-		return SASS::LDGInstruction::Type::S8;
+		return I::S8;
 	}
-	else if constexpr(std::is_same<T, PTX::UInt16Type>::value)
+	else if constexpr(std::is_same<T, PTX::UInt16Type>::value || std::is_same<T, PTX::Bit16Type>::value)
 	{
-		return SASS::LDGInstruction::Type::U16;
+		return I::U16;
 	}
 	else if constexpr(std::is_same<T, PTX::Int16Type>::value)
 	{
-		return SASS::LDGInstruction::Type::S16;
+		return I::S16;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
-		return SASS::LDGInstruction::Type::X32;
+		return I::X32;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		return SASS::LDGInstruction::Type::X64;
+		return I::X64;
 	}
 	Error("load for type " + T::Name());
 }
@@ -49,48 +49,104 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 	// Spaces: *
 	// Modifiers: --
 
-	// Generate destination operand
+	// Verify permissible synchronization
 
-	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-
-	//TODO: Instruction Load<T> types, modifiers, spaces, atomics
-	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
+	if constexpr(A == PTX::LoadSynchronization::Weak)
 	{
-		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [address, address_Hi] = compositeGenerator.Generate(instruction->GetAddress());
+		// Generate destination operand
 
-		// Generate instruction
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
 
-		this->AddInstruction(new SASS::MOVInstruction(destination, address));
-
-		// Extended datatypes
-
-		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(destination_Hi, address_Hi));
+			CompositeGenerator compositeGenerator(this->m_builder);
+			auto [address, address_Hi] = compositeGenerator.Generate(instruction->GetAddress());
+
+			// Generate instruction
+
+			this->AddInstruction(new SASS::MOVInstruction(destination, address));
+
+			// Extended datatypes
+
+			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			{
+				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, address_Hi));
+			}
+		}
+		else
+		{
+			// Generate address operand
+
+			AddressGenerator addressGenerator(this->m_builder);
+			auto address = addressGenerator.Generate(instruction->GetAddress());
+
+			if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+			{
+				// Generate instruction
+
+				auto type = InstructionType<SASS::LDGInstruction::Type, T>();
+				auto flags = SASS::LDGInstruction::Flags::None;
+				if constexpr(B == PTX::Bits::Bits64)
+				{
+					flags |= SASS::LDGInstruction::Flags::E;
+				}
+
+				auto cache = SASS::LDGInstruction::Cache::None;
+				switch (instruction->GetCacheOperator())
+				{
+					// case PTX::LoadInstruction<B, T, S, A>::CacheOperator::All:
+					// case PTX::LoadInstruction<B, T, S, A>::CacheOperator::Streaming:
+					// {
+					// 	cache = SASS::LDGInstruction::Cache::None;
+					// 	break;
+					// }
+					case PTX::LoadInstruction<B, T, S, A>::CacheOperator::Global:
+					case PTX::LoadInstruction<B, T, S, A>::CacheOperator::LastUse:
+					{
+						cache = SASS::LDGInstruction::Cache::CG;
+						break;
+					}
+					case PTX::LoadInstruction<B, T, S, A>::CacheOperator::Invalidate:
+					{
+						cache = SASS::LDGInstruction::Cache::CV;
+						break;
+					}
+				}
+
+				this->AddInstruction(new SASS::LDGInstruction(destination, address, type, cache, flags));
+			}
+			else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+			{
+				// Generate instruction
+
+				auto type = InstructionType<SASS::LDSInstruction::Type, T>();
+				auto flags = SASS::LDSInstruction::Flags::None;
+
+				// Flag not necessary for shared variables
+				//
+				// if constexpr(B == PTX::Bits::Bits64)
+				// {
+				// 	flags |= SASS::LDSInstruction::Flags::E;
+				// }
+
+				this->AddInstruction(new SASS::LDSInstruction(destination, address, type, flags));
+			}
+			else
+			{
+				Error(instruction, "unsupported space");
+			}
+
+			this->AddInstruction(new SASS::DEPBARInstruction(
+				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
+			));
 		}
 	}
-	else if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+	else
 	{
-		// Generate address operand
-
-		AddressGenerator addressGenerator(this->m_builder);
-		auto address = addressGenerator.Generate(instruction->GetAddress());
-
-		// Generate instruction
-
-		auto type = InstructionType<T>();
-		auto flags = SASS::LDGInstruction::Flags::None;
-		if constexpr(B == PTX::Bits::Bits64)
-		{
-			flags = SASS::LDGInstruction::Flags::E;
-		}
-		auto cache = SASS::LDGInstruction::Cache::None;
-
-		this->AddInstruction(new SASS::LDGInstruction(destination, address, type, cache, flags));
-		this->AddInstruction(new SASS::DEPBARInstruction(SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE));
+		Error(instruction, "unsupported synchronzation modifier");
 	}
+
 }
 
 }

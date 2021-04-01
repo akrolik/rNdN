@@ -117,7 +117,7 @@ void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
 		}
 	}
 
-	Error(constant);
+	Error(constant, "constant not found");
 }
 
 template<class T>

@@ -18,6 +18,14 @@ public:
 
 	std::string Name() const override { return "CompositeGenerator"; }
 
+	// Options
+
+	bool GetZeroRegister() const { return m_zeroRegister; }
+	void SetZeroRegister(bool zeroRegister) { m_zeroRegister = zeroRegister; }
+
+	bool GetImmediateValue() const { return m_immediateValue; }
+	void SetImmediateValue(bool immediateValue) { m_immediateValue = immediateValue; }
+
 	// Generators
 
 	std::pair<SASS::Composite *, SASS::Composite *> Generate(const PTX::Operand *operand);
@@ -54,6 +62,9 @@ public:
 private:
 	SASS::Composite *m_composite = nullptr;
 	SASS::Composite *m_compositeHi = nullptr;
+
+	bool m_zeroRegister = true;
+	bool m_immediateValue = true;
 };
 
 }

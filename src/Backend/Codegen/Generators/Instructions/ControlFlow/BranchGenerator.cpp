@@ -5,10 +5,12 @@ namespace Codegen {
 
 void BranchGenerator::Generate(const PTX::BranchInstruction *instruction)
 {
-	// Predicated instruction
+	// Branches supported by structured control-flow
 
-	//TODO: Branches unsupported
 	return;
+
+	// Unstructured control-flow would take into account uniformity
+
 	this->SetPredicatedInstruction(instruction);
 
 	// Generate branch instruction

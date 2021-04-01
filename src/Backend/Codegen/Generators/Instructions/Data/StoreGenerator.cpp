@@ -11,32 +11,32 @@ void StoreGenerator::Generate(const PTX::_StoreInstruction *instruction)
 	instruction->Dispatch(*this);
 }
 
-template<class T>
-SASS::STGInstruction::Type StoreGenerator::InstructionType()
+template<typename I, class T>
+I StoreGenerator::InstructionType()
 {
-	if constexpr(std::is_same<T, PTX::UInt8Type>::value)
+	if constexpr(std::is_same<T, PTX::UInt8Type>::value || std::is_same<T, PTX::Bit8Type>::value)
 	{
-		return SASS::STGInstruction::Type::U8;
+		return I::U8;
 	}
 	else if constexpr(std::is_same<T, PTX::Int8Type>::value)
 	{
-		return SASS::STGInstruction::Type::S8;
+		return I::S8;
 	}
-	else if constexpr(std::is_same<T, PTX::UInt16Type>::value)
+	else if constexpr(std::is_same<T, PTX::UInt16Type>::value || std::is_same<T, PTX::Bit16Type>::value)
 	{
-		return SASS::STGInstruction::Type::U16;
+		return I::U16;
 	}
 	else if constexpr(std::is_same<T, PTX::Int16Type>::value)
 	{
-		return SASS::STGInstruction::Type::S16;
+		return I::S16;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
-		return SASS::STGInstruction::Type::X32;
+		return I::X32;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		return SASS::STGInstruction::Type::X64;
+		return I::X64;
 	}
 	Error("store for type " + T::Name());
 }
@@ -48,30 +48,86 @@ void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 	// Spaces: *
 	// Modifiers: --
 
-	// Generate source operand
+	// Verify permissible synchronization
 
-	RegisterGenerator registerGenerator(this->m_builder);
-	auto [source, source_Hi] = registerGenerator.Generate(instruction->GetSource());
-
-	//TODO: Instruction Store<T> types, modifiers, atomics
-	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+	if constexpr(A == PTX::StoreSynchronization::Weak)
 	{
+		// Generate source operand
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto [source, source_Hi] = registerGenerator.Generate(instruction->GetSource());
+
 		// Generate address operand
 
 		AddressGenerator addressGenerator(this->m_builder);
 		auto address = addressGenerator.Generate(instruction->GetAddress());
 
-		// Generate instruction
-
-		auto type = InstructionType<T>();
-		auto flags = SASS::STGInstruction::Flags::None;
-		if constexpr(B == PTX::Bits::Bits64)
+		if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 		{
-			flags = SASS::STGInstruction::Flags::E;
-		}
-		auto cache = SASS::STGInstruction::Cache::None;
+			// Generate instruction
 
-		this->AddInstruction(new SASS::STGInstruction(address, source, type, cache, flags));
+			auto type = InstructionType<SASS::STGInstruction::Type, T>();
+			auto flags = SASS::STGInstruction::Flags::None;
+			if constexpr(B == PTX::Bits::Bits64)
+			{
+				flags = SASS::STGInstruction::Flags::E;
+			}
+
+			auto cache = SASS::STGInstruction::Cache::None;
+			switch (instruction->GetCacheOperator())
+			{
+				// case PTX::StoreInstruction<B, T, S, A>::CacheOperator::WriteBack:
+				// {
+				// 	cache = SASS::STGInstruction::Cache::None;
+				// 	break;
+				// }
+				case PTX::StoreInstruction<B, T, S, A>::CacheOperator::Global:
+				{
+					cache = SASS::STGInstruction::Cache::CG;
+					break;
+				}
+				case PTX::StoreInstruction<B, T, S, A>::CacheOperator::Streaming:
+				{
+					cache = SASS::STGInstruction::Cache::CS;
+					break;
+				}
+				case PTX::StoreInstruction<B, T, S, A>::CacheOperator::WriteThrough:
+				{
+					cache = SASS::STGInstruction::Cache::WT;
+					break;
+				}
+			}
+
+			this->AddInstruction(new SASS::STGInstruction(address, source, type, cache, flags));
+		}
+		else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+		{
+			// Generate instruction
+
+			auto type = InstructionType<SASS::STSInstruction::Type, T>();
+			auto flags = SASS::STSInstruction::Flags::None;
+
+			// Flag not necessary for shared variables
+			//
+			// if constexpr(B == PTX::Bits::Bits64)
+			// {
+			// 	flags |= SASS::STSInstruction::Flags::E;
+			// }
+
+			this->AddInstruction(new SASS::STSInstruction(address, source, type, flags));
+		}
+		else
+		{
+			Error(instruction, "unsupported space");
+		}
+
+		this->AddInstruction(new SASS::DEPBARInstruction(
+			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
+		));
+	}
+	else
+	{
+		Error(instruction, "unsupported synchronzation modifier");
 	}
 }
 

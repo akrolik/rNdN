@@ -95,6 +95,10 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		}
 		m_address = new SASS::Address(temp);
 	}
+	else
+	{
+		Error(address, "unsupported space");
+	}
 }
 
 template<PTX::Bits B, class T, class S>
@@ -109,10 +113,35 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 
 	if (auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType)))
 	{
-		auto temp = this->m_builder.AllocateTemporaryRegister();
-		this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, reg, new SASS::I32Immediate(addressOffset)));
+		if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+		{
+			auto [temp0, temp1] = this->m_builder.AllocateTemporaryRegisterPair<B>();
 
-		m_address = new SASS::Address(temp);
+			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
+				temp0, reg, new SASS::I32Immediate(addressOffset), SASS::IADD32IInstruction::Flags::CC
+			));
+
+			if constexpr(B == PTX::Bits::Bits64)
+			{
+				this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
+					temp1, regHi, new SASS::I32Immediate(0x0), SASS::IADD32IInstruction::Flags::X
+				));
+			}
+
+			m_address = new SASS::Address(temp0);
+		}
+		else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+		{
+			auto temp = this->m_builder.AllocateTemporaryRegister();
+
+			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, reg, new SASS::I32Immediate(addressOffset)));
+
+			m_address = new SASS::Address(temp);
+		}
+		else
+		{
+			Error(address, "unsupported space");
+		}
 	}
 	else
 	{

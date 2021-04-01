@@ -46,7 +46,8 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
-			//TODO: PackInstruction Vector2<Bit32Type>
+			this->AddInstruction(new SASS::SHLInstruction(temp, sourceB, new SASS::I32Immediate(0x16)));
+			this->AddInstruction(new SASS::LOPInstruction(destination, sourceA, temp, SASS::LOPInstruction::BooleanOperator::OR));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
@@ -57,7 +58,7 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 	}
 	else if constexpr(V == PTX::VectorSize::Vector4)
 	{
-		//TODO: PackInstruction Vector4<Bit16Type/Bit32Type/Bit64Type>
+		Error(instruction, "unsupported vector size");
 	}
 }
 

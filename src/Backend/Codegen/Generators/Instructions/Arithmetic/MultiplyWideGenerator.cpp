@@ -30,7 +30,56 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 
 	// Generate instruction
 
-	//TODO: Instruction MultiplyWide<T> types
+	if constexpr(T::TypeBits == PTX::Bits::Bits32)
+	{
+		if (auto immediateSourceB = dynamic_cast<SASS::I32Immediate *>(sourceB))
+		{
+			// Special case for constant multiplications
+
+			auto value = immediateSourceB->GetValue();
+			if (value == 0)
+			{
+				this->AddInstruction(new SASS::MOVInstruction(destination, SASS::RZ));
+				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
+				return;
+			}
+			else if (value == 1)
+			{
+				this->AddInstruction(new SASS::MOVInstruction(destination, sourceA));
+				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
+				return;
+			}
+			else if (value == Utils::Math::Power2(value))
+			{
+				auto temp = this->m_builder.AllocateTemporaryRegister();
+
+				auto logValue = Utils::Math::Log2(value);
+				immediateSourceB->SetValue(logValue);
+
+				auto flagsSHR = SASS::SHRInstruction::Flags::None;
+				if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+				{
+					flagsSHR |= SASS::SHRInstruction::Flags::U32;
+				}
+
+				this->AddInstruction(new SASS::SHLInstruction(temp, sourceA, immediateSourceB));
+				this->AddInstruction(new SASS::SHRInstruction(
+					destination_Hi, sourceA, new SASS::I32Immediate(32 - logValue), flagsSHR
+				));
+				this->AddInstruction(new SASS::MOVInstruction(destination, temp));
+				return;
+			}
+
+			// All other cases use a complex multiplication, requiring a non-immediate value
+
+			compositeGenerator.SetImmediateValue(false);
+			auto [compB, compB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+
+			sourceB = compB;
+			sourceB_Hi = compB_Hi;
+		}
+	}
+
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
 		// Compute {D1, D2} = S1 * S2
@@ -49,11 +98,6 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 		auto temp2 = this->m_builder.AllocateTemporaryRegister();
 		auto temp3 = this->m_builder.AllocateTemporaryRegister();
 		auto temp4 = this->m_builder.AllocateTemporaryRegister();
-
-		//TODO: Generate sourceB as register if is immediate
-		auto temp5_tmp = this->m_builder.AllocateTemporaryRegister();
-		this->AddInstruction(new SASS::MOVInstruction(temp5_tmp, sourceB));
-		auto sourceB = temp5_tmp;
 
 		this->AddInstruction(new SASS::XMADInstruction(temp0, sourceA, sourceB, SASS::RZ));
 		this->AddInstruction(new SASS::XMADInstruction(temp1, sourceA, sourceB, SASS::RZ));
@@ -77,6 +121,10 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 		this->AddInstruction(new SASS::IADD3Instruction(
 			destination_Hi, temp0, temp3, temp4, SASS::IADD3Instruction::Flags::RS
 		));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
 	}
 }
 

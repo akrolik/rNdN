@@ -1,6 +1,8 @@
 #include "Backend/Codegen/Generators/Instructions/Logical/NotGenerator.h"
 
+#include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
+#include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
 namespace Backend {
 namespace Codegen {
@@ -43,7 +45,27 @@ void NotGenerator::Visit(const PTX::NotInstruction<T> *instruction)
 			flags
 		));
 	}
-	//TODO: Instruction Not<T> types/modifiers
+	else
+	{
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+
+		CompositeGenerator compositeGenerator(this->m_builder);
+		auto [source, source_Hi] = compositeGenerator.Generate(instruction->GetSource());
+
+		this->AddInstruction(new SASS::LOPInstruction(
+			destination, SASS::RZ, source, SASS::LOPInstruction::BooleanOperator::PASS_B,
+			SASS::LOPInstruction::Flags::INV
+		));
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			this->AddInstruction(new SASS::LOPInstruction(
+				destination_Hi, SASS::RZ, source_Hi, SASS::LOPInstruction::BooleanOperator::PASS_B,
+				SASS::LOPInstruction::Flags::INV
+			));
+		}
+	}
 }
 
 }

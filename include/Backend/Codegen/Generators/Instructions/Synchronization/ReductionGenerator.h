@@ -23,11 +23,11 @@ public:
 	void Visit(const PTX::ReductionInstruction<B, T, S> *instruction);
 
 private:
-	template<class T>
-	SASS::REDInstruction::Type InstructionType();
+	template<PTX::Bits B, class T, class S>
+	SASS::REDInstruction::Type InstructionType(const PTX::ReductionInstruction<B, T, S> *instruction);
 
-	template<class T>
-	SASS::REDInstruction::Mode InstructionMode(typename T::ReductionOperation operation);
+	template<PTX::Bits B, class T, class S>
+	SASS::REDInstruction::Mode InstructionMode(const PTX::ReductionInstruction<B, T, S> *instruction);
 };
 
 }

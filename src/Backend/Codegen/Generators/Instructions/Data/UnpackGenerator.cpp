@@ -45,13 +45,17 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 		{
 			this->AddInstruction(new SASS::SHRInstruction(temp, source, new SASS::I32Immediate(0x8)));
 			this->AddInstruction(new SASS::LOPInstruction(
-				destinationA, source, new SASS::I32Immediate(0xffff), SASS::LOPInstruction::BooleanOperator::AND
+				destinationA, source, new SASS::I32Immediate(0xff), SASS::LOPInstruction::BooleanOperator::AND
 			));
 			this->AddInstruction(new SASS::MOVInstruction(destinationB, temp));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
-			//TODO: UnpackInstruction Vector2<Bit32Type>
+			this->AddInstruction(new SASS::SHRInstruction(temp, source, new SASS::I32Immediate(0x10)));
+			this->AddInstruction(new SASS::LOPInstruction(
+				destinationA, source, new SASS::I32Immediate(0xffff), SASS::LOPInstruction::BooleanOperator::AND
+			));
+			this->AddInstruction(new SASS::MOVInstruction(destinationB, temp));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
@@ -62,7 +66,7 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 	}
 	else if constexpr(V == PTX::VectorSize::Vector4)
 	{
-		//TODO: UnpackInstruction Vector4<Bit16Type/Bit32Type/Bit64Type>
+		Error(instruction, "unsupported vector size");
 	}
 }
 

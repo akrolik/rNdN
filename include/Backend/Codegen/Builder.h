@@ -44,25 +44,33 @@ public:
 
 	// Temporary Registers
 
+	SASS::Predicate *AllocateTemporaryPredicate()
+	{
+		//TODO: Allocate temporary predicate
+		SASS::Predicate *pred = new SASS::Predicate(6);
+		return pred;
+	}
+
 	template<PTX::Bits B>
 	std::pair<SASS::Register *, SASS::Register *> AllocateTemporaryRegisterPair()
 	{
+		auto align = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+		return AllocateTemporaryRegisterPair<B>(align);
+	}
+
+	template<PTX::Bits B>
+	std::pair<SASS::Register *, SASS::Register *> AllocateTemporaryRegisterPair(unsigned int align)
+	{
 		if constexpr(PTX::BitSize<B>::NumBits <= 32)
 		{
-			return { AllocateTemporaryRegister(), nullptr };
+			return { AllocateTemporaryRegister(align), nullptr };
 		}
 		else
 		{
-			auto align = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
-			return AllocateTemporaryRegisterPair(align);
+			auto reg0 = AllocateTemporaryRegister(align);
+			auto reg1 = AllocateTemporaryRegister();
+			return { reg0, reg1 };
 		}
-	}
-
-	std::pair<SASS::Register *, SASS::Register *> AllocateTemporaryRegisterPair(unsigned int align = 1)
-	{
-		auto reg0 = AllocateTemporaryRegister(align);
-		auto reg1 = AllocateTemporaryRegister();
-		return { reg0, reg1 };
 	}
 
 	SASS::Register *AllocateTemporaryRegister(unsigned int align = 1);

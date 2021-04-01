@@ -29,6 +29,7 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
+	compositeGenerator.SetImmediateValue(false);
 
 	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
 	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
@@ -37,30 +38,41 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 
 	// Generate instruction
 
-	//TODO: Instruction MAD<T> types/modifiers
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
+		if (instruction->GetCarryIn() || instruction->GetCarryOut())
+		{
+			Error(instruction, "unsupported carry modifier");
+		}
+
 		if (instruction->GetHalf() == PTX::MADInstruction<T>::Half::Lower)
 		{
 			// Compute D = (S1 * S2 + S3).lo
 			//
-			//   XMAD D, S1, S2, S3 ;
-			//   XMAD.MRG TMP0, S1, S2.H1, RZ ;
-			//   XMAD.PSL.CBCC D, S1.H1, TMP0.H1, D ;
+			//   XMAD TMP0, S1, S2, S3 ;
+			//   XMAD.MRG TMP1, S1, S2.H1, RZ ;
+			//   XMAD.PSL.CBCC D, S1.H1, TMP1.H1, TMP0 ;
 
-			auto temp = this->m_builder.AllocateTemporaryRegister();
+			auto temp0 = this->m_builder.AllocateTemporaryRegister();
+			auto temp1 = this->m_builder.AllocateTemporaryRegister();
 
+			this->AddInstruction(new SASS::XMADInstruction(temp0, sourceA, sourceB, sourceC));
 			this->AddInstruction(new SASS::XMADInstruction(
-				destination, sourceA, sourceB, sourceC
+				temp1, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::MRG, SASS::XMADInstruction::Flags::H1_B
 			));
 			this->AddInstruction(new SASS::XMADInstruction(
-				temp, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::MRG, SASS::XMADInstruction::Flags::H1_B
-			));
-			this->AddInstruction(new SASS::XMADInstruction(
-				destination, sourceA, temp, destination, SASS::XMADInstruction::Mode::PSL,
+				destination, sourceA, temp1, temp0, SASS::XMADInstruction::Mode::PSL,
 				SASS::XMADInstruction::Flags::CBCC | SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
 			));
 		}
+		else
+		{
+			Error(instruction, "unsuppoorted half modifier");
+		}
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
 	}
 }
 

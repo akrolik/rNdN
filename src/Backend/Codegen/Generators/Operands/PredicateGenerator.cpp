@@ -46,6 +46,14 @@ void PredicateGenerator::Visit(const PTX::Register<T> *reg)
 			m_predicate = new SASS::Predicate(allocation);
 			m_negatePredicate = false;
 		}
+		else
+		{
+			Error(reg, "predicate not found");
+		}
+	}
+	else
+	{
+		Error(reg, "unsupported type");
 	}
 }
 
@@ -63,6 +71,10 @@ void PredicateGenerator::Visit(const PTX::Value<T> *value)
 
 		m_predicate = SASS::PT;
 		m_negatePredicate = (value->GetValue() == false);
+	}
+	else
+	{
+		Error(value, "unsupported type");
 	}
 }
 

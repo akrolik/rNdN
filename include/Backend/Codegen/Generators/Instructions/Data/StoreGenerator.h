@@ -23,8 +23,8 @@ public:
 	void Visit(const PTX::StoreInstruction<B, T, S, A> *instruction);
 
 private:
-	template<class T>
-	SASS::STGInstruction::Type InstructionType();
+	template<typename I, class T>
+	I InstructionType();
 };
 
 }

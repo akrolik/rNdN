@@ -2,8 +2,6 @@
 
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
-#include "PTX/Utils/PrettyPrinter.h"
-
 namespace Backend {
 namespace Codegen {
 
@@ -78,7 +76,7 @@ void CompositeGenerator::Visit(const PTX::Constant<T> *constant)
 		}
 	}
 
-	Error(constant);
+	Error(constant,  "constant not found");
 }
 
 template<class T>
@@ -86,14 +84,21 @@ void CompositeGenerator::Visit(const PTX::Value<T> *value)
 {
 	if (value->GetValue() == 0)
 	{
-		//TODO: Decide whether zero is register or immediate
-
-		m_composite = SASS::RZ;
-		// m_composite = new SASS::I32Immediate(0);
-		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		if (m_zeroRegister)
 		{
-			m_compositeHi = SASS::RZ;
-			// m_compositeHi = new SASS::I32Immediate(0);
+			m_composite = SASS::RZ;
+			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			{
+				m_compositeHi = SASS::RZ;
+			}
+		}
+		else
+		{
+			m_composite = new SASS::I32Immediate(0);
+			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			{
+				m_compositeHi = new SASS::I32Immediate(0);
+			}
 		}
 	}
 	else
@@ -102,14 +107,17 @@ void CompositeGenerator::Visit(const PTX::Value<T> *value)
 
 		if constexpr(PTX::is_int_type<T>::value)
 		{
-			if (value->GetValue() < 0xffffff)
+			if (m_immediateValue)
 			{
-				m_composite = new SASS::I32Immediate(value->GetValue());
-				if constexpr(T::TypeBits == PTX::Bits::Bits64)
+				if (value->GetValue() < 0xffffff)
 				{
-					m_compositeHi = new SASS::I32Immediate(0x0);
+					m_composite = new SASS::I32Immediate(value->GetValue());
+					if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					{
+						m_compositeHi = new SASS::I32Immediate(0x0);
+					}
+					return;
 				}
-				return;
 			}
 		}
 
@@ -151,6 +159,10 @@ void CompositeGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		{
 			m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
 		}
+	}
+	else
+	{
+		Error(address, "parameter not found");
 	}
 }
 

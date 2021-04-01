@@ -1,4 +1,4 @@
-#include "Backend/Codegen/Generators/Instructions/Arithmetic/AddGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/SubtractGenerator.h"
 
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
@@ -6,13 +6,13 @@
 namespace Backend {
 namespace Codegen {
 
-void AddGenerator::Generate(const PTX::_AddInstruction *instruction)
+void SubtractGenerator::Generate(const PTX::_SubtractInstruction *instruction)
 {
 	instruction->Dispatch(*this);
 }
 
 template<class T>
-void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
+void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 {
 	// Types:
 	//   - Int16, Int32, Int64
@@ -37,8 +37,8 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 
 	if constexpr(PTX::is_int_type<T>::value)
 	{
-		auto flags1 = SASS::IADDInstruction::Flags::None;
-		auto flags2 = SASS::IADDInstruction::Flags::None;
+		auto flags1 = SASS::IADDInstruction::Flags::NEG_B;
+		auto flags2 = SASS::IADDInstruction::Flags::NEG_B;
 
 		// Carry modifier
 
@@ -53,6 +53,8 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 				flags2 |= SASS::IADDInstruction::Flags::CC;
 			}
 		}
+
+		// Saturate modifier
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
 		{
@@ -104,7 +106,7 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 			}
 		}
 
-		this->AddInstruction(new SASS::DADDInstruction(destination, sourceA, sourceB, round));
+		this->AddInstruction(new SASS::DADDInstruction(destination, sourceA, sourceB, round, SASS::DADDInstruction::Flags::NEG_B));
 		this->AddInstruction(new SASS::DEPBARInstruction(
 			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
 		));

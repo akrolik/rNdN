@@ -16,11 +16,13 @@ public:
 	// Generators
 
 	void SetPredicatedInstruction(const PTX::PredicatedInstruction *instruction);
-	void AddInstruction(SASS::PredicatedInstruction *instruction);
+	void AddInstruction(SASS::PredicatedInstruction *instruction, SASS::Predicate *predicate = nullptr, bool negatePredicate = false);
 
 private:
 	SASS::Predicate *m_predicate = nullptr;
 	bool m_negatePredicate = false;
+
+	const PTX::PredicatedInstruction *m_instruction = nullptr;
 };
 
 }
