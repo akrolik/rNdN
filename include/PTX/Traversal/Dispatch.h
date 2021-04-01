@@ -144,6 +144,10 @@ namespace PTX {
 	}
 
 #define DispatchExpand_Array32(type) ArrayType<type, 32>
+#define DispatchExpand_Array64(type) ArrayType<type, 64>
+#define DispatchExpand_Array128(type) ArrayType<type, 128>
+#define DispatchExpand_Array256(type) ArrayType<type, 256>
+#define DispatchExpand_Array512(type) ArrayType<type, 512>
 #define DispatchExpand_Array1024(type) ArrayType<type, 1024>
 #define DispatchExpand_Array2048(type) ArrayType<type, 2048>
 
@@ -153,6 +157,14 @@ namespace PTX {
 		switch (atype->GetDimension()) { \
 			case 32: \
 				DispatchType_Basic(atype->GetType(), DispatchExpand_Array32); break; \
+			case 64: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array64); break; \
+			case 128: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array128); break; \
+			case 256: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array256); break; \
+			case 512: \
+				DispatchType_Basic(atype->GetType(), DispatchExpand_Array512); break; \
 			case 1024: \
 				DispatchType_Basic(atype->GetType(), DispatchExpand_Array1024); break; \
 			case 2048: \

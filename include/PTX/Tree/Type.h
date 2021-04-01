@@ -68,6 +68,7 @@ struct Type {
 
 	using ComparisonOperator = std::nullptr_t;
 	using ReductionOperation = std::nullptr_t;
+	using AtomicOperation = std::nullptr_t;
 
 	// Polymorphism
 	virtual ~Type() = default;

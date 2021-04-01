@@ -23,10 +23,10 @@ public:
 	TypedOperand<UInt32Type> *GetThreads() { return m_threads; }
 	void SetThreads(TypedOperand<UInt32Type> *threads) { m_threads = threads; }
 
-	bool GetWait() { return m_wait; }
+	bool GetWait() const { return m_wait; }
 	void SetWait(bool wait) { m_wait = wait; }
 
-	bool GetAligned() { return m_aligned; }
+	bool GetAligned() const { return m_aligned; }
 	void SetAligned(bool aligned) { m_aligned = aligned; }
 
 	// Formatting
