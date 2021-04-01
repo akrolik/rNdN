@@ -17,7 +17,7 @@ public:
 		CC    = 0x0000800000000000,
 		CBCC  = 0x0010000000000000,
 		H1_A  = 0x0020000000000000,
-		H1_B  = 0x0000000800000000 //TODO: Does not work with immediates
+		H1_B  = 0x0000000800000000 // Invalid flag for Immediate
 	};
 
 	SASS_FLAGS_FRIEND()

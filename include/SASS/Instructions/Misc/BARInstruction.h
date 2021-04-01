@@ -126,7 +126,7 @@ public:
 			code |= 0x0000100000000000;
 		}
 		// Use 12-bit integer for threads
-		if (dynamic_cast<I32Immediate *>(m_threads))
+		if (m_threads == nullptr)//TODO:dynamic_cast<I32Immediate *>(m_threads))
 		{
 			code |= 0x0000080000000000;
 		}
@@ -135,7 +135,6 @@ public:
 		{
 			code |= 0x0000038000000000;
 		}
-
 		return code;
 	}
 
@@ -171,6 +170,7 @@ public:
 				code |= BinaryUtils::OperandPredicate39(m_predicate);
 			}
 		}
+
 		return code;
 	}
 

@@ -45,6 +45,7 @@ namespace SASS {
 #include "SASS/Instructions/Conversion/I2IInstruction.h"
 
 #include "SASS/Instructions/Integer/BFEInstruction.h"
+#include "SASS/Instructions/Integer/FLOInstruction.h"
 #include "SASS/Instructions/Integer/IADDInstruction.h"
 #include "SASS/Instructions/Integer/IADD3Instruction.h"
 #include "SASS/Instructions/Integer/IADD32IInstruction.h"
@@ -58,15 +59,19 @@ namespace SASS {
 #include "SASS/Instructions/Integer/XMADInstruction.h"
 
 #include "SASS/Instructions/Float/DADDInstruction.h"
+#include "SASS/Instructions/Float/DFMAInstruction.h"
 #include "SASS/Instructions/Float/DMNMXInstruction.h"
 #include "SASS/Instructions/Float/DMULInstruction.h"
 #include "SASS/Instructions/Float/DSETPInstruction.h"
 #include "SASS/Instructions/Float/MUFUInstruction.h"
 
+#include "SASS/Instructions/LoadStore/ATOMInstruction.h"
 #include "SASS/Instructions/LoadStore/LDGInstruction.h"
+#include "SASS/Instructions/LoadStore/LDSInstruction.h"
 #include "SASS/Instructions/LoadStore/MEMBARInstruction.h"
 #include "SASS/Instructions/LoadStore/REDInstruction.h"
 #include "SASS/Instructions/LoadStore/STGInstruction.h"
+#include "SASS/Instructions/LoadStore/STSInstruction.h"
 
 #include "SASS/Instructions/Misc/CS2RInstruction.h"
 #include "SASS/Instructions/Misc/DEPBARInstruction.h"
