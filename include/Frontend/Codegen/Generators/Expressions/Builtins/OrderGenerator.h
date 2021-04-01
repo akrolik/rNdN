@@ -522,16 +522,16 @@ public:
 			// Compute the size of each bitonic sequence in this stage
 			//   sequenceSize = 2^(stage + 1)
 
-			auto temp1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+			auto temp_stageP1 = resources->template AllocateTemporary<PTX::UInt32Type>();
 			auto temp2 = resources->template AllocateTemporary<PTX::UInt32Type>();
 			auto sequenceSize = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(temp1, stage, new PTX::UInt32Value(1)));
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(temp_stageP1, stage, new PTX::UInt32Value(1)));
 			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp2, new PTX::UInt32Value(1)));
 			this->m_builder.AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
 				new PTX::Bit32RegisterAdapter<PTX::UIntType>(sequenceSize),
 				new PTX::Bit32Adapter<PTX::UIntType>(temp2),
-				temp1
+				temp_stageP1
 			));
 
 			// Compute the sequence index of this thread. We allocate threads for half the sequence size as each thread will perform 1 swap
@@ -546,19 +546,10 @@ public:
 				new PTX::UInt32Value(1)
 			));
 
-			// Fancy division by power-of-2
-
-			auto temp_leadingZeros0 = resources->template AllocateTemporary<PTX::UInt32Type>();
-			auto temp_powerTwo0 = resources->template AllocateTemporary<PTX::UInt32Type>();
-
-			this->m_builder.AddStatement(new PTX::CountLeadingZerosInstruction<PTX::Bit32Type>(
-				temp_leadingZeros0, new PTX::Bit32Adapter<PTX::UIntType>(temp_halfSequence)
-			));
-			this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_powerTwo0, new PTX::UInt32Value(31), temp_leadingZeros0));
 			this->m_builder.AddStatement(new PTX::ShiftRightInstruction<PTX::Bit32Type>(
 				new PTX::Bit32RegisterAdapter<PTX::UIntType>(sequenceIndex),
 				new PTX::Bit32Adapter<PTX::UIntType>(index),
-				temp_powerTwo0
+				stage
 			));
 
 			auto temp_halfSequenceM1 = resources->template AllocateTemporary<PTX::UInt32Type>();
@@ -572,12 +563,16 @@ public:
 			));
 
 			// Compute the sequence start index for this thread
-			//   sequenceStart = sequenceindex * sequenceSize
+			//   sequenceStart = sequenceIndex * sequenceSize = sequenceIndex * 2^(stage + 1)
 
 			auto sequenceStart = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-			this->m_builder.AddStatement(new PTX::MultiplyInstruction<PTX::UInt32Type>(
-				sequenceStart, sequenceIndex, sequenceSize, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+			// Multiplication by power-of-2 number
+
+			this->m_builder.AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
+				new PTX::Bit32RegisterAdapter<PTX::UIntType>(sequenceStart),
+				new PTX::Bit32Adapter<PTX::UIntType>(sequenceIndex),
+				temp_stageP1
 			));
 
 			// Bitonic sequence direction
@@ -619,24 +614,21 @@ public:
 
 				// Fancy division by power-of-2
 
-				auto temp_leadingZeros1 = resources->template AllocateTemporary<PTX::UInt32Type>();
-				auto temp_powerTwo1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+				auto temp_gap = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-				this->m_builder.AddStatement(new PTX::CountLeadingZerosInstruction<PTX::Bit32Type>(
-					temp_leadingZeros1, new PTX::Bit32Adapter<PTX::UIntType>(temp_halfSubsequence)
-				));
-				this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_powerTwo1, new PTX::UInt32Value(31), temp_leadingZeros1));
+				this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(temp_gap, stage, substage));
 				this->m_builder.AddStatement(new PTX::ShiftRightInstruction<PTX::Bit32Type>(
 					new PTX::Bit32RegisterAdapter<PTX::UIntType>(subsequenceIndex),
 					new PTX::Bit32Adapter<PTX::UIntType>(temp4),
-					temp_powerTwo1
+					temp_gap
 				));
-
+                                
 				// Compute the subsequence start index for this thread
 				//   subsequenceStart = sequenceStart + (subsequenceIndex * subsequenceSize)
 
 				auto subsequenceStart = resources->template AllocateTemporary<PTX::UInt32Type>();
 
+				//TODO: Optimize
 				this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
 					subsequenceStart, subsequenceIndex, subsequenceSize, sequenceStart, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
 				));
@@ -765,6 +757,7 @@ public:
 			auto blockIndex = indexGenerator.GenerateBlockIndex();
 			auto localIndex = indexGenerator.GenerateLocalIndex();
 
+			//TODO: Optimize
 			auto sharedIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
 				sharedIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2), blockIndex, localIndex, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
