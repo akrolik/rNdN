@@ -16,26 +16,15 @@ public:
 	{
 		for (const auto& statement : statements)
 		{
-			this->SetInSet(statement, this->m_currentInSet);
+			this->SetInSet(statement, this->m_currentSet);
 			statement->Accept(*this);
-			this->SetOutSet(statement, this->m_currentOutSet);
-
-			PropagateNext();
+			this->SetOutSet(statement, this->m_currentSet);
 		}
-	}
-
-	void PropagateNext() override
-	{
-		// Copy the out set to the in set for traversing the next node
-
-		this->m_currentInSet = this->m_currentOutSet;
 	}
 
 	void Visit(const Node *node) override
 	{
 		// Default action, propagate the set forward with no changes
-
-		this->m_currentOutSet = this->m_currentInSet;
 	}
 };
 

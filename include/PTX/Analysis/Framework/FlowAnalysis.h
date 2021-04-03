@@ -24,8 +24,6 @@ public:
 
 	virtual void TraverseStatements(const std::vector<const Statement *>& statements) = 0;
 
-	virtual void PropagateNext() = 0;
-
 	// Visitors
 
 	virtual void Visit(const Node *node) = 0;
@@ -45,7 +43,6 @@ public:
 		for (const auto& operand : statement->GetOperands())
 		{
 			operand->Accept(*this);
-			PropagateNext();
 		}
 	}
 

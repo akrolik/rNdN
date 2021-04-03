@@ -18,18 +18,10 @@ public:
 
 		// Initialize worklist with start nodes
 
-		for (const auto node : cfg->GetNodes())
-		{
-			if (cfg->IsEntryNode(node))
-			{
-				this->PushWorklist(node);
-				this->SetInSet(node, initialFlow);
-			}
-			else
-			{
-				this->SetInSet(node, temporaryFlow);
-			}
-		}
+		auto entry = cfg->GetEntryNode();
+
+		this->PushWorklist(entry);
+		this->SetInSet(entry, initialFlow);
 
 		// Traverse worklist in order
 
@@ -40,18 +32,23 @@ public:
 			{
 				// If this is the first iteration, travese the block and all successors
 
-				this->m_currentInSet = this->GetInSet(node);
+				this->m_currentSet = this->GetInSet(node);
 				TraverseBlock(node);
-				this->SetOutSet(node, this->m_currentOutSet);
+				this->SetOutSet(node, this->m_currentSet);
 
 				// Propagate to all successors
 
 				for (const auto successor : cfg->GetSuccessors(node))
 				{
-					const auto& successorInSet = this->GetInSet(successor);
-					const auto mergedInSet = this->Merge(this->m_currentOutSet, successorInSet);
-
-					this->SetInSet(successor, mergedInSet);
+					if (this->ContainsInSet(successor))
+					{
+						const auto& successorInSet = this->GetInSet(successor);
+						this->SetInSet(successor, this->Merge(this->m_currentSet, successorInSet));
+					}
+					else
+					{
+						this->SetInSet(successor, this->Merge(this->m_currentSet, temporaryFlow));
+					}
 					this->PushWorklist(successor);
 				}
 			}
@@ -59,26 +56,35 @@ public:
 			{
 				// For further iterations, save the old outset for comparison
 
-				const auto oldOutSet = this->GetOutSet(node);
-
-				this->m_currentInSet = this->GetInSet(node);
+				this->m_currentSet = this->GetInSet(node);
 				TraverseBlock(node);
-				this->SetOutSet(node, this->m_currentOutSet);
 
 				// Only process the successors if the outset has changed
 
-				if (oldOutSet != this->m_currentOutSet)
+				if (this->GetOutSet(node) != this->m_currentSet)
 				{
+					this->SetOutSet(node, this->m_currentSet);
+
 					for (const auto successor : cfg->GetSuccessors(node))
 					{
-						const auto& successorInSet = this->GetInSet(successor);
-						const auto mergedInSet = this->Merge(this->m_currentOutSet, successorInSet);
-
-						// Proccess changed successors
-
-						if (mergedInSet != successorInSet)
+						if (this->ContainsInSet(successor))
 						{
-							this->SetInSet(successor, mergedInSet);
+							const auto& successorInSet = this->GetInSet(successor);
+							const auto mergedInSet = this->Merge(this->m_currentSet, successorInSet);
+
+							// Proccess changed successors
+
+							if (mergedInSet != successorInSet)
+							{
+								this->SetInSet(successor, mergedInSet);
+								this->PushWorklist(successor);
+							}
+						}
+						else
+						{
+							// Proccess changed successors
+
+							this->SetInSet(successor, this->Merge(this->m_currentSet, temporaryFlow));
 							this->PushWorklist(successor);
 						}
 					}

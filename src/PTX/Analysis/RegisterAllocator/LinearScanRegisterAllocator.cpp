@@ -9,7 +9,7 @@ namespace Analysis {
 
 void LinearScanRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *function)
 {
-	auto timeAllocation_start = Utils::Chrono::Start("Register allocation '" + function->GetName() + "'");
+	auto timeAllocation_start = Utils::Chrono::Start("Linear scan allocator '" + function->GetName() + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeAllocation_start);
 

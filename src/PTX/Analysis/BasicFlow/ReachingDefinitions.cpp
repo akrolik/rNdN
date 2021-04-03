@@ -5,9 +5,6 @@ namespace Analysis {
 
 void ReachingDefinitions::Visit(const InstructionStatement *statement)
 {
-	// Copy input to output directly
-
-	m_currentOutSet = m_currentInSet;
 	m_currentStatement = statement;
 
 	// Assume the first operand is the destination
@@ -29,7 +26,7 @@ void ReachingDefinitions::Visit(const Register<T> *reg)
 
 	auto key = new ReachingDefinitionsKey::Type(reg->GetName());
 	auto value = new ReachingDefinitionsValue::Type({m_currentStatement});
-	m_currentOutSet[key] = value;
+	this->m_currentSet[key] = value;
 }
 
 ReachingDefinitions::Properties ReachingDefinitions::InitialFlow(const FunctionDefinition<VoidType> *function) const

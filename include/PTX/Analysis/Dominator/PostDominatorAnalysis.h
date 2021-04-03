@@ -37,46 +37,11 @@ public:
 
 	// Accessors
 
-	std::unordered_set<const BasicBlock *> GetPostDominators(const BasicBlock *block) const
-	{
-		const auto& set = this->GetInSet(block);
-		return { std::begin(set), std::end(set) };
-	}
+	std::unordered_set<const BasicBlock *> GetPostDominators(const BasicBlock *block) const;
+	std::unordered_set<const BasicBlock *> GetStrictPostDominators(const BasicBlock *block) const;
+	const BasicBlock *GetImmediatePostDominator(const BasicBlock *block) const;
 
-	std::unordered_set<const BasicBlock *> GetStrictPostDominators(const BasicBlock *block) const
-	{
-		auto dominators = GetPostDominators(block);
-		dominators.erase(block);
-		return dominators;
-	}
-
-	const BasicBlock *GetImmediatePostDominator(const BasicBlock *block) const
-	{
-		const auto strictPostDominators = GetStrictPostDominators(block);
-		for (const auto node1 : strictPostDominators)
-		{
-			// Check that this node post-dominates all other strict post-dominators
-
-			auto postDominatesAll = true;
-			for (const auto node2 : strictPostDominators)
-			{
-				const auto strictPostDominators2 = GetStrictPostDominators(node2);
-				if (strictPostDominators2.find(node1) != strictPostDominators2.end())
-				{
-					postDominatesAll = false;
-					break;
-				}
-			}
-
-			// If all nodes post-dominated, this is our immediate post-dominator
-
-			if (postDominatesAll)
-			{
-				return node1;
-			}
-		}
-		return nullptr;
-	}
+	bool IsPostDominated(const BasicBlock *block, const BasicBlock *postDominator) const;
 
 	// Visitors
 

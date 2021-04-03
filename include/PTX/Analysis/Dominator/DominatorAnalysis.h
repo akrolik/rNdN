@@ -37,46 +37,11 @@ public:
 
 	// Accessors
 
-	std::unordered_set<const BasicBlock *> GetDominators(const BasicBlock *block) const
-	{
-		const auto& set = this->GetOutSet(block);
-		return { std::begin(set), std::end(set) };
-	}
+	std::unordered_set<const BasicBlock *> GetDominators(const BasicBlock *block) const;
+	std::unordered_set<const BasicBlock *> GetStrictDominators(const BasicBlock *block) const;
+	const BasicBlock *GetImmediateDominator(const BasicBlock *block) const;
 
-	std::unordered_set<const BasicBlock *> GetStrictDominators(const BasicBlock *block) const
-	{
-		auto dominators = GetDominators(block);
-		dominators.erase(block);
-		return dominators;
-	}
-
-	const BasicBlock *GetImmediateDominator(const BasicBlock *block) const
-	{
-		const auto strictDominators = GetStrictDominators(block);
-		for (const auto node1 : strictDominators)
-		{
-			// Check that this node dominates all other strict dominators
-
-			auto dominatesAll = true;
-			for (const auto node2 : strictDominators)
-			{
-				const auto strictDominators2 = GetStrictDominators(node2);
-				if (strictDominators2.find(node1) != strictDominators2.end())
-				{
-					dominatesAll = false;
-					break;
-				}
-			}
-
-			// If all nodes dominated, this is our strict dominator
-
-			if (dominatesAll)
-			{
-				return node1;
-			}
-		}
-		return nullptr;
-	}
+	bool IsDominated(const BasicBlock *block, const BasicBlock *dominator) const;
 
 	// Visitors
 

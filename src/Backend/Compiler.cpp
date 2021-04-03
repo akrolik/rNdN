@@ -118,6 +118,8 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Structurize CFG
 
+	auto timeStructurizer = Utils::Chrono::Start("Structurizer '" + function->GetName() + "'");
+
 	PTX::Analysis::DominatorAnalysis dominatorAnalysis;
 	dominatorAnalysis.Analyze(function);
 
@@ -128,6 +130,8 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	auto structuredGraph = structurizer.Structurize(function);
 
 	function->SetStructuredGraph(structuredGraph);
+
+	Utils::Chrono::End(timeStructurizer);
 
 	// Generate SASS code from 64-bit PTX code
 
@@ -165,6 +169,8 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function)
 {
+	Utils::ScopedChrono chrono("Register allocation '" + function->GetName() + "'");
+
 	switch (Utils::Options::GetBackend_RegisterAllocator())
 	{
 		case Utils::Options::BackendRegisterAllocator::Virtual:

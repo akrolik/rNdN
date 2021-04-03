@@ -54,7 +54,7 @@ int main(int argc, const char *argv[])
 	Utils::Chrono::End(timeFile_start);
 
 	auto timeCompilation_start = Utils::Chrono::Start("Compilation");
-	auto timeFrontend_start = Utils::Chrono::Start("Frontend");
+	auto timeSyntax_start = Utils::Chrono::Start("Syntax");
 
 	// Parse the input HorseIR program from stdin and generate an AST
 
@@ -88,7 +88,7 @@ int main(int argc, const char *argv[])
 		Utils::Logger::LogInfo(programString, 0, true, Utils::Logger::NoPrefix);
 	}
 
-	Utils::Chrono::End(timeFrontend_start);
+	Utils::Chrono::End(timeSyntax_start);
 
 	if (Utils::Options::IsOptimize_HorseIR())
 	{

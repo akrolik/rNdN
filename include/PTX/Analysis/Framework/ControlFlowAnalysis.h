@@ -1,6 +1,6 @@
 #pragma once
 
-#include <queue>
+#include <deque>
 #include <string>
 #include <sstream>
 #include <unordered_map>
@@ -40,8 +40,9 @@ public:
 
 		m_functionTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "' body");
 
-		this->m_currentInSet.clear();
-		this->m_currentOutSet.clear();
+		InitializeWorklist(function);
+
+		this->m_currentSet.clear();
 
 		TraverseFunction(function, initialFlow);
 
@@ -84,24 +85,72 @@ protected:
 	bool ContainsInSet(const BasicBlock *block) const { return m_blockInSets.find(block) != m_blockInSets.end(); }
 	bool ContainsOutSet(const BasicBlock *block) const { return m_blockOutSets.find(block) != m_blockOutSets.end(); }
 
-	F m_currentInSet;
-	F m_currentOutSet;
+	F m_currentSet;
 
 	std::unordered_map<const BasicBlock *, F> m_blockInSets;
 	std::unordered_map<const BasicBlock *, F> m_blockOutSets;
 
 	// Worklist
 
-	bool IsEmptyWorklist() const { return m_worklist.empty(); }
-	void PushWorklist(BasicBlock *block) { m_worklist.push(block); }
+	std::unordered_map<const BasicBlock *, unsigned int> m_blockOrder;
+
+	void InitializeWorklist(const FunctionDefinition<VoidType> *function)
+	{
+		const auto cfg = function->GetControlFlowGraph();
+		const auto entry = cfg->GetEntryNode();
+		auto index = cfg->GetNodeCount();
+
+		cfg->DFS(entry, [&](BasicBlock *block)
+		{
+			m_blockOrder[block] = index;
+			index--;
+
+			return false;
+		}, Utils::Graph<BasicBlock *>::Traversal::Postorder);
+	}
+
+	bool IsEmptyWorklist() const
+	{
+		return m_queuedWork.empty() && m_unqueuedWork.empty();
+	}
+	void PushWorklist(BasicBlock *block)
+	{
+		if (std::find(m_queuedWork.begin(), m_queuedWork.end(), block) == m_queuedWork.end())
+		{
+			m_unqueuedWork.insert(block);
+		}
+	}
 	BasicBlock *PopWorklist()
 	{
-		auto element = m_worklist.front();
-		m_worklist.pop();
+		if (m_queuedWork.empty())
+		{
+			// Sort the unqueued work by reverse post-order
+
+			std::vector<BasicBlock *> sortedWork(std::begin(m_unqueuedWork), std::end(m_unqueuedWork));
+			std::sort(std::begin(sortedWork), std::end(sortedWork), [&](auto& left, auto& right)
+			{
+				return m_blockOrder[left] < m_blockOrder[right];
+			});
+
+			// Queue the sorted work
+
+			for (auto& block : sortedWork)
+			{
+				m_queuedWork.push_back(block);
+			}
+
+			m_unqueuedWork.clear();
+		}
+
+		// Get the next queued element
+
+		auto element = m_queuedWork.front();
+		m_queuedWork.pop_front();
 		return element;
 	}
 
-	std::queue<BasicBlock *> m_worklist;
+	std::deque<BasicBlock *> m_queuedWork;
+	std::unordered_set<BasicBlock *> m_unqueuedWork;
 
 	// Chrono
 

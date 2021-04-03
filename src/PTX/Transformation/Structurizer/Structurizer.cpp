@@ -14,7 +14,7 @@ Analysis::StructureNode *Structurizer::Structurize(const FunctionDefinition<Void
 	auto timeStructurize_start = Utils::Chrono::Start("Structurize '" + function->GetName() + "'");
 
 	m_processedNodes.clear();
-	m_reconvergenceStack.push(new Context());
+	m_reconvergenceStack.push(new Context(Context::Kind::Function));
 
 	auto cfg = function->GetControlFlowGraph();
 	auto entry = cfg->GetEntryNode();
@@ -92,8 +92,12 @@ BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const std::unordered_s
 		auto dominatesAll = true;
 		for (const auto node2 : postDominators)
 		{
-			const auto strictDominators2 = m_postDominators.GetStrictPostDominators(node2);
-			if (strictDominators2.find(node1) != strictDominators2.end())
+			if (node1 == node2)
+			{
+				continue;
+			}
+
+			if (m_postDominators.IsPostDominated(node2, node1))
 			{
 				dominatesAll = false;
 				break;
@@ -134,8 +138,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 		for (const auto& predecessor : cfg->GetPredecessors(block))
 		{
-			const auto& dominators = m_dominators.GetDominators(predecessor);
-			if (dominators.find(block) != dominators.end())
+			if (m_dominators.IsDominated(predecessor, block))
 			{
 				// Only support a single back-edge
 
@@ -240,8 +243,10 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 		// Check for loop special case branching
 
-		if (auto loopContext = dynamic_cast<const LoopContext *>(context))
+		if (context->GetKind() == Context::Kind::Loop)
 		{
+			auto loopContext = static_cast<const LoopContext *>(context);
+
 			auto header = loopContext->GetHeader();
 			auto exit = loopContext->GetExit();
 
@@ -315,8 +320,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 		if (trueBranch != nullptr)
 		{
-			const auto trueDominators = m_dominators.GetDominators(trueBranch);
-			if (trueDominators.find(block) == trueDominators.end())
+			if (!m_dominators.IsDominated(trueBranch, block))
 			{
 				Error("unstructured true branch", block);
 			}
@@ -324,8 +328,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 		if (falseBranch != nullptr)
 		{
-			const auto falseDominators = m_dominators.GetDominators(falseBranch);
-			if (falseDominators.find(block) == falseDominators.end())
+			if (!m_dominators.IsDominated(falseBranch, block))
 			{
 				Error("unstructured false branch", block);
 			}
@@ -352,18 +355,25 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 	// Continue processing IPDOM if not loop latch or branch reconvergence point
 
-	if (auto loopContext = dynamic_cast<const LoopContext *>(context))
+	switch (context->GetKind())
 	{
-		if (block == loopContext->GetLatch())
+		case Context::Kind::Loop:
 		{
-			return m_latchStructure = new Analysis::SequenceStructure(block, nullptr);
+			auto loopContext = static_cast<const LoopContext *>(context);
+			if (block == loopContext->GetLatch())
+			{
+				return m_latchStructure = new Analysis::SequenceStructure(block, nullptr);
+			}
+			break;
 		}
-	}
-	else if (auto branchContext = dynamic_cast<const BranchContext *>(context))
-	{
-		if (postDominator == branchContext->GetReconvergence())
+		case Context::Kind::Branch:
 		{
-			return new Analysis::SequenceStructure(block, nullptr);
+			auto branchContext = static_cast<const BranchContext *>(context);
+			if (postDominator == branchContext->GetReconvergence())
+			{
+				return new Analysis::SequenceStructure(block, nullptr);
+			}
+			break;
 		}
 	}
 

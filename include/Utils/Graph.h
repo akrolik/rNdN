@@ -23,6 +23,7 @@ public:
 	}
 
 	const std::unordered_set<T>& GetNodes() const { return m_nodes; }
+	unsigned int GetNodeCount() const { return m_nodes.size(); }
 	bool ContainsNode(const T& node) const { return (m_nodes.find(node) != m_nodes.end()); }
 
 	const std::unordered_set<T>& GetPredecessors(const T& node) const { return m_predecessors.at(node); }
@@ -83,8 +84,13 @@ public:
 		return found;
 	}
 
+	enum Traversal {
+		Preorder,
+		Postorder
+	};
+
 	template<typename F>
-	bool DFS(const T& start, F function) const
+	bool DFS(const T& start, F function, Traversal order = Traversal::Preorder) const
 	{
 		// Construct DFA ordering structure
 
@@ -104,9 +110,12 @@ public:
 			{
 				// Apply the given function, exit if returned true
 
-				if (function(node))
+				if (order == Traversal::Preorder)
 				{
-					return true;
+					if (function(node))
+					{
+						return true;
+					}
 				}
 
 				// Maintain the visited structure and add successors
@@ -115,6 +124,14 @@ public:
 				for (auto successor : GetSuccessors(node))
 				{
 					stack.push(successor);
+				}
+				
+				if (order == Traversal::Postorder)
+				{
+					if (function(node))
+					{
+						return true;
+					}
 				}
 			}
 		}

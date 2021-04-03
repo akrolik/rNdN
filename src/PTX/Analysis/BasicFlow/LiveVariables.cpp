@@ -6,9 +6,6 @@ namespace Analysis {
 void LiveVariables::Visit(const InstructionStatement *statement)
 {
 	// Kill all destinations, add all uses
-
-	m_currentInSet = m_currentOutSet;
-
 	// Assume the first operand is the destination
 
 	m_destination = true;
@@ -47,11 +44,11 @@ void LiveVariables::Visit(const Register<T> *reg)
 	const auto& name = reg->GetName();
 	if (m_destination)
 	{
-		m_currentInSet.erase(&name);
+		m_currentSet.erase(&name);
 	}
 	else
 	{
-		m_currentInSet.insert(new LiveVariablesValue::Type(name));
+		m_currentSet.insert(new LiveVariablesValue::Type(name));
 	}
 }
 
@@ -73,9 +70,7 @@ LiveVariables::Properties LiveVariables::Merge(const Properties& s1, const Prope
 {
 	// Simple merge operation, add all non-duplicate eelements to the out set
 
-	Properties outSet;
-
-	outSet.insert(s1.begin(), s1.end());
+	Properties outSet(s1);
 	outSet.insert(s2.begin(), s2.end());
 
 	return outSet;

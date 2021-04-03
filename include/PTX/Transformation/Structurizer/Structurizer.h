@@ -35,6 +35,17 @@ private:
 
 	struct Context
 	{
+		enum Kind {
+			Function,
+			Loop,
+			Branch
+		};
+
+		Context(Kind kind) : m_kind(kind) {}
+
+		Kind GetKind() const { return m_kind; }
+		Kind m_kind;
+
 		virtual ~Context() {};
 	};
 
@@ -42,7 +53,7 @@ private:
 	{
 	public:
 		LoopContext(const BasicBlock *header, const BasicBlock *latch, const BasicBlock *exit, const std::unordered_set<const BasicBlock *>& loopBlocks)
-			: m_header(header), m_latch(latch), m_exit(exit), m_loopBlocks(loopBlocks) {}
+			: Context(Kind::Loop), m_header(header), m_latch(latch), m_exit(exit), m_loopBlocks(loopBlocks) {}
 
 		const BasicBlock *GetHeader() const { return m_header; }
 		const BasicBlock *GetLatch() const { return m_latch; }
@@ -62,7 +73,7 @@ private:
 	struct BranchContext : public Context
 	{
 	public:
-		BranchContext(const BasicBlock *reconvergence) : m_reconvergence(reconvergence) {}
+		BranchContext(const BasicBlock *reconvergence) : Context(Context::Branch), m_reconvergence(reconvergence) {}
 
 		const BasicBlock *GetReconvergence() const { return m_reconvergence; }
 
