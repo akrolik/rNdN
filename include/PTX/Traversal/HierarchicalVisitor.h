@@ -29,6 +29,8 @@ class DirectiveStatement;
 class InstructionStatement;
 class LabelStatement;
 
+class BranchInstruction;
+class ReturnInstruction;
 class PredicatedInstruction;
 
 class Operand;
@@ -101,6 +103,12 @@ public:
 
 	virtual bool VisitIn(PredicatedInstruction *instruction);
 	virtual void VisitOut(PredicatedInstruction *instruction);
+
+	virtual bool VisitIn(BranchInstruction *instruction);
+	virtual void VisitOut(BranchInstruction *instruction);
+
+	virtual bool VisitIn(ReturnInstruction *instruction);
+	virtual void VisitOut(ReturnInstruction *instruction);
 
 	// Operands
 

@@ -31,6 +31,12 @@ public:
 
 	// Visitors
 
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
 	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
 };

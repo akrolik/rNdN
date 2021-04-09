@@ -54,24 +54,37 @@ bool ControlFlowAccumulator::VisitIn(Statement *statement)
 	return false;
 }
 
-bool ControlFlowAccumulator::VisitIn(PredicatedInstruction *instruction)
+bool ControlFlowAccumulator::VisitIn(ReturnInstruction *instruction)
+{
+	// 2(a). Leader after return instruction
+
+	// Add instruction, then end the current block
+
+	HierarchicalVisitor::VisitIn(static_cast<PredicatedInstruction *>(instruction));
+
+	m_graph->AddExitNode(m_currentBlock);
+	m_currentBlock = nullptr;
+
+	return false;
+}
+
+bool ControlFlowAccumulator::VisitIn(BranchInstruction *instruction)
 {
 	// 2. Leader after branch/return instruction
-	if (dynamic_cast<BranchInstruction *>(instruction) || dynamic_cast<ReturnInstruction *>(instruction))
-	{
-		// Add instruction, then end the current block
 
-		HierarchicalVisitor::VisitIn(instruction);
+	// Add instruction, then end the current block
 
-		if (dynamic_cast<ReturnInstruction *>(instruction))
-		{
-			m_graph->AddExitNode(m_currentBlock);
-		}
-		m_currentBlock = nullptr;
-	}
+	HierarchicalVisitor::VisitIn(static_cast<PredicatedInstruction *>(instruction));
 
+	m_currentBlock = nullptr;
+
+	return false;
+}
+
+bool ControlFlowAccumulator::VisitIn(PredicatedInstruction *instruction)
+{
 	// 3. False branch if predicated instruction
-	else if (auto [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
+	if (auto [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
 	{
 		if (m_currentBlock == nullptr)
 		{
@@ -200,33 +213,35 @@ bool ControlFlowBuilder::VisitIn(Statement *statement)
 	return false;
 }
 
+bool ControlFlowBuilder::VisitIn(BranchInstruction *instruction)
+{
+	// Insert incoming edges
+
+	HierarchicalVisitor::VisitIn(static_cast<PredicatedInstruction *>(instruction));
+
+	// Insert outgoing edges for branching (label target)
+
+	auto statementBlock = m_statementMap.at(instruction);
+	auto [predicate, negate] = instruction->GetPredicate();
+
+	m_graph->InsertEdge(statementBlock, m_labelMap.at(instruction->GetLabel()), predicate, negate);
+
+	// Predicated branches have an edge to the next block
+
+	if (instruction->HasPredicate())
+	{
+		m_previousBlock = statementBlock;
+	}
+	else
+	{
+		m_previousBlock = nullptr;
+	}
+	return false;
+}
+
 bool ControlFlowBuilder::VisitIn(PredicatedInstruction *instruction)
 {
-	if (auto branchInstruction = dynamic_cast<BranchInstruction *>(instruction))
-	{
-		// Insert incoming edges
-
-		HierarchicalVisitor::VisitIn(instruction);
-
-		// Insert outgoing edges for branching (label target)
-
-		auto statementBlock = m_statementMap.at(instruction);
-		auto [predicate, negate] = branchInstruction->GetPredicate();
-
-		m_graph->InsertEdge(statementBlock, m_labelMap.at(branchInstruction->GetLabel()), predicate, negate);
-
-		// Predicated branches have an edge to the next block
-
-		if (branchInstruction->HasPredicate())
-		{
-			m_previousBlock = statementBlock;
-		}
-		else
-		{
-			m_previousBlock = nullptr;
-		}
-	}
-	else if (instruction->HasPredicate())
+	if (instruction->HasPredicate())
 	{
 		// Remove predicate (now part of the block)
 
@@ -242,7 +257,6 @@ bool ControlFlowBuilder::VisitIn(PredicatedInstruction *instruction)
 
 		HierarchicalVisitor::VisitIn(instruction);
 	}
-
 	return false;
 }
 
