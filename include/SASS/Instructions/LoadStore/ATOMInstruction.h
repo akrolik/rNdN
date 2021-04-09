@@ -164,6 +164,10 @@ public:
 		// SourceC ignored for bit pattern, must be sequential
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::GlobalMemory; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

@@ -93,6 +93,10 @@ public:
 		       BinaryUtils::OperandComposite(m_sourceB);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::Shift; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

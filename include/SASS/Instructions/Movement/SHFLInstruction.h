@@ -143,6 +143,10 @@ public:
 		return code;
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::SharedMemory; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

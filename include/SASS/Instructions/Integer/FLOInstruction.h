@@ -79,6 +79,11 @@ public:
 		       BinaryUtils::OperandComposite(m_source);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::x32; } //TODO:
+	// HardwareClass GetHardwareClass() const override { return HardwareClass::S2R; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

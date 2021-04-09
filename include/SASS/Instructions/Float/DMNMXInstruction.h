@@ -126,6 +126,10 @@ public:
 		       BinaryUtils::OperandPredicate39(m_sourceC);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::x64; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

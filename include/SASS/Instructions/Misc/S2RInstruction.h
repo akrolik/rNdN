@@ -45,6 +45,10 @@ public:
 		       BinaryUtils::OperandSpecialRegister(m_source);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::S2R; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

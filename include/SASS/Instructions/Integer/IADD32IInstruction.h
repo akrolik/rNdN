@@ -98,6 +98,10 @@ public:
 		       BinaryUtils::OperandLiteral20W32(m_sourceB);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::x32; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

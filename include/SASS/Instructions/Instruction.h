@@ -73,6 +73,22 @@ public:
 		m_scheduling.SetScheduling(stall, yield, writeBarrier, readBarrier, waitBarriers, reuse);
 	}
 
+	// Hardware properties
+
+	enum HardwareClass {
+		S2R,
+		SharedMemory,
+		GlobalMemory,
+		x32,
+		x64,
+		qtr, //TODO: Name
+		Shift,
+		Compare,
+		Schedule
+	};
+
+	virtual HardwareClass GetHardwareClass() const = 0;
+
 	// Formatting
 
 	virtual std::string OpCode() const = 0;

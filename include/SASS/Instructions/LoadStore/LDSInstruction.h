@@ -110,6 +110,10 @@ public:
 		       BinaryUtils::OperandAddress20W24(m_source->GetOffset());
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::SharedMemory; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

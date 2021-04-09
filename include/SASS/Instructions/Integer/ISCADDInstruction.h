@@ -103,6 +103,10 @@ public:
 		       BinaryUtils::OperandLiteral39W8(m_sourceC);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::Shift; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

@@ -77,6 +77,10 @@ public:
 		return BinaryUtils::Format(relativeAddress, 20, 0xffffff);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::x32; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

@@ -1,7 +1,7 @@
 #include "Backend/Compiler.h"
 
 #include "Backend/Codegen/CodeGenerator.h"
-#include "Backend/Scheduler.h"
+#include "Backend/Scheduler/Scheduler.h"
 
 #include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
@@ -140,10 +140,14 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	Codegen::CodeGenerator codegen;
 	auto sassFunction = codegen.Generate(function, registerAllocation, parameterAllocation);
 
+	Utils::Chrono::End(timeSASS_start);
+
+	auto timeScheduler_start = Utils::Chrono::Start("Scheduler '" + function->GetName() + "'");
+
 	Scheduler scheduler;
 	scheduler.Schedule(sassFunction);
 
-	Utils::Chrono::End(timeSASS_start);
+	Utils::Chrono::End(timeScheduler_start);
 	Utils::Chrono::End(timeCodegen_start);
 
 	// Dump the SASS program to stdout

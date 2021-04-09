@@ -100,6 +100,10 @@ public:
 		       BinaryUtils::OperandRegister8(m_source);
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::qtr; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

@@ -122,6 +122,10 @@ public:
 		       BinaryUtils::OperandAddress20W24(m_destination->GetOffset());
 	}
 
+	// Hardware properties
+
+	HardwareClass GetHardwareClass() const override { return HardwareClass::GlobalMemory; }
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
