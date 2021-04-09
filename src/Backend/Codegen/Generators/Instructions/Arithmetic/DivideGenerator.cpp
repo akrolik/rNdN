@@ -391,7 +391,7 @@ void DivideGenerator::Visit(const PTX::DivideInstruction<T> *instruction)
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
-		if (instruction->GetRoundingMode != T::RoundingMode::Nearest)
+		if (instruction->GetRoundingMode() != T::RoundingMode::Nearest)
 		{
 			Error(instruction, "unsupported rounding mode");
 		}
