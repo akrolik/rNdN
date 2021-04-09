@@ -74,6 +74,10 @@ public:
 		       BinaryUtils::OperandComposite(m_source);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Register *m_destination = nullptr;
 	Composite *m_source = nullptr;

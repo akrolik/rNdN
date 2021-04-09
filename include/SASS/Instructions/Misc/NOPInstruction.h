@@ -17,6 +17,10 @@ public:
 	{
 		return 0x50b0000000000f00;
 	}
+
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
 };
 
 }

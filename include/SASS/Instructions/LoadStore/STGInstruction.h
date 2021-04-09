@@ -122,6 +122,10 @@ public:
 		       BinaryUtils::OperandAddress20W24(m_destination->GetOffset());
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Address *m_destination = nullptr;
 	Register *m_source = nullptr;

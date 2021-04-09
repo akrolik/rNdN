@@ -194,6 +194,10 @@ public:
 		       BinaryUtils::OperandPredicate39(m_sourceC);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Predicate *m_destinationA = nullptr;
 	Predicate *m_destinationB = nullptr;

@@ -45,6 +45,10 @@ public:
 		       BinaryUtils::OperandSpecialRegister(m_source);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Register *m_destination = nullptr;
 	SpecialRegister *m_source = nullptr;

@@ -174,6 +174,10 @@ public:
 		return code;
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Mode m_mode;
 	Reduction m_reduction;

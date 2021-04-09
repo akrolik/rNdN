@@ -62,13 +62,11 @@ BinaryProgram *Assembler::Assemble(const SASS::Program *program)
 BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 {
 	auto binaryFunction = new BinaryFunction(function->GetName());
+
 	for (auto parameter : function->GetParameters())
 	{
 		binaryFunction->AddParameter(parameter);
 	}
-
-	std::unordered_map<std::string, unsigned int> blockIndex;
-	auto blockOffset = 0u;
 
 	// 1. Sequence basic blocks, create linear sequence of instruction
 	// 2. Add self-loop BRA
@@ -83,6 +81,9 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	//    (c) BAR instructions
 	//    (d) SHFL instructions
 
+	auto blockOffset = 0u;
+	m_blockIndex.clear();
+
 	std::vector<const SASS::Instruction *> linearProgram;
 	for (const auto block : function->GetBasicBlocks())
 	{
@@ -93,7 +94,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 		// Keep track of the start address to resolve branches
 
-		blockIndex.insert({block->GetName(), blockOffset});
+		m_blockIndex.insert({block->GetName(), blockOffset});
 		blockOffset += instructions.size();
 	}
 
@@ -105,7 +106,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	selfBranch->SetScheduling(15, true, 7, 7, 0, 0);
 
 	linearProgram.push_back(selfBranch);
-	blockIndex.insert({selfName, blockOffset++});
+	m_blockIndex.insert({selfName, blockOffset++});
 
 	// Padding to multiple of 6
 
@@ -142,88 +143,27 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	}
 
 	// Resolve branches and control reconvergence instructions
-
-	for (auto i = 0u; i < linearProgram.size(); ++i)
-	{
-		auto instruction = linearProgram.at(i);
-		if (auto _branchInstruction = dynamic_cast<const SASS::BRAInstruction *>(instruction))
-		{
-			auto unpaddedIndex = blockIndex.at(_branchInstruction->GetTarget());
-			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
-			if (paddedIndex % 4 == 1)
-			{
-				paddedIndex--; // Begin at previous SCHI instruction
-			}
-
-			auto branchInstruction = const_cast<SASS::BRAInstruction *>(_branchInstruction);
-			branchInstruction->SetTargetAddress(
-				paddedIndex * sizeof(std::uint64_t),
-				i * sizeof(std::uint64_t)
-			);
-		}
-		else if (auto _divInstruction = dynamic_cast<const SASS::DivergenceInstruction *>(instruction))
-		{
-			auto unpaddedIndex = blockIndex.at(_divInstruction->GetTarget());
-			auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
-			if (paddedIndex % 4 == 1)
-			{
-				paddedIndex--; // Begin at previous SCHI instruction
-			}
-
-			auto divInstruction = const_cast<SASS::DivergenceInstruction *>(_divInstruction);
-			divInstruction->SetTargetAddress(
-				paddedIndex * sizeof(std::uint64_t),
-				i * sizeof(std::uint64_t)
-			);
-		}
-	}
-	
 	// Collect special NVIDIA ELF properties
 
-	constexpr auto MAX_BARRIERS = 16u;
-	auto barriers = 0u;
+	m_index = 0;
+	m_barrierCount = 0;
+	m_binaryFunction = binaryFunction;
+
 	for (auto i = 0u; i < linearProgram.size(); ++i)
 	{
-		auto instruction = linearProgram.at(i);
-		if (auto exitInstruction = dynamic_cast<const SASS::EXITInstruction *>(instruction))
-		{
-			binaryFunction->AddExitOffset(i * sizeof(std::uint64_t));
-		}
-		else if (auto s2rInstruction = dynamic_cast<const SASS::S2RInstruction *>(instruction))
-		{
-			auto kind = s2rInstruction->GetSource()->GetKind();
-			if (kind == SASS::SpecialRegister::Kind::SR_CTAID_X ||
-				kind == SASS::SpecialRegister::Kind::SR_CTAID_Y ||
-				kind == SASS::SpecialRegister::Kind::SR_CTAID_X)
-			{
-				binaryFunction->AddS2RCTAIDOffset(i * sizeof(std::uint64_t));
-			}
-			if (kind == SASS::SpecialRegister::Kind::SR_CTAID_Z)
-			{
-				binaryFunction->SetCTAIDZUsed(true);
-			}
-		}
-		else if (auto coopInstruction = dynamic_cast<const SASS::SHFLInstruction *>(instruction))
-		{
-			binaryFunction->AddCoopOffset(i * sizeof(std::uint64_t));
-		}
-		else if (auto barrierInstruction = dynamic_cast<const SASS::BARInstruction *>(instruction))
-		{
-			auto barrier = barrierInstruction->GetBarrier();
-			if (dynamic_cast<const SASS::Register *>(barrier))
-			{
-				barriers = MAX_BARRIERS; // Max
-			}
-			else if (auto immediateBarrier = dynamic_cast<const SASS::I32Immediate *>(barrier))
-			{
-				auto value = immediateBarrier->GetValue();
-				if (value + 1 > barriers)
-				{
-					barriers = value + 1;
-				}
-			}
-		}
+		auto instruction = const_cast<SASS::Instruction *>(linearProgram.at(i));
+		instruction->Accept(*this);
+
+		m_index++;
 	}
+
+	// Setup barriers
+
+	if (m_barrierCount > SASS::MAX_BARRIERS)
+	{
+		Utils::Logger::LogError("Barrier count " + std::to_string(m_barrierCount) + " exceeded maximum (" + std::to_string(SASS::MAX_BARRIERS) + ")");
+	}
+	binaryFunction->SetBarriers(m_barrierCount);
 
 	// Build relocations, resolving the address of each relocated instruction
 
@@ -270,7 +210,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 		// Compute offset of target block
 
-		auto unpaddedIndex = blockIndex.at(indirectBranch->GetTarget());
+		auto unpaddedIndex = m_blockIndex.at(indirectBranch->GetTarget());
 		auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
 		if (paddedIndex % 4 == 1)
 		{
@@ -282,14 +222,6 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 		binaryFunction->AddIndirectBranch(offset, target);
 	}
-
-	// Setup barriers
-
-	if (barriers > MAX_BARRIERS)
-	{
-		Utils::Logger::LogError("Barrier count " + std::to_string(barriers) + " exceeded maximum (" + std::to_string(MAX_BARRIERS) + ")");
-	}
-	binaryFunction->SetBarriers(barriers);
 
 	// Assemble into binary
 
@@ -325,6 +257,82 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	binaryFunction->SetConstantMemory(function->GetConstantMemory());
 
 	return binaryFunction;
+}
+
+// Address resolution
+
+void Assembler::Visit(SASS::DivergenceInstruction *instruction)
+{
+	auto unpaddedIndex = m_blockIndex.at(instruction->GetTarget());
+	auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+	if (paddedIndex % 4 == 1)
+	{
+		paddedIndex--; // Begin at previous SCHI instruction
+	}
+
+	instruction->SetTargetAddress(
+		paddedIndex * sizeof(std::uint64_t),
+		m_index * sizeof(std::uint64_t)
+	);
+}
+
+void Assembler::Visit(SASS::BRAInstruction *instruction)
+{
+	auto unpaddedIndex = m_blockIndex.at(instruction->GetTarget());
+	auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
+	if (paddedIndex % 4 == 1)
+	{
+		paddedIndex--; // Begin at previous SCHI instruction
+	}
+
+	instruction->SetTargetAddress(
+		paddedIndex * sizeof(std::uint64_t),
+		m_index * sizeof(std::uint64_t)
+	);
+}
+
+// NVIDIA custom ELF
+
+void Assembler::Visit(SASS::EXITInstruction *instruction)
+{
+	m_binaryFunction->AddExitOffset(m_index * sizeof(std::uint64_t));
+}
+
+void Assembler::Visit(SASS::S2RInstruction *instruction)
+{
+	auto kind = instruction->GetSource()->GetKind();
+	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_X ||
+		kind == SASS::SpecialRegister::Kind::SR_CTAID_Y ||
+		kind == SASS::SpecialRegister::Kind::SR_CTAID_X)
+	{
+		m_binaryFunction->AddS2RCTAIDOffset(m_index * sizeof(std::uint64_t));
+	}
+	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_Z)
+	{
+		m_binaryFunction->SetCTAIDZUsed(true);
+	}
+}
+
+void Assembler::Visit(SASS::SHFLInstruction *instruction)
+{
+	m_binaryFunction->AddCoopOffset(m_index * sizeof(std::uint64_t));
+}
+
+void Assembler::Visit(SASS::BARInstruction *instruction)
+{
+	auto barrier = instruction->GetBarrier();
+	if (dynamic_cast<const SASS::Register *>(barrier))
+	{
+		m_barrierCount = SASS::MAX_BARRIERS; // Max # barriers when register is used (dynamic)
+	}
+	else if (auto immediateBarrier = dynamic_cast<const SASS::I32Immediate *>(barrier))
+	{
+		auto value = immediateBarrier->GetValue();
+		if (value + 1 > m_barrierCount)
+		{
+			m_barrierCount = value + 1;
+		}
+	}
 }
 
 }

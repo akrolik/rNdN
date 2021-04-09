@@ -77,6 +77,10 @@ public:
 		return BinaryUtils::Format(relativeAddress, 20, 0xffffff);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	std::string m_target;
 

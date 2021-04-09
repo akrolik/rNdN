@@ -49,6 +49,10 @@ public:
 		return BinaryUtils::OpModifierFlags(m_mode);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Mode m_mode;
 };

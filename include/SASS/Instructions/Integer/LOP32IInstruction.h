@@ -89,6 +89,10 @@ public:
 		       BinaryUtils::OperandLiteral20W32(m_sourceB);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Register *m_destination = nullptr;
 	Register *m_sourceA = nullptr;

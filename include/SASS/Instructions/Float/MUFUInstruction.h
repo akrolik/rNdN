@@ -100,6 +100,10 @@ public:
 		       BinaryUtils::OperandRegister8(m_source);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	const Register *m_destination = nullptr;
 	const Register *m_source = nullptr;

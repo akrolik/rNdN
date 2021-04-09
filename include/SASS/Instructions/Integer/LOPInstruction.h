@@ -160,6 +160,10 @@ public:
 		return code;
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Predicate *m_destinationP = nullptr;
 	Register *m_destination = nullptr;

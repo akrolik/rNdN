@@ -5,6 +5,8 @@
 #include "SASS/Node.h"
 #include "SASS/Operands/Operand.h"
 
+#include "SASS/Traversal/Visitor.h"
+
 namespace SASS {
 
 class Instruction : public Node
@@ -96,6 +98,10 @@ public:
 		code |= BinaryOperands();
 		return code;
 	}
+
+	// Visitors
+
+	virtual void Accept(Visitor& visitor) = 0;
 
 private:
 	std::vector<const Operand *> m_operands;

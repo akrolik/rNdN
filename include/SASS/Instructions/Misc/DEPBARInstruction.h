@@ -93,6 +93,10 @@ public:
 		       BinaryUtils::OperandLiteral20W6(m_value);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Barrier m_barrier;
 	I8Immediate *m_value = nullptr;

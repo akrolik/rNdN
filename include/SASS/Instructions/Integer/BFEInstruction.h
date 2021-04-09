@@ -94,6 +94,10 @@ public:
 		       BinaryUtils::OperandComposite(m_sourceB);
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	Register *m_destination = nullptr;
 	Register *m_sourceA = nullptr;

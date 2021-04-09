@@ -22,6 +22,10 @@ public:
 		return m_schedule;
 	}
 
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+
 private:
 	std::uint64_t m_schedule = 0;
 };
