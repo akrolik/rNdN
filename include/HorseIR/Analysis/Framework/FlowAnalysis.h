@@ -47,8 +47,7 @@ public:
 
 		m_functionTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "' body");
 
-		this->m_currentInSet.clear();
-		this->m_currentOutSet.clear();
+		this->m_currentSet.clear();
 
 		TraverseFunction(function, initialFlow);
 
@@ -71,8 +70,6 @@ public:
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);
 	}
 
-	virtual void PropagateNext() = 0;
-
 	virtual void Visit(const Node *node) = 0;
 
 	void Visit(const VariableDeclaration *declaration) override
@@ -90,7 +87,6 @@ public:
 		for (const auto& target : assignS->GetTargets())
 		{
 			target->Accept(*this);
-			PropagateNext();
 		}
 		assignS->GetExpression()->Accept(*this);
 	}
@@ -122,14 +118,8 @@ public:
 
 	void Visit(const ReturnStatement *returnS) override
 	{
-		bool first = true;
 		for (const auto& operand : returnS->GetOperands())
 		{
-			if (!first)
-			{
-				PropagateNext();
-			}
-			first = false;
 			operand->Accept(*this);
 		}
 	}
@@ -149,7 +139,6 @@ public:
 		call->GetFunctionLiteral()->Accept(*this);
 		for (const auto& argument : call->GetArguments())
 		{
-			PropagateNext();
 			argument->Accept(*this);
 		}
 	}
@@ -157,7 +146,6 @@ public:
 	void Visit(const CastExpression *cast) override
 	{
 		cast->GetExpression()->Accept(*this);
-		PropagateNext();
 		cast->GetCastType()->Accept(*this);
 	}
 
@@ -170,23 +158,46 @@ public:
 	virtual void TraverseBreak(const BreakStatement *breakS) = 0;
 	virtual void TraverseContinue(const ContinueStatement *continueS) = 0;
 
+	// Accessors
+
 	const F& GetInSet(const Statement *statement) const { return m_inSets.at(statement); }
 	const F& GetOutSet(const Statement *statement) const { return m_outSets.at(statement); }
+
+	// Options
+
+	bool CollectInSets() const { return m_collectInSets; }
+	bool CollectOutSets() const { return m_collectOutSets; }
+
+	void SetCollectInSets(bool collectInSets) { m_collectInSets = collectInSets; }
+	void SetCollectOutSets(bool collectOutSets) { m_collectOutSets = collectOutSets; }
+
+	// Formatting
 
 	std::string DebugString(const Statement *statement, unsigned indent = 0) const override
 	{
 		std::string indentString(indent * Utils::Logger::IndentSize, ' ');
 
 		std::stringstream string;
-		string << indentString << "In: {" << std::endl;
-		GetInSet(statement).Print(string, indent + 1);
-		string << std::endl;
-		string << indentString << "}" << std::endl;
+		if (m_collectInSets)
+		{
+			string << indentString << "In: {" << std::endl;
+			GetInSet(statement).Print(string, indent + 1);
+			string << std::endl;
+			string << indentString << "}";
 
-		string << indentString << "Out: {" << std::endl;
-		GetOutSet(statement).Print(string, indent + 1);
-		string << std::endl;
-		string << indentString << "}";
+			if (m_collectOutSets)
+			{
+				string << std::endl;
+			}
+		}
+
+		if (m_collectOutSets)
+		{
+			string << indentString << "Out: {" << std::endl;
+			GetOutSet(statement).Print(string, indent + 1);
+			string << std::endl;
+			string << indentString << "}";
+		}
 
 		return string.str();
 	}
@@ -207,8 +218,10 @@ protected:
 	std::unordered_map<const Statement *, F> m_inSets;
 	std::unordered_map<const Statement *, F> m_outSets;
 
-	F m_currentInSet;
-	F m_currentOutSet;
+	bool m_collectInSets = true;
+	bool m_collectOutSets = true;
+
+	F m_currentSet;
 
 	const Utils::Chrono::SpanTiming *m_analysisTime = nullptr;
 	const Utils::Chrono::SpanTiming *m_functionTime = nullptr;

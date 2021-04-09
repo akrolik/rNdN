@@ -44,7 +44,11 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		// Collect runtime shape information for determining exact thread geometry and return shapes
 
 		HorseIR::Analysis::DataObjectAnalysis dataAnalysis(m_program);
+		dataAnalysis.SetCollectInSets(false);
+		dataAnalysis.SetCollectOutSets(false);
+
 		HorseIR::Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_program, true);
+		shapeAnalysis.SetCollectOutSets(false);
 
 		HorseIR::Analysis::DataObjectAnalysis::Properties inputObjects;
 		HorseIR::Analysis::ShapeAnalysis::Properties inputShapes;

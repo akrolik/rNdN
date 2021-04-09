@@ -31,7 +31,7 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 	std::vector<std::tuple<std::string, unsigned int, unsigned int>> liveIntervals;
 	for (const auto& [name, interval] : m_liveIntervals.GetLiveIntervals())
 	{
-		liveIntervals.push_back({ name, interval.first, interval.second });
+		liveIntervals.emplace_back(name, interval.first, interval.second);
 	}
 	
 	// Sort live intervals by start position
@@ -180,14 +180,14 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 			if (intervalEnd < activeEnd)
 			{
 				inserted = true;
-				activeIntervals.insert(it, { intervalEnd, intervalRegister, intervalRange });
+				activeIntervals.emplace(it, intervalEnd, intervalRegister, intervalRange);
 				break;
 			}
 		}
 
 		if (inserted == false)
 		{
-			activeIntervals.push_back({ intervalEnd, intervalRegister, intervalRange });
+			activeIntervals.emplace_back(intervalEnd, intervalRegister, intervalRange);
 		}
 	}
 }

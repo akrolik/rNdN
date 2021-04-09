@@ -7,14 +7,13 @@ void LiveVariables::Kill(const SymbolTable::Symbol *symbol)
 {
 	// Remove all matches in the set
 	
-	m_currentInSet.erase(symbol);
+	m_currentSet.erase(symbol);
 }
 
 void LiveVariables::Visit(const VariableDeclaration *declaration)
 {
 	// Kill all declarations
 
-	m_currentInSet = m_currentOutSet;
 	Kill(declaration->GetSymbol());
 }
 
@@ -27,7 +26,6 @@ void LiveVariables::Visit(const AssignStatement *assignS)
 	for (const auto target : assignS->GetTargets())
 	{
 		target->Accept(*this);
-		PropagateNext();
 	}
 
 	m_isTarget = false;
@@ -39,14 +37,13 @@ void LiveVariables::Visit(const Identifier *identifier)
 {
 	// Kill all definitions, add all uses
 
-	m_currentInSet = m_currentOutSet;
 	if (m_isTarget)
 	{
 		Kill(identifier->GetSymbol());
 	}
 	else
 	{
-		m_currentInSet.insert(identifier->GetSymbol());
+		m_currentSet.insert(identifier->GetSymbol());
 	}
 }
 
@@ -62,9 +59,8 @@ LiveVariables::Properties LiveVariables::Merge(const Properties& s1, const Prope
 {
 	// Simple merge operation, add all non-duplicate eelements to the out set
 
-	Properties outSet;
+	Properties outSet(s1);
 
-	outSet.insert(s1.begin(), s1.end());
 	outSet.insert(s2.begin(), s2.end());
 
 	return outSet;

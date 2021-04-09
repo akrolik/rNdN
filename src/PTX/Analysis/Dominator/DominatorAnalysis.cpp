@@ -43,29 +43,22 @@ DominatorAnalysis::Properties DominatorAnalysis::Merge(const Properties& s1, con
 
 std::unordered_set<const BasicBlock *> DominatorAnalysis::GetDominators(const BasicBlock *block) const
 {
-	const auto& set = this->GetOutSet(block);
-	return { std::begin(set), std::end(set) };
+	auto dominators = this->GetInSet(block);
+	dominators.insert(block);
+	return { std::begin(dominators), std::end(dominators) };
 }
 
 std::unordered_set<const BasicBlock *> DominatorAnalysis::GetStrictDominators(const BasicBlock *block) const
 {
-	auto dominators = GetDominators(block);
-	dominators.erase(block);
-	return dominators;
+	const auto& dominators = this->GetInSet(block);
+	return { std::begin(dominators), std::end(dominators) };
 }
 
 const BasicBlock *DominatorAnalysis::GetImmediateDominator(const BasicBlock *block) const
 {
-	const auto& strictDominators = this->GetOutSet(block);
+	const auto& strictDominators = this->GetInSet(block);
 	for (const auto node1 : strictDominators)
 	{
-		// Strict dominators
-
-		if (node1 == block)
-		{
-			continue;
-		}
-
 		// Check that this node dominates all other strict dominators
 
 		auto dominatesAll = true;
@@ -73,12 +66,12 @@ const BasicBlock *DominatorAnalysis::GetImmediateDominator(const BasicBlock *blo
 		{
 			// Strict dominators
 
-			if (node2 == block || node1 == node2)
+			if (node1 == node2)
 			{
 				continue;
 			}
 
-			const auto& dominators2 = this->GetOutSet(node2);
+			const auto& dominators2 = this->GetInSet(node2);
 			if (dominators2.find(node1) != dominators2.end())
 			{
 				dominatesAll = false;
@@ -98,7 +91,12 @@ const BasicBlock *DominatorAnalysis::GetImmediateDominator(const BasicBlock *blo
 
 bool DominatorAnalysis::IsDominated(const BasicBlock *block, const BasicBlock *dominator) const
 {
-	const auto& blockDominators = this->GetOutSet(block);
+	if (block == dominator)
+	{
+		return true;
+	}
+
+	const auto& blockDominators = this->GetInSet(block);
 	return (blockDominators.find(dominator) != blockDominators.end());
 }
 

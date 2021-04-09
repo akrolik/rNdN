@@ -18,34 +18,32 @@ void ShapeAnalysis::Visit(const Parameter *parameter)
 {
 	// Add dynamic sized shapes for all parameters
 
-	m_currentOutSet = m_currentInSet;
-	
 	auto symbol = parameter->GetSymbol();
-	if (m_currentOutSet.first.find(symbol) == m_currentOutSet.first.end())
+	if (m_currentSet.first.find(symbol) == m_currentSet.first.end())
 	{
 		auto shape = ShapeUtils::SymbolicShapeFromType(parameter->GetType(), "param." + parameter->GetName());
-		m_currentOutSet.first[symbol] = shape;
-		m_currentOutSet.second[symbol] = shape;
+		m_currentSet.first[symbol] = shape;
+		m_currentSet.second[symbol] = shape;
 	}
-	if (m_currentOutSet.second.find(symbol) == m_currentOutSet.second.end())
+	if (m_currentSet.second.find(symbol) == m_currentSet.second.end())
 	{
-		m_currentOutSet.second[symbol] = m_currentOutSet.first[symbol];
+		m_currentSet.second[symbol] = m_currentSet.first[symbol];
 	}
 
-	m_parameterShapes[parameter] = m_currentOutSet.first.at(symbol);
+	m_parameterShapes[parameter] = m_currentSet.first.at(symbol);
 }
 
 void ShapeAnalysis::Visit(const DeclarationStatement *declarationS)
 {
-	m_currentOutSet = m_currentInSet;
-
 	// Set initial geometry for variable
 
 	auto declaration = declarationS->GetDeclaration();
 	auto shape = ShapeUtils::InitialShapeFromType(declaration->GetType());
 
-	m_currentOutSet.first[declaration->GetSymbol()] = shape;
-	m_currentOutSet.second[declaration->GetSymbol()] = shape;
+	m_currentSet.first[declaration->GetSymbol()] = shape;
+	m_currentSet.second[declaration->GetSymbol()] = shape;
+
+	m_declarationShapes[declaration] = shape;
 }
 
 void ShapeAnalysis::Visit(const AssignStatement *assignS)
@@ -54,8 +52,9 @@ void ShapeAnalysis::Visit(const AssignStatement *assignS)
 
 	auto expression = assignS->GetExpression();
 	expression->Accept(*this);
-	auto expressionShapes = GetShapes(expression);
-	auto writeShapes = GetWriteShapes(expression);
+
+	const auto& expressionShapes = GetShapes(expression);
+	const auto& writeShapes = GetWriteShapes(expression);
 
 	// Check the number of shapes matches the number of targets
 
@@ -71,16 +70,14 @@ void ShapeAnalysis::Visit(const AssignStatement *assignS)
 
 	// Update map for each target symbol
 
-	m_currentOutSet = m_currentInSet;
-
 	unsigned int i = 0;
 	for (const auto target : targets)
 	{
 		// Extract the target shape from the expression
 
 		auto symbol = target->GetSymbol();
-		m_currentOutSet.first[symbol] = expressionShapes.at(i);
-		m_currentOutSet.second[symbol] = writeShapes.at(i);
+		m_currentSet.first[symbol] = expressionShapes.at(i);
+		m_currentSet.second[symbol] = writeShapes.at(i);
 		i++;
 	}
 }
@@ -94,8 +91,8 @@ void ShapeAnalysis::Visit(const BlockStatement *blockS)
 	// Kill all declarations that were part of the block
 
 	const auto symbolTable = blockS->GetSymbolTable();
-	KillShapes(symbolTable, m_currentOutSet.first);
-	KillShapes(symbolTable, m_currentOutSet.second);
+	KillShapes(symbolTable, m_currentSet.first);
+	KillShapes(symbolTable, m_currentSet.second);
 }
 
 void ShapeAnalysis::KillShapes(const SymbolTable *symbolTable, ::Analysis::Map<SymbolObject, ShapeAnalysisValue>& outMap) const
@@ -2646,8 +2643,8 @@ void ShapeAnalysis::Visit(const Identifier *identifier)
 
 	auto symbol = identifier->GetSymbol();
 
-	SetShape(identifier, m_currentInSet.first.at(symbol));
-	SetWriteShape(identifier, m_currentInSet.second.at(symbol));
+	SetShape(identifier, m_currentSet.first.at(symbol));
+	SetWriteShape(identifier, m_currentSet.second.at(symbol));
 }
 
 void ShapeAnalysis::Visit(const VectorLiteral *literal)

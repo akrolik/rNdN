@@ -68,6 +68,14 @@ public:
 	const F& GetInSet(const BasicBlock *block) const { return m_blockInSets.at(block); }
 	const F& GetOutSet(const BasicBlock *block) const { return m_blockOutSets.at(block); }
 
+	// Options
+
+	bool CollectInSets() const { return m_collectInSets; }
+	bool CollectOutSets() const { return m_collectOutSets; }
+
+	void SetCollectInSets(bool collectInSets) { m_collectInSets = collectInSets; }
+	void SetCollectOutSets(bool collectOutSets) { m_collectOutSets = collectOutSets; }
+
 	// Each analysis must provide initial flows and merge operation
 
 	virtual F InitialFlow(const FunctionDefinition<VoidType> *function) const = 0;
@@ -82,6 +90,12 @@ protected:
 	void SetInSet(const BasicBlock *block, const F& set) { m_blockInSets.insert_or_assign(block, set); }
 	void SetOutSet(const BasicBlock *block, const F& set) { m_blockOutSets.insert_or_assign(block, set); }
 
+	void SetInSet(const BasicBlock *block, F&& set) { m_blockInSets.insert_or_assign(block, std::move(set)); }
+	void SetOutSet(const BasicBlock *block, F&& set) { m_blockOutSets.insert_or_assign(block, std::move(set)); }
+
+	void SetInSetMove(const BasicBlock *block, F&& set) { m_blockInSets[block] = std::move(set); }
+	void SetOutSetMove(const BasicBlock *block, F&& set) { m_blockOutSets[block] = std::move(set); }
+
 	bool ContainsInSet(const BasicBlock *block) const { return m_blockInSets.find(block) != m_blockInSets.end(); }
 	bool ContainsOutSet(const BasicBlock *block) const { return m_blockOutSets.find(block) != m_blockOutSets.end(); }
 
@@ -90,24 +104,14 @@ protected:
 	std::unordered_map<const BasicBlock *, F> m_blockInSets;
 	std::unordered_map<const BasicBlock *, F> m_blockOutSets;
 
+	bool m_collectInSets = true;
+	bool m_collectOutSets = true;
+
 	// Worklist
 
 	std::unordered_map<const BasicBlock *, unsigned int> m_blockOrder;
 
-	void InitializeWorklist(const FunctionDefinition<VoidType> *function)
-	{
-		const auto cfg = function->GetControlFlowGraph();
-		const auto entry = cfg->GetEntryNode();
-		auto index = cfg->GetNodeCount();
-
-		cfg->DFS(entry, [&](BasicBlock *block)
-		{
-			m_blockOrder[block] = index;
-			index--;
-
-			return false;
-		}, Utils::Graph<BasicBlock *>::Traversal::Postorder);
-	}
+	virtual void InitializeWorklist(const FunctionDefinition<VoidType> *function) = 0;
 
 	bool IsEmptyWorklist() const
 	{

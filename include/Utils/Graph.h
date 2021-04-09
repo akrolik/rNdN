@@ -94,6 +94,7 @@ public:
 	{
 		// Construct DFA ordering structure
 
+		std::stack<T> outStack;
 		std::stack<T> stack;
 		std::unordered_set<T> visited;
 
@@ -117,6 +118,10 @@ public:
 						return true;
 					}
 				}
+				else if (order == Traversal::Postorder)
+				{
+					outStack.push(node);
+				}
 
 				// Maintain the visited structure and add successors
 
@@ -125,16 +130,23 @@ public:
 				{
 					stack.push(successor);
 				}
-				
-				if (order == Traversal::Postorder)
+			}
+		}
+
+		if (order == Traversal::Postorder)
+		{
+			while (!outStack.empty())
+			{
+				auto node = outStack.top();
+				outStack.pop();
+
+				if (function(node))
 				{
-					if (function(node))
-					{
-						return true;
-					}
+					return true;
 				}
 			}
 		}
+
 		return false;
 	}
 

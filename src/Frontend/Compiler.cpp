@@ -32,9 +32,12 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 	// Collect input/output shapes and data objects interprocedurally
 
 	HorseIR::Analysis::DataObjectAnalysis dataAnalysis(program);
+	dataAnalysis.SetCollectInSets(false);
+	dataAnalysis.SetCollectOutSets(false);
 	dataAnalysis.Analyze(entry);
 
 	HorseIR::Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, program);
+	shapeAnalysis.SetCollectOutSets(false);
 	shapeAnalysis.Analyze(entry);
 
 	// Generate 64-bit PTX code from the input HorseIR for the current device

@@ -121,9 +121,11 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	auto timeStructurizer = Utils::Chrono::Start("Structurizer '" + function->GetName() + "'");
 
 	PTX::Analysis::DominatorAnalysis dominatorAnalysis;
+	dominatorAnalysis.SetCollectOutSets(false);
 	dominatorAnalysis.Analyze(function);
 
 	PTX::Analysis::PostDominatorAnalysis postDominatorAnalysis;
+	dominatorAnalysis.SetCollectInSets(false);
 	postDominatorAnalysis.Analyze(function);
 
 	PTX::Transformation::Structurizer structurizer(dominatorAnalysis, postDominatorAnalysis);
@@ -187,6 +189,7 @@ const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::
 		case Utils::Options::BackendRegisterAllocator::LinearScan:
 		{
 			PTX::Analysis::LiveVariables liveVariables;
+			liveVariables.SetCollectInSets(false);
 			liveVariables.Analyze(function);
 
 			PTX::Analysis::LiveIntervals liveIntervals(liveVariables);

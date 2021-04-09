@@ -29,8 +29,7 @@ void GeometryAnalysis::Analyze(const Function *function)
 
 bool GeometryAnalysis::VisitIn(const DeclarationStatement *declarationS)
 {
-	const auto& outShapes = m_shapeAnalysis.GetOutSet(declarationS);
-	m_geometries[declarationS] = outShapes.first.at(declarationS->GetDeclaration()->GetSymbol());
+	m_geometries[declarationS] = m_shapeAnalysis.GetDeclarationShape(declarationS->GetDeclaration());
 	return false;
 }
 
@@ -134,7 +133,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const Function *function, const std::
 const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments)
 {
 	const auto& inShapes = m_shapeAnalysis.GetInSet(m_currentStatement);
-	const auto& outShapes = m_shapeAnalysis.GetOutSet(m_currentStatement);
 
 	switch (function->GetPrimitive())
 	{

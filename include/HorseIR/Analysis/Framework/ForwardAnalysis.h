@@ -43,34 +43,23 @@ public:
 	void Visit(const Node *node) override
 	{
 		// Default action, propagate the set forward with no changes
-
-		this->m_currentOutSet = this->m_currentInSet;
-	}
-
-	void PropagateNext() override
-	{
-		// Copy the out set to the in set for traversing the next node
-
-		this->m_currentInSet = this->m_currentOutSet;
 	}
 
 	void TraverseFunction(const Function *function, const F& initialFlow) override
 	{
 		// Initialize the input flow set for the function
 
-		this->m_currentInSet = initialFlow;
+		this->m_currentSet = initialFlow;
 
 		// Traverse the parameters and then the body
 
 		for (const auto& parameter : function->GetParameters())
 		{
 			parameter->Accept(*this);
-			PropagateNext();
 		}
 		for (const auto& returnType : function->GetReturnTypes())
 		{
 			returnType->Accept(*this);
-			PropagateNext();
 		}
 		TraverseStatements(function->GetStatements());
 	}
@@ -83,15 +72,19 @@ public:
 		{
 			this->m_currentStatement = statement;
 
-			this->SetInSet(statement, this->m_currentInSet);
+			if (this->CollectInSets())
+			{
+				this->SetInSet(statement, this->m_currentSet);
+			}
 			statement->Accept(*this);
-			this->SetOutSet(statement, this->m_currentOutSet);
-
-			PropagateNext();
+			if (this->CollectOutSets())
+			{
+				this->SetOutSet(statement, this->m_currentSet);
+			}
 		}
 		this->m_currentStatement = nullptr;
 
-		this->m_endSet = this->m_currentInSet;
+		this->m_endSet = this->m_currentSet;
 	}
 
 	void TraverseConditional(const Expression *condition, const BlockStatement *trueBlock, const BlockStatement *elseBlock) override
@@ -100,44 +93,51 @@ public:
 		// for traversing the else branch (if any) after the condition eval
 
 		condition->Accept(*this);
-		PropagateNext();
 
-		auto inSet = this->m_currentInSet; // Includes the condition changes
+		auto inSet = this->m_currentSet; // Includes the condition changes
 
 		trueBlock->Accept(*this);
-		auto trueOutSet = this->m_currentOutSet;
+		auto trueOutSet = this->m_currentSet;
 
 		if (elseBlock != nullptr)
 		{
 			// If an else branch is present, analyze, and then merge in the results
 			// with the provided merge operation. Reset with in set from condition
 
-			this->m_currentInSet = inSet;
+			this->m_currentSet = inSet;
 
 			elseBlock->Accept(*this);
-			auto elseOutSet = this->m_currentOutSet;
+			auto elseOutSet = this->m_currentSet;
 
-			this->m_currentOutSet = this->Merge(trueOutSet, elseOutSet);
+			this->m_currentSet = this->Merge(trueOutSet, elseOutSet);
 		}
 		else
 		{
 			// If no else branch is present, merge the in set from the if statement
 			// which represents a null else branch (false condition case)
 
-			this->m_currentOutSet = this->Merge(trueOutSet, inSet);
+			this->m_currentSet = this->Merge(trueOutSet, inSet);
 		}
 	}
 
 	void Visit(const WhileStatement *whileS) override
 	{
 		auto [inSet, _] = TraverseLoop(whileS->GetCondition(), whileS->GetBody());
-		this->SetInSet(whileS, inSet);
+
+		if (this->CollectInSets())
+		{
+			this->SetInSet(whileS, inSet);
+		}
 	}
 
 	void Visit(const RepeatStatement *repeatS) override
 	{
 		auto [inSet, _] = TraverseLoop(repeatS->GetCondition(), repeatS->GetBody());
-		this->SetInSet(repeatS, inSet);
+
+		if (this->CollectInSets())
+		{
+			this->SetInSet(repeatS, inSet);
+		}
 	}
 
 	std::tuple<F, F> TraverseLoop(const Expression *condition, const BlockStatement *body) override
@@ -152,7 +152,7 @@ public:
 
 		// Store the in set for the loop, not including the condition (we want under all circumstanes)
 
-		auto preSet = this->m_currentInSet;
+		auto preSet = this->m_currentSet;
 
 		this->m_currentStatement = currentStatement;
 		condition->Accept(*this);
@@ -165,7 +165,7 @@ public:
 		do {
 			// Store previous out set, used to check for fixed point at the end of the loop
 
-			outSet = this->m_currentOutSet;
+			outSet = this->m_currentSet;
 
 			// Reinitialize the break/continue sets for this iteration
 
@@ -173,12 +173,11 @@ public:
 
 			// Traverse the body and compute sets for all statements
 
-			PropagateNext();
 			body->Accept(*this);
 
 			// Merge all back edge sets (body and continue)
 
-			auto mergedOutSet = this->m_currentOutSet;
+			auto mergedOutSet = this->m_currentSet;
 			for (const auto& continueSet : m_loopContexts.top().GetContinueSets())
 			{
 				mergedOutSet = this->Merge(mergedOutSet, continueSet);
@@ -187,12 +186,12 @@ public:
 			// Create the new in set for the loop, including the previous in set
 			// and use this to evaluate the condition and compute the new out set
 
-			this->m_currentInSet = inSet = this->Merge(mergedOutSet, preSet);
+			this->m_currentSet = inSet = this->Merge(mergedOutSet, preSet);
 
 			this->m_currentStatement = currentStatement;
 			condition->Accept(*this);
 
-		} while (outSet != this->m_currentOutSet);
+		} while (outSet != this->m_currentSet);
 
 		// Merge in all break sets to the condition out from the above dowhile loop
 
@@ -201,10 +200,10 @@ public:
 			outSet = this->Merge(outSet, breakSet);
 		}
 
-		this->m_currentOutSet = outSet;
+		this->m_currentSet = outSet;
 		m_loopContexts.pop();
 
-		// Return the new m_currentInSet after the fixed point calculation
+		// Return the new m_currentSet after the fixed point calculation
 
 		return {inSet, outSet};
 	}
@@ -212,13 +211,13 @@ public:
 	void TraverseBreak(const BreakStatement *breakS) override
 	{
 		auto context = m_loopContexts.top();
-		context.AddBreakSet(this->m_currentInSet);
+		context.AddBreakSet(this->m_currentSet);
 	}
 
 	void TraverseContinue(const ContinueStatement *continueS) override
 	{
 		auto context = m_loopContexts.top();
-		context.AddContinueSet(this->m_currentInSet);
+		context.AddContinueSet(this->m_currentSet);
 	}
 
 	const F& GetEndSet() const { return m_endSet; }

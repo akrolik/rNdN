@@ -23,7 +23,7 @@ void LiveVariables::Visit(const PredicatedInstruction *instruction)
 	if (auto [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
 	{
 		m_destination = false;
-		predicate->Accept(static_cast<ConstOperandDispatcher&>(*this));
+		Visit(predicate); // predicate->Accept(static_cast<ConstOperandDispatcher&>(*this));
 	}
 }
 

@@ -77,7 +77,7 @@ std::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const Analysi
 
 BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const std::unordered_set<const BasicBlock *>& loopBlocks) const
 {
-	auto postDominators = m_postDominators.GetPostDominators(header);
+	auto postDominators = m_postDominators.GetStrictPostDominators(header);
 	for (auto loopBlock : loopBlocks)
 	{
 		postDominators.erase(loopBlock);

@@ -11,23 +11,19 @@ void DataObjectAnalysis::Visit(const Parameter *parameter)
 {
 	// Initialize all incoming parameters with unique data objects
 
-	m_currentOutSet = m_currentInSet;
-	
 	auto symbol = parameter->GetSymbol();
-	if (m_currentOutSet.find(symbol) == m_currentOutSet.end())
+	if (this->m_currentSet.find(symbol) == this->m_currentSet.end())
 	{
-		m_currentOutSet[parameter->GetSymbol()] = new DataObject();
+		m_currentSet[symbol] = new DataObject();
 	}
 
-	m_parameterObjects[parameter] = m_currentOutSet.at(parameter->GetSymbol());
+	m_parameterObjects[parameter] = this->m_currentSet.at(symbol);
 }
 
 void DataObjectAnalysis::Visit(const AssignStatement *assignS)
 {
 	// For each target of the assignment, kill the previous data objects (if any)
 	// and add a new value to the map associating the target to the data object
-
-	m_currentOutSet = m_currentInSet;
 
 	auto expression = assignS->GetExpression();
 	expression->Accept(*this);
@@ -39,7 +35,7 @@ void DataObjectAnalysis::Visit(const AssignStatement *assignS)
 		// Construct the new value for the set
 
 		auto symbol = target->GetSymbol();
-		m_currentOutSet[symbol] = dataObjects.at(index++);
+		this->m_currentSet[symbol] = dataObjects.at(index++);
 	}
 }
 
@@ -52,13 +48,13 @@ void DataObjectAnalysis::Visit(const BlockStatement *blockS)
 	// Kill all symbols that were part of the block
 
 	auto symbolTable = blockS->GetSymbolTable();
-	auto it = m_currentOutSet.begin();
-	while (it != m_currentOutSet.end())
+	auto it = this->m_currentSet.begin();
+	while (it != this->m_currentSet.end())
 	{
 		auto symbol = it->first;
 		if (symbolTable->ContainsSymbol(symbol))
 		{
-			it = m_currentOutSet.erase(it);
+			it = this->m_currentSet.erase(it);
 		}
 		else
 		{
@@ -324,7 +320,7 @@ void DataObjectAnalysis::Visit(const Identifier *identifier)
 {
 	// Propagate data objects through assignments
 
-	m_expressionObjects[identifier] = {m_currentInSet.at(identifier->GetSymbol())};
+	m_expressionObjects[identifier] = {this->m_currentSet.at(identifier->GetSymbol())};
 }
 
 void DataObjectAnalysis::Visit(const Literal *literal)

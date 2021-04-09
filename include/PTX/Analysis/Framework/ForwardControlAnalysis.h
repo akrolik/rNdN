@@ -28,72 +28,64 @@ public:
 		while (!this->IsEmptyWorklist())
 		{
 			const auto node = this->PopWorklist();
-			if (!this->ContainsOutSet(node))
-			{
-				// If this is the first iteration, travese the block and all successors
 
-				this->m_currentSet = this->GetInSet(node);
-				TraverseBlock(node);
+			// Process the current node
+
+			this->m_currentSet = this->GetInSet(node);
+			TraverseBlock(node);
+
+			if (this->CollectOutSets())
+			{
 				this->SetOutSet(node, this->m_currentSet);
-
-				// Propagate to all successors
-
-				for (const auto successor : cfg->GetSuccessors(node))
-				{
-					if (this->ContainsInSet(successor))
-					{
-						const auto& successorInSet = this->GetInSet(successor);
-						this->SetInSet(successor, this->Merge(this->m_currentSet, successorInSet));
-					}
-					else
-					{
-						this->SetInSet(successor, this->Merge(this->m_currentSet, temporaryFlow));
-					}
-					this->PushWorklist(successor);
-				}
 			}
-			else
+
+			// Process the successors
+
+			for (const auto successor : cfg->GetSuccessors(node))
 			{
-				// For further iterations, save the old outset for comparison
-
-				this->m_currentSet = this->GetInSet(node);
-				TraverseBlock(node);
-
-				// Only process the successors if the outset has changed
-
-				if (this->GetOutSet(node) != this->m_currentSet)
+				if (this->ContainsInSet(successor))
 				{
-					this->SetOutSet(node, this->m_currentSet);
+					const auto& successorInSet = this->GetInSet(successor);
+					auto mergedInSet = this->Merge(this->m_currentSet, successorInSet);
 
-					for (const auto successor : cfg->GetSuccessors(node))
+					// Proccess changed successors
+
+					if (mergedInSet != successorInSet)
 					{
-						if (this->ContainsInSet(successor))
-						{
-							const auto& successorInSet = this->GetInSet(successor);
-							const auto mergedInSet = this->Merge(this->m_currentSet, successorInSet);
-
-							// Proccess changed successors
-
-							if (mergedInSet != successorInSet)
-							{
-								this->SetInSet(successor, mergedInSet);
-								this->PushWorklist(successor);
-							}
-						}
-						else
-						{
-							// Proccess changed successors
-
-							this->SetInSet(successor, this->Merge(this->m_currentSet, temporaryFlow));
-							this->PushWorklist(successor);
-						}
+						this->SetInSet(successor, std::move(mergedInSet));
+						this->PushWorklist(successor);
 					}
+				}
+				else
+				{
+					// Proccess new successors
+
+					auto mergedInSet = this->Merge(this->m_currentSet, temporaryFlow);
+
+					this->SetInSetMove(successor, std::move(mergedInSet));
+					this->PushWorklist(successor);
 				}
 			}
 		}
 	}
 
 	virtual void TraverseBlock(const BasicBlock *block) = 0;
+
+protected:
+	void InitializeWorklist(const FunctionDefinition<VoidType> *function) override
+	{
+		const auto cfg = function->GetControlFlowGraph();
+		const auto entry = cfg->GetEntryNode();
+		auto index = cfg->GetNodeCount();
+
+		cfg->DFS(entry, [&](BasicBlock *block)
+		{
+			this->m_blockOrder[block] = index;
+			index--;
+
+			return false;
+		}, Utils::Graph<BasicBlock *>::Traversal::Postorder);
+	}
 };
 
 }

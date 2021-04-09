@@ -43,29 +43,22 @@ PostDominatorAnalysis::Properties PostDominatorAnalysis::Merge(const Properties&
 
 std::unordered_set<const BasicBlock *> PostDominatorAnalysis::GetPostDominators(const BasicBlock *block) const
 {
-	const auto& set = this->GetInSet(block);
-	return { std::begin(set), std::end(set) };
+	auto dominators = this->GetOutSet(block);
+	dominators.insert(block);
+	return { std::begin(dominators), std::end(dominators) };
 }
 
 std::unordered_set<const BasicBlock *> PostDominatorAnalysis::GetStrictPostDominators(const BasicBlock *block) const
 {
-	auto dominators = GetPostDominators(block);
-	dominators.erase(block);
-	return dominators;
+	const auto& dominators = this->GetOutSet(block);
+	return { std::begin(dominators), std::end(dominators) };
 }
 
 const BasicBlock *PostDominatorAnalysis::GetImmediatePostDominator(const BasicBlock *block) const
 {
-	const auto& postDominators = this->GetInSet(block);
+	const auto& postDominators = this->GetOutSet(block);
 	for (const auto node1 : postDominators)
 	{
-		// Strict post dominators
-
-		if (node1 == block)
-		{
-			continue;
-		}
-
 		// Check that this node post-dominates all other strict post-dominators
 
 		auto postDominatesAll = true;
@@ -73,12 +66,12 @@ const BasicBlock *PostDominatorAnalysis::GetImmediatePostDominator(const BasicBl
 		{
 			// Strict post dominators
 
-			if (node2 == block || node1 == node2)
+			if (node1 == node2)
 			{
 				continue;
 			}
 
-			const auto& postDominators2 = this->GetInSet(node2);
+			const auto& postDominators2 = this->GetOutSet(node2);
 			if (postDominators2.find(node1) != postDominators2.end())
 			{
 				postDominatesAll = false;
@@ -97,7 +90,12 @@ const BasicBlock *PostDominatorAnalysis::GetImmediatePostDominator(const BasicBl
 
 bool PostDominatorAnalysis::IsPostDominated(const BasicBlock *block, const BasicBlock *postDominator) const
 {
-	const auto& postDominators = this->GetInSet(block);
+	if (block == postDominator)
+	{
+		return true;
+	}
+
+	const auto& postDominators = this->GetOutSet(block);
 	return (postDominators.find(postDominator) != postDominators.end());
 }
 

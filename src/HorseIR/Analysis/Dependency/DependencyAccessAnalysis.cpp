@@ -5,18 +5,14 @@ namespace Analysis {
 
 void DependencyAccessAnalysis::Visit(const DeclarationStatement *declarationS)
 {
-	m_currentOutSet = m_currentInSet;
-
 	// Add an implicit write for declarations
 
 	auto symbol = declarationS->GetDeclaration()->GetSymbol();
-	m_currentOutSet.second[symbol] = new DependencyAccessValue::Type({declarationS});
+	m_currentSet.second[symbol] = new DependencyAccessValue::Type({declarationS});
 }
 
 void DependencyAccessAnalysis::Visit(const AssignStatement *assignS)
 {
-	m_currentOutSet = m_currentInSet;
-
 	// Traverse the reads first, since they may be later killed by the writes
 
 	assignS->GetExpression()->Accept(*this);
@@ -27,8 +23,8 @@ void DependencyAccessAnalysis::Visit(const AssignStatement *assignS)
 	{
 		auto symbol = target->GetSymbol();
 
-		m_currentOutSet.first.erase(symbol);
-		m_currentOutSet.second[symbol] = new DependencyAccessValue::Type({assignS});
+		m_currentSet.first.erase(symbol);
+		m_currentSet.second[symbol] = new DependencyAccessValue::Type({assignS});
 	}
 }
 
@@ -36,7 +32,7 @@ void DependencyAccessAnalysis::Visit(const Identifier *identifier)
 {
 	// Get the set of reads and the symbol
 
-	auto& reads = m_currentOutSet.first;
+	auto& reads = m_currentSet.first;
 	auto symbol = identifier->GetSymbol();
 
 	// Add the statement to the input set of statements if they exist

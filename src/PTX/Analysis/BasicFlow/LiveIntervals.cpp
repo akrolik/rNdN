@@ -22,18 +22,19 @@ bool LiveIntervals::VisitIn(const InstructionStatement *statement)
 
 	for (const auto& element : m_liveVariables.GetOutSet(statement))
 	{
-		auto name = *element;
-		if (m_liveIntervals.find(name) == m_liveIntervals.end())
+		const auto& name = *element;
+		auto it = m_liveIntervals.find(name);
+		if (it == m_liveIntervals.end())
 		{
 			// New live range
 
-			m_liveIntervals[name] = { m_statementIndex, m_statementIndex };
+			m_liveIntervals.try_emplace(name, m_statementIndex, m_statementIndex);
 		}
 		else
 		{
 			// Existing live range, extend
 
-			m_liveIntervals[name].second = m_statementIndex;
+			it->second.second = m_statementIndex;
 		}
 	}
 

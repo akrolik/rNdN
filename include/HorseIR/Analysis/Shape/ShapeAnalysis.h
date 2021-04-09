@@ -97,6 +97,7 @@ public:
 	// Input and output shapes
 
 	const Shape *GetParameterShape(const Parameter *parameter) const { return m_parameterShapes.at(parameter); }
+	const Shape *GetDeclarationShape(const VariableDeclaration *declaration) const { return m_declarationShapes.at(declaration); }
 
 	const std::vector<const Shape *>& GetReturnShapes() const { return m_returnShapes; }
 	const std::vector<const Shape *>& GetReturnWriteShapes() const { return m_returnWriteShapes; }
@@ -146,6 +147,7 @@ private:
 	std::unordered_map<const Expression *, std::vector<const Shape *>> m_expressionShapes;
 	std::unordered_map<const Expression *, std::vector<const Shape *>> m_writeShapes;
 
+	std::unordered_map<const VariableDeclaration *, const Shape *> m_declarationShapes;
 	std::unordered_map<const Parameter *, const Shape *> m_parameterShapes;
 
 	std::vector<const Shape *> m_returnShapes;

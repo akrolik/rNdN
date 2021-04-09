@@ -18,9 +18,15 @@ public:
 		{
 			auto statement = *it;
 
-			this->SetOutSet(statement, this->m_currentSet);
+			if (this->CollectOutSets())
+			{
+				this->SetOutSet(statement, this->m_currentSet);
+			}
 			statement->Accept(*this);
-			this->SetInSet(statement, this->m_currentSet);
+			if (this->CollectInSets())
+			{
+				this->SetInSet(statement, this->m_currentSet);
+			}
 		}
 	}
 

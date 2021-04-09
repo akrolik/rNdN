@@ -100,6 +100,7 @@ bool Outliner::VisitIn(const Function *function)
 	auto timeOutline_start = Utils::Chrono::Start("Outline function '" + function->GetName() + "'");
 
 	Analysis::DependencyAccessAnalysis accessAnalysis(m_currentProgram);
+	accessAnalysis.SetCollectOutSets(false);
 	accessAnalysis.Analyze(function);
 
 	Analysis::DependencyAnalysis dependencyAnalysis(accessAnalysis);
@@ -113,9 +114,12 @@ bool Outliner::VisitIn(const Function *function)
 	// Perform a conservative shape analysis
 
 	Analysis::DataObjectAnalysis dataAnalysis(m_currentProgram);
+	dataAnalysis.SetCollectInSets(false);
+	dataAnalysis.SetCollectOutSets(false);
 	dataAnalysis.Analyze(function);
 
 	Analysis::ShapeAnalysis shapeAnalysis(dataAnalysis, m_currentProgram);
+	shapeAnalysis.SetCollectOutSets(false);
 	shapeAnalysis.Analyze(function);
 
 	// Compatibility analysis from dependency and geometry analyses

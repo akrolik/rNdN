@@ -8,14 +8,12 @@ void ReachingDefinitions::Visit(const AssignStatement *assignS)
 	// For each target of the assignment, kill the previous definition (if any)
 	// and add a new value to the map associating the target to the assignment
 
-	m_currentOutSet = m_currentInSet;
-
 	for (const auto target : assignS->GetTargets())
 	{
 		// Construct the new value for the set
 
 		auto symbol = target->GetSymbol();
-		m_currentOutSet[symbol] = new ReachingDefinitionsValue::Type({assignS});
+		m_currentSet[symbol] = new ReachingDefinitionsValue::Type({assignS});
 	}
 }
 
@@ -28,13 +26,13 @@ void ReachingDefinitions::Visit(const BlockStatement *blockS)
 	// Kill all declarations that were part of the block
 
 	auto symbolTable = blockS->GetSymbolTable();
-	auto it = m_currentOutSet.begin();
-	while (it != m_currentOutSet.end())
+	auto it = m_currentSet.begin();
+	while (it != m_currentSet.end())
 	{
 		auto symbol = it->first;
 		if (symbolTable->ContainsSymbol(symbol))
 		{
-			it = m_currentOutSet.erase(it);
+			it = m_currentSet.erase(it);
 		}
 		else
 		{
