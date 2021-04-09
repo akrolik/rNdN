@@ -33,6 +33,8 @@ public:
 		return (m_bank << 14) + (m_address / sizeof(std::uint32_t));
 	}
 
+	OpCodeKind GetOpCodeKind() const override { return OpCodeKind::Constant; }
+
 private:
 	std::uint32_t m_bank = 0;
 	std::uint32_t m_address = 0;

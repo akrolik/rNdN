@@ -41,28 +41,33 @@ public:
 
 	static std::uint64_t OpCodeComposite(std::uint64_t opCode, const Composite *operand)
 	{
-		if (dynamic_cast<const Constant *>(operand))
+		switch (operand->GetOpCodeKind())
 		{
-			opCode ^= static_cast<std::uint64_t>(0x10) << 56;
-		}
-		else if (dynamic_cast<const Immediate *>(operand))
-		{
-			auto shortCode = (opCode >> 56);
-			if (shortCode == 0x5c)
+			case Composite::OpCodeKind::Constant:
 			{
-				opCode ^= static_cast<std::uint64_t>(0x64) << 56;
+				opCode ^= static_cast<std::uint64_t>(0x10) << 56;
+				break;
 			}
-			else if (shortCode == 0x5b)
+			case Composite::OpCodeKind::Immediate:
 			{
-				opCode ^= static_cast<std::uint64_t>(0x6d) << 56;
-			}
-			else if (shortCode == 0x59)
-			{
-				opCode ^= static_cast<std::uint64_t>(0x6b) << 56;
-			}
-			else if (shortCode == 0x58)
-			{
-				opCode ^= static_cast<std::uint64_t>(0x68) << 56;
+				auto shortCode = (opCode >> 56);
+				if (shortCode == 0x5c)
+				{
+					opCode ^= static_cast<std::uint64_t>(0x64) << 56;
+				}
+				else if (shortCode == 0x5b)
+				{
+					opCode ^= static_cast<std::uint64_t>(0x6d) << 56;
+				}
+				else if (shortCode == 0x59)
+				{
+					opCode ^= static_cast<std::uint64_t>(0x6b) << 56;
+				}
+				else if (shortCode == 0x58)
+				{
+					opCode ^= static_cast<std::uint64_t>(0x68) << 56;
+				}
+				break;
 			}
 		}
 		return opCode;
