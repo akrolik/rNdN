@@ -223,6 +223,10 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		binaryFunction->AddIndirectBranch(offset, target);
 	}
 
+	// Stack size
+
+	binaryFunction->SetCRSStackSize(function->GetCRSStackSize());
+
 	// Assemble into binary
 
 	auto binary = new std::uint64_t[linearProgram.size()];

@@ -170,6 +170,11 @@ public:
 	}
 	void SetIndirectBranches(const std::vector<IndirectBranch>& indirectBranches) { m_indirectBranches = indirectBranches; }
 
+	// Stack size
+
+	std::size_t GetCRSStackSize() const { return m_crsStackSize; }
+	void SetCRSStackSize(std::size_t crsStackSize) { m_crsStackSize = crsStackSize; }
+
 	// Formatting
 
 	std::string ToString() const
@@ -311,6 +316,13 @@ public:
 			}
 		}
 
+		// Stack size
+
+		if (m_crsStackSize > 0)
+		{
+			code += "// - CRS Stack Size: " + Utils::Format::HexString(m_crsStackSize) + " bytes \n";
+		}
+
 		// Print assembled program with address and binary format
 
 		auto first = true;
@@ -347,6 +359,7 @@ private:
 
 	std::vector<std::size_t> m_parameters;
 	std::size_t m_parametersSize = 0;
+	std::size_t m_crsStackSize = 0;
 
 	std::vector<const SASS::Instruction *> m_linearProgram;
 	char *m_text = nullptr;

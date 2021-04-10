@@ -36,6 +36,11 @@ void Builder::AddSharedVariable(const std::string& name, std::size_t size, std::
 	m_currentFunction->AddSharedVariable(new SASS::SharedVariable(name, size, dataSize));
 }
 
+void Builder::SetCRSStackSize(std::size_t size)
+{
+	m_currentFunction->SetCRSStackSize(size);
+}
+
 // Basic Blocks
 
 SASS::BasicBlock *Builder::CreateBasicBlock(const std::string& name)

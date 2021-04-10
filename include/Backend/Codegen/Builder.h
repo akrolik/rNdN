@@ -33,6 +33,8 @@ public:
 	void AddParameter(std::size_t size);
 	void AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize);
 
+	void SetCRSStackSize(std::size_t size);
+
 	// Basic Blocks
 
 	SASS::BasicBlock *CreateBasicBlock(const std::string& name);

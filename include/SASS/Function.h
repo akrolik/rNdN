@@ -100,6 +100,11 @@ public:
 	void AddIndirectBranch(IndirectBranch *indirectBranch) { m_indirectBranches.push_back(indirectBranch); }
 	void SetIndirectBranches(const std::vector<IndirectBranch *>& indirectBranches) { m_indirectBranches = indirectBranches; }
 
+	// CRS Stack Size
+
+	std::size_t GetCRSStackSize() const { return m_crsStackSize; }
+	void SetCRSStackSize(std::size_t crsStackSize) { m_crsStackSize = crsStackSize; }
+
 	// Formatting
 
 	std::string ToString() const override
@@ -183,6 +188,13 @@ public:
 			}
 		}
 
+		// CRS stack size
+
+		if (m_crsStackSize > 0)
+		{
+			code += "// - CRS Stack Size: " + std::to_string(m_crsStackSize) + " bytes\n";
+		}
+
 		// Function body
 
 		code += ".text." + m_name + ":\n";
@@ -198,6 +210,7 @@ private:
 	std::vector<std::size_t> m_parameters;
 	std::vector<BasicBlock *> m_blocks;
 	std::size_t m_registers = 0;
+	std::size_t m_crsStackSize = 0;
 
 	std::tuple<std::size_t, std::size_t, std::size_t> m_requiredThreads;
 	std::tuple<std::size_t, std::size_t, std::size_t> m_maxThreads;

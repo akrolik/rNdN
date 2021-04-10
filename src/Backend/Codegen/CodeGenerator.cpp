@@ -22,6 +22,7 @@ SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidT
 
 	// Close function and return
 
+	m_builder.SetCRSStackSize(m_maxStack);
 	m_builder.CloseFunction();
 	return sassFunction;
 }
@@ -111,6 +112,12 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 
 	auto ssyInstruction = new SASS::SSYInstruction("");
 	branchBlock->AddInstruction(ssyInstruction);
+
+	m_stackSize += SASS::SSY_STACK_SIZE;
+	if (m_stackSize > m_maxStack)
+	{
+		m_maxStack = m_stackSize;
+	}
 
 	auto syncInstruction1 = new SASS::SYNCInstruction();
 	auto syncInstruction2 = new SASS::SYNCInstruction();
@@ -207,6 +214,8 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 		m_endBlock->AddInstruction(syncInstruction2);
 	}
 
+	m_stackSize -= SASS::SSY_STACK_SIZE;
+
 	// Process next structure
 
 	PTX::Analysis::ConstStructuredGraphVisitor::Visit(structure);
@@ -269,6 +278,12 @@ void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 	auto ssyInstruction = new SASS::SSYInstruction("");
 	m_endBlock->AddInstruction(ssyInstruction);
 
+	m_stackSize += SASS::SSY_STACK_SIZE;
+	if (m_stackSize > m_maxStack)
+	{
+		m_maxStack = m_stackSize;
+	}
+
 	// Process loop body
 
 	auto oldExits = m_loopExits;
@@ -280,6 +295,8 @@ void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 	auto headerBlock = m_beginBlock;
 	auto loopExits = m_loopExits;
 	m_loopExits = oldExits;
+
+	m_stackSize -= SASS::SSY_STACK_SIZE;
 
 	// Process next structure
 

@@ -58,6 +58,8 @@ private:
 	SASS::BasicBlock *m_endBlock = nullptr;
 
 	std::vector<SASS::Instruction *> m_loopExits;
+	std::size_t m_stackSize = 0;
+	std::size_t m_maxStack = 0;
 };
 
 }

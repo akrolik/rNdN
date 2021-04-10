@@ -579,6 +579,24 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			AppendBytes(functionInfoBuffer, {0, 0}); // Zero
 		}
 
+		if (auto size = function->GetCRSStackSize(); size > 0)
+		{
+			// EIATTR_CRS_STACK_SIZE
+			//     Format: EIFMT_SVAL
+			//
+			//
+			//     /*0000*/        .byte   0x04, 0x1e
+			//     /*0002*/        .short  (.L_2 - .L_1)
+			// .L_1:
+			//     /*0004*/        .word   0x00000230
+			// .L_2:
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_CRS_STACK_SIZE});
+			AppendBytes(functionInfoBuffer, DecomposeShort(1*SZ_WORD)); // Size
+			AppendBytes(functionInfoBuffer, DecomposeWord(size));       // Stack size
+		}
+
 		if (auto count = function->GetIndirectBranchesCount(); count > 0)
 		{
 			// EIATTR_INDIRECT_BRANCH_TARGETS
