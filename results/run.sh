@@ -2,15 +2,14 @@
 
 make -C ../build
 
-for i in $(seq 1 22)
+DATA_PATH="/mnt/local/alex/data/tpc-h/"
+
+for i in {1..22}
 do
 	echo "Query $i"
 	echo "===================================="
 
-	../build/bin/r3d3 --load-tpch --print-time "../tests/tpch/q${i}.hir" | tee "q${i}.log"
-	# for j in $(seq 1 10)
-	# do
-	# 	../build/bin/r3d3 --load-tpch --print-time "../tests/tpch/q${i}.hir" | tee "q${i}_${j}.log"
-	# done
+	../build/bin/r3d3 --debug-time --backend=r3d3 --data-load-tpch --data-path-tpch="$DATA_PATH" "../tests/tpch/q${i}.hir" | tee "q${i}_r3d3.log"
+
 	echo
 done

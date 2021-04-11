@@ -18,10 +18,37 @@ function collect_1 {
 echo "Compile"
 echo "--------------------"
 
-collect_1 "Frontend"
+collect_1 "Syntax"
 collect_1 "Outliner"
-collect_1 "Codegen"
-collect_1 "CUDA assembly"
+collect_1 "Frontend compiler"
+	echo -en "\t"; collect "Dependency access analysis '.*'"
+	echo -en "\t"; collect "Dependency graph analysis '.*'"
+	echo -en "\t"; collect "Dependency subgraph analysis '.*'"
+	echo -en "\t"; collect "Data object analysis '.*'"
+	echo -en "\t"; collect "Shape analysis '.*'"
+	echo -en "\t"; collect "Geometry analysis '.*'"
+	echo -en "\t"; collect "Compatibility analysis '.*'"
+	echo -en "\t"; collect "Outline builder '.*'"
+
+collect "Control-flow builder '.*'"
+collect "Register allocation '.*'"
+	echo -en "\t"; collect "Live variables '.*'"
+	echo -en "\t"; collect "Live intervals '.*'"
+	echo -en "\t"; collect "Linear scan allocator '.*'"
+
+collect "Structurizer '.*'"
+	echo -en "\t"; collect "Dominators '.*'"
+	echo -en "\t"; collect "Post-dominators '.*'"
+	echo -en "\t"; collect "Structurize '.*'"
+
+collect "SASS codegen '.*'"
+collect "Scheduler '.*'"
+
+collect_1 "Binary generator"
+	echo -en "\t"; collect "SASS assembler"
+	echo -en "\t"; collect "ELF generator"
+
+collect_1 "CUDA assembler"
 
 echo -n "[TOTAL] "
 collect_1 "Compilation"
