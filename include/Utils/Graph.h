@@ -150,16 +150,54 @@ public:
 		return false;
 	}
 
-	struct OrderingContext
+	struct OrderContextDFS
 	{
-		OrderingContext(std::queue<T>& queue, std::unordered_map<T, unsigned int>& edges) : queue(queue), edges(edges) {}
+		OrderContextDFS(std::stack<T>& stack, std::unordered_map<T, unsigned int>& edges) : order(stack), edges(edges) {}
 
-		std::queue<T>& queue;
+		std::stack<T>& order;
+		std::unordered_map<T, unsigned int>& edges;
+	};
+
+	struct OrderContextBFS
+	{
+		OrderContextBFS(std::queue<T>& queue, std::unordered_map<T, unsigned int>& edges) : order(queue), edges(edges) {}
+
+		std::queue<T>& order;
 		std::unordered_map<T, unsigned int>& edges;
 	};
 
 	template <typename F> 
-	void TopologicalOrdering(F function) const
+	void TopologicalOrderDFS(F function) const
+	{
+		// Construct the topological sorting structure
+		//     Stack: store the current nodes 0 in-degree
+		//     Edges: count the in-degree of each node
+
+		std::stack<T> stack;
+		std::unordered_map<T, unsigned int> edges;
+
+		OrderContextDFS context(stack, edges);
+
+		// Perform the topological sort
+
+		while (!stack.empty())
+		{
+			auto& node = stack.top();
+			stack.pop();
+
+			// Apply the given function
+
+			if (function(context, node))
+			{
+				// Process all successors of the node
+
+				ProcessSuccessors(context, node);
+			}
+		}
+	}
+
+	template <typename F> 
+	void TopologicalOrderBFS(F function) const
 	{
 		// Construct the topological sorting structure
 		//     Queue: store the current nodes 0 in-degree
@@ -168,19 +206,9 @@ public:
 		std::queue<T> queue;
 		std::unordered_map<T, unsigned int> edges;
 
-		OrderingContext context(queue, edges);
+		OrderContextBFS context(queue, edges);
 
-		// Initialization with root nodes and count for incoming edges of each node
-
-		for (auto& node : GetNodes())
-		{
-			auto count = GetLinearInDegree(node);
-			if (count == 0)
-			{
-				queue.push(node);
-			}
-			edges.insert({node, count});
-		}
+		InitializeOrderContext(context);
 
 		// Perform the topological sort
 
@@ -191,19 +219,48 @@ public:
 
 			// Apply the given function
 
-			auto status = function(context, node);
-
-			// Process all successors of the node
-
-			if (status)
+			if (function(context, node))
 			{
+				// Process all successors of the node
+
 				ProcessSuccessors(context, node);
 			}
 		}
 	}
 
 	template <typename F> 
-	void ReverseTopologicalOrdering(F function) const
+	void ReverseTopologicalOrderDFS(F function) const
+	{
+		// Construct the topological sorting structure
+		//     Queue: store the current nodes 0 out-degree
+		//     Edges: count the out-degree of each node
+
+		std::stack<T> stack;
+		std::unordered_map<T, unsigned int> edges;
+
+		OrderContextDFS context(stack, edges);
+
+		InitializeOrderContext(context);
+
+		// Perform the topological sort
+
+		while (!stack.empty())
+		{
+			auto node = stack.top();
+			stack.pop();
+
+			// Apply the given function
+
+			if (function(context, node))
+			{
+				// Process all predecessors of the node
+
+				ProcessPredecessors(context, node);
+			}
+		}
+	}
+	template <typename F> 
+	void ReverseTopologicalOrderBFS(F function) const
 	{
 		// Construct the topological sorting structure
 		//     Queue: store the current nodes 0 out-degree
@@ -212,19 +269,9 @@ public:
 		std::queue<T> queue;
 		std::unordered_map<T, unsigned int> edges;
 
-		OrderingContext context(queue, edges);
+		OrderContextBFS context(queue, edges);
 
-		// Initialization with root nodes and count for incoming edges of each node
-
-		for (auto& node : GetNodes())
-		{
-			auto count = GetLinearOutDegree(node);
-			if (count == 0)
-			{
-				queue.push(node);
-			}
-			edges.insert({node, count});
-		}
+		InitializeOrderContext(context);
 
 		// Perform the topological sort
 
@@ -235,11 +282,12 @@ public:
 
 			// Apply the given function
 
-			function(node);
+			if (function(context, node))
+			{
+				// Process all predecessors of the node
 
-			// Process all predecessors of the node
-
-			ProcessPredecessors(context, node);
+				ProcessPredecessors(context, node);
+			}
 		}
 	}
 
@@ -254,9 +302,29 @@ protected:
 		return GetOutDegree(node);
 	}
 
-	void ProcessSuccessors(OrderingContext& context, const T& node) const
+	template<class O>
+	void InitializeOrderContext(O& context) const
 	{
-		auto& queue = context.queue;
+		auto& order = context.order;
+		auto& edges = context.edges;
+
+		// Initialization with root nodes and count for incoming edges of each node
+
+		for (auto& node : GetNodes())
+		{
+			auto count = GetLinearInDegree(node);
+			if (count == 0)
+			{
+				order.push(node);
+			}
+			edges.insert({node, count});
+		}
+	}
+
+	template<class O>
+	void ProcessSuccessors(O& context, const T& node) const
+	{
+		auto& order = context.order;
 		auto& edges = context.edges;
 
 		// Decrease the degree of all successors, adding them to the queue
@@ -267,14 +335,15 @@ protected:
 			edges.at(successor)--;
 			if (edges.at(successor) == 0)
 			{
-				queue.push(successor);
+				order.push(successor);
 			}
 		}
 	}
 
-	void ProcessPredecessors(OrderingContext& context, const T& node) const
+	template<class O>
+	void ProcessPredecessors(O& context, const T& node) const
 	{
-		auto& queue = context.queue;
+		auto& order = context.order;
 		auto& edges = context.edges;
 
 		// Decrease the degree of all predecessors, adding them to the queue
@@ -285,7 +354,7 @@ protected:
 			edges.at(predecessor)--;
 			if (edges.at(predecessor) == 0)
 			{
-				queue.push(predecessor);
+				order.push(predecessor);
 			}
 		}
 	}

@@ -238,7 +238,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 	std::unordered_set<DependencySubgraphNode> processedNodes;
 
 	auto subgraph = parentOverlay->GetSubgraph();
-	subgraph->TopologicalOrdering([&](DependencySubgraph::OrderingContext& context, DependencySubgraphNode& node)
+	subgraph->TopologicalOrderBFS([&](DependencySubgraph::OrderContextBFS& context, DependencySubgraphNode& node)
 	{
 		// Iteratively merge the children
 
@@ -390,7 +390,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 	Utils::Chrono::End(timeOptimize_start);
 }
 
-DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderingContext& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
+DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderContextBFS& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
 {
 	auto parentOverlay = overlay1->GetParent();
 	auto parentSubgraph = parentOverlay->GetSubgraph();
@@ -424,13 +424,13 @@ DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::Orde
 
 	if (predecessors.size() == 0)
 	{
-		context.queue.push(mergedOverlay);
+		context.order.push(mergedOverlay);
 	}
 
 	return mergedOverlay;
 }
 
-void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderingContext& context, DependencyOverlay *mergedOverlay, const DependencyOverlay *sourceOverlay)
+void CompatibilityAnalysis::MoveOverlay(DependencySubgraph::OrderContextBFS& context, DependencyOverlay *mergedOverlay, const DependencyOverlay *sourceOverlay)
 {
 	// Add all nodes from source to merged
 	//   - Overlay: Statements, child overlays
@@ -533,7 +533,7 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 	auto newOverlay = new DependencyOverlay(graph);
 
 	const auto subgraph = overlay->GetSubgraph();
-	subgraph->ReverseTopologicalOrdering([&](const DependencySubgraphNode& node)
+	subgraph->ReverseTopologicalOrderBFS([&](DependencySubgraph::OrderContextBFS& context, const DependencySubgraphNode& node)
 	{
 		std::visit(overloaded
 		{
@@ -582,6 +582,7 @@ void CompatibilityAnalysis::Visit(const DependencyOverlay *overlay)
 			}},
 			node
 		);
+		return true;
 	});
 
 	// Update the geometry calculations of all child overlays

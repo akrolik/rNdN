@@ -44,7 +44,7 @@ void OutlineBuilder::Visit(const AssignStatement *assignS)
 
 void OutlineBuilder::InsertStatement(Statement *statement)
 {
-	m_statements.top().push_back(statement);
+	m_statements.top().insert(std::begin(m_statements.top()), statement);
 }
 
 void OutlineBuilder::InsertDeclaration(DeclarationStatement *declaration)
@@ -93,7 +93,7 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 	// Perform the topological sort and construct the statement list recursively
 
 	const auto subgraph = overlay->GetSubgraph();
-	subgraph->TopologicalOrdering([&](Analysis::DependencySubgraph::OrderingContext& context, const Analysis::DependencySubgraphNode& node)
+	subgraph->ReverseTopologicalOrderDFS([&](Analysis::DependencySubgraph::OrderContextDFS& context, const Analysis::DependencySubgraphNode& node)
 	{
 		std::visit(overloaded
 		{

@@ -65,8 +65,8 @@ private:
 	// Optimization
 
 	void Optimize(DependencyOverlay *parentOverlay);
-	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderingContext& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
-	void MoveOverlay(DependencySubgraph::OrderingContext& context, DependencyOverlay *merged, const DependencyOverlay *source);
+	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderContextBFS& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
+	void MoveOverlay(DependencySubgraph::OrderContextBFS& context, DependencyOverlay *merged, const DependencyOverlay *source);
 };
 
 }
