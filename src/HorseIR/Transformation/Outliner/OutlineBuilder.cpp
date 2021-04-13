@@ -44,7 +44,8 @@ void OutlineBuilder::Visit(const AssignStatement *assignS)
 
 void OutlineBuilder::InsertStatement(Statement *statement)
 {
-	m_statements.top().insert(std::begin(m_statements.top()), statement);
+	auto& statements = m_statements.top();
+	statements.insert(std::begin(statements), statement);
 }
 
 void OutlineBuilder::InsertDeclaration(DeclarationStatement *declaration)

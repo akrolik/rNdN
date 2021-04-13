@@ -240,7 +240,7 @@ public:
 
 		OrderContextDFS context(stack, edges);
 
-		InitializeOrderContext(context);
+		InitializeReverseOrderContext(context);
 
 		// Perform the topological sort
 
@@ -271,7 +271,7 @@ public:
 
 		OrderContextBFS context(queue, edges);
 
-		InitializeOrderContext(context);
+		InitializeReverseOrderContext(context);
 
 		// Perform the topological sort
 
@@ -305,9 +305,6 @@ protected:
 	template<class O>
 	void InitializeOrderContext(O& context) const
 	{
-		auto& order = context.order;
-		auto& edges = context.edges;
-
 		// Initialization with root nodes and count for incoming edges of each node
 
 		for (auto& node : GetNodes())
@@ -315,9 +312,25 @@ protected:
 			auto count = GetLinearInDegree(node);
 			if (count == 0)
 			{
-				order.push(node);
+				context.order.push(node);
 			}
-			edges.insert({node, count});
+			context.edges.insert({node, count});
+		}
+	}
+
+	template<class O>
+	void InitializeReverseOrderContext(O& context) const
+	{
+		// Initialization with root nodes and count for incoming edges of each node
+
+		for (auto& node : GetNodes())
+		{
+			auto count = GetLinearOutDegree(node);
+			if (count == 0)
+			{
+				context.order.push(node);
+			}
+			context.edges.insert({node, count});
 		}
 	}
 
