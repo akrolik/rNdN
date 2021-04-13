@@ -31,6 +31,7 @@ public:
 
 	static constexpr char const *Opt_Backend = "backend";
 	static constexpr char const *Opt_Backend_reg_alloc = "backend-reg-alloc";
+	static constexpr char const *Opt_Backend_scheduler = "backend-scheduler";
 	static constexpr char const *Opt_Backend_dump_elf = "backend-dump-elf";
 	static constexpr char const *Opt_Backend_print_analysis = "backend-print-analysis";
 	static constexpr char const *Opt_Backend_print_analysis_block = "backend-print-analysis-block";
@@ -159,6 +160,25 @@ public:
 			return BackendRegisterAllocator::LinearScan;
 		}
 		Utils::Logger::LogError("Unknown register allocator '" + allocator + "'");
+	}
+
+	enum class BackendScheduler {
+		Linear,
+		List
+	};
+
+	static BackendScheduler GetBackend_Scheduler()
+	{
+		auto scheduler = Get<std::string>(Opt_Backend_scheduler);
+		if (scheduler == "linear")
+		{
+			return BackendScheduler::Linear;
+		}
+		else if (scheduler == "list")
+		{
+			return BackendScheduler::List;
+		}
+		Utils::Logger::LogError("Unknown scheduler '" + scheduler + "'");
 	}
 
 	static bool IsBackend_DumpELF() { return Present(Opt_Backend_dump_elf); }
@@ -375,6 +395,7 @@ private:
 		m_options.add_options("Backend")
 			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("ptxas"))
 			(Opt_Backend_reg_alloc, "Register allocation algorithm [virtual|linear]", cxxopts::value<std::string>()->default_value("linear"))
+			(Opt_Backend_scheduler, "Scheduler algorithm [linear|list]", cxxopts::value<std::string>()->default_value("linear"))
 			(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 			(Opt_Backend_print_analysis, "Print backend analyses")
 			(Opt_Backend_print_analysis_block, "Print backend analyses in basic blocks mode")

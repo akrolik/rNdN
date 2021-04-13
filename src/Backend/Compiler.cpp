@@ -1,7 +1,8 @@
 #include "Backend/Compiler.h"
 
 #include "Backend/Codegen/CodeGenerator.h"
-#include "Backend/Scheduler/Scheduler.h"
+#include "Backend/Scheduler/LinearBlockScheduler.h"
+#include "Backend/Scheduler/ListBlockScheduler.h"
 
 #include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
@@ -146,8 +147,25 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	auto timeScheduler_start = Utils::Chrono::Start("Scheduler '" + function->GetName() + "'");
 
-	Scheduler scheduler;
-	scheduler.Schedule(sassFunction);
+	switch (Utils::Options::GetBackend_Scheduler())
+	{
+		case Utils::Options::BackendScheduler::Linear:
+		{
+			Scheduler::LinearBlockScheduler scheduler;
+			scheduler.Schedule(sassFunction);
+			break;
+		}
+		case Utils::Options::BackendScheduler::List:
+		{
+			Scheduler::ListBlockScheduler scheduler;
+			scheduler.Schedule(sassFunction);
+			break;
+		}
+		default:
+		{
+			Utils::Logger::LogError("Unknown instruction scheduler");
+		}
+	}
 
 	Utils::Chrono::End(timeScheduler_start);
 	Utils::Chrono::End(timeCodegen_start);
