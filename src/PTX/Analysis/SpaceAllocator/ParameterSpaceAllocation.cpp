@@ -1,5 +1,7 @@
 #include "PTX/Analysis/SpaceAllocator/ParameterSpaceAllocation.h"
 
+#include "Utils/Format.h"
+
 namespace PTX {
 namespace Analysis {
 
