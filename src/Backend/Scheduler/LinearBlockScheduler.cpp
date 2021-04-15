@@ -17,7 +17,7 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 		if (barrierLatency > 0)
 		{
-			instruction->SetScheduling(
+			instruction->SetSchedule(
 				latency, // Stall
 				true,    // Yield
 				0,       // Write barrier
@@ -28,7 +28,7 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		}
 		else if (readHold > 0)
 		{
-			instruction->SetScheduling(
+			instruction->SetSchedule(
 				latency, // Stall
 				true,    // Yield
 				7,       // Write barrier
@@ -40,7 +40,7 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		}
 		else
 		{
-			instruction->SetScheduling(
+			instruction->SetSchedule(
 				latency, // Stall
 				true,    // Yield
 				7,       // Write barrier

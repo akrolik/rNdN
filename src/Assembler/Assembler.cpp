@@ -103,7 +103,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	auto selfName = "_END";
 	auto selfBlock = new SASS::BasicBlock(selfName);
 	auto selfBranch = new SASS::BRAInstruction(selfName);
-	selfBranch->SetScheduling(15, true, 7, 7, 0, 0);
+	selfBranch->SetSchedule(15, true, 7, 7, 0, 0);
 
 	linearProgram.push_back(selfBranch);
 	m_blockIndex.insert({selfName, blockOffset++});
@@ -119,7 +119,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		//   0000 000000 111 111 0 0000
 
 		auto nop = new SASS::NOPInstruction();
-		nop->SetScheduling(0, false, 7, 7, 0, 0);
+		nop->SetSchedule(0, false, 7, 7, 0, 0);
 		linearProgram.push_back(nop);
 	}
 
@@ -133,11 +133,11 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 		std::uint64_t assembled = 0u;
 		assembled <<= 1;
-		assembled |= inst3->GetScheduling().GenCode();
+		assembled |= inst3->GetSchedule().GenCode();
 		assembled <<= 21;
-		assembled |= inst2->GetScheduling().GenCode();
+		assembled |= inst2->GetSchedule().GenCode();
 		assembled <<= 21;
-		assembled |= inst1->GetScheduling().GenCode();
+		assembled |= inst1->GetSchedule().GenCode();
 
 		linearProgram.insert(std::begin(linearProgram) + i, new SASS::SCHIInstruction(assembled));
 	}
