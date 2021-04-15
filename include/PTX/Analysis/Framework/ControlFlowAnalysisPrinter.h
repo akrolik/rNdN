@@ -41,15 +41,21 @@ public:
 
 		m_indent++;
 
-		m_string << indent << "In: {" << std::endl;
-		m_analysis.GetInSet(block).Print(m_string, m_indent + 1);
-		m_string << std::endl;
-		m_string << indent << "}" << std::endl;
+		if (m_analysis.CollectInSets())
+		{
+			m_string << indent << "In: {" << std::endl;
+			m_analysis.GetInSet(block).Print(m_string, m_indent + 1);
+			m_string << std::endl;
+			m_string << indent << "}" << std::endl;
+		}
 
-		m_string << indent << "Out: {" << std::endl;
-		m_analysis.GetOutSet(block).Print(m_string, m_indent + 1);
-		m_string << std::endl;
-		m_string << indent << "}";
+		if (m_analysis.CollectOutSets())
+		{
+			m_string << indent << "Out: {" << std::endl;
+			m_analysis.GetOutSet(block).Print(m_string, m_indent + 1);
+			m_string << std::endl;
+			m_string << indent << "}";
+		}
 
 		m_indent--;
 		return false;
