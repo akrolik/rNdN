@@ -178,6 +178,8 @@ public:
 
 		OrderContextDFS context(stack, edges);
 
+		InitializeOrderContext(context);
+
 		// Perform the topological sort
 
 		while (!stack.empty())
