@@ -6,7 +6,7 @@
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
 #include "PTX/Tree/Tree.h"
 
-#include "SASS/SASS.h"
+#include "SASS/Tree/Tree.h"
 
 namespace Backend {
 

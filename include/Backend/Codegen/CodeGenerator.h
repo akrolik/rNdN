@@ -12,7 +12,7 @@
 #include "PTX/Analysis/SpaceAllocator/ParameterSpaceAllocation.h"
 #include "PTX/Tree/Tree.h"
 
-#include "SASS/SASS.h"
+#include "SASS/Tree/Tree.h"
 
 namespace Backend {
 namespace Codegen {

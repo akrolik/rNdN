@@ -5,7 +5,7 @@
 #include "Assembler/BinaryFunction.h"
 #include "Assembler/BinaryProgram.h"
 
-#include "SASS/SASS.h"
+#include "SASS/Tree/Tree.h"
 #include "SASS/Traversal/Visitor.h"
 
 namespace Assembler {

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "SASS/SASS.h"
+#include "SASS/Tree/Tree.h"
 
 #include "Utils/Format.h"
 

@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "SASS/SASS.h"
+#include "SASS/Tree/Constants.h"
 
 namespace PTX {
 namespace Analysis {
