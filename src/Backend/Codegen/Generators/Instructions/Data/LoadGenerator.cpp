@@ -53,19 +53,21 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 
 	if constexpr(A == PTX::LoadSynchronization::Weak)
 	{
-		// Generate destination operand
-
-		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-
 		if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 		{
+			// Generate destination operand
+
+			RegisterGenerator registerGenerator(this->m_builder);
+			auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+
+			// Generate address operand
+
 			CompositeGenerator compositeGenerator(this->m_builder);
-			auto [address, address_Hi] = compositeGenerator.Generate(instruction->GetAddress());
+			auto [address_Lo, address_Hi] = compositeGenerator.GeneratePair(instruction->GetAddress());
 
 			// Generate instruction
 
-			this->AddInstruction(new SASS::MOVInstruction(destination, address));
+			this->AddInstruction(new SASS::MOVInstruction(destination_Lo, address_Lo));
 
 			// Extended datatypes
 
@@ -76,6 +78,11 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 		}
 		else
 		{
+			// Generate destination operand
+
+			RegisterGenerator registerGenerator(this->m_builder);
+			auto destination = registerGenerator.Generate(instruction->GetDestination());
+
 			// Generate address operand
 
 			AddressGenerator addressGenerator(this->m_builder);

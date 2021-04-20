@@ -29,14 +29,14 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
-
 	// Generate instruction
 
 	if constexpr(PTX::is_int_type<T>::value)
 	{
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
+		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
+
 		auto flags1 = SASS::IADDInstruction::Flags::NEG_B;
 		auto flags2 = SASS::IADDInstruction::Flags::NEG_B;
 
@@ -66,12 +66,12 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 				}
 			}
 
-			this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB, flags1));
+			this->AddInstruction(new SASS::IADDInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, flags1));
 		}
 		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
 			this->AddInstruction(new SASS::IADDInstruction(
-				destination, sourceA, sourceB, flags1 | SASS::IADDInstruction::Flags::CC
+				destination_Lo, sourceA_Lo, sourceB_Lo, flags1 | SASS::IADDInstruction::Flags::CC
 			));
 			this->AddInstruction(new SASS::IADDInstruction(
 				destination_Hi, sourceA_Hi, sourceB_Hi, flags2 | SASS::IADDInstruction::Flags::X
@@ -80,6 +80,10 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
 		auto round = SASS::DADDInstruction::Round::RN;
 		switch (instruction->GetRoundingMode())
 		{

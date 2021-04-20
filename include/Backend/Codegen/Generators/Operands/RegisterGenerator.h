@@ -20,7 +20,8 @@ public:
 
 	// Generators
 
-	std::pair<SASS::Register *, SASS::Register *> Generate(const PTX::Operand *operand);
+	SASS::Register *Generate(const PTX::Operand *operand);
+	std::pair<SASS::Register *, SASS::Register *> GeneratePair(const PTX::Operand *operand);
 
 	// Registers
 
@@ -50,6 +51,8 @@ public:
 private:
 	SASS::Register *m_register = nullptr;
 	SASS::Register *m_registerHi = nullptr;
+
+	bool m_pair = false;
 };
 
 }

@@ -24,9 +24,9 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+	auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+	auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+	auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
 	// Generate instruction
 
@@ -39,13 +39,13 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 			auto value = immediateSourceB->GetValue();
 			if (value == 0)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(destination, SASS::RZ));
+				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, SASS::RZ));
 				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
 				return;
 			}
 			else if (value == 1)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(destination, sourceA));
+				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, sourceA));
 				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
 				return;
 			}
@@ -66,17 +66,14 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 				this->AddInstruction(new SASS::SHRInstruction(
 					destination_Hi, sourceA, new SASS::I32Immediate(32 - logValue), flagsSHR
 				));
-				this->AddInstruction(new SASS::MOVInstruction(destination, temp));
+				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, temp));
 				return;
 			}
 
 			// All other cases use a complex multiplication, requiring a non-immediate value
 
 			compositeGenerator.SetImmediateValue(false);
-			auto [compB, compB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
-
-			sourceB = compB;
-			sourceB_Hi = compB_Hi;
+			sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 		}
 	}
 
@@ -115,7 +112,7 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 			SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
 		));
 		this->AddInstruction(new SASS::XMADInstruction(
-			destination, sourceA, temp2, temp1, SASS::XMADInstruction::Mode::PSL,
+			destination_Lo, sourceA, temp2, temp1, SASS::XMADInstruction::Mode::PSL,
 			SASS::XMADInstruction::Flags::CBCC | SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
 		));
 		this->AddInstruction(new SASS::IADD3Instruction(

@@ -28,7 +28,8 @@ public:
 
 	// Generators
 
-	std::pair<SASS::Composite *, SASS::Composite *> Generate(const PTX::Operand *operand);
+	SASS::Composite *Generate(const PTX::Operand *operand);
+	std::pair<SASS::Composite *, SASS::Composite *> GeneratePair(const PTX::Operand *operand);
 
 	// Registers
 
@@ -62,6 +63,7 @@ public:
 private:
 	SASS::Composite *m_composite = nullptr;
 	SASS::Composite *m_compositeHi = nullptr;
+	bool m_pair = false;
 
 	bool m_zeroRegister = true;
 	bool m_immediateValue = true;

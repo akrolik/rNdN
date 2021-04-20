@@ -75,7 +75,16 @@ public:
 		}
 	}
 
-	SASS::Register *AllocateTemporaryRegister(unsigned int align = 1);
+	template<PTX::Bits B>
+	SASS::Register *AllocateTemporaryRegister()
+	{
+		// Size and alignment are the same
+
+		auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+		return AllocateTemporaryRegister(size, size);
+	}
+
+	SASS::Register *AllocateTemporaryRegister(unsigned int align = 1, unsigned int range = 1);
 	void ClearTemporaryRegisters();
 
 	// Relocations

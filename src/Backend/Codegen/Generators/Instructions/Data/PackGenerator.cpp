@@ -22,7 +22,7 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 	// Generate destination register
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 
 	// Source decomposition, split below
 
@@ -32,8 +32,8 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 
 	if constexpr(V == PTX::VectorSize::Vector2)
 	{
-		auto [sourceA, sourceA_Hi] = registerGenerator.Generate(sources.at(0));
-		auto [sourceB, sourceB_Hi] = registerGenerator.Generate(sources.at(1));
+		auto sourceA = registerGenerator.Generate(sources.at(0));
+		auto sourceB = registerGenerator.Generate(sources.at(1));
 
 		// Temporary necessary for register reuse
 
@@ -42,18 +42,18 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 		if constexpr(std::is_same<T, PTX::Bit16Type>::value)
 		{
 			this->AddInstruction(new SASS::SHLInstruction(temp, sourceB, new SASS::I32Immediate(0x8)));
-			this->AddInstruction(new SASS::LOPInstruction(destination, sourceA, temp, SASS::LOPInstruction::BooleanOperator::OR));
+			this->AddInstruction(new SASS::LOPInstruction(destination_Lo, sourceA, temp, SASS::LOPInstruction::BooleanOperator::OR));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
 			this->AddInstruction(new SASS::SHLInstruction(temp, sourceB, new SASS::I32Immediate(0x16)));
-			this->AddInstruction(new SASS::LOPInstruction(destination, sourceA, temp, SASS::LOPInstruction::BooleanOperator::OR));
+			this->AddInstruction(new SASS::LOPInstruction(destination_Lo, sourceA, temp, SASS::LOPInstruction::BooleanOperator::OR));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
 			this->AddInstruction(new SASS::MOVInstruction(temp, sourceA));
 			this->AddInstruction(new SASS::MOVInstruction(destination_Hi, sourceB));
-			this->AddInstruction(new SASS::MOVInstruction(destination, temp));
+			this->AddInstruction(new SASS::MOVInstruction(destination_Lo, temp));
 		}
 	}
 	else if constexpr(V == PTX::VectorSize::Vector4)

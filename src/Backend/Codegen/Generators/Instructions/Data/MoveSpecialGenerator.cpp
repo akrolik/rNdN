@@ -22,10 +22,10 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	// Generate destination
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destinationHi] = registerGenerator.Generate(instruction->GetDestination());
+	auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 
-	m_destination = destination;
-	m_destinationHi = destinationHi;
+	m_destination = destination_Lo;
+	m_destinationHi = destination_Hi;
 
 	// Generate instruction depending on source
 

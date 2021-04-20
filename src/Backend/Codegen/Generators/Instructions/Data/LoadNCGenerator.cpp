@@ -53,7 +53,7 @@ void LoadNCGenerator::Visit(const PTX::LoadNCInstruction<B, T, S> *instruction)
 		// Generate operands
 
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
 
 		AddressGenerator addressGenerator(this->m_builder);
 		auto address = addressGenerator.Generate(instruction->GetAddress());

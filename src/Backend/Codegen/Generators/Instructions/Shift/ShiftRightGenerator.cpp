@@ -25,11 +25,11 @@ void ShiftRightGenerator::Visit(const PTX::ShiftRightInstruction<T> *instruction
 		// Generate operands
 
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-		auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
 
 		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
 		// Flags
 

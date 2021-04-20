@@ -226,12 +226,6 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 	auto destinationB_opt = instruction->GetDestinationQ();
 	auto destinationB = (destinationB_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(destinationB_opt).first;
 
-	RegisterGenerator registerGenerator(this->m_builder);
-	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-
-	CompositeGenerator compositeGenerator(this->m_builder);
-	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
-
 	// Optional source C predicate
 
 	auto sourceC_opt = instruction->GetSourcePredicate();
@@ -241,6 +235,14 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 
 	if constexpr(PTX::is_int_type<T>::value || PTX::is_bit_type<T>::value)
 	{
+		// Source operands
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
+
+		CompositeGenerator compositeGenerator(this->m_builder);
+		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
+
 		// Comparison/boolean operators
 
 		auto comparisonOperator = IInstructionComparisonOperator<T>(instruction);
@@ -273,28 +275,24 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 			if constexpr(PTX::is_unsigned_int_type<T>::value || PTX::is_bit_type<T>::value)
 			{
 				this->AddInstruction(new SASS::I2IInstruction(
-					temp0, sourceA, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
+					temp0, sourceA_Lo, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
 				));
 				this->AddInstruction(new SASS::I2IInstruction(
-					temp1, sourceB, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
+					temp1, sourceB_Lo, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
 				));
 			}
 			else
 			{
 				this->AddInstruction(new SASS::I2IInstruction(
-					temp0, sourceA, SASS::I2IInstruction::DestinationType::S32, SASS::I2IInstruction::SourceType::S16
+					temp0, sourceA_Lo, SASS::I2IInstruction::DestinationType::S32, SASS::I2IInstruction::SourceType::S16
 				));
 				this->AddInstruction(new SASS::I2IInstruction(
-					temp1, sourceB, SASS::I2IInstruction::DestinationType::S32, SASS::I2IInstruction::SourceType::S16
+					temp1, sourceB_Lo, SASS::I2IInstruction::DestinationType::S32, SASS::I2IInstruction::SourceType::S16
 				));
 			}
 
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
-
-			sourceA = temp0;
-			sourceB = temp1;
+			sourceA_Lo = temp0;
+			sourceB_Lo = temp1;
 		}
 		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
@@ -302,7 +300,7 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 			//   IADD RZ.CC, R0, -R1
 
 			this->AddInstruction(new SASS::IADDInstruction(
-				SASS::RZ, sourceA, sourceB, SASS::IADDInstruction::Flags::NEG_B | SASS::IADDInstruction::Flags::CC
+				SASS::RZ, sourceA_Lo, sourceB_Lo, SASS::IADDInstruction::Flags::NEG_B | SASS::IADDInstruction::Flags::CC
 			));
 
 			flags |= SASS::ISETPInstruction::Flags::X;
@@ -319,11 +317,19 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 		// Finally, the instruction
 
 		this->AddInstruction(new SASS::ISETPInstruction(
-			destinationA, destinationB, sourceA, sourceB, sourceC, comparisonOperator, booleanOperator, flags
+			destinationA, destinationB, sourceA_Lo, sourceB_Lo, sourceC, comparisonOperator, booleanOperator, flags
 		));
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
+		// Source operands
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+
+		CompositeGenerator compositeGenerator(this->m_builder);
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
 		// Comparison/boolean operators
 
 		auto comparisonOperator = DInstructionComparisonOperator<T>(instruction);

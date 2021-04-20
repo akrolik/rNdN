@@ -121,7 +121,7 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 	auto address = addressGenerator.Generate(instruction->GetAddress());
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [value, value_Hi] = registerGenerator.Generate(instruction->GetValue());
+	auto value = registerGenerator.Generate(instruction->GetValue());
 
 	// Generate instruction
 

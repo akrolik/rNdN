@@ -26,9 +26,9 @@ void RemainderGenerator::Visit(const PTX::RemainderInstruction<T> *instruction)
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+	auto destination = registerGenerator.Generate(instruction->GetDestination());
+	auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+	auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
 	// Generate instruction
 
@@ -53,7 +53,7 @@ void RemainderGenerator::Visit(const PTX::RemainderInstruction<T> *instruction)
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
 		{
-			auto [sourceB, sourceB_Hi] = registerGenerator.Generate(instruction->GetSourceB());
+			auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
 
 			// Compute D = S1 % S2
 

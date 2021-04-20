@@ -24,19 +24,15 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 	//   - Rounding: Float16, Float16x2, Float32, Float64
 	//   - Saturate: Int32, Float16, Float16x2, Float32
 
-	// Generate operands
-
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
 
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
-
-	// Generate instruction
-
 	if constexpr(PTX::is_int_type<T>::value)
 	{
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
+		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
+
 		auto flags1 = SASS::IADDInstruction::Flags::None;
 		auto flags2 = SASS::IADDInstruction::Flags::None;
 
@@ -64,12 +60,12 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 				}
 			}
 
-			this->AddInstruction(new SASS::IADDInstruction(destination, sourceA, sourceB, flags1));
+			this->AddInstruction(new SASS::IADDInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, flags1));
 		}
 		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
 			this->AddInstruction(new SASS::IADDInstruction(
-				destination, sourceA, sourceB, flags1 | SASS::IADDInstruction::Flags::CC
+				destination_Lo, sourceA_Lo, sourceB_Lo, flags1 | SASS::IADDInstruction::Flags::CC
 			));
 			this->AddInstruction(new SASS::IADDInstruction(
 				destination_Hi, sourceA_Hi, sourceB_Hi, flags2 | SASS::IADDInstruction::Flags::X
@@ -78,6 +74,14 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
+		// Generate operands
+
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+		// Generate instruction
+
 		auto round = SASS::DADDInstruction::Round::RN;
 		switch (instruction->GetRoundingMode())
 		{

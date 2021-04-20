@@ -53,14 +53,14 @@ void MoveGenerator::Visit(const PTX::MoveInstruction<T> *instruction)
 		// Generate operands
 
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 
 		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [source, source_Hi] = compositeGenerator.Generate(instruction->GetSource());
+		auto [source_Lo, source_Hi] = compositeGenerator.GeneratePair(instruction->GetSource());
 
 		// Generate instruction (no overlap unless equal)
 
-		this->AddInstruction(new SASS::MOVInstruction(destination, source));
+		this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
 			this->AddInstruction(new SASS::MOVInstruction(destination_Hi, source_Hi));

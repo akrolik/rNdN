@@ -19,12 +19,12 @@ void ConvertToAddressGenerator::Visit(const PTX::ConvertToAddressInstruction<B, 
 	// Generate source and destination registers (the source is always a register address)
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [source, source_Hi] = registerGenerator.Generate(instruction->GetAddress()->GetRegister());
+	auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+	auto [source_Lo, source_Hi] = registerGenerator.GeneratePair(instruction->GetAddress()->GetRegister());
 
 	// Move address from source to destination
 
-	this->AddInstruction(new SASS::MOVInstruction(destination, source));
+	this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
 	if constexpr(B == PTX::Bits::Bits64)
 	{
 		this->AddInstruction(new SASS::MOVInstruction(destination_Hi, source_Hi));

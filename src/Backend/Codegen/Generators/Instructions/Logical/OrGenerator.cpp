@@ -53,14 +53,14 @@ void OrGenerator::Visit(const PTX::OrInstruction<T> *instruction)
 	else
 	{
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-		auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
 
 		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
+		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
 
 		this->AddInstruction(new SASS::LOPInstruction(
-			destination, sourceA, sourceB, SASS::LOPInstruction::BooleanOperator::OR
+			destination_Lo, sourceA_Lo, sourceB_Lo, SASS::LOPInstruction::BooleanOperator::OR
 		));
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)

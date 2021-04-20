@@ -25,19 +25,6 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 	//   - Rounding: Float32, Float64
 	//   - Saturate: Int32, Float32
 
-	// Generate operands
-
-	RegisterGenerator registerGenerator(this->m_builder);
-	CompositeGenerator compositeGenerator(this->m_builder);
-	compositeGenerator.SetImmediateValue(false);
-
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [sourceA, sourceA_Hi] = registerGenerator.Generate(instruction->GetSourceA());
-	auto [sourceB, sourceB_Hi] = compositeGenerator.Generate(instruction->GetSourceB());
-	auto [sourceC, sourceC_Hi] = registerGenerator.Generate(instruction->GetSourceC());
-
-	// Generate instruction
-
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
 		if (instruction->GetCarryIn() || instruction->GetCarryOut())
@@ -47,6 +34,17 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 
 		if (instruction->GetHalf() == PTX::MADInstruction<T>::Half::Lower)
 		{
+			// Generate operands
+
+			RegisterGenerator registerGenerator(this->m_builder);
+			CompositeGenerator compositeGenerator(this->m_builder);
+			compositeGenerator.SetImmediateValue(false);
+
+			auto destination = registerGenerator.Generate(instruction->GetDestination());
+			auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+			auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+			auto sourceC = registerGenerator.Generate(instruction->GetSourceC());
+
 			// Compute D = (S1 * S2 + S3).lo
 			//
 			//   XMAD TMP0, S1, S2, S3 ;

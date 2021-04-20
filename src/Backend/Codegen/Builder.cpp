@@ -64,7 +64,7 @@ void Builder::AddInstruction(SASS::Instruction *instruction)
 
 // Temporary Registers
 
-SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align)
+SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align, unsigned int range)
 {
 	// Find next free register
 
@@ -77,11 +77,11 @@ SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align)
 
 	// Check within range
 
-	if (allocation >= PTX::Analysis::RegisterAllocation::MaxRegister)
+	if (allocation + (range - 1) >= PTX::Analysis::RegisterAllocation::MaxRegister)
 	{
 		Utils::Logger::LogError("Temporary register exceeded maximum register count (" + std::to_string(PTX::Analysis::RegisterAllocation::MaxRegister) + ") for function '" + m_currentFunction->GetName() + "'");
 	}
-	m_temporaryCount = 1 + allocation - offset;
+	m_temporaryCount = range + allocation - offset;
 
 	// Maintain high water mark for total registers
 
@@ -89,7 +89,8 @@ SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align)
 	{
 		m_temporaryMax = m_temporaryCount;
 	}
-	return new SASS::Register(allocation);
+
+	return new SASS::Register(allocation, range);
 }
 
 void Builder::ClearTemporaryRegisters()

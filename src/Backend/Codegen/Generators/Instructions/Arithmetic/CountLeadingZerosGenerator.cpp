@@ -19,15 +19,15 @@ void CountLeadingZerosGenerator::Visit(const PTX::CountLeadingZerosInstruction<T
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [source, source_Hi] = registerGenerator.Generate(instruction->GetSource());
+	auto destination = registerGenerator.Generate(instruction->GetDestination());
+	auto [source_Lo, source_Hi] = registerGenerator.GeneratePair(instruction->GetSource());
 
 	if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 	{
 		// FLO.U32 D, S ;
 		// IADD32I D, -D, 0x1f ;
 
-		this->AddInstruction(new SASS::FLOInstruction(destination, source));
+		this->AddInstruction(new SASS::FLOInstruction(destination, source_Lo));
 		this->AddInstruction(new SASS::IADD32IInstruction(
 			destination, destination, new SASS::I32Immediate(0x1f), SASS::IADD32IInstruction::Flags::NEG_A
 		));
@@ -52,7 +52,7 @@ void CountLeadingZerosGenerator::Visit(const PTX::CountLeadingZerosInstruction<T
 		this->AddInstruction(new SASS::SELInstruction(
 			temp, SASS::RZ, new SASS::I32Immediate(0x20), predicate, SASS::SELInstruction::Flags::NOT_C
 		));
-		this->AddInstruction(new SASS::SELInstruction(destination, source, source_Hi, predicate));
+		this->AddInstruction(new SASS::SELInstruction(destination, source_Lo, source_Hi, predicate));
 
 		this->AddInstruction(new SASS::FLOInstruction(destination, destination));
 		this->AddInstruction(new SASS::IADD32IInstruction(

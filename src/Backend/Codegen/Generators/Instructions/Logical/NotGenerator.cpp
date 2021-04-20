@@ -48,13 +48,13 @@ void NotGenerator::Visit(const PTX::NotInstruction<T> *instruction)
 	else
 	{
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 
 		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [source, source_Hi] = compositeGenerator.Generate(instruction->GetSource());
+		auto [source_Lo, source_Hi] = compositeGenerator.GeneratePair(instruction->GetSource());
 
 		this->AddInstruction(new SASS::LOPInstruction(
-			destination, SASS::RZ, source, SASS::LOPInstruction::BooleanOperator::PASS_B,
+			destination_Lo, SASS::RZ, source_Lo, SASS::LOPInstruction::BooleanOperator::PASS_B,
 			SASS::LOPInstruction::Flags::INV
 		));
 

@@ -55,7 +55,7 @@ void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 		// Generate source operand
 
 		RegisterGenerator registerGenerator(this->m_builder);
-		auto [source, source_Hi] = registerGenerator.Generate(instruction->GetSource());
+		auto source = registerGenerator.Generate(instruction->GetSource());
 
 		// Generate address operand
 

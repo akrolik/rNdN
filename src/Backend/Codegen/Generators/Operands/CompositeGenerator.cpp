@@ -5,12 +5,31 @@
 namespace Backend {
 namespace Codegen {
 
-std::pair<SASS::Composite *, SASS::Composite *> CompositeGenerator::Generate(const PTX::Operand *operand)
+SASS::Composite *CompositeGenerator::Generate(const PTX::Operand *operand)
 {
 	// Clear
 
 	m_composite = nullptr;
 	m_compositeHi = nullptr;
+	m_pair = false;
+
+	// Generate composite
+
+	operand->Accept(*this);
+	if (m_composite == nullptr)
+	{
+		Error(operand, "unsupported kind");
+	}
+	return m_composite;
+}
+
+std::pair<SASS::Composite *, SASS::Composite *> CompositeGenerator::GeneratePair(const PTX::Operand *operand)
+{
+	// Clear
+
+	m_composite = nullptr;
+	m_compositeHi = nullptr;
+	m_pair = true;
 
 	// Generate composite
 
@@ -36,20 +55,34 @@ template<class T>
 void CompositeGenerator::Visit(const PTX::Register<T> *reg)
 {
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [regLo, regHi] = registerGenerator.Generate(reg);
+	if (m_pair)
+	{
+		auto [regLo, regHi] = registerGenerator.GeneratePair(reg);
 
-	m_composite = regLo;
-	m_compositeHi = regHi;
+		m_composite = regLo;
+		m_compositeHi = regHi;
+	}
+	else
+	{
+		m_composite = registerGenerator.Generate(reg);
+	}
 }
 
 template<class T, class S, PTX::VectorSize V>
 void CompositeGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 {
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [regLo, regHi] = registerGenerator.Generate(reg);
+	if (m_pair)
+	{
+		auto [regLo, regHi] = registerGenerator.GeneratePair(reg);
 
-	m_composite = regLo;
-	m_compositeHi = regHi;
+		m_composite = regLo;
+		m_compositeHi = regHi;
+	}
+	else
+	{
+		m_composite = registerGenerator.Generate(reg);
+	}
 }
 
 void CompositeGenerator::Visit(const PTX::_Constant *constant)

@@ -80,10 +80,10 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
+	auto destination = registerGenerator.Generate(instruction->GetDestination());
 
 	CompositeGenerator compositeGenerator(this->m_builder);
-	auto [source, source_Hi] = compositeGenerator.Generate(instruction->GetSource());
+	auto source = compositeGenerator.Generate(instruction->GetSource());
 
 	// Generate instruction
 
@@ -97,14 +97,15 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			//TODO: 64-bit fails
 			if constexpr(D::TypeBits == PTX::Bits::Bits64)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(destination, source));
+				auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+
+				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source));
 				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
 				return;
 			}
 			if constexpr(D::TypeBits == PTX::Bits::Bits32 && S::TypeBits == PTX::Bits::Bits64)
 			{
 				this->AddInstruction(new SASS::MOVInstruction(destination, source));
-				// this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
 				return;
 			}
 

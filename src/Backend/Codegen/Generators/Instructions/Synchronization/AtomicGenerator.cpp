@@ -123,13 +123,12 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [destination, destination_Hi] = registerGenerator.Generate(instruction->GetDestination());
-	auto [value, value_Hi] = registerGenerator.Generate(instruction->GetValue());
+	auto destination = registerGenerator.Generate(instruction->GetDestination());
+	auto value = registerGenerator.Generate(instruction->GetValue());
 
 	// If CAS mode, the new value is sequential to the comparison value
 
 	SASS::Register *sourceC = nullptr;
-	SASS::Register *sourceC_Hi = nullptr;
 
 	if constexpr(PTX::is_bit_type<T>::value)
 	{
@@ -140,34 +139,37 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 			auto align1 = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits * 2, 32);
 			auto align2 = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
 
-			auto [temp0, temp1] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align1);
-			auto [temp2, temp3] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align2);
+			auto [temp0_Lo, temp0_Hi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align1);
+			auto [temp1_Lo, temp1_Hi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align2);
 
 			// Move values into temporaries
+
+			auto [value_Lo, value_Hi] = registerGenerator.GeneratePair(instruction->GetValue());
 			
-			this->AddInstruction(new SASS::MOVInstruction(temp0, value));
+			this->AddInstruction(new SASS::MOVInstruction(temp0_Lo, value_Lo));
 			if constexpr(T::TypeBits == PTX::Bits::Bits64)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(temp1, value_Hi));
+				this->AddInstruction(new SASS::MOVInstruction(temp0_Hi, value_Hi));
 			}
 
 			if (auto valueExtra = instruction->GetValueC())
 			{
 				CompositeGenerator compositeGenerator(this->m_builder);
-				auto [valueC, valueC_Hi] = compositeGenerator.Generate(valueExtra);
+				auto [valueC_Lo, valueC_Hi] = compositeGenerator.GeneratePair(valueExtra);
 
-				this->AddInstruction(new SASS::MOVInstruction(temp2, valueC));
+				this->AddInstruction(new SASS::MOVInstruction(temp1_Lo, valueC_Lo));
 				if constexpr(T::TypeBits == PTX::Bits::Bits64)
 				{
-					this->AddInstruction(new SASS::MOVInstruction(temp3, valueC_Hi));
+					this->AddInstruction(new SASS::MOVInstruction(temp1_Hi, valueC_Hi));
 				}
 			}
 
-			value = temp0;
-			value_Hi = temp1;
+			// Assign temporaries for use with atomic operation
 
-			sourceC = temp2;
-			sourceC_Hi = temp3;
+			auto size = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
+
+			value = new SASS::Register(temp0_Lo->GetValue(), size);
+			sourceC = new SASS::Register(temp1_Lo->GetValue(), size);
 		}
 	}
 
