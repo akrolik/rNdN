@@ -111,9 +111,6 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 		}
 
 		this->AddInstruction(new SASS::DADDInstruction(destination, sourceA, sourceB, round, SASS::DADDInstruction::Flags::NEG_B));
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{

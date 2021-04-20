@@ -124,9 +124,6 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			auto sourceType = GetConversionType<SASS::I2IInstruction::SourceType, S>();
 
 			this->AddInstruction(new SASS::I2IInstruction(destination, source, destinationType, sourceType, flags));
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
 		}
 		else if constexpr(PTX::is_float_type<S>::value)
 		{
@@ -141,9 +138,6 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			auto sourceType = GetConversionType<SASS::F2IInstruction::SourceType, S>();
 
 			this->AddInstruction(new SASS::F2IInstruction(destination, source, destinationType, sourceType, round, flags));
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
 		}
 		else
 		{
@@ -175,9 +169,6 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			auto sourceType = GetConversionType<SASS::I2FInstruction::SourceType, S>();
 
 			this->AddInstruction(new SASS::I2FInstruction(destination, source, destinationType, sourceType, round, flags));
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
 		}
 		else if constexpr(PTX::is_float_type<S>::value)
 		{

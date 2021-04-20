@@ -30,10 +30,6 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	// Generate instruction depending on source
 
 	instruction->GetSource()->Accept(*this);
-
-	this->AddInstruction(new SASS::DEPBARInstruction(
-		SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-	));
 }
 
 void MoveSpecialGenerator::GenerateS2R(SASS::SpecialRegister *source)

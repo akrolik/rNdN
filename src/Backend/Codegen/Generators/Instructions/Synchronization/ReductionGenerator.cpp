@@ -136,9 +136,6 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 		auto mode = InstructionMode(instruction);
 
 		this->AddInstruction(new SASS::REDInstruction(address, value, type, mode, flags));
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 }
 

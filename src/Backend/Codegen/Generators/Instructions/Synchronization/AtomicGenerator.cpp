@@ -189,9 +189,6 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 		auto mode = InstructionMode(instruction);
 
 		this->AddInstruction(new SASS::ATOMInstruction(destination, address, value, sourceC, type, mode, flags));
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{

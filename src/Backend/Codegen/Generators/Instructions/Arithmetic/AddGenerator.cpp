@@ -109,9 +109,6 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 		}
 
 		this->AddInstruction(new SASS::DADDInstruction(destination, sourceA, sourceB, round));
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{

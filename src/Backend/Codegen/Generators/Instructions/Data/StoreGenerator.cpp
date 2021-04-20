@@ -120,10 +120,6 @@ void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 		{
 			Error(instruction, "unsupported space");
 		}
-
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{

@@ -69,9 +69,6 @@ void LoadNCGenerator::Visit(const PTX::LoadNCInstruction<B, T, S> *instruction)
 		auto cache = SASS::LDGInstruction::Cache::CI;
 
 		this->AddInstruction(new SASS::LDGInstruction(destination, address, type, cache, flags));
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{

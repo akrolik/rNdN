@@ -69,9 +69,6 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 		this->AddInstruction(new SASS::SHFLInstruction(
 			destinationP, destinationD, sourceA, sourceB, sourceC, shuffleOperator
 		));
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{

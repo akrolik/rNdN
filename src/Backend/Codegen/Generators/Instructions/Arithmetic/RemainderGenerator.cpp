@@ -32,6 +32,7 @@ void RemainderGenerator::Visit(const PTX::RemainderInstruction<T> *instruction)
 
 	// Generate instruction
 
+	//TODO: Only for 32-bit, 64 bit won't work
 	if constexpr(PTX::is_int_type<T>::value)
 	{
 		// Optimize power of 2 remainder using bitwise &(divisor-1)
@@ -77,20 +78,11 @@ void RemainderGenerator::Visit(const PTX::RemainderInstruction<T> *instruction)
 				temp0, sourceB, SASS::I2FInstruction::DestinationType::F32, SASS::I2FInstruction::SourceType::U32,
 				SASS::I2FInstruction::Round::RP
 			));
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
 			this->AddInstruction(new SASS::MUFUInstruction(temp0, temp0, SASS::MUFUInstruction::Function::RCP));
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
 			this->AddInstruction(new SASS::IADD32IInstruction(temp1, temp0, new SASS::I32Immediate(0xffffffe)));
 			this->AddInstruction(new SASS::F2IInstruction(
 				temp2, temp1, SASS::F2IInstruction::DestinationType::U32, SASS::F2IInstruction::SourceType::F32,
 				SASS::F2IInstruction::Round::TRUNC, SASS::F2IInstruction::Flags::FTZ
-			));
-			this->AddInstruction(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
 			));
 
 			// XMAD TMP3, TMP2.reuse, S2.reuse, RZ ;

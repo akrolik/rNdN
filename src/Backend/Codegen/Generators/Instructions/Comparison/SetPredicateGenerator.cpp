@@ -348,10 +348,6 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 		this->AddInstruction(new SASS::DSETPInstruction(
 			destinationA, destinationB, sourceA, sourceB, sourceC, comparisonOperator, booleanOperator, flags
 		));
-
-		this->AddInstruction(new SASS::DEPBARInstruction(
-			SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		));
 	}
 	else
 	{
