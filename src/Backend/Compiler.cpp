@@ -15,6 +15,8 @@
 
 #include "PTX/Transformation/Structurizer/Structurizer.h"
 
+#include "SASS/Optimizer/Optimizer.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
@@ -144,6 +146,29 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	auto sassFunction = codegen.Generate(function, registerAllocation, parameterAllocation);
 
 	Utils::Chrono::End(timeSASS_start);
+	Utils::Chrono::End(timeCodegen_start);
+
+	// Dump the SASS program to stdout
+
+	if (Utils::Options::IsBackend_PrintSASS())
+	{
+		Utils::Logger::LogInfo("Generated SASS function: " + sassFunction->GetName());
+		Utils::Logger::LogInfo(sassFunction->ToString(), 0, true, Utils::Logger::NoPrefix);
+	}
+
+	// Optimize the generated SASS program
+
+	if (Utils::Options::IsOptimize_SASS())
+	{
+		SASS::Optimizer::Optimizer optimizer;
+		optimizer.Optimize(sassFunction);
+
+		if (Utils::Options::IsBackend_PrintSASS())
+		{
+			Utils::Logger::LogInfo("Optimized SASS function: " + sassFunction->GetName());
+			Utils::Logger::LogInfo(sassFunction->ToString(), 0, true, Utils::Logger::NoPrefix);
+		}
+	}
 
 	auto timeScheduler_start = Utils::Chrono::Start("Scheduler '" + function->GetName() + "'");
 
@@ -168,24 +193,6 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	}
 
 	Utils::Chrono::End(timeScheduler_start);
-	Utils::Chrono::End(timeCodegen_start);
-
-	// Dump the SASS program to stdout
-
-	if (Utils::Options::IsBackend_PrintSASS())
-	{
-		Utils::Logger::LogInfo("Generated SASS function: " + sassFunction->GetName());
-		Utils::Logger::LogInfo(sassFunction->ToString(), 0, true, Utils::Logger::NoPrefix);
-	}
-
-	// Optimize the generated SASS program
-
-	if (Utils::Options::IsOptimize_SASS())
-	{
-		//TODO: SASS Optimizer API
-		// Optimize(sassFunction);
-	}
-
 	m_program->AddFunction(sassFunction);
 
 	return false;
