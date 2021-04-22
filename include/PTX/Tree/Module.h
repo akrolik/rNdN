@@ -4,12 +4,13 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 #include "PTX/Tree/Declarations/Declaration.h"
 #include "PTX/Tree/Directives/Directive.h"
 #include "PTX/Tree/Functions/Function.h"
 #include "PTX/Tree/Type.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 
@@ -47,11 +48,16 @@ public:
 		return m_entryFunctions.at(name);
 	}
 
-	const std::unordered_map<std::string, const Function *> GetEntryFunctions() const
+	const robin_hood::unordered_map<std::string, const Function *> GetEntryFunctions() const
 	{
-		return { std::begin(m_entryFunctions), std::end(m_entryFunctions) };
+		robin_hood::unordered_map<std::string, const Function *> map;
+		for (const auto& [name, function] : m_entryFunctions)
+		{
+			map.insert({name, function});
+		}
+		return map;
 	}
-	std::unordered_map<std::string, Function *>& GetEntryFunctions() { return m_entryFunctions; }
+	robin_hood::unordered_map<std::string, Function *>& GetEntryFunctions() { return m_entryFunctions; }
 
 	// Contents
 
@@ -162,7 +168,7 @@ private:
 	std::vector<Directive *> m_directives;
 	std::vector<Declaration *> m_declarations;
 
-	std::unordered_map<std::string, Function *> m_entryFunctions;
+	robin_hood::unordered_map<std::string, Function *> m_entryFunctions;
 };
 
 }

@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 #include "HorseIR/Analysis/Dependency/DependencyGraph.h"
@@ -10,6 +9,8 @@
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 
 #include "HorseIR/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 using namespace std::literals::string_view_literals;
 
@@ -83,7 +84,7 @@ public:
 
 	// Statements
 
-	const std::unordered_set<const Statement *>& GetStatements() const { return m_statements; }
+	const robin_hood::unordered_set<const Statement *>& GetStatements() const { return m_statements; }
 	void InsertStatement(const Statement *statement) { m_statements.insert(statement); }
 
 	bool ContainsStatement(const Statement *statement) const { return m_statements.find(statement) != m_statements.end(); }
@@ -113,7 +114,7 @@ protected:
 	DependencyOverlay *m_parent = nullptr;
 	std::vector<DependencyOverlay *> m_children;
 
-	std::unordered_set<const Statement *> m_statements;
+	robin_hood::unordered_set<const Statement *> m_statements;
 
 	bool m_gpu = false;
 	bool m_synchronizedOut = false;

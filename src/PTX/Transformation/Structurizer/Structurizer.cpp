@@ -35,14 +35,14 @@ Analysis::StructureNode *Structurizer::Structurize(const FunctionDefinition<Void
 	return structure;
 }
 
-std::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const
+robin_hood::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const
 {
-	std::unordered_set<const BasicBlock *> loopBlocks;
+	robin_hood::unordered_set<const BasicBlock *> loopBlocks;
 
 	// DFS structure
 
 	std::stack<BasicBlock *> stack;
-	std::unordered_set<BasicBlock *> visited;
+	robin_hood::unordered_set<BasicBlock *> visited;
 
 	// Initialize with the latch node, header already visited (to terminate)
 
@@ -75,7 +75,7 @@ std::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const Analysi
 	return loopBlocks;
 }
 
-BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const std::unordered_set<const BasicBlock *>& loopBlocks) const
+BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const robin_hood::unordered_set<const BasicBlock *>& loopBlocks) const
 {
 	auto postDominators = m_postDominators.GetStrictPostDominators(header);
 	for (auto loopBlock : loopBlocks)

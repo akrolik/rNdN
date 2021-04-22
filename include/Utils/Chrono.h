@@ -3,10 +3,11 @@
 #include <chrono>
 #include <stack>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "CUDA/Event.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Utils {
 
@@ -122,7 +123,7 @@ private:
 	static void PrintTiming(const Timing *timing);
 
 	std::stack<Timing *> m_timings;
-	std::unordered_set<SpanTiming *> m_pausedTimings;
+	robin_hood::unordered_set<SpanTiming *> m_pausedTimings;
 };
 
 template<class T = Chrono::SpanTiming>

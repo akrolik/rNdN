@@ -28,9 +28,9 @@ struct ReachingDefinitionsKey : ::Analysis::Value<std::string>
 	}
 };
 
-struct ReachingDefinitionsValue : ::Analysis::Value<std::unordered_set<const InstructionStatement *>>
+struct ReachingDefinitionsValue : ::Analysis::Value<robin_hood::unordered_set<const InstructionStatement *>>
 {
-	using Type = std::unordered_set<const InstructionStatement *>;
+	using Type = robin_hood::unordered_set<const InstructionStatement *>;
 	using ::Analysis::Value<Type>::Equals;
 
 	static void Print(std::ostream& os, const Type *val)

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <unordered_set>
-
 #include "HorseIR/Traversal/ConstHierarchicalVisitor.h"
 
 #include "HorseIR/Semantics/SymbolTable/SymbolTable.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 
@@ -35,8 +35,8 @@ public:
 private:
 	bool m_globalsPhase = false;
 
-	std::unordered_set<const SymbolTable::Symbol *> m_globals;
-	std::unordered_set<const SymbolTable::Symbol *> m_definitions;
+	robin_hood::unordered_set<const SymbolTable::Symbol *> m_globals;
+	robin_hood::unordered_set<const SymbolTable::Symbol *> m_definitions;
 };
 
 }

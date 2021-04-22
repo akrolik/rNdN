@@ -2,8 +2,9 @@
 
 #include <cstdint>
 #include <string>
-#include <unordered_map>
 #include <utility>
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -36,8 +37,8 @@ public:
 	std::string ToString() const;
 
 private:
-	std::unordered_map<std::string, std::pair<std::uint8_t, std::uint8_t>> m_registerMap;
-	std::unordered_map<std::string, std::uint8_t> m_predicateMap;
+	robin_hood::unordered_map<std::string, std::pair<std::uint8_t, std::uint8_t>> m_registerMap;
+	robin_hood::unordered_map<std::string, std::uint8_t> m_predicateMap;
 
 	std::uint8_t m_registerCount = 0;
 	std::uint8_t m_predicateCount = 0;

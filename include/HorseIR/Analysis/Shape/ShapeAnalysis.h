@@ -13,6 +13,8 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace HorseIR {
 namespace Analysis {
 
@@ -128,7 +130,7 @@ private:
 
 	void CheckCondition(const Operand *operand) const;
 
-	std::unordered_map<const DataObject *, const Shape::Size *> m_compressionConstraints;
+	robin_hood::unordered_map<const DataObject *, const Shape::Size *> m_compressionConstraints;
 	bool m_enforce = false;
 
 	// Checks for values
@@ -144,11 +146,11 @@ private:
 	
 	const CallExpression *m_call = nullptr;
 
-	std::unordered_map<const Expression *, std::vector<const Shape *>> m_expressionShapes;
-	std::unordered_map<const Expression *, std::vector<const Shape *>> m_writeShapes;
+	robin_hood::unordered_map<const Expression *, std::vector<const Shape *>> m_expressionShapes;
+	robin_hood::unordered_map<const Expression *, std::vector<const Shape *>> m_writeShapes;
 
-	std::unordered_map<const VariableDeclaration *, const Shape *> m_declarationShapes;
-	std::unordered_map<const Parameter *, const Shape *> m_parameterShapes;
+	robin_hood::unordered_map<const VariableDeclaration *, const Shape *> m_declarationShapes;
+	robin_hood::unordered_map<const Parameter *, const Shape *> m_parameterShapes;
 
 	std::vector<const Shape *> m_returnShapes;
 	std::vector<const Shape *> m_returnWriteShapes;
@@ -159,7 +161,7 @@ private:
 
 	// Interprocedural
 
-	std::unordered_map<const Function *, const ShapeAnalysis *> m_interproceduralMap;
+	robin_hood::unordered_map<const Function *, const ShapeAnalysis *> m_interproceduralMap;
 };
 
 }

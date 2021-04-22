@@ -12,6 +12,8 @@
 
 #include "Utils/Logger.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace PTX {
 
 template<class T> class FunctionDefinition;
@@ -79,9 +81,9 @@ public:
 	{
 		return (m_exitNodes.find(node) != m_exitNodes.end());
 	}
-	const std::unordered_set<ControlFlowNode>& GetExitNodes() const { return m_exitNodes; }
+	const robin_hood::unordered_set<ControlFlowNode>& GetExitNodes() const { return m_exitNodes; }
 
-	void SetExitNodes(const std::unordered_set<ControlFlowNode>& exitNodes) { m_exitNodes = exitNodes; }
+	void SetExitNodes(const robin_hood::unordered_set<ControlFlowNode>& exitNodes) { m_exitNodes = exitNodes; }
 	void AddExitNode(const ControlFlowNode& exitNode) { m_exitNodes.insert(exitNode); }
 
 	// Ordering
@@ -92,7 +94,7 @@ public:
 		// Construct DFA ordering structure
 
 		std::stack<ControlFlowNode> stack;
-		std::unordered_set<ControlFlowNode> visited;
+		robin_hood::unordered_set<ControlFlowNode> visited;
 
 		// Initialize with the entry node
 
@@ -162,15 +164,15 @@ public:
 
 private:
 	FunctionDefinition<VoidType> *m_function = nullptr;
-	std::unordered_map<const Label *, ControlFlowNode> m_labelMap;
+	robin_hood::unordered_map<const Label *, ControlFlowNode> m_labelMap;
 
 	using EdgeType = typename Utils::Graph<ControlFlowNode>::EdgeType;
 	using EdgeHash = typename Utils::Graph<ControlFlowNode>::EdgeHash;
 
-	std::unordered_map<EdgeType, std::pair<const Register<PredicateType> *, bool>, EdgeHash> m_edgeData;
+	robin_hood::unordered_map<EdgeType, std::pair<const Register<PredicateType> *, bool>, EdgeHash> m_edgeData;
 
 	ControlFlowNode m_entryNode = nullptr;
-	std::unordered_set<ControlFlowNode> m_exitNodes;
+	robin_hood::unordered_set<ControlFlowNode> m_exitNodes;
 };
 
 }

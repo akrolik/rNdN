@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 
@@ -58,7 +59,7 @@ private:
 	SymbolTable *m_parent = nullptr;
 	SymbolTable *m_importTable = nullptr;
 
-	std::unordered_map<std::string, Symbol *> m_table;
+	robin_hood::unordered_map<std::string, Symbol *> m_table;
 };
 
 }

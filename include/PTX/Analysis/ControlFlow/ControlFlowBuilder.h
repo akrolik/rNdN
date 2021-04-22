@@ -5,6 +5,8 @@
 #include "PTX/Tree/Tree.h"
 #include "PTX/Analysis/ControlFlow/ControlFlowGraph.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace PTX {
 namespace Analysis {
 
@@ -15,8 +17,8 @@ public:
 
 	ControlFlowGraph *Analyze(FunctionDefinition<VoidType> *function);
 
-	const std::unordered_map<const Label *, BasicBlock *>& GetLabelMap() const { return m_labelMap; }
-	const std::unordered_map<const Statement *, BasicBlock *>& GetStatementMap() const { return m_statementMap; }
+	const robin_hood::unordered_map<const Label *, BasicBlock *>& GetLabelMap() const { return m_labelMap; }
+	const robin_hood::unordered_map<const Statement *, BasicBlock *>& GetStatementMap() const { return m_statementMap; }
 
 	// Statements
 
@@ -35,8 +37,8 @@ private:
 	BasicBlock *m_currentBlock = nullptr;
 
 	ControlFlowGraph *m_graph = nullptr;
-	std::unordered_map<const Label *, BasicBlock *> m_labelMap;
-	std::unordered_map<const Statement *, BasicBlock *> m_statementMap;
+	robin_hood::unordered_map<const Label *, BasicBlock *> m_labelMap;
+	robin_hood::unordered_map<const Statement *, BasicBlock *> m_statementMap;
 };
 
 class ControlFlowBuilder : public HierarchicalVisitor
@@ -57,8 +59,8 @@ private:
 	BasicBlock *m_previousBlock = nullptr;
 
 	ControlFlowGraph *m_graph = nullptr;
-	std::unordered_map<const Label *, BasicBlock *> m_labelMap;
-	std::unordered_map<const Statement *, BasicBlock *> m_statementMap;
+	robin_hood::unordered_map<const Label *, BasicBlock *> m_labelMap;
+	robin_hood::unordered_map<const Statement *, BasicBlock *> m_statementMap;
 };
 
 }

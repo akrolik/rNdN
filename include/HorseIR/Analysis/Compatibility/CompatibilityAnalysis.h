@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <unordered_map>
 
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 
@@ -10,6 +9,8 @@
 #include "HorseIR/Analysis/Shape/Shape.h"
 
 #include "Utils/Variant.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Analysis {
@@ -49,13 +50,13 @@ private:
 
 	FunctionDependencyOverlay *m_functionOverlay = nullptr;
 	std::vector<DependencyOverlay *> m_currentOverlays;
-	std::unordered_map<DependencySubgraphNode, DependencyOverlay *> m_kernelMap;
-	std::unordered_map<const DependencyOverlay *, DependencyOverlay *> m_overlayMap;
+	robin_hood::unordered_map<DependencySubgraphNode, DependencyOverlay *> m_kernelMap;
+	robin_hood::unordered_map<const DependencyOverlay *, DependencyOverlay *> m_overlayMap;
 
 	// Geometry analysis for statements and map for overlays
 
 	const GeometryAnalysis& m_geometryAnalysis;
-	std::unordered_map<const DependencyOverlay *, const Shape *> m_overlayGeometries;
+	robin_hood::unordered_map<const DependencyOverlay *, const Shape *> m_overlayGeometries;
 
 	const Shape *GetGeometry(const DependencySubgraphNode& node) const;
 	const Shape *BuildGeometry(const DependencyOverlay *overlay) const;
@@ -65,7 +66,7 @@ private:
 	// Optimization
 
 	void Optimize(DependencyOverlay *parentOverlay);
-	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderContextBFS& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
+	DependencyOverlay *MergeOverlays(DependencySubgraph::OrderContextBFS& context, const robin_hood::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2);
 	void MoveOverlay(DependencySubgraph::OrderContextBFS& context, DependencyOverlay *merged, const DependencyOverlay *source);
 };
 

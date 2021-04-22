@@ -1,11 +1,11 @@
 #include "Assembler/ELFGenerator.h"
 
 #include <sstream>
-#include <unordered_map>
 
 #include "Libraries/elfio/elfio.hpp"
 #include "Libraries/elfio/elfio_dump.hpp"
 #include "Libraries/wmemstreambuf.hpp"
+#include "Libraries/robin_hood.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -124,7 +124,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 	// Global variables
 
-	std::unordered_map<std::string, ELFIO::Elf_Word> symbolMap;
+	robin_hood::unordered_map<std::string, ELFIO::Elf_Word> symbolMap;
 	if (program->GetGlobalVariableCount() > 0)
 	{
 		// Add NVIDIA global section that will contain all variables

@@ -1,9 +1,10 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 
 #include "SASS/Tree/Constants.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -23,7 +24,7 @@ public:
 	std::string ToString() const;
 
 private:
-	std::unordered_map<std::string, std::size_t> m_parameterMap;
+	robin_hood::unordered_map<std::string, std::size_t> m_parameterMap;
 	std::size_t m_parameterOffset = SASS::CBANK_ParametersOffset;
 };
 

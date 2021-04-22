@@ -122,8 +122,8 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 
 	// Collect the incoming and outgoing symbols
 
-	std::unordered_set<const SymbolTable::Symbol *> inSet;
-	std::unordered_set<const SymbolTable::Symbol *> outSet;
+	robin_hood::unordered_set<const SymbolTable::Symbol *> inSet;
+	robin_hood::unordered_set<const SymbolTable::Symbol *> outSet;
 
 	const auto containerGraph = overlay->GetParent()->GetSubgraph();
 	for (const auto& predecessor : containerGraph->GetPredecessors(overlay))

@@ -62,7 +62,7 @@ bool UDDUChainsBuilder::VisitIn(const Identifier *identifier)
 	{
 		// Skip global variables
 
-		m_useDefChains[identifier] = std::unordered_set<const AssignStatement *>();
+		m_useDefChains[identifier];
 		return true;
 	}
 
@@ -75,10 +75,6 @@ bool UDDUChainsBuilder::VisitIn(const Identifier *identifier)
 
 	for (const auto& definition : *definitions)
 	{
-		if (m_defUseChains.find(definition) == m_defUseChains.end())
-		{
-			m_defUseChains[definition] = std::unordered_set<const Identifier *>();
-		}
 		m_defUseChains[definition].insert(identifier);
 	}
 	return true;

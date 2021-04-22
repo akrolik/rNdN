@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stack>
-#include <unordered_set>
 #include <vector>
 
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
@@ -10,6 +9,8 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "HorseIR/Transformation/Outliner/OutlineLibrary.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Transformation {
@@ -38,7 +39,7 @@ public:
 private:
 	std::vector<Function *> m_functions;
 	std::stack<std::vector<Statement *>> m_statements;
-	std::stack<std::unordered_set<const SymbolTable::Symbol *>> m_symbols;
+	std::stack<robin_hood::unordered_set<const SymbolTable::Symbol *>> m_symbols;
 
 	OutlineLibrary m_libraryOutliner;
 

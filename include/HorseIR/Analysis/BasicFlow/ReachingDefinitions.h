@@ -1,7 +1,6 @@
 #pragma once
 
 #include <sstream>
-#include <unordered_set>
 
 #include "Analysis/FlowValue.h"
 
@@ -14,9 +13,9 @@
 namespace HorseIR {
 namespace Analysis {
 
-struct ReachingDefinitionsValue : ::Analysis::Value<std::unordered_set<const AssignStatement *>>
+struct ReachingDefinitionsValue : ::Analysis::Value<robin_hood::unordered_set<const AssignStatement *>>
 {
-	using Type = std::unordered_set<const AssignStatement *>;
+	using Type = robin_hood::unordered_set<const AssignStatement *>;
 	using ::Analysis::Value<Type>::Equals;
 
 	static void Print(std::ostream& os, const Type *val)

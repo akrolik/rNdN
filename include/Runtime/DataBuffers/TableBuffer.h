@@ -3,7 +3,6 @@
 #include "Runtime/DataBuffers/DataBuffer.h"
 
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -13,6 +12,8 @@
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ColumnBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
+
+#include "Libraries/robin_hood.h"
 
 #include "Utils/Logger.h"
 
@@ -39,7 +40,7 @@ public:
 
 	// Columns
 	
-	void SetPrimaryKey(VectorBuffer *primaryKey, const std::unordered_map<std::int32_t, std::int64_t>& primaryMap)
+	void SetPrimaryKey(VectorBuffer *primaryKey, const robin_hood::unordered_map<std::int32_t, std::int64_t>& primaryMap)
 	{
 		m_primaryKey = primaryKey; 
 		m_primaryMap = primaryMap;
@@ -48,7 +49,7 @@ public:
 	const VectorBuffer *GetPrimaryKey() const { return m_primaryKey; }
 	VectorBuffer *GetPrimaryKey() { return m_primaryKey; }
 
-	const std::unordered_map<std::int32_t, std::int64_t>& GetPrimaryMap() const { return m_primaryMap; }
+	const robin_hood::unordered_map<std::int32_t, std::int64_t>& GetPrimaryMap() const { return m_primaryMap; }
 
 	const ColumnBuffer *GetColumn(const std::string& column) const;
 	ColumnBuffer *GetColumn(const std::string& column);
@@ -74,10 +75,10 @@ private:
 	const HorseIR::Analysis::TableShape *m_shape = nullptr;
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> m_columns;
-	std::unordered_map<std::string, ColumnBuffer *> m_columnMap;
+	robin_hood::unordered_map<std::string, ColumnBuffer *> m_columnMap;
 
 	VectorBuffer *m_primaryKey = nullptr;
-	std::unordered_map<std::int32_t, std::int64_t> m_primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> m_primaryMap;
 
 	unsigned int m_rows = 0;
 };

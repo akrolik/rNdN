@@ -113,7 +113,7 @@ void DataRegistry::LoadDebugData()
 	{
 		std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
-		std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+		robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 		CUDA::Vector<std::int64_t> primaryKey(size);
 		for (auto i = 0u; i < size; ++i)
 		{
@@ -187,7 +187,7 @@ void DataRegistry::LoadTPCHNationTable()
 	// );
 	auto size = 25u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int32_t> nationKey(size); // PKey
 	CUDA::Vector<std::uint64_t> name(size);
@@ -245,7 +245,7 @@ void DataRegistry::LoadTPCHRegionTable()
 	// );
 	auto size = 5u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int32_t> regionKey(size); // PKey
 	CUDA::Vector<std::uint64_t> name(size);
@@ -297,7 +297,7 @@ void DataRegistry::LoadTPCHPartTable()
 	// );
 	auto _size = 200000u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int32_t> partKey(_size); // PKey
 	CUDA::Vector<std::uint64_t> name(_size);
@@ -367,7 +367,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	// );
 	auto size = 10000u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int32_t> supplierKey(size); // PKey
 	CUDA::Vector<std::uint64_t> name(size);
@@ -514,7 +514,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	// );
 	auto size = 150000u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int32_t> custKey(size); // PKey
 	CUDA::Vector<std::uint64_t> name(size);
@@ -592,7 +592,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	// );
 	auto size = 1500000u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryMap;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
 	CUDA::Vector<std::int32_t> orderKey(size); // PKey
 	CUDA::Vector<std::int32_t> customerVal(size); // FKey[customer] value
@@ -680,7 +680,7 @@ void DataRegistry::LoadTPCHLineItemTable()
 	// );
 	auto size = 6001215u;
 
-	std::unordered_map<std::int32_t, std::int64_t> primaryKey;
+	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryKey;
 
 	CUDA::Vector<std::int32_t> orderVal(size); // FKey[orders] value, PKey
 	CUDA::Vector<std::int64_t> orderKey(size); // FKey[orders], PKey

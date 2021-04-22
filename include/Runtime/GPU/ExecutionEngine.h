@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <unordered_map>
 #include <utility>
 
 #include "Frontend/Codegen/InputOptions.h"
@@ -18,6 +17,8 @@
 #include "Runtime/DataBuffers/VectorBuffer.h"
 
 #include "HorseIR/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Runtime {
 namespace GPU {
@@ -42,7 +43,7 @@ private:
 
 	// Cache for GPU execution
 
-	std::unordered_map<const HorseIR::Function *, Frontend::Codegen::InputOptions *> m_optionsCache;
+	robin_hood::unordered_map<const HorseIR::Function *, Frontend::Codegen::InputOptions *> m_optionsCache;
 };
 
 }

@@ -1,12 +1,13 @@
 #pragma once
 
 #include <stack>
-#include <unordered_map>
 #include <vector>
 
 #include "HorseIR/Tree/Tree.h"
 
 #include "Runtime/DataBuffers/DataBuffer.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Runtime {
 
@@ -29,16 +30,16 @@ public:
 private:
 	struct GlobalContext
 	{
-		std::unordered_map<const HorseIR::SymbolTable::Symbol *, DataBuffer *> variableMap;
-		std::unordered_map<const HorseIR::Expression *, std::vector<DataBuffer *>> expressionMap;
+		robin_hood::unordered_map<const HorseIR::SymbolTable::Symbol *, DataBuffer *> variableMap;
+		robin_hood::unordered_map<const HorseIR::Expression *, std::vector<DataBuffer *>> expressionMap;
 	};
 
-	std::unordered_map<const HorseIR::Module *, GlobalContext> m_globalContexts;
+	robin_hood::unordered_map<const HorseIR::Module *, GlobalContext> m_globalContexts;
 
 	struct FunctionContext
 	{
-		std::unordered_map<const HorseIR::SymbolTable::Symbol *, DataBuffer *> variableMap;
-		std::unordered_map<const HorseIR::Expression *, std::vector<DataBuffer *>> expressionMap;
+		robin_hood::unordered_map<const HorseIR::SymbolTable::Symbol *, DataBuffer *> variableMap;
+		robin_hood::unordered_map<const HorseIR::Expression *, std::vector<DataBuffer *>> expressionMap;
 		std::vector<DataBuffer *> results;
 	};
 

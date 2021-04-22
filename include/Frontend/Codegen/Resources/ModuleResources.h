@@ -4,6 +4,8 @@
 
 #include "PTX/Tree/Tree.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace Frontend {
 namespace Codegen {
 
@@ -71,8 +73,8 @@ public:
 	}
 private:
 	std::vector<PTX::VariableDeclaration *> m_declarations;
-	std::unordered_map<std::string, PTX::GlobalVariable<T> *> m_globalsMap;
-	std::unordered_map<std::string, PTX::ConstVariable<T> *> m_constsMap;
+	robin_hood::unordered_map<std::string, PTX::GlobalVariable<T> *> m_globalsMap;
+	robin_hood::unordered_map<std::string, PTX::ConstVariable<T> *> m_constsMap;
 };
 
 }

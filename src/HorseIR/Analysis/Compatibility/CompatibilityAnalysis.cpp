@@ -235,7 +235,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 	DependencySubgraphAnalysis dependencySubgraphAnalysis;
 	dependencySubgraphAnalysis.Analyze(parentOverlay);
 
-	std::unordered_set<DependencySubgraphNode> processedNodes;
+	robin_hood::unordered_set<DependencySubgraphNode> processedNodes;
 
 	auto subgraph = parentOverlay->GetSubgraph();
 	subgraph->TopologicalOrderBFS([&](DependencySubgraph::OrderContextBFS& context, DependencySubgraphNode& node)
@@ -390,7 +390,7 @@ void CompatibilityAnalysis::Optimize(DependencyOverlay *parentOverlay)
 	Utils::Chrono::End(timeOptimize_start);
 }
 
-DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderContextBFS& context, const std::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
+DependencyOverlay *CompatibilityAnalysis::MergeOverlays(DependencySubgraph::OrderContextBFS& context, const robin_hood::unordered_set<DependencySubgraphNode>& processedNodes, const DependencyOverlay *overlay1, const DependencyOverlay *overlay2)
 {
 	auto parentOverlay = overlay1->GetParent();
 	auto parentSubgraph = parentOverlay->GetSubgraph();

@@ -1,12 +1,13 @@
 #pragma once
 
 #include <stack>
-#include <unordered_set>
 #include <vector>
 
 #include "HorseIR/Traversal/ConstVisitor.h"
 
 #include "HorseIR/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Transformation {
@@ -14,7 +15,7 @@ namespace Transformation {
 class OutlineLibrary : public ConstVisitor
 {
 public:
-	OutlineLibrary(std::vector<Function *>& functions, std::stack<std::unordered_set<const SymbolTable::Symbol *>>& symbols) : m_functions(functions), m_symbols(symbols) {}
+	OutlineLibrary(std::vector<Function *>& functions, std::stack<robin_hood::unordered_set<const SymbolTable::Symbol *>>& symbols) : m_functions(functions), m_symbols(symbols) {}
 	
 	Statement *Outline(const Statement *statement);
 
@@ -46,7 +47,7 @@ private:
 	Statement *m_libraryStatement = nullptr;
 
 	std::vector<Function *>& m_functions;
-	std::stack<std::unordered_set<const SymbolTable::Symbol *>>& m_symbols;
+	std::stack<robin_hood::unordered_set<const SymbolTable::Symbol *>>& m_symbols;
 
 	unsigned int m_index = 1u;
 };

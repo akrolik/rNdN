@@ -1,12 +1,13 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlay.h"
 
 #include "HorseIR/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Analysis {
@@ -29,7 +30,7 @@ private:
 	std::stringstream m_string;
 
 	unsigned int m_nameIndex = 0;
-	std::unordered_map<const Statement *, std::string> m_nameMap;
+	robin_hood::unordered_map<const Statement *, std::string> m_nameMap;
 };
 
 }

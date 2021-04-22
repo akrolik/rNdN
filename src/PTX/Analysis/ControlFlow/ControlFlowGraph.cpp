@@ -1,7 +1,6 @@
 #include "PTX/Analysis/ControlFlow/ControlFlowGraph.h"
 
 #include <regex>
-#include <unordered_map>
 
 #include "PTX/Tree/Tree.h"
 #include "PTX/Utils/PrettyPrinter.h"
@@ -11,7 +10,7 @@ namespace Analysis {
 
 std::string ControlFlowGraph::ToDOTString() const
 {
-	std::unordered_map<ControlFlowNode, unsigned int> indexMap;
+	robin_hood::unordered_map<ControlFlowNode, unsigned int> indexMap;
 	auto index = 1u;
 
  	// Construct the DOT surrounding structure

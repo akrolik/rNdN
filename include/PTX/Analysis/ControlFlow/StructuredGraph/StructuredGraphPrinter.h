@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 
 #include "PTX/Analysis/ControlFlow/StructuredGraph/ConstStructuredGraphVisitor.h"
 #include "PTX/Analysis/ControlFlow/StructuredGraph/StructuredGraph.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -27,7 +28,7 @@ private:
 	unsigned int m_index = 0;
 	std::stringstream m_string;
 
-	std::unordered_map<const StructureNode *, std::string> m_nameMap;
+	robin_hood::unordered_map<const StructureNode *, std::string> m_nameMap;
 };
 
 }

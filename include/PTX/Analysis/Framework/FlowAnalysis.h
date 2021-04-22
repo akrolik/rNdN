@@ -2,11 +2,12 @@
 
 #include <string>
 #include <sstream>
-#include <unordered_map>
 #include <vector>
 
 #include "PTX/Traversal/ConstVisitor.h"
 #include "PTX/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -68,8 +69,8 @@ protected:
 	void SetInSet(const Statement *statement, const F& set) { m_inSets.insert_or_assign(statement, set); }
 	void SetOutSet(const Statement *statement, const F& set) { m_outSets.insert_or_assign(statement, set); }
 
-	std::unordered_map<const Statement *, F> m_inSets;
-	std::unordered_map<const Statement *, F> m_outSets;
+	robin_hood::unordered_map<const Statement *, F> m_inSets;
+	robin_hood::unordered_map<const Statement *, F> m_outSets;
 };
 
 }

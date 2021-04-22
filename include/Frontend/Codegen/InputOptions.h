@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "HorseIR/Analysis/DataObject/DataObject.h"
@@ -11,6 +10,8 @@
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Frontend {
 namespace Codegen {
@@ -33,17 +34,17 @@ struct InputOptions
 
 	// Parameter data
 
-	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::Parameter *> Parameters;
+	robin_hood::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::Parameter *> Parameters;
 
-	std::unordered_map<const HorseIR::Parameter *, const HorseIR::Analysis::Shape *> ParameterShapes;
+	robin_hood::unordered_map<const HorseIR::Parameter *, const HorseIR::Analysis::Shape *> ParameterShapes;
 
-	std::unordered_map<const HorseIR::Parameter *, const HorseIR::Analysis::DataObject *> ParameterObjects;
-	std::unordered_map<const HorseIR::Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjectMap;
+	robin_hood::unordered_map<const HorseIR::Parameter *, const HorseIR::Analysis::DataObject *> ParameterObjects;
+	robin_hood::unordered_map<const HorseIR::Analysis::DataObject *, const HorseIR::Parameter *> ParameterObjectMap;
 
 	// Declaration data
 
-	std::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::VariableDeclaration *> Declarations;
-	std::unordered_map<const HorseIR::VariableDeclaration *, const HorseIR::Analysis::Shape *> DeclarationShapes;
+	robin_hood::unordered_map<const HorseIR::SymbolTable::Symbol *, const HorseIR::VariableDeclaration *> Declarations;
+	robin_hood::unordered_map<const HorseIR::VariableDeclaration *, const HorseIR::Analysis::Shape *> DeclarationShapes;
 
 	// Return data
 
@@ -53,8 +54,8 @@ struct InputOptions
 
 	// Initializations
 	
-	std::unordered_map<const HorseIR::Analysis::DataObject *, HorseIR::Analysis::DataInitializationAnalysis::Initialization> InitObjects;
-	std::unordered_map<const HorseIR::Analysis::DataObject *, const HorseIR::Analysis::DataObject *> CopyObjects;
+	robin_hood::unordered_map<const HorseIR::Analysis::DataObject *, HorseIR::Analysis::DataInitializationAnalysis::Initialization> InitObjects;
+	robin_hood::unordered_map<const HorseIR::Analysis::DataObject *, const HorseIR::Analysis::DataObject *> CopyObjects;
 
 	std::string ToString() const
 	{

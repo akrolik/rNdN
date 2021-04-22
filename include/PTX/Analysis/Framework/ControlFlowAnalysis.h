@@ -3,13 +3,14 @@
 #include <deque>
 #include <string>
 #include <sstream>
-#include <unordered_map>
 
 #include "PTX/Tree/Tree.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -101,15 +102,15 @@ protected:
 
 	F m_currentSet;
 
-	std::unordered_map<const BasicBlock *, F> m_blockInSets;
-	std::unordered_map<const BasicBlock *, F> m_blockOutSets;
+	robin_hood::unordered_map<const BasicBlock *, F> m_blockInSets;
+	robin_hood::unordered_map<const BasicBlock *, F> m_blockOutSets;
 
 	bool m_collectInSets = true;
 	bool m_collectOutSets = true;
 
 	// Worklist
 
-	std::unordered_map<const BasicBlock *, unsigned int> m_blockOrder;
+	robin_hood::unordered_map<const BasicBlock *, unsigned int> m_blockOrder;
 
 	virtual void InitializeWorklist(const FunctionDefinition<VoidType> *function) = 0;
 
@@ -154,7 +155,7 @@ protected:
 	}
 
 	std::deque<BasicBlock *> m_queuedWork;
-	std::unordered_set<BasicBlock *> m_unqueuedWork;
+	robin_hood::unordered_set<BasicBlock *> m_unqueuedWork;
 
 	// Chrono
 

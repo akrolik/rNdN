@@ -2,7 +2,6 @@
 
 #include <string>
 #include <sstream>
-#include <unordered_map>
 #include <vector>
 
 #include "HorseIR/Analysis/Framework/StatementAnalysis.h"
@@ -13,6 +12,8 @@
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Analysis {
@@ -215,8 +216,8 @@ protected:
 	const Program *m_program = nullptr;
 	const Statement *m_currentStatement = nullptr;
 
-	std::unordered_map<const Statement *, F> m_inSets;
-	std::unordered_map<const Statement *, F> m_outSets;
+	robin_hood::unordered_map<const Statement *, F> m_inSets;
+	robin_hood::unordered_map<const Statement *, F> m_outSets;
 
 	bool m_collectInSets = true;
 	bool m_collectOutSets = true;

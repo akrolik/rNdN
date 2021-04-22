@@ -4,6 +4,8 @@
 
 #include "PTX/Tree/Tree.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace Frontend {
 namespace Codegen {
 
@@ -122,12 +124,12 @@ public:
 private:
 	PTX::RegisterDeclaration<T> *m_declaration = new PTX::RegisterDeclaration<T>();
 
-	std::unordered_map<std::string, PTX::Register<T> *> m_registersMap;
+	robin_hood::unordered_map<std::string, PTX::Register<T> *> m_registersMap;
 	unsigned int m_temporaries = 0;
 
-	std::unordered_map<PTX::Register<T> *, PTX::Register<PTX::PredicateType> *> m_compressedMap;
-	std::unordered_map<PTX::Register<T> *, PTX::TypedOperand<PTX::UInt32Type> *> m_indexedMap;
-	std::unordered_map<PTX::Register<T> *, std::pair<RegisterReductionGranularity, RegisterReductionOperation>> m_reductionMap;
+	robin_hood::unordered_map<PTX::Register<T> *, PTX::Register<PTX::PredicateType> *> m_compressedMap;
+	robin_hood::unordered_map<PTX::Register<T> *, PTX::TypedOperand<PTX::UInt32Type> *> m_indexedMap;
+	robin_hood::unordered_map<PTX::Register<T> *, std::pair<RegisterReductionGranularity, RegisterReductionOperation>> m_reductionMap;
 };
 
 }

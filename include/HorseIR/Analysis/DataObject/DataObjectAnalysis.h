@@ -1,8 +1,6 @@
 #pragma once
 
 #include <sstream>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "Analysis/FlowValue.h"
@@ -13,6 +11,8 @@
 #include "HorseIR/Analysis/Utils/SymbolObject.h"
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Analysis {
@@ -81,13 +81,13 @@ private:
 	std::vector<const DataObject *> AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
 	std::vector<const DataObject *> AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, const std::vector<const DataObject *>& argumentObjects);
 
-	std::unordered_map<const Expression *, std::vector<const DataObject *>> m_expressionObjects;
-	std::unordered_map<const Parameter *, const DataObject *> m_parameterObjects;
+	robin_hood::unordered_map<const Expression *, std::vector<const DataObject *>> m_expressionObjects;
+	robin_hood::unordered_map<const Parameter *, const DataObject *> m_parameterObjects;
 	std::vector<const DataObject *> m_returnObjects;
 
 	// Interprocedural
 
-	std::unordered_map<const Function *, const DataObjectAnalysis *> m_interproceduralMap;
+	robin_hood::unordered_map<const Function *, const DataObjectAnalysis *> m_interproceduralMap;
 };
 
 }

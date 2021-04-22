@@ -1,10 +1,10 @@
 #pragma once
 
-#include <unordered_set>
-#include <unordered_map>
 #include <utility>
 
 #include "Utils/Logger.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Analysis {
 
@@ -33,9 +33,9 @@ struct Value
 };
 
 template<typename T>
-struct Set : public std::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>
+struct Set : public robin_hood::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>
 {
-	using std::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>::unordered_set;
+	using robin_hood::unordered_set<const typename T::Type *, typename T::Hash, typename T::Equals>::unordered_set;
 
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{
@@ -76,7 +76,7 @@ struct Set : public std::unordered_set<const typename T::Type *, typename T::Has
 };
 
 template<typename K, typename V>
-struct Map : public std::unordered_map<const typename K::Type *, const typename V::Type *, typename K::Hash, typename K::Equals>
+struct Map : public robin_hood::unordered_map<const typename K::Type *, const typename V::Type *, typename K::Hash, typename K::Equals>
 {
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{

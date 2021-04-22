@@ -2,12 +2,13 @@
 
 #include <typeindex>
 #include <typeinfo>
-#include <unordered_map>
 #include <utility>
 
 #include "Frontend/Codegen/Resources/Resources.h"
 
 #include "PTX/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Frontend {
 namespace Codegen {
@@ -43,7 +44,7 @@ protected:
 		return static_cast<R<T> *>(m_resourcesMap.at(key));
 	}
 
-	mutable std::unordered_map<std::type_index, Resources *> m_resourcesMap;
+	mutable robin_hood::unordered_map<std::type_index, Resources *> m_resourcesMap;
 };
 
 }

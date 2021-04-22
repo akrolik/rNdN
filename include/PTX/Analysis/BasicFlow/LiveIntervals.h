@@ -4,6 +4,8 @@
 
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace PTX {
 namespace Analysis {
 
@@ -18,8 +20,8 @@ public:
 
 	void Analyze(const FunctionDefinition<VoidType> *function);
 
-	const std::unordered_map<std::string, LiveInterval>& GetLiveIntervals() const { return m_liveIntervals; }
-	std::unordered_map<std::string, LiveInterval>& GetLiveIntervals() { return m_liveIntervals; }
+	const robin_hood::unordered_map<std::string, LiveInterval>& GetLiveIntervals() const { return m_liveIntervals; }
+	robin_hood::unordered_map<std::string, LiveInterval>& GetLiveIntervals() { return m_liveIntervals; }
 
 	// Visitors
 
@@ -33,7 +35,7 @@ private:
 	const LiveVariables& m_liveVariables;
 
 	unsigned int m_statementIndex = 0;
-	std::unordered_map<std::string, LiveInterval> m_liveIntervals;
+	robin_hood::unordered_map<std::string, LiveInterval> m_liveIntervals;
 };
 
 }

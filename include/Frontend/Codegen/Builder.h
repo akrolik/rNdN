@@ -1,6 +1,5 @@
 #pragma once
 
-#include <set>
 #include <stack>
 
 #include "Frontend/Codegen/InputOptions.h"
@@ -12,6 +11,8 @@
 #include "HorseIR/Tree/Tree.h"
 
 #include "PTX/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Frontend {
 namespace Codegen {
@@ -300,8 +301,8 @@ private:
 	PTX::StatementList *GetCurrentBlock() const { return m_scopes.top(); }
 
 	const TargetOptions& m_targetOptions;
-	std::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;
-	std::unordered_map<const HorseIR::Function*, PTX::FileDirective *> m_files;
+	robin_hood::unordered_map<const HorseIR::Function*, const InputOptions *> m_inputOptions;
+	robin_hood::unordered_map<const HorseIR::Function*, PTX::FileDirective *> m_files;
 
 	PTX::Program *m_currentProgram = nullptr;
 	PTX::Module *m_currentModule = nullptr;
@@ -310,9 +311,9 @@ private:
 	const HorseIR::Function *m_currentFunction = nullptr;
 
 	std::stack<PTX::StatementList *> m_scopes;
-	std::unordered_map<PTX::StatementList *, RegisterAllocator *> m_localResources;
-	std::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, KernelAllocator *> m_kernelResources;
-	std::unordered_map<PTX::Module *, ModuleAllocator *> m_globalResources;
+	robin_hood::unordered_map<PTX::StatementList *, RegisterAllocator *> m_localResources;
+	robin_hood::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, KernelAllocator *> m_kernelResources;
+	robin_hood::unordered_map<PTX::Module *, ModuleAllocator *> m_globalResources;
 
 	unsigned int m_uniqueIndex = 0;
 };

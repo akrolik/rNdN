@@ -2718,12 +2718,14 @@ const std::vector<const Shape *>& ShapeAnalysis::GetWriteShapes(const Expression
 
 void ShapeAnalysis::SetShapes(const Expression *expression, const std::vector<const Shape *>& shapes)
 {
-	m_expressionShapes[expression] = shapes;
+	auto shapesCopy = shapes;
+	m_expressionShapes[expression] = shapesCopy;
 }
 
 void ShapeAnalysis::SetWriteShapes(const Expression *expression, const std::vector<const Shape *>& shapes)
 {
-	m_writeShapes[expression] = shapes;
+	auto shapesCopy = shapes;
+	m_writeShapes[expression] = shapesCopy;
 }
 
 ShapeAnalysis::Properties ShapeAnalysis::InitialFlow() const

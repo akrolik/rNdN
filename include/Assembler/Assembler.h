@@ -1,12 +1,12 @@
 #pragma once
 
-#include <unordered_map>
-
 #include "Assembler/BinaryFunction.h"
 #include "Assembler/BinaryProgram.h"
 
 #include "SASS/Tree/Tree.h"
 #include "SASS/Traversal/Visitor.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Assembler {
 
@@ -32,7 +32,7 @@ protected:
 	std::uint32_t m_index = 0;
 	std::uint32_t m_barrierCount = 0;
 	
-	std::unordered_map<std::string, unsigned int> m_blockIndex;
+	robin_hood::unordered_map<std::string, unsigned int> m_blockIndex;
 	BinaryFunction *m_binaryFunction = nullptr;
 };
 

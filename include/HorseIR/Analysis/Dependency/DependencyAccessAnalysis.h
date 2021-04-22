@@ -1,7 +1,6 @@
 #pragma once
 
 #include <sstream>
-#include <unordered_set>
 
 #include "Analysis/FlowValue.h"
 
@@ -11,12 +10,14 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace HorseIR {
 namespace Analysis {
 
-struct DependencyAccessValue : ::Analysis::Value<std::unordered_set<const Statement *>>
+struct DependencyAccessValue : ::Analysis::Value<robin_hood::unordered_set<const Statement *>>
 {
-	using Type = std::unordered_set<const Statement *>;
+	using Type = robin_hood::unordered_set<const Statement *>;
 	using ::Analysis::Value<Type>::Equals;
 
 	static void Print(std::ostream& os, const Type *val)

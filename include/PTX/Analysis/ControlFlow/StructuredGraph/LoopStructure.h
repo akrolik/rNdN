@@ -1,12 +1,12 @@
 #pragma once
 
-#include <unordered_set>
-
 #include "PTX/Analysis/ControlFlow/StructuredGraph/StructureNode.h"
 #include "PTX/Analysis/ControlFlow/StructuredGraph/ExitStructure.h"
 
 #include "PTX/Analysis/ControlFlow/StructuredGraph/ConstStructuredGraphVisitor.h"
 #include "PTX/Analysis/ControlFlow/StructuredGraph/StructuredGraphVisitor.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -14,7 +14,7 @@ namespace Analysis {
 class LoopStructure : public StructureNode
 {
 public:
-	LoopStructure(StructureNode *body, const std::unordered_set<ExitStructure *>& exits, StructureNode *latch, StructureNode *next) : StructureNode(next), m_body(body), m_exits(exits), m_latch(latch) {}
+	LoopStructure(StructureNode *body, const robin_hood::unordered_set<ExitStructure *>& exits, StructureNode *latch, StructureNode *next) : StructureNode(next), m_body(body), m_exits(exits), m_latch(latch) {}
 
 	// Loop body
 
@@ -25,14 +25,14 @@ public:
 
 	// Exits
 
-	const std::unordered_set<ExitStructure *>& GetExits() { return m_exits; }
-	std::unordered_set<const ExitStructure *> GetExits() const
+	const robin_hood::unordered_set<ExitStructure *>& GetExits() { return m_exits; }
+	robin_hood::unordered_set<const ExitStructure *> GetExits() const
 	{
 		return { std::begin(m_exits), std::end(m_exits) };
 	}
 
 	void AddExit(ExitStructure *exit) { m_exits.insert(exit); }
-	void SetExits(const std::unordered_set<ExitStructure *>& exits) { m_exits = exits; }
+	void SetExits(const robin_hood::unordered_set<ExitStructure *>& exits) { m_exits = exits; }
 
 	// Latch
 
@@ -48,7 +48,7 @@ public:
 	
 private:
 	StructureNode *m_body = nullptr;
-	std::unordered_set<ExitStructure *> m_exits;
+	robin_hood::unordered_set<ExitStructure *> m_exits;
 	StructureNode *m_latch = nullptr;
 };
 

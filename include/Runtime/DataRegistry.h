@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "HorseIR/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace Runtime {
 
@@ -41,7 +42,7 @@ private:
 	void LoadTPCHOrderTable();
 	void LoadTPCHLineItemTable();
 
-	std::unordered_map<std::string, TableBuffer *> m_registry;
+	robin_hood::unordered_map<std::string, TableBuffer *> m_registry;
 };
 
 }

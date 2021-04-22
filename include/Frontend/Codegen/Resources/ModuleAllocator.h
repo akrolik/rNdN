@@ -128,7 +128,7 @@ private:
 	PTX::TypedVariableDeclaration<PTX::ArrayType<PTX::Bit8Type, PTX::DynamicSize>, PTX::SharedSpace> *m_sharedMemoryDeclaration = nullptr;
 	unsigned int m_dynamicSharedMemorySize = 0;
 
-	std::set<PTX::Declaration *> m_externalDeclarations;
+	robin_hood::unordered_set<PTX::Declaration *> m_externalDeclarations;
 };
 
 }

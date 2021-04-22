@@ -41,14 +41,14 @@ DominatorAnalysis::Properties DominatorAnalysis::Merge(const Properties& s1, con
 	return outSet;
 }
 
-std::unordered_set<const BasicBlock *> DominatorAnalysis::GetDominators(const BasicBlock *block) const
+robin_hood::unordered_set<const BasicBlock *> DominatorAnalysis::GetDominators(const BasicBlock *block) const
 {
 	auto dominators = this->GetInSet(block);
 	dominators.insert(block);
 	return { std::begin(dominators), std::end(dominators) };
 }
 
-std::unordered_set<const BasicBlock *> DominatorAnalysis::GetStrictDominators(const BasicBlock *block) const
+robin_hood::unordered_set<const BasicBlock *> DominatorAnalysis::GetStrictDominators(const BasicBlock *block) const
 {
 	const auto& dominators = this->GetInSet(block);
 	return { std::begin(dominators), std::end(dominators) };

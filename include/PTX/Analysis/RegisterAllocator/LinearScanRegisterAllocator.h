@@ -7,7 +7,7 @@
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
 #include "PTX/Tree/Tree.h"
 
-#include <unordered_map>
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 namespace Analysis {
@@ -38,7 +38,7 @@ private:
 	const LiveIntervals& m_liveIntervals;
 
 	RegisterAllocation *m_allocation = nullptr;
-	std::unordered_map<std::string, Bits> m_registerBits;
+	robin_hood::unordered_map<std::string, Bits> m_registerBits;
 };
 
 }

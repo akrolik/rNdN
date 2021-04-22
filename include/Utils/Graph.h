@@ -2,9 +2,9 @@
 
 #include <queue>
 #include <stack>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
+
+#include "Libraries/robin_hood.h"
 
 namespace Utils {
 
@@ -22,12 +22,12 @@ public:
 		m_nodes.insert(node);
 	}
 
-	const std::unordered_set<T>& GetNodes() const { return m_nodes; }
+	const robin_hood::unordered_set<T>& GetNodes() const { return m_nodes; }
 	unsigned int GetNodeCount() const { return m_nodes.size(); }
 	bool ContainsNode(const T& node) const { return (m_nodes.find(node) != m_nodes.end()); }
 
-	const std::unordered_set<T>& GetPredecessors(const T& node) const { return m_predecessors.at(node); }
-	const std::unordered_set<T>& GetSuccessors(const T& node) const { return m_successors.at(node); }
+	const robin_hood::unordered_set<T>& GetPredecessors(const T& node) const { return m_predecessors.at(node); }
+	const robin_hood::unordered_set<T>& GetSuccessors(const T& node) const { return m_successors.at(node); }
 
 	unsigned int GetInDegree(const T& node) const
 	{
@@ -96,7 +96,7 @@ public:
 
 		std::stack<T> outStack;
 		std::stack<T> stack;
-		std::unordered_set<T> visited;
+		robin_hood::unordered_set<T> visited;
 
 		// Initialize with the given node
 
@@ -152,18 +152,18 @@ public:
 
 	struct OrderContextDFS
 	{
-		OrderContextDFS(std::stack<T>& stack, std::unordered_map<T, unsigned int>& edges) : order(stack), edges(edges) {}
+		OrderContextDFS(std::stack<T>& stack, robin_hood::unordered_map<T, unsigned int>& edges) : order(stack), edges(edges) {}
 
 		std::stack<T>& order;
-		std::unordered_map<T, unsigned int>& edges;
+		robin_hood::unordered_map<T, unsigned int>& edges;
 	};
 
 	struct OrderContextBFS
 	{
-		OrderContextBFS(std::queue<T>& queue, std::unordered_map<T, unsigned int>& edges) : order(queue), edges(edges) {}
+		OrderContextBFS(std::queue<T>& queue, robin_hood::unordered_map<T, unsigned int>& edges) : order(queue), edges(edges) {}
 
 		std::queue<T>& order;
-		std::unordered_map<T, unsigned int>& edges;
+		robin_hood::unordered_map<T, unsigned int>& edges;
 	};
 
 	template <typename F> 
@@ -174,7 +174,7 @@ public:
 		//     Edges: count the in-degree of each node
 
 		std::stack<T> stack;
-		std::unordered_map<T, unsigned int> edges;
+		robin_hood::unordered_map<T, unsigned int> edges;
 
 		OrderContextDFS context(stack, edges);
 
@@ -206,7 +206,7 @@ public:
 		//     Edges: count the in-degree of each node
 
 		std::queue<T> queue;
-		std::unordered_map<T, unsigned int> edges;
+		robin_hood::unordered_map<T, unsigned int> edges;
 
 		OrderContextBFS context(queue, edges);
 
@@ -238,7 +238,7 @@ public:
 		//     Edges: count the out-degree of each node
 
 		std::stack<T> stack;
-		std::unordered_map<T, unsigned int> edges;
+		robin_hood::unordered_map<T, unsigned int> edges;
 
 		OrderContextDFS context(stack, edges);
 
@@ -269,7 +269,7 @@ public:
 		//     Edges: count the out-degree of each node
 
 		std::queue<T> queue;
-		std::unordered_map<T, unsigned int> edges;
+		robin_hood::unordered_map<T, unsigned int> edges;
 
 		OrderContextBFS context(queue, edges);
 
@@ -374,10 +374,10 @@ protected:
 		}
 	}
 
-	std::unordered_set<T> m_nodes;
+	robin_hood::unordered_set<T> m_nodes;
 
-	std::unordered_map<T, std::unordered_set<T>> m_successors;
-	std::unordered_map<T, std::unordered_set<T>> m_predecessors;
+	robin_hood::unordered_map<T, robin_hood::unordered_set<T>> m_successors;
+	robin_hood::unordered_map<T, robin_hood::unordered_set<T>> m_predecessors;
 
 	using EdgeType = std::pair<T, T>;
 	struct EdgeHash

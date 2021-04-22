@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_set>
-
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayVisitor.h"
 
 #include "HorseIR/Analysis/Dependency/DependencyGraph.h"

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_set>
-
 #include "PTX/Tree/Functions/FunctionDeclaration.h"
 
 #include "PTX/Tree/BasicBlock.h"
@@ -10,6 +8,8 @@
 
 #include "PTX/Analysis/ControlFlow/ControlFlowGraph.h"
 #include "PTX/Analysis/ControlFlow/StructuredGraph/StructuredGraph.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace PTX {
 
@@ -33,12 +33,12 @@ public:
 
 	// Basic blocks
 
-	std::unordered_set<const BasicBlock *> GetBasicBlocks() const
+	robin_hood::unordered_set<const BasicBlock *> GetBasicBlocks() const
 	{
 		return { std::begin(m_basicBlocks), std::end(m_basicBlocks) };
 	}
-	std::unordered_set<BasicBlock *>& GetBasicBlocks() { return m_basicBlocks; }
-	void SetBasicBlocks(const std::unordered_set<BasicBlock *>& basicBlocks) { m_basicBlocks = basicBlocks; }
+	robin_hood::unordered_set<BasicBlock *>& GetBasicBlocks() { return m_basicBlocks; }
+	void SetBasicBlocks(const robin_hood::unordered_set<BasicBlock *>& basicBlocks) { m_basicBlocks = basicBlocks; }
 
 	// Formatting
 
@@ -137,7 +137,7 @@ public:
 	}
 
 protected:
-	std::unordered_set<BasicBlock *> m_basicBlocks;
+	robin_hood::unordered_set<BasicBlock *> m_basicBlocks;
 	Analysis::ControlFlowGraph *m_cfg = nullptr;
 	Analysis::StructureNode *m_structuredGraph = nullptr;
 };

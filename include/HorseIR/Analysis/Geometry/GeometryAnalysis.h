@@ -10,6 +10,8 @@
 
 #include "HorseIR/Tree/Tree.h"
 
+#include "Libraries/robin_hood.h"
+
 namespace HorseIR {
 namespace Analysis {
 
@@ -48,7 +50,7 @@ private:
 	const CallExpression *m_call = nullptr;
 
 	const Shape *m_currentGeometry = nullptr;
-	std::unordered_map<const Statement *, const Shape *> m_geometries;
+	robin_hood::unordered_map<const Statement *, const Shape *> m_geometries;
 };
 
 }

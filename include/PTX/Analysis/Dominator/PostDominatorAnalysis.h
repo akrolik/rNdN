@@ -37,8 +37,8 @@ public:
 
 	// Accessors
 
-	std::unordered_set<const BasicBlock *> GetPostDominators(const BasicBlock *block) const;
-	std::unordered_set<const BasicBlock *> GetStrictPostDominators(const BasicBlock *block) const;
+	robin_hood::unordered_set<const BasicBlock *> GetPostDominators(const BasicBlock *block) const;
+	robin_hood::unordered_set<const BasicBlock *> GetStrictPostDominators(const BasicBlock *block) const;
 	const BasicBlock *GetImmediatePostDominator(const BasicBlock *block) const;
 
 	bool IsPostDominated(const BasicBlock *block, const BasicBlock *postDominator) const;

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
 #include "Utils/Graph.h"
 
 #include "HorseIR/Tree/Tree.h"
+
+#include "Libraries/robin_hood.h"
 
 namespace HorseIR {
 namespace Analysis {
@@ -52,10 +52,10 @@ public:
 
 	void InsertEdge(const N& source, const N& destination, const SymbolTable::Symbol *symbol, bool isBackEdge, bool isSynchronized)
 	{
-		InsertEdge(source, destination, std::unordered_set<const SymbolTable::Symbol *>({symbol}), isBackEdge, isSynchronized);
+		InsertEdge(source, destination, robin_hood::unordered_set<const SymbolTable::Symbol *>({symbol}), isBackEdge, isSynchronized);
 	}
 
-	void InsertEdge(const N& source, const N& destination, const std::unordered_set<const SymbolTable::Symbol *>& symbols, bool isBackEdge, bool isSynchronized)
+	void InsertEdge(const N& source, const N& destination, const robin_hood::unordered_set<const SymbolTable::Symbol *>& symbols, bool isBackEdge, bool isSynchronized)
 	{
 		Utils::Graph<N>::InsertEdge(source, destination);
 
@@ -86,7 +86,7 @@ public:
 		}
 	}
 
-	const std::unordered_set<const SymbolTable::Symbol *>& GetEdgeData(const N& source, const N& destination) const
+	const robin_hood::unordered_set<const SymbolTable::Symbol *>& GetEdgeData(const N& source, const N& destination) const
 	{
 		return m_edgeData.at({source, destination});
 	}
@@ -143,15 +143,15 @@ private:
 		return edges;
 	}
 
-	std::unordered_set<N> m_gpuNodes;
-	std::unordered_set<N> m_libraryNodes;
+	robin_hood::unordered_set<N> m_gpuNodes;
+	robin_hood::unordered_set<N> m_libraryNodes;
 
 	using EdgeType = typename Utils::Graph<N>::EdgeType;
 	using EdgeHash = typename Utils::Graph<N>::EdgeHash;
 
-	std::unordered_set<EdgeType, EdgeHash> m_backEdges;
-	std::unordered_set<EdgeType, EdgeHash> m_synchronizedEdges;
-	std::unordered_map<EdgeType, std::unordered_set<const SymbolTable::Symbol *>, EdgeHash> m_edgeData;
+	robin_hood::unordered_set<EdgeType, EdgeHash> m_backEdges;
+	robin_hood::unordered_set<EdgeType, EdgeHash> m_synchronizedEdges;
+	robin_hood::unordered_map<EdgeType, robin_hood::unordered_set<const SymbolTable::Symbol *>, EdgeHash> m_edgeData;
 };
 
 using DependencyGraphNode = const Statement *;

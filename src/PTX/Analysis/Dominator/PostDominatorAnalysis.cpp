@@ -41,14 +41,14 @@ PostDominatorAnalysis::Properties PostDominatorAnalysis::Merge(const Properties&
 	return inSet;
 }
 
-std::unordered_set<const BasicBlock *> PostDominatorAnalysis::GetPostDominators(const BasicBlock *block) const
+robin_hood::unordered_set<const BasicBlock *> PostDominatorAnalysis::GetPostDominators(const BasicBlock *block) const
 {
 	auto dominators = this->GetOutSet(block);
 	dominators.insert(block);
 	return { std::begin(dominators), std::end(dominators) };
 }
 
-std::unordered_set<const BasicBlock *> PostDominatorAnalysis::GetStrictPostDominators(const BasicBlock *block) const
+robin_hood::unordered_set<const BasicBlock *> PostDominatorAnalysis::GetStrictPostDominators(const BasicBlock *block) const
 {
 	const auto& dominators = this->GetOutSet(block);
 	return { std::begin(dominators), std::end(dominators) };

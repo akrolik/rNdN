@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+
+#include "Libraries/robin_hood.h"
 
 namespace Runtime {
 
@@ -49,7 +50,7 @@ private:
 	std::uint64_t m_index = 0;
 
 	std::vector<std::string> m_bucket;
-	std::unordered_map<std::uint64_t, std::uint64_t> m_hashMap;
+	robin_hood::unordered_map<std::uint64_t, std::uint64_t> m_hashMap;
 };
 
 }
