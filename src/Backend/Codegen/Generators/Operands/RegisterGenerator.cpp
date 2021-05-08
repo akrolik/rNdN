@@ -143,7 +143,7 @@ void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
 		{
 			m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
 		
-			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(32)));
+			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(SASS::WARP_SIZE)));
 			return;
 		}
 	}

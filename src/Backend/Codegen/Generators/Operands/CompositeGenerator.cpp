@@ -104,7 +104,7 @@ void CompositeGenerator::Visit(const PTX::Constant<T> *constant)
 
 		if (constant->GetName() == PTX::SpecialConstantName_WARP_SZ)
 		{
-			m_composite = new SASS::I32Immediate(32);
+			m_composite = new SASS::I32Immediate(SASS::WARP_SIZE);
 			return;
 		}
 	}
