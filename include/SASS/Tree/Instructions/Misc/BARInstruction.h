@@ -189,7 +189,7 @@ public:
 	// Hardware properties
 
 	// HardwareClass GetHardwareClass() const override { return HardwareClass::GlobalMemory; }
-	HardwareClass GetHardwareClass() const override { return HardwareClass::x32; } //TODO:
+	HardwareClass GetHardwareClass() const override { return HardwareClass::Core; } //TODO:
 
 	// Visitors
 

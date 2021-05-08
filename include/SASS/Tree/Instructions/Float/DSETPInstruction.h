@@ -210,7 +210,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::Compare; }
+	HardwareClass GetHardwareClass() const override { return HardwareClass::DoublePrecision; }
 
 	// Visitors
 

@@ -186,7 +186,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::qtr; }
+	HardwareClass GetHardwareClass() const override { return HardwareClass::SpecialFunction; }
 
 	// Visitors
 

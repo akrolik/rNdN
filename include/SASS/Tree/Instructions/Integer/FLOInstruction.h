@@ -95,8 +95,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::x32; } //TODO:
-	// HardwareClass GetHardwareClass() const override { return HardwareClass::S2R; }
+	HardwareClass GetHardwareClass() const override { return HardwareClass::SpecialFunction; }
 
 	// Visitors
 

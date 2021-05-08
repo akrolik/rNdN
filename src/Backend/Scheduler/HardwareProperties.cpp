@@ -10,18 +10,16 @@ std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction
 		case SASS::Instruction::HardwareClass::S2R:
 		case SASS::Instruction::HardwareClass::GlobalMemory:
 		case SASS::Instruction::HardwareClass::SharedMemory:
-		case SASS::Instruction::HardwareClass::x64:
+		case SASS::Instruction::HardwareClass::DoublePrecision:
+		case SASS::Instruction::HardwareClass::SpecialFunction:
 		{
-			return 2;
+			return 2; // 1 cycle + barrier
 		}
-		case SASS::Instruction::HardwareClass::x32:
+		case SASS::Instruction::HardwareClass::Core:
+		case SASS::Instruction::HardwareClass::Control:
 		case SASS::Instruction::HardwareClass::Shift:
 		{
-			return 6;
-		}
-		case SASS::Instruction::HardwareClass::qtr:
-		{
-			return 15; //TODO: SG value 8
+			return 6; // Fixed pipeline depth
 		}
 		case SASS::Instruction::HardwareClass::Compare:
 		{
@@ -55,25 +53,22 @@ std::uint8_t HardwareProperties::GetBarrierLatency(const SASS::Instruction *inst
 			}
 			return 30;
 		}
-		case SASS::Instruction::HardwareClass::x32:
+		case SASS::Instruction::HardwareClass::Core:
+		case SASS::Instruction::HardwareClass::Control:
 		case SASS::Instruction::HardwareClass::Shift:
 		{
 			return 0;
 		}
-		case SASS::Instruction::HardwareClass::x64:
+		case SASS::Instruction::HardwareClass::DoublePrecision:
 		{
 			return 128;
 		}
-		case SASS::Instruction::HardwareClass::qtr:
+		case SASS::Instruction::HardwareClass::SpecialFunction:
 		{
 			return 10; //TODO: SG value 0
 		}
 		case SASS::Instruction::HardwareClass::Compare:
 		{
-			if (dynamic_cast<const SASS::DSETPInstruction *>(instruction))
-			{
-				return 10; //TODO: SG  value 0
-			}
 			return 0;
 		}
 	}
@@ -85,9 +80,10 @@ std::uint8_t HardwareProperties::GetReadHold(const SASS::Instruction *instructio
 	switch (instruction->GetHardwareClass())
 	{
 		case SASS::Instruction::HardwareClass::S2R:
-		case SASS::Instruction::HardwareClass::x32:
-		case SASS::Instruction::HardwareClass::x64:
-		case SASS::Instruction::HardwareClass::qtr:
+		case SASS::Instruction::HardwareClass::Control:
+		case SASS::Instruction::HardwareClass::Core:
+		case SASS::Instruction::HardwareClass::DoublePrecision:
+		case SASS::Instruction::HardwareClass::SpecialFunction:
 		case SASS::Instruction::HardwareClass::Compare:
 		case SASS::Instruction::HardwareClass::Shift:
 		{

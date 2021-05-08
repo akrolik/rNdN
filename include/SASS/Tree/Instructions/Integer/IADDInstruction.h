@@ -139,7 +139,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::x32; }
+	HardwareClass GetHardwareClass() const override { return HardwareClass::Core; }
 
 	// Visitors
 

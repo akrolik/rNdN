@@ -143,7 +143,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::x64; }
+	HardwareClass GetHardwareClass() const override { return HardwareClass::DoublePrecision; }
 
 	// Visitors
 

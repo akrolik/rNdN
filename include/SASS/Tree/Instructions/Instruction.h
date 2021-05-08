@@ -27,14 +27,15 @@ public:
 
 	enum HardwareClass {
 		S2R,
+		Control,
+		Core,
+		DoublePrecision,
+		SpecialFunction,
+		Compare,
+		Shift,
 		SharedMemory,
 		GlobalMemory,
-		x32,
-		x64,
-		qtr, //TODO: Name
-		Shift,
-		Compare,
-		Schedule
+		SCHI
 	};
 
 	virtual HardwareClass GetHardwareClass() const = 0;
