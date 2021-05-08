@@ -12,9 +12,7 @@ public:
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
-	
-private:
-	std::string SpaceName() const override { return "global"; }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 };
 
 }

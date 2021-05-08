@@ -2,6 +2,8 @@
 
 #include "Libraries/robin_hood.h"
 
+#include "SASS/Utils/PrettyPrinter.h"
+
 namespace SASS {
 namespace Analysis {
 
@@ -21,7 +23,7 @@ std::string BlockDependencyGraph::ToDOTString() const
 		indexMap[node] = index;
 
 		auto name = "n_" + std::to_string(index);
-		auto label = node->ToString();
+		auto label = SASS::PrettyPrinter::PrettyString(node);
 
 		string += "\t" + name + "[label=\"" + label + "\", shape=plaintext]\n"; 
 

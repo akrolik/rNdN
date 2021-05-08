@@ -31,22 +31,10 @@ public:
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 
-	// Formatting
-
-	std::string ToString() const override
-	{
-		std::string code = "." + m_name + ":\n";
-		for (auto instruction : m_instructions)
-		{
-			code += std::string(Utils::Logger::IndentSize, ' ');
-			code += instruction->ToString() + "\n";
-		}
-		return code;
-	}
-
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 	
 private:
 	std::string m_name;

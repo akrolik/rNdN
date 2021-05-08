@@ -62,61 +62,10 @@ public:
 	void AddFunction(Function *function) { m_functions.push_back(function); }
 	void SetFunctions(const std::vector<Function *>& functions) { m_functions = functions; }
 
-	// Formatting
-
-	std::string ToString() const override
-	{
-		std::string code;
-
-		code += "// SASS Program\n";
-		code += "// - Compute Capability: sm_" + std::to_string(m_computeCapability) + "\n";
-
-		// Global variables
-		
-		if (m_globalVariables.size() > 0)
-		{
-			code += "// - Global Variables:\n";
-			for (const auto& global : m_globalVariables)
-			{
-				code += "\n" + global->ToString();
-			}
-		}
-
-		// Shared variables
-
-		if (m_sharedVariables.size() > 0)
-		{
-			code += "// - Shared Variables:\n";
-			for (const auto& shared : m_sharedVariables)
-			{
-				code += "\n" + shared->ToString();
-			}
-		}
-
-		// Dynamic shared variables
-
-		if (m_dynamicSharedVariables.size() > 0)
-		{
-			code += "// - Dynamic Shared Variables:\n";
-			for (const auto& shared : m_dynamicSharedVariables)
-			{
-				code += "\n" + shared->ToString();
-			}
-		}
-
-		// Functio body
-
-		for (const auto& function : m_functions)
-		{
-			code += "\n" + function->ToString();
-		}
-
-		return code;
-	}
-
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 	
 private:
 	unsigned int m_computeCapability = 0;

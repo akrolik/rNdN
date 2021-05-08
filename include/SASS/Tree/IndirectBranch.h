@@ -21,16 +21,10 @@ public:
 	const std::string& GetTarget() const { return m_target; }
 	void SetTarget(const std::string& target) { m_target = target; }
 
-	// Formatting
-
-	std::string ToString() const override
-	{
-		return ".branch " + m_target + " (" + m_branch->ToString() + ")";
-	}
-
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 	
 private:
 	const Instruction *m_branch = nullptr;

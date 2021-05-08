@@ -3,17 +3,17 @@
 #include <string>
 
 #include "SASS/Traversal/Visitor.h"
+#include "SASS/Traversal/ConstVisitor.h"
 
 namespace SASS {
 
 class Node
 {
 public:
-	virtual std::string ToString() const = 0;
-
 	// Visitors
 
 	virtual void Accept(Visitor& visitor) = 0;
+	virtual void Accept(ConstVisitor& visitor) const = 0;
 };
 
 }

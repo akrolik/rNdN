@@ -7,8 +7,9 @@ namespace SASS {
 class Operand : public Node
 {
 public:
-	// Binary
+	// Binary/Formatting
 
+	virtual std::string ToString() const = 0;
 	virtual std::uint64_t ToBinary() const = 0;
 };
 

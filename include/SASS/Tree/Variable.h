@@ -2,8 +2,6 @@
 
 #include "SASS/Tree/Node.h"
 
-#include "Utils/Format.h"
-
 #include <string>
 
 namespace SASS {
@@ -25,19 +23,7 @@ public:
 	std::size_t GetDataSize() const { return m_dataSize; }
 	void SetDataSize(std::size_t dataSize) { m_dataSize = dataSize; }
 
-	// Formatting
-
-	std::string ToString() const override
-	{
-		auto string = "." + SpaceName() + " " + m_name + " { ";
-		string += "size = " + Utils::Format::HexString(m_size) + " bytes; ";
-		string += "datasize = " + Utils::Format::HexString(m_dataSize) + " bytes }";
-		return string;
-	}
-
 private:
-	virtual std::string SpaceName() const = 0 ;
-
 	std::string m_name;
 	std::size_t m_size = 0;
 	std::size_t m_dataSize = 0;

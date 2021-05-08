@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "SASS/Tree/Tree.h"
+#include "SASS/Utils/PrettyPrinter.h"
 
 #include "Utils/Format.h"
 
@@ -331,7 +332,7 @@ public:
 			auto instruction = m_linearProgram.at(i);
 
 			auto address = "/* " + Utils::Format::HexString(i * sizeof(std::uint64_t), 4) + " */    ";
-			auto mnemonic = instruction->ToString();
+			auto mnemonic = SASS::PrettyPrinter::PrettyString(instruction);
 			auto binary = "/* " + Utils::Format::HexString(instruction->ToBinary(), 16) + " */";
 
 			auto indent = 4;

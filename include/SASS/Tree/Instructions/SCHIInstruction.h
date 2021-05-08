@@ -26,7 +26,6 @@ public:
 	// Formatting
 
 	std::string OpCode() const override { return ""; }
-	std::string ToString() const override { return ""; }
 
 	std::uint64_t BinaryOpCode() const override { return 0; }
 	std::uint64_t ToBinary() const override
@@ -41,6 +40,7 @@ public:
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 
 private:
 	std::uint64_t m_schedule = 0;

@@ -183,6 +183,7 @@ public:
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 
 private:
 	Predicate *m_destinationA = nullptr;

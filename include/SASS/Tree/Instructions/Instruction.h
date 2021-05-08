@@ -95,11 +95,6 @@ public:
 	virtual std::string OpModifiers() const { return ""; }
 	virtual std::string Operands() const { return ""; }
 
-	std::string ToString() const override
-	{
-		return OpCode() + OpModifiers() + " " + Operands() + ";";
-	}
-
 	// Binary
 
 	virtual std::uint64_t BinaryOpCode() const = 0;

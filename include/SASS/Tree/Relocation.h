@@ -44,16 +44,10 @@ public:
 	Kind GetKind() const { return m_kind; }
 	void SetKind(Kind kind) { m_kind = kind; }
 
-	// Formatting
-
-	std::string ToString() const override
-	{
-		return ".reloc " + m_name + " " + KindString(m_kind) + " (" + m_instruction->ToString() + ")";
-	}
-
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 	
 private:
 	const Instruction *m_instruction = nullptr;

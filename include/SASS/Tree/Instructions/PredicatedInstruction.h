@@ -22,23 +22,6 @@ public:
 		m_negatePredicate = negate;
 	}
 
-	// Formatting
-
-	std::string ToString() const override
-	{
-		std::string code;
-		if (m_predicate != nullptr)
-		{
-			code += "@";
-			if (m_negatePredicate)
-			{
-				code += "!";
-			}
-			code += m_predicate->ToString() + " ";
-		}
-		return code + Instruction::ToString();
-	}
-
 	// Binary
 
 	std::uint64_t ToBinary() const override

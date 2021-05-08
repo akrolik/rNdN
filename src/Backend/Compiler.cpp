@@ -16,6 +16,7 @@
 #include "PTX/Transformation/Structurizer/Structurizer.h"
 
 #include "SASS/Optimizer/Optimizer.h"
+#include "SASS/Utils/PrettyPrinter.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
@@ -152,8 +153,10 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	if (Utils::Options::IsBackend_PrintSASS())
 	{
+		auto functionString = SASS::PrettyPrinter::PrettyString(sassFunction);
+
 		Utils::Logger::LogInfo("Generated SASS function: " + sassFunction->GetName());
-		Utils::Logger::LogInfo(sassFunction->ToString(), 0, true, Utils::Logger::NoPrefix);
+		Utils::Logger::LogInfo(functionString, 0, true, Utils::Logger::NoPrefix);
 	}
 
 	// Optimize the generated SASS program
@@ -165,8 +168,10 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 		if (Utils::Options::IsBackend_PrintSASS())
 		{
+			auto functionString = SASS::PrettyPrinter::PrettyString(sassFunction);
+
 			Utils::Logger::LogInfo("Optimized SASS function: " + sassFunction->GetName());
-			Utils::Logger::LogInfo(sassFunction->ToString(), 0, true, Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(functionString, 0, true, Utils::Logger::NoPrefix);
 		}
 	}
 

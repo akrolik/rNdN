@@ -33,6 +33,7 @@ public:
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 	
 private:
 	std::uint16_t m_value = 0;
