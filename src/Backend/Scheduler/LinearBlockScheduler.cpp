@@ -17,52 +17,34 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	{
 		scheduledInstructions.push_back(instruction);
 
-		//TODO: 7 should be set to a constant somewhere for no barrier
-
 		auto latency = HardwareProperties::GetLatency(instruction);
 		auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction);
 		auto readHold = HardwareProperties::GetReadHold(instruction);
 
-		if (barrierLatency > 0)
-		{
-			instruction->SetSchedule(
-				latency, // Stall
-				true,    // Yield
-				0,       // Write barrier
-				7,       // Read barrier
-				0,       // Wait barriers
-				0        // Reuse
-			);
+		auto& schedule = instruction->GetSchedule();
+		schedule.SetStall(latency);
+		schedule.SetYield(true);
+		schedule.SetReuseCache({SASS::Schedule::ReuseCache::OperandA});
 
-			scheduledInstructions.push_back(new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
-		}
-		else if (readHold > 0)
+		if (barrierLatency > 0 || readHold > 0)
 		{
-			instruction->SetSchedule(
-				latency, // Stall
-				true,    // Yield
-				7,       // Write barrier
-				0,       // Read barrier
-				0,       // Wait barriers
-				0        // Reuse
-			);
+			if (barrierLatency > 0)
+			{
+				schedule.SetWriteBarrier(SASS::Schedule::Barrier::SB0);
+			}
+			else if (readHold > 0)
+			{
+				schedule.SetReadBarrier(SASS::Schedule::Barrier::SB0);
+			}
 
-			scheduledInstructions.push_back(new SASS::DEPBARInstruction(
+			auto barrier = new SASS::DEPBARInstruction(
 				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			));
-		}
-		else
-		{
-			instruction->SetSchedule(
-				latency, // Stall
-				true,    // Yield
-				7,       // Write barrier
-				7,       // Read barrier
-				0,       // Wait barriers
-				0        // Reuse
 			);
+			auto& barrierSchedule = barrier->GetSchedule();
+			barrierSchedule.SetStall(HardwareProperties::GetLatency(barrier));
+			barrierSchedule.SetYield(true);
+
+			scheduledInstructions.push_back(barrier);
 		}
 	}
 

@@ -197,6 +197,14 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 		}
 	}
 
+	if (Utils::Options::IsBackend_PrintScheduled())
+	{
+		auto functionString = SASS::PrettyPrinter::PrettyString(sassFunction, true);
+
+		Utils::Logger::LogInfo("Scheduled SASS function: " + sassFunction->GetName());
+		Utils::Logger::LogInfo(functionString, 0, true, Utils::Logger::NoPrefix);
+	}
+
 	Utils::Chrono::End(timeScheduler_start);
 	m_program->AddFunction(sassFunction);
 

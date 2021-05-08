@@ -38,6 +38,7 @@ public:
 	static constexpr char const *Opt_Backend_print_cfg = "backend-print-cfg";
 	static constexpr char const *Opt_Backend_print_structured = "backend-print-structured";
 	static constexpr char const *Opt_Backend_print_sass = "backend-print-sass";
+	static constexpr char const *Opt_Backend_print_scheduled = "backend-print-scheduled";
 	static constexpr char const *Opt_Backend_print_assembled = "backend-print-assembled";
 	static constexpr char const *Opt_Backend_print_elf = "backend-print-elf";
 
@@ -186,6 +187,7 @@ public:
 	static bool IsBackend_PrintAnalysisBlock() { return Present(Opt_Backend_print_analysis_block); }
 	static bool IsBackend_PrintCFG() { return Present(Opt_Backend_print_cfg); }
 	static bool IsBackend_PrintStructured() { return Present(Opt_Backend_print_structured); }
+	static bool IsBackend_PrintScheduled() { return Present(Opt_Backend_print_scheduled); }
 	static bool IsBackend_PrintSASS() { return Present(Opt_Backend_print_sass); }
 	static bool IsBackend_PrintAssembled() { return Present(Opt_Backend_print_assembled); }
 	static bool IsBackend_PrintELF() { return Present(Opt_Backend_print_elf); }
@@ -402,6 +404,7 @@ private:
 			(Opt_Backend_print_cfg, "Print control-flow graph")
 			(Opt_Backend_print_structured, "Print structured control-flow graph")
 			(Opt_Backend_print_sass, "Print generated SASS code")
+			(Opt_Backend_print_scheduled, "Print scheduled SASS code")
 			(Opt_Backend_print_assembled, "Print assembled SASS code")
 			(Opt_Backend_print_elf, "Print generated ELF file")
 		;

@@ -102,6 +102,7 @@ public:
 		{
 			code += "|";
 		}
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 		code += ", ";
 
 		// SourceB
@@ -122,6 +123,7 @@ public:
 		{
 			code += "|";
 		}
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 		return code;
 	}
 

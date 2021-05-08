@@ -61,6 +61,7 @@ public:
 
 		// Destination
 		code += m_destination->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 		code += ", ";
 
 		// Source
@@ -69,6 +70,7 @@ public:
 			code += "-";
 		}
 		code += m_source->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 
 		return code;
 	}

@@ -41,7 +41,16 @@ public:
 
 	std::string Operands() const override
 	{
-		return m_destination->ToString() + ", " + m_source->ToString();
+		std::string code;
+
+		// Destination
+		code += m_destination->ToString() + ", ";
+		
+		// Source
+		code += m_source->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
+
+		return code;
 	}
 
 	// Binary

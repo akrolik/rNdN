@@ -84,6 +84,7 @@ public:
 		{
 			code += ".CC";
 		}
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 		code += ", ";
 
 		// SourceA
@@ -92,6 +93,7 @@ public:
 		{
 			code += "-";
 		}
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 		code += ", ";
 
 		// SourceB

@@ -64,6 +64,7 @@ public:
 			code += "-";
 		}
 		code += m_source->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 
 		return code;
 	}

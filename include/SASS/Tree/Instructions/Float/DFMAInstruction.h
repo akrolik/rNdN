@@ -92,6 +92,7 @@ public:
 
 		// SourceA
 		code += m_sourceA->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 		code += ", ";
 
 		// SourceB
@@ -104,6 +105,7 @@ public:
 		{
 			code += ".NEG";
 		}
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 		code += ", ";
 
 		// SourceC
@@ -112,6 +114,7 @@ public:
 			code += "-";
 		}
 		code += m_sourceC->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandC);
 
 		return code;                               
 	}

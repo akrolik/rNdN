@@ -74,6 +74,7 @@ public:
 
 		// Source A
 		code += m_sourceA->ToString();
+		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 		code += ", ";
 
 		// Source B

@@ -102,7 +102,10 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	auto selfName = "_END";
 	auto selfBlock = new SASS::BasicBlock(selfName);
 	auto selfBranch = new SASS::BRAInstruction(selfName);
-	selfBranch->SetSchedule(15, true, 7, 7, 0, 0);
+
+	auto& selfSchedule = selfBranch->GetSchedule();
+	selfSchedule.SetStall(15);
+	selfSchedule.SetYield(true);
 
 	linearProgram.push_back(selfBranch);
 	m_blockIndex.insert({selfName, blockOffset++});
@@ -118,7 +121,9 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		//   0000 000000 111 111 0 0000
 
 		auto nop = new SASS::NOPInstruction();
-		nop->SetSchedule(0, false, 7, 7, 0, 0);
+		auto& nopSchedule = nop->GetSchedule();
+		nopSchedule.SetStall(0);
+
 		linearProgram.push_back(nop);
 	}
 
