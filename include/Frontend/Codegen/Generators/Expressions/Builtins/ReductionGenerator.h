@@ -156,15 +156,22 @@ public:
 		{
 			// If the input is within range, select between the source and null values depending on the compression
 
-			auto s1 = new PTX::SelectInstruction<T>(targetRegister, src, GenerateNullValue(m_reductionOp), compress);
-			s1->SetPredicate(inputPredicate);
-			this->m_builder.AddStatement(s1);
+			this->m_builder.AddIfElseStatement("INIT", [&]()
+			{
+				return std::make_tuple(inputPredicate, true);
+			},
+			[&]()
+			{
+				// Store the value in shared memory
 
-			// If the input is out of range, set the index to the null value
+				this->m_builder.AddStatement(new PTX::SelectInstruction<T>(targetRegister, src, GenerateNullValue(m_reductionOp), compress));
+			},
+			[&]()
+			{
+				// If the input is out of range, set the index to the null value
 
-			auto s2 = new PTX::MoveInstruction<T>(targetRegister, GenerateNullValue(m_reductionOp));
-			s2->SetPredicate(inputPredicate, true);
-			this->m_builder.AddStatement(s2);
+				this->m_builder.AddStatement(new PTX::MoveInstruction<T>(targetRegister, GenerateNullValue(m_reductionOp)));
+			});
 		}
 
 		switch (Utils::Options::GetAlgorithm_ReductionKind())
