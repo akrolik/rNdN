@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include "Libraries/robin_hood.h"
 
 namespace SASS {
 
@@ -43,13 +43,13 @@ public:
 	Barrier GetReadBarrier() const { return m_readBarrier; }
 	void SetReadBarrier(Barrier barrier) { m_readBarrier = barrier; }
 
-	const std::vector<Barrier>& GetWaitBarriers() const { return m_waitBarriers; }
-	void SetWaitBarriers(const std::vector<Barrier>& barriers) { m_waitBarriers = barriers; }
+	const robin_hood::unordered_set<Barrier>& GetWaitBarriers() const { return m_waitBarriers; }
+	void SetWaitBarriers(const robin_hood::unordered_set<Barrier>& barriers) { m_waitBarriers = barriers; }
 
 	// Register reuse cache
 
-	const std::vector<ReuseCache>& GetReuseCache() const { return m_reuseCache; }
-	void SetReuseCache(const std::vector<ReuseCache>& reuseCache) { m_reuseCache = reuseCache; }
+	const robin_hood::unordered_set<ReuseCache>& GetReuseCache() const { return m_reuseCache; }
+	void SetReuseCache(const robin_hood::unordered_set<ReuseCache>& reuseCache) { m_reuseCache = reuseCache; }
 
 	// Format
 
@@ -156,8 +156,8 @@ private:
 	bool m_yield = false;
 	Barrier m_writeBarrier = Barrier::None;
 	Barrier m_readBarrier = Barrier::None;
-	std::vector<Barrier> m_waitBarriers;
-	std::vector<ReuseCache> m_reuseCache;
+	robin_hood::unordered_set<Barrier> m_waitBarriers;
+	robin_hood::unordered_set<ReuseCache> m_reuseCache;
 };
 
 }

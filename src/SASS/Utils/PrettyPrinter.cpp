@@ -208,16 +208,26 @@ void PrettyPrinter::Visit(const DynamicSharedVariable *variable)
 
 void PrettyPrinter::Visit(const Relocation *relocation)
 {
+	auto schedule = m_schedule;
+	m_schedule = false;
+
 	m_string << ".reloc " << relocation->GetName() << " " << Relocation::KindString(relocation->GetKind()) << " (";
 	relocation->GetInstruction()->Accept(*this);
 	m_string << ")";
+
+	m_schedule = schedule;
 }
 
 void PrettyPrinter::Visit(const IndirectBranch *branch)
 {
+	auto schedule = m_schedule;
+	m_schedule = false;
+
 	m_string << ".branch " << branch->GetTarget() << " (";
 	branch->GetBranch()->Accept(*this);
 	m_string << ")";
+
+	m_schedule = schedule;
 }
 
 void PrettyPrinter::Visit(const Instruction *instruction)
@@ -227,7 +237,17 @@ void PrettyPrinter::Visit(const Instruction *instruction)
 		Indent();
 	}
 
-	auto instructionString = instruction->OpCode() + instruction->OpModifiers() + " " + instruction->Operands() + ";";
+	auto instructionString = instruction->OpCode() + instruction->OpModifiers();
+	auto operandString = instruction->Operands();
+	if (operandString.size() > 0)
+	{
+		instructionString += " " + operandString;
+	}
+	if (instructionString.size() > 0)
+	{
+		instructionString += ";";
+	}
+
 	m_string << instructionString;
 
 	if (m_schedule)

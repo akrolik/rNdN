@@ -190,7 +190,14 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::SpecialFunction; }
+	HardwareClass GetHardwareClass() const override
+	{
+		if (m_sourceType == SourceType::F64)
+		{
+			return HardwareClass::DoublePrecision;
+		}
+		return HardwareClass::SpecialFunction;
+	}
 
 	// Visitors
 
