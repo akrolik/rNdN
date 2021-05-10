@@ -17,18 +17,16 @@ void BlockDependencyAnalysis::Build(BasicBlock *block)
 
 	auto timeAnalysis_start = Utils::Chrono::Start("Block dependency analysis '" + block->GetName() + "'");
 
-	m_graph = new BlockDependencyGraph(block);
-	m_currentSet.clear();
-	m_controlInstruction = nullptr;
-
-	m_readMap.clear();
-	m_writeMap.clear();
+	m_block = block;
 
 	for (auto& instruction : block->GetInstructions())
 	{
-		m_graph->InsertNode(instruction);
-		m_instruction = instruction;
+		if (m_graph == nullptr)
+		{
+			InitializeSection();
+		}
 
+		m_instruction = instruction;
 		instruction->Accept(*this);
 	}
 
@@ -38,14 +36,28 @@ void BlockDependencyAnalysis::Build(BasicBlock *block)
 
 	if (Utils::Options::IsBackend_PrintAnalysis())
 	{
-		Utils::Logger::LogInfo("Block dependency graph: " + block->GetName());
-		Utils::Logger::LogInfo(m_graph->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
+		Utils::Logger::LogInfo("Block dependency graphs: " + block->GetName());
+		for (auto graph : m_graphs)
+		{
+			Utils::Logger::LogInfo(graph->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
+		}
 	}
+}
+
+void BlockDependencyAnalysis::InitializeSection()
+{
+	m_graph = new BlockDependencyGraph(m_block);
+	m_graphs.push_back(m_graph);
+
+	m_readMap.clear();
+	m_writeMap.clear();
 }
 
 void BlockDependencyAnalysis::Visit(Instruction *instruction)
 {
 	// Process source followed by destination operands
+
+	m_graph->InsertNode(instruction);
 
 	m_destination = false;
 	for (auto& operand : instruction->GetSourceOperands())
@@ -64,16 +76,6 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 			operand->Accept(*this);
 		}
 	}
-
-	if (m_controlInstruction != nullptr)
-	{
-		if (m_graph->GetInDegree(instruction) == 0)
-		{
-			m_graph->InsertEdge(m_controlInstruction, instruction);
-		}
-	}
-
-	m_currentSet.insert(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
@@ -97,73 +99,61 @@ void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
 
 void BlockDependencyAnalysis::Visit(BRAInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(BRKInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(CONTInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(EXITInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(PBKInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(PCNTInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(RETInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(SSYInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(SYNCInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(DEPBARInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(BARInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(MEMBARInstruction *instruction)
 {
-	Visitor::Visit(instruction);
 	BuildControlDependencies(instruction);
 }
 
@@ -224,33 +214,15 @@ void BlockDependencyAnalysis::Visit(CarryFlag *carry)
 
 void BlockDependencyAnalysis::BuildControlDependencies(Instruction *controlInstruction)
 {
-	// Add edge from all prior instructions that must be complete
+	// Create a new section just for this instruction
 
-	for (auto& instruction : m_currentSet)
+	if (m_graph->GetNodeCount() > 0)
 	{
-		if (instruction == controlInstruction)
-		{
-			continue;
-		}
-		if (m_graph->GetOutDegree(instruction) == 0)
-		{
-			m_graph->InsertEdge(instruction, controlInstruction);
-		}
+		InitializeSection();
 	}
 
-	m_controlInstruction = controlInstruction;
-	m_currentSet.clear();
-	m_currentSet.insert(controlInstruction);
-
-	for (auto& [operand, instructions] : m_readMap)
-	{
-		instructions.insert(controlInstruction);
-	}
-
-	for (auto& [operand, instructions] : m_writeMap)
-	{
-		instructions.insert(controlInstruction);
-	}
+	m_graph->InsertNode(controlInstruction);
+	m_graph = nullptr;
 }
 
 void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
@@ -266,7 +238,7 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
 		{
 			if (readInstruction != m_instruction)
 			{
-				m_graph->InsertEdge(readInstruction, m_instruction);
+				m_graph->InsertEdge(readInstruction, m_instruction, BlockDependencyGraph::DependencyKind::ReadWrite);
 			}
 		}
 
@@ -276,7 +248,7 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
 		{
 			if (writeInstruction != m_instruction)
 			{
-				m_graph->InsertEdge(writeInstruction, m_instruction);
+				m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteWrite);
 			}
 		}
 
@@ -297,7 +269,7 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
 		{
 			if (writeInstruction != m_instruction)
 			{
-				m_graph->InsertEdge(writeInstruction, m_instruction);
+				m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteRead);
 			}
 		}
 

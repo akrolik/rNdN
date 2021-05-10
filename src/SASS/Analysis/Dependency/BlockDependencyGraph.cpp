@@ -29,7 +29,7 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 		index++;
 	}
-	string +"\n";
+	string += "\n";
 
 	// Add all edges in the graph
 
@@ -40,7 +40,31 @@ std::string BlockDependencyGraph::ToDOTString() const
 			auto nodeIndex = std::to_string(indexMap[node]);
 			auto successorIndex = std::to_string(indexMap[successor]);
 
-			string += "\tn_" + nodeIndex + " -> n_" + successorIndex + ";\n";
+			string += "\tn_" + nodeIndex + " -> n_" + successorIndex + " [style=bold, label=\"";
+
+			for (auto dependency : m_edgeData.at({node, successor}))
+			{
+				switch (dependency)
+				{
+					case DependencyKind::ReadWrite:
+					{
+						string += "a";
+						break;
+					}
+					case DependencyKind::WriteRead:
+					{
+						string += "t";
+						break;
+					}
+					case DependencyKind::WriteWrite:
+					{
+						string += "w";
+						break;
+					}
+				}
+			}
+
+			string += "\"];\n";
 		}
 	}
 

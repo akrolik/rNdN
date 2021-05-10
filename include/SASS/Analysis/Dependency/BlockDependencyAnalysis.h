@@ -15,7 +15,7 @@ class BlockDependencyAnalysis : public Visitor
 public:
 	void Build(BasicBlock *block);
 
-	BlockDependencyGraph *GetGraph() const { return m_graph; }
+	const std::vector<BlockDependencyGraph *>& GetGraphs() const { return m_graphs; }
 
 	// Visitors
 
@@ -49,15 +49,16 @@ private:
 	static const std::uint32_t DataOffset_Carry     = 512; // 1
 	static const std::uint32_t DataOffset_Predicate = 513; // 7
 
+	std::vector<BlockDependencyGraph *> m_graphs;
 	BlockDependencyGraph *m_graph = nullptr;
 
 	robin_hood::unordered_map<std::uint32_t, robin_hood::unordered_set<Instruction *>> m_readMap;
 	robin_hood::unordered_map<std::uint32_t, robin_hood::unordered_set<Instruction *>> m_writeMap;
 
-	robin_hood::unordered_set<Instruction *> m_currentSet;
-
 	SASS::Instruction *m_instruction = nullptr;
-	SASS::Instruction *m_controlInstruction = nullptr;
+	SASS::BasicBlock *m_block = nullptr;
+
+	void InitializeSection();
 
 	bool m_destination = false;
 	bool m_predicated = false;
