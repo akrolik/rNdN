@@ -43,6 +43,9 @@ collect "Structurizer '.*'"
 
 collect "SASS codegen '.*'"
 collect "Scheduler '.*'"
+	echo -en "\t"; collect "Block dependency analysis '.*'"
+	echo -en "\t"; collect "List scheduler '.*'"
+	echo -en "\t"; collect "Linear scheduler '.*'"
 
 collect_1 "Binary generator"
 	echo -en "\t"; collect "SASS assembler"
