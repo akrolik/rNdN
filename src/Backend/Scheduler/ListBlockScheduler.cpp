@@ -170,11 +170,17 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				{
 					waitBarriers.insert(it->second);
 					dependencyBarriers.erase(it);
-					activeBarriers.erase(it->second);
 				}
 			}
 
 			schedule.SetWaitBarriers(waitBarriers);
+
+			// Clear old barriers
+
+			for (auto barrier : waitBarriers)
+			{
+				activeBarriers.erase(barrier);
+			}
 
 			// Add new barriers to schedule
 
