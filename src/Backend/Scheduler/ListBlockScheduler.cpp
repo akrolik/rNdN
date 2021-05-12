@@ -25,9 +25,10 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	
 	// Build the schedule for each schedulable section individually (guarantees ordering)
 
-	std::vector<SASS::Instruction *> scheduledInstructions;
+	auto& scheduledInstructions = block->GetInstructions();
+	scheduledInstructions.clear();
 
-	for (const auto dependencyGraph : dependencyAnalysis.GetGraphs())
+	for (const auto& dependencyGraph : dependencyAnalysis.GetGraphs())
 	{
 		// Order the instructions based on the length of the longest path
 
@@ -375,8 +376,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			barrierSchedule.SetYield(true);
 		}
 	}
-
-	block->SetInstructions(scheduledInstructions);
 
 	Utils::Chrono::End(timeScheduler_start);
 }
