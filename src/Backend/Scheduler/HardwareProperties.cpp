@@ -13,7 +13,7 @@ std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction
 		case SASS::Instruction::HardwareClass::DoublePrecision:
 		case SASS::Instruction::HardwareClass::SpecialFunction:
 		{
-			return 2; // 1 cycle + barrier
+			return 2; // 1 cycle issue, 1 cycle barrier
 		}
 		case SASS::Instruction::HardwareClass::Core:
 		case SASS::Instruction::HardwareClass::Control:
@@ -33,18 +33,15 @@ std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *inst
 {
 	switch (instruction->GetHardwareClass())
 	{
+		case SASS::Instruction::HardwareClass::Control:
+		{
+			return 6; // Must complete
+		}
 		case SASS::Instruction::HardwareClass::S2R:
 		case SASS::Instruction::HardwareClass::GlobalMemory:
 		case SASS::Instruction::HardwareClass::SharedMemory:
 		case SASS::Instruction::HardwareClass::DoublePrecision:
 		case SASS::Instruction::HardwareClass::SpecialFunction:
-		{
-			return 2; // 1 cycle + barrier
-		}
-		case SASS::Instruction::HardwareClass::Control:
-		{
-			return 6; // Must complete
-		}
 		case SASS::Instruction::HardwareClass::Core:
 		case SASS::Instruction::HardwareClass::Shift:
 		case SASS::Instruction::HardwareClass::Compare:
@@ -118,8 +115,8 @@ std::uint8_t HardwareProperties::GetReadLatency(const SASS::Instruction *instruc
 		}
 		case SASS::Instruction::HardwareClass::GlobalMemory:
 		{
-			//TODO: Read latency RED/ATOM
-			if (dynamic_cast<const SASS::STGInstruction *>(instruction))
+			//TODO: Read latency ATOM(unknown)
+			if (dynamic_cast<const SASS::REDInstruction *>(instruction) || dynamic_cast<const SASS::STGInstruction *>(instruction))
 			{
 				// return 4;
 			}
@@ -154,6 +151,7 @@ std::uint8_t HardwareProperties::GetReadHold(const SASS::Instruction *instructio
 		}
 		case SASS::Instruction::HardwareClass::GlobalMemory:
 		{
+			//TODO: ATOM?
 			if (dynamic_cast<const SASS::REDInstruction *>(instruction) || dynamic_cast<const SASS::STGInstruction *>(instruction))
 			{
 				return 15;

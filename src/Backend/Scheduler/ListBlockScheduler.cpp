@@ -189,10 +189,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			if (barrierLatency > 0 || readHold > 0)
 			{
-				// Instructions which set dependencies require 1 cycle to issue and 1 cycle to set barrier
-
-				schedule.SetStall(2);
-
 				// Set the read/write barrier, select from non-active set
 
 				auto barrier = SASS::Schedule::Barrier::SB0;
@@ -241,20 +237,45 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					{
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
 						{
-							auto latency = HardwareProperties::GetLatency(instruction);
-							auto readLatency = HardwareProperties::GetReadLatency(successor);
-
-							auto diff = (int)latency - (int)readLatency;
-							if (delay < diff)
+							if (HardwareProperties::GetBarrierLatency(instruction) > 0)
 							{
-								delay = diff;
+								// If the previous instruction sets a barrier, minimum 2 cycle stall
+
+								if (delay < 2)
+								{
+									delay = 2;
+								}
+							}
+							else
+							{
+								// If no barrier, wait the full instruction length
+
+								auto latency = HardwareProperties::GetLatency(instruction);
+								auto readLatency = HardwareProperties::GetReadLatency(successor);
+
+								auto diff = (int)latency - (int)readLatency;
+								if (delay < diff)
+								{
+									delay = diff;
+								}
 							}
 							break;
 						}
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
 						{
-							if (delay < 1)
+							// If the previous instruction sets a barrier, minimum 2 cycle stall.
+							// Otherwise, must wait until the next cycle before executing
+
+							if (HardwareProperties::GetReadHold(instruction) > 0 ||
+								HardwareProperties::GetBarrierLatency(instruction) > 0)
+							{
+								if (delay < 2)
+								{
+									delay = 2;
+								}
+							}
+							else if (delay < 1)
 							{
 								delay = 1;
 							}
