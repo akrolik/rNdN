@@ -21,6 +21,27 @@ public:
 		WriteWrite
 	};
 
+	// Nodes
+
+	void InsertNode(const DependencyGraphNode& node, std::uint32_t value = 0)
+	{
+		Utils::Graph<DependencyGraphNode>::InsertNode(node);
+
+		m_values[node] = value;
+	}
+
+	void SetNodeValue(const DependencyGraphNode& node, std::uint32_t value)
+	{
+		m_values.at(node) = value;
+	}
+
+	std::uint32_t GetNodeValue(const DependencyGraphNode& node) const
+	{
+		return m_values.at(node);
+	}
+
+	// Edges
+
  	void InsertEdge(const DependencyGraphNode& source, const DependencyGraphNode& destination, DependencyKind dependency)
 	{
 		Utils::Graph<DependencyGraphNode>::InsertEdge(source, destination);
@@ -35,7 +56,7 @@ public:
 	{
 		return m_edgeData.at({source, destination});
 	}
- 
+
 	// Formatting
 
 	std::string ToDOTString() const;
@@ -47,6 +68,7 @@ private:
 	using EdgeHash = typename Utils::Graph<DependencyGraphNode>::EdgeHash;
 
 	robin_hood::unordered_map<EdgeType, robin_hood::unordered_set<DependencyKind>, EdgeHash> m_edgeData;
+	robin_hood::unordered_map<DependencyGraphNode, std::uint32_t> m_values;
 };
 
 }

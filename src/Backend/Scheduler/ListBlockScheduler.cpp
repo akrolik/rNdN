@@ -29,6 +29,29 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 	for (const auto dependencyGraph : dependencyAnalysis.GetGraphs())
 	{
+		// Order the instructions based on the length of the longest path
+
+		dependencyGraph->ReverseTopologicalOrderDFS([&](const SASS::Analysis::BlockDependencyGraph::OrderContextDFS& context, SASS::Instruction *instruction)
+		{
+			auto latency = HardwareProperties::GetLatency(instruction) +
+				HardwareProperties::GetBarrierLatency(instruction) +
+				HardwareProperties::GetReadHold(instruction);
+
+			auto maxSuccessor = 0;
+
+			for (auto successor : dependencyGraph->GetSuccessors(instruction))
+			{
+				auto successorValue = dependencyGraph->GetNodeValue(successor);
+				if (successorValue > maxSuccessor)
+				{
+					maxSuccessor = successorValue;
+				}
+			}
+
+			dependencyGraph->SetNodeValue(instruction, latency + maxSuccessor);
+			return true;
+		});
+
 		// Schedule the instructions based on the dependency DAG and hardware properties
 		//   - Priority function: lowest stall count
 		//   - Pipeline depth & latencies
@@ -41,9 +64,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> scheduleStall;
 
 		// Construct a priority queue for available instructions (all dependencies scheduled)
+		// 
+		// Priority queue comparator returns false if values in correct order (true to reorder)
 
 		auto priorityFunction = [&](SASS::Instruction *left, SASS::Instruction *right) {
-			return scheduleStall.at(left) > scheduleStall.at(right); // Lower better
+			return dependencyGraph->GetNodeValue(left) < dependencyGraph->GetNodeValue(right);
 		};
 		std::priority_queue<
 			SASS::Instruction *, std::vector<SASS::Instruction *>, decltype(priorityFunction)
