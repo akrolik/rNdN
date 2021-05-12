@@ -32,7 +32,10 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	{
 		// Order the instructions based on the length of the longest path
 
-		dependencyGraph->ReverseTopologicalOrderDFS([&](const SASS::Analysis::BlockDependencyGraph::OrderContextDFS& context, SASS::Instruction *instruction)
+		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> topologicalOrder;
+		auto orderValue = 0;
+
+		dependencyGraph->ReverseTopologicalOrderBFS([&](const SASS::Analysis::BlockDependencyGraph::OrderContextBFS& context, SASS::Instruction *instruction)
 		{
 			auto latency = HardwareProperties::GetLatency(instruction) +
 				HardwareProperties::GetBarrierLatency(instruction) +
@@ -50,6 +53,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			}
 
 			dependencyGraph->SetNodeValue(instruction, latency + maxSuccessor);
+			topologicalOrder.emplace(instruction, orderValue++);
 			return true;
 		});
 
@@ -65,11 +69,49 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> scheduleStall;
 
 		// Construct a priority queue for available instructions (all dependencies scheduled)
-		// 
-		// Priority queue comparator returns false if values in correct order (true to reorder)
+		//
+		// Priority queue comparator returns false if values in correct order (true to reorder).
+		// i.e. if the left item comes AFTER the right
 
 		auto priorityFunction = [&](SASS::Instruction *left, SASS::Instruction *right) {
-			return dependencyGraph->GetNodeValue(left) < dependencyGraph->GetNodeValue(right);
+			// Property 1: Stall count [lower]
+
+			auto stallLeft = scheduleStall.at(left);
+			auto stallRight = scheduleStall.at(right);
+
+			if (stallLeft != stallRight)
+			{
+				return stallLeft > stallRight;
+			}
+
+			// Property 2: Individual latency [higher]
+
+			auto latencyLeft = HardwareProperties::GetLatency(left) +
+				HardwareProperties::GetBarrierLatency(left) +
+				HardwareProperties::GetReadHold(left);
+
+			auto latencyRight = HardwareProperties::GetLatency(right) +
+				HardwareProperties::GetBarrierLatency(right) +
+				HardwareProperties::GetReadHold(right);
+
+			if (latencyLeft != latencyRight)
+			{
+				return latencyLeft < latencyRight;
+			}
+
+			// Property 3: Overall/path latency [higher]
+
+			auto pathLeft = dependencyGraph->GetNodeValue(left);
+			auto pathRight = dependencyGraph->GetNodeValue(right);
+
+			if (pathLeft != pathRight)
+			{
+				return pathLeft < pathRight;
+			}
+
+			// Property 4: Tie breaker
+			
+			return topologicalOrder.at(left) < topologicalOrder.at(right);
 		};
 		std::priority_queue<
 			SASS::Instruction *, std::vector<SASS::Instruction *>, decltype(priorityFunction)
@@ -85,7 +127,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			if (count == 0)
 			{
 				scheduleTime.emplace(instruction, 0);
-				scheduleStall.emplace(instruction, 0);
+				scheduleStall.emplace(instruction, 1);
 
 				availableInstructions.push(instruction);
 			}
@@ -299,7 +341,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				dependencyCount.at(successor)--;
 				if (dependencyCount.at(successor) == 0)
 				{
-					scheduleStall[successor] = 0;
+					scheduleStall[successor] = 1;
 					availableDependencies.push_back(successor);
 				}
 			}
