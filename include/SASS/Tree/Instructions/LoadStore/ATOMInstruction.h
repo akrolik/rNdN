@@ -178,7 +178,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::GlobalMemory; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::GlobalMemoryLoad; }
 
 	// Visitors
 

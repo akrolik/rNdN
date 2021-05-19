@@ -160,7 +160,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::Compare; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::Comparison; }
 
 	// Visitors
 

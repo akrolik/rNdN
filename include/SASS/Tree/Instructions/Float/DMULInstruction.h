@@ -125,7 +125,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::DoublePrecision; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::DoublePrecision; }
 
 	// Visitors
 

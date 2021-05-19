@@ -23,22 +23,25 @@ public:
 	virtual std::vector<Operand *> GetSourceOperands() const = 0;
 	virtual std::vector<Operand *> GetDestinationOperands() const = 0;
 
-	// Hardware properties
+	// Hardware instruction properties
 
-	enum HardwareClass {
+	enum InstructionClass {
 		S2R,
 		Control,
-		Core,
+		Integer,
+		SinglePrecision,
 		DoublePrecision,
 		SpecialFunction,
-		Compare,
+		Comparison,
 		Shift,
-		SharedMemory,
-		GlobalMemory,
+		SharedMemoryLoad,
+		SharedMemoryStore,
+		GlobalMemoryLoad,
+		GlobalMemoryStore,
 		SCHI
 	};
 
-	virtual HardwareClass GetHardwareClass() const = 0;
+	virtual InstructionClass GetInstructionClass() const = 0;
 
 	// Formatting
 

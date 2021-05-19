@@ -119,7 +119,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::Shift; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::Shift; }
 
 	// Visitors
 

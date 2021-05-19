@@ -232,7 +232,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::Core; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::Integer; }
 
 	// Visitors
 

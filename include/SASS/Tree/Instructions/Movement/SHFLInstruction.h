@@ -157,7 +157,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::SharedMemory; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::SharedMemoryLoad; }
 
 	// Visitors
 

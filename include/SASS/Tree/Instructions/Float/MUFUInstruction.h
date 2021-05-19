@@ -116,7 +116,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::SpecialFunction; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::SpecialFunction; }
 
 	// Visitors
 

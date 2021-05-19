@@ -35,7 +35,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::SCHI; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::SCHI; }
 
 	// Visitors
 

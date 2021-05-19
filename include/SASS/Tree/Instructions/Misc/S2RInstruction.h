@@ -59,7 +59,7 @@ public:
 
 	// Hardware properties
 
-	HardwareClass GetHardwareClass() const override { return HardwareClass::S2R; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::S2R; }
 
 	// Visitors
 

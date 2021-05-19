@@ -5,23 +5,25 @@ namespace Scheduler {
 
 std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction)
 {
-	switch (instruction->GetHardwareClass())
+	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::HardwareClass::S2R:
-		case SASS::Instruction::HardwareClass::GlobalMemory:
-		case SASS::Instruction::HardwareClass::SharedMemory:
-		case SASS::Instruction::HardwareClass::DoublePrecision:
-		case SASS::Instruction::HardwareClass::SpecialFunction:
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
 		{
 			return 2; // 1 cycle issue, 1 cycle barrier
 		}
-		case SASS::Instruction::HardwareClass::Core:
-		case SASS::Instruction::HardwareClass::Control:
-		case SASS::Instruction::HardwareClass::Shift:
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Control:
+		case SASS::Instruction::InstructionClass::Shift:
 		{
 			return 6; // Fixed pipeline depth
 		}
-		case SASS::Instruction::HardwareClass::Compare:
+		case SASS::Instruction::InstructionClass::Comparison:
 		{
 			return 13; // Fixed pipeline depth
 		}
@@ -31,25 +33,26 @@ std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction
 
 std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *instruction)
 {
-	switch (instruction->GetHardwareClass())
+	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::HardwareClass::Control:
+		case SASS::Instruction::InstructionClass::Control:
 		{
 			return 6; // Must complete
 		}
-		case SASS::Instruction::HardwareClass::S2R:
-		case SASS::Instruction::HardwareClass::GlobalMemory:
-		case SASS::Instruction::HardwareClass::SharedMemory:
-		case SASS::Instruction::HardwareClass::DoublePrecision:
-		case SASS::Instruction::HardwareClass::SpecialFunction:
-		case SASS::Instruction::HardwareClass::Core:
-		case SASS::Instruction::HardwareClass::Shift:
-		case SASS::Instruction::HardwareClass::Compare:
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
 		{
-			if (dynamic_cast<const SASS::DEPBARInstruction *>(instruction))
-			{
-				return 6;
-			}
+			return 2; //TODO: 1 vs 2
+		}
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::Comparison:
+		{
 			return 1; // Immediately available
 		}
 	}
@@ -58,40 +61,34 @@ std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *inst
 
 std::uint8_t HardwareProperties::GetBarrierLatency(const SASS::Instruction *instruction)
 {
-	switch (instruction->GetHardwareClass())
+	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::HardwareClass::S2R:
+		case SASS::Instruction::InstructionClass::S2R:
 		{
 			return 25;
 		}
-		case SASS::Instruction::HardwareClass::GlobalMemory:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
 		{
-			if (dynamic_cast<const SASS::REDInstruction *>(instruction) || dynamic_cast<const SASS::STGInstruction *>(instruction))
-			{
-				return 0;
-			}
 			return 200;
 		}
-		case SASS::Instruction::HardwareClass::SharedMemory:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
 		{
-			if (dynamic_cast<const SASS::STSInstruction *>(instruction))
-			{
-				return 0;
-			}
 			return 30;
 		}
-		case SASS::Instruction::HardwareClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
 			return 32;
 		}
-		case SASS::Instruction::HardwareClass::SpecialFunction:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
 		{
-			return 16; //TODO: SG lists value as 0
+			return 16;
 		}
-		case SASS::Instruction::HardwareClass::Core:
-		case SASS::Instruction::HardwareClass::Control:
-		case SASS::Instruction::HardwareClass::Shift:
-		case SASS::Instruction::HardwareClass::Compare:
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Control:
+		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
 			return 0;
 		}
@@ -101,35 +98,27 @@ std::uint8_t HardwareProperties::GetBarrierLatency(const SASS::Instruction *inst
 
 std::uint8_t HardwareProperties::GetReadLatency(const SASS::Instruction *instruction)
 {
-	switch (instruction->GetHardwareClass())
+	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::HardwareClass::S2R:
-		case SASS::Instruction::HardwareClass::Control:
-		case SASS::Instruction::HardwareClass::Core:
-		case SASS::Instruction::HardwareClass::DoublePrecision:
-		case SASS::Instruction::HardwareClass::SpecialFunction:
-		case SASS::Instruction::HardwareClass::Compare:
-		case SASS::Instruction::HardwareClass::Shift:
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::Control:
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::Shift:
 		{
 			return 0;
 		}
-		case SASS::Instruction::HardwareClass::GlobalMemory:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
 		{
-			//TODO: Read latency ATOM(unknown)
-			if (dynamic_cast<const SASS::REDInstruction *>(instruction) || dynamic_cast<const SASS::STGInstruction *>(instruction))
-			{
-				// return 4;
-			}
-			return 0;
+			return 4;
 		}
-		case SASS::Instruction::HardwareClass::SharedMemory:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
-			//TODO: Read latency STS
-			// if (dynamic_cast<const SASS::STSInstruction *>(instruction))
-			// {
-			// 	return 2;
-			// }
-			return 0;
+			return 2;
 		}
 	}
 	return 0;
@@ -137,34 +126,24 @@ std::uint8_t HardwareProperties::GetReadLatency(const SASS::Instruction *instruc
 
 std::uint8_t HardwareProperties::GetReadHold(const SASS::Instruction *instruction)
 {
-	switch (instruction->GetHardwareClass())
+	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::HardwareClass::S2R:
-		case SASS::Instruction::HardwareClass::Control:
-		case SASS::Instruction::HardwareClass::Core:
-		case SASS::Instruction::HardwareClass::DoublePrecision:
-		case SASS::Instruction::HardwareClass::SpecialFunction:
-		case SASS::Instruction::HardwareClass::Compare:
-		case SASS::Instruction::HardwareClass::Shift:
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::Control:
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::Shift:
 		{
 			return 0;
 		}
-		case SASS::Instruction::HardwareClass::GlobalMemory:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
-			//TODO: ATOM?
-			if (dynamic_cast<const SASS::REDInstruction *>(instruction) || dynamic_cast<const SASS::STGInstruction *>(instruction))
-			{
-				return 15;
-			}
-			return 0;
-		}
-		case SASS::Instruction::HardwareClass::SharedMemory:
-		{
-			if (dynamic_cast<const SASS::STSInstruction *>(instruction))
-			{
-				return 15;
-			}
-			return 0;
+			return 15; // Unbuffered reads
 		}
 	}
 	return 0;
@@ -172,26 +151,28 @@ std::uint8_t HardwareProperties::GetReadHold(const SASS::Instruction *instructio
 
 std::uint8_t HardwareProperties::GetThroughputLatency(const SASS::Instruction *instruction)
 {
-	switch (instruction->GetHardwareClass())
+	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::HardwareClass::S2R:
-		case SASS::Instruction::HardwareClass::Control:
-		case SASS::Instruction::HardwareClass::Core:
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::Control:
+		case SASS::Instruction::InstructionClass::Integer:
 		{
 			return 1;
 		}
-		case SASS::Instruction::HardwareClass::Compare:
-		case SASS::Instruction::HardwareClass::Shift:
+		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::Shift:
 		{
 			return 2;
 		}
-		case SASS::Instruction::HardwareClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
 			return 16;
 		}
-		case SASS::Instruction::HardwareClass::SpecialFunction:
-		case SASS::Instruction::HardwareClass::GlobalMemory:
-		case SASS::Instruction::HardwareClass::SharedMemory:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
 			return 4;
 		}
