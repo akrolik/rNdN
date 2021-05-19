@@ -82,18 +82,12 @@ void RegisterGenerator::Visit(const PTX::Register<T> *reg)
 	}
 	else
 	{
-		// Non-allocated registers are given a temporary
+		// Non-allocated registers are given system zero register
 
+		m_register = SASS::RZ;
 		if (m_pair)
 		{
-			auto [temp, tempHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
-
-			m_register = temp;
-			m_registerHi = tempHi;
-		}
-		else
-		{
-			m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
+			m_registerHi = SASS::RZ;
 		}
 	}
 }
@@ -107,18 +101,12 @@ void RegisterGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 template<class T>
 void RegisterGenerator::Visit(const PTX::SinkRegister<T> *reg)
 {
-	// Sink register given a temporary
+	// Sink register given a system zero register
 
+	m_register = SASS::RZ;
 	if (m_pair)
 	{
-		auto [temp, tempHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
-
-		m_register = temp;
-		m_registerHi = tempHi;
-	}
-	else
-	{
-		m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
+		m_registerHi = SASS::RZ;
 	}
 }
 
