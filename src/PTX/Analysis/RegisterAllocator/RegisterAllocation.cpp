@@ -7,7 +7,7 @@ namespace Analysis {
 
 void RegisterAllocation::AddRegister(const std::string& name, std::uint8_t reg, std::uint8_t range)
 {
-	m_registerMap[name] = {reg, range};
+	m_registerMap.emplace(name, std::make_pair(reg, range));
 
 	auto maxRegister = reg + range;
 	if (maxRegister > m_registerCount)
@@ -30,7 +30,7 @@ const std::pair<std::uint8_t, std::uint8_t>& RegisterAllocation::GetRegister(con
 
 void RegisterAllocation::AddPredicate(const std::string& name, std::uint8_t reg)
 {
-	m_predicateMap[name] = reg;
+	m_predicateMap.emplace(name, reg);
 
 	auto maxPredicate = reg + 1;
 	if (maxPredicate > m_predicateCount)

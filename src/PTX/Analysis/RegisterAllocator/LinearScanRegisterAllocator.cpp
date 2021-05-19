@@ -212,7 +212,7 @@ void LinearScanRegisterAllocator::Visit(const TypedVariableDeclaration<T, S> *de
 		{
 			for (auto i = 0u; i < names->GetCount(); ++i)
 			{
-				m_registerBits[names->GetName(i)] = T::TypeBits;
+				m_registerBits.emplace(names->GetName(i), T::TypeBits);
 			}
 		}
 	}

@@ -64,8 +64,8 @@ public:
 
 	void InsertEdge(const T& source, const T& destination)
 	{
-		m_successors[source].insert(destination);
-		m_predecessors[destination].insert(source);
+		m_successors.at(source).insert(destination);
+		m_predecessors.at(destination).insert(source);
 	}
 
 	bool ContainsEdge(const T& source, const T& destination) const
@@ -347,8 +347,7 @@ protected:
 
 		for (const auto& successor : GetSuccessors(node))
 		{
-			edges.at(successor)--;
-			if (edges.at(successor) == 0)
+			if (--edges.at(successor) == 0)
 			{
 				order.push(successor);
 			}
@@ -366,8 +365,7 @@ protected:
 
 		for (const auto& predecessor : GetPredecessors(node))
 		{
-			edges.at(predecessor)--;
-			if (edges.at(predecessor) == 0)
+			if (--edges.at(predecessor) == 0)
 			{
 				order.push(predecessor);
 			}

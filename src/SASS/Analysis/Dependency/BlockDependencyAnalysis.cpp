@@ -57,7 +57,10 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 {
 	// Process source followed by destination operands
 
-	m_graph->InsertNode(instruction);
+	if (!m_predicated)
+	{
+		m_graph->InsertNode(instruction);
+	}
 
 	m_destination = false;
 	for (auto& operand : instruction->GetSourceOperands())
@@ -80,6 +83,8 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 
 void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
 {
+	m_graph->InsertNode(instruction);
+
 	if (auto predicate = instruction->GetPredicate())
 	{
 		// Process predicate as a source register
@@ -87,13 +92,14 @@ void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
 		auto destination = m_destination;
 		m_destination = false;
 
-		predicate->Accept(*this);
+		Visit(predicate);
 
 		m_destination = destination;
 		m_predicated = true;
 	}
 
-	Visitor::Visit(instruction);
+	Visit(static_cast<Instruction *>(instruction));
+
 	m_predicated = false;
 }
 
@@ -164,7 +170,7 @@ void BlockDependencyAnalysis::Visit(Address *address)
 	auto destination = m_destination;
 	m_destination = false;
 
-	address->GetBase()->Accept(*this);
+	Visit(address->GetBase());
 
 	m_destination = destination;
 
