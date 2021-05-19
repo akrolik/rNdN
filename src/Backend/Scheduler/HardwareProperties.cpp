@@ -3,6 +3,43 @@
 namespace Backend {
 namespace Scheduler {
 
+HardwareProperties::FunctionalUnit HardwareProperties::GetFunctionalUnit(const SASS::Instruction *instruction)
+{
+	switch (instruction->GetInstructionClass())
+	{
+		case SASS::Instruction::InstructionClass::S2R:
+		{
+			return FunctionalUnit::S2R;
+		}
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
+		{
+			return FunctionalUnit::LoadStore;
+		}
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		{
+			return FunctionalUnit::DoublePrecision;
+		}
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		{
+			return FunctionalUnit::SpecialFunction;
+		}
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Control:
+		{
+			return FunctionalUnit::Core;
+		}
+		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::Comparison:
+		{
+			return FunctionalUnit::HalfCore;
+		}
+	}
+	return FunctionalUnit::Core;
+}
+
 std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction)
 {
 	switch (instruction->GetInstructionClass())

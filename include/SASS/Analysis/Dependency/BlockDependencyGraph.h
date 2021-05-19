@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <deque>
 
 #include "Utils/Graph.h"
 
@@ -10,7 +11,7 @@ namespace SASS {
 namespace Analysis {
 
 using DependencyGraphNode = Instruction *;
-class BlockDependencyGraph : public Utils::Graph<DependencyGraphNode>
+class BlockDependencyGraph
 {
 public:
 	BlockDependencyGraph(BasicBlock *block) : m_block(block) {}
@@ -23,11 +24,17 @@ public:
 
 	// Nodes
 
+	const robin_hood::unordered_set<DependencyGraphNode>& GetNodes() const { return m_nodes; }
+	unsigned int GetNodeCount() const { return m_nodes.size(); }
+	bool ContainsNode(const DependencyGraphNode& node) const { return (m_nodes.find(node) != m_nodes.end()); }
+
 	void InsertNode(const DependencyGraphNode& node, std::uint32_t value = 0)
 	{
-		Utils::Graph<DependencyGraphNode>::InsertNode(node);
+		m_nodes.insert(node);
+		m_values.emplace(node, value);
 
-		m_values[node] = value;
+		m_outgoingEdges[node];
+		m_incomingEdges[node];
 	}
 
 	void SetNodeValue(const DependencyGraphNode& node, std::uint32_t value)
@@ -42,19 +49,111 @@ public:
 
 	// Edges
 
+	struct Edge
+	{
+	public:
+		Edge(DependencyGraphNode start, DependencyGraphNode end, DependencyKind kind)
+			: m_start(start), m_end(end), m_dependencies({kind}) {}
+
+		DependencyGraphNode GetStart() const { return m_start; }
+		DependencyGraphNode GetEnd() const { return m_end; }
+
+		const std::vector<DependencyKind>& GetDependencies() const { return m_dependencies; }
+		std::vector<DependencyKind>& GetDependencies() { return m_dependencies; }
+
+		void SetDependencies(const std::vector<DependencyKind>& dependencies) { m_dependencies = dependencies; }
+
+	private:
+		DependencyGraphNode m_start = nullptr;
+		DependencyGraphNode m_end = nullptr;
+		std::vector<DependencyKind> m_dependencies;
+	};
+
  	void InsertEdge(const DependencyGraphNode& source, const DependencyGraphNode& destination, DependencyKind dependency)
 	{
-		Utils::Graph<DependencyGraphNode>::InsertEdge(source, destination);
+		// Augment existing edge with new dependency if one exists
 
-		// Add dependency to edge, extending the set if it already exists
+		for (auto& edge : m_outgoingEdges.at(source))
+		{
+			if (edge->GetEnd() == destination)
+			{
+				edge->GetDependencies().push_back(dependency);
+				return;
+			}
+		}
 
-		auto edge = std::make_pair(source, destination);
-		m_edgeData[edge].insert(dependency);
+		// Create a new edge - shared between the source/destination for value
+
+		auto edge = new Edge(source, destination, dependency);
+
+		m_outgoingEdges.at(source).push_back(edge);
+		m_incomingEdges.at(destination).push_back(edge);
 	}
 
-	const robin_hood::unordered_set<DependencyKind>& GetEdgeDependencies(const DependencyGraphNode& source, const DependencyGraphNode& destination) const
+	std::size_t GetInDegree(const DependencyGraphNode& node) const
 	{
-		return m_edgeData.at({source, destination});
+		return m_incomingEdges.at(node).size();
+	}
+	std::size_t GetOutDegree(const DependencyGraphNode& node) const
+	{
+		return m_outgoingEdges.at(node).size();
+	}
+
+	const std::vector<Edge *>& GetOutgoingEdges(const DependencyGraphNode& source) const
+	{
+		return m_outgoingEdges.at(source);
+	}
+
+	const std::vector<Edge *>& GetIncomingEdges(const DependencyGraphNode& destination) const
+	{
+		return m_incomingEdges.at(destination);
+	}
+
+	// Traversal
+
+	template <typename F> 
+	void ReverseTopologicalOrderBFS(F function) const
+	{
+		// Construct the topological sorting structure
+		//     Queue: store the current nodes 0 out-degree
+		//     Edges: count the out-degree of each node
+
+		std::deque<DependencyGraphNode> queue;
+		robin_hood::unordered_map<DependencyGraphNode, unsigned int> edges;
+
+		for (auto& node : GetNodes())
+		{
+			auto count = GetOutDegree(node);
+			if (count == 0)
+			{
+				queue.push_back(node);
+			}
+			edges.emplace(node, count);
+		}
+
+		// Perform the topological sort
+
+		while (!queue.empty())
+		{
+			auto node = queue.front();
+			queue.pop_front();
+
+			// Apply the given function
+
+			if (function(node))
+			{
+				// Process all predecessors of the node
+
+				for (const auto& edge : m_incomingEdges.at(node))
+				{
+					auto predecessor = edge->GetStart();
+					if (--edges.at(predecessor) == 0)
+					{
+						queue.push_back(predecessor);
+					}
+				}
+			}
+		}
 	}
 
 	// Formatting
@@ -64,11 +163,11 @@ public:
 private:
 	BasicBlock *m_block = nullptr;
 
-	using EdgeType = typename Utils::Graph<DependencyGraphNode>::EdgeType;
-	using EdgeHash = typename Utils::Graph<DependencyGraphNode>::EdgeHash;
-
-	robin_hood::unordered_map<EdgeType, robin_hood::unordered_set<DependencyKind>, EdgeHash> m_edgeData;
+	robin_hood::unordered_set<DependencyGraphNode> m_nodes;
 	robin_hood::unordered_map<DependencyGraphNode, std::uint32_t> m_values;
+
+	robin_hood::unordered_map<DependencyGraphNode, std::vector<Edge *>> m_incomingEdges;
+	robin_hood::unordered_map<DependencyGraphNode, std::vector<Edge *>> m_outgoingEdges;
 };
 
 }
