@@ -370,6 +370,10 @@ void DivideGenerator::Visit(const PTX::DivideInstruction<T> *instruction)
 
 			this->AddInstruction(new SASS::MOVInstruction(destination, temp0));
 		}
+		else
+		{
+			Error(instruction, "unsupported type");
+		}
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
