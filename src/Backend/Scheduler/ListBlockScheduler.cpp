@@ -277,6 +277,48 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			}
 
 			schedule.SetWaitBarriers(waitBarriers);
+			
+			// Ensure 2 cycles for barrier used immediately
+
+			if (!first)
+			{
+				auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
+				auto& previousSchedule = previousInstruction->GetSchedule();
+
+				auto readBarrier = previousSchedule.GetReadBarrier();
+				auto writeBarrier = previousSchedule.GetWriteBarrier();
+
+				// Check if this instruction waits on a barrier set in the previous instruction
+
+				if (waitBarriers.find(readBarrier) != waitBarriers.end() ||
+					waitBarriers.find(writeBarrier) != waitBarriers.end())
+				{
+					// Minimum 2 cycles to issue instruction and set barrier active
+
+					auto previousStall = previousSchedule.GetStall();
+					auto minimumStall = 2;
+
+					if (previousStall < minimumStall)
+					{
+						// Update stall count
+
+						previousSchedule.SetStall(minimumStall);
+
+						auto diff = minimumStall - previousStall;
+						auto currentStall = schedule.GetStall() - diff;
+
+						if (latency > currentStall)
+						{
+							currentStall = latency;
+						}
+
+						schedule.SetStall(currentStall);
+						schedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
+
+						time += diff;
+					}
+				}
+			}
 
 			// Clear old barriers
 

@@ -84,7 +84,7 @@ std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *inst
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		case SASS::Instruction::InstructionClass::SpecialFunction:
 		{
-			return 2; //TODO: 1 vs 2
+			return 1; // Immediately available, but must wait 2 cycles before checking barrier
 		}
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Shift:
