@@ -173,65 +173,13 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto instruction = *it;
 			availableInstructions.erase(it);
 
+			auto& schedule = instruction->GetSchedule();
+
 			// Get stall count to the previous instruction
 
 			auto stall = instructionStall.at(instruction);
 			instructionStall.erase(instruction);
 			instructionTime.erase(instruction);
-
-			// Cap the stall by the maximum value. Legal since throughput is hardware regulated, and
-			// stalls > 15 can only be caused by throuput (variable length is handled through barriers
-
-			if (stall > 15)
-			{
-				stall = 15;
-			}
-
-			// Schedule instruction
-
-			scheduledInstructions.push_back(instruction);
-
-			auto& schedule = instruction->GetSchedule();
-			auto latency = HardwareProperties::GetLatency(instruction);
-
-			// Instruction latency is the maximum of:
-			//  - Instruction latency
-			//  - Previous instruction stall - current stall
-			// We can therefore guarantee that both instructions are finished by the end
-			// of the stall. Required property for the end of schedulable blocks
-
-			if (!first)
-			{
-				auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
-				auto& previousSchedule = previousInstruction->GetSchedule();
-
-				auto previousStall = previousSchedule.GetStall();
-				previousSchedule.SetStall(stall);
-				previousSchedule.SetYield(stall < 13);
-
-				std::int32_t currentStall = previousStall - stall;
-				if (latency > currentStall)
-				{
-					currentStall = latency;
-				}
-
-				schedule.SetStall(currentStall);
-				schedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
-
-				time += stall;
-			}
-			else
-			{
-				// For the first instruction, stall the entire pipeline depth (corrected later)
-
-				schedule.SetStall(latency);
-				schedule.SetYield(latency < 13); // Higher stall counts cannot yield
-			}
-
-			// Store the time the functional unit becomes free
-
-			auto instructionUnit = HardwareProperties::GetFunctionalUnit(instruction);
-			unitTime.insert_or_assign(instructionUnit, time + HardwareProperties::GetThroughputLatency(instruction));
 
 			// Add wait barriers for each predecessor that has not been waited
 
@@ -259,13 +207,13 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 								// If waiting on a write barrier, the associated read barrier can
 								// be cleared if it is still active
 
-								if (auto it2 = readDependencyBarriers.find(predecessor); it2 != readDependencyBarriers.end())
+								if (auto it = readDependencyBarriers.find(predecessor); it != readDependencyBarriers.end())
 								{
 									auto &schedule = predecessor->GetSchedule();
 									schedule.SetReadBarrier(SASS::Schedule::Barrier::None);
 
-									activeBarriers.erase(it2->second);
-									readDependencyBarriers.erase(it2);
+									activeBarriers.erase(it->second);
+									readDependencyBarriers.erase(it);
 								}
 							}
 							break;
@@ -289,48 +237,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			schedule.SetWaitBarriers(waitBarriers);
 			
-			// Ensure 2 cycles for barrier used immediately
-
-			if (!first)
-			{
-				auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
-				auto& previousSchedule = previousInstruction->GetSchedule();
-
-				auto readBarrier = previousSchedule.GetReadBarrier();
-				auto writeBarrier = previousSchedule.GetWriteBarrier();
-
-				// Check if this instruction waits on a barrier set in the previous instruction
-
-				if (waitBarriers.find(readBarrier) != waitBarriers.end() ||
-					waitBarriers.find(writeBarrier) != waitBarriers.end())
-				{
-					// Minimum 2 cycles to issue instruction and set barrier active
-
-					auto previousStall = previousSchedule.GetStall();
-					auto minimumStall = 2;
-
-					if (previousStall < minimumStall)
-					{
-						// Update stall count
-
-						previousSchedule.SetStall(minimumStall);
-
-						auto diff = minimumStall - previousStall;
-						auto currentStall = schedule.GetStall() - diff;
-
-						if (latency > currentStall)
-						{
-							currentStall = latency;
-						}
-
-						schedule.SetStall(currentStall);
-						schedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
-
-						time += diff;
-					}
-				}
-			}
-
 			// Clear old barriers
 
 			for (auto barrier : waitBarriers)
@@ -371,19 +277,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						break;
 					}
 				}
-
-				// auto barrier = SASS::Schedule::Barrier::SB0;
-				// for (auto ba : {SASS::Schedule::Barrier::SB0, SASS::Schedule::Barrier::SB1,
-				// 		SASS::Schedule::Barrier::SB2, SASS::Schedule::Barrier::SB3,
-				// 		SASS::Schedule::Barrier::SB4, SASS::Schedule::Barrier::SB5})
-				// {
-				// 	if (activeBarriers.find(ba) == activeBarriers.end())
-				// 	{
-				// 		barrier = ba;
-				// 		break;
-				// 	}
-				// }
-
 				schedule.SetWriteBarrier(barrier);
 
 				// Maintain barrier set
@@ -414,17 +307,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						break;
 					}
 				}
-				// for (auto ba : {SASS::Schedule::Barrier::SB0, SASS::Schedule::Barrier::SB1,
-				// 		SASS::Schedule::Barrier::SB2, SASS::Schedule::Barrier::SB3,
-				// 		SASS::Schedule::Barrier::SB4, SASS::Schedule::Barrier::SB5})
-				// {
-				// 	if (activeBarriers.find(ba) == activeBarriers.end())
-				// 	{
-				// 		barrier = ba;
-				// 		break;
-				// 	}
-				// }
-
 				schedule.SetReadBarrier(barrier);
 
 				// Maintain barrier set
@@ -432,6 +314,77 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				readDependencyBarriers.emplace(instruction, barrier);
 				activeBarriers.insert(barrier);
 			}
+
+			// Cap the stall by the maximum value. Legal since throughput is hardware regulated, and
+			// stalls > 15 can only be caused by throuput (variable length is handled through barriers
+
+			if (stall > 15)
+			{
+				stall = 15;
+			}
+
+			// Schedule instruction
+
+			scheduledInstructions.push_back(instruction);
+
+			auto latency = HardwareProperties::GetLatency(instruction);
+
+			// Instruction latency is the maximum of:
+			//  - Instruction latency
+			//  - Previous instruction stall - current stall
+			// We can therefore guarantee that both instructions are finished by the end
+			// of the stall. Required property for the end of schedulable blocks
+
+			if (!first)
+			{
+				auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
+				auto& previousSchedule = previousInstruction->GetSchedule();
+
+				// Ensure 2 cycles for barrier used immediately
+
+				auto readBarrier = previousSchedule.GetReadBarrier();
+				auto writeBarrier = previousSchedule.GetWriteBarrier();
+
+				// Check if this instruction waits on a barrier set in the previous instruction
+
+				if (waitBarriers.find(readBarrier) != waitBarriers.end() ||
+					waitBarriers.find(writeBarrier) != waitBarriers.end())
+				{
+					if (stall < 2)
+					{
+						stall = 2;
+					}
+				}
+
+				// Set stall for current and previous instructions
+
+				auto previousStall = previousSchedule.GetStall();
+				previousSchedule.SetStall(stall);
+				previousSchedule.SetYield(stall < 13);
+
+				std::int32_t currentStall = previousStall - stall;
+				if (latency > currentStall)
+				{
+					currentStall = latency;
+				}
+
+				schedule.SetStall(currentStall);
+				schedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
+
+				time += stall;
+			}
+			else
+			{
+				// For the first instruction, stall the entire pipeline depth (corrected later)
+
+				schedule.SetStall(latency);
+				schedule.SetYield(latency < 13); // Higher stall counts cannot yield
+			}
+
+			// Store the time the functional unit becomes free
+
+			auto instructionUnit = HardwareProperties::GetFunctionalUnit(instruction);
+			unitTime.insert_or_assign(instructionUnit, time + HardwareProperties::GetThroughputLatency(instruction));
 
 			//TODO: Reuse cache
 			// instruction->SetReuseCache();
@@ -622,40 +575,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		{
 			// Convert to the instruction barrier type
 
-			SASS::DEPBARInstruction::Barrier barrierI;
-			switch (barrier)
-			{
-				case SASS::Schedule::Barrier::SB0:
-				{
-					barrierI = SASS::DEPBARInstruction::Barrier::SB0;
-					break;
-				}
-				case SASS::Schedule::Barrier::SB1:
-				{
-					barrierI = SASS::DEPBARInstruction::Barrier::SB1;
-					break;
-				}
-				case SASS::Schedule::Barrier::SB2:
-				{
-					barrierI = SASS::DEPBARInstruction::Barrier::SB2;
-					break;
-				}
-				case SASS::Schedule::Barrier::SB3:
-				{
-					barrierI = SASS::DEPBARInstruction::Barrier::SB3;
-					break;
-				}
-				case SASS::Schedule::Barrier::SB4:
-				{
-					barrierI = SASS::DEPBARInstruction::Barrier::SB4;
-					break;
-				}
-				case SASS::Schedule::Barrier::SB5:
-				{
-					barrierI = SASS::DEPBARInstruction::Barrier::SB5;
-					break;
-				}
-			}
+			auto barrierI = GetInstructionBarrier(barrier);
 
 			// Insert barrier to wait until zero
 
@@ -671,6 +591,38 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	}
 
 	Utils::Chrono::End(timeScheduler_start);
+}
+
+SASS::DEPBARInstruction::Barrier ListBlockScheduler::GetInstructionBarrier(SASS::Schedule::Barrier barrier) const
+{
+	switch (barrier)
+	{
+		case SASS::Schedule::Barrier::SB0:
+		{
+			return SASS::DEPBARInstruction::Barrier::SB0;
+		}
+		case SASS::Schedule::Barrier::SB1:
+		{
+			return SASS::DEPBARInstruction::Barrier::SB1;
+		}
+		case SASS::Schedule::Barrier::SB2:
+		{
+			return SASS::DEPBARInstruction::Barrier::SB2;
+		}
+		case SASS::Schedule::Barrier::SB3:
+		{
+			return SASS::DEPBARInstruction::Barrier::SB3;
+		}
+		case SASS::Schedule::Barrier::SB4:
+		{
+			return SASS::DEPBARInstruction::Barrier::SB4;
+		}
+		case SASS::Schedule::Barrier::SB5:
+		{
+			return SASS::DEPBARInstruction::Barrier::SB5;
+		}
+	}
+	Utils::Logger::LogError("Unsupported barrier kind");
 }
 
 }

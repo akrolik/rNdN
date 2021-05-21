@@ -9,6 +9,8 @@ class ListBlockScheduler : public BlockScheduler
 {
 protected:
 	void ScheduleBlock(SASS::BasicBlock *block) override;
+
+	SASS::DEPBARInstruction::Barrier GetInstructionBarrier(SASS::Schedule::Barrier barrier) const;
 };
 
 }
