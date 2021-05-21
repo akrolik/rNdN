@@ -219,7 +219,26 @@ std::uint8_t HardwareProperties::GetThroughputLatency(const SASS::Instruction *i
 
 bool HardwareProperties::GetDualIssue(const SASS::Instruction *instruction)
 {
-	//TODO: Dual issue
+	switch (instruction->GetInstructionClass())
+	{
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::Control:
+		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		{
+			return false;
+		}
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
+		{
+			return true;
+		}
+	}
 	return false;
 }
 

@@ -623,9 +623,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Check if the unit is busy with another (independent) instruction
 
-				auto instructionUnit = HardwareProperties::GetFunctionalUnit(availableInstruction);
+				auto availableUnit = HardwareProperties::GetFunctionalUnit(availableInstruction);
 
-				if (auto it = unitTime.find(instructionUnit); it != unitTime.end())
+				if (auto it = unitTime.find(availableUnit); it != unitTime.end())
 				{
 					auto unitAvailableTime = it->second;
 					if (availableTime < unitAvailableTime)
@@ -646,7 +646,57 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					stall = minimumStall;
 				}
 
-				//TODO: Dual issue (no 2-constants)
+				// Dual issue eligible instructions
+
+				if (availableTime <= time && HardwareProperties::GetDualIssue(instruction) &&
+					availableUnit != HardwareProperties::GetFunctionalUnit(instruction))
+				{
+					auto constant1 = false;
+					for (auto operand : instruction->GetSourceOperands())
+					{
+						if (auto composite = dynamic_cast<SASS::Composite *>(operand))
+						{
+							if (composite->GetOpCodeKind() == SASS::Composite::OpCodeKind::Constant)
+							{
+								constant1 = true;
+							}
+						}
+					}
+
+					auto constant2 = false;
+					for (auto operand : availableInstruction->GetSourceOperands())
+					{
+						if (auto composite = dynamic_cast<SASS::Composite *>(operand))
+						{
+							if (composite->GetOpCodeKind() == SASS::Composite::OpCodeKind::Constant)
+							{
+								constant2 = true;
+							}
+						}
+					}
+
+					// Cannot dual issue instructions which both load constants
+
+					if (!constant1 || !constant2)
+					{
+						// First instruction may be dual issued with second
+
+						if (first)
+						{
+							stall = 0;
+						}
+						else
+						{
+							// Otherwise, make sure there was not already a dual issue in the previous pair
+
+							auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
+							if (previousInstruction->GetSchedule().GetStall() != 0)
+							{
+								stall = 0;
+							}
+						}
+					}
+				}
 
 				instructionStall.insert_or_assign(availableInstruction, stall);
 
