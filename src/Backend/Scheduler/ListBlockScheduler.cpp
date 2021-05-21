@@ -68,13 +68,19 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		// For each instruction maintain:
 		//   - (all) Earliest virtual clock cycle for execution (updated when each parent is scheduled)
 		//   - (avail) Stall count required if scheduled next
+		// Together these give the legal execution time for the instruction
 		//
 		// Also maintain the unit availability time, used for independent instructions which share
-		// the same functional unit
+		// the same functional unit. Used as a hint to the instruction, as the GPU will insert stalls if needed
+		//
+		// For variable latency dependencies, we use a second map to hint at the expected execution time
 
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> scheduleTime;
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> scheduleStall;
+		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionTime;
+		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionStall;
 		robin_hood::unordered_map<HardwareProperties::FunctionalUnit, std::uint32_t> unitTime;
+
+		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionBarrierTime;
+		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionBarrierStall;
 
 		// Construct a priority queue for available instructions (all dependencies scheduled)
 		//
@@ -84,9 +90,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		auto priorityFunction = [&](SASS::Instruction *left, SASS::Instruction *right) {
 			// Property 1: Stall count [lower]
 
-			auto stallLeft = scheduleStall.at(left);
-			auto stallRight = scheduleStall.at(right);
+			auto stallLeft = instructionBarrierStall.at(left);
+			auto stallRight = instructionBarrierStall.at(right);
 
+			// auto stallLeft = instructionStall.at(left);
+			// auto stallRight = instructionStall.at(right);
 			if (stallLeft != stallRight)
 			{
 				return stallLeft > stallRight;
@@ -134,8 +142,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto count = dependencyGraph->GetInDegree(instruction);
 			if (count == 0)
 			{
-				scheduleTime.emplace(instruction, 0);
-				scheduleStall.emplace(instruction, 1);
+				instructionTime.emplace(instruction, 0);
+				instructionStall.emplace(instruction, 1);
+
+				instructionBarrierTime.emplace(instruction, 0);
+				instructionBarrierStall.emplace(instruction, 1);
 
 				availableInstructions.push_back(instruction);
 			}
@@ -164,9 +175,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			// Get stall count to the previous instruction
 
-			auto stall = scheduleStall.at(instruction);
-			scheduleStall.erase(instruction);
-			scheduleTime.erase(instruction);
+			auto stall = instructionStall.at(instruction);
+			instructionStall.erase(instruction);
+			instructionTime.erase(instruction);
 
 			// Cap the stall by the maximum value. Legal since throughput is hardware regulated, and
 			// stalls > 15 can only be caused by throuput (variable length is handled through barriers
@@ -437,6 +448,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				auto successor = edge->GetEnd();
 				auto delay = 0u;
+				auto barrierDelay = 0u;
 
 				for (auto dependency : edge->GetDependencies())
 				{
@@ -444,14 +456,19 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					{
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
 						{
-							if (HardwareProperties::GetBarrierLatency(instruction) > 0)
+							if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
 							{
 								// If the previous instruction sets a barrier, minimum 2 cycle stall
 
-								auto latency = 2;//HardwareProperties::GetBarrierLatency(instruction);
+								auto latency = 2;
 								if (delay < latency)
 								{
 									delay = latency;
+								}
+
+								if (barrierDelay < barrierLatency)
+								{
+									barrierDelay = barrierLatency;
 								}
 							}
 							else
@@ -475,12 +492,17 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
 						{
-							if (HardwareProperties::GetReadHold(instruction) > 0)
+							if (auto barrierLatency = HardwareProperties::GetReadHold(instruction); barrierLatency > 0)
 							{
-								auto latency = 2;//HardwareProperties::GetReadHold(instruction);
+								auto latency = 2;
 								if (delay < latency)
 								{
 									delay = latency;
+								}
+
+								if (barrierDelay < barrierLatency)
+								{
+									barrierDelay = barrierLatency;
 								}
 							}
 							else if (delay < 1)
@@ -491,12 +513,17 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						}
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
 						{
-							if (HardwareProperties::GetBarrierLatency(instruction) > 0)
+							if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
 							{
-								auto latency = 2;//HardwareProperties::GetBarrierLatency(instruction);
+								auto latency = 2;
 								if (delay < latency)
 								{
 									delay = latency;
+								}
+
+								if (barrierDelay < barrierLatency)
+								{
+									barrierDelay = barrierLatency;
 								}
 							}
 							else if (delay < 1)
@@ -508,14 +535,24 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					}
 				}
 
-				auto availableTime = time + delay;
-
 				// Record the latest schedulable time (dependends on all predecessors)
 			       
-				auto it = scheduleTime.find(successor);
-				if (it == scheduleTime.end() || availableTime > it->second)
+				auto availableTime = time + delay;
+
+				auto it = instructionTime.find(successor);
+				if (it == instructionTime.end() || availableTime > it->second)
 				{
-					scheduleTime.insert_or_assign(successor, availableTime);
+					instructionTime.insert_or_assign(successor, availableTime);
+				}
+
+				// Also record the expected instruction availability (satisfying all barriers)
+
+				auto barrierTime = time + barrierDelay;
+
+                                auto it2 = instructionBarrierTime.find(successor);
+				if (it2 == instructionBarrierTime.end() || barrierTime > it2->second)
+				{
+					instructionBarrierTime.insert_or_assign(successor, barrierTime);
 				}
 
 				// Priority queue management
@@ -532,7 +569,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			{
 				// Get time when the instruction dependencies are satisfied
 
-				auto availableTime = scheduleTime.at(availableInstruction);
+				auto availableTime = instructionTime.at(availableInstruction);
 
 				// Check if the unit is busy with another (independent) instruction
 
@@ -561,7 +598,19 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				//TODO: Dual issue (no 2-constants)
 
-				scheduleStall.insert_or_assign(availableInstruction, stall);
+				instructionStall.insert_or_assign(availableInstruction, stall);
+
+				// Hint for instruction execution
+
+				auto barrierTime = instructionBarrierTime.at(availableInstruction);
+
+				std::int32_t barrierStall = barrierTime - time;
+				if (barrierStall < stall)
+				{
+					barrierStall = stall;
+				}
+
+				instructionBarrierStall.insert_or_assign(availableInstruction, barrierStall);
 			}
 
 			first = false;
