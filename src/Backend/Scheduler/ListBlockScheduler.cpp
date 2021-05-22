@@ -5,6 +5,7 @@
 #include "SASS/Analysis/Dependency/BlockDependencyAnalysis.h"
 
 #include "Utils/Chrono.h"
+#include "Utils/Options.h"
 
 #include "Libraries/robin_hood.h"
 
@@ -20,7 +21,13 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	dependencyAnalysis.Build(block);
 
 	auto timeScheduler_start = Utils::Chrono::Start("List scheduler '" + block->GetName() + "'");
+
+	// Get scheduler options
 	
+	auto optionReuse = Utils::Options::IsBackendSchedule_Reuse();
+	auto optionDual = Utils::Options::IsBackendSchedule_Dual();
+	auto optionCBarrier = Utils::Options::IsBackendSchedule_CBarrier();
+
 	// Build the schedule for each schedulable section individually (guarantees ordering)
 
 	auto& scheduledInstructions = block->GetInstructions();
@@ -260,10 +267,13 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// Only some barriers may be processed out of order (certain memory ops)
 
 				auto outOfOrder = false;
-				if (barrier == SASS::Schedule::Barrier::SB0 || barrier == SASS::Schedule::Barrier::SB1 ||
-					barrier == SASS::Schedule::Barrier::SB4 || barrier == SASS::Schedule::Barrier::SB5)
+				if (optionCBarrier)
 				{
-					outOfOrder = true;
+					if (barrier == SASS::Schedule::Barrier::SB0 || barrier == SASS::Schedule::Barrier::SB1 ||
+						barrier == SASS::Schedule::Barrier::SB4 || barrier == SASS::Schedule::Barrier::SB5)
+					{
+						outOfOrder = true;
+					}
 				}
 
 				// A partial barrier is used when there are additional instructions queued after
@@ -648,7 +658,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Dual issue eligible instructions
 
-				if (availableTime <= time && HardwareProperties::GetDualIssue(instruction) &&
+				if (optionDual && availableTime <= time && HardwareProperties::GetDualIssue(instruction) &&
 					availableUnit != HardwareProperties::GetFunctionalUnit(instruction))
 				{
 					auto constant1 = false;

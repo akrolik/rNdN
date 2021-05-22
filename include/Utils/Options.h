@@ -42,6 +42,11 @@ public:
 	static constexpr char const *Opt_Backend_print_assembled = "backend-print-assembled";
 	static constexpr char const *Opt_Backend_print_elf = "backend-print-elf";
 
+	static constexpr char const *Opt_Backend_scheduler_dual = "backend-scheduler-dual";
+	static constexpr char const *Opt_Backend_scheduler_reuse = "backend-scheduler-reuse";
+	static constexpr char const *Opt_Backend_scheduler_cbarrier = "backend-scheduler-cbarrier";
+	static constexpr char const *Opt_Backend_scheduler_function = "backend-scheduler-function";
+
 	static constexpr char const *Opt_Link_external = "link-external";
 
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
@@ -70,7 +75,7 @@ public:
 		auto results = instance.m_options.parse(argc, argv);
 		if (results.count(Opt_Help) > 0)
 		{
-			Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Link", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
+			Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Backend Scheduler", "Link", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
 			std::exit(EXIT_SUCCESS);
 		}
 		instance.m_results = results;
@@ -102,26 +107,26 @@ public:
 		Utils::Logger::LogError("Unknown outline optimization '" + optMode + "'");
 	}
 
-	static bool IsOptimize_HorseIR() { return Present(Opt_Optimize_hir); }
-	static bool IsOptimize_PTX() { return Present(Opt_Optimize_ptx); }
-	static bool IsOptimize_SASS() { return Present(Opt_Optimize_sass); }
+	static bool IsOptimize_HorseIR() { return Get(Opt_Optimize_hir); }
+	static bool IsOptimize_PTX() { return Get(Opt_Optimize_ptx); }
+	static bool IsOptimize_SASS() { return Get(Opt_Optimize_sass); }
 
 	// Debug
 
-	static bool IsDebug_Load() { return Present(Opt_Debug_load); }
-	static bool IsDebug_Print() { return Present(Opt_Debug_print); }
-	static bool IsDebug_Time() { return Present(Opt_Debug_time); }
+	static bool IsDebug_Load() { return Get(Opt_Debug_load); }
+	static bool IsDebug_Print() { return Get(Opt_Debug_print); }
+	static bool IsDebug_Time() { return Get(Opt_Debug_time); }
 
 	// Frontend
 
-	static bool IsFrontend_PrintHorseIR() { return Present(Opt_Frontend_print_hir); }
-	static bool IsFrontend_PrintHorseIRTyped() { return Present(Opt_Frontend_print_hir_typed); }
-	static bool IsFrontend_PrintSymbols() { return Present(Opt_Frontend_print_symbols); }
-	static bool IsFrontend_PrintAnalysis() { return Present(Opt_Frontend_print_analysis); }
-	static bool IsFrontend_PrintOutline() { return Present(Opt_Frontend_print_outline); }
-	static bool IsFrontend_PrintOutlineGraph() { return Present(Opt_Frontend_print_outline_graph); }
-	static bool IsFrontend_PrintPTX() { return Present(Opt_Frontend_print_ptx); }
-	static bool IsFrontend_PrintJSON() { return Present(Opt_Frontend_print_json); }
+	static bool IsFrontend_PrintHorseIR() { return Get(Opt_Frontend_print_hir); }
+	static bool IsFrontend_PrintHorseIRTyped() { return Get(Opt_Frontend_print_hir_typed); }
+	static bool IsFrontend_PrintSymbols() { return Get(Opt_Frontend_print_symbols); }
+	static bool IsFrontend_PrintAnalysis() { return Get(Opt_Frontend_print_analysis); }
+	static bool IsFrontend_PrintOutline() { return Get(Opt_Frontend_print_outline); }
+	static bool IsFrontend_PrintOutlineGraph() { return Get(Opt_Frontend_print_outline_graph); }
+	static bool IsFrontend_PrintPTX() { return Get(Opt_Frontend_print_ptx); }
+	static bool IsFrontend_PrintJSON() { return Get(Opt_Frontend_print_json); }
 
 	// Backend
 
@@ -182,19 +187,35 @@ public:
 		Utils::Logger::LogError("Unknown scheduler '" + scheduler + "'");
 	}
 
-	static bool IsBackend_DumpELF() { return Present(Opt_Backend_dump_elf); }
-	static bool IsBackend_PrintAnalysis() { return Present(Opt_Backend_print_analysis); }
-	static bool IsBackend_PrintAnalysisBlock() { return Present(Opt_Backend_print_analysis_block); }
-	static bool IsBackend_PrintCFG() { return Present(Opt_Backend_print_cfg); }
-	static bool IsBackend_PrintStructured() { return Present(Opt_Backend_print_structured); }
-	static bool IsBackend_PrintScheduled() { return Present(Opt_Backend_print_scheduled); }
-	static bool IsBackend_PrintSASS() { return Present(Opt_Backend_print_sass); }
-	static bool IsBackend_PrintAssembled() { return Present(Opt_Backend_print_assembled); }
-	static bool IsBackend_PrintELF() { return Present(Opt_Backend_print_elf); }
+	static bool IsBackend_DumpELF() { return Get(Opt_Backend_dump_elf); }
+	static bool IsBackend_PrintAnalysis() { return Get(Opt_Backend_print_analysis); }
+	static bool IsBackend_PrintAnalysisBlock() { return Get(Opt_Backend_print_analysis_block); }
+	static bool IsBackend_PrintCFG() { return Get(Opt_Backend_print_cfg); }
+	static bool IsBackend_PrintStructured() { return Get(Opt_Backend_print_structured); }
+	static bool IsBackend_PrintScheduled() { return Get(Opt_Backend_print_scheduled); }
+	static bool IsBackend_PrintSASS() { return Get(Opt_Backend_print_sass); }
+	static bool IsBackend_PrintAssembled() { return Get(Opt_Backend_print_assembled); }
+	static bool IsBackend_PrintELF() { return Get(Opt_Backend_print_elf); }
+
+	// Backend scheduler
+
+	static bool IsBackendSchedule_Dual() { return Get(Opt_Backend_scheduler_dual); }
+	static bool IsBackendSchedule_Reuse() { return Get(Opt_Backend_scheduler_reuse); }
+	static bool IsBackendSchedule_CBarrier() { return Get(Opt_Backend_scheduler_cbarrier); }
+
+	enum class BackendScheduleHeuristic {
+		Default
+	};
+
+	static BackendScheduleHeuristic GetBackendSchedule_Heuristic()
+	{
+		// Opt_Backend_scheduler_function
+		return BackendScheduleHeuristic::Default;
+	}
 
 	// Link
 
-	static bool IsLink_External() { return Present(Opt_Link_external); }
+	static bool IsLink_External() { return Get(Opt_Link_external); }
 
 	// Algorithm
 
@@ -321,7 +342,7 @@ public:
 
 	// Data
 
-	static bool IsData_LoadTPCH() { return Present(Opt_Data_load_tpch); }
+	static bool IsData_LoadTPCH() { return Get(Opt_Data_load_tpch); }
 	static std::string GetData_PathTPCH() { return Get<std::string>(Opt_Data_path_tpch); }
 
 	static float GetData_Resize() { return Get<float>(Opt_Data_resize); }
@@ -361,7 +382,17 @@ private:
 		return GetInstance().m_results.count(name) > 0;
 	}
 
-	template<typename T = bool>
+	static bool Get(const std::string& name)
+	{
+		auto& results = GetInstance().m_results;
+		if (results.count(name) > 0)
+		{
+			return results[name].as<bool>();
+		}
+		return false;
+	}
+
+	template<typename T>
 	static const T& Get(const std::string& name)
 	{
 		return GetInstance().m_results[name].as<T>();
@@ -407,6 +438,12 @@ private:
 			(Opt_Backend_print_scheduled, "Print scheduled SASS code")
 			(Opt_Backend_print_assembled, "Print assembled SASS code")
 			(Opt_Backend_print_elf, "Print generated ELF file")
+		;
+		m_options.add_options("Backend Scheduler")
+			(Opt_Backend_scheduler_dual, "Dual issue instructions")
+			(Opt_Backend_scheduler_reuse, "Enable register reuse flags")
+			(Opt_Backend_scheduler_cbarrier, "Data dependence counting barriers")
+			(Opt_Backend_scheduler_function, "Schedule heuristic [TODO]")
 		;
 		m_options.add_options("Link")
 			(Opt_Link_external, "Link external libraries (libdevice)")
