@@ -18,9 +18,9 @@ public:
 	};
 
 	enum class ReuseCache : std::uint8_t {
-		OperandA = 1,
-		OperandB = 2,
-		OperandC = 3
+		OperandA = 0,
+		OperandB = 1,
+		OperandC = 2
 	};
 
 	static constexpr std::uint8_t DualIssue = 0;
@@ -44,11 +44,13 @@ public:
 	void SetReadBarrier(Barrier barrier) { m_readBarrier = barrier; }
 
 	const robin_hood::unordered_set<Barrier>& GetWaitBarriers() const { return m_waitBarriers; }
+	robin_hood::unordered_set<Barrier>& GetWaitBarriers() { return m_waitBarriers; }
 	void SetWaitBarriers(const robin_hood::unordered_set<Barrier>& barriers) { m_waitBarriers = barriers; }
 
 	// Register reuse cache
 
 	const robin_hood::unordered_set<ReuseCache>& GetReuseCache() const { return m_reuseCache; }
+	robin_hood::unordered_set<ReuseCache>& GetReuseCache() { return m_reuseCache; }
 	void SetReuseCache(const robin_hood::unordered_set<ReuseCache>& reuseCache) { m_reuseCache = reuseCache; }
 
 	// Format
