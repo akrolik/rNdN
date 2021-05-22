@@ -304,7 +304,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					auto previousStall = previousSchedule.GetStall();
 					previousSchedule.SetStall(barrierStall);
-					previousSchedule.SetYield(barrierStall < 13);
+
+					if (previousSchedule.GetReuseCache().size() == 0)
+					{
+						previousSchedule.SetYield(barrierStall < 13);
+					}
 
 					// Convert to the instruction barrier type
 
@@ -461,7 +465,10 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				auto previousStall = previousSchedule.GetStall();
 				previousSchedule.SetStall(stall);
-				previousSchedule.SetYield(stall < 13);
+
+				if (previousSchedule.GetReuseCache().size() == 0) {
+					previousSchedule.SetYield(stall < 13);
+				}
 
 				auto latency = HardwareProperties::GetLatency(instruction);
 				std::int32_t currentStall = previousStall - stall;
@@ -493,8 +500,102 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto instructionUnit = HardwareProperties::GetFunctionalUnit(instruction);
 			unitTime.insert_or_assign(instructionUnit, time + HardwareProperties::GetThroughputLatency(instruction));
 
-			//TODO: Reuse cache
-			// instruction->SetReuseCache();
+			// Register reuse cache
+
+			if (optionReuse && !first && stall > 0 && HardwareProperties::GetReuseFlags(instruction))
+			{
+				auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
+				if (HardwareProperties::GetReuseFlags(previousInstruction))
+				{
+					auto previousOperands = previousInstruction->GetSourceOperands();
+					auto currentOperands = instruction->GetSourceOperands();
+
+					// Iterate pairwise through source operands, checking for register matches that are not overwritten
+
+					robin_hood::unordered_set<SASS::Schedule::ReuseCache> reuseCache;
+
+					auto count = std::min(previousOperands.size(), currentOperands.size());
+					for (auto i = 0u; i < count; ++i)
+					{
+						auto previousRegister = dynamic_cast<SASS::Register *>(previousOperands.at(i));
+						auto currentRegister = dynamic_cast<SASS::Register *>(currentOperands.at(i));
+
+						if (previousRegister != nullptr && currentRegister != nullptr)
+						{
+							auto previousValue = previousRegister->GetValue();
+							auto currentValue = currentRegister->GetValue();
+
+							if (previousValue == currentValue && previousValue != SASS::Register::ZeroIndex)
+							{
+								// Overwrites disable reuse opportunities
+
+								auto overwritten = false;
+								for (auto previousTarget : previousInstruction->GetDestinationOperands())
+								{
+									if (auto targetRegister = dynamic_cast<SASS::Register *>(previousTarget))
+									{
+										if (targetRegister->GetValue() == currentRegister->GetValue())
+										{
+											overwritten = true;
+										}
+									}
+								}
+
+								for (auto target : instruction->GetDestinationOperands())
+								{
+									if (auto targetRegister = dynamic_cast<SASS::Register *>(target))
+									{
+										if (targetRegister->GetValue() == currentRegister->GetValue())
+										{
+											overwritten = true;
+										}
+									}
+								}
+
+								if (overwritten)
+								{
+									continue;
+								}
+
+								// Translate from index to the operand cache entry
+
+								switch (i)
+								{
+									case 0:
+									{
+										reuseCache.insert(SASS::Schedule::ReuseCache::OperandA);
+										break;
+									}
+									case 1:
+									{
+										reuseCache.insert(SASS::Schedule::ReuseCache::OperandB);
+										break;
+									}
+									case 2:
+									{
+										reuseCache.insert(SASS::Schedule::ReuseCache::OperandC);
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					// Set current reuse flags, and add reuse flags to previous instruction
+
+					if (reuseCache.size() > 0)
+					{
+						schedule.SetReuseCache(reuseCache);
+						schedule.SetYield(false); // May not yield and reuse
+
+						auto& previousSchedule = previousInstruction->GetSchedule();
+						auto& previousCache = previousSchedule.GetReuseCache();
+
+						previousCache.insert(std::begin(reuseCache), std::end(reuseCache));
+						previousSchedule.SetYield(false);
+					}
+				}
+			}
 
 			// Decrease the degree of all successors, adding them to the priority queue if next
 
