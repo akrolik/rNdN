@@ -40,7 +40,14 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 	std::sort(liveIntervals.begin(), liveIntervals.end(), [](auto &left, auto &right)
 	{
-		return std::get<1>(left) < std::get<1>(right);
+		auto& leftValue = std::get<1>(left);
+		auto& rightValue = std::get<1>(right);
+		if (leftValue != rightValue)
+		{
+			return leftValue < rightValue;
+		}
+
+		return std::get<0>(left) < std::get<0>(right);
 	});
 
 	// Initialize empty vector of active records (end, register, range). Range=0 for predicates
