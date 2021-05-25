@@ -59,9 +59,17 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(temp, source_Lo));
-			this->AddInstruction(new SASS::MOVInstruction(destinationB, source_Hi));
-			this->AddInstruction(new SASS::MOVInstruction(destinationA, temp));
+			if (destinationA->GetValue() != source_Hi->GetValue())
+			{
+				this->AddInstruction(new SASS::MOVInstruction(destinationA, source_Lo));
+				this->AddInstruction(new SASS::MOVInstruction(destinationB, source_Hi));
+			}
+			else
+			{
+				this->AddInstruction(new SASS::MOVInstruction(temp, source_Lo));
+				this->AddInstruction(new SASS::MOVInstruction(destinationB, source_Hi));
+				this->AddInstruction(new SASS::MOVInstruction(destinationA, temp));
+			}
 		}
 	}
 	else if constexpr(V == PTX::VectorSize::Vector4)
