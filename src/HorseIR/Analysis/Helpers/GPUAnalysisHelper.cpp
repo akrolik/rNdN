@@ -106,7 +106,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments, unsigned int index)
 {
-	return {Device::CPU, Synchronization::None};
+	return std::make_pair(Device::CPU, Synchronization::None);
 }
 
 std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnalysisHelper::AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments, unsigned int index)
@@ -188,13 +188,13 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::Drop:
 		case BuiltinFunction::Primitive::Vector:
 		{
-			return {Device::GPU, Synchronization:None};
+			return std::make_pair(Device::GPU, Synchronization::None);
 		}
 
 		case BuiltinFunction::Primitive::Reverse:
 		{
 			// Indexed write
-			return {Device::GPU, Synchronization::In};
+			return std::make_pair(Device::GPU, Synchronization::In);
 		}
 
 		// Binary
@@ -206,13 +206,13 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			const auto type0 = arguments.at(0)->GetType();
 			if (TypeUtils::IsCharacterType(type0))
 			{
-				return {Device::CPU, Synchronization:None};
+				return std::make_pair(Device::CPU, Synchronization::None);
 			}
 			else if (const auto listType0 = TypeUtils::GetType<ListType>(type0))
 			{
 				if (TypeUtils::ForanyElement(listType0, TypeUtils::IsCharacterType))
 				{
-					return {Device::CPU, Synchronization:None};
+					return std::make_pair(Device::CPU, Synchronization::None);
 				}
 			}
 
@@ -223,15 +223,15 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 				{
 					if (TypeUtils::ForanyElement(listType1, TypeUtils::IsCharacterType))
 					{
-						return {Device::CPU, Synchronization:None};
+						return std::make_pair(Device::CPU, Synchronization::None);
 					}
 				}
 				else if (TypeUtils::IsCharacterType(type1))
 				{
-					return {Device::CPU, Synchronization:None};
+					return std::make_pair(Device::CPU, Synchronization::None);
 				}
 			}
-			return {Device::GPU, Synchronization:None};
+			return std::make_pair(Device::GPU, Synchronization::None);
 		}
 
 		// Algebraic Binary
@@ -240,9 +240,9 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		{
 			if (index == 1)
 			{
-				return {Device::GPU, Synchronization::In};
+				return std::make_pair(Device::GPU, Synchronization::In);
 			}
-			return {Device::GPU, Synchronization::None};
+			return std::make_pair(Device::GPU, Synchronization::None);
 		}
 
 		// Indexing
@@ -251,23 +251,23 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			const auto type0 = arguments.at(0)->GetType();
 			if (TypeUtils::IsType<ListType>(type0))
 			{
-				return {Device::CPU, Synchronization::None};
+				return std::make_pair(Device::CPU, Synchronization::None);
 			}
 
 			if (index == 0)
 			{
-				return {Device::GPU, Synchronization::In};
+				return std::make_pair(Device::GPU, Synchronization::In);
 			}
-			return {Device::GPU, Synchronization::None};
+			return std::make_pair(Device::GPU, Synchronization::None);
 
 		}
 		case BuiltinFunction::Primitive::IndexAssignment:
 		{
 			if (index == 0)
 			{
-				return {Device::GPU, Synchronization::In | Synchronization::Out};
+				return std::make_pair(Device::GPU, Synchronization::In | Synchronization::Out);
 			}
-			return {Device::GPU, Synchronization::Out};
+			return std::make_pair(Device::GPU, Synchronization::Out);
 		}
 
 		// Algebraic Binary
@@ -276,10 +276,10 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			const auto type0 = arguments.at(0)->GetType();
 			if (!TypeUtils::IsType<BasicType>(type0))
 			{
-				return {Device::CPU, Synchronization::None};
+				return std::make_pair(Device::CPU, Synchronization::None);
 			}
 
-			return {Device::GPU, Synchronization::In};
+			return std::make_pair(Device::GPU, Synchronization::In);
 		}
 
 		// --------------------
@@ -292,7 +292,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Algebraic Binary
 		case BuiltinFunction::Primitive::Compress:
 		{
-			return {Device::GPU, Synchronization::None};
+			return std::make_pair(Device::GPU, Synchronization::None);
 		}
 
 		// ----------------------
@@ -304,9 +304,9 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			switch (Utils::Options::GetAlgorithm_UniqueKind())
 			{
 				case Utils::Options::UniqueKind::SortUnique:
-					return {Device::GPULibrary, Synchronization::None};
+					return std::make_pair(Device::GPULibrary, Synchronization::None);
 				case Utils::Options::UniqueKind::LoopUnique:
-					return {Device::GPU, Synchronization::In};
+					return std::make_pair(Device::GPU, Synchronization::In);
 			}
 		}
 
@@ -318,12 +318,12 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			{
 				if (TypeUtils::ForanyElement(listType0, TypeUtils::IsCharacterType))
 				{
-					return {Device::CPU, Synchronization::None};
+					return std::make_pair(Device::CPU, Synchronization::None);
 				}
 			}
 			else if (TypeUtils::IsCharacterType(type0))
 			{
-				return {Device::CPU, Synchronization::None};
+				return std::make_pair(Device::CPU, Synchronization::None);
 			}
 		}
 
@@ -335,7 +335,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		{
 			// Complex independent operations are controlled on the CPU with GPU sections
 
-			return {Device::GPULibrary, Synchronization::None};
+			return std::make_pair(Device::GPULibrary, Synchronization::None);
 		}
 
 		// --------------------
@@ -349,7 +349,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::Minimum:
 		case BuiltinFunction::Primitive::Maximum:
 		{
-			return {Device::GPU, (Synchronization::Out | Synchronization::Reduction)};
+			return std::make_pair(Device::GPU, (Synchronization::Out | Synchronization::Reduction));
 		}
 
 		// ---------------
@@ -376,11 +376,11 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// List
 		case BuiltinFunction::Primitive::Raze:
 		{
-			return {Device::GPU, (Synchronization::Out | Synchronization::Raze)};
+			return std::make_pair(Device::GPU, (Synchronization::Out | Synchronization::Raze));
 		}
 		case BuiltinFunction::Primitive::ToList:
 		{
-			return {Device::GPU, Synchronization::In};
+			return std::make_pair(Device::GPU, Synchronization::In);
 		}
 
 		// ----------------------
@@ -393,7 +393,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::GPULoopJoinLib:
 		case BuiltinFunction::Primitive::GPUHashJoinLib:
 		{
-			return {Device::CPU, Synchronization::None};
+			return std::make_pair(Device::CPU, Synchronization::None);
 		}
 		case BuiltinFunction::Primitive::GPUOrderInit:
 		case BuiltinFunction::Primitive::GPUOrder:
@@ -410,7 +410,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::GPUHashJoinCount:
 		case BuiltinFunction::Primitive::GPUHashJoin:
 		{
-			return {Device::GPU, (Synchronization::In | Synchronization::Out)};
+			return std::make_pair(Device::GPU, (Synchronization::In | Synchronization::Out));
 		}
 
 		// --------------
@@ -448,7 +448,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::String:
 		case BuiltinFunction::Primitive::SubString:
 		{
-			return {Device::CPU, Synchronization::None};
+			return std::make_pair(Device::CPU, Synchronization::None);
 		}
 	}
 	
