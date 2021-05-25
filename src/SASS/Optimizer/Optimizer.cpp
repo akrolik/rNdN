@@ -1,6 +1,7 @@
 #include "SASS/Optimizer/Optimizer.h"
 
 #include "SASS/Transformation/RedundantCodeElimination.h"
+#include "SASS/Transformation/DeadLoadElimination.h"
 
 #include "Utils/Chrono.h"
 
@@ -15,6 +16,11 @@ void Optimizer::Optimize(Function *function)
 
 	Transformation::RedundantCodeElimination redundantCode;
 	redundantCode.Transform(function);
+
+	// Dead load elimination (LDG RZ, [RX])
+
+	Transformation::DeadLoadElimination deadLoad;
+	deadLoad.Transform(function);
 
 	Utils::Chrono::End(timeOptimizer_start);
 }
