@@ -33,7 +33,11 @@ class DominatorAnalysis : public ForwardControlAnalysis<DominatorAnalysisPropert
 {
 public:
 	using Properties = DominatorAnalysisProperties;
-	using ForwardControlAnalysis<DominatorAnalysisProperties>::ForwardControlAnalysis;
+
+	inline const static std::string Name = "Dominators";
+	inline const static std::string ShortName = "dom";
+
+	DominatorAnalysis() : ForwardControlAnalysis<DominatorAnalysisProperties>(Name, ShortName) {}
 
 	// Accessors
 
@@ -53,8 +57,6 @@ public:
 	Properties TemporaryFlow(const FunctionDefinition<VoidType> *function) const override;
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Dominators"; }
 };
 
 }

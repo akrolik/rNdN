@@ -12,18 +12,20 @@ namespace Analysis {
 
 void KernelGeometryAnalysis::Analyze(const Function *function)
 {
-	auto timeKernel_start = Utils::Chrono::Start("Kernel analysis '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeKernel_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeKernel_start);
 
 	if (m_operatingGeometry == nullptr)
 	{
-		Utils::Logger::LogError("Unable to determine kernel geometry of empty kernel '" + function->GetName() + "'");
+		Utils::Logger::LogError("Unable to determine kernel geometry of empty kernel '" + functionName + "'");
 	}
 
-	if (Utils::Options::IsFrontend_PrintAnalysis())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		auto string = "Kernel geometry '" + function->GetName() + "': " + ShapeUtils::ShapeString(m_operatingGeometry);
+		auto string = Name + " '" + functionName + "': " + ShapeUtils::ShapeString(m_operatingGeometry);
 		Utils::Logger::LogInfo(string);
 	}
 }

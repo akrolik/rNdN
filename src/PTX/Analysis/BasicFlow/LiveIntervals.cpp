@@ -5,13 +5,15 @@ namespace Analysis {
 
 void LiveIntervals::Analyze(const FunctionDefinition<VoidType> *function)
 {
-	auto timeIntervals_start = Utils::Chrono::Start("Live intervals '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeIntervals_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeIntervals_start);
 
-	if (Utils::Options::IsBackend_PrintAnalysis())
+	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("LiveIntervals '" + function->GetName() + "'");
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
 	}
 }

@@ -19,11 +19,13 @@ template<class F>
 class ControlFlowAnalysis
 {
 public:
+	ControlFlowAnalysis(const std::string& name, const std::string& shortName) : m_name(name), m_shortName(shortName) {}
+
 	void Analyze(const FunctionDefinition<VoidType> *function)
 	{
-		m_analysisTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+		m_analysisTime = Utils::Chrono::Start(m_name + " '" + function->GetName() + "'");
 
-		auto timeInit_start = Utils::Chrono::Start(Name() + " initial flow");
+		auto timeInit_start = Utils::Chrono::Start(m_name + " initial flow");
 		auto initialFlow = InitialFlow(function);
 		Utils::Chrono::End(timeInit_start);
 
@@ -34,12 +36,13 @@ public:
 	{
 		// Clear sets and traverse the function, timing results
 
+		auto& functionName = function->GetName();
 		if (m_analysisTime == nullptr)
 		{
-			m_analysisTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+			m_analysisTime = Utils::Chrono::Start(m_name + " '" + functionName + "'");
 		}
 
-		m_functionTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "' body");
+		m_functionTime = Utils::Chrono::Start(m_name + " '" + functionName + "' body");
 
 		InitializeWorklist(function);
 
@@ -49,7 +52,7 @@ public:
 
 		// Print results if needed
 
-		if (Utils::Options::IsBackend_PrintAnalysis())
+		if (Utils::Options::IsBackend_PrintAnalysis(m_shortName, functionName))
 		{
 			PrintResults(function);
 		}
@@ -77,13 +80,14 @@ public:
 	void SetCollectInSets(bool collectInSets) { m_collectInSets = collectInSets; }
 	void SetCollectOutSets(bool collectOutSets) { m_collectOutSets = collectOutSets; }
 
+	const std::string& GetName() const { return m_name; }
+	const std::string& GetShortName() const { return m_shortName; }
+
 	// Each analysis must provide initial flows and merge operation
 
 	virtual F InitialFlow(const FunctionDefinition<VoidType> *function) const = 0;
 	virtual F TemporaryFlow(const FunctionDefinition<VoidType> *function) const = 0;
 	virtual F Merge(const F& s1, const F& s2) const = 0;
-
-	virtual std::string Name() const = 0;
 
 protected:
 	// Maintain basic block input/output sets
@@ -161,6 +165,11 @@ protected:
 
 	const Utils::Chrono::SpanTiming *m_analysisTime = nullptr;
 	const Utils::Chrono::SpanTiming *m_functionTime = nullptr;
+
+	// Naming
+
+	const std::string m_name;
+	const std::string m_shortName;
 };
 
 }
@@ -174,7 +183,7 @@ namespace Analysis {
 template<class F>
 void ControlFlowAnalysis<F>::PrintResults(const FunctionDefinition<VoidType> *function) const
 {
-	Utils::Logger::LogInfo(Name() + ": " + function->GetName());
+	Utils::Logger::LogInfo(m_name + " '" + function->GetName() + "'");
 
 	auto string = ControlFlowAnalysisPrinter<F>::PrettyString(*this, function);
 	Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);

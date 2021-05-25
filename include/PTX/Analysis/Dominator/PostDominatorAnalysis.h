@@ -33,7 +33,11 @@ class PostDominatorAnalysis : public BackwardControlAnalysis<PostDominatorAnalys
 {
 public:
 	using Properties = PostDominatorAnalysisProperties;
-	using BackwardControlAnalysis<PostDominatorAnalysisProperties>::BackwardControlAnalysis;
+
+	inline const static std::string Name = "Post-dominators";
+	inline const static std::string ShortName = "pdom";
+
+	PostDominatorAnalysis() : BackwardControlAnalysis<PostDominatorAnalysisProperties>(Name, ShortName) {}
 
 	// Accessors
 
@@ -53,8 +57,6 @@ public:
 	Properties TemporaryFlow(const FunctionDefinition<VoidType> *function) const override;
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Post-dominators"; }
 };
 
 }

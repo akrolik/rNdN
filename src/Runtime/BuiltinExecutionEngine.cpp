@@ -371,7 +371,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			CUDA::Vector<std::int8_t> likeData(size);
 
 			auto likeKind = Utils::Options::GetAlgorithm_LikeKind();
-			if (likeKind == Utils::Options::LikeKind::OptLike)
+			if (likeKind == Utils::Options::LikeKind::InternalLike)
 			{
 				for (auto i = 0u; i < size; ++i)
 				{

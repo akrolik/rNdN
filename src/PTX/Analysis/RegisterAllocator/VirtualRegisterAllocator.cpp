@@ -9,13 +9,15 @@ namespace Analysis {
 
 void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *function)
 {
-	auto timeAllocation_start = Utils::Chrono::Start("Virtual register allocator '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeAllocation_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeAllocation_start);
 
-	if (Utils::Options::IsBackend_PrintAnalysis())
+	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Register Allocation: " + function->GetName());
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 		Utils::Logger::LogInfo(m_allocation->ToString());
 	}
 }

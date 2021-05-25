@@ -14,13 +14,15 @@ namespace Analysis {
 
 void GeometryAnalysis::Analyze(const Function *function)
 {
-	auto timeGeometry_start = Utils::Chrono::Start("Geometry analysis '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeGeometry_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeGeometry_start);
 
-	if (Utils::Options::IsFrontend_PrintAnalysis())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Geometry analysis '" + function->GetName() + "'");
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 
 		auto string = StatementAnalysisPrinter::PrettyString(*this, function);
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);

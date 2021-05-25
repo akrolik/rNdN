@@ -12,6 +12,8 @@ public:
 
 protected:
 	virtual void ScheduleBlock(SASS::BasicBlock *block) = 0;
+
+	SASS::Function *m_function = nullptr;
 };
 
 }

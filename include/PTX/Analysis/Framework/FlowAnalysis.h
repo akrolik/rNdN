@@ -16,6 +16,8 @@ template<class F, template<class> typename A>
 class FlowAnalysis : public A<F>, public ConstVisitor
 {
 public:
+	using A<F>::A;
+
 	// Analysis framework
 
 	void TraverseBlock(const BasicBlock *block) override
@@ -61,8 +63,6 @@ public:
 
 	void PrintResults(const FunctionDefinition<VoidType> *function) const override;
 
-	using A<F>::Name;
-
 protected:
 	// Maintain statement input/output sets
 
@@ -90,7 +90,7 @@ void FlowAnalysis<F, A>::PrintResults(const FunctionDefinition<VoidType> *functi
 	}
 	else
 	{
-		Utils::Logger::LogInfo(Name() + ": " + function->GetName());
+		Utils::Logger::LogInfo(this->GetName() + ": " + function->GetName());
 
 		auto string = FlowAnalysisPrinter<F, A>::PrettyString(*this, function);
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);

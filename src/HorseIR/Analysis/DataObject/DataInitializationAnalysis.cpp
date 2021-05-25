@@ -11,13 +11,15 @@ namespace Analysis {
 
 void DataInitializationAnalysis::Analyze(const Function *function)
 {
-	auto timeDataInitialization_start = Utils::Chrono::Start("Data initialization analysis");
+	auto& functionName = function->GetName();
+
+	auto timeDataInitialization_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeDataInitialization_start);
 
-	if (Utils::Options::IsFrontend_PrintAnalysis())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Data initialization analysis");
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
 	}
 }

@@ -1,14 +1,19 @@
 #include "HorseIR/Semantics/SymbolTable/SymbolTableBuilder.h"
 
+#include "HorseIR/Semantics/SymbolTable/SymbolTablePrinter.h"
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
+#include "Utils/Options.h"
 
 namespace HorseIR {
 
 void SymbolTableBuilder::Build(Program *program)
 {
+	auto timeSymbols_start = Utils::Chrono::Start("Symbol table");
+
 	// Pass 1: Collect modules and functions
 
 	SymbolPass_Modules modules;
@@ -23,6 +28,19 @@ void SymbolTableBuilder::Build(Program *program)
 
 	SymbolPass_Functions functions;
 	functions.Build(program);
+
+	Utils::Chrono::End(timeSymbols_start);
+
+	if (Utils::Options::IsFrontend_PrintSymbols())
+	{
+		// Pretty print the symbol table cactus stack
+
+		Utils::Logger::LogInfo("HorseIR symbol table");
+
+		auto tableString = SymbolTablePrinter::PrettyString(program);
+		Utils::Logger::LogInfo(tableString, 0, true, Utils::Logger::NoPrefix);
+	}
+
 }
 
 void SymbolPass_Modules::Build(Program *program)

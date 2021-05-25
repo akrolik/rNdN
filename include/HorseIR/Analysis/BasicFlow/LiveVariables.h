@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sstream>
-
 #include "Analysis/FlowValue.h"
 
 #include "HorseIR/Analysis/Framework/BackwardAnalysis.h"
@@ -18,16 +16,22 @@ class LiveVariables : public BackwardAnalysis<LiveVariablesProperties>
 {
 public:
 	using Properties = LiveVariablesProperties;
-	using BackwardAnalysis<LiveVariablesProperties>::BackwardAnalysis;
+
+	inline const static std::string Name = "Live variables";
+	inline const static std::string ShortName = "live";
+	
+	LiveVariables(const Program *program) : BackwardAnalysis<LiveVariablesProperties>(Name, ShortName, program) {}
+
+	// Visitors
 
 	void Visit(const VariableDeclaration *declaration) override;
 	void Visit(const AssignStatement *assignS) override;
 	void Visit(const Identifier *identifier) override;
 
+	// Flow
+
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Live variables"; }
 
 protected:
 	void Kill(const SymbolTable::Symbol *symbol);

@@ -12,6 +12,8 @@ template<class F>
 class BackwardAnalysis : public FlowAnalysis<F, BackwardControlAnalysis>
 {
 public:
+	using FlowAnalysis<F, BackwardControlAnalysis>::FlowAnalysis;
+
 	void TraverseStatements(const std::vector<const Statement *>& statements) override
 	{
 		for (auto it = statements.rbegin(); it != statements.rend(); ++it)

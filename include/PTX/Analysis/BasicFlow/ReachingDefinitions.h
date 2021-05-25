@@ -56,7 +56,13 @@ class ReachingDefinitions : public ForwardAnalysis<ReachingDefinitionsProperties
 {
 public:
 	using Properties = ReachingDefinitionsProperties;
-	using ForwardAnalysis<ReachingDefinitionsProperties>::ForwardAnalysis;
+
+	inline const static std::string Name = "Reaching definitions";
+	inline const static std::string ShortName = "rdef";
+
+	ReachingDefinitions() : ForwardAnalysis<ReachingDefinitionsProperties>(Name, ShortName) {}
+
+	// Visitors
 
 	void Visit(const InstructionStatement *statement) override;
 
@@ -72,8 +78,6 @@ public:
 	Properties TemporaryFlow(const FunctionDefinition<VoidType> *function) const override;
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Reaching definitions"; }
 
 private:
 	const InstructionStatement *m_currentStatement = nullptr;

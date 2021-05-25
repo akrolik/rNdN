@@ -12,6 +12,9 @@ namespace Analysis {
 class ParameterSpaceAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
 {
 public:
+	inline const static std::string Name = "Parameter space allocator";
+	inline const static std::string ShortName = "param";
+
 	void Analyze(const FunctionDefinition<VoidType> *function);
 	const ParameterSpaceAllocation *GetSpaceAllocation() { return m_allocation; }
 

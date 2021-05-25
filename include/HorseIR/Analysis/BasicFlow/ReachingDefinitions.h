@@ -41,15 +41,21 @@ class ReachingDefinitions : public ForwardAnalysis<ReachingDefinitionsProperties
 {
 public:
 	using Properties = ReachingDefinitionsProperties;
-	using ForwardAnalysis<Properties>::ForwardAnalysis;
+
+	inline const static std::string Name = "Reaching definitions";
+	inline const static std::string ShortName = "rdef";
+	
+	ReachingDefinitions(const Program *program) : ForwardAnalysis<ReachingDefinitionsProperties>(Name, ShortName, program) {}
+
+	// Visitors
 
 	void Visit(const AssignStatement *assignS) override;
 	void Visit(const BlockStatement *blockS) override;
 
+	// Flow
+
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Reaching definitions"; }
 };
 
 }

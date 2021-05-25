@@ -12,13 +12,15 @@ namespace Analysis {
 
 void UDDUChainsBuilder::Build(const Function *function)
 {
-	auto timeUDDU_start = Utils::Chrono::Start("UD/DU chains '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeUDDU_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeUDDU_start);
 
-	if (Utils::Options::IsFrontend_PrintAnalysis())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("UD/DU chains '" + function->GetName() + "'");
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 		Utils::Logger::LogInfo(DebugString(), 0, true, Utils::Logger::NoPrefix);
 	}
 }

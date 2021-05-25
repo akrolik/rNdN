@@ -12,9 +12,17 @@ namespace Analysis {
 class UDDUChainsBuilder : public ConstHierarchicalVisitor
 {
 public:
+	inline const static std::string Name = "UD/DU chains";
+	inline const static std::string ShortName = "uddu";
+
 	UDDUChainsBuilder(const ReachingDefinitions& reachingDefinitions) : m_reachingDefinitions(reachingDefinitions) {}
 
 	void Build(const Function *function);
+
+	const robin_hood::unordered_set<const AssignStatement *>& GetDefinitions(const Identifier *identifier) const { return m_useDefChains.at(identifier); }
+	const robin_hood::unordered_set<const Identifier *>& GetUses(const AssignStatement *assignS) const { return m_defUseChains.at(assignS); }
+
+	// Visitors
 
 	bool VisitIn(const Statement *statement) override;
 	void VisitOut(const Statement *statement) override;
@@ -23,8 +31,7 @@ public:
 	bool VisitIn(const FunctionLiteral *literal) override;
 	bool VisitIn(const Identifier *identifier) override;
 
-	const robin_hood::unordered_set<const AssignStatement *>& GetDefinitions(const Identifier *identifier) const { return m_useDefChains.at(identifier); }
-	const robin_hood::unordered_set<const Identifier *>& GetUses(const AssignStatement *assignS) const { return m_defUseChains.at(assignS); }
+	// Formatting
 
 	std::string DebugString(unsigned int indent = 0) const;
 

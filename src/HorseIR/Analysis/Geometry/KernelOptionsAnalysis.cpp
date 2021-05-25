@@ -15,7 +15,9 @@ namespace Analysis {
 
 Frontend::Codegen::InputOptions *KernelOptionsAnalysis::Analyze(const Function *function)
 {
-	auto timeKernelOptions_start = Utils::Chrono::Start("Kernel options '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeKernelOptions_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 
 	GeometryAnalysis geometryAnalysis(m_shapeAnalysis);
 	geometryAnalysis.Analyze(function);
@@ -74,9 +76,9 @@ Frontend::Codegen::InputOptions *KernelOptionsAnalysis::Analyze(const Function *
 		m_inputOptions->ListCellThreads = GetAverageCellSize(listShape);
 	}
 
-	if (Utils::Options::IsFrontend_PrintAnalysis())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Input Options: " + function->GetName());
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 		Utils::Logger::LogInfo(m_inputOptions->ToString(), 1);
 	}
 

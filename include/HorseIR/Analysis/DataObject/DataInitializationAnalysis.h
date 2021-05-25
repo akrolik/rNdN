@@ -15,6 +15,9 @@ namespace Analysis {
 class DataInitializationAnalysis : public ConstHierarchicalVisitor
 {
 public:
+	inline const static std::string Name = "Data initialization analysis";
+	inline const static std::string ShortName = "datainit";
+
 	DataInitializationAnalysis(const DataObjectAnalysis& objectAnalysis) : m_objectAnalysis(objectAnalysis) {}
 
 	// Analysis input/output

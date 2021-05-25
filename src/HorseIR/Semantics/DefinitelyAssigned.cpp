@@ -5,6 +5,7 @@
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace HorseIR {
@@ -14,11 +15,15 @@ void DefinitelyAssigned::Analyze(const Program *program)
 	// Traverse the program in sections, first collecting the globals, and then handling
 	// the function bodies
 
+	auto timeAssigned_start = Utils::Chrono::Start("Definitely assigned");
+
 	m_globalsPhase = true;
 	program->Accept(*this);
 
 	m_globalsPhase = false;
 	program->Accept(*this);
+
+	Utils::Chrono::End(timeAssigned_start);
 }
 
 bool DefinitelyAssigned::VisitIn(const GlobalDeclaration *global)

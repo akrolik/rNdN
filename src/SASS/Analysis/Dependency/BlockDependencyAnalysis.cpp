@@ -15,7 +15,9 @@ void BlockDependencyAnalysis::Build(BasicBlock *block)
 	//   - Predicated instructions
 	//   - Control dependencies (e.g. SSY/SYNC)
 
-	auto timeAnalysis_start = Utils::Chrono::Start("Block dependency analysis '" + block->GetName() + "'");
+	auto& functionName = m_function->GetName();
+
+	auto timeAnalysis_start = Utils::Chrono::Start(Name + " '" + functionName + ":" + block->GetName() + "'");
 
 	m_block = block;
 
@@ -34,9 +36,9 @@ void BlockDependencyAnalysis::Build(BasicBlock *block)
 
 	// Debug printing
 
-	if (Utils::Options::IsBackend_PrintAnalysis())
+	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Block dependency graphs: " + block->GetName());
+		Utils::Logger::LogInfo(Name + " '" + functionName + ":" + block->GetName() + "'");
 		for (auto graph : m_graphs)
 		{
 			Utils::Logger::LogInfo(graph->ToDOTString(), 0, true, Utils::Logger::NoPrefix);

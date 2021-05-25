@@ -15,13 +15,15 @@ namespace Analysis {
 
 void CompatibilityAnalysis::Analyze(const FunctionDependencyOverlay *overlay)
 {
-	auto timeCompatibility_start = Utils::Chrono::Start("Compatibility analysis '" + std::string(overlay->GetName()) + "'");
+	std::string functionName(overlay->GetName());
+
+	auto timeCompatibility_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	overlay->Accept(*this);
 	Utils::Chrono::End(timeCompatibility_start);
 
-	if (Utils::Options::IsFrontend_PrintOutlineGraph())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Compatibility graph '" + std::string(overlay->GetName()) + "'");
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 
 		auto compatibilityString = Analysis::DependencyOverlayPrinter::PrettyString(m_functionOverlay);
 		Utils::Logger::LogInfo(compatibilityString, 0, true, Utils::Logger::NoPrefix);

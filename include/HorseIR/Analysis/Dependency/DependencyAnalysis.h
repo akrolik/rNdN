@@ -13,6 +13,9 @@ namespace Analysis {
 class DependencyAnalysis : public ConstHierarchicalVisitor
 {
 public:
+	inline const static std::string Name = "Dependency analysis";
+	inline const static std::string ShortName = "dep";
+
 	DependencyAnalysis(const DependencyAccessAnalysis& accessAnalysis) : m_accessAnalysis(accessAnalysis) {}
 
 	// Analysis inputs and outputs

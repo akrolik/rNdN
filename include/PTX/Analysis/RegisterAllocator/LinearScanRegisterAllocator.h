@@ -15,6 +15,9 @@ namespace Analysis {
 class LinearScanRegisterAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
 {
 public:
+	inline const static std::string Name = "Linear scan";
+	inline const static std::string ShortName = "reg";
+
 	LinearScanRegisterAllocator(const LiveIntervals& liveIntervals) : m_liveIntervals(liveIntervals) {}
 
 	// Public API

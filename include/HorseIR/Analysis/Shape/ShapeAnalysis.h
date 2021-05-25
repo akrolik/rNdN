@@ -46,8 +46,11 @@ class ShapeAnalysis : public ForwardAnalysis<ShapeAnalysisProperties>
 public:
 	using Properties = ShapeAnalysisProperties;
 
+	inline const static std::string Name = "Shape analysis";
+	inline const static std::string ShortName = "shape";
+
 	ShapeAnalysis(const DataObjectAnalysis& dataAnalysis, const Program *program, bool enforce = false) :
-		ForwardAnalysis<ShapeAnalysisProperties>(program), m_dataAnalysis(dataAnalysis), m_enforce(enforce) {}
+		ForwardAnalysis<ShapeAnalysisProperties>(Name, ShortName, program), m_dataAnalysis(dataAnalysis), m_enforce(enforce) {}
 
 	void AddCompressionConstraint(const DataObject *dataObject, const Shape::Size *size);
 
@@ -76,8 +79,6 @@ public:
 	
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Shape analysis"; }
 
 	// Shape utilities for propagation
 

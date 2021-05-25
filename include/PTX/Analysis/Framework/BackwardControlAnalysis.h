@@ -11,6 +11,8 @@ template<class F>
 class BackwardControlAnalysis : public ControlFlowAnalysis<F>
 {
 public:
+	using ControlFlowAnalysis<F>::ControlFlowAnalysis;
+
 	void TraverseFunction(const FunctionDefinition<VoidType> *function, const F& initialFlow) override
 	{
 		const auto cfg = function->GetControlFlowGraph();

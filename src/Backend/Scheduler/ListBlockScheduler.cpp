@@ -17,7 +17,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	// Build the instruction dependency graphs (DAG) for the basic block, each
 	// representing a schedulable section that may be reordered
 
-	SASS::Analysis::BlockDependencyAnalysis dependencyAnalysis;
+	SASS::Analysis::BlockDependencyAnalysis dependencyAnalysis(m_function);
 	dependencyAnalysis.Build(block);
 
 	auto timeScheduler_start = Utils::Chrono::Start("List scheduler '" + block->GetName() + "'");

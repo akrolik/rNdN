@@ -13,8 +13,14 @@ namespace Analysis {
 class BlockDependencyAnalysis : public Visitor
 {
 public:
-	void Build(BasicBlock *block);
+	inline const static std::string Name = "Block dependency analysis";
+	inline const static std::string ShortName = "dep";
 
+	// Public API
+
+	BlockDependencyAnalysis(const Function *function) : m_function(function) {}
+
+	void Build(BasicBlock *block);
 	const std::vector<BlockDependencyGraph *>& GetGraphs() const { return m_graphs; }
 
 	// Visitors
@@ -62,6 +68,8 @@ private:
 
 	bool m_destination = false;
 	bool m_predicated = false;
+
+	const Function *m_function = nullptr;
 };
 
 }

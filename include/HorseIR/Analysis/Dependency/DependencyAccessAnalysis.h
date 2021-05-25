@@ -46,7 +46,13 @@ class DependencyAccessAnalysis : public ForwardAnalysis<DependencyAccessProperti
 {
 public:
 	using Properties = DependencyAccessProperties;
-	using ForwardAnalysis<Properties>::ForwardAnalysis;
+
+	inline const static std::string Name = "Dependency access analysis";
+	inline const static std::string ShortName = "depaccess";
+
+	DependencyAccessAnalysis(const Program *program) : ForwardAnalysis<DependencyAccessProperties>(Name, ShortName, program) {}
+
+	// Visitors
 
 	void Visit(const DeclarationStatement *declarationS) override;
 	void Visit(const AssignStatement *assignS) override;
@@ -54,8 +60,6 @@ public:
 
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Dependency access analysis"; }
 };
 
 }

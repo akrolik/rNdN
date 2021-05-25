@@ -34,7 +34,11 @@ class LiveVariables : public BackwardAnalysis<LiveVariablesProperties>, public C
 {
 public:
 	using Properties = LiveVariablesProperties;
-	using BackwardAnalysis<LiveVariablesProperties>::BackwardAnalysis;
+
+	inline const static std::string Name = "Live variables";
+	inline const static std::string ShortName = "live";
+
+	LiveVariables() : BackwardAnalysis<LiveVariablesProperties>(Name, ShortName) {}
 
 	// Visitors
 
@@ -54,8 +58,6 @@ public:
 	Properties TemporaryFlow(const FunctionDefinition<VoidType> *function) const override;
 
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Live variables"; }
 
 private:
 	bool m_destination = false;

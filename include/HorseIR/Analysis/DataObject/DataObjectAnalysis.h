@@ -34,7 +34,11 @@ class DataObjectAnalysis : public ForwardAnalysis<DataObjectProperties>
 {
 public:
 	using Properties = DataObjectProperties;
-	using ForwardAnalysis<Properties>::ForwardAnalysis;
+
+	inline const static std::string Name = "Data object analysis";
+	inline const static std::string ShortName = "dataobj";
+
+	DataObjectAnalysis(const Program *program) : ForwardAnalysis<DataObjectProperties>(Name, ShortName, program) {}
 
 	// Parameters
 
@@ -57,8 +61,6 @@ public:
 
 	Properties InitialFlow() const override;
 	Properties Merge(const Properties& s1, const Properties& s2) const override;
-
-	std::string Name() const override { return "Data object analysis"; }
 
 	// Convenience fetching
 

@@ -18,10 +18,17 @@ namespace Analysis {
 class GeometryAnalysis : public ConstHierarchicalVisitor, public StatementAnalysis
 {
 public:
+	inline const static std::string Name = "Geometry analysis";
+	inline const static std::string ShortName = "geom";
+
+	// Public API
+
 	GeometryAnalysis(const ShapeAnalysis& shapeAnalysis) : m_shapeAnalysis(shapeAnalysis) {}
 
 	void Analyze(const Function *function);
 	const Shape *GetGeometry(const Statement *statement) const { return m_geometries.at(statement); }
+
+	// Visitors
 
 	bool VisitIn(const Statement *statement) override;
 	void VisitOut(const Statement *statement) override;
@@ -36,6 +43,8 @@ public:
 
 	bool VisitIn(const CallExpression *call) override;
 	bool VisitIn(const Operand *operand) override;
+
+	// Formatting
 
 	std::string DebugString(const Statement *statement, unsigned int indent = 0) const override;
 

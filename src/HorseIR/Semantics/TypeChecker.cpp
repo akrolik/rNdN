@@ -6,13 +6,18 @@
 #include "HorseIR/Utils/TypeUtils.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
 
+#include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 
 namespace HorseIR {
 
 void TypeChecker::Analyze(Program *program)
 {
+	auto timeTypes_start = Utils::Chrono::Start("Typechecker");
+
 	program->Accept(*this);
+
+	Utils::Chrono::End(timeTypes_start);
 }
 
 void TypeChecker::VisitOut(GlobalDeclaration *global)

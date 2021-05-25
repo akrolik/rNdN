@@ -13,13 +13,15 @@ namespace Analysis {
 
 void DependencyAnalysis::Build(const Function *function)
 {
-	auto timeDependencies_start = Utils::Chrono::Start("Dependency graph analysis '" + function->GetName() + "'");
+	auto& functionName = function->GetName();
+
+	auto timeDependencies_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 	function->Accept(*this);
 	Utils::Chrono::End(timeDependencies_start);
 
-	if (Utils::Options::IsFrontend_PrintOutlineGraph())
+	if (Utils::Options::IsFrontend_PrintAnalysis(ShortName, functionName))
 	{
-		Utils::Logger::LogInfo("Dependency graph analysis '" + function->GetName() + "'");
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
 
 		auto dependencyString = Analysis::DependencyOverlayPrinter::PrettyString(m_graphOverlay);
 		Utils::Logger::LogInfo(dependencyString, 0, true, Utils::Logger::NoPrefix);

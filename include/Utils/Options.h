@@ -2,8 +2,6 @@
 
 #include "Libraries/cxxopts.hpp"
 
-#include "Utils/Logger.h"
-
 namespace Utils {
 
 class Options
@@ -24,8 +22,8 @@ public:
 	static constexpr char const *Opt_Frontend_print_hir_typed = "frontend-print-hir-typed";
 	static constexpr char const *Opt_Frontend_print_symbols = "frontend-print-symbols";
 	static constexpr char const *Opt_Frontend_print_analysis = "frontend-print-analysis";
+	static constexpr char const *Opt_Frontend_print_analysis_func = "frontend-print-analysis-func";
 	static constexpr char const *Opt_Frontend_print_outline = "frontend-print-outline";
-	static constexpr char const *Opt_Frontend_print_outline_graph = "frontend-print-outline-graph";
 	static constexpr char const *Opt_Frontend_print_ptx = "frontend-print-ptx";
 	static constexpr char const *Opt_Frontend_print_json = "frontend-print-json";
 
@@ -34,6 +32,7 @@ public:
 	static constexpr char const *Opt_Backend_scheduler = "backend-scheduler";
 	static constexpr char const *Opt_Backend_dump_elf = "backend-dump-elf";
 	static constexpr char const *Opt_Backend_print_analysis = "backend-print-analysis";
+	static constexpr char const *Opt_Backend_print_analysis_func = "backend-print-analysis-func";
 	static constexpr char const *Opt_Backend_print_analysis_block = "backend-print-analysis-block";
 	static constexpr char const *Opt_Backend_print_cfg = "backend-print-cfg";
 	static constexpr char const *Opt_Backend_print_structured = "backend-print-structured";
@@ -69,17 +68,7 @@ public:
 	Options(Options const&) = delete;
 	void operator=(Options const&) = delete;
 
-	static void Initialize(int argc, const char *argv[])
-	{
-		auto& instance = GetInstance();
-		auto results = instance.m_options.parse(argc, argv);
-		if (results.count(Opt_Help) > 0)
-		{
-			Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Backend Scheduler", "Link", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
-			std::exit(EXIT_SUCCESS);
-		}
-		instance.m_results = results;
-	}
+	static void Initialize(int argc, const char *argv[]);
 
 	// Optimization
 
@@ -89,44 +78,27 @@ public:
 		Full
 	};
 
-	static OutlineOptimization GetOptimize_Outline()
-	{
-		auto optMode = Get<std::string>(Opt_Optimize_outline);
-		if (optMode == "none")
-		{
-			return OutlineOptimization::None;
-		}
-		else if (optMode == "flow")
-		{
-			return OutlineOptimization::Flow;
-		}
-		else if (optMode == "full")
-		{
-			return OutlineOptimization::Full;
-		}
-		Utils::Logger::LogError("Unknown outline optimization '" + optMode + "'");
-	}
+	static OutlineOptimization GetOptimize_Outline();
 
-	static bool IsOptimize_HorseIR() { return Get(Opt_Optimize_hir); }
-	static bool IsOptimize_PTX() { return Get(Opt_Optimize_ptx); }
-	static bool IsOptimize_SASS() { return Get(Opt_Optimize_sass); }
+	static bool IsOptimize_HorseIR();
+	static bool IsOptimize_PTX();
+	static bool IsOptimize_SASS();
 
 	// Debug
 
-	static bool IsDebug_Load() { return Get(Opt_Debug_load); }
-	static bool IsDebug_Print() { return Get(Opt_Debug_print); }
-	static bool IsDebug_Time() { return Get(Opt_Debug_time); }
+	static bool IsDebug_Load();
+	static bool IsDebug_Print();
+	static bool IsDebug_Time();
 
 	// Frontend
 
-	static bool IsFrontend_PrintHorseIR() { return Get(Opt_Frontend_print_hir); }
-	static bool IsFrontend_PrintHorseIRTyped() { return Get(Opt_Frontend_print_hir_typed); }
-	static bool IsFrontend_PrintSymbols() { return Get(Opt_Frontend_print_symbols); }
-	static bool IsFrontend_PrintAnalysis() { return Get(Opt_Frontend_print_analysis); }
-	static bool IsFrontend_PrintOutline() { return Get(Opt_Frontend_print_outline); }
-	static bool IsFrontend_PrintOutlineGraph() { return Get(Opt_Frontend_print_outline_graph); }
-	static bool IsFrontend_PrintPTX() { return Get(Opt_Frontend_print_ptx); }
-	static bool IsFrontend_PrintJSON() { return Get(Opt_Frontend_print_json); }
+	static bool IsFrontend_PrintHorseIR();
+	static bool IsFrontend_PrintHorseIRTyped();
+	static bool IsFrontend_PrintSymbols();
+	static bool IsFrontend_PrintAnalysis(const std::string& analysis, const std::string& function);
+	static bool IsFrontend_PrintOutline();
+	static bool IsFrontend_PrintPTX();
+	static bool IsFrontend_PrintJSON();
 
 	// Backend
 
@@ -135,87 +107,46 @@ public:
 		r3d3
 	};
 
-	static BackendKind GetBackend_Kind()
-	{
-		auto backend = Get<std::string>(Opt_Backend);
-		if (backend == "ptxas")
-		{
-			return BackendKind::ptxas;
-		}
-		else if (backend == "r3d3")
-		{
-			return BackendKind::r3d3;
-		}
-		Utils::Logger::LogError("Unknown backend '" + backend + "'");
-	}
-
 	enum class BackendRegisterAllocator {
 		Virtual,
 		LinearScan
 	};
 
-	static BackendRegisterAllocator GetBackend_RegisterAllocator()
-	{
-		auto allocator = Get<std::string>(Opt_Backend_reg_alloc);
-		if (allocator == "virtual")
-		{
-			return BackendRegisterAllocator::Virtual;
-		}
-		else if (allocator == "linear")
-		{
-			return BackendRegisterAllocator::LinearScan;
-		}
-		Utils::Logger::LogError("Unknown register allocator '" + allocator + "'");
-	}
 
 	enum class BackendScheduler {
 		Linear,
 		List
 	};
 
-	static BackendScheduler GetBackend_Scheduler()
-	{
-		auto scheduler = Get<std::string>(Opt_Backend_scheduler);
-		if (scheduler == "linear")
-		{
-			return BackendScheduler::Linear;
-		}
-		else if (scheduler == "list")
-		{
-			return BackendScheduler::List;
-		}
-		Utils::Logger::LogError("Unknown scheduler '" + scheduler + "'");
-	}
+	static BackendKind GetBackend_Kind();
+	static BackendRegisterAllocator GetBackend_RegisterAllocator();
+	static BackendScheduler GetBackend_Scheduler();
 
-	static bool IsBackend_DumpELF() { return Get(Opt_Backend_dump_elf); }
-	static bool IsBackend_PrintAnalysis() { return Get(Opt_Backend_print_analysis); }
-	static bool IsBackend_PrintAnalysisBlock() { return Get(Opt_Backend_print_analysis_block); }
-	static bool IsBackend_PrintCFG() { return Get(Opt_Backend_print_cfg); }
-	static bool IsBackend_PrintStructured() { return Get(Opt_Backend_print_structured); }
-	static bool IsBackend_PrintScheduled() { return Get(Opt_Backend_print_scheduled); }
-	static bool IsBackend_PrintSASS() { return Get(Opt_Backend_print_sass); }
-	static bool IsBackend_PrintAssembled() { return Get(Opt_Backend_print_assembled); }
-	static bool IsBackend_PrintELF() { return Get(Opt_Backend_print_elf); }
+	static bool IsBackend_DumpELF();
+	static bool IsBackend_PrintAnalysis(const std::string& analysis, const std::string& function);
+	static bool IsBackend_PrintAnalysisBlock();
+	static bool IsBackend_PrintCFG();
+	static bool IsBackend_PrintStructured();
+	static bool IsBackend_PrintScheduled();
+	static bool IsBackend_PrintSASS();
+	static bool IsBackend_PrintAssembled();
+	static bool IsBackend_PrintELF();
 
 	// Backend scheduler
 
-	static bool IsBackendSchedule_Dual() { return Get(Opt_Backend_scheduler_dual); }
-	static bool IsBackendSchedule_Reuse() { return Get(Opt_Backend_scheduler_reuse); }
-	static bool IsBackendSchedule_CBarrier() { return Get(Opt_Backend_scheduler_cbarrier); }
+	static bool IsBackendSchedule_Dual();
+	static bool IsBackendSchedule_Reuse();
+	static bool IsBackendSchedule_CBarrier();
 
 	enum class BackendScheduleHeuristic {
 		Default
 	};
 
-	static BackendScheduleHeuristic GetBackendSchedule_Heuristic()
-	{
-		// Opt_Backend_scheduler_function
-		return BackendScheduleHeuristic::Default;
-	}
+	static BackendScheduleHeuristic GetBackendSchedule_Heuristic();
 
 	// Link
 
-	static bool IsLink_External() { return Get(Opt_Link_external); }
+	static bool IsLink_External();
 
 	// Algorithm
 
@@ -225,260 +156,73 @@ public:
 		Shared
 	};
 
-	static ReductionKind GetAlgorithm_ReductionKind()
-	{
-		auto reductionMode = Get<std::string>(Opt_Algo_reduction);
-		if (reductionMode == "shflwarp")
-		{
-			return ReductionKind::ShuffleWarp;
-		}
-		else if (reductionMode  == "shflblock")
-		{
-			return ReductionKind::ShuffleBlock;
-		}
-		else if (reductionMode == "shared")
-		{
-			return ReductionKind::Shared;
-		}
-		Utils::Logger::LogError("Unknown reduction mode '" + reductionMode + "'");
-	}
-
 	enum class SortKind {
 		GlobalSort,
 		SharedSort
 	};
-
-	static SortKind GetAlgorithm_SortKind()
-	{
-		auto sortMode = Get<std::string>(Opt_Algo_sort);
-		if (sortMode == "global")
-		{
-			return SortKind::GlobalSort;
-		}
-		else if (sortMode == "shared")
-		{
-			return SortKind::SharedSort;
-		}
-		Utils::Logger::LogError("Unknown sort mode '" + sortMode + "'");
-	}
 
 	enum class GroupKind {
 		CellGroup,
 		CompressedGroup
 	};
 
-	static GroupKind GetAlgorithm_GroupKind()
-	{
-		auto groupMode = Get<std::string>(Opt_Algo_group);
-		if (groupMode == "cell")
-		{
-			return GroupKind::CellGroup;
-		}
-		else if (groupMode == "compressed")
-		{
-			return GroupKind::CompressedGroup;
-		}
-		Utils::Logger::LogError("Unknown group mode '" + groupMode + "'");
-	}
-
 	enum class JoinKind {
 		LoopJoin,
 		HashJoin
 	};
 
-	static JoinKind GetAlgorithm_JoinKind()
-	{
-		auto joinMode = Get<std::string>(Opt_Algo_join);
-		if (joinMode == "loop")
-		{
-			return JoinKind::LoopJoin;
-		}
-		else if (joinMode == "hash")
-		{
-			return JoinKind::HashJoin;
-		}
-		Utils::Logger::LogError("Unknown join mode '" + joinMode + "'");
-	}
-
-	static unsigned int GetAlgorithm_HashSize() { return Get<unsigned int>(Opt_Algo_hash_size); }
-
 	enum class LikeKind {
 		PCRELike,
-		OptLike
+		InternalLike
 	};
-
-	static LikeKind GetAlgorithm_LikeKind()
-	{
-		auto likeMode = Get<std::string>(Opt_Algo_like);
-		if (likeMode == "pcre")
-		{
-			return LikeKind::PCRELike;
-		}
-		else if (likeMode == "opt")
-		{
-			return LikeKind::OptLike;
-		}
-		Utils::Logger::LogError("Unknown like mode '" + likeMode + "'");
-	}
 
 	enum class UniqueKind {
 		SortUnique,
 		LoopUnique
 	};
 
-	static UniqueKind GetAlgorithm_UniqueKind()
-	{
-		auto uniqueKind = Get<std::string>(Opt_Algo_unique);
-		if (uniqueKind == "sort")
-		{
-			return UniqueKind::SortUnique;
-		}
-		else if (uniqueKind == "loop")
-		{
-			return UniqueKind::LoopUnique;
-		}
-		Utils::Logger::LogError("Unknown unique mode '" + uniqueKind + "'");
-	}
+	static ReductionKind GetAlgorithm_ReductionKind();
+	static SortKind GetAlgorithm_SortKind();
+	static GroupKind GetAlgorithm_GroupKind();
+	static JoinKind GetAlgorithm_JoinKind();
+	static unsigned int GetAlgorithm_HashSize();
+	static LikeKind GetAlgorithm_LikeKind();
+	static UniqueKind GetAlgorithm_UniqueKind();
 
 	// Data
 
-	static bool IsData_LoadTPCH() { return Get(Opt_Data_load_tpch); }
-	static std::string GetData_PathTPCH() { return Get<std::string>(Opt_Data_path_tpch); }
+	static bool IsData_LoadTPCH();
+	static std::string GetData_PathTPCH();
 
-	static float GetData_Resize() { return Get<float>(Opt_Data_resize); }
+	static float GetData_Resize();
 
 	enum class AllocatorKind {
 		CUDA,
 		Linear
 	};
 
-	static AllocatorKind GetData_AllocatorKind()
-	{
-		auto allocator = Get<std::string>(Opt_Data_allocator);
-		if (allocator == "cuda")
-		{
-			return AllocatorKind::CUDA;
-		}
-		else if (allocator == "linear")
-		{
-			return AllocatorKind::Linear;
-		}
-		Utils::Logger::LogError("Unknown allocator '" + allocator + "'");
-	}
-
-	static unsigned long long GetData_PageSize() { return Get<unsigned long long>(Opt_Data_page_size); }
-	static unsigned int GetData_PageCount() { return Get<unsigned int>(Opt_Data_page_count); }
+	static AllocatorKind GetData_AllocatorKind();
+	static unsigned long long GetData_PageSize();
+	static unsigned int GetData_PageCount();
 
 	// Input file
 
-	static bool HasInputFile() { return Present(Opt_File); }
-	static std::string GetInputFile() { return Get<std::string>(Opt_File); }
+	static bool HasInputFile();
+	static std::string GetInputFile();
 
 private:
 	// Getter
 
-	static bool Present(const std::string& name)
-	{
-		return GetInstance().m_results.count(name) > 0;
-	}
-
-	static bool Get(const std::string& name)
-	{
-		auto& results = GetInstance().m_results;
-		if (results.count(name) > 0)
-		{
-			return results[name].as<bool>();
-		}
-		return false;
-	}
+	static bool Present(const std::string& name);
+	static bool Get(const std::string& name);
 
 	template<typename T>
-	static const T& Get(const std::string& name)
-	{
-		return GetInstance().m_results[name].as<T>();
-	}
+	static const T& Get(const std::string& name);
 
 	// Initialization
 
-	Options() : m_options("r3d3", "Optimizing JIT compiler for HorseIR targetting PTX")
-	{
-		m_options.add_options()
-			("h,help", "Display this help menu")
-		;
-		m_options.add_options("Optimization")
-			(Opt_Optimize_outline, "Outline graph optimization [none|flow|full]", cxxopts::value<std::string>()->default_value("full"))
-			(Opt_Optimize_ptx, "PTX optimizer")
-			(Opt_Optimize_sass, "SASS optimizer")
-		;
-		m_options.add_options("Debug")
-			(Opt_Debug_load, "Debug data loading")
-			(Opt_Debug_print, "Print debug logs")
-			(Opt_Debug_time, "Print executing timings")
-		;
-		m_options.add_options("Frontend")
-			(Opt_Frontend_print_hir, "Pretty print input HorseIR program")
-			(Opt_Frontend_print_hir_typed, "Pretty print typed HorseIR program")
-			(Opt_Frontend_print_symbols, "Print symbol table")
-			(Opt_Frontend_print_analysis, "Print frontend analyses")
-			(Opt_Frontend_print_outline, "Pretty print outlined HorseIR program")
-			(Opt_Frontend_print_outline_graph, "Pretty print outliner graph")
-			(Opt_Frontend_print_ptx, "Print generated PTX code")
-			(Opt_Frontend_print_json, "Print generated PTX JSON")
-		;
-		m_options.add_options("Backend")
-			(Opt_Backend, "Backend assembler [ptxas|r3d3]", cxxopts::value<std::string>()->default_value("r3d3"))
-			(Opt_Backend_reg_alloc, "Register allocation algorithm [virtual|linear]", cxxopts::value<std::string>()->default_value("linear"))
-			(Opt_Backend_scheduler, "Scheduler algorithm [linear|list]", cxxopts::value<std::string>()->default_value("list"))
-			(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
-			(Opt_Backend_print_analysis, "Print backend analyses")
-			(Opt_Backend_print_analysis_block, "Print backend analyses in basic blocks mode")
-			(Opt_Backend_print_cfg, "Print control-flow graph")
-			(Opt_Backend_print_structured, "Print structured control-flow graph")
-			(Opt_Backend_print_sass, "Print generated SASS code")
-			(Opt_Backend_print_scheduled, "Print scheduled SASS code")
-			(Opt_Backend_print_assembled, "Print assembled SASS code")
-			(Opt_Backend_print_elf, "Print generated ELF file")
-		;
-		m_options.add_options("Backend Scheduler")
-			(Opt_Backend_scheduler_dual, "Dual issue instructions")
-			(Opt_Backend_scheduler_reuse, "Enable register reuse flags")
-			(Opt_Backend_scheduler_cbarrier, "Data dependence counting barriers")
-			(Opt_Backend_scheduler_function, "Schedule heuristic [TODO]")
-		;
-		m_options.add_options("Link")
-			(Opt_Link_external, "Link external libraries (libdevice)")
-		;
-		m_options.add_options("Algorithm")
-			(Opt_Algo_reduction, "Reduction [sfhlwarp|shflblock|shared]", cxxopts::value<std::string>()->default_value("shflwarp"))
-			(Opt_Algo_sort, "Sort mode [global|shared]", cxxopts::value<std::string>()->default_value("shared"))
-			(Opt_Algo_group, "Group mode [cell|compressed]", cxxopts::value<std::string>()->default_value("compressed"))
-			(Opt_Algo_join, "Join mode [loop|hash]", cxxopts::value<std::string>()->default_value("hash"))
-			(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
-			(Opt_Algo_like, "Like mode [pcre|opt]", cxxopts::value<std::string>()->default_value("opt"))
-			(Opt_Algo_unique, "Unique mode [sort|loop]", cxxopts::value<std::string>()->default_value("loop"))
-		;
-		m_options.add_options("Backend")
-		;
-		m_options.add_options("Data")
-			(Opt_Data_load_tpch, "Load TPC-H data")
-			(Opt_Data_path_tpch, "TPC-H data path", cxxopts::value<std::string>())
-			(Opt_Data_allocator, "GPU allocator algorithm [cuda|linear]", cxxopts::value<std::string>()->default_value("linear"))
-			(Opt_Data_page_size, "GPU page size", cxxopts::value<unsigned long long>()->default_value("2147483648"))
-			(Opt_Data_page_count, "GPU page count", cxxopts::value<unsigned int>()->default_value("2"))
-			(Opt_Data_resize, "Resize buffer factor (only used with cuda allocator)", cxxopts::value<float>()->default_value("0.9"))
-		;
-		m_options.add_options("Query")
-			(Opt_File, "Query HorseIR file", cxxopts::value<std::string>())
-		;
-		m_options.parse_positional(Opt_File);
-		m_options.positional_help("filename");
-	}
-
-	static Options& GetInstance()
-	{
-		static Options instance;
-		return instance;
-	}
+	Options();
+	static Options& GetInstance();
 
 	cxxopts::Options m_options;
 	cxxopts::ParseResult m_results;

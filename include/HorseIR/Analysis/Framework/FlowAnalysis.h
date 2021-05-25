@@ -24,13 +24,13 @@ class FlowAnalysis : public ConstVisitor, public StatementAnalysis
 public:
 	using ConstVisitor::Visit;
 
-	FlowAnalysis(const Program *program) : m_program(program) {}
+	FlowAnalysis(const std::string& name, const std::string& shortName, const Program *program) : m_name(name), m_shortName(shortName), m_program(program) {}
 
 	void Analyze(const Function *function)
 	{
-		m_analysisTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+		m_analysisTime = Utils::Chrono::Start(m_name + " '" + function->GetName() + "'");
 
-		auto timeInit_start = Utils::Chrono::Start(Name() + " initial flow");
+		auto timeInit_start = Utils::Chrono::Start(m_name + " initial flow");
 		auto initialFlow = InitialFlow();
 		Utils::Chrono::End(timeInit_start);
 
@@ -41,12 +41,13 @@ public:
 	{
 		// Clear sets and traverse the function, timing results
 
+		auto& functionName = function->GetName();
 		if (m_analysisTime == nullptr)
 		{
-			m_analysisTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "'");
+			m_analysisTime = Utils::Chrono::Start(m_name + " '" + functionName + "'");
 		}
 
-		m_functionTime = Utils::Chrono::Start(Name() + " '" + function->GetName() + "' body");
+		m_functionTime = Utils::Chrono::Start(m_name + " '" + functionName + "' body");
 
 		this->m_currentSet.clear();
 
@@ -54,7 +55,7 @@ public:
 
 		// Print results if needed
 
-		if (Utils::Options::IsFrontend_PrintAnalysis())
+		if (Utils::Options::IsFrontend_PrintAnalysis(m_shortName, functionName))
 		{
 			PrintResults(function);
 		}
@@ -65,7 +66,7 @@ public:
 
 	void PrintResults(const Function *function)
 	{
-		Utils::Logger::LogInfo(Name() + " " + function->GetName());
+		Utils::Logger::LogInfo(m_name + " '" + function->GetName() + "'");
 
 		auto string = StatementAnalysisPrinter::PrettyString(*this, function);
 		Utils::Logger::LogInfo(string, 0, true, Utils::Logger::NoPrefix);
@@ -172,6 +173,9 @@ public:
 	void SetCollectInSets(bool collectInSets) { m_collectInSets = collectInSets; }
 	void SetCollectOutSets(bool collectOutSets) { m_collectOutSets = collectOutSets; }
 
+	const std::string& GetName() const { return m_name; }
+	const std::string& GetShortName() const { return m_shortName; }
+
 	// Formatting
 
 	std::string DebugString(const Statement *statement, unsigned indent = 0) const override
@@ -207,7 +211,6 @@ public:
 
 	virtual F InitialFlow() const = 0;
 	virtual F Merge(const F& s1, const F& s2) const = 0;
-	virtual std::string Name() const = 0;
 
 protected:
 	void SetInSet(const Statement *statement, const F& set) { m_inSets.insert_or_assign(statement, set); }
@@ -226,6 +229,9 @@ protected:
 
 	const Utils::Chrono::SpanTiming *m_analysisTime = nullptr;
 	const Utils::Chrono::SpanTiming *m_functionTime = nullptr;
+
+	std::string m_name;
+	std::string m_shortName;
 };
 
 }

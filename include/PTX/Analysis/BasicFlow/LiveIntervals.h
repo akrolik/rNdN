@@ -14,6 +14,9 @@ class LiveIntervals : public ConstHierarchicalVisitor
 public:
 	using LiveInterval = std::pair<unsigned int, unsigned int>;
 
+	inline const static std::string Name = "Live internals";
+	inline const static std::string ShortName = "interval";
+
 	// Public API
 
 	LiveIntervals(const LiveVariables& liveVariables) : m_liveVariables(liveVariables) {}

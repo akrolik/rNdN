@@ -18,6 +18,9 @@ namespace Analysis {
 class CompatibilityAnalysis : public DependencyOverlayConstVisitor
 {
 public:
+	inline const static std::string Name = "Compatibility analysis";
+	inline const static std::string ShortName = "comp";
+
 	CompatibilityAnalysis(const GeometryAnalysis& geometryAnalysis) : m_geometryAnalysis(geometryAnalysis) {}
 
 	// Analysis input/output
