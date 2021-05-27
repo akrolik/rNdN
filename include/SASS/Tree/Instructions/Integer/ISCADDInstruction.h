@@ -16,7 +16,8 @@ public:
 		None  = 0,
 		NEG_I = 0x0100000000000000,
 		NEG_A = 0x0002000000000000,
-		NEG_B = 0x0001000000000000
+		NEG_B = 0x0001000000000000,
+		CC    = 0x0000800000000000
 	};
 
 	SASS_FLAGS_FRIEND()
@@ -49,6 +50,10 @@ public:
 	
 	std::vector<Operand *> GetDestinationOperands() const override
 	{
+		if (m_flags & Flags::CC)
+		{
+			return { m_destination, SASS::CC };
+		}
 		return { m_destination };
 	}
 
@@ -75,6 +80,10 @@ public:
 			code += "-";
 		}
 		code += m_sourceA->ToString();
+		if (m_flags & Flags::CC)
+		{
+			code += ".CC";
+		}
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 		code += ", ";
 

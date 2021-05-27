@@ -182,23 +182,16 @@ public:
 
 		// Get the address of the value in the indirection structure (by the bitsize of the address)
 
-		auto globalIndexed = resources->template AllocateTemporary<PTX::UIntType<B>>();
-		auto globalIndexedPointer = new PTX::PointerRegisterAdapter<B, DataType, PTX::GlobalSpace>(globalIndexed);
-
-		AddressGenerator<B, DataType> addressGenerator(this->m_builder);
-		auto offset = addressGenerator.template GenerateAddressOffset<B>(index);
-
 		auto parameterAddress = GenerateParameterAddress<DataType>(parameter);
 
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(globalIndexed, parameterAddress->GetVariable(), offset));
+		AddressGenerator<B, DataType> addressGenerator(this->m_builder);
+		auto indexedAddress = addressGenerator.template GenerateAddress<PTX::GlobalSpace>(parameterAddress->GetVariable(), index);
 
 		// Load the indirect address of the data
 
 		auto cellAddressName = NameUtils::DataCellAddressName(parameter);
 		auto cellRegister = resources->template AllocateRegister<PTX::UIntType<B>>(cellAddressName);
-
 		auto dataPointer = new PTX::PointerRegisterAdapter<B, T, PTX::GlobalSpace>(cellRegister);
-		auto indexedAddress = new PTX::RegisterAddress<B, DataType, PTX::GlobalSpace>(globalIndexedPointer);
 
 		this->m_builder.AddStatement(new PTX::LoadNCInstruction<B, DataType>(dataPointer, indexedAddress));
 	}

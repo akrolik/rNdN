@@ -81,45 +81,32 @@ public:
 		}
 		else
 		{
+			// Compute offset from the base address using the thread id and the data size
+
 			auto address = resources->template AllocateTemporary<PTX::UIntType<B>>();
-			auto indexOffset = GenerateAddressOffset<T::TypeBits>(index);
+			if constexpr(B == PTX::Bits::Bits32)
+			{
+				// In a 32-bit system, the offset is computed by using a left shift of the thread id by
+				// the data size. The registers are both adapted to bit types since it is required
+				// for the instruction
 
-			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(address, base, indexOffset));
+				auto indexOffset = resources->template AllocateTemporary<PTX::UInt32Type>();
+				this->m_builder.AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
+					new PTX::Bit32RegisterAdapter<PTX::UIntType>(indexOffset),
+					new PTX::Bit32Adapter<PTX::UIntType>(index),
+					new PTX::UInt32Value(std::log2(PTX::BitSize<T::TypeBits>::NumBytes))
+				));
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(address, base, indexOffset));
+			}
+			else
+			{
+				// In a 64-bit system, the offset is computed using a wide multiplication of the thread id and
+				// the data size. A wide multiplication extends the result past the 32-bit size of both operands
 
+				this->m_builder.AddStatement(new PTX::MADWideInstruction<PTX::UInt32Type>(address, index, new PTX::UInt32Value(PTX::BitSize<T::TypeBits>::NumBytes), base));
+			}
 			return new PTX::RegisterAddress<B, T, S>(new PTX::PointerRegisterAdapter<B, T, S>(address), offset);
 		}
-	}
-
-	template<PTX::Bits OffsetBits>
-	PTX::TypedOperand<PTX::UIntType<B>> *GenerateAddressOffset(PTX::TypedOperand<PTX::UInt32Type> *index)
-	{
-		// Compute offset from the base address using the thread id and the data size
-
-		auto resources = this->m_builder.GetLocalResources();
-		auto offset = resources->template AllocateTemporary<PTX::UIntType<B>>();
-
-		if constexpr(B == PTX::Bits::Bits32)
-		{
-			// In a 32-bit system, the offset is computed by using a left shift of the thread id by
-			// the data size. The registers are both adapted to bit types since it is required
-			// for the instruction
-
-			this->m_builder.AddStatement(new PTX::ShiftLeftInstruction<PTX::Bit32Type>(
-				new PTX::Bit32RegisterAdapter<PTX::UIntType>(offset),
-				new PTX::Bit32Adapter<PTX::UIntType>(index),
-				new PTX::UInt32Value(std::log2(PTX::BitSize<OffsetBits>::NumBytes))
-			));
-		}
-		else
-		{
-			// In a 64-bit system, the offset is computed using a wide multiplication of the thread
-			// id and the data size. A wide multiplication extends the result past the 32-bit
-			// size of both operands
-
-			this->m_builder.AddStatement(new PTX::MultiplyWideInstruction<PTX::UInt32Type>(offset, index, new PTX::UInt32Value(PTX::BitSize<OffsetBits>::NumBytes)));
-		}
-
-                return offset;
 	}
 
 private:

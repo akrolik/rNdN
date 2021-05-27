@@ -4,6 +4,7 @@
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/CountLeadingZerosGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/DivideGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MADGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Arithmetic/MADWideGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/MultiplyWideGenerator.h"
 #include "Backend/Codegen/Generators/Instructions/Arithmetic/RemainderGenerator.h"
@@ -70,6 +71,12 @@ void InstructionGenerator::Visit(const PTX::_DivideInstruction *instruction)
 void InstructionGenerator::Visit(const PTX::_MADInstruction *instruction)
 {
 	MADGenerator generator(this->m_builder);
+	generator.Generate(instruction);
+}
+
+void InstructionGenerator::Visit(const PTX::_MADWideInstruction *instruction)
+{
+	MADWideGenerator generator(this->m_builder);
 	generator.Generate(instruction);
 }
 
