@@ -105,29 +105,12 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto stallLeft = instructionBarrierStall.at(left);
 			auto stallRight = instructionBarrierStall.at(right);
 
-			// auto stallLeft = instructionStall.at(left);
-			// auto stallRight = instructionStall.at(right);
 			if (stallLeft != stallRight)
 			{
 				return stallLeft > stallRight;
 			}
 
-			// Property 2: Individual latency [higher]
-
-			// auto latencyLeft = HardwareProperties::GetLatency(left) +
-			// 	HardwareProperties::GetBarrierLatency(left) +
-			// 	HardwareProperties::GetReadHold(left);
-
-			// auto latencyRight = HardwareProperties::GetLatency(right) +
-			// 	HardwareProperties::GetBarrierLatency(right) +
-			// 	HardwareProperties::GetReadHold(right);
-
-			// if (latencyLeft != latencyRight)
-			// {
-			// 	// return latencyLeft < latencyRight;
-			// }
-
-			// Property 3: Overall/path latency [higher]
+			// Property 2: Overall/path latency [higher]
 
 			auto pathLeft = dependencyGraph->GetNodeValue(left);
 			auto pathRight = dependencyGraph->GetNodeValue(right);
@@ -137,7 +120,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				return pathLeft < pathRight;
 			}
 
-			// Property 4: Tie breaker
+			// Property 3: Tie breaker (groups sibling instructions)
 			
 			return topologicalOrder.at(left) < topologicalOrder.at(right);
 		};
@@ -735,6 +718,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				}
 
 				// Also record the expected instruction availability (satisfying all barriers)
+
+				if (barrierDelay < delay)
+				{
+					barrierDelay = delay;
+				}
 
 				auto barrierTime = time + barrierDelay;
 
