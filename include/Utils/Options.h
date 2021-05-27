@@ -29,6 +29,8 @@ public:
 
 	static constexpr char const *Opt_Backend = "backend";
 	static constexpr char const *Opt_Backend_reg_alloc = "backend-reg-alloc";
+	static constexpr char const *Opt_Backend_inline_branch = "backend-inline-branch";
+	static constexpr char const *Opt_Backend_inline_branch_threshold = "backend-inline-branch-threshold";
 	static constexpr char const *Opt_Backend_scheduler = "backend-scheduler";
 	static constexpr char const *Opt_Backend_dump_elf = "backend-dump-elf";
 	static constexpr char const *Opt_Backend_print_analysis = "backend-print-analysis";
@@ -121,6 +123,9 @@ public:
 	static BackendKind GetBackend_Kind();
 	static BackendRegisterAllocator GetBackend_RegisterAllocator();
 	static BackendScheduler GetBackend_Scheduler();
+
+	static bool IsBackend_InlineBranch();
+	static unsigned int GetBackend_InlineBranchThreshold();
 
 	static bool IsBackend_DumpELF();
 	static bool IsBackend_PrintAnalysis(const std::string& analysis, const std::string& function);

@@ -91,6 +91,8 @@ public:
 		visitor.VisitOut(this);
 	}
 
+	using InstructionStatement::Accept;
+
 protected:
 	Register<PredicateType> *m_predicate = nullptr;
 	bool m_negatePredicate = false;

@@ -14,6 +14,7 @@
 #include "PTX/Analysis/SpaceAllocator/ParameterSpaceAllocator.h"
 
 #include "PTX/Transformation/Structurizer/Structurizer.h"
+#include "PTX/Transformation/Structurizer/BranchInliner.h"
 
 #include "SASS/Optimizer/Optimizer.h"
 #include "SASS/Utils/PrettyPrinter.h"
@@ -136,6 +137,14 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	auto structuredGraph = structurizer.Structurize(function);
 
 	function->SetStructuredGraph(structuredGraph);
+
+	if (Utils::Options::IsBackend_InlineBranch())
+	{
+		PTX::Transformation::BranchInliner branchInliner;
+		auto inlinedGraph = branchInliner.Optimize(function);
+
+		function->SetStructuredGraph(inlinedGraph);
+	}
 
 	Utils::Chrono::End(timeStructurizer);
 

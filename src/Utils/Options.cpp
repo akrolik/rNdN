@@ -174,6 +174,16 @@ Options::BackendScheduler Options::GetBackend_Scheduler()
 	Utils::Logger::LogError("Unknown scheduler '" + scheduler + "'");
 }
 
+bool Options::IsBackend_InlineBranch()
+{
+	return Get(Opt_Backend_inline_branch);
+}
+
+unsigned int Options::GetBackend_InlineBranchThreshold()
+{
+	return Get<unsigned int>(Opt_Backend_inline_branch_threshold);
+}
+
 bool Options::IsBackend_DumpELF()
 {
 	return Get(Opt_Backend_dump_elf);
@@ -510,6 +520,8 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 			"   - list       Pipelining List scheduler (options below)",
 			cxxopts::value<std::string>()->default_value("list")
 		)
+		(Opt_Backend_inline_branch, "Enable inlined (predicated) control-flow branches", cxxopts::value<bool>()->default_value("true"))
+		(Opt_Backend_inline_branch_threshold, "Maximum statements in inlined branch", cxxopts::value<unsigned int>()->default_value("8"))
 		(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 		(Opt_Backend_print_analysis, "Print backend analyses\n"
 			"   - live       Live variables\n"
