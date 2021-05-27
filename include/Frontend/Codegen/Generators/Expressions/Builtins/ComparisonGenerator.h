@@ -136,7 +136,13 @@ public:
 	template<class T>
 	void Generate(PTX::Register<PTX::PredicateType> *target, PTX::TypedOperand<T> *src1, PTX::TypedOperand<T> *src2)
 	{
-		if constexpr(PTX::is_comparable_type<T>::value)
+		if constexpr(std::is_same<T, PTX::Int8Type>::value || std::is_same<T, PTX::Int16Type>::value)
+		{
+			auto converted1 = ConversionGenerator::ConvertSource<PTX::Int32Type, T>(this->m_builder, src1);
+			auto converted2 = ConversionGenerator::ConvertSource<PTX::Int32Type, T>(this->m_builder, src2);
+			Generate<PTX::Int32Type>(target, converted1, converted2);
+		}
+		else if constexpr(PTX::is_comparable_type<T>::value)
 		{
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(target, src1, src2, PTXOp<T>(m_comparisonOp)));
 		}
@@ -163,12 +169,6 @@ public:
 					break;
 				}
 			}
-		}
-		else if constexpr(std::is_same<T, PTX::Int8Type>::value)
-		{
-			auto converted1 = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, src1);
-			auto converted2 = ConversionGenerator::ConvertSource<PTX::Int16Type, T>(this->m_builder, src2);
-			Generate<PTX::Int16Type>(target, converted1, converted2);
 		}
 		else
 		{

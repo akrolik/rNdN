@@ -357,10 +357,10 @@ template<>
 void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(PTX::Register<PTX::PredicateType> *destination, PTX::TypedOperand<PTX::Int8Type> *source)
 {
 	auto resources = this->m_builder.GetLocalResources();
-	auto temp16 = resources->AllocateTemporary<PTX::Int16Type>();
+	auto temp32 = resources->AllocateTemporary<PTX::Int32Type>();
 
-	this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int16Type, PTX::Int8Type>(temp16, source));
-	this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int16Type>(destination, temp16, new PTX::Value<PTX::Int16Type>(0), PTX::Int16Type::ComparisonOperator::NotEqual));
+	this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int32Type, PTX::Int8Type>(temp32, source));
+	this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(destination, temp32, new PTX::Value<PTX::Int32Type>(0), PTX::Int32Type::ComparisonOperator::NotEqual));
 }
 
 template<>

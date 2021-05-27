@@ -229,9 +229,9 @@ private:
 	template<class T>
 	void GenerateComparison(const HorseIR::Identifier *identifier, bool isCell = false, unsigned int index = 0, unsigned int limit = 1)
 	{
-		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
+		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value || std::is_same<T, PTX::Int16Type>::value)
 		{
-			GenerateComparison<PTX::Int16Type>(identifier, isCell, index, limit);
+			GenerateComparison<PTX::Int32Type>(identifier, isCell, index, limit);
 		}
 		else
 		{
