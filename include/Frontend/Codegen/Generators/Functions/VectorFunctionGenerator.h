@@ -95,17 +95,35 @@ public:
 					blockIndex, g_initBlocksAddress, new PTX::UInt32Value(1), PTX::UInt32Type::AtomicOperation::Add
 				));
 
-				// Compute the block index, keeping it within range (the kernel may be executed multiple times)
-
-				SpecialRegisterGenerator specialGenerator(this->m_builder);
-				auto nctaidx = specialGenerator.GenerateBlockCount();
-
-				this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(blockIndex, blockIndex, nctaidx));
-
 				// Store the unique block index for the entire block in shared member
 
 				auto s_blockIndexAddress = addressGenerator.GenerateAddress(s_blockIndex);
 				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::SharedSpace>(s_blockIndexAddress, blockIndex));
+
+				// Reset the block index (the kernel may be executed multiple times)
+
+				this->m_builder.AddIfStatement("RESET", [&]()
+				{
+					auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto nctaidxP1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+					SpecialRegisterGenerator specialGenerator(this->m_builder);
+					auto nctaidx = specialGenerator.GenerateBlockCount();
+
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(nctaidxP1, nctaidx, new PTX::UInt32Value(1)));
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+						predicate, blockIndex, nctaidx, PTX::UInt32Type::ComparisonOperator::NotEqual
+					));
+
+					return std::make_pair(predicate, false);
+				},
+				[&]()
+				{
+					auto value = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(value, new PTX::UInt32Value(0)));
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_initBlocksAddress, value));
+				});
 			});
 
 			// Synchronize the block index across all threads in the block

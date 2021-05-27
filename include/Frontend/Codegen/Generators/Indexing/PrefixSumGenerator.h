@@ -240,11 +240,6 @@ public:
 					completedBlocks, g_completedBlocksAddress, new PTX::UInt32Value(0), PTX::UInt32Type::AtomicOperation::Add
 				));
 
-				// Since the kernel may be executed multiple times, keep within range
-
-				auto nctaidx = specialGenerator.GenerateBlockCount();
-				this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, nctaidx));
-
 				// Check if we are next, or keep looping!
 
 				auto atomicPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
@@ -279,7 +274,33 @@ public:
 			// Proceed to next thread by incrementing the global counter
 
 			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, new PTX::UInt32Value(1)));
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
+
+			// Reset the block index (the kernel may be executed multiple times)
+
+			this->m_builder.AddIfElseStatement("UPDATE", [&]()
+			{
+				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				auto nctaidxP1 = resources->template AllocateTemporary<PTX::UInt32Type>();
+				auto nctaidx = specialGenerator.GenerateBlockCount();
+
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(nctaidxP1, nctaidx, new PTX::UInt32Value(1)));
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					predicate, blockIndex, nctaidx, PTX::UInt32Type::ComparisonOperator::NotEqual
+				));
+
+				return std::make_pair(predicate, false);
+			},
+			[&]()
+			{
+				auto value = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(value, new PTX::UInt32Value(0)));
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, value));
+			},
+			[&]()
+			{
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
+			});
 		});
 
 		// Synchronize the results - every thread now has the previous thread's (inclusive) prefix sum
