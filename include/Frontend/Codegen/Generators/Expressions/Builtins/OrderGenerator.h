@@ -628,7 +628,8 @@ public:
 
 				auto subsequenceStart = resources->template AllocateTemporary<PTX::UInt32Type>();
 
-				//TODO: Optimize
+				// 3 instructions for MAD, can only optimize to (add, shift, add), so equivalent
+
 				this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
 					subsequenceStart, subsequenceIndex, subsequenceSize, sequenceStart, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
 				));
@@ -757,7 +758,6 @@ public:
 			auto blockIndex = indexGenerator.GenerateBlockIndex();
 			auto localIndex = indexGenerator.GenerateLocalIndex();
 
-			//TODO: Optimize
 			auto sharedIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
 			this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
 				sharedIndex, new PTX::UInt32Value(SORT_CACHE_SIZE * 2), blockIndex, localIndex, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
