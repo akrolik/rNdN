@@ -521,7 +521,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 			cxxopts::value<std::string>()->default_value("list")
 		)
 		(Opt_Backend_inline_branch, "Enable inlined (predicated) control-flow branches", cxxopts::value<bool>()->default_value("true"))
-		(Opt_Backend_inline_branch_threshold, "Maximum statements in inlined branch", cxxopts::value<unsigned int>()->default_value("8"))
+		(Opt_Backend_inline_branch_threshold, "Maximum statements in inlined branch", cxxopts::value<unsigned int>()->default_value("6"))
 		(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
 		(Opt_Backend_print_analysis, "Print backend analyses\n"
 			"   - live       Live variables\n"
