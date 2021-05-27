@@ -54,8 +54,11 @@ std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction
 		{
 			return 2; // 1 cycle issue, 1 cycle barrier
 		}
-		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Control:
+		{
+			return 5;
+		}
+		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Shift:
 		{
 			return 6; // Fixed pipeline depth
@@ -74,7 +77,7 @@ std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *inst
 	{
 		case SASS::Instruction::InstructionClass::Control:
 		{
-			return 6; // Must complete
+			return 5; // Must complete
 		}
 		case SASS::Instruction::InstructionClass::S2R:
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
