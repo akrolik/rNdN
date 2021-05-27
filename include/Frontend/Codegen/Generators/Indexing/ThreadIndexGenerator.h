@@ -110,6 +110,16 @@ public:
 
 	PTX::Register<PTX::UInt32Type> *GenerateGlobalIndex()
 	{
+		if (auto index = this->m_builder.GetThreadIndex())
+		{
+			auto resources = this->m_builder.GetLocalResources();
+			auto temp = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(temp, index));
+
+			return temp;
+		}
+
 		// Compute the thread index as blockSize * blockIndex + threadIndex
 
 		auto tidx = GenerateLocalIndex();
@@ -124,6 +134,7 @@ public:
 		this->m_builder.AddStatement(new PTX::MADInstruction<PTX::UInt32Type>(
 			index, ctaidx, ntidx, tidx, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
 		));
+		this->m_builder.SetThreadIndex(index);
 
 		return index;
 	}

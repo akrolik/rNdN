@@ -92,6 +92,10 @@ public:
 
 		m_currentKernel = nullptr;
 		m_currentFunction = nullptr;
+
+		// CSE properties
+
+		m_threadIndex = nullptr;
 	}
 
 	template<class T, class S>
@@ -263,6 +267,11 @@ public:
 		AddStatement(new PTX::LabelStatement(endLabel));
 	}
 
+	// CSE special registers
+
+	PTX::Register<PTX::UInt32Type> *GetThreadIndex() const { return m_threadIndex; }
+	void SetThreadIndex(PTX::Register<PTX::UInt32Type> *threadIndex) { m_threadIndex = threadIndex; }
+
 	// Resources
 
 	const RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
@@ -314,6 +323,8 @@ private:
 	robin_hood::unordered_map<PTX::StatementList *, RegisterAllocator *> m_localResources;
 	robin_hood::unordered_map<PTX::FunctionDefinition<PTX::VoidType> *, KernelAllocator *> m_kernelResources;
 	robin_hood::unordered_map<PTX::Module *, ModuleAllocator *> m_globalResources;
+
+	PTX::Register<PTX::UInt32Type> *m_threadIndex = nullptr;
 
 	unsigned int m_uniqueIndex = 0;
 };
