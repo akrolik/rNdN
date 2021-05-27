@@ -13,6 +13,10 @@ void ConvertToAddressGenerator::Generate(const PTX::_ConvertToAddressInstruction
 template<PTX::Bits B, class T, class S>
 void ConvertToAddressGenerator::Visit(const PTX::ConvertToAddressInstruction<B, T, S> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types: *
 	// Spaces: Addressable subspace
 

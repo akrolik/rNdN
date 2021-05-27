@@ -7,6 +7,10 @@ namespace Codegen {
 
 void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Generate barrier operand
 
 	CompositeGenerator compositeGenerator(this->m_builder);

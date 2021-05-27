@@ -64,6 +64,10 @@ E ConvertGenerator::GetConversionType()
 template<class D, class S>
 void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types<D/S>:
 	//   - Int8, Int16, Int32, Int64
 	//   - UInt8, UInt16, UInt32, UInt64

@@ -15,6 +15,10 @@ void OrGenerator::Generate(const PTX::_OrInstruction *instruction)
 template<class T>
 void OrGenerator::Visit(const PTX::OrInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Predicate
 	//   - Bit16, Bit32, Bit64    

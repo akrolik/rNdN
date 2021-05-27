@@ -45,6 +45,10 @@ I LoadGenerator::InstructionType()
 template<PTX::Bits B, class T, class S, PTX::LoadSynchronization A>
 void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types: *, Vector (exclude Float16(x2))
 	// Spaces: *
 	// Modifiers: --

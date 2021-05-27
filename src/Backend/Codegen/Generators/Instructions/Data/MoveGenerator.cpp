@@ -15,6 +15,10 @@ void MoveGenerator::Generate(const PTX::_MoveInstruction *instruction)
 template<class T>
 void MoveGenerator::Visit(const PTX::MoveInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Predicate
 	//   - Bit16, Bit32, Bit64

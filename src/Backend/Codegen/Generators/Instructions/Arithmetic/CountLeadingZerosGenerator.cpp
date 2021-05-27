@@ -13,6 +13,10 @@ void CountLeadingZerosGenerator::Generate(const PTX::_CountLeadingZerosInstructi
 template<class T>
 void CountLeadingZerosGenerator::Visit(const PTX::CountLeadingZerosInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit32, Bit64    
 

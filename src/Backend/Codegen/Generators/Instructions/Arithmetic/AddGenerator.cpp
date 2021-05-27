@@ -14,6 +14,10 @@ void AddGenerator::Generate(const PTX::_AddInstruction *instruction)
 template<class T>
 void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32, Int64
 	//   - UInt16, UInt32, UInt64

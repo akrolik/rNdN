@@ -15,6 +15,10 @@ void NotGenerator::Generate(const PTX::_NotInstruction *instruction)
 template<class T>
 void NotGenerator::Visit(const PTX::NotInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Predicate
 	//   - Bit16, Bit32, Bit64    

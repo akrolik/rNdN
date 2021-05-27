@@ -206,6 +206,10 @@ SASS::DSETPInstruction::BooleanOperator SetPredicateGenerator::DInstructionBoole
 template<class T>
 void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit16, Bit32, Bit64
 	//   - Int16, Int32, Int64

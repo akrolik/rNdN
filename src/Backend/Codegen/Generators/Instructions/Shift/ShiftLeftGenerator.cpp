@@ -14,6 +14,10 @@ void ShiftLeftGenerator::Generate(const PTX::_ShiftLeftInstruction *instruction)
 template<class T>
 void ShiftLeftGenerator::Visit(const PTX::ShiftLeftInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit16, Bit32, Bit64    
 	// Modifiers: --

@@ -14,6 +14,10 @@ void MultiplyWideGenerator::Generate(const PTX::_MultiplyWideInstruction *instru
 template<class T>
 void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32
 	//   - UInt16, UInt32

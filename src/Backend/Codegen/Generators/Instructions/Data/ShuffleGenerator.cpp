@@ -15,6 +15,10 @@ void ShuffleGenerator::Generate(const PTX::_ShuffleInstruction *instruction)
 template<class T>
 void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types: Bit32
 	// Modifiers: --
 

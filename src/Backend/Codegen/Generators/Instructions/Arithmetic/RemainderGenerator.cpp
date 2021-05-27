@@ -16,6 +16,10 @@ void RemainderGenerator::Generate(const PTX::_RemainderInstruction *instruction)
 template<class T>
 void RemainderGenerator::Visit(const PTX::RemainderInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32, Int64
 	//   - UInt16, UInt32, UInt64

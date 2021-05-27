@@ -13,6 +13,10 @@ void MoveSpecialGenerator::Generate(const PTX::_MoveSpecialInstruction *instruct
 template<class T>
 void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit32
 	//   - UInt32, UInt64

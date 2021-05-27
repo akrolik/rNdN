@@ -15,6 +15,10 @@ void XorGenerator::Generate(const PTX::_XorInstruction *instruction)
 template<class T>
 void XorGenerator::Visit(const PTX::XorInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Predicate
 	//   - Bit16, Bit32, Bit64    

@@ -13,6 +13,10 @@ void PackGenerator::Generate(const PTX::_PackInstruction *instruction)
 template<class T, PTX::VectorSize V>
 void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit16, Bit32, Bit64
 	// Vector

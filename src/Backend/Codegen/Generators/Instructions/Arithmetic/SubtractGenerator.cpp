@@ -14,6 +14,10 @@ void SubtractGenerator::Generate(const PTX::_SubtractInstruction *instruction)
 template<class T>
 void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32, Int64
 	//   - UInt16, UInt32, UInt64

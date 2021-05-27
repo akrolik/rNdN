@@ -95,6 +95,10 @@ SASS::ATOMInstruction::Mode AtomicGenerator::InstructionMode(const PTX::AtomicIn
 template<PTX::Bits B, class T, class S>
 void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types
 	//   - Bit16, Bit32, Bit64
 	//   - Int32, Int64

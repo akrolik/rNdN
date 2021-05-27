@@ -14,6 +14,10 @@ void ShiftRightGenerator::Generate(const PTX::_ShiftRightInstruction *instructio
 template<class T>
 void ShiftRightGenerator::Visit(const PTX::ShiftRightInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit16, Bit32, Bit64    
 	//   - UInt16, UInt32, UInt64    

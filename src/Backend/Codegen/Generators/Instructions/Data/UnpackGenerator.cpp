@@ -13,6 +13,10 @@ void UnpackGenerator::Generate(const PTX::_UnpackInstruction *instruction)
 template<class T, PTX::VectorSize V>
 void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit16, Bit32, Bit64
 	// Vector

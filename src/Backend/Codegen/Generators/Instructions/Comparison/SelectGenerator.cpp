@@ -15,6 +15,10 @@ void SelectGenerator::Generate(const PTX::_SelectInstruction *instruction)
 template<class T>
 void SelectGenerator::Visit(const PTX::SelectInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Bit16, Bit32, Bit64
 	//   - Int16, Int32, Int64

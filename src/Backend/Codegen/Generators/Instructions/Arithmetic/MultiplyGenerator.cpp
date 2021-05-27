@@ -14,6 +14,10 @@ void MultiplyGenerator::Generate(const PTX::_MultiplyInstruction *instruction)
 template<class T>
 void MultiplyGenerator::Visit(const PTX::MultiplyInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32, Int64
 	//   - UInt16, UInt32, UInt64

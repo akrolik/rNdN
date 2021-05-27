@@ -44,6 +44,10 @@ I StoreGenerator::InstructionType()
 template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
 void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types: *, Vector (exclude Float16(x2))
 	// Spaces: *
 	// Modifiers: --

@@ -14,6 +14,10 @@ void MADGenerator::Generate(const PTX::_MADInstruction *instruction)
 template<class T>
 void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32, Int64
 	//   - UInt16, UInt32, UInt64

@@ -44,6 +44,10 @@ SASS::LDGInstruction::Type LoadNCGenerator::InstructionType()
 template<PTX::Bits B, class T, class S>
 void LoadNCGenerator::Visit(const PTX::LoadNCInstruction<B, T, S> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types: *, Vector (exclude Float16(x2))
 	// Spaces: Global
 	// Modifiers: --

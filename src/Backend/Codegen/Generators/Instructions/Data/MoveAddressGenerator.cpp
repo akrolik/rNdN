@@ -14,6 +14,10 @@ void MoveAddressGenerator::Generate(const PTX::_MoveAddressInstruction *instruct
 template<PTX::Bits B, class T, class S>
 void MoveAddressGenerator::Visit(const PTX::MoveAddressInstruction<B, T, S> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);

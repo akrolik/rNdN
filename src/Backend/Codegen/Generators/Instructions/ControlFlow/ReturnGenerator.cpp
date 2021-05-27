@@ -5,6 +5,10 @@ namespace Codegen {
 
 void ReturnGenerator::Generate(const PTX::ReturnInstruction *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	this->AddInstruction(new SASS::EXITInstruction());
 }
 

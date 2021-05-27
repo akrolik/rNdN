@@ -90,6 +90,10 @@ SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(const PTX::Reduct
 template<PTX::Bits B, class T, class S>
 void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types
 	//   - Bit32, Bit64
 	//   - Int32, Int64

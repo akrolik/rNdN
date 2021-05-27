@@ -15,6 +15,10 @@ void AndGenerator::Generate(const PTX::_AndInstruction *instruction)
 template<class T>
 void AndGenerator::Visit(const PTX::AndInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Predicate
 	//   - Bit16, Bit32, Bit64    

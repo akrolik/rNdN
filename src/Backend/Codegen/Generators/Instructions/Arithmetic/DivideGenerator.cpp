@@ -14,6 +14,10 @@ void DivideGenerator::Generate(const PTX::_DivideInstruction *instruction)
 template<class T>
 void DivideGenerator::Visit(const PTX::DivideInstruction<T> *instruction)
 {
+	// Instruction predicate
+
+	this->SetPredicatedInstruction(instruction);
+
 	// Types:
 	//   - Int16, Int32, Int64
 	//   - UInt16, UInt32, UInt64
