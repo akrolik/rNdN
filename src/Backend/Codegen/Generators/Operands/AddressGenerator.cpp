@@ -37,6 +37,8 @@ template<PTX::Bits B, class T, class S>
 void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 {
 	const auto& name = address->GetVariable()->GetName();
+	auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType));
+
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
 		// Global addresses are initially zero and relocated at runtime
@@ -57,9 +59,12 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 			this->m_builder.AddRelocation(inst1, name, SASS::Relocation::Kind::ABS32_HI_20);
 		}
 
-		// Add offset to base
+		// Form the address with the offset
 
-		if (auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType)))
+		auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+		auto temp = new SASS::Register(temp_Lo->GetValue(), size);
+
+		if (addressOffset >= (1 << 24))
 		{
 			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
 				temp_Lo, temp_Lo, new SASS::I32Immediate(addressOffset), SASS::IADD32IInstruction::Flags::CC
@@ -71,14 +76,13 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 					temp_Hi, temp_Hi, new SASS::I32Immediate(0x0), SASS::IADD32IInstruction::Flags::X
 				));
 			}
+
+			m_address = new SASS::Address(temp);
 		}
-
-		// Form the address
-
-		auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
-		auto temp = new SASS::Register(temp_Lo->GetValue(), size);
-
-		m_address = new SASS::Address(temp);
+		else
+		{
+			m_address = new SASS::Address(temp, addressOffset);
+		}
 	}
 	else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
 	{
@@ -92,11 +96,15 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 
 		// Form the address with the offset
 
-		if (auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType)))
+		if (addressOffset >= (1 << 24))
 		{
 			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, temp, new SASS::I32Immediate(addressOffset)));
+			m_address = new SASS::Address(temp);
 		}
-		m_address = new SASS::Address(temp);
+		else
+		{
+			m_address = new SASS::Address(temp, addressOffset);
+		}
 	}
 	else
 	{
@@ -110,24 +118,26 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 	// Generate register for address
 
 	RegisterGenerator registerGenerator(this->m_builder);
-	auto [reg, regHi] = registerGenerator.GeneratePair(address->GetRegister());
+	auto [reg_Lo, reg_Hi] = registerGenerator.GeneratePair(address->GetRegister());
 
 	// Construct address with offset
 
-	if (auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType)))
+	auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType));
+
+	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
-		if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+		if (addressOffset >= (1 << 24))
 		{
 			auto [temp_Lo, temp_Hi] = this->m_builder.AllocateTemporaryRegisterPair<B>();
 
 			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
-				temp_Lo, reg, new SASS::I32Immediate(addressOffset), SASS::IADD32IInstruction::Flags::CC
+				temp_Lo, reg_Lo, new SASS::I32Immediate(addressOffset), SASS::IADD32IInstruction::Flags::CC
 			));
 
 			if constexpr(B == PTX::Bits::Bits64)
 			{
 				this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
-					temp_Hi, regHi, new SASS::I32Immediate(0x0), SASS::IADD32IInstruction::Flags::X
+					temp_Hi, reg_Hi, new SASS::I32Immediate(0x0), SASS::IADD32IInstruction::Flags::X
 				));
 			}
 
@@ -136,25 +146,32 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 
 			m_address = new SASS::Address(temp);
 		}
-		else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+		else
+		{
+			auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+			auto reg = new SASS::Register(reg_Lo->GetValue(), size);
+
+			m_address = new SASS::Address(reg, addressOffset);
+		}
+	}
+	else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
+	{
+		if (addressOffset >= (1 << 24))
 		{
 			auto temp = this->m_builder.AllocateTemporaryRegister();
 
-			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, reg, new SASS::I32Immediate(addressOffset)));
+			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, reg_Lo, new SASS::I32Immediate(addressOffset)));
 
 			m_address = new SASS::Address(temp);
 		}
 		else
 		{
-			Error(address, "unsupported space");
+			m_address = new SASS::Address(reg_Lo, addressOffset);
 		}
 	}
 	else
 	{
-		auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
-		auto temp = new SASS::Register(reg->GetValue(), size);
-
-		m_address = new SASS::Address(temp);
+		Error(address, "unsupported space");
 	}
 }
 

@@ -69,7 +69,13 @@ public:
 
 		// Sum the base and the offset to create the full address for the thread and store the value in a register
 
-		if (index == nullptr)
+		auto zero = false;
+		if (auto value = dynamic_cast<PTX::UInt32Value *>(index))
+		{
+			zero = (value->GetValue() == 0);
+		}
+
+		if (zero || index == nullptr)
 		{
 			return new PTX::RegisterAddress<B, T, S>(new PTX::PointerRegisterAdapter<B, T, S>(base), offset);
 		}
