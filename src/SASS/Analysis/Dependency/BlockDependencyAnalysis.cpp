@@ -277,7 +277,14 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
 		{
 			if (writeInstruction != m_instruction)
 			{
-				m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteRead);
+				if (operand >= DataOffset_Predicate)
+				{
+					m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteReadPredicate);
+				}
+				else
+				{
+					m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteRead);
+				}
 			}
 		}
 

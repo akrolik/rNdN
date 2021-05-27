@@ -58,6 +58,11 @@ std::string BlockDependencyGraph::ToDOTString() const
 						string += "t";
 						break;
 					}
+					case DependencyKind::WriteReadPredicate:
+					{
+						string += "p";
+						break;
+					}
 					case DependencyKind::WriteWrite:
 					{
 						string += "w";

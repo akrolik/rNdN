@@ -19,6 +19,7 @@ public:
 	enum class DependencyKind {
 		ReadWrite,
 		WriteRead,
+		WriteReadPredicate,
 		WriteWrite
 	};
 

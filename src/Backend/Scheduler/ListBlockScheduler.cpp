@@ -221,6 +221,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					switch (dependency)
 					{
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
+						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
 						{
 							if (auto it = writeDependencyBarriers.find(predecessor); it != writeDependencyBarriers.end())
@@ -660,6 +661,17 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 								{
 									delay = diff;
 								}
+							}
+							break;
+						}
+						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
+						{
+							// Predicate dependencies used for masking have no read latency
+
+							auto latency = HardwareProperties::GetLatency(instruction);
+							if (delay < latency)
+							{
+								delay = latency;
 							}
 							break;
 						}
