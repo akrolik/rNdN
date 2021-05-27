@@ -13,12 +13,13 @@ namespace Analysis {
 class SequenceStructure : public StructureNode
 {
 public:
-	SequenceStructure(const BasicBlock *block, StructureNode *next) : StructureNode(next), m_block(block) {}
+	SequenceStructure(BasicBlock *block, StructureNode *next) : StructureNode(next), m_block(block) {}
 
 	// Basic block
 
 	const BasicBlock *GetBlock() const { return m_block; }
-	void SetBlock(const BasicBlock *block) { m_block = block; }
+	BasicBlock *GetBlock() { return m_block; }
+	void SetBlock(BasicBlock *block) { m_block = block; }
 
 	// Visitor
 
@@ -26,7 +27,7 @@ public:
 	void Accept(StructuredGraphVisitor& visitor) { visitor.Visit(this); }
 	
 private:
-	const BasicBlock *m_block = nullptr;
+	BasicBlock *m_block = nullptr;
 };
 
 }

@@ -23,12 +23,12 @@ public:
 
 	// Structurizer algorithm
 
-	Analysis::StructureNode *Structurize(const FunctionDefinition<VoidType> *function);
+	Analysis::StructureNode *Structurize(FunctionDefinition<VoidType> *function);
 	Analysis::StructureNode *Structurize(const Analysis::ControlFlowGraph *cfg, BasicBlock *block, bool skipLoop = false);
 
 private:
-	robin_hood::unordered_set<const BasicBlock *> GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const;
-	BasicBlock *GetLoopExit(BasicBlock *header, const robin_hood::unordered_set<const BasicBlock *>& loopBlocks) const;
+	robin_hood::unordered_set<BasicBlock *> GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const;
+	BasicBlock *GetLoopExit(BasicBlock *header, const robin_hood::unordered_set<BasicBlock *>& loopBlocks) const;
 
 	[[noreturn]] void Error(const std::string& message, const BasicBlock *block);
 
@@ -53,36 +53,36 @@ private:
 	struct LoopContext : public Context
 	{
 	public:
-		LoopContext(const BasicBlock *header, const BasicBlock *latch, const BasicBlock *exit, const robin_hood::unordered_set<const BasicBlock *>& loopBlocks)
+		LoopContext(BasicBlock *header, BasicBlock *latch, BasicBlock *exit, const robin_hood::unordered_set<BasicBlock *>& loopBlocks)
 			: Context(Kind::Loop), m_header(header), m_latch(latch), m_exit(exit), m_loopBlocks(loopBlocks) {}
 
-		const BasicBlock *GetHeader() const { return m_header; }
-		const BasicBlock *GetLatch() const { return m_latch; }
-		const BasicBlock *GetExit() const { return m_exit; }
+		BasicBlock *GetHeader() const { return m_header; }
+		BasicBlock *GetLatch() const { return m_latch; }
+		BasicBlock *GetExit() const { return m_exit; }
 
-		const robin_hood::unordered_set<const BasicBlock *>& GetLoopBlocks() const { return m_loopBlocks; }
-		bool ContainsBlock(const BasicBlock *block) const { return m_loopBlocks.find(block) != m_loopBlocks.end(); }
+		const robin_hood::unordered_set<BasicBlock *>& GetLoopBlocks() const { return m_loopBlocks; }
+		bool ContainsBlock(BasicBlock *block) const { return m_loopBlocks.find(block) != m_loopBlocks.end(); }
 
 	private:
-		const BasicBlock *m_header = nullptr;
-		const BasicBlock *m_latch = nullptr;
-		const BasicBlock *m_exit = nullptr;
+		BasicBlock *m_header = nullptr;
+		BasicBlock *m_latch = nullptr;
+		BasicBlock *m_exit = nullptr;
 
-		robin_hood::unordered_set<const BasicBlock *> m_loopBlocks;
+		robin_hood::unordered_set<BasicBlock *> m_loopBlocks;
 	};
 
 	struct BranchContext : public Context
 	{
 	public:
-		BranchContext(const BasicBlock *reconvergence) : Context(Context::Branch), m_reconvergence(reconvergence) {}
+		BranchContext(BasicBlock *reconvergence) : Context(Context::Branch), m_reconvergence(reconvergence) {}
 
-		const BasicBlock *GetReconvergence() const { return m_reconvergence; }
+		BasicBlock *GetReconvergence() const { return m_reconvergence; }
 
 	private:
-		const BasicBlock *m_reconvergence = nullptr;
+		BasicBlock *m_reconvergence = nullptr;
 	};
 
-	robin_hood::unordered_set<const BasicBlock *> m_processedNodes;
+	robin_hood::unordered_set<BasicBlock *> m_processedNodes;
 	std::stack<const Context *> m_reconvergenceStack;
 	robin_hood::unordered_set<Analysis::ExitStructure *> m_exitStructures;
 	Analysis::StructureNode *m_latchStructure = nullptr;

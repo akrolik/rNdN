@@ -9,7 +9,7 @@
 namespace PTX {
 namespace Transformation {
 
-Analysis::StructureNode *Structurizer::Structurize(const FunctionDefinition<VoidType> *function)
+Analysis::StructureNode *Structurizer::Structurize(FunctionDefinition<VoidType> *function)
 {
 	auto timeStructurize_start = Utils::Chrono::Start("Structurize '" + function->GetName() + "'");
 
@@ -35,9 +35,9 @@ Analysis::StructureNode *Structurizer::Structurize(const FunctionDefinition<Void
 	return structure;
 }
 
-robin_hood::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const
+robin_hood::unordered_set<BasicBlock *> Structurizer::GetLoopBlocks(const Analysis::ControlFlowGraph *cfg, BasicBlock *header, BasicBlock *latch) const
 {
-	robin_hood::unordered_set<const BasicBlock *> loopBlocks;
+	robin_hood::unordered_set<BasicBlock *> loopBlocks;
 
 	// DFS structure
 
@@ -75,7 +75,7 @@ robin_hood::unordered_set<const BasicBlock *> Structurizer::GetLoopBlocks(const 
 	return loopBlocks;
 }
 
-BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const robin_hood::unordered_set<const BasicBlock *>& loopBlocks) const
+BasicBlock *Structurizer::GetLoopExit(BasicBlock *header, const robin_hood::unordered_set<BasicBlock *>& loopBlocks) const
 {
 	auto postDominators = m_postDominators.GetStrictPostDominators(header);
 	for (auto loopBlock : loopBlocks)
@@ -206,7 +206,7 @@ Analysis::StructureNode *Structurizer::Structurize(const Analysis::ControlFlowGr
 
 		BasicBlock *trueBranch = nullptr;
 		BasicBlock *falseBranch = nullptr;
-		const Register<PredicateType> *condition = nullptr;
+		Register<PredicateType> *condition = nullptr;
 
 		if (auto [predicate1, negate1] = cfg->GetEdgeData(block, successor1); predicate1 != nullptr)
 		{

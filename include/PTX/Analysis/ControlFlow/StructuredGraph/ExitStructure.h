@@ -13,18 +13,20 @@ namespace Analysis {
 class ExitStructure : public StructureNode
 {
 public:
-	ExitStructure(const BasicBlock *block, const Register<PredicateType> *predicate, bool negate, StructureNode *next)
+	ExitStructure(BasicBlock *block, Register<PredicateType> *predicate, bool negate, StructureNode *next)
 		: StructureNode(next), m_block(block), m_predicate(predicate), m_negate(negate) {}
 
 	// Basic block
 
 	const BasicBlock *GetBlock() const { return m_block; }
-	void SetBlock(const BasicBlock *block) { m_block = block; }
+	BasicBlock *GetBlock() { return m_block; }
+	void SetBlock(BasicBlock *block) { m_block = block; }
 	
 	// Branch predicate
 
 	std::pair<const Register<PredicateType> *, bool> GetPredicate() const { return { m_predicate, m_negate }; }
-	void SetPredicate(const Register<PredicateType> *predicate, bool negate)
+	std::pair<Register<PredicateType> *, bool> GetPredicate() { return { m_predicate, m_negate }; }
+	void SetPredicate(Register<PredicateType> *predicate, bool negate)
 	{
 		m_predicate = predicate;
 		m_negate = negate;
@@ -36,8 +38,8 @@ public:
 	void Accept(StructuredGraphVisitor& visitor) { visitor.Visit(this); }
 	
 private:
-	const BasicBlock *m_block = nullptr;
-	const Register<PredicateType> *m_predicate = nullptr;
+	BasicBlock *m_block = nullptr;
+	Register<PredicateType> *m_predicate = nullptr;
 	bool m_negate = false;
 };
 

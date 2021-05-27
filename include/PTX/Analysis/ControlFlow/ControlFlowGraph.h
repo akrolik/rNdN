@@ -46,7 +46,7 @@ public:
 
 	// Edges
 
-	void InsertEdge(const ControlFlowNode& source, const ControlFlowNode& destination, const Register<PredicateType> *predicate = nullptr, bool negate = false)
+	void InsertEdge(const ControlFlowNode& source, const ControlFlowNode& destination, Register<PredicateType> *predicate = nullptr, bool negate = false)
 	{
 		Utils::Graph<ControlFlowNode>::InsertEdge(source, destination);
 
@@ -56,7 +56,7 @@ public:
 		m_edgeData[edge] = { predicate, negate };
 	}
 
-	const std::pair<const Register<PredicateType> *, bool>& GetEdgeData(const ControlFlowNode& source, const ControlFlowNode& destination) const
+	const std::pair<Register<PredicateType> *, bool>& GetEdgeData(const ControlFlowNode& source, const ControlFlowNode& destination) const
 	{
 		return m_edgeData.at({source, destination});
 	}
@@ -169,7 +169,7 @@ private:
 	using EdgeType = typename Utils::Graph<ControlFlowNode>::EdgeType;
 	using EdgeHash = typename Utils::Graph<ControlFlowNode>::EdgeHash;
 
-	robin_hood::unordered_map<EdgeType, std::pair<const Register<PredicateType> *, bool>, EdgeHash> m_edgeData;
+	robin_hood::unordered_map<EdgeType, std::pair<Register<PredicateType> *, bool>, EdgeHash> m_edgeData;
 
 	ControlFlowNode m_entryNode = nullptr;
 	robin_hood::unordered_set<ControlFlowNode> m_exitNodes;

@@ -13,18 +13,20 @@ namespace Analysis {
 class BranchStructure : public StructureNode
 {
 public:
-	BranchStructure(const BasicBlock *block, const Register<PredicateType> *predicate, StructureNode *trueBranch, StructureNode *falseBranch, StructureNode *next)
+	BranchStructure(BasicBlock *block, Register<PredicateType> *predicate, StructureNode *trueBranch, StructureNode *falseBranch, StructureNode *next)
 		: StructureNode(next), m_block(block), m_predicate(predicate), m_trueBranch(trueBranch), m_falseBranch(falseBranch) {}
 
 	// Basic block
 
 	const BasicBlock *GetBlock() const { return m_block; }
-	void SetBlock(const BasicBlock *block) { m_block = block; }
+	BasicBlock *GetBlock() { return m_block; }
+	void SetBlock(BasicBlock *block) { m_block = block; }
 
 	// Branch predicate
 
 	const Register<PredicateType> *GetPredicate() const { return m_predicate; }
-	void SetPredicate(const Register<PredicateType> *predicate) { m_predicate = predicate; }
+	Register<PredicateType> *GetPredicate() { return m_predicate; }
+	void SetPredicate(Register<PredicateType> *predicate) { m_predicate = predicate; }
 
 	// True structure
 
@@ -46,8 +48,8 @@ public:
 	void Accept(StructuredGraphVisitor& visitor) { visitor.Visit(this); }
 	
 private:
-	const BasicBlock *m_block = nullptr;
-	const Register<PredicateType> *m_predicate = nullptr;
+	BasicBlock *m_block = nullptr;
+	Register<PredicateType> *m_predicate = nullptr;
 	StructureNode *m_trueBranch = nullptr;
 	StructureNode *m_falseBranch = nullptr;
 };
