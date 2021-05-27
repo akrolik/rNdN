@@ -64,6 +64,23 @@ void Builder::AddInstruction(SASS::Instruction *instruction)
 
 // Temporary Registers
 
+SASS::Predicate *Builder::AllocateTemporaryPredicate()
+{
+	// Find next free predicate
+
+	auto offset = m_registerAllocation->GetPredicateCount();
+	auto allocation = m_predicateCount + offset;
+
+	// Check within range
+
+	if (allocation >= PTX::Analysis::RegisterAllocation::MaxPredicate)
+	{
+		Utils::Logger::LogError("Temporary predicate exceeded maximum predicate count (" + std::to_string(PTX::Analysis::RegisterAllocation::MaxPredicate) + ") for function '" + m_currentFunction->GetName() + "'");
+	}
+
+	return new SASS::Predicate(allocation);
+}
+
 SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align, unsigned int range)
 {
 	// Find next free register
@@ -96,6 +113,7 @@ SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align, unsigned 
 void Builder::ClearTemporaryRegisters()
 {
 	m_temporaryCount = 0;
+	m_predicateCount = 0;
 }
 
 // Relocations

@@ -46,12 +46,7 @@ public:
 
 	// Temporary Registers
 
-	SASS::Predicate *AllocateTemporaryPredicate()
-	{
-		//TODO: Allocate temporary predicate
-		SASS::Predicate *pred = new SASS::Predicate(6);
-		return pred;
-	}
+	SASS::Predicate *AllocateTemporaryPredicate();
 
 	template<PTX::Bits B>
 	std::pair<SASS::Register *, SASS::Register *> AllocateTemporaryRegisterPair()
@@ -130,6 +125,7 @@ private:
 	const PTX::Analysis::RegisterAllocation *m_registerAllocation = nullptr;
 	const PTX::Analysis::ParameterSpaceAllocation *m_parameterSpaceAllocation = nullptr;
 
+	std::uint8_t m_predicateCount = 0;
 	std::uint8_t m_temporaryCount = 0;
 	std::uint8_t m_temporaryMax = 0;
 
