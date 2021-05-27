@@ -22,6 +22,22 @@ public:
 
 	std::string Name() const override { return "ThreadGeometryGenerator"; }
 
+	PTX::Register<PTX::UInt32Type> *GenerateGlobalSize()
+	{
+		SpecialRegisterGenerator specialGenerator(this->m_builder);
+		auto ntidx = specialGenerator.GenerateThreadCount();
+		auto nctaidx = specialGenerator.GenerateBlockCount();
+
+		auto resources = this->m_builder.GetLocalResources();
+		auto size = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+		this->m_builder.AddStatement(new PTX::MultiplyInstruction<PTX::UInt32Type>(
+			size, ntidx, nctaidx, PTX::HalfModifier<PTX::UInt32Type>::Half::Lower
+		));
+
+		return size;
+	}
+
 	PTX::TypedOperand<PTX::UInt32Type> *GenerateVectorGeometry()
 	{
 		auto& inputOptions = this->m_builder.GetInputOptions();

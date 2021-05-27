@@ -49,6 +49,17 @@ public:
 	template<class S>
 	PTX::Register<T> *Generate(PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, PTX::TypedOperand<S> *value, PrefixSumMode mode, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
+		auto [inclusive, exclusive] = Generate(g_prefixSumAddress, value, predicate);
+		if (mode == PrefixSumMode::Exclusive)
+		{
+			return exclusive;
+		}
+		return inclusive;
+	}
+
+	template<class S>
+	std::pair<PTX::Register<T> *, PTX::Register<T> *> Generate(PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, PTX::TypedOperand<S> *value, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
+	{
 		// A global prefix sum is computed in 4 stages:
 		//
 		//    1. Each warp computes its local prefix sum using a shuffle reduction
@@ -280,13 +291,12 @@ public:
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(blockPrefixSum, s_blockPrefixSumAddress));
 		this->m_builder.AddStatement(new PTX::AddInstruction<T>(prefixSum, blockPrefixSum, prefixSum));
 
-		if (mode == PrefixSumMode::Exclusive)
-		{
-			auto exclusiveSum = resources->template AllocateTemporary<T>();
-			this->m_builder.AddStatement(new PTX::SubtractInstruction<T>(exclusiveSum, prefixSum, initialValue));
-			return exclusiveSum;
-		}
-		return prefixSum;
+		auto exclusiveSum = resources->template AllocateTemporary<T>();
+		this->m_builder.AddStatement(new PTX::SubtractInstruction<T>(exclusiveSum, prefixSum, initialValue));
+
+		// Inclusive, exclusive
+
+		return {prefixSum, exclusiveSum};
 	}
 
 	void GenerateWarpPrefixSum(PTX::Register<PTX::UInt32Type> *laneIndex, PTX::Register<T> *value)

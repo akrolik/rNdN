@@ -73,21 +73,28 @@ public:
 
 		// Compute the predicate mask, and store it the mapping in the resources
 
-		auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+		auto name = m_predicate->GetName().substr(3) + "$compress";
 
-		OperandCompressionGenerator compGen(this->m_builder);
-		if (const auto compression = compGen.GetCompressionRegister(identifier))
+		if (!resources->template ContainsRegister<PTX::PredicateType>(name))
 		{
-			// If a predicate has already been set on the value register, combine with the new compress predicate
+			auto predicate = resources->template AllocateRegister<PTX::PredicateType>(name);
 
-			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
-		}
-		else
-		{
-			// Otherwise this is the first compression and it is simply stored
+			OperandCompressionGenerator compGen(this->m_builder);
+			if (const auto compression = compGen.GetCompressionRegister(identifier))
+			{
+				// If a predicate has already been set on the value register, combine with the new compress predicate
 
-			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(predicate, m_predicate));
+				this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
+			}
+			else
+			{
+				// Otherwise this is the first compression and it is simply stored
+
+				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(predicate, m_predicate));
+			}
 		}
+
+		auto predicate = resources->template AllocateRegister<PTX::PredicateType>(name);
 
 		// Ensure that the predicate is false for out-of-bounds indexes
 
