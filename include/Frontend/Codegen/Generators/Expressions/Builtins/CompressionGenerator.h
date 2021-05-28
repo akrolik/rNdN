@@ -75,21 +75,26 @@ public:
 
 		auto name = m_predicate->GetName().substr(3) + "$compress";
 
-		if (!resources->template ContainsRegister<PTX::PredicateType>(name))
+		OperandCompressionGenerator compGen(this->m_builder);
+		if (const auto compression = compGen.GetCompressionRegister(identifier))
 		{
-			auto predicate = resources->template AllocateRegister<PTX::PredicateType>(name);
+			name += "$" + compression->GetName().substr(3) + "$compress";
 
-			OperandCompressionGenerator compGen(this->m_builder);
-			if (const auto compression = compGen.GetCompressionRegister(identifier))
+			if (!resources->template ContainsRegister<PTX::PredicateType>(name))
 			{
 				// If a predicate has already been set on the value register, combine with the new compress predicate
 
+				auto predicate = resources->template AllocateRegister<PTX::PredicateType>(name);
 				this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(predicate, compression, m_predicate));
 			}
-			else
+		}
+		else
+		{
+			if (!resources->template ContainsRegister<PTX::PredicateType>(name))
 			{
 				// Otherwise this is the first compression and it is simply stored
 
+				auto predicate = resources->template AllocateRegister<PTX::PredicateType>(name);
 				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::PredicateType>(predicate, m_predicate));
 			}
 		}
