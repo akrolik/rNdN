@@ -48,6 +48,10 @@ public:
 	TestPropertyInstruction(Register<PredicateType> *destination, TypedOperand<T> *source, Property property)
 		: InstructionBase_1<PredicateType, T>(destination, source), m_property(property) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	Property GetProperty() const { return m_property; }

@@ -28,6 +28,10 @@ public:
 
 	LoadUniformInstruction(Register<T> *destination, Address<B, T, S> *address) : m_destination(destination), m_address(address) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }

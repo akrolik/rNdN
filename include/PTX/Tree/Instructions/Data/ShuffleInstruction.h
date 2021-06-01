@@ -47,6 +47,10 @@ public:
 	ShuffleInstruction(Register<T> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *sourceA, TypedOperand<UInt32Type> *sourceB, TypedOperand<UInt32Type> *sourceC, UInt32Value *memberMask, Mode mode)
 		: m_destinationD(destinationD), m_destinationP(destinationP), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_memberMask(memberMask), m_mode(mode) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destinationD; }

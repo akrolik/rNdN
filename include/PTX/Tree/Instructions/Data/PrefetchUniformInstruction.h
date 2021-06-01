@@ -24,6 +24,10 @@ public:
 
 	PrefetchUniformInstruction(Address<B, T, AddressableSpace> *address) : m_address(address) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Address<B, T, AddressableSpace> *GetAddress() const { return m_address; }

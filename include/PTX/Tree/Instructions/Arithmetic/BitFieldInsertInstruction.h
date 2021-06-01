@@ -18,6 +18,10 @@ public:
 
 	using InstructionBase_4<T, T, T, UInt32Type, UInt32Type>::InstructionBase;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+  	
 	// Formatting
 
 	static std::string Mnemonic() { return "bfi"; }

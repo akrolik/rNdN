@@ -31,6 +31,10 @@ public:
 	MADInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC)
 		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "mad"; }

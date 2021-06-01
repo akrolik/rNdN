@@ -19,6 +19,10 @@ public:
 	FMAInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, typename T::RoundingMode roundingMode)
 		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), RoundingModifier<T, true>(roundingMode) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "fma"; }

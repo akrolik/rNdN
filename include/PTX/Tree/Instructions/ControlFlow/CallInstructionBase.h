@@ -17,6 +17,10 @@ class CallInstructionBase : DispatchInherit(CallInstructionBase), public Predica
 public:
 	CallInstructionBase(Function *function, R *returnVariable, bool uniform) : UniformModifier(uniform), m_function(function), m_returnVariable(returnVariable) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Function *GetFunction() const { return m_function; }

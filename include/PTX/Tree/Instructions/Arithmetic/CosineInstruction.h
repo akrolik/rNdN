@@ -17,6 +17,10 @@ public:
 
 	using InstructionBase_1<T>::InstructionBase_1;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "cos"; }

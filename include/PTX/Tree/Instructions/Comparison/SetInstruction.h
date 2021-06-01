@@ -33,6 +33,10 @@ public:
 	SetInstruction(Register<D> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false)
 		: InstructionBase_2<D, T>(destination, sourceA, sourceB), m_comparator(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	typename T::ComparisonOperator GetComparisonOperator() const { return m_comparator; }

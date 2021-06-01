@@ -9,6 +9,10 @@ class DevInstruction : public PredicatedInstruction
 public:
 	DevInstruction(const std::string& instruction) : m_instruction(instruction) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const std::string& GetInstruction() const { return m_instruction; }

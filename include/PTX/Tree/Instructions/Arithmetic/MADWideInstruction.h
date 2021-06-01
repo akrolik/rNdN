@@ -16,6 +16,10 @@ public:
 
 	using InstructionBase_3<typename T::WideType, T, T, typename T::WideType>::InstructionBase_3;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "mad"; }

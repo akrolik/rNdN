@@ -23,6 +23,10 @@ public:
 	MoveAddressInstruction(Register<PointerType<B, T, S>> *destination, MemoryAddress<B, T, S> *source)
 		: m_destination(destination), m_source(source) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<PointerType<B, T, S>> *GetDestination() const { return m_destination; }

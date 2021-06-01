@@ -22,6 +22,10 @@ public:
 
 	IsSpaceInstruction(Register<PredicateType> *destination, Address<B, T> *address) : m_destination(destination), m_address(address) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<PredicateType> *GetDestination() const { return m_destination; }

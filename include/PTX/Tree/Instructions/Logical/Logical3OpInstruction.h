@@ -19,6 +19,10 @@ public:
 	Logical3OpInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, UInt8Value *immLut)
 		: InstructionBase_3<T>(destination, sourceA, sourceB, sourceC), m_immLut(immLut) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const UInt8Value *GetLookup() const { return m_immLut; }

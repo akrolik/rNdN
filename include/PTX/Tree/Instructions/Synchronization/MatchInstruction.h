@@ -27,6 +27,10 @@ public:
 	MatchAllInstruction(Register<Bit32Type> *destinationD, Register<PredicateType> *destinationP, TypedOperand<T> *source, UInt32Value *memberMask)
 		: m_destinationD(destinationD), m_destinationP(destinationP), m_source(source), m_memberMask(memberMask) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Register<Bit32Type> *GetDestinationD() const { return m_destinationD; }
@@ -109,6 +113,10 @@ public:
 
 	MatchAnyInstruction(Register<Bit32Type> *destination, TypedOperand<T> *source, UInt32Value *memberMask)
 		: m_destination(destination), m_source(source), m_memberMask(memberMask) {}
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
 
 	// Properties
 

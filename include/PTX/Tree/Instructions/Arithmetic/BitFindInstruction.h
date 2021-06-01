@@ -19,6 +19,10 @@ public:
 
 	BitFindInstruction(Register<UInt32Type> *destination, TypedOperand<T> *source, bool shiftAmount = false) : InstructionBase_1<UInt32Type, T>(destination, source), m_shiftAmount(shiftAmount) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	bool GetShiftAmount() const { return m_shiftAmount; }

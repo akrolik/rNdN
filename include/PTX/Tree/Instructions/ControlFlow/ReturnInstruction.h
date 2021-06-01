@@ -10,7 +10,11 @@ class ReturnInstruction : public PredicatedInstruction, public UniformModifier
 public:
 	ReturnInstruction(bool uniform = false) : UniformModifier(uniform) {}
 
-	// formatting
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "ret"; }
 

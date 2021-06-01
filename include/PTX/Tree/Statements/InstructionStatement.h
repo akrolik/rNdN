@@ -14,6 +14,7 @@ class InstructionStatement : public Statement
 public:
 	// OpCode
 
+	virtual bool HasSideEffect() const = 0;
 	virtual std::string GetOpCode() const = 0;
 
 	// Operands
@@ -29,6 +30,7 @@ public:
 	{
 		json j;
 		j["kind"] = "PTX::InstructionStatement";
+		j["side_effect"] = HasSideEffect();
 		j["opcode"] = GetOpCode();
 		for (const auto& operand : GetOperands())
 		{

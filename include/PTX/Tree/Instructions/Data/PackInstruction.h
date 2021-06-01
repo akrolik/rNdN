@@ -25,6 +25,10 @@ public:
 
 	PackInstruction(Register<T> *destination, BracedOperand<PackType, V> *source) : m_destination(destination), m_source(source) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }

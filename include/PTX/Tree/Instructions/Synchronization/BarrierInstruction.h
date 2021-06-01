@@ -13,6 +13,10 @@ public:
 	BarrierInstruction(TypedOperand<UInt32Type> *barrier, bool aligned = false) : m_barrier(barrier), m_wait(true), m_aligned(aligned) {}
 	BarrierInstruction(TypedOperand<UInt32Type> *barrier, TypedOperand<UInt32Type> *threads, bool wait, bool aligned = false) : m_barrier(barrier), m_threads(threads), m_wait(wait), m_aligned(aligned) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const TypedOperand<UInt32Type> *GetBarrier() const { return m_barrier; }

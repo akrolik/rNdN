@@ -18,6 +18,10 @@ public:
 
 	using InstructionBase_3<Bit32Type, Bit32Type, T, Int32Type>::InstructionBase_3;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "fns"; }

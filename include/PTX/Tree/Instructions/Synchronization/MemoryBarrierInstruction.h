@@ -29,6 +29,10 @@ public:
 
 	MemoryBarrierInstruction(Level level) : m_level(level) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	Level GetLevel() const { return m_level; }

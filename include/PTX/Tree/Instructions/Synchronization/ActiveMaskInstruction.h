@@ -16,6 +16,10 @@ public:
 
 	using InstructionBase_0<T>::InstructionBase_0;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "activemask"; }

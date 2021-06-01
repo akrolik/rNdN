@@ -23,6 +23,10 @@ public:
 	ConvertAddressInstruction(Register<PointerType<B, T>> *destination, Address<B, T, S> *source)
 		: m_destination(destination), m_source(source) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<PointerType<B, T>> *GetDestination() const { return m_destination; }

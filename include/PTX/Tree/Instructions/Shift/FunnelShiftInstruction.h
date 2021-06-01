@@ -27,6 +27,10 @@ public:
 	FunnelShiftInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<UInt32Type> *shift, Direction direction, Mode mode)
 		: InstructionBase_3<T, T, T, UInt32Type>(destination, sourceA, sourceB, shift), m_direction(direction), m_mode(mode) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	Direction GetDirection() const { return m_direction; }

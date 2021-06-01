@@ -30,6 +30,10 @@ public:
 	MultiplyInstruction(Register<T> *destination, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB)
 		: InstructionBase_2<T>(destination, sourceA, sourceB) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "mul"; }

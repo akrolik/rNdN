@@ -17,6 +17,10 @@ public:
 	BarrierReductionInstructionBase(Register<T> *destination, TypedOperand<UInt32Type> *barrier, Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : BarrierReductionInstructionBase(destination, barrier, nullptr, sourcePredicate, negateSourcePredicate, aligned) {}
 	BarrierReductionInstructionBase(Register<T> *destination, TypedOperand<UInt32Type> *barrier, TypedOperand<UInt32Type> *threads, Register<PredicateType> *sourcePredicate, bool negateSourcePredicate = false, bool aligned = false) : m_destination(destination), m_barrier(barrier), m_threads(threads), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_aligned(aligned) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }

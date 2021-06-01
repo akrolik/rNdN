@@ -32,6 +32,10 @@ public:
 
 	FenceInstruction(Scope scope, Synchronization synchronization = Synchronization::None) : ScopeModifier<>(scope), m_synchronization(synchronization) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	Synchronization GetSynchronization() const { return m_synchronization; }

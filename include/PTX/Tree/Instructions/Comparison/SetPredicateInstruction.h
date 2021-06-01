@@ -32,6 +32,10 @@ public:
 
 	SetPredicateInstruction(Register<PredicateType> *destinationP, Register<PredicateType> *destinationQ, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, typename T::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : ComparisonModifier<T>(comparator), m_destinationP(destinationP), m_destinationQ(destinationQ), m_sourceA(sourceA), m_sourceB(sourceB), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<PredicateType> *GetDestination() const { return m_destinationP; }
@@ -123,6 +127,12 @@ public:
 	SetPredicateInstruction(Register<PredicateType> *destination, TypedOperand<Float16Type> *sourceA, TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator) {}
 
 	SetPredicateInstruction(Register<PredicateType> *destination, TypedOperand<Float16Type> *sourceA, TypedOperand<Float16Type> *sourceB, Float16Type::ComparisonOperator comparator, Register<PredicateType> *sourceC, BoolOperator boolOperator, bool negateSourcePredicate = false) : InstructionBase_2<PredicateType, Float16Type>(destination, sourceA, sourceB), ComparisonModifier<Float16Type>(comparator), PredicateModifier(sourceC, boolOperator, negateSourcePredicate) {}
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
+	// Formatting
 
 	static std::string Mnemonic() { return "setp"; }
 

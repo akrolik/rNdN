@@ -19,6 +19,10 @@ public:
 	VoteInstructionBase(Register<T> *destination, TypedOperand<PredicateType> *sourcePredicate, UInt32Value *memberMask, bool negateSourcePredicate = false)
 		: m_destination(destination), m_sourcePredicate(sourcePredicate), m_negateSourcePredicate(negateSourcePredicate), m_memberMask(memberMask) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }

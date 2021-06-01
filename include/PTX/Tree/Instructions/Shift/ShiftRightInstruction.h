@@ -20,6 +20,10 @@ public:
 
 	using InstructionBase_2<T, T, UInt32Type>::InstructionBase_2;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "shr"; }

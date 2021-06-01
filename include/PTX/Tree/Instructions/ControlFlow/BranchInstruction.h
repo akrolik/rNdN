@@ -13,6 +13,10 @@ public:
 	BranchInstruction(Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
 	BranchInstruction(Label *label, Register<PredicateType> *predicate, bool negate = false, bool uniform = false) : PredicatedInstruction(predicate, negate), UniformModifier(uniform), m_label(label) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Label *GetLabel() const { return m_label; }

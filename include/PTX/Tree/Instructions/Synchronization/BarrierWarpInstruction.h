@@ -11,6 +11,10 @@ class BarrierWarpInstruction : public PredicatedInstruction
 public:
 	BarrierWarpInstruction(UInt32Value *memberMask) : m_memberMask(memberMask) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const UInt32Value *GetMemberMask() const { return m_memberMask; }

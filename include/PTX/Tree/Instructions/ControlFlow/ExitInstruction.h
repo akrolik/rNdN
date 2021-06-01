@@ -9,6 +9,10 @@ class ExitInstruction : public PredicatedInstruction
 public:
 	ExitInstruction() {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "exit"; }

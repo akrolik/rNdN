@@ -22,6 +22,10 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase_2;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "div"; }
@@ -45,6 +49,10 @@ class DivideInstruction<Float32Type> : DispatchInherit(DivideInstruction), publi
 {
 public:
 	DivideInstruction(Register<Float32Type> *destination, TypedOperand<Float32Type> *sourceA, TypedOperand<Float32Type> *sourceB, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_2<Float32Type>(destination, sourceA, sourceB), RoundingModifier<Float32Type>(roundingMode) {}
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
 
 	// Properties
 
@@ -105,6 +113,10 @@ class DivideInstruction<Float64Type> : DispatchInherit(DivideInstruction), publi
 {
 public:
 	DivideInstruction(Register<Float64Type> *destination, TypedOperand<Float64Type> *sourceA, TypedOperand<Float64Type> *sourceB, Float64Type::RoundingMode roundingMode) : InstructionBase_2<Float64Type>(destination, sourceA, sourceB), RoundingModifier<Float64Type, true>(roundingMode) {}
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
 
 	// Formatting
 

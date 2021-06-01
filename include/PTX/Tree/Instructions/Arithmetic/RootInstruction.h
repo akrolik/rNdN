@@ -18,6 +18,10 @@ public:
 		)
 	);
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "sqrt"; }
@@ -36,6 +40,10 @@ class RootInstruction<Float32Type> : DispatchInherit(RootInstruction), public In
 {
 public:
 	RootInstruction(Register<Float32Type> *destination, TypedOperand<Float32Type> *source, Float32Type::RoundingMode roundingMode = Float32Type::RoundingMode::None) : InstructionBase_1<Float32Type>(destination, source), RoundingModifier<Float32Type>(roundingMode) {}
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
 
 	// Formatting
 
@@ -70,6 +78,10 @@ class RootInstruction<Float64Type> : DispatchInherit(RootInstruction), public In
 {
 public:
 	RootInstruction(Register<Float64Type> *destination, TypedOperand<Float64Type> *source, Float64Type::RoundingMode roundingMode) : InstructionBase_1<Float64Type>(destination, source), RoundingModifier<Float64Type, true>(roundingMode) {}
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
 
 	// Formatting
 

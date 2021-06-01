@@ -18,6 +18,10 @@ public:
 
 	using InstructionBase_2<T>::InstructionBase;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "brev"; }

@@ -21,6 +21,10 @@ public:
 
 	using InstructionBase_3<T, T, T, PredicateType>::InstructionBase_3;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "selp"; }

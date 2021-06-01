@@ -16,6 +16,10 @@ public:
 
 	using InstructionBase_2<typename T::WideType, T>::InstructionBase_2;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "mul"; }

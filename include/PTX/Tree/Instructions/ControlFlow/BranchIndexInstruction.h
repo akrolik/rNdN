@@ -12,6 +12,10 @@ class BranchIndexInstruction : public PredicatedInstruction, public UniformModif
 public:
 	BranchIndexInstruction(Register<UInt32Type> *index, const std::vector<Label *>& labels, bool uniform = false) : UniformModifier(uniform), m_index(index), m_labels(labels) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Register<UInt32Type> *GetIndex() const { return m_index; }

@@ -61,6 +61,10 @@ public:
 	AtomicInstruction(Register<T> *destination, Address<B, T, S> *address, TypedOperand<T> *value, TypedOperand<T> *valueC, typename T::AtomicOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None)
 		: ScopeModifier<false>(scope), m_destination(destination), m_address(address), m_value(value), m_valueC(valueC), m_operation(operation), m_synchronization(synchronization) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }

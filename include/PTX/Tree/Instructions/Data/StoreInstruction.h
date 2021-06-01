@@ -34,6 +34,10 @@ public:
 
 	StoreInstructionBase(Address<B, T, S> *address, Register<T> *source) : m_address(address), m_source(source) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }

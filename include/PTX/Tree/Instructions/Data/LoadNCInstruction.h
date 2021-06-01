@@ -49,6 +49,10 @@ public:
 	LoadNCInstruction(Register<T> *destination, Address<B, T, S> *address, CacheOperator cacheOperator = CacheOperator::All)
 		: m_destination(destination), m_address(address), m_cacheOperator(cacheOperator) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	const Register<T> *GetDestination() const { return m_destination; }

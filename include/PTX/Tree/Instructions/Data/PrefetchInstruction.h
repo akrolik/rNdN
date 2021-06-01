@@ -41,6 +41,10 @@ public:
 
 	PrefetchInstruction(Address<B, T, S> *address, Level level) : m_address(address), m_level(level) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }

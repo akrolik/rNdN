@@ -55,6 +55,10 @@ public:
 	ReductionInstruction(Address<B, T, S> *address, TypedOperand<T> *value, typename T::ReductionOperation operation, Synchronization synchronization = Synchronization::None, Scope scope = Scope::None)
 		: ScopeModifier<false>(scope), m_address(address), m_value(value), m_operation(operation), m_synchronization(synchronization) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return true; }
+
 	// Properties
 
 	const Address<B, T, S> *GetAddress() const { return m_address; }

@@ -25,6 +25,10 @@ public:
 
 	using InstructionBase_3<D, D, D, T>::InstructionBase_3;
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Formatting
 
 	static std::string Mnemonic() { return "slct"; }

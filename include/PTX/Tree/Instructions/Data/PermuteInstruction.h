@@ -52,6 +52,10 @@ public:
 	PermuteInstruction(Register<T> *destinationD, TypedOperand<T> *sourceA, TypedOperand<T> *sourceB, TypedOperand<T> *sourceC, Mode mode = Mode::Generic)
 		: InstructionBase_3<T>(destinationD, sourceA, sourceB, sourceC), m_mode(mode) {}
 
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
 	// Properties
 
 	Mode GetMode() const { return m_mode; }
