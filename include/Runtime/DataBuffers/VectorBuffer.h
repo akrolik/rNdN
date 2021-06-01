@@ -333,10 +333,31 @@ public:
 
 				auto& runtime = *Runtime::GetInstance();
 				auto& gpuManager = runtime.GetGPUManager();
-
-				//TODO: Naming does not work for date/string types
 				auto libr3d3 = gpuManager.GetLibrary();
-				auto kernel = libr3d3->GetKernel("set_" + HorseIR::PrettyPrinter::PrettyString(m_type));
+
+				std::string kernelName("set_");
+				if constexpr(std::is_floating_point<T>::value)
+				{
+					kernelName += "f";
+				}
+				else if constexpr(std::is_integral<T>::value)
+				{
+					if constexpr(std::is_signed<T>::value)
+					{
+						kernelName += "s";
+					}
+					else
+					{
+						kernelName += "u";
+					}
+				}
+				else
+				{
+					Utils::Logger::LogError("Unable to find initialization kernel for vector type '" + HorseIR::PrettyPrinter::PrettyString(m_type) + "'");
+				}
+				kernelName += std::to_string(sizeof(T) * 8);
+
+				auto kernel = libr3d3->GetKernel(kernelName);
 				CUDA::KernelInvocation invocation(kernel);
 
 				// Configure the runtime thread layout

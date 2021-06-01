@@ -10,10 +10,15 @@ PTX::Program *libr3d3::CreateProgram(const std::unique_ptr<Device>& device)
 	module->SetDeviceTarget(device->GetComputeCapability());
 	module->SetAddressSize(PTX::Bits::Bits64);
 
-	CreateFunction_set<PTX::Bits::Bits64, PTX::Int8Type>(module, "i8");
-	CreateFunction_set<PTX::Bits::Bits64, PTX::Int16Type>(module, "i16");
-	CreateFunction_set<PTX::Bits::Bits64, PTX::Int32Type>(module, "i32");
-	CreateFunction_set<PTX::Bits::Bits64, PTX::Int64Type>(module, "i64");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::UInt8Type>(module, "u8");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::UInt16Type>(module, "u16");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::UInt32Type>(module, "u32");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::UInt64Type>(module, "u64");
+
+	CreateFunction_set<PTX::Bits::Bits64, PTX::Int8Type>(module, "s8");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::Int16Type>(module, "s16");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::Int32Type>(module, "s32");
+	CreateFunction_set<PTX::Bits::Bits64, PTX::Int64Type>(module, "s64");
 
 	CreateFunction_set<PTX::Bits::Bits64, PTX::Float32Type>(module, "f32");
 	CreateFunction_set<PTX::Bits::Bits64, PTX::Float64Type>(module, "f64");
