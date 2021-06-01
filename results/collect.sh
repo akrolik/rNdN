@@ -31,6 +31,7 @@ collect_1 "Frontend compiler"
 	echo -en "\t"; collect "Outline builder '.*'"
 
 collect "Control-flow graph '.*'"
+collect "Constant propagation '.*'"
 collect "Register allocation '.*'"
 	echo -en "\t"; collect "Live variables '.*'"
 	echo -en "\t"; collect "Live intervals '.*'"
