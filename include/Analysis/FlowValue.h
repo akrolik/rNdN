@@ -75,8 +75,8 @@ struct Set : public robin_hood::unordered_set<const typename T::Type *, typename
 	}
 };
 
-template<typename K, typename V>
-struct Map : public robin_hood::unordered_map<const typename K::Type *, const typename V::Type *, typename K::Hash, typename K::Equals>
+template<typename K, typename V, bool constV = true>
+struct Map : public robin_hood::unordered_map<const typename K::Type *, typename std::conditional<constV, const typename V::Type *, typename V::Type *>::type, typename K::Hash, typename K::Equals>
 {
 	void Print(std::ostream& os, unsigned int level = 0) const
 	{

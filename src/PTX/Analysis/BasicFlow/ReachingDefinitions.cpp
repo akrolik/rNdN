@@ -26,7 +26,7 @@ void ReachingDefinitions::Visit(const Register<T> *reg)
 
 	auto key = new ReachingDefinitionsKey::Type(reg->GetName());
 	auto value = new ReachingDefinitionsValue::Type({m_currentStatement});
-	this->m_currentSet[key] = value;
+	this->m_currentSet.insert_or_assign(key, std::move(value));
 }
 
 ReachingDefinitions::Properties ReachingDefinitions::InitialFlow(const FunctionDefinition<VoidType> *function) const
@@ -52,11 +52,11 @@ ReachingDefinitions::Properties ReachingDefinitions::Merge(const Properties& s1,
 			auto newSet = new ReachingDefinitionsValue::Type();
 			newSet->insert(definitions->begin(), definitions->end());
 			newSet->insert(it->second->begin(), it->second->end());
-			outSet[name] = newSet;
+			outSet.insert_or_assign(name, std::move(newSet));
 		}
 		else
 		{
-			outSet.insert({name, definitions});
+			outSet.emplace(name, definitions);
 		}
 	}
 	return outSet;
