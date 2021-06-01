@@ -11,7 +11,7 @@ namespace Transformation {
 
 Analysis::StructureNode *BranchInliner::Optimize(FunctionDefinition<VoidType> *function)
 {
-	auto timeStructurize_start = Utils::Chrono::Start("Predicated structurizer '" + function->GetName() + "'");
+	auto timeStructurize_start = Utils::Chrono::Start("Branch inliner '" + function->GetName() + "'");
 
 	m_sequenceNode = nullptr;
 	m_nextNode = nullptr;
@@ -23,7 +23,7 @@ Analysis::StructureNode *BranchInliner::Optimize(FunctionDefinition<VoidType> *f
 
 	if (Utils::Options::IsBackend_PrintStructured())
 	{
-		Utils::Logger::LogInfo("Predicated structured control-flow graph: " + function->GetName());
+		Utils::Logger::LogInfo("Branch inliner '" + function->GetName() + "'");
 
 		auto structureString = Analysis::StructuredGraphPrinter::PrettyString(function->GetName(), m_nextNode);
 		Utils::Logger::LogInfo(structureString, 0, true, Utils::Logger::NoPrefix);

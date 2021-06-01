@@ -164,7 +164,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	{
 		auto functionString = SASS::PrettyPrinter::PrettyString(sassFunction);
 
-		Utils::Logger::LogInfo("Generated SASS function: " + sassFunction->GetName());
+		Utils::Logger::LogInfo("Generated SASS function '" + sassFunction->GetName() + "'");
 		Utils::Logger::LogInfo(functionString, 0, true, Utils::Logger::NoPrefix);
 	}
 
@@ -179,7 +179,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 		{
 			auto functionString = SASS::PrettyPrinter::PrettyString(sassFunction);
 
-			Utils::Logger::LogInfo("Optimized SASS function: " + sassFunction->GetName());
+			Utils::Logger::LogInfo("Optimized SASS function '" + sassFunction->GetName() + "'");
 			Utils::Logger::LogInfo(functionString, 0, true, Utils::Logger::NoPrefix);
 		}
 	}
@@ -210,7 +210,7 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	{
 		auto functionString = SASS::PrettyPrinter::PrettyString(sassFunction, true);
 
-		Utils::Logger::LogInfo("Scheduled SASS function: " + sassFunction->GetName());
+		Utils::Logger::LogInfo("Scheduled SASS function '" + sassFunction->GetName() + "'");
 		Utils::Logger::LogInfo(functionString, 0, true, Utils::Logger::NoPrefix);
 	}
 

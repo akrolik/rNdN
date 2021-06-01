@@ -12,7 +12,7 @@ namespace Analysis {
 class VirtualRegisterAllocator : public ConstHierarchicalVisitor, public ConstDeclarationVisitor
 {
 public:
-	inline const static std::string Name = "Virtual registers";
+	inline const static std::string Name = "Virtual registers allocator";
 	inline const static std::string ShortName = "reg";
 
 	// Public API

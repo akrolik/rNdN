@@ -170,7 +170,7 @@ bool ControlFlowAccumulator::VisitIn(LabelStatement *statement)
 
 ControlFlowGraph *ControlFlowBuilder::Analyze(FunctionDefinition<VoidType> *function)
 {
-	auto timeBuild_start = Utils::Chrono::Start("Control-flow builder '" + function->GetName() + "'");
+	auto timeBuild_start = Utils::Chrono::Start("Control-flow graph '" + function->GetName() + "'");
 
 	// Accumulate statements into basic blocks
 
@@ -190,7 +190,7 @@ ControlFlowGraph *ControlFlowBuilder::Analyze(FunctionDefinition<VoidType> *func
 
 	if (Utils::Options::IsBackend_PrintCFG())
 	{
-		Utils::Logger::LogInfo("Control-flow graph: " + function->GetName());
+		Utils::Logger::LogInfo("Control-flow graph '" + function->GetName() + "'");
 		Utils::Logger::LogInfo(m_graph->ToDOTString(), 0, true, Utils::Logger::NoPrefix);
 	}
 

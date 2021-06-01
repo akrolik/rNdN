@@ -11,7 +11,7 @@ namespace Transformation {
 
 Analysis::StructureNode *Structurizer::Structurize(FunctionDefinition<VoidType> *function)
 {
-	auto timeStructurize_start = Utils::Chrono::Start("Structurize '" + function->GetName() + "'");
+	auto timeStructurize_start = Utils::Chrono::Start("Structurizer '" + function->GetName() + "'");
 
 	m_processedNodes.clear();
 	m_reconvergenceStack.push(new Context(Context::Kind::Function));
@@ -26,7 +26,7 @@ Analysis::StructureNode *Structurizer::Structurize(FunctionDefinition<VoidType> 
 
 	if (Utils::Options::IsBackend_PrintStructured())
 	{
-		Utils::Logger::LogInfo("Structured control-flow graph: " + function->GetName());
+		Utils::Logger::LogInfo("Structurizer '" + function->GetName() + "'");
 
 		auto structureString = Analysis::StructuredGraphPrinter::PrettyString(function->GetName(), structure);
 		Utils::Logger::LogInfo(structureString, 0, true, Utils::Logger::NoPrefix);
