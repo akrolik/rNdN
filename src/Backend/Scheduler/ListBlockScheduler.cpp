@@ -341,7 +341,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					time += barrierStall;
 
-					stall = barrierLatency;
+					stall -= barrierStall;
+					if (barrierLatency > stall)
+					{
+						stall = barrierLatency;
+					}
 					barrierStall = barrierLatency;
 
 					// Update the current wait position for the barrier
