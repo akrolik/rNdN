@@ -44,8 +44,21 @@ public:
 
 	// Visitors
 
-	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
-	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+	void Accept(OperandVisitor& visitor) override
+	{
+		if (visitor.Visit(this))
+		{
+			m_address->Accept(visitor);
+		}
+	}
+
+	void Accept(ConstOperandVisitor& visitor) const override
+	{
+		if (visitor.Visit(this))
+		{
+			m_address->Accept(visitor);
+		}
+	}
 
 protected:
 	DispatchMember_Bits(B);

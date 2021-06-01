@@ -23,9 +23,10 @@ std::pair<SASS::Predicate *, bool> PredicateGenerator::Generate(const PTX::Opera
 }
 
 
-void PredicateGenerator::Visit(const PTX::_Register *reg)
+bool PredicateGenerator::Visit(const PTX::_Register *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
 template<class T>
@@ -57,9 +58,10 @@ void PredicateGenerator::Visit(const PTX::Register<T> *reg)
 	}
 }
 
-void PredicateGenerator::Visit(const PTX::_Value *value)
+bool PredicateGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
+	return false;
 }
 
 template<class T>

@@ -24,14 +24,14 @@ public:
 
 	// Registers
 
-	void Visit(const PTX::_Register *reg) override;
+	bool Visit(const PTX::_Register *reg) override;
 
 	template<class T>
 	void Visit(const PTX::Register<T> *reg);
 
 	// Values
 
-	void Visit(const PTX::_Value *value);
+	bool Visit(const PTX::_Value *value);
 
 	template<class T>
 	void Visit(const PTX::Value<T> *value);

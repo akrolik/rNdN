@@ -3,7 +3,7 @@
 #include "Analysis/FlowValue.h"
 
 #include "PTX/Analysis/Framework/BackwardAnalysis.h"
-#include "PTX/Traversal/ConstOperandDispatcher.h"
+#include "PTX/Traversal/ConstOperandVisitor.h"
 #include "PTX/Tree/Tree.h"
 
 namespace PTX {
@@ -30,7 +30,7 @@ struct LiveVariablesValue : ::Analysis::Value<std::string>
 
 using LiveVariablesProperties = ::Analysis::Set<LiveVariablesValue>;
 
-class LiveVariables : public BackwardAnalysis<LiveVariablesProperties>, public ConstOperandDispatcher<LiveVariables>
+class LiveVariables : public BackwardAnalysis<LiveVariablesProperties>, public ConstOperandVisitor
 {
 public:
 	using Properties = LiveVariablesProperties;
@@ -47,10 +47,14 @@ public:
 
 	// Operand dispatch
 
-	using ConstOperandDispatcher<LiveVariables>::Visit;
+	bool Visit(const _DereferencedAddress *address) override;
+	bool Visit(const _Register *reg) override;
 
-	template<Bits B, class T, class S> void Visit(const DereferencedAddress<B, T, S> *address);
-	template<class T> void Visit(const Register<T> *reg);
+	template<Bits B, class T, class S>
+	void Visit(const DereferencedAddress<B, T, S> *address);
+
+	template<class T>
+	void Visit(const Register<T> *reg);
 
 	// Flow
 

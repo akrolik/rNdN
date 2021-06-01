@@ -66,8 +66,27 @@ public:
 
 	// Visitors
 
-	void Accept(OperandVisitor& visitor) override { visitor.Visit(static_cast<_BracedRegister *>(this)); }
-	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(static_cast<const _BracedRegister *>(this)); }
+	void Accept(OperandVisitor& visitor) override
+	{
+		if (visitor.Visit(static_cast<_BracedRegister *>(this)))
+		{
+			for (auto& reg : m_registers)
+			{
+				reg->Accept(visitor);
+			}
+		}
+	}
+
+	void Accept(ConstOperandVisitor& visitor) const override
+	{
+		if (visitor.Visit(static_cast<const _BracedRegister *>(this)))
+		{
+			for (const auto& reg : m_registers)
+			{
+				reg->Accept(visitor);
+			}
+		}
+	}
 
 protected:
 	DispatchMember_Type(T);

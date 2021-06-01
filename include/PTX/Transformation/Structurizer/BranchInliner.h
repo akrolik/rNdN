@@ -34,7 +34,7 @@ public:
 
 	// Operands visitor
 
-	void Visit(const _Register *reg) override;
+	bool Visit(const _Register *reg) override;
 
 	template<class T>
 	void Visit(const Register<T> *reg);

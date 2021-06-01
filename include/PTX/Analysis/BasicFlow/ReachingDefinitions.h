@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Analysis/Framework/ForwardAnalysis.h"
-#include "PTX/Traversal/ConstOperandDispatcher.h"
+#include "PTX/Traversal/ConstOperandVisitor.h"
 #include "PTX/Utils/PrettyPrinter.h"
 
 #include "Analysis/FlowValue.h"
@@ -52,7 +52,7 @@ struct ReachingDefinitionsValue : ::Analysis::Value<robin_hood::unordered_set<co
 
 using ReachingDefinitionsProperties = ::Analysis::Map<ReachingDefinitionsKey, ReachingDefinitionsValue>; 
 
-class ReachingDefinitions : public ForwardAnalysis<ReachingDefinitionsProperties>, public ConstOperandDispatcher<ReachingDefinitions>
+class ReachingDefinitions : public ForwardAnalysis<ReachingDefinitionsProperties>, public ConstOperandVisitor
 {
 public:
 	using Properties = ReachingDefinitionsProperties;
@@ -68,9 +68,10 @@ public:
 
 	// Operand dispatch
 
-	using ConstOperandDispatcher<ReachingDefinitions>::Visit;
+	bool Visit(const _Register *reg);
 
-	template<class T> void Visit(const Register<T> *reg);
+	template<class T>
+	void Visit(const Register<T> *reg);
 
 	// Flow
 

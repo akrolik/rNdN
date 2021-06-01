@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PTX/Analysis/Framework/FlowInsensitiveAnalysis.h"
-#include "PTX/Traversal/ConstOperandDispatcher.h"
+#include "PTX/Traversal/ConstOperandVisitor.h"
 #include "PTX/Utils/PrettyPrinter.h"
 
 #include "Analysis/FlowValue.h"
@@ -51,7 +51,7 @@ struct DefinitionsAnalysisValue : robin_hood::unordered_set<const InstructionSta
 
 using DefinitionsAnalysisProperties = ::Analysis::Map<DefinitionsAnalysisKey, DefinitionsAnalysisValue, false>; 
 
-class DefinitionsAnalysis : public FlowInsensitiveAnalysis<DefinitionsAnalysisProperties>, public ConstOperandDispatcher<DefinitionsAnalysis>
+class DefinitionsAnalysis : public FlowInsensitiveAnalysis<DefinitionsAnalysisProperties>, public ConstOperandVisitor
 {
 public:
 	using Properties = DefinitionsAnalysisProperties;
@@ -67,10 +67,11 @@ public:
 
 	// Operand dispatch
 
-	using ConstOperandDispatcher<DefinitionsAnalysis>::Visit;
+	bool Visit(const _DereferencedAddress *address);
+	bool Visit(const _Register *reg);
 
-	template<Bits B, class T, class S> void Visit(const DereferencedAddress<B, T, S> *address);
-	template<class T> void Visit(const Register<T> *reg);
+	template<class T>
+	void Visit(const Register<T> *reg);
 
 	// Definitions
 

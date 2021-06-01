@@ -41,14 +41,16 @@ void MoveSpecialGenerator::GenerateS2R(SASS::SpecialRegister *source)
 	this->AddInstruction(new SASS::S2RInstruction(m_destination, source));
 }
 
-void MoveSpecialGenerator::Visit(const PTX::_SpecialRegister *reg)
+bool MoveSpecialGenerator::Visit(const PTX::_SpecialRegister *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
-void MoveSpecialGenerator::Visit(const PTX::_IndexedRegister *reg)
+bool MoveSpecialGenerator::Visit(const PTX::_IndexedRegister *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
 template<class T>

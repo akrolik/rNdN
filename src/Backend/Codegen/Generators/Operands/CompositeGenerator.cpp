@@ -41,14 +41,16 @@ std::pair<SASS::Composite *, SASS::Composite *> CompositeGenerator::GeneratePair
 	return { m_composite, m_compositeHi };
 }
 
-void CompositeGenerator::Visit(const PTX::_Register *reg)
+bool CompositeGenerator::Visit(const PTX::_Register *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
-void CompositeGenerator::Visit(const PTX::_IndexedRegister *reg)
+bool CompositeGenerator::Visit(const PTX::_IndexedRegister *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
 template<class T>
@@ -85,19 +87,22 @@ void CompositeGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 	}
 }
 
-void CompositeGenerator::Visit(const PTX::_Constant *constant)
+bool CompositeGenerator::Visit(const PTX::_Constant *constant)
 {
 	constant->Dispatch(*this);
+	return false;
 }
 
-void CompositeGenerator::Visit(const PTX::_ParameterConstant *constant)
+bool CompositeGenerator::Visit(const PTX::_ParameterConstant *constant)
 {
 	constant->Dispatch(*this);
+	return false;
 }
 
-void CompositeGenerator::Visit(const PTX::_Value *value)
+bool CompositeGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
+	return false;
 }
 
 template<class T>
@@ -199,9 +204,10 @@ void CompositeGenerator::Visit(const PTX::Value<T> *value)
 	}
 }
 
-void CompositeGenerator::Visit(const PTX::_MemoryAddress *address)
+bool CompositeGenerator::Visit(const PTX::_MemoryAddress *address)
 {
 	address->Dispatch(*this);
+	return false;
 }
 
 template<PTX::Bits B, class T, class S>

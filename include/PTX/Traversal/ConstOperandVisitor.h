@@ -33,43 +33,43 @@ class _BracedRegister;
 class ConstOperandVisitor
 {
 public:
-	virtual void Visit(const Label *label) {}
+	virtual bool Visit(const Label *label) { return true; }
 
 	// Constants
 
-	virtual void Visit(const _Constant *constant) {}
-	virtual void Visit(const _ParameterConstant *constant) {}
-	virtual void Visit(const _Value *value) {}
+	virtual bool Visit(const _Constant *constant) { return true; }
+	virtual bool Visit(const _ParameterConstant *constant) { return true; }
+	virtual bool Visit(const _Value *value) { return true; }
 
 	// Extended
 
-	virtual void Visit(const _BracedOperand *operand) {}
-	virtual void Visit(const _DualOperand *operand) {}
-	virtual void Visit(const _InvertedOperand *operand) {}
-	virtual void Visit(const ListOperand *operand) {}
-	virtual void Visit(const StringOperand *operand) {}
+	virtual bool Visit(const _BracedOperand *operand) { return true; }
+	virtual bool Visit(const _DualOperand *operand) { return true; }
+	virtual bool Visit(const _InvertedOperand *operand) { return true; }
+	virtual bool Visit(const ListOperand *operand) { return true; }
+	virtual bool Visit(const StringOperand *operand) { return true; }
 
 	// Address
 
-	virtual void Visit(const _DereferencedAddress *address) {}
-	virtual void Visit(const _MemoryAddress *address) {}
-	virtual void Visit(const _RegisterAddress *address) {}
+	virtual bool Visit(const _DereferencedAddress *address) { return true; }
+	virtual bool Visit(const _MemoryAddress *address) { return true; }
+	virtual bool Visit(const _RegisterAddress *address) { return true; }
 
 	// Variables
 
-	virtual void Visit(const _ConstVariable *variable) {}
-	virtual void Visit(const _GlobalVariable *variable) {}
-	virtual void Visit(const _LocalVariable *variable) {}
-	virtual void Visit(const _ParameterVariable *variable) {}
-	virtual void Visit(const _SharedVariable *variable) {}
+	virtual bool Visit(const _ConstVariable *variable) { return true; }
+	virtual bool Visit(const _GlobalVariable *variable) { return true; }
+	virtual bool Visit(const _LocalVariable *variable) { return true; }
+	virtual bool Visit(const _ParameterVariable *variable) { return true; }
+	virtual bool Visit(const _SharedVariable *variable) { return true; }
 
 	// Registers
 
-	virtual void Visit(const _Register *reg) {}
-	virtual void Visit(const _SpecialRegister *reg) {}
-	virtual void Visit(const _SinkRegister *reg) {}
-	virtual void Visit(const _IndexedRegister *reg) {}
-	virtual void Visit(const _BracedRegister *reg) {}
+	virtual bool Visit(const _Register *reg) { return true; }
+	virtual bool Visit(const _SpecialRegister *reg) { return true; }
+	virtual bool Visit(const _SinkRegister *reg) { return true; }
+	virtual bool Visit(const _IndexedRegister *reg) { return true; }
+	virtual bool Visit(const _BracedRegister *reg) { return true; }
 };
 
 }

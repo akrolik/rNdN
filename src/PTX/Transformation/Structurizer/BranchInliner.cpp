@@ -194,9 +194,10 @@ void BranchInliner::Visit(const _DivideInstruction *instruction)
 	m_predicated = false;
 }
 
-void BranchInliner::Visit(const _Register *reg)
+bool BranchInliner::Visit(const _Register *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
 template<class T>

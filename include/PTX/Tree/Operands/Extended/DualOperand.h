@@ -43,8 +43,23 @@ public:
 		return j;
 	}
 
-	void Accept(OperandVisitor& visitor) override { visitor.Visit(this); }
-	void Accept(ConstOperandVisitor& visitor) const override { visitor.Visit(this); }
+	void Accept(OperandVisitor& visitor) override
+	{
+		if (visitor.Visit(this))
+		{
+			m_operandP->Accept(visitor);
+			m_operandQ->Accept(visitor);
+		}
+	}
+
+	void Accept(ConstOperandVisitor& visitor) const override
+	{
+		if (visitor.Visit(this))
+		{
+			m_operandP->Accept(visitor);
+			m_operandQ->Accept(visitor);
+		}
+	}
 
 private:
 	DispatchMember_Type1(T1);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PTX/Traversal/ConstInstructionVisitor.h"
+#include "PTX/Traversal/ConstOperandVisitor.h"
 #include "PTX/Traversal/Visitor.h"
 
 #include "PTX/Tree/Tree.h"
@@ -10,7 +10,7 @@
 namespace PTX {
 namespace Transformation {
 
-class DeadCodeElimination : public Visitor, public ConstOperandDispatcher<DeadCodeElimination>
+class DeadCodeElimination : public Visitor, public ConstOperandVisitor
 {
 public:
 	DeadCodeElimination(const Analysis::LiveVariables& liveVariables) : m_liveVariables(liveVariables) {}
@@ -25,9 +25,10 @@ public:
 
 	// Operand visitors
 
-	using ConstOperandDispatcher<DeadCodeElimination>::Visit;
+	bool Visit(const _Register *reg) override;
 
-	template<class T> void Visit(const Register<T> *reg);
+	template<class T>
+	void Visit(const Register<T> *reg);
 
 private:
 	const Analysis::LiveVariables& m_liveVariables;

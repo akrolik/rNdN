@@ -25,8 +25,8 @@ public:
 
 	// Special Register
 
-	void Visit(const PTX::_SpecialRegister *reg) override;
-	void Visit(const PTX::_IndexedRegister *reg) override;
+	bool Visit(const PTX::_SpecialRegister *reg) override;
+	bool Visit(const PTX::_IndexedRegister *reg) override;
 
 	template<class T>
 	void Visit(const PTX::SpecialRegister<T> *reg);

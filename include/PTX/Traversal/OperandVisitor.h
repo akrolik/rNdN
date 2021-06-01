@@ -33,43 +33,43 @@ class _BracedRegister;
 class OperandVisitor
 {
 public:
-	virtual void Visit(Label *label) = 0;
+	virtual bool Visit(Label *label) { return true; }
 
 	// Constants
 
-	virtual void Visit(_Constant *constant) = 0;
-	virtual void Visit(_ParameterConstant *constant) = 0;
-	virtual void Visit(_Value *value) = 0;
+	virtual bool Visit(_Constant *constant) { return true; }
+	virtual bool Visit(_ParameterConstant *constant) { return true; }
+	virtual bool Visit(_Value *value) { return true; }
 
 	// Extended
 
-	virtual void Visit(_BracedOperand *operand) = 0;
-	virtual void Visit(_DualOperand *operand) = 0;
-	virtual void Visit(_InvertedOperand *operand) = 0;
-	virtual void Visit(ListOperand *operand) = 0;
-	virtual void Visit(StringOperand *operand) = 0;
+	virtual bool Visit(_BracedOperand *operand) { return true; }
+	virtual bool Visit(_DualOperand *operand) { return true; }
+	virtual bool Visit(_InvertedOperand *operand) { return true; }
+	virtual bool Visit(ListOperand *operand) { return true; }
+	virtual bool Visit(StringOperand *operand) { return true; }
 
 	// Address
 
-	virtual void Visit(_DereferencedAddress *address) = 0;
-	virtual void Visit(_MemoryAddress *address) = 0;
-	virtual void Visit(_RegisterAddress *address) = 0;
+	virtual bool Visit(_DereferencedAddress *address) { return true; }
+	virtual bool Visit(_MemoryAddress *address) { return true; }
+	virtual bool Visit(_RegisterAddress *address) { return true; }
 
 	// Variables
 
-	virtual void Visit(_ConstVariable *variable) = 0;
-	virtual void Visit(_GlobalVariable *variable) = 0;
-	virtual void Visit(_LocalVariable *variable) = 0;
-	virtual void Visit(_ParameterVariable *variable) = 0;
-	virtual void Visit(_SharedVariable *variable) = 0;
+	virtual bool Visit(_ConstVariable *variable) { return true; }
+	virtual bool Visit(_GlobalVariable *variable) { return true; }
+	virtual bool Visit(_LocalVariable *variable) { return true; }
+	virtual bool Visit(_ParameterVariable *variable) { return true; }
+	virtual bool Visit(_SharedVariable *variable) { return true; }
 
 	// Registers
 
-	virtual void Visit(_Register *reg) = 0;
-	virtual void Visit(_SpecialRegister *reg) = 0;
-	virtual void Visit(_SinkRegister *reg) = 0;
-	virtual void Visit(_IndexedRegister *reg) = 0;
-	virtual void Visit(_BracedRegister *reg) = 0;
+	virtual bool Visit(_Register *reg) { return true; }
+	virtual bool Visit(_SpecialRegister *reg) { return true; }
+	virtual bool Visit(_SinkRegister *reg) { return true; }
+	virtual bool Visit(_IndexedRegister *reg) { return true; }
+	virtual bool Visit(_BracedRegister *reg) { return true; }
 };
 
 }

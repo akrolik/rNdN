@@ -23,14 +23,16 @@ SASS::Address *AddressGenerator::Generate(const PTX::Operand *operand)
 	return m_address;
 }
 
-void AddressGenerator::Visit(const PTX::_MemoryAddress *address)
+bool AddressGenerator::Visit(const PTX::_MemoryAddress *address)
 {
 	address->Dispatch(*this);
+	return false;
 }
 
-void AddressGenerator::Visit(const PTX::_RegisterAddress *address)
+bool AddressGenerator::Visit(const PTX::_RegisterAddress *address)
 {
 	address->Dispatch(*this);
+	return false;
 }
 
 template<PTX::Bits B, class T, class S>

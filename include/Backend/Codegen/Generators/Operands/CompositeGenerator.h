@@ -33,8 +33,8 @@ public:
 
 	// Registers
 
-	void Visit(const PTX::_Register *reg) override;
-	void Visit(const PTX::_IndexedRegister *reg) override;
+	bool Visit(const PTX::_Register *reg) override;
+	bool Visit(const PTX::_IndexedRegister *reg) override;
 
 	template<class T>
 	void Visit(const PTX::Register<T> *reg);
@@ -44,9 +44,9 @@ public:
 
 	// Values
 
-	void Visit(const PTX::_Constant *constant) override;
-	void Visit(const PTX::_ParameterConstant *constant) override;
-	void Visit(const PTX::_Value *value) override;
+	bool Visit(const PTX::_Constant *constant) override;
+	bool Visit(const PTX::_ParameterConstant *constant) override;
+	bool Visit(const PTX::_Value *value) override;
 
 	template<class T>
 	void Visit(const PTX::Constant<T> *constant);
@@ -59,7 +59,7 @@ public:
 
 	// Addresses
 
-	void Visit(const PTX::_MemoryAddress *address) override;
+	bool Visit(const PTX::_MemoryAddress *address) override;
 
 	template<PTX::Bits B, class T, class S>
 	void Visit(const PTX::MemoryAddress<B, T, S> *address);

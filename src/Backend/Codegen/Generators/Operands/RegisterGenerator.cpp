@@ -41,19 +41,22 @@ std::pair<SASS::Register *, SASS::Register *> RegisterGenerator::GeneratePair(co
 	return { m_register, m_registerHi };
 }
 
-void RegisterGenerator::Visit(const PTX::_Register *reg)
+bool RegisterGenerator::Visit(const PTX::_Register *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
-void RegisterGenerator::Visit(const PTX::_IndexedRegister *reg)
+bool RegisterGenerator::Visit(const PTX::_IndexedRegister *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
-void RegisterGenerator::Visit(const PTX::_SinkRegister *reg)
+bool RegisterGenerator::Visit(const PTX::_SinkRegister *reg)
 {
 	reg->Dispatch(*this);
+	return false;
 }
 
 template<class T>
@@ -110,19 +113,22 @@ void RegisterGenerator::Visit(const PTX::SinkRegister<T> *reg)
 	}
 }
 
-void RegisterGenerator::Visit(const PTX::_Constant *constant)
+bool RegisterGenerator::Visit(const PTX::_Constant *constant)
 {
 	constant->Dispatch(*this);
+	return false;
 }
 
-void RegisterGenerator::Visit(const PTX::_ParameterConstant *constant)
+bool RegisterGenerator::Visit(const PTX::_ParameterConstant *constant)
 {
 	constant->Dispatch(*this);
+	return false;
 }
 
-void RegisterGenerator::Visit(const PTX::_Value *value)
+bool RegisterGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
+	return false;
 }
 
 template<class T>

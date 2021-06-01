@@ -25,9 +25,9 @@ public:
 
 	// Registers
 
-	void Visit(const PTX::_Register *reg) override;
-	void Visit(const PTX::_IndexedRegister *reg) override;
-	void Visit(const PTX::_SinkRegister *reg) override;
+	bool Visit(const PTX::_Register *reg) override;
+	bool Visit(const PTX::_IndexedRegister *reg) override;
+	bool Visit(const PTX::_SinkRegister *reg) override;
 
 	template<class T> void Visit(const PTX::Register<T> *reg);
 
@@ -39,9 +39,9 @@ public:
 
 	// Values
 
-	void Visit(const PTX::_Constant *constant);
-	void Visit(const PTX::_ParameterConstant *constant);
-	void Visit(const PTX::_Value *value);
+	bool Visit(const PTX::_Constant *constant);
+	bool Visit(const PTX::_ParameterConstant *constant);
+	bool Visit(const PTX::_Value *value);
 
 	template<class T>
 	void Visit(const PTX::Constant<T> *value);

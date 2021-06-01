@@ -13,10 +13,16 @@ void ReachingDefinitions::Visit(const InstructionStatement *statement)
 	if (operands.size() > 0)
 	{
 		const auto& destination = operands.at(0);
-		destination->Accept(static_cast<ConstOperandDispatcher&>(*this));
+		destination->Accept(static_cast<ConstOperandVisitor&>(*this));
 	}
 
 	m_currentStatement = nullptr;
+}
+
+bool ReachingDefinitions::Visit(const _Register *reg)
+{
+	reg->Dispatch(*this);
+	return false;
 }
 
 template<class T>

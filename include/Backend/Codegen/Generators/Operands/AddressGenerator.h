@@ -22,8 +22,8 @@ public:
 
 	// Addresss
 
-	void Visit(const PTX::_MemoryAddress *address) override;
-	void Visit(const PTX::_RegisterAddress *address) override;
+	bool Visit(const PTX::_MemoryAddress *address) override;
+	bool Visit(const PTX::_RegisterAddress *address) override;
 
 	template<PTX::Bits B, class T, class S>
 	void Visit(const PTX::MemoryAddress<B, T, S> *address);
