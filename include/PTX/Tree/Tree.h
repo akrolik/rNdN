@@ -63,6 +63,7 @@ namespace PTX {
 // Constants
 
 #include "PTX/Tree/Operands/Constants/Constant.h"
+#include "PTX/Tree/Operands/Constants/ParameterConstant.h"
 #include "PTX/Tree/Operands/Constants/SpecialConstants.h"
 #include "PTX/Tree/Operands/Constants/Value.h"
 

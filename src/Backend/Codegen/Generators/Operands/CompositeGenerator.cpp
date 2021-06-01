@@ -90,6 +90,11 @@ void CompositeGenerator::Visit(const PTX::_Constant *constant)
 	constant->Dispatch(*this);
 }
 
+void CompositeGenerator::Visit(const PTX::_ParameterConstant *constant)
+{
+	constant->Dispatch(*this);
+}
+
 void CompositeGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
@@ -110,6 +115,32 @@ void CompositeGenerator::Visit(const PTX::Constant<T> *constant)
 	}
 
 	Error(constant,  "constant not found");
+}
+
+template<class T>
+void CompositeGenerator::Visit(const PTX::ParameterConstant<T> *constant)
+{
+	const auto& allocations = this->m_builder.GetParameterSpaceAllocation();
+
+	// Verify parameter allocated
+
+	const auto& name = constant->GetName();
+	if (allocations->ContainsParameter(name))
+	{
+		auto offset = allocations->GetParameterOffset(name);
+		m_composite = new SASS::Constant(0x0, offset);
+
+		// Extended datatypes
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
+		}
+	}
+	else
+	{
+		Error(constant, "parameter not found");
+	}
 }
 
 template<class T>
@@ -176,26 +207,33 @@ void CompositeGenerator::Visit(const PTX::_MemoryAddress *address)
 template<PTX::Bits B, class T, class S>
 void CompositeGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 {
-	const auto& allocations = this->m_builder.GetParameterSpaceAllocation();
-
-	// Verify parameter allocated
-
-	const auto& name = address->GetVariable()->GetName();
-	if (allocations->ContainsParameter(name))
+	if constexpr(std::is_same<S, PTX::ParameterSpace>::value)
 	{
-		auto offset = allocations->GetParameterOffset(name);
-		m_composite = new SASS::Constant(0x0, offset);
+		const auto& allocations = this->m_builder.GetParameterSpaceAllocation();
 
-		// Extended datatypes
+		// Verify parameter allocated
 
-		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		const auto& name = address->GetVariable()->GetName();
+		if (allocations->ContainsParameter(name))
 		{
-			m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
+			auto offset = allocations->GetParameterOffset(name);
+			m_composite = new SASS::Constant(0x0, offset);
+
+			// Extended datatypes
+
+			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			{
+				m_compositeHi = new SASS::Constant(0x0, offset + 0x4);
+			}
+		}
+		else
+		{
+			Error(address, "parameter not found");
 		}
 	}
 	else
 	{
-		Error(address, "parameter not found");
+		Error(address, "unsupported space");
 	}
 }
 

@@ -115,6 +115,11 @@ void RegisterGenerator::Visit(const PTX::_Constant *constant)
 	constant->Dispatch(*this);
 }
 
+void RegisterGenerator::Visit(const PTX::_ParameterConstant *constant)
+{
+	constant->Dispatch(*this);
+}
+
 void RegisterGenerator::Visit(const PTX::_Value *value)
 {
 	value->Dispatch(*this);
@@ -137,6 +142,41 @@ void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
 	}
 
 	Error(constant, "constant not found");
+}
+
+template<class T>
+void RegisterGenerator::Visit(const PTX::ParameterConstant<T> *constant)
+{
+	const auto& allocations = this->m_builder.GetParameterSpaceAllocation();
+
+	// Verify parameter allocated
+
+	const auto& name = constant->GetName();
+	if (allocations->ContainsParameter(name))
+	{
+		auto [reg, regHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
+
+		// Get offset in parameter constant
+
+		auto offset = allocations->GetParameterOffset(name);
+
+		// Load value from constant space into registers (hi for 64-bit types)
+
+		auto constant = new SASS::Constant(0x0, offset);
+		this->m_builder.AddInstruction(new SASS::MOVInstruction(reg, constant));
+		m_register = reg;
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			auto constantHi = new SASS::Constant(0x0, offset + 0x4);
+			this->m_builder.AddInstruction(new SASS::MOVInstruction(regHi, constantHi));
+			m_registerHi = regHi;
+		}
+	}
+	else
+	{
+		Error(constant, "parameter not found");
+	}
 }
 
 template<class T>

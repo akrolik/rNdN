@@ -40,10 +40,14 @@ public:
 	// Values
 
 	void Visit(const PTX::_Constant *constant);
+	void Visit(const PTX::_ParameterConstant *constant);
 	void Visit(const PTX::_Value *value);
 
 	template<class T>
 	void Visit(const PTX::Constant<T> *value);
+
+	template<class T>
+	void Visit(const PTX::ParameterConstant<T> *value);
 
 	template<class T>
 	void Visit(const PTX::Value<T> *value);

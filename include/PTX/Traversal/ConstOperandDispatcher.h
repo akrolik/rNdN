@@ -19,12 +19,18 @@ public:
 		constant->Dispatch<D>(static_cast<D&>(*this));
 	}
 
+	void Visit(const _ParameterConstant *constant) override
+	{
+		constant->Dispatch<D>(static_cast<D&>(*this));
+	}
+
 	void Visit(const _Value *value) override
 	{
 		value->Dispatch<D>(static_cast<D&>(*this));
 	}
 
 	template<class T> void Visit(const Constant<T> *constant) {}
+	template<class T> void Visit(const ParameterConstant<T> *constant) {}
 	template<class T> void Visit(const Value<T> *value) {}
 
 	// Extended

@@ -5,6 +5,7 @@ namespace PTX {
 class Label;
 
 class _Constant;
+class _ParameterConstant;
 class _Value;
 
 class _BracedOperand;
@@ -37,6 +38,7 @@ public:
 	// Constants
 
 	virtual void Visit(const _Constant *constant) {}
+	virtual void Visit(const _ParameterConstant *constant) {}
 	virtual void Visit(const _Value *value) {}
 
 	// Extended
