@@ -16,6 +16,11 @@ void Options::Initialize(int argc, const char *argv[])
 	instance.m_results = results;
 }
 
+bool Options::IsDev()
+{
+	return Get(Opt_Dev);
+}
+
 // Optimization
 
 Options::OutlineOptimization Options::GetOptimize_Outline()
@@ -465,6 +470,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 {
 	m_options.add_options()
 		("h,help", "Display this help menu")
+		(Opt_Dev, "Development flag")
 	;
 	m_options.add_options("Optimization")
 		(Opt_Optimize_outline, "Outline graph optimization\n"

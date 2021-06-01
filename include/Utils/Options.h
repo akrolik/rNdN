@@ -8,6 +8,7 @@ class Options
 {
 public:
 	static constexpr char const *Opt_Help = "help";
+	static constexpr char const *Opt_Dev = "dev";
 
 	static constexpr char const *Opt_Optimize_outline = "optimize-outline";
 	static constexpr char const *Opt_Optimize_hir = "optimize-hir";
@@ -71,6 +72,8 @@ public:
 	void operator=(Options const&) = delete;
 
 	static void Initialize(int argc, const char *argv[]);
+
+	static bool IsDev();
 
 	// Optimization
 
