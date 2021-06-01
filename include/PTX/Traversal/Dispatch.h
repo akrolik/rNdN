@@ -201,6 +201,19 @@ public:
 #undef _DispatchType
 	}
 
+	template<class V>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<T, false>::TypeSupported) { \
+			return visitor.Visit(static_cast<C<T>*>(this)); \
+		}
+
+		const auto type = GetType();
+		DispatchType(type);
+
+#undef _DispatchType
+	}
 protected:
 	virtual const Type *GetType() const = 0;
 };
@@ -227,6 +240,32 @@ public:
 #define _DispatchType(type, T2) \
 		if constexpr(C<T1, T2, false>::TypeSupported) { \
 			return visitor.Visit(static_cast<const C<T1, T2>*>(this)); \
+		}
+
+		const auto type = GetType2();
+		DispatchType(type);
+
+#undef _DispatchType
+	}
+
+	template<class V>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T1) \
+		return Dispatch<V, T1>(visitor);
+
+		const auto type = GetType1();
+		DispatchType(type);
+
+#undef _DispatchType
+	}
+
+	template<class V, class T1>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T2) \
+		if constexpr(C<T1, T2, false>::TypeSupported) { \
+			return visitor.Visit(static_cast<C<T1, T2>*>(this)); \
 		}
 
 		const auto type = GetType2();
@@ -264,6 +303,34 @@ public:
 #define _DispatchType(type, T) \
 		if constexpr(C<T, E, false>::TypeSupported) { \
 			return visitor.Visit(static_cast<const C<T, E>*>(this)); \
+		}
+
+		const auto type = GetType();
+		DispatchType(type)
+
+#undef _DispatchType
+	}
+
+	template<class V>
+	void Dispatch(V& visitor)
+	{
+		const auto vectorSize = GetVectorSize();
+		if (vectorSize == VectorSize::Vector2)
+		{
+			Dispatch<V, VectorSize::Vector2>(visitor);
+		}
+		else if (vectorSize == VectorSize::Vector4)
+		{
+			Dispatch<V, VectorSize::Vector4>(visitor);
+		}
+	}
+
+	template<class V, VectorSize E>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<T, E, false>::TypeSupported) { \
+			return visitor.Visit(static_cast<C<T, E>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -321,6 +388,46 @@ public:
 #undef _DispatchType
 	}
 
+	template<class V>
+	void Dispatch(V& visitor)
+	{
+		const auto vectorSize = GetVectorSize();
+		if (vectorSize == VectorSize::Vector2)
+		{
+			Dispatch<V, VectorSize::Vector2>(visitor);
+		}
+		else if (vectorSize == VectorSize::Vector4)
+		{
+			Dispatch<V, VectorSize::Vector4>(visitor);
+		}
+	}
+
+	template<class V, VectorSize E>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchSpace(space, S) \
+		return Dispatch<V, S, E>(visitor);
+
+		const auto space = GetStateSpace();
+		DispatchSpace(space);
+
+#undef _DispatchSpace
+	}
+
+	template<class V, class S, VectorSize E>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<T, S, E, false>::TypeSupported && C<T, S, E, false>::SpaceSupported) { \
+			return visitor.Visit(static_cast<C<T, S, E>*>(this)); \
+		}
+
+		const auto type = GetType();
+		DispatchType(type)
+
+#undef _DispatchType
+	}
+
 protected:
 	virtual const Type *GetType() const = 0;
 	virtual const StateSpace *GetStateSpace() const = 0;
@@ -349,6 +456,32 @@ public:
 #define _DispatchType(type, T) \
 		if constexpr(C<T, S, false>::TypeSupported && C<T, S, false>::SpaceSupported) { \
 			return visitor.Visit(static_cast<const C<T, S>*>(this)); \
+		}
+
+		const auto type = GetType();
+		DispatchType(type);
+
+#undef _DispatchType
+	}
+
+	template<class V>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchSpace(space, S) \
+		return Dispatch<V, S>(visitor);
+
+		const auto space = GetStateSpace();
+		DispatchSpace(space);
+
+#undef _DispatchSpace
+	}
+
+	template<class V, class S>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<T, S, false>::TypeSupported && C<T, S, false>::SpaceSupported) { \
+			return visitor.Visit(static_cast<C<T, S>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -398,6 +531,46 @@ public:
 #define _DispatchType(type, T) \
 		if constexpr(C<B, T, S, false>::TypeSupported && C<B, T, S, false>::SpaceSupported) { \
 			return visitor.Visit(static_cast<const C<B, T, S>*>(this)); \
+		}
+
+		const auto type = GetType();
+		DispatchType(type);
+
+#undef _DispatchType
+	}
+
+	template<class V>
+	void Dispatch(V& visitor)
+	{
+		const auto bits = GetBits();
+		if (bits == Bits::Bits32)
+		{
+			Dispatch<V, Bits::Bits32>(visitor);
+		}
+		else if (bits == Bits::Bits64)
+		{
+			Dispatch<V, Bits::Bits64>(visitor);
+		}
+	}
+
+	template<class V, Bits B>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchSpace(space, S) \
+		return Dispatch<V, B, S>(visitor);
+
+		const auto space = GetStateSpace();
+		DispatchSpace(space);
+
+#undef _DispatchSpace
+	}
+
+	template<class V, Bits B, class S>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<B, T, S, false>::TypeSupported && C<B, T, S, false>::SpaceSupported) { \
+			return visitor.Visit(static_cast<C<B, T, S>*>(this)); \
 		}
 
 		const auto type = GetType();
@@ -456,6 +629,46 @@ public:
 #undef _DispatchType
 	}
 
+	template<class V, A AA>
+	void Dispatch(V& visitor)
+	{
+		const auto bits = GetBits();
+		if (bits == Bits::Bits32)
+		{
+			Dispatch<V, Bits::Bits32, AA>(visitor);
+		}
+		else if (bits == Bits::Bits64)
+		{
+			Dispatch<V, Bits::Bits64, AA>(visitor);
+		}
+	}
+
+	template<class V, Bits B, A AA>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchSpace(space, S) \
+		return Dispatch<V, B, S, AA>(visitor);
+
+		const auto space = GetStateSpace();
+		DispatchSpace(space);
+
+#undef _DispatchSpace
+	}
+
+	template<class V, Bits B, class S, A AA>
+	void Dispatch(V& visitor)
+	{
+#define _DispatchType(type, T) \
+		if constexpr(C<B, T, S, AA, false>::TypeSupported && C<B, T, S, AA, false>::SpaceSupported) { \
+			return visitor.Visit(static_cast<C<B, T, S, AA>*>(this)); \
+		}
+
+		const auto type = GetType();
+		DispatchType(type);
+
+#undef _DispatchType
+	}
+
 protected:
 	virtual const Bits GetBits() const = 0;
 	virtual const Type *GetType() const = 0;
@@ -497,6 +710,7 @@ protected:
 	class _##x : public Dispatcher_DataAtomic<y, x> { \
 	public: \
 		template<class V> void Dispatch(V& visitor) const; \
+		template<class V> void Dispatch(V& visitor); \
 	};
 
 #define DispatchImplementation_DataAtomic(x, y) \
@@ -504,7 +718,13 @@ protected:
 	void _##x::Dispatch(V& visitor) const \
 	{ \
 		y; \
+	} \
+	template<class V> \
+	void _##x::Dispatch(V& visitor) \
+	{ \
+		y; \
 	}
+
 
 #define DispatchMember_Bits(b) \
 	const Bits GetBits() const override { return b; }
