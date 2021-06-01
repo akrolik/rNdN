@@ -1,7 +1,6 @@
 #include "Runtime/GPU/Library/LoopJoinEngine.h"
 
 #include "Runtime/DataBuffers/BufferUtils.h"
-#include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Logger.h"
@@ -9,15 +8,6 @@
 
 namespace Runtime {
 namespace GPU {
-
-const HorseIR::Function *LoopJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
-{
-	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
-	{
-		return static_cast<const HorseIR::Function *>(function);
-	}
-	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
-}
 
 ListBuffer *LoopJoinEngine::Join(const std::vector<const DataBuffer *>& arguments)
 {
@@ -27,7 +17,7 @@ ListBuffer *LoopJoinEngine::Join(const std::vector<const DataBuffer *>& argument
 
 	// Count the number of results for the join
 
-	auto countFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
+	auto countFunction = GetFunction(arguments.at(0));
 	auto countBuffers = engine.Execute(countFunction, {arguments.at(2), arguments.at(3)});
 
 	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
@@ -41,7 +31,7 @@ ListBuffer *LoopJoinEngine::Join(const std::vector<const DataBuffer *>& argument
 
 	// Perform the actual join
 
-	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
+	auto joinFunction = GetFunction(arguments.at(1));
 	auto joinBuffers = engine.Execute(joinFunction, {arguments.at(2), arguments.at(3), offsetsBuffer, countBuffer});
 
 	if (Utils::Options::IsDebug_Print())

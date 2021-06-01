@@ -2,7 +2,6 @@
 
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/ConstantBuffer.h"
-#include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/GPU/ExecutionEngine.h"
 
 #include "Utils/Logger.h"
@@ -11,15 +10,6 @@
 
 namespace Runtime {
 namespace GPU {
-
-const HorseIR::Function *HashJoinEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
-{
-	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
-	{
-		return static_cast<const HorseIR::Function *>(function);
-	}
-	Utils::Logger::LogError("GPU join library cannot execute function '" + function->GetName() + "'");
-}
 
 ListBuffer *HashJoinEngine::Join(const std::vector<const DataBuffer *>& arguments)
 {
@@ -57,7 +47,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<const DataBuffer *>& argument
 	const auto powerSize = Utils::Math::Power2(size) << shift;
 	const auto hashSize = new TypedConstantBuffer<std::int32_t>(HorseIR::BasicType::BasicKind::Int32, powerSize);
 
-	auto hashFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
+	auto hashFunction = GetFunction(arguments.at(0));
 	auto hashBuffers = engine.Execute(hashFunction, {leftBuffer, hashSize});
 
 	auto keysBuffer = hashBuffers.at(0);
@@ -71,7 +61,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<const DataBuffer *>& argument
 
 	// Count the number of results for the join
 
-	auto countFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
+	auto countFunction = GetFunction(arguments.at(1));
 	auto countBuffers = engine.Execute(countFunction, {keysBuffer, rightBuffer});
 
 	auto offsetsBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(countBuffers.at(0));
@@ -85,7 +75,7 @@ ListBuffer *HashJoinEngine::Join(const std::vector<const DataBuffer *>& argument
 
 	// Perform the actual join
 
-	auto joinFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction());
+	auto joinFunction = GetFunction(arguments.at(2));
 	auto joinBuffers = engine.Execute(joinFunction, {keysBuffer, valuesBuffer, rightBuffer, offsetsBuffer, countBuffer});
 
 	if (Utils::Options::IsDebug_Print())

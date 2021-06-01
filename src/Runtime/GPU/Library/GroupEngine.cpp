@@ -3,7 +3,6 @@
 #include "Runtime/Interpreter.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 
-#include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/DataBuffers/ListCellBuffer.h"
 #include "Runtime/DataBuffers/ListCompressedBuffer.h"
 #include "Runtime/GPU/Library/SortEngine.h"
@@ -14,15 +13,6 @@
 
 namespace Runtime {
 namespace GPU {
-
-const HorseIR::Function *GroupEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
-{
-	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
-	{
-		return static_cast<const HorseIR::Function *>(function);
-	}
-	Utils::Logger::LogError("GPU group library cannot execute function '" + function->GetName() + "'");
-}
 
 DictionaryBuffer *GroupEngine::Group(const std::vector<const DataBuffer *>& arguments)
 {
@@ -50,7 +40,7 @@ DictionaryBuffer *GroupEngine::Group(const std::vector<const DataBuffer *>& argu
 
 	auto timeGroup_start = Utils::Chrono::Start("Group execution");
 
-	auto groupFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction());
+	auto groupFunction = GetFunction(arguments.at(2 + isShared));
 
 	ExecutionEngine engine(m_runtime, m_program);
 	auto groupBuffers = engine.Execute(groupFunction, {indexBuffer, dataBuffer});

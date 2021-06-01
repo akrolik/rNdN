@@ -2,25 +2,22 @@
 
 #include <vector>
 
-#include "HorseIR/Tree/Tree.h"
+#include "Runtime/GPU/Library/LibraryEngine.h"
 
-#include "Runtime/Runtime.h"
 #include "Runtime/DataBuffers/DataBuffer.h"
 #include "Runtime/DataBuffers/VectorBuffer.h"
+
+#include "HorseIR/Tree/Tree.h"
 
 namespace Runtime {
 namespace GPU {
 
-class UniqueEngine
+class UniqueEngine : public LibraryEngine
 {
 public:
-	UniqueEngine(Runtime& runtime, const HorseIR::Program *program) : m_runtime(runtime), m_program(program) {}
+	using LibraryEngine::LibraryEngine;
 
 	TypedVectorBuffer<std::int64_t> *Unique(const std::vector<const DataBuffer *>& arguments);
-
-private:
-	Runtime& m_runtime;
-	const HorseIR::Program *m_program = nullptr;
 };
 
 }

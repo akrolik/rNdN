@@ -12,15 +12,6 @@
 namespace Runtime {
 namespace GPU {
 
-const HorseIR::Function *SortEngine::GetFunction(const HorseIR::FunctionDeclaration *function) const
-{
-	if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Definition)
-	{
-		return static_cast<const HorseIR::Function *>(function);
-	}
-	Utils::Logger::LogError("GPU sort library cannot execute function '" + function->GetName() + "'");
-}
-
 std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(const std::vector<const DataBuffer *>& arguments)
 {
 	// Get the execution engine for the init/sort functions
@@ -33,7 +24,7 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(cons
 
 	std::vector<const DataBuffer *> initSortBuffers(std::begin(arguments) + 2 + isShared, std::end(arguments));
 
-	auto initFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(0))->GetFunction());
+	auto initFunction = GetFunction(arguments.at(0));
 	auto initBuffers = engine.Execute(initFunction, initSortBuffers);
 
 	auto indexBuffer = BufferUtils::GetVectorBuffer<std::int64_t>(initBuffers.at(0));
@@ -41,8 +32,8 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(cons
 
 	// Perform the iterative sort
 
-	auto sortFunction = GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(1))->GetFunction());
-	auto sortFunctionShared = (isShared) ? GetFunction(BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2))->GetFunction()) : nullptr;
+	auto sortFunction = GetFunction(arguments.at(1));
+	auto sortFunctionShared = (isShared) ? GetFunction(arguments.at(2)) : nullptr;
 
 	// Compute the active size and iterations
 
