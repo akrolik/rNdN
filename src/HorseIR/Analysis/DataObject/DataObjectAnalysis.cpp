@@ -312,6 +312,27 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const BuiltinFun
 		{
 			return {new DataObject()};
 		}
+		case BuiltinFunction::Primitive::GPUHashMemberLib:
+		{
+			const auto hashType = arguments.at(0)->GetType();
+			const auto countType = arguments.at(1)->GetType();
+
+			const auto hashFunction = TypeUtils::GetType<FunctionType>(hashType)->GetFunctionDeclaration();
+			const auto countFunction = TypeUtils::GetType<FunctionType>(countType)->GetFunctionDeclaration();
+
+			// Functions are provided internally
+
+			const auto hashObjects = AnalyzeCall(hashFunction, {}, {argumentObjects.at(3)});
+			const auto memberObjects = AnalyzeCall(countFunction, {}, {hashObjects.at(0), argumentObjects.at(2)});
+
+			return {memberObjects.at(0)};
+		}
+		case BuiltinFunction::Primitive::GPUHashMemberCreate:
+		case BuiltinFunction::Primitive::GPUHashMember:
+		{
+			return {new DataObject()};
+		}
+
 	}
 	return {new DataObject()};
 }

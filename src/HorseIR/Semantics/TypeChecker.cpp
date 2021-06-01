@@ -1512,6 +1512,60 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 
 			return {new ListType(new BasicType(BasicType::BasicKind::Int64))};
 		}
+		case BuiltinFunction::Primitive::GPUHashMemberLib:
+		{
+			// @GPU.hash_member_lib(@hash, @member, left, right)
+
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+			const auto inputType2 = argumentTypes.at(2);
+			const auto inputType3 = argumentTypes.at(3);
+
+			Require(TypeUtils::IsType<FunctionType>(inputType0));
+			Require(TypeUtils::IsType<FunctionType>(inputType1));
+
+			auto functionType0 = TypeUtils::GetType<FunctionType>(inputType0);
+			auto functionType1 = TypeUtils::GetType<FunctionType>(inputType1);
+
+			Require(TypeUtils::IsType<BasicType>(inputType2));
+			Require(TypeUtils::IsType<BasicType>(inputType3));
+
+			// Hash call
+
+			const auto callTypes0 = AnalyzeCall(functionType0, {inputType3});
+			Require(callTypes0.size() == 1);
+			Require(TypeUtils::IsTypesEqual(callTypes0.at(0), inputType3));
+
+			// Member call
+
+			const auto callTypes1 = AnalyzeCall(functionType1, {callTypes0.at(0), inputType2});
+			Require(callTypes1.size() == 1);
+			Require(TypeUtils::IsBasicType(callTypes1.at(0), BasicType::BasicKind::Boolean));
+
+			return {callTypes1.at(0)};
+		}
+		case BuiltinFunction::Primitive::GPUHashMemberCreate:
+		{
+			const auto inputType = argumentTypes.at(0);
+			Require(TypeUtils::IsType<BasicType>(inputType));
+			return {inputType->Clone()};
+		}
+		case BuiltinFunction::Primitive::GPUHashMember:
+		{
+			const auto inputType0 = argumentTypes.at(0);
+			const auto inputType1 = argumentTypes.at(1);
+
+			Require(TypeUtils::IsType<BasicType>(inputType0));
+			Require(TypeUtils::IsType<BasicType>(inputType1));
+
+			Require(
+				(TypeUtils::IsRealType(inputType0)      && TypeUtils::IsRealType(inputType1)) ||
+				(TypeUtils::IsCharacterType(inputType0) && TypeUtils::IsCharacterType(inputType1)) ||
+				TypeUtils::IsTypesEqual(inputType0, inputType1)
+			);
+
+			return {new BasicType(BasicType::BasicKind::Boolean)};
+		}
 		default:
 		{
 			Utils::Logger::LogError("Type analysis does not support builtin function '" + function->GetName() + "'");

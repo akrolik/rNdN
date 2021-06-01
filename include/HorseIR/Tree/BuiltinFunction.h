@@ -163,7 +163,11 @@ public:
 		GPUHashJoinLib,
 		GPUHashCreate,
 		GPUHashJoinCount,
-		GPUHashJoin
+		GPUHashJoin,
+
+		GPUHashMemberLib,
+		GPUHashMemberCreate,
+		GPUHashMember,
 	};
 
 	static const std::string PrimitiveName(Primitive primitive)
@@ -414,6 +418,12 @@ public:
 				return "hash_join_count";
 			case Primitive::GPUHashJoin:
 				return "hash_join";
+			case Primitive::GPUHashMemberLib:
+				return "hash_member_lib";
+			case Primitive::GPUHashMemberCreate:
+				return "hash_member_create";
+			case Primitive::GPUHashMember:
+				return "hash_member";
 		}
 		return "<unknown>";
 	}
@@ -617,6 +627,12 @@ public:
 				return 2; // data1, hash_keys
 			case Primitive::GPUHashJoin:
 				return 5; // data1, hash_keys, hash_values, offsets, count
+			case Primitive::GPUHashMemberLib:
+				return 4; // @hash_create, @hash_member, data1, data2
+			case Primitive::GPUHashMemberCreate:
+				return 1; // data2
+			case Primitive::GPUHashMember:
+				return 2; // hash_keys, data1
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

@@ -27,7 +27,12 @@ static Module *GPUModule = new LibraryModule("GPU", {
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoinLib),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashCreate),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoinCount),
-	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoin)
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashJoin),
+
+	// Member
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMemberLib),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMemberCreate),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMember)
 });
 
 }

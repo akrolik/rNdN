@@ -98,6 +98,7 @@ std::vector<DataBuffer *> Interpreter::Execute(const HorseIR::BuiltinFunction *f
 		case HorseIR::BuiltinFunction::Primitive::GPUUniqueLib:
 		case HorseIR::BuiltinFunction::Primitive::GPULoopJoinLib:
 		case HorseIR::BuiltinFunction::Primitive::GPUHashJoinLib:
+		case HorseIR::BuiltinFunction::Primitive::GPUHashMemberLib:
 			name = "Library function";
 	}
 

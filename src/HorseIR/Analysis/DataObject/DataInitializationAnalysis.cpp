@@ -119,6 +119,7 @@ bool DataInitializationAnalysis::VisitIn(const CallExpression *call)
 				break;
 			}
 			case BuiltinFunction::Primitive::GPUHashCreate:
+			case BuiltinFunction::Primitive::GPUHashMemberCreate:
 			{
 				const auto& outputObjects = m_objectAnalysis.GetDataObjects(call);
 				m_dataInit.insert({outputObjects.at(0), Initialization::Maximum});

@@ -403,6 +403,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, cons
 		case BuiltinFunction::Primitive::GPUUniqueLib:
 		case BuiltinFunction::Primitive::GPULoopJoinLib:
 		case BuiltinFunction::Primitive::GPUHashJoinLib:
+		case BuiltinFunction::Primitive::GPUHashMemberLib:
 		{
 			CPU();
 		}
@@ -436,6 +437,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, cons
 			return indexShape;
 		}
 		case BuiltinFunction::Primitive::GPULoopJoinCount:
+		case BuiltinFunction::Primitive::GPUHashMember:
 		{
 			const auto& shapes = m_shapeAnalysis.GetShapes(m_call);
 			auto offsetsShape = shapes.at(0);
@@ -451,7 +453,6 @@ const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, cons
 			auto dataIndex = arguments.size();
 			switch (function->GetPrimitive())
 			{
-				// case BuiltinFunction::Primitive::GPULoopJoinCount:
 				case BuiltinFunction::Primitive::GPUHashJoinCount:
 				{
 					dataIndex -= 1;
@@ -478,6 +479,7 @@ const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, cons
 			break;
 		}
 		case BuiltinFunction::Primitive::GPUHashCreate:
+		case BuiltinFunction::Primitive::GPUHashMemberCreate:
 		{
 			auto dataShape = ShapeCollector::ShapeFromOperand(inShapes, arguments.at(0));
 			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(dataShape))

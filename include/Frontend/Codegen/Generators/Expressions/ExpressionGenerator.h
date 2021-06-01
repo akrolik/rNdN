@@ -45,6 +45,7 @@
 #include "Frontend/Codegen/Generators/Expressions/Builtins/HashCreateGenerator.h"
 #include "Frontend/Codegen/Generators/Expressions/Builtins/HashJoinCountGenerator.h"
 #include "Frontend/Codegen/Generators/Expressions/Builtins/HashJoinGenerator.h"
+#include "Frontend/Codegen/Generators/Expressions/Builtins/HashMemberGenerator.h"
 
 #include "Frontend/Codegen/Generators/Expressions/Builtins/IndexedReadGenerator.h"
 #include "Frontend/Codegen/Generators/Expressions/Builtins/IndexedWriteGenerator.h"
@@ -158,6 +159,18 @@ public:
 			{
 				HashJoinGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets.at(0), arguments);
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUHashMemberCreate:
+			{
+				HashCreateGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments, false); // Don't store value
+				break;
+			}
+			case HorseIR::BuiltinFunction::Primitive::GPUHashMember:
+			{
+				HashMemberGenerator<B> generator(this->m_builder);
+				generator.Generate(m_targets, arguments);
 				break;
 			}
 			default:

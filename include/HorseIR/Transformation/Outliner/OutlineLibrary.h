@@ -43,6 +43,9 @@ private:
 	Function *GenerateJoinCountFunction(std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing);
 	Function *GenerateJoinFunction(std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing);
 
+	Function *GenerateMemberHashFunction(const Type *dataType);
+	Function *GenerateMemberFunction(const Type *leftType, const Type *rightType);
+
 	CallExpression *m_libraryCall = nullptr;
 	Statement *m_libraryStatement = nullptr;
 

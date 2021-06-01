@@ -386,6 +386,20 @@ Options::UniqueKind Options::GetAlgorithm_UniqueKind()
 	Utils::Logger::LogError("Unknown unique mode '" + uniqueKind + "'");
 }
 
+Options::MemberKind Options::GetAlgorithm_MemberKind()
+{
+	auto& memberKind = Get<std::string>(Opt_Algo_member);
+	if (memberKind == "loop")
+	{
+		return MemberKind::LoopMember;
+	}
+	else if (memberKind == "hash")
+	{
+		return MemberKind::HashMember;
+	}
+	Utils::Logger::LogError("Unknown member mode '" + memberKind + "'");
+}
+
 // Data
 
 bool Options::IsData_LoadTPCH()
@@ -589,6 +603,11 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Algo_unique, "Unique mode\n"
 			"   - sort         Sort based unique\n"
 			"   - loop         O(N^2) loop unique",
+			cxxopts::value<std::string>()->default_value("loop")
+		)
+		(Opt_Algo_member, "Member mode\n"
+			"   - loop         O(N^2) loop member\n"
+			"   - hash         Hash member (murmur3)",
 			cxxopts::value<std::string>()->default_value("loop")
 		)
 	;

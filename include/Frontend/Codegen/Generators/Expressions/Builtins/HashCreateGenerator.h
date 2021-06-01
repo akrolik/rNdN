@@ -127,8 +127,10 @@ public:
 
 	std::string Name() const override { return "HashCreateGenerator"; }
 
-	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments)
+	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments, bool storeValue = true)
 	{
+		m_storeValue = storeValue;
+
 		auto dataArgument = arguments.at(0);
 		DispatchType(*this, dataArgument->GetType(), dataArgument);
 	}
@@ -269,21 +271,26 @@ private:
 				HashCreateInsertGenerator<B> insertGenerator(this->m_builder);
 				insertGenerator.Generate(operand, currentSlot);
 
-				// Store value (index)
+				if (m_storeValue)
+				{
+					// Store value (index)
 
-				auto valueParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::Int64Type>>(NameUtils::ReturnName(1));
+					auto valueParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::Int64Type>>(NameUtils::ReturnName(1));
 
-				AddressGenerator<B, PTX::Int64Type> valueAddressGenerator(this->m_builder);
-				auto valueAddress = valueAddressGenerator.GenerateAddress(valueParameter, currentSlot);
+					AddressGenerator<B, PTX::Int64Type> valueAddressGenerator(this->m_builder);
+					auto valueAddress = valueAddressGenerator.GenerateAddress(valueParameter, currentSlot);
 
-				DataIndexGenerator<B> indexGenerator(this->m_builder);
-				auto index = indexGenerator.GenerateDataIndex();
-				auto index64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, index);
+					DataIndexGenerator<B> indexGenerator(this->m_builder);
+					auto index = indexGenerator.GenerateDataIndex();
+					auto index64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, index);
 
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(valueAddress, index64));
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(valueAddress, index64));
+				}
 			});
 		}
 	}
+
+	bool m_storeValue = true;
 };
 
 }

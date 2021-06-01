@@ -235,8 +235,16 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		}
 
 		// Algebraic Binary
-		case BuiltinFunction::Primitive::IndexOf:
 		case BuiltinFunction::Primitive::Member:
+		{
+			switch (Utils::Options::GetAlgorithm_MemberKind())
+			{
+				case Utils::Options::MemberKind::HashMember:
+					return std::make_pair(Device::GPULibrary, Synchronization::None);
+			}
+			// Fallthrough
+		}
+		case BuiltinFunction::Primitive::IndexOf:
 		{
 			if (index == 1)
 			{
@@ -392,6 +400,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::GPUUniqueLib:
 		case BuiltinFunction::Primitive::GPULoopJoinLib:
 		case BuiltinFunction::Primitive::GPUHashJoinLib:
+		case BuiltinFunction::Primitive::GPUHashMemberLib:
 		{
 			return std::make_pair(Device::CPU, Synchronization::None);
 		}
@@ -409,6 +418,9 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::GPUHashCreate:
 		case BuiltinFunction::Primitive::GPUHashJoinCount:
 		case BuiltinFunction::Primitive::GPUHashJoin:
+
+		case BuiltinFunction::Primitive::GPUHashMemberCreate:
+		case BuiltinFunction::Primitive::GPUHashMember:
 		{
 			return std::make_pair(Device::GPU, (Synchronization::In | Synchronization::Out));
 		}

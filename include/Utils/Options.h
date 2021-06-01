@@ -58,6 +58,7 @@ public:
 	static constexpr char const *Opt_Algo_hash_size = "algo-hash-size";
 	static constexpr char const *Opt_Algo_like = "algo-like";
 	static constexpr char const *Opt_Algo_unique = "algo-unique";
+	static constexpr char const *Opt_Algo_member = "algo-member";
 
 	static constexpr char const *Opt_Data_load_tpch = "data-load-tpch";
 	static constexpr char const *Opt_Data_path_tpch = "data-path-tpch";
@@ -189,6 +190,11 @@ public:
 		LoopUnique
 	};
 
+	enum class MemberKind {
+		LoopMember,
+		HashMember
+	};
+
 	static ReductionKind GetAlgorithm_ReductionKind();
 	static SortKind GetAlgorithm_SortKind();
 	static GroupKind GetAlgorithm_GroupKind();
@@ -196,6 +202,7 @@ public:
 	static unsigned int GetAlgorithm_HashSize();
 	static LikeKind GetAlgorithm_LikeKind();
 	static UniqueKind GetAlgorithm_UniqueKind();
+	static MemberKind GetAlgorithm_MemberKind();
 
 	// Data
 

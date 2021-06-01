@@ -259,6 +259,36 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 			auto name = (isHashing) ? "hash_join_lib" : "loop_join_lib";
 			return new CallExpression(new FunctionLiteral(new Identifier("GPU", name)), operands);
 		}
+		case BuiltinFunction::Primitive::Member:
+		{
+			auto leftArgument = arguments.at(0);
+			auto rightArgument = arguments.at(1);
+
+			auto leftType = leftArgument->GetType();
+			auto rightType = rightArgument->GetType();
+
+			// Build the library functions
+
+			auto hashFunction = GenerateMemberHashFunction(rightType);
+			auto memberFunction = GenerateMemberFunction(rightType, leftType);
+
+			m_functions.push_back(hashFunction);
+			m_functions.push_back(memberFunction);
+
+			// Build the list of arguments for the library function call
+
+			std::vector<Operand *> operands;
+
+			operands.push_back(new FunctionLiteral(new Identifier(hashFunction->GetName())));
+			operands.push_back(new FunctionLiteral(new Identifier(memberFunction->GetName())));
+
+			operands.push_back(leftArgument->Clone());
+			operands.push_back(rightArgument->Clone());
+
+			// Build the library call
+
+			return new CallExpression(new FunctionLiteral(new Identifier("GPU", "hash_member_lib")), operands);
+		}
 	}
 	Utils::Logger::LogError("GPU library outliner does not support builtin function '" + function->GetName() + "'");
 }
@@ -550,6 +580,57 @@ Function *OutlineLibrary::GenerateJoinFunction(std::vector<const Operand *>& fun
 	auto returnStatement = new ReturnStatement(returnOperands);
 
 	return new Function("join_" + std::to_string(m_index++), parameters, returnTypes, {joinStatement, returnStatement}, true);
+}
+
+Function *OutlineLibrary::GenerateMemberHashFunction(const Type *dataType)
+{
+	std::vector<Parameter *> parameters;
+
+	std::vector<Operand *> operands;
+	std::vector<LValue *> lvalues;
+
+	std::vector<Operand *> returnOperands;
+	std::vector<Type *> returnTypes;
+
+	parameters.push_back(new Parameter("data", dataType->Clone()));
+	operands.push_back(new Identifier("data"));
+
+	lvalues.push_back(new VariableDeclaration("keys", dataType->Clone()));
+	returnOperands.push_back(new Identifier("keys"));
+	returnTypes.push_back(dataType->Clone());
+
+	auto hashCall = new CallExpression(new FunctionLiteral(new Identifier("GPU", "hash_member_create")), operands);
+	auto hashStatement = new AssignStatement(lvalues, hashCall);
+	auto returnStatement = new ReturnStatement(returnOperands);
+
+	return new Function("hash_member_create_" + std::to_string(m_index++), parameters, returnTypes, {hashStatement, returnStatement}, true);
+}
+
+Function *OutlineLibrary::GenerateMemberFunction(const Type *leftType, const Type *rightType)
+{
+	std::vector<Parameter *> parameters;
+
+	std::vector<Operand *> operands;
+	std::vector<LValue *> lvalues;
+
+	std::vector<Operand *> returnOperands;
+	std::vector<Type *> returnTypes;
+
+	parameters.push_back(new Parameter("hash_keys", leftType->Clone()));
+	operands.push_back(new Identifier("hash_keys"));
+
+	parameters.push_back(new Parameter("data_right", rightType->Clone()));
+	operands.push_back(new Identifier("data_right"));
+
+	lvalues.push_back(new VariableDeclaration("matches", new BasicType(BasicType::BasicKind::Boolean)));
+	returnOperands.push_back(new Identifier("matches"));
+	returnTypes.push_back(new BasicType(BasicType::BasicKind::Boolean));
+
+	auto memberCall = new CallExpression(new FunctionLiteral(new Identifier("GPU", "hash_member")), operands);
+	auto memberStatement = new AssignStatement(lvalues, memberCall);
+	auto returnStatement = new ReturnStatement(returnOperands);
+
+	return new Function("hash_member_" + std::to_string(m_index++), parameters, returnTypes, {memberStatement, returnStatement}, true);
 }
 
 }

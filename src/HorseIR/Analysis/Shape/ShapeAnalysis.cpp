@@ -2381,11 +2381,11 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		{
 			// -- Vector input
 			// Input: Vector<Size1*>, Vector<Size2*>
-			// Output: Vector<Size1*>, Vector<1>
+			// Output: Vector<Size2*>, Vector<1>
 			//
 			// -- List input
 			// Input: List<k, {Vector<Size1*>}>, List<k, {Vector<Size2*>}>
-			// Output: Vector<Size1*>, Vector<1>
+			// Output: Vector<Size2*>, Vector<1>
 
 			auto keyShape = argumentShapes.at(0);
 			auto rightShape = argumentShapes.at(1);
@@ -2504,6 +2504,82 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				}
 			}
 			Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call))}));
+		}
+		case BuiltinFunction::Primitive::GPUHashMemberLib:
+		{
+			// -- Vector input
+			// Input: *, *, Vector<Size1*>, Vector<Size2*>
+			// Output: Vector<Size1*>
+
+			const auto hashType = arguments.at(0)->GetType();
+			const auto countType = arguments.at(1)->GetType();
+
+			const auto hashFunction = TypeUtils::GetType<FunctionType>(hashType)->GetFunctionDeclaration();
+			const auto countFunction = TypeUtils::GetType<FunctionType>(countType)->GetFunctionDeclaration();
+
+			const auto leftShape = argumentShapes.at(2);
+			const auto rightShape = argumentShapes.at(3);
+
+			Require(ShapeUtils::IsShape<VectorShape>(leftShape));
+			Require(ShapeUtils::IsShape<VectorShape>(rightShape));
+
+			// Hash call
+
+			const auto [hashShapes, hashWriteShapes] = AnalyzeCall(hashFunction, {rightShape}, {});
+			Require(hashShapes.size() == 1);
+			Require(ShapeUtils::IsShape<VectorShape>(hashShapes.at(0)));
+
+			// Member call
+
+			const auto [countShapes, countWriteShapes] = AnalyzeCall(countFunction, {hashShapes.at(0), leftShape}, {});
+			Require(countShapes.size() == 1);
+			Require(ShapeUtils::IsShape<VectorShape>(countShapes.at(0)));
+
+			const auto vectorMember = ShapeUtils::GetShape<VectorShape>(countShapes.at(0));
+			const auto vectorLeft = ShapeUtils::GetShape<VectorShape>(leftShape);
+			Require(CheckStaticEquality(vectorMember->GetSize(), vectorLeft->GetSize()));
+
+			// Return
+
+			Return(vectorMember);
+		}
+		case BuiltinFunction::Primitive::GPUHashMemberCreate:
+		{
+			// -- Vector input
+			// Input: Vector<Size*>
+			// Output: Vector<DynamicSize*>
+
+			const auto dataShape = argumentShapes.at(0);
+			Require(ShapeUtils::IsShape<VectorShape>(dataShape));
+
+			const auto vectorShape = ShapeUtils::GetShape<VectorShape>(dataShape);
+			const auto writeShape = new VectorShape(new Shape::DynamicSize(m_call));
+
+			if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
+			{
+				const auto shift = Utils::Options::GetAlgorithm_HashSize();
+				const auto powerSize = Utils::Math::Power2(constantSize->GetValue()) << shift;
+
+				const auto valueShape = new VectorShape(new Shape::ConstantSize(powerSize));
+				return {{valueShape}, {writeShape}};
+			}
+
+			const auto valueShape = new VectorShape(new Shape::DynamicSize(m_call));
+			return {{valueShape}, {writeShape}};
+		}
+		case BuiltinFunction::Primitive::GPUHashMember:
+		{
+			// -- Vector input
+			// Input: Vector<Size1*>, Vector<Size2*>
+			// Output: Vector<Size2*>
+
+			const auto keyShape = argumentShapes.at(0);
+			const auto rightShape = argumentShapes.at(1);
+
+			Require(ShapeUtils::IsShape<VectorShape>(keyShape));
+			Require(ShapeUtils::IsShape<VectorShape>(rightShape));
+
+			Return(rightShape);
 		}
 		default:
 		{
