@@ -229,17 +229,14 @@ public:
 
 		void Print(std::ostream& os) const override
 		{
+			os << "Dynamic{" << m_uniqueKey << "}";
 			if (m_size1 != nullptr && m_size2 != nullptr)
 			{
-				os << "Dynamic<" << *m_size1 << ", " << *m_size2 << ">";
+				os << "<" << *m_size1 << ", " << *m_size2 << ">";
 			}
 			else if (m_expression != nullptr)
 			{
-				os << "Dynamic/" << PrettyPrinter::PrettyString(m_expression);
-			}
-			else
-			{
-				os << "Dynamic";
+				os << "/" << PrettyPrinter::PrettyString(m_expression);
 			}
 			if (m_tag > 0)
 			{
