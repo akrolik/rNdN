@@ -298,7 +298,7 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const BuiltinFun
 
 			return {joinObjects.at(0)};
 		}
-		case BuiltinFunction::Primitive::GPUHashCreate:
+		case BuiltinFunction::Primitive::GPUHashJoinCreate:
 		{
 			return {new DataObject(), new DataObject()};
 		}

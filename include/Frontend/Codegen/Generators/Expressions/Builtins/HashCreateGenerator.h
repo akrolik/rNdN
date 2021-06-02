@@ -92,7 +92,7 @@ private:
 		if constexpr(std::is_same<T, PTX::PredicateType>::value)
 		{
 			//TODO: Smaller types
-			Error("unimplemented");
+			Error("Unimplemented");
 		}
 		else
 		{
@@ -129,36 +129,58 @@ public:
 
 	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments, bool storeValue = true)
 	{
+		std::vector<const HorseIR::Operand *> functionArguments(std::begin(arguments), std::end(arguments) - 1);
+		auto dataArgument = arguments.back();
+
+		std::vector<ComparisonOperation> joinOperations;
+		if (functionArguments.size() == 0)
+		{
+			joinOperations.push_back(ComparisonOperation::Equal);
+		}
+		else
+		{
+			for (auto functionArgument : functionArguments)
+			{
+				if (auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(functionArgument->GetType()))
+				{
+					auto joinOperation = GetJoinComparisonOperation(functionType->GetFunctionDeclaration(), true);
+					joinOperations.push_back(joinOperation);
+				}
+				else
+				{
+					Generator::Error("non-function join argument '" + HorseIR::PrettyPrinter::PrettyString(functionArgument, true) + "'");
+				}
+			}
+		}
 		m_storeValue = storeValue;
 
-		auto dataArgument = arguments.at(0);
-		DispatchType(*this, dataArgument->GetType(), dataArgument);
+		DispatchType(*this, dataArgument->GetType(), dataArgument, joinOperations);
 	}
 	
 	template<class T>
-	void GenerateVector(const HorseIR::Operand *operand)
+	void GenerateVector(const HorseIR::Operand *operand, const std::vector<ComparisonOperation>& joinOperations)
 	{
-		GenerateHashInsert<T>(operand);
+		GenerateHashInsert<T>(operand, joinOperations);
 	}
 
 	template<class T>
-	void GenerateList(const HorseIR::Operand *operand)
+	void GenerateList(const HorseIR::Operand *operand, const std::vector<ComparisonOperation>& joinOperations)
 	{
-		GenerateHashInsert<T>(operand, true);
+		GenerateHashInsert<T>(operand, joinOperations, true);
 	}
 	
 	template<class T>
-	void GenerateTuple(unsigned int index, const HorseIR::Operand *operand)
+	void GenerateTuple(unsigned int index, const HorseIR::Operand *operand, const std::vector<ComparisonOperation>& joinOperations)
 	{
 		if (index == 0)
 		{
-			GenerateHashInsert<T>(operand, true);
+			GenerateHashInsert<T>(operand, joinOperations, true);
 		}
 	}
 
 private:
 	template<class T>
-	void GenerateHashInsert(const HorseIR::Operand *operand, bool isCell = false)
+	void GenerateHashInsert(const HorseIR::Operand *operand, const std::vector<ComparisonOperation>& joinOperations, bool isCell = false)
 	{
 		if constexpr(std::is_same<T, PTX::PredicateType>::value || std::is_same<T, PTX::Int8Type>::value)
 		{
@@ -196,7 +218,7 @@ private:
 				this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(capacityM1, capacity, new PTX::UInt32Value(1)));
 
 				InternalHashGenerator<B> hashGenerator(this->m_builder);
-				auto slot = hashGenerator.Generate(operand);
+				auto slot = hashGenerator.Generate(operand, joinOperations);
 				auto currentSlot = resources->template AllocateTemporary<PTX::UInt32Type>();
 
 				this->m_builder.AddDoWhileLoop("HASH", [&](Builder::LoopContext& loopContext)

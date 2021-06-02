@@ -415,7 +415,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		case BuiltinFunction::Primitive::GPULoopJoinCount:
 		case BuiltinFunction::Primitive::GPULoopJoin:
 
-		case BuiltinFunction::Primitive::GPUHashCreate:
+		case BuiltinFunction::Primitive::GPUHashJoinCreate:
 		case BuiltinFunction::Primitive::GPUHashJoinCount:
 		case BuiltinFunction::Primitive::GPUHashJoin:
 

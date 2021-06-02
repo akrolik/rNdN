@@ -143,7 +143,7 @@ public:
 				generator.Generate(m_targets.at(0), arguments);
 				break;
 			}
-			case HorseIR::BuiltinFunction::Primitive::GPUHashCreate:
+			case HorseIR::BuiltinFunction::Primitive::GPUHashJoinCreate:
 			{
 				HashCreateGenerator<B> generator(this->m_builder);
 				generator.Generate(m_targets, arguments);

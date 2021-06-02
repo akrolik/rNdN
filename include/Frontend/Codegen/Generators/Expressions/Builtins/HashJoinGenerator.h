@@ -4,6 +4,7 @@
 
 #include "Frontend/Codegen/Builder.h"
 #include "Frontend/Codegen/Generators/Data/TargetCellGenerator.h"
+#include "Frontend/Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 #include "Frontend/Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -23,7 +24,7 @@ public:
 
 	void Generate(const HorseIR::LValue *target, const std::vector<const HorseIR::Operand *>& arguments)
 	{
-		auto dataArgument = arguments.at(2);
+		auto dataArgument = arguments.at(arguments.size() - 3);
 		DispatchType(*this, dataArgument->GetType(), arguments);
 	}
 
@@ -59,14 +60,31 @@ private:
 		}
 		else
 		{
+			std::vector<const HorseIR::Operand *> functionArguments(std::begin(arguments), std::end(arguments) - 5);
+			auto functionCount = functionArguments.size();
+
+			std::vector<ComparisonOperation> joinOperations;
+			for (auto functionArgument : functionArguments)
+			{
+				if (auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(functionArgument->GetType()))
+				{
+					auto joinOperation = GetJoinComparisonOperation(functionType->GetFunctionDeclaration(), true);
+					joinOperations.push_back(joinOperation);
+				}
+				else
+				{
+					Generator::Error("non-function join argument '" + HorseIR::PrettyPrinter::PrettyString(functionArgument, true) + "'");
+				}
+			}
+
 			auto resources = this->m_builder.GetLocalResources();
 
 			// Decompose arguments
 
-			auto keyOperand = arguments.at(0);
-			auto valueOperand = arguments.at(1);
-			auto dataOperand = arguments.at(2);
-			auto offsetOperand = arguments.at(3);
+			auto keyOperand = arguments.at(functionCount);
+			auto valueOperand = arguments.at(functionCount + 1);
+			auto dataOperand = arguments.at(functionCount + 2);
+			auto offsetOperand = arguments.at(functionCount + 3);
 
 			// Bounds check
 
@@ -102,7 +120,7 @@ private:
 				// Compute the hash value
 
 				InternalHashGenerator<B> hashGenerator(this->m_builder);
-				auto slot = hashGenerator.Generate(dataOperand);
+				auto slot = hashGenerator.Generate(dataOperand, joinOperations);
 
 				this->m_builder.AddDoWhileLoop("HASH", [&](Builder::LoopContext& loopContext)
 				{
@@ -115,13 +133,7 @@ private:
 					));
 
 					InternalHashEqualGenerator<B, T> equalGenerator(this->m_builder);
-					auto [equalPredicate, slotValue] = equalGenerator.Generate(dataOperand, keyOperand, slot);
-
-					// Store old value and pre-increment
-
-					auto oldSlot = resources->template AllocateTemporary<PTX::UInt32Type>();
-					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(oldSlot, slot));
-					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
+					auto [equalPredicate, slotValue, slotIdentifier] = equalGenerator.Generate(dataOperand, keyOperand, slot, joinOperations);
 
 					this->m_builder.AddIfStatement("MATCH", [&]()
 					{
@@ -149,7 +161,7 @@ private:
 
 						OperandGenerator<B, PTX::Int64Type> operandGenerator64(this->m_builder);
 						operandGenerator64.SetBoundsCheck(false);
-						auto matchValue = operandGenerator64.GenerateRegister(valueOperand, oldSlot, this->m_builder.UniqueIdentifier("slot"));
+						auto matchValue = operandGenerator64.GenerateRegister(valueOperand, slot, this->m_builder.UniqueIdentifier("slot"));
 
 						this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, matchValue));
 						this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, globalIndex64));
@@ -161,12 +173,13 @@ private:
 
 					// No match, check for empty
 
-					auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
-					auto emptyPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					InternalHashEmptyGenerator<B> emptyGenerator(this->m_builder);
+					auto emptyPredicate = emptyGenerator.Generate(keyOperand, slot, slotIdentifier);
 
-					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
-						emptyPredicate, slotValue, empty, T::ComparisonOperator::NotEqual
-					));
+					// Pre-increment slot position
+
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
+
 					return std::make_tuple(emptyPredicate, false);
 				});
 			});

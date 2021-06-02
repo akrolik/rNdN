@@ -26,7 +26,7 @@ public:
 
 	void Generate(const std::vector<const HorseIR::LValue *>& targets, const std::vector<const HorseIR::Operand *>& arguments)
 	{
-		auto dataArgument = arguments.at(1);
+		auto dataArgument = arguments.back();
 		DispatchType(*this, dataArgument->GetType(), targets, arguments);
 	}
 
@@ -62,10 +62,27 @@ private:
 		}
 		else
 		{
+			std::vector<const HorseIR::Operand *> functionArguments(std::begin(arguments), std::end(arguments) - 2);
+			auto functionCount = functionArguments.size();
+
+			std::vector<ComparisonOperation> joinOperations;
+			for (auto functionArgument : functionArguments)
+			{
+				if (auto functionType = HorseIR::TypeUtils::GetType<HorseIR::FunctionType>(functionArgument->GetType()))
+				{
+					auto joinOperation = GetJoinComparisonOperation(functionType->GetFunctionDeclaration(), true);
+					joinOperations.push_back(joinOperation);
+				}
+				else
+				{
+					Generator::Error("non-function join argument '" + HorseIR::PrettyPrinter::PrettyString(functionArgument, true) + "'");
+				}
+			}
+
 			// Decompose operands
 
-			auto keyOperand = arguments.at(0);
-			auto dataOperand = arguments.at(1);
+			auto keyOperand = arguments.at(functionCount);
+			auto dataOperand = arguments.at(functionCount + 1);
 
 			// Get target registers
 
@@ -105,7 +122,7 @@ private:
 				// Compute the hash
 
 				InternalHashGenerator<B> hashGenerator(this->m_builder);
-				auto slot = hashGenerator.Generate(dataOperand);
+				auto slot = hashGenerator.Generate(dataOperand, joinOperations);
 
 				// Keep the slot within range
 
@@ -120,11 +137,7 @@ private:
 					// Check if we have a match at this slot
 
 					InternalHashEqualGenerator<B, T> equalGenerator(this->m_builder);
-					auto [equalPredicate, slotValue] = equalGenerator.Generate(dataOperand, keyOperand, slot);
-
-					// Pre-increment slot position
-
-					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
+					auto [equalPredicate, slotValue, slotIdentifier] = equalGenerator.Generate(dataOperand, keyOperand, slot, joinOperations);
 
 					// Count number of matches
 
@@ -134,12 +147,12 @@ private:
 
 					// Check if we have reached the end of the search area
 
-					auto empty = new PTX::Value<T>(std::numeric_limits<typename T::SystemType>::max());
-					auto emptyPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+					InternalHashEmptyGenerator<B> emptyGenerator(this->m_builder);
+					auto emptyPredicate = emptyGenerator.Generate(keyOperand, slot, slotIdentifier);
 
-					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<T>(
-						emptyPredicate, slotValue, empty, T::ComparisonOperator::NotEqual
-					));
+					// Pre-increment slot position
+
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(slot, slot, new PTX::UInt32Value(1)));
 
 					return std::make_tuple(emptyPredicate, false);
 				});

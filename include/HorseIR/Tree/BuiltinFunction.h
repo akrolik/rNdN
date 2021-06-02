@@ -161,7 +161,7 @@ public:
 		GPULoopJoin,
 
 		GPUHashJoinLib,
-		GPUHashCreate,
+		GPUHashJoinCreate,
 		GPUHashJoinCount,
 		GPUHashJoin,
 
@@ -412,8 +412,8 @@ public:
 				return "loop_join";
 			case Primitive::GPUHashJoinLib:
 				return "hash_join_lib";
-			case Primitive::GPUHashCreate:
-				return "hash_create";
+			case Primitive::GPUHashJoinCreate:
+				return "hash_join_create";
 			case Primitive::GPUHashJoinCount:
 				return "hash_join_count";
 			case Primitive::GPUHashJoin:
@@ -620,13 +620,13 @@ public:
 			case Primitive::GPULoopJoin:
 				return VariadicParameterCount; // @fn1, ..., @fnk, data1, data2, offsets, count
 			case Primitive::GPUHashJoinLib:
-				return 5; // @hash_create, @hash_join_count, @hash_join, data1, data2
-			case Primitive::GPUHashCreate:
-				return 1; // data
+				return 5; // @hash_join_create, @hash_join_count, @hash_join, data1, data2
+			case Primitive::GPUHashJoinCreate:
+				return VariadicParameterCount; // @fn1, ..., @fnk, data2
 			case Primitive::GPUHashJoinCount:
-				return 2; // data1, hash_keys
+				return VariadicParameterCount; // @fn1, ..., @fnk, data1, hash_keys
 			case Primitive::GPUHashJoin:
-				return 5; // data1, hash_keys, hash_values, offsets, count
+				return VariadicParameterCount; // @fn1, ..., @fnk, data1, hash_keys, hash_values, offsets, count
 			case Primitive::GPUHashMemberLib:
 				return 4; // @hash_create, @hash_member, data1, data2
 			case Primitive::GPUHashMemberCreate:

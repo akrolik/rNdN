@@ -39,9 +39,9 @@ private:
 
 	Function *GenerateUniqueFunction(const Type *dataType, bool nested = false);
 
-	Function *GenerateHashFunction(const Type *dataType);
-	Function *GenerateJoinCountFunction(std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing);
-	Function *GenerateJoinFunction(std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing);
+	Function *GenerateJoinHashFunction(const std::vector<const Operand *>& functions, const Type *dataType);
+	Function *GenerateJoinCountFunction(const std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing);
+	Function *GenerateJoinFunction(const std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing);
 
 	Function *GenerateMemberHashFunction(const Type *dataType);
 	Function *GenerateMemberFunction(const Type *leftType, const Type *rightType);

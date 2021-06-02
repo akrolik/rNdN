@@ -210,7 +210,7 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 				}
 				case Utils::Options::JoinKind::HashJoin:
 				{
-					isHashing = true;
+					isHashing = false;
 					for (const auto function : functions)
 					{
 						const auto functionType = TypeUtils::GetType<FunctionType>(function->GetType());
@@ -222,17 +222,18 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 							break;
 						}
 
+						// Require at least one eq function
+
 						auto primitive = static_cast<const BuiltinFunction *>(declaration);
-						if (primitive->GetPrimitive() != BuiltinFunction::Primitive::Equal)
+						if (primitive->GetPrimitive() == BuiltinFunction::Primitive::Equal)
 						{
-							isHashing = false;
-							break;
+							isHashing = true;
 						}
 					}
 
 					if (isHashing)
 					{
-						auto hashFunction = GenerateHashFunction(leftType);
+						auto hashFunction = GenerateJoinHashFunction(functions, leftType);
 						m_functions.push_back(hashFunction);
 						operands.push_back(new FunctionLiteral(new Identifier(hashFunction->GetName())));
 					}
@@ -457,7 +458,7 @@ Function *OutlineLibrary::GenerateUniqueFunction(const Type *dataType, bool nest
 	return new Function("unique_" + std::to_string(m_index++), parameters, returnTypes, {uniqueStatement, returnStatement}, true);
 }
 
-Function *OutlineLibrary::GenerateHashFunction(const Type *dataType)
+Function *OutlineLibrary::GenerateJoinHashFunction(const std::vector<const Operand *>& functions, const Type *dataType)
 {
 	std::vector<Parameter *> parameters;
 
@@ -466,6 +467,11 @@ Function *OutlineLibrary::GenerateHashFunction(const Type *dataType)
 
 	std::vector<Operand *> returnOperands;
 	std::vector<Type *> returnTypes;
+
+	for (const auto argument : functions)
+	{
+		operands.push_back(argument->Clone());
+	}
 
 	parameters.push_back(new Parameter("data", dataType->Clone()));
 	operands.push_back(new Identifier("data"));
@@ -478,15 +484,15 @@ Function *OutlineLibrary::GenerateHashFunction(const Type *dataType)
 	returnOperands.push_back(new Identifier("values"));
 	returnTypes.push_back(new BasicType(BasicType::BasicKind::Int64));
 
-	auto hashCall = new CallExpression(new FunctionLiteral(new Identifier("GPU", "hash_create")), operands);
+	auto hashCall = new CallExpression(new FunctionLiteral(new Identifier("GPU", "hash_join_create")), operands);
 	auto hashStatement = new AssignStatement(lvalues, hashCall);
 	auto returnStatement = new ReturnStatement(returnOperands);
 
-	return new Function("hash_create_" + std::to_string(m_index++), parameters, returnTypes, {hashStatement, returnStatement}, true);
+	return new Function("hash_join_create_" + std::to_string(m_index++), parameters, returnTypes, {hashStatement, returnStatement}, true);
 }
 
 
-Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing)
+Function *OutlineLibrary::GenerateJoinCountFunction(const std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing)
 {
 	std::vector<Parameter *> parameters;
 
@@ -496,6 +502,11 @@ Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const Operand *>
 	std::vector<Operand *> returnOperands;
 	std::vector<Type *> returnTypes;
 
+	for (const auto argument : functions)
+	{
+		operands.push_back(argument->Clone());
+	}
+
 	if (isHashing)
 	{
 		parameters.push_back(new Parameter("hash_keys", leftType->Clone()));
@@ -503,11 +514,6 @@ Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const Operand *>
 	}
 	else
 	{
-		for (const auto argument : functions)
-		{
-			operands.push_back(argument->Clone());
-		}
-
 		parameters.push_back(new Parameter("data_left", leftType->Clone()));
 		operands.push_back(new Identifier("data_left"));
 	}
@@ -531,7 +537,7 @@ Function *OutlineLibrary::GenerateJoinCountFunction(std::vector<const Operand *>
 	return new Function("join_count_" + std::to_string(m_index++), parameters, returnTypes, {joinStatement, returnStatement}, true);
 }
 
-Function *OutlineLibrary::GenerateJoinFunction(std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing)
+Function *OutlineLibrary::GenerateJoinFunction(const std::vector<const Operand *>& functions, const Type *leftType, const Type *rightType, bool isHashing)
 {
 	std::vector<Parameter *> parameters;
 
@@ -540,6 +546,11 @@ Function *OutlineLibrary::GenerateJoinFunction(std::vector<const Operand *>& fun
 
 	std::vector<Operand *> returnOperands;
 	std::vector<Type *> returnTypes;
+
+	for (const auto argument : functions)
+	{
+		operands.push_back(argument->Clone());
+	}
 
 	if (isHashing)
 	{
@@ -551,11 +562,6 @@ Function *OutlineLibrary::GenerateJoinFunction(std::vector<const Operand *>& fun
 	}
 	else
 	{
-		for (const auto argument : functions)
-		{
-			operands.push_back(argument->Clone());
-		}
-
 		parameters.push_back(new Parameter("data_left", leftType->Clone()));
 		operands.push_back(new Identifier("data_left"));
 	}

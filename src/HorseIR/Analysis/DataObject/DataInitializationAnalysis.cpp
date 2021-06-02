@@ -118,7 +118,7 @@ bool DataInitializationAnalysis::VisitIn(const CallExpression *call)
 				}
 				break;
 			}
-			case BuiltinFunction::Primitive::GPUHashCreate:
+			case BuiltinFunction::Primitive::GPUHashJoinCreate:
 			case BuiltinFunction::Primitive::GPUHashMemberCreate:
 			{
 				const auto& outputObjects = m_objectAnalysis.GetDataObjects(call);

@@ -2175,7 +2175,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			// Return shape is the left argument size
 
-			auto rightShape = argumentShapes.at(argumentShapes.size() - 1);
+			auto rightShape = argumentShapes.back();
 
 			// Get the count shape (constant for runtime, compressed for codegen)
 
@@ -2202,11 +2202,13 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 		case BuiltinFunction::Primitive::GPULoopJoin:
 		{
 			// -- Unknown scalar constant
-			// Intput: Vector<Size*>, Vector<Size*>, Vector<Size*>, Vector<1> | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<Size*>, Vector<1>
+			// Intput: Vector<Size1*>, Vector<Size2*>, Vector<Size2*>, Vector<1>
+			//       | List<k, {Vector<Size1*>}>, List<k, {Vector<Size2*>}>, Vector<Size2*>, Vector<1>
 			// Output: List<2, {Vector<SizeDynamic>}>
 			//
 			// -- Known scalar constant
-			// Intput: Vector<Size*>, Vector<Size*>, Vector<Size*>, Vector<1> (value m) | List<k, {Vector<Size*>}>, List<k, {Vector<Size*>}>, Vector<Size*>, Vector<1> (value m)
+			// Intput: Vector<Size1*>, Vector<Size2*>, Vector<Size2*>, Vector<1> (value m)
+			//       | List<k, {Vector<Size1*>}>, List<k, {Vector<Size2*>}>, Vector<Size2*>, Vector<1> (value m)
 			// Output: List<2, {Vector<m>}>
 
 			std::vector<const Shape *> joinShapes(std::begin(argumentShapes), std::end(argumentShapes) - 2);
@@ -2214,8 +2216,13 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			Require(AnalyzeJoinArguments(joinShapes, joinArguments));
 
-			const auto vectorOffsets = ShapeUtils::GetShape<VectorShape>(argumentShapes.at(argumentShapes.size() - 2));
-			const auto vectorCount = ShapeUtils::GetShape<VectorShape>(argumentShapes.at(argumentShapes.size() - 1));
+			const auto offsetShape = argumentShapes.at(argumentShapes.size() - 2);
+			const auto countShape = argumentShapes.at(argumentShapes.size() - 1);
+			Require(ShapeUtils::IsShape<VectorShape>(offsetShape));
+			Require(ShapeUtils::IsShape<VectorShape>(countShape));
+
+			const auto vectorOffsets = ShapeUtils::GetShape<VectorShape>(offsetShape);
+			const auto vectorCount = ShapeUtils::GetShape<VectorShape>(countShape);
 			Require(CheckStaticScalar(vectorCount->GetSize()));
 
 			const auto rightShape = argumentShapes.at(argumentShapes.size() - 3);
@@ -2325,7 +2332,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			return {joinShapes, joinWriteShapes};
 		}
-		case BuiltinFunction::Primitive::GPUHashCreate:
+		case BuiltinFunction::Primitive::GPUHashJoinCreate:
 		{
 			// -- Vector input
 			// Input: Vector<Size*>
@@ -2335,26 +2342,35 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			// Input: List<k, {Vector<Size*>}>
 			// Output: List<k, {Vector<DynamicSize*>}>, Vector<DynamicSize*>
 
-			const auto dataShape = argumentShapes.at(0);
-			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(dataShape))
-			{
-				const auto writeShape = new VectorShape(new Shape::DynamicSize(m_call));
+			const auto functionCount = argumentShapes.size() - 1;
+			const auto dataShape = argumentShapes.at(functionCount);
 
-				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
-				{
-					const auto shift = Utils::Options::GetAlgorithm_HashSize();
-					const auto powerSize = Utils::Math::Power2(constantSize->GetValue()) << shift;
+			Require(ShapeUtils::IsShape<VectorShape>(dataShape) || ShapeUtils::IsShape<ListShape>(dataShape));
 
-					const auto valueShape = new VectorShape(new Shape::ConstantSize(powerSize));
-					return {{valueShape, valueShape}, {writeShape, writeShape}};
-				}
-
-				const auto valueShape = new VectorShape(new Shape::DynamicSize(m_call));
-				return {{valueShape, valueShape}, {writeShape, writeShape}};
-			}
-			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
+			if (const auto listShape = ShapeUtils::GetShape<ListShape>(dataShape))
 			{
 				Require(CheckStaticTabular(listShape));
+
+				const auto& elementShapes = listShape->GetElementShapes();
+				const auto elementCount = elementShapes.size();
+
+				Require(functionCount == 1 || elementCount == functionCount);
+
+				auto count = std::max({elementCount, functionCount});
+				for (auto i = 0u; i < count; ++i)
+				{
+					const auto type = arguments.at((functionCount == 1) ? 0 : i)->GetType();
+					const auto function = TypeUtils::GetType<FunctionType>(type)->GetFunctionDeclaration();
+
+					const auto inputShape = elementShapes.at((elementCount == 1) ? 0 : i);
+					const auto l_inputShape = new VectorShape(new Shape::ConstantSize(1));
+
+					const auto [returnShapes, writeShapes] = AnalyzeCall(function, {inputShape, l_inputShape}, {});
+					Require(ShapeUtils::IsSingleShape(returnShapes));
+					Require(ShapeUtils::IsSingleShape(writeShapes));
+					Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
+					Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(writeShapes)));
+				}
 
 				auto mergedShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
 				if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(mergedShape))
@@ -2375,6 +2391,36 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 					return {{new ListShape(listShape->GetListSize(), {valueShape}), valueShape}, {writeShape2, writeShape1}};
 				}
 			}
+			else if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(dataShape))
+			{
+				// If the inputs are vectors, require a single function
+
+				Require(functionCount == 1);
+
+				const auto type = arguments.at(0)->GetType();
+				const auto function = TypeUtils::GetType<FunctionType>(type)->GetFunctionDeclaration();
+				const auto l_inputShape = new VectorShape(new Shape::ConstantSize(1));
+
+				const auto [returnShapes, writeShapes] = AnalyzeCall(function, {vectorShape, l_inputShape}, {});
+				Require(ShapeUtils::IsSingleShape(returnShapes));
+				Require(ShapeUtils::IsSingleShape(writeShapes));
+				Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(returnShapes)));
+				Require(ShapeUtils::IsShape<VectorShape>(ShapeUtils::GetSingleShape(writeShapes)));
+
+				const auto writeShape = new VectorShape(new Shape::DynamicSize(m_call));
+
+				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
+				{
+					const auto shift = Utils::Options::GetAlgorithm_HashSize();
+					const auto powerSize = Utils::Math::Power2(constantSize->GetValue()) << shift;
+
+					const auto valueShape = new VectorShape(new Shape::ConstantSize(powerSize));
+					return {{valueShape, valueShape}, {writeShape, writeShape}};
+				}
+
+				const auto valueShape = new VectorShape(new Shape::DynamicSize(m_call));
+				return {{valueShape, valueShape}, {writeShape, writeShape}};
+			}
 			break;
 		}
 		case BuiltinFunction::Primitive::GPUHashJoinCount:
@@ -2387,13 +2433,11 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			// Input: List<k, {Vector<Size1*>}>, List<k, {Vector<Size2*>}>
 			// Output: Vector<Size2*>, Vector<1>
 
-			auto keyShape = argumentShapes.at(0);
-			auto rightShape = argumentShapes.at(1);
+			Require(AnalyzeJoinArguments(argumentShapes, arguments));
 
-			Require(
-				(ShapeUtils::IsShape<VectorShape>(keyShape) && ShapeUtils::IsShape<VectorShape>(rightShape)) ||
-				(ShapeUtils::IsShape<ListShape>(keyShape) && ShapeUtils::IsShape<ListShape>(rightShape))
-			);
+			// Return shape is the left argument size
+
+			auto rightShape = argumentShapes.back();
 
 			// Get the count shape (constant for runtime, compressed for codegen)
 
@@ -2402,22 +2446,12 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			if (const auto vectorShape = ShapeUtils::GetShape<VectorShape>(rightShape))
 			{
-				// Ensure vector key
-
-				Require(ShapeUtils::IsShape<VectorShape>(keyShape));
-
-				// Return shapes
-
 				std::vector<const Shape *> shapes({vectorShape, countShape});
 				std::vector<const Shape *> writeShapes({vectorShape, countWriteShape});
 				return {shapes, writeShapes};
 			}
 			else if (const auto listShape = ShapeUtils::GetShape<ListShape>(rightShape))
 			{
-				Require(ShapeUtils::IsShape<ListShape>(keyShape));
-
-				// Return shapes
-
 				auto cellShape = ShapeUtils::MergeShapes(listShape->GetElementShapes());
 				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
 
@@ -2439,8 +2473,8 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			//       | List<k, {Vector<Size2*>}>, Vector<Size2*>, List<k, {Vector<Size1*>}>, Vector<Size1*>, Vector<1> (value m)
 			// Output: List<2, {Vector<m>}>
 
-			const auto offsetShape = argumentShapes.at(3);
-			const auto countShape = argumentShapes.at(4);
+			const auto offsetShape = argumentShapes.at(argumentShapes.size() - 2);
+			const auto countShape = argumentShapes.at(argumentShapes.size() - 1);
 			Require(ShapeUtils::IsShape<VectorShape>(offsetShape));
 			Require(ShapeUtils::IsShape<VectorShape>(countShape));
 
@@ -2448,51 +2482,55 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			const auto vectorCount = ShapeUtils::GetShape<VectorShape>(countShape);
 			Require(CheckStaticScalar(vectorCount->GetSize()));
 
+			const auto keyShape = argumentShapes.at(argumentShapes.size() - 5);
+			const auto valueShape = argumentShapes.at(argumentShapes.size() - 4);
+			const auto dataShape = argumentShapes.at(argumentShapes.size() - 3);
+			Require(ShapeUtils::IsShape<VectorShape>(valueShape));
+
 			// Hashtable
 
-			const auto keyShape = argumentShapes.at(0);
-			const auto valueShape = argumentShapes.at(1);
+			std::vector<const Shape *> joinShapes(std::begin(argumentShapes), std::end(argumentShapes) - 4);
+			std::vector<const Operand *> joinArguments(std::begin(arguments), std::end(arguments) - 4);
 
-			Require(ShapeUtils::IsShape<VectorShape>(valueShape));
+			joinShapes.push_back(dataShape);
+			joinArguments.push_back(arguments.at(arguments.size() - 3));
+
+			Require(AnalyzeJoinArguments(joinShapes, joinArguments));
+
+			// Key/value shape equality
+
 			const auto vectorValue = ShapeUtils::GetShape<VectorShape>(valueShape);
-
-			// Left argument
-
-			const auto rightShape = argumentShapes.at(2);
-			if (const auto vectorRight = ShapeUtils::GetShape<VectorShape>(rightShape))
+			if (const auto vectorKey = ShapeUtils::GetShape<VectorShape>(keyShape))
 			{
-				// Ensure equal size of key/value
-
-				Require(ShapeUtils::IsShape<VectorShape>(keyShape));
-
-				const auto vectorKey = ShapeUtils::GetShape<VectorShape>(keyShape);
 				Require(CheckStaticEquality(vectorKey->GetSize(), vectorValue->GetSize()));
-
-				// Offset shape equality
-
-				Require(CheckStaticEquality(vectorOffsets->GetSize(), vectorRight->GetSize()));
 			}
-			else if (const auto listRight = ShapeUtils::GetShape<ListShape>(rightShape))
+			else if (const auto listKey = ShapeUtils::GetShape<ListShape>(keyShape))
 			{
-				// Ensure equal size of key/value
-
-				Require(ShapeUtils::IsShape<ListShape>(keyShape));
-
-				const auto listKey = ShapeUtils::GetShape<ListShape>(keyShape);
-				const auto cellKey = ShapeUtils::MergeShapes(listKey->GetElementShapes());
-				Require(ShapeUtils::IsShape<VectorShape>(cellKey));
-
-				const auto vectorCellKey = ShapeUtils::GetShape<VectorShape>(cellKey);
-				Require(CheckStaticEquality(vectorCellKey->GetSize(), vectorValue->GetSize()));
-
-				// Offset shape equality
-
-				const auto cellShape = ShapeUtils::MergeShapes(listRight->GetElementShapes());
+				const auto cellShape = ShapeUtils::MergeShapes(listKey->GetElementShapes());
 				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
 
-				const auto vectorCell = ShapeUtils::GetShape<VectorShape>(cellShape);
-				Require(CheckStaticEquality(vectorOffsets->GetSize(), vectorCell->GetSize()));
+				const auto cellVector = ShapeUtils::GetShape<VectorShape>(cellShape);
+				Require(CheckStaticEquality(cellVector->GetSize(), vectorValue->GetSize()));
 			}
+
+			// Offset shape equality
+
+			if (const auto vectorData = ShapeUtils::GetShape<VectorShape>(dataShape))
+			{
+				Require(CheckStaticEquality(vectorOffsets->GetSize(), vectorData->GetSize()));
+			}
+			else if (const auto listData = ShapeUtils::GetShape<ListShape>(dataShape))
+			{
+				// Ensure equal size of offset/data
+
+				const auto cellShape = ShapeUtils::MergeShapes(listData->GetElementShapes());
+				Require(ShapeUtils::IsShape<VectorShape>(cellShape));
+
+				const auto cellVector = ShapeUtils::GetShape<VectorShape>(cellShape);
+				Require(CheckStaticEquality(vectorOffsets->GetSize(), cellVector->GetSize()));
+			}
+
+			// Return shape
 
 			if (arguments.size() > 0)
 			{
