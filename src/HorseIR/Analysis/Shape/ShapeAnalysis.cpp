@@ -1486,6 +1486,12 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				{
 					Return(valueShape);
 				}
+
+				const auto keyShape = dictionaryShape->GetKeyShape();
+				if (const auto vectorKeys = ShapeUtils::GetShape<VectorShape>(keyShape))
+				{
+					Return(new ListShape(vectorKeys->GetSize(), {valueShape}));
+				}
 				Return(new ListShape(new Shape::DynamicSize(m_call), {valueShape}));
 			}
 			else if (const auto tableShape = ShapeUtils::GetShape<TableShape>(argumentShape))
