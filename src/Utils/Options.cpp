@@ -608,7 +608,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Algo_member, "Member mode\n"
 			"   - loop         O(N^2) loop member\n"
 			"   - hash         Hash member (murmur3)",
-			cxxopts::value<std::string>()->default_value("loop")
+			cxxopts::value<std::string>()->default_value("hash")
 		)
 	;
 	m_options.add_options("Backend")
