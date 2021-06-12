@@ -20,7 +20,7 @@ public:
 
 	// Functions
 
-	void Visit(const FunctionDeclaration<VoidType> *function) override;
+	void Visit(const Function *function) override;
 	void Visit(const FunctionDefinition<VoidType> *function) override;
 
 	// Declarations

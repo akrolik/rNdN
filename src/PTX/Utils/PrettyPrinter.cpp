@@ -87,7 +87,7 @@ void PrettyPrinter::Visit(const BasicBlock *block)
 	m_quick = quick;
 }
 
-void PrettyPrinter::Visit(const FunctionDeclaration<VoidType> *function)
+void PrettyPrinter::Visit(const Function *function)
 {
 	// Linking
 	auto linkDirective = function->GetLinkDirective();
@@ -102,7 +102,7 @@ void PrettyPrinter::Visit(const FunctionDeclaration<VoidType> *function)
 	{
 		m_string << "(";
 		returnDeclaration->Accept(*this);
-		m_string << ")";
+		m_string << ") ";
 	}
 	m_string << function->GetName();
 	
