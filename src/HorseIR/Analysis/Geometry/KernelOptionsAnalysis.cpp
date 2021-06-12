@@ -156,7 +156,7 @@ std::uint32_t KernelOptionsAnalysis::GetAverageCellSize(const Analysis::ListShap
 			}
 			else if (const auto rangedSize = Analysis::ShapeUtils::GetSize<Analysis::Shape::RangedSize>(cellSize))
 			{
-				return Utils::Math::Power2(Utils::Math::Average<CUDA::Vector, std::int32_t>(rangedSize->GetValues()));
+				return Utils::Math::Power2(Utils::Math::Average(rangedSize->GetValues()));
 			}
 			return Frontend::Codegen::InputOptions::DynamicSize;
 		}

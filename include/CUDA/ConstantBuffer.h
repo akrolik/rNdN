@@ -19,7 +19,6 @@ public:
 	// Transfers
 
 	void AllocateOnGPU();
-	void Clear();
 	void TransferToGPU();
 
 	// Buffers

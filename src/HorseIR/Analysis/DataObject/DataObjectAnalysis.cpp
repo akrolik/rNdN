@@ -332,6 +332,11 @@ std::vector<const DataObject *> DataObjectAnalysis::AnalyzeCall(const BuiltinFun
 		{
 			return {new DataObject()};
 		}
+		case BuiltinFunction::Primitive::GPULikeLib:
+		case BuiltinFunction::Primitive::GPULikeCacheLib:
+		{
+			return {new DataObject()};
+		}
 
 	}
 	return {new DataObject()};

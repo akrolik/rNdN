@@ -20,9 +20,9 @@ public:
 	// Transfers
 
 	void AllocateOnGPU() { m_buffer.AllocateOnGPU(); }
-	void Clear() { m_buffer.Clear(); }
 	void TransferToGPU() { m_buffer.TransferToGPU(); }
 
+	void Clear(size_t offset = 0);
 	void TransferToCPU();
 
 	// Buffers

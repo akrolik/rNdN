@@ -1,8 +1,11 @@
 #pragma once
 
-#include <string>
+#include <string_view>
 
 #include "Libraries/robin_hood.h"
+
+#include "CUDA/Buffer.h"
+#include "CUDA/Vector.h"
 
 namespace Runtime {
 
@@ -12,31 +15,11 @@ public:
 	StringBucket(StringBucket const&) = delete;
 	void operator=(StringBucket const&) = delete;
 
-	static std::uint64_t HashString(const std::string& string)
-	{
-		auto& instance = GetInstance();
-		auto& hashMap = instance.m_hashMap;
+	static std::uint64_t HashString(const std::string_view& string);
+	static const char *RecoverString(std::uint64_t index);
 
-		auto hash = std::hash<std::string>{}(string);
-		auto find = hashMap.find(hash);
-		if (find != hashMap.end())
-		{
-			return find->second;
-		}
-
-		auto& bucket = instance.m_bucket;
-		auto index = instance.m_index++;
-
-		bucket.push_back(string);
-		hashMap[hash] = index;
-
-		return index;
-	}
-
-	static const std::string& RecoverString(std::uint64_t index)
-	{
-		return GetInstance().m_bucket.at(index);
-	}
+	static const CUDA::MappedVector<char>& GetBucket();
+	static CUDA::Buffer *GetCache();
 
 private:
 	StringBucket() {}
@@ -49,8 +32,11 @@ private:
 
 	std::uint64_t m_index = 0;
 
-	std::vector<std::string> m_bucket;
+	CUDA::MappedVector<char> m_bucket;
 	robin_hood::unordered_map<std::uint64_t, std::uint64_t> m_hashMap;
+
+	CUDA::Buffer *m_cacheBuffer = nullptr;
+	std::size_t m_cacheSize = 0;
 };
 
 }

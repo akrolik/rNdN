@@ -182,7 +182,9 @@ public:
 
 	enum class LikeKind {
 		PCRELike,
-		InternalLike
+		InternalLike,
+		GPULike,
+		GPULikeCache
 	};
 
 	enum class UniqueKind {

@@ -290,6 +290,22 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 
 			return new CallExpression(new FunctionLiteral(new Identifier("GPU", "hash_member_lib")), operands);
 		}
+		case BuiltinFunction::Primitive::Like:
+		{
+			// Copy all operands
+
+			std::vector<Operand *> operands;
+			for (auto argument : arguments)
+			{
+				operands.push_back(argument->Clone());
+			}
+
+			// Build the library call
+
+			auto isCache = (Utils::Options::GetAlgorithm_LikeKind() == Utils::Options::LikeKind::GPULikeCache);
+			auto name = (isCache) ? "like_cache" : "like";
+			return new CallExpression(new FunctionLiteral(new Identifier("GPU", name)), operands);
+		}
 	}
 	Utils::Logger::LogError("GPU library outliner does not support builtin function '" + function->GetName() + "'");
 }

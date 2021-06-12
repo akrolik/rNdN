@@ -168,6 +168,9 @@ public:
 		GPUHashMemberLib,
 		GPUHashMemberCreate,
 		GPUHashMember,
+
+		GPULikeLib,
+		GPULikeCacheLib
 	};
 
 	static const std::string PrimitiveName(Primitive primitive)
@@ -424,6 +427,10 @@ public:
 				return "hash_member_create";
 			case Primitive::GPUHashMember:
 				return "hash_member";
+			case Primitive::GPULikeLib:
+				return "like";
+			case Primitive::GPULikeCacheLib:
+				return "like_cache";
 		}
 		return "<unknown>";
 	}
@@ -633,6 +640,12 @@ public:
 				return 1; // data2
 			case Primitive::GPUHashMember:
 				return 2; // hash_keys, data1
+			case Primitive::GPULikeLib:
+			case Primitive::GPULikeCacheLib:
+			{
+				return 2;
+			}
+
 		}
 		Utils::Logger::LogError("Unknown parameter count for builtin function '" + m_name + "'");
 	}

@@ -50,15 +50,6 @@ void ConstantBuffer::AllocateOnGPU()
 	}
 }
 
-void ConstantBuffer::Clear()
-{
-	auto start = Utils::Chrono::StartCUDA(ChronoDescription("clear", m_allocatedSize));
-
-	checkDriverResult(cuMemsetD8(m_GPUBuffer, 0, m_allocatedSize));
-
-	Utils::Chrono::End(start);
-}
-
 void ConstantBuffer::TransferToGPU()
 {
 	auto start = Utils::Chrono::StartCUDA(ChronoDescription("transfer", m_size) + " ->");

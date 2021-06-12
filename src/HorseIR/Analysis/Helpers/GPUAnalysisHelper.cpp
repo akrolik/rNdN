@@ -334,6 +334,16 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 				return std::make_pair(Device::CPU, Synchronization::None);
 			}
 		}
+		case BuiltinFunction::Primitive::Like:
+		{
+			switch (Utils::Options::GetAlgorithm_LikeKind())
+			{
+				case Utils::Options::LikeKind::GPULike:
+				case Utils::Options::LikeKind::GPULikeCache:
+					return std::make_pair(Device::GPULibrary, Synchronization::None);
+			}
+			return std::make_pair(Device::CPU, Synchronization::None);
+		}
 
 		// Algebraic Unary
 		case BuiltinFunction::Primitive::Group:
@@ -421,6 +431,9 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		case BuiltinFunction::Primitive::GPUHashMemberCreate:
 		case BuiltinFunction::Primitive::GPUHashMember:
+
+		case BuiltinFunction::Primitive::GPULikeLib:
+		case BuiltinFunction::Primitive::GPULikeCacheLib:
 		{
 			return std::make_pair(Device::GPU, (Synchronization::In | Synchronization::Out));
 		}
@@ -436,7 +449,6 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 
 		// Algebraic Binary
 		case BuiltinFunction::Primitive::Replicate:
-		case BuiltinFunction::Primitive::Like:
 
 		// List
 		case BuiltinFunction::Primitive::List:

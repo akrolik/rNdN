@@ -19,6 +19,15 @@ private:
 
 	template<PTX::Bits B>
 	static void CreateFunction_initlist(PTX::Module *module);
+
+	template<PTX::Bits B>
+	static void CreateFunction_like_internal(PTX::Module *module);
+
+	template<PTX::Bits B>
+	static void CreateFunction_like(PTX::Module *module);
+
+	template<PTX::Bits B>
+	static void CreateFunction_like_cache(PTX::Module *module);
 };
 
 }

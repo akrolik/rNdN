@@ -892,6 +892,8 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 			break;
 		}
 		case BuiltinFunction::Primitive::Like:
+		case BuiltinFunction::Primitive::GPULikeLib:
+		case BuiltinFunction::Primitive::GPULikeCacheLib:
 		{
 			// -- Propagate the left vector size
 			// Input: Vector<Size*>, Vector<1>

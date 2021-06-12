@@ -77,9 +77,10 @@ public:
 		}
 	}
 
-	const T& GetValue(unsigned int i) const { return m_data.at(i); }
 	const CUDA::Vector<T>& GetValues() const { return m_data; }
+	CUDA::Vector<T>& GetValues() { return m_data; }
 
+	const T& GetValue(unsigned int i) const { return m_data.at(i); }
 	void SetValue(unsigned int i, const T& value) { m_data.at(i) = value; }
 
         void *GetData() override { return m_data.data(); }

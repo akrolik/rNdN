@@ -25,6 +25,10 @@ PTX::Program *libr3d3::CreateProgram(const std::unique_ptr<Device>& device)
 
 	CreateFunction_initlist<PTX::Bits::Bits64>(module);
 
+	CreateFunction_like_internal<PTX::Bits::Bits64>(module);
+	CreateFunction_like<PTX::Bits::Bits64>(module);
+	CreateFunction_like_cache<PTX::Bits::Bits64>(module);
+
 	program->AddModule(module);
 	return program;
 }
@@ -280,60 +284,370 @@ void libr3d3::CreateFunction_initlist(PTX::Module *module)
 	kernel->AddParameter(i_datasizeDeclaration);
 
 	kernel->AddStatement(new PTX::DevInstruction(
-		".reg .pred 	%p<3>;\n\t"
-		".reg .b32 	%r<8>;\n\t"
-		".reg .b64 	%rd<27>;\n\t"
+		".reg .pred 	%p<3>;\n        "
+		".reg .b32 	%r<8>;\n        "
+		".reg .b64 	%rd<27>;\n        "
 
-		"ld.param.u64 	%rd7, [o_adata];\n\t"
-		"ld.param.u64 	%rd8, [o_asizes];\n\t"
-		"ld.param.u64 	%rd9, [o_sizes];\n\t"
-		"ld.param.u64 	%rd10, [i_offsets];\n\t"
-		"ld.param.u64 	%rd11, [i_data];\n\t"
-		"ld.param.u32 	%r2, [i_size];\n\t"
-		"ld.param.u32 	%r3, [i_datasize];\n\t"
+		"ld.param.u64 	%rd7, [o_adata];\n        "
+		"ld.param.u64 	%rd8, [o_asizes];\n        "
+		"ld.param.u64 	%rd9, [o_sizes];\n        "
+		"ld.param.u64 	%rd10, [i_offsets];\n        "
+		"ld.param.u64 	%rd11, [i_data];\n        "
+		"ld.param.u32 	%r2, [i_size];\n        "
+		"ld.param.u32 	%r3, [i_datasize];\n        "
 
-		"mov.u32 	%r4, %ntid.x;\n\t"
-		"mov.u32 	%r5, %ctaid.x;\n\t"
-		"mov.u32 	%r6, %tid.x;\n\t"
-		"mad.lo.s32 	%r1, %r4, %r5, %r6;\n\t"
-		"setp.ge.u32	%p1, %r1, %r2;\n\t"
-		"@%p1 bra 	BB0_5;\n\n\t"
+		"mov.u32 	%r4, %ntid.x;\n        "
+		"mov.u32 	%r5, %ctaid.x;\n        "
+		"mov.u32 	%r6, %tid.x;\n        "
+		"mad.lo.s32 	%r1, %r4, %r5, %r6;\n        "
+		"setp.ge.u32	%p1, %r1, %r2;\n   "
+		"@%p1 bra 	BB0_5;\n\n        "
 
-		"cvt.u64.u32	%rd1, %r1;\n\t"
-		"cvta.to.global.u64 	%rd12, %rd10;\n\t"
-		"mul.wide.u32 	%rd13, %r1, 8;\n\t"
-		"add.s64 	%rd2, %rd12, %rd13;\n\t"
-		"ld.global.u64 	%rd3, [%rd2];\n\t"
-		"add.s32 	%r7, %r1, 1;\n\t"
-		"setp.eq.s32	%p2, %r7, %r2;\n\t"
-		"@%p2 bra 	BB0_3;\n\t"
+		"cvt.u64.u32	%rd1, %r1;\n        "
+		"cvta.to.global.u64 	%rd12, %rd10;\n        "
+		"mul.wide.u32 	%rd13, %r1, 8;\n        "
+		"add.s64 	%rd2, %rd12, %rd13;\n        "
+		"ld.global.u64 	%rd3, [%rd2];\n        "
+		"add.s32 	%r7, %r1, 1;\n        "
+		"setp.eq.s32	%p2, %r7, %r2;\n   "
+		"@%p2 bra 	BB0_3;\n\n        "
 		"bra.uni 	BB0_2;\n\n"
 
-	"BB0_3:\n\t"
-		"cvt.u64.u32	%rd26, %r3;\n\t"
+	"BB0_3:\n        "
+		"cvt.u64.u32	%rd26, %r3;\n        "
 		"bra.uni 	BB0_4;\n\n"
 
-	"BB0_2:\n\t"
+	"BB0_2:\n        "
 		"ld.global.u64 	%rd26, [%rd2+8];\n\n"
 
-	"BB0_4:\n\t"
-		"shl.b64 	%rd14, %rd3, 3;\n\t"
-		"add.s64 	%rd15, %rd14, %rd11;\n\t"
-		"cvta.to.global.u64 	%rd16, %rd7;\n\t"
-		"shl.b64 	%rd17, %rd1, 3;\n\t"
-		"add.s64 	%rd18, %rd16, %rd17;\n\t"
-		"st.global.u64 	[%rd18], %rd15;\n\t"
-		"shl.b64 	%rd19, %rd1, 2;\n\t"
-		"add.s64 	%rd20, %rd19, %rd9;\n\t"
-		"cvta.to.global.u64 	%rd21, %rd8;\n\t"
-		"add.s64 	%rd22, %rd21, %rd17;\n\t"
-		"st.global.u64 	[%rd22], %rd20;\n\t"
-		"sub.s64 	%rd23, %rd26, %rd3;\n\t"
-		"cvta.to.global.u64 	%rd24, %rd9;\n\t"
-		"add.s64 	%rd25, %rd24, %rd19;\n\t"
+	"BB0_4:\n        "
+		"shl.b64 	%rd14, %rd3, 3;\n        "
+		"add.s64 	%rd15, %rd14, %rd11;\n        "
+		"cvta.to.global.u64 	%rd16, %rd7;\n        "
+		"shl.b64 	%rd17, %rd1, 3;\n        "
+		"add.s64 	%rd18, %rd16, %rd17;\n        "
+		"st.global.u64 	[%rd18], %rd15;\n        "
+		"shl.b64 	%rd19, %rd1, 2;\n        "
+		"add.s64 	%rd20, %rd19, %rd9;\n        "
+		"cvta.to.global.u64 	%rd21, %rd8;\n        "
+		"add.s64 	%rd22, %rd21, %rd17;\n        "
+		"st.global.u64 	[%rd22], %rd20;\n        "
+		"sub.s64 	%rd23, %rd26, %rd3;\n        "
+		"cvta.to.global.u64 	%rd24, %rd9;\n        "
+		"add.s64 	%rd25, %rd24, %rd19;\n        "
 		"st.global.u32 	[%rd25], %rd23;\n\n"
 
-	"BB0_5:\n\t"
+	"BB0_5:\n        "
+		"ret"
+	));
+
+	module->AddDeclaration(kernel);
+	module->AddEntryFunction(kernel);
+}
+
+template<PTX::Bits B>
+void libr3d3::CreateFunction_like_internal(PTX::Module *module)
+{
+	// Setup kernel
+
+	auto kernel = new PTX::FunctionDefinition<PTX::ParameterVariable<PTX::Bit32Type>>();
+	kernel->SetName("like_internal");
+
+	// Initialize parameters
+
+	auto i_dataDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("i_data");
+	auto i_patternDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("i_pattern");
+
+	kernel->AddParameter(i_dataDeclaration);
+	kernel->AddParameter(i_patternDeclaration);
+
+	auto returnDeclaration = new PTX::ParameterDeclaration<PTX::Bit32Type>("return_m");
+	kernel->SetReturnDeclaration(returnDeclaration);
+
+	kernel->AddStatement(new PTX::DevInstruction(
+		".reg .pred %p<15>;\n        "
+		".reg .b16 %rs<28>;\n        "
+		".reg .b32 %r<4>;\n        "
+		".reg .b64 %rd<22>;\n        "
+
+		"ld.param.u64 %rd1, [i_data];\n        "
+		"ld.param.u64 %rd2, [i_pattern];\n        "
+		"ld.u8 %rs25, [%rd2];\n        "
+		"setp.eq.s16     %p1, %rs25, 0;\n   "
+		"@%p1 bra BB0_6;\n\n"
+
+	"BB0_1:\n        "
+		"mov.u16 %rs27, 0;\n        "
+		"add.s16 %rs11, %rs25, -91;\n        "
+		"and.b16 %rs12, %rs11, 255;\n        "
+		"setp.gt.u16     %p2, %rs12, 4;\n        "
+		"cvt.u64.u16     %rd13, %rs11;\n        "
+		"and.b64 %rd12, %rd13, 255;\n   "
+		"@%p2 bra BB0_3;\n\n        "
+		"bra.uni BB0_2;\n\n"
+
+	"BB0_3:\n        "
+		"setp.eq.s16     %p4, %rs25, 37;\n        "
+		"add.s64 %rd4, %rd2, 1;\n   "
+		"@%p4 bra BB0_7;\n\n        "
+
+		"ld.u8 %rs15, [%rd1];\n        "
+		"setp.eq.s16     %p5, %rs15, 0;\n        "
+		"setp.ne.s16     %p6, %rs15, %rs25;\n        "
+		"or.pred %p7, %p5, %p6;\n   "
+		"@%p7 bra BB0_15;\n\n        "
+
+		"add.s64 %rd1, %rd1, 1;\n        "
+		"ld.u8 %rs25, [%rd2+1];\n        "
+		"setp.eq.s16     %p8, %rs25, 0;\n        "
+		"mov.u64 %rd2, %rd4;\n   "
+		"@%p8 bra BB0_6;\n\n        "
+		"bra.uni BB0_1;\n\n"
+
+	"BB0_2:\n        "
+		"cvt.u32.u64     %r1, %rd12;\n        "
+		"mov.u64 %rd14, 1;\n        "
+		"shl.b64 %rd15, %rd14, %r1;\n        "
+		"and.b64 %rd16, %rd15, 19;\n        "
+		"setp.ne.s64     %p3, %rd16, 0;\n   "
+		"@%p3 bra BB0_15;\n\n        "
+		"bra.uni BB0_3;\n\n"
+
+	"BB0_6:\n        "
+		"ld.u8 %rs24, [%rd1];\n        "
+		"setp.eq.s16     %p14, %rs24, 0;\n        "
+		"selp.u16        %rs27, 1, 0, %p14;\n\n"
+
+	"BB0_15:\n        "
+		"cvt.u32.u16     %r3, %rs27;\n        "
+		"st.param.b32    [return_m+0], %r3;\n        "
+		"ret;\n\n"
+
+	"BB0_7:\n        "
+		"ld.u8 %rs4, [%rd2+1];\n        "
+		"setp.eq.s16     %p9, %rs4, 0;\n        "
+		"mov.u16 %rs17, 1;\n   "
+		"@%p9 bra BB0_8;\n\n        "
+
+		"ld.u8 %rs26, [%rd1];\n        "
+		"setp.eq.s16     %p10, %rs26, 0;\n  "
+		"@%p10 bra BB0_15;\n\n        "
+
+		"add.s64 %rd6, %rd2, 2;\n\n"
+
+	"BB0_11:\n        "
+		"setp.ne.s16     %p11, %rs26, %rs4;\n  "
+		"@%p11 bra BB0_14;\n\n        "
+
+		"add.s64 %rd17, %rd1, 1;\n        "
+
+		"{\n                "
+			".param .b64 param0;\n                "
+			"st.param.b64    [param0+0], %rd17;\n                "
+			".param .b64 param1;\n                "
+			"st.param.b64    [param1+0], %rd6;\n                "
+			".param .b32 retval0;\n                "
+			"call.uni (retval0), like_internal, (param0, param1);\n                "
+			"ld.param.b32    %r2, [retval0+0];\n        "
+		"}\n        "
+
+		"cvt.u16.u32     %rs21, %r2;\n        "
+		"and.b16 %rs22, %rs21, 255;\n        "
+		"setp.ne.s16     %p12, %rs22, 0;\n  "
+		"@%p12 bra BB0_13;\n\n"
+
+	"BB0_14:\n        "
+		"add.s64 %rd8, %rd1, 1;\n        "
+		"ld.u8 %rs26, [%rd1+1];\n        "
+		"setp.eq.s16     %p13, %rs26, 0;\n        "
+		"mov.u64 %rd1, %rd8;\n  "
+		"@%p13 bra BB0_15;\n\n        "
+		"bra.uni BB0_11;\n\n"
+
+	"BB0_8:\n        "
+		"mov.u16 %rs27, %rs17;\n        "
+		"bra.uni BB0_15;\n\n"
+
+	"BB0_13:\n        "
+		"mov.u16 %rs27, %rs17;\n        "
+		"bra.uni BB0_15"
+	));
+
+	module->AddDeclaration(kernel);
+}
+
+template<PTX::Bits B>
+void libr3d3::CreateFunction_like(PTX::Module *module)
+{
+	// Setup kernel
+
+	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
+	kernel->SetName("like");
+	kernel->SetEntry(true);
+	kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
+
+	// Initialize parameters
+
+	auto o_matchDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("o_match");
+	auto i_indexesDeclaration = new PTX::PointerDeclaration<B, PTX::Int64Type>("i_indexes");
+	auto i_dataDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("i_data");
+	auto i_patternDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("i_pattern");
+	auto i_sizeDeclaration = new PTX::ParameterDeclaration<PTX::UInt32Type>("i_size");
+
+	kernel->AddParameter(o_matchDeclaration);
+	kernel->AddParameter(i_indexesDeclaration);
+	kernel->AddParameter(i_dataDeclaration);
+	kernel->AddParameter(i_patternDeclaration);
+	kernel->AddParameter(i_sizeDeclaration);
+
+	kernel->AddStatement(new PTX::DevInstruction(
+		".reg .pred %p<2>;\n        "
+		".reg .b32 %r<7>;\n        "
+		".reg .b64 %rd<13>;\n        "
+
+		"ld.param.u64 %rd1, [o_match];\n        "
+		"ld.param.u64 %rd2, [i_indexes];\n        "
+		"ld.param.u64 %rd3, [i_data];\n        "
+		"ld.param.u64 %rd4, [i_pattern];\n        "
+		"ld.param.u32 %r2, [i_size];\n        "
+		"mov.u32 %r3, %ctaid.x;\n        "
+		"mov.u32 %r4, %ntid.x;\n        "
+		"mov.u32 %r5, %tid.x;\n        "
+		"mad.lo.s32 %r1, %r4, %r3, %r5;\n        "
+		"setp.ge.u32     %p1, %r1, %r2;\n   "
+		"@%p1 bra BB1_2;\n\n        "
+
+		"cvta.to.global.u64 %rd5, %rd2;\n        "
+		"cvt.u64.u32     %rd6, %r1;\n        "
+		"mul.wide.u32 %rd7, %r1, 8;\n        "
+		"add.s64 %rd8, %rd5, %rd7;\n        "
+		"ld.global.u64 %rd9, [%rd8];\n        "
+		"add.s64 %rd10, %rd3, %rd9;\n        "
+
+		"{\n                "
+			".param .b64 param0;\n                "
+			"st.param.b64    [param0+0], %rd10;\n                "
+			".param .b64 param1;\n                "
+			"st.param.b64    [param1+0], %rd4;\n                "
+			".param .b32 retval0;\n                "
+			"call.uni (retval0), like_internal, (param0, param1);\n                "
+			"ld.param.b32    %r6, [retval0+0];\n        "
+		"}\n        "
+
+		"cvta.to.global.u64 %rd11, %rd1;\n        "
+		"add.s64 %rd12, %rd11, %rd6;\n        "
+		"st.global.u8 [%rd12], %r6;\n\n"
+
+	"BB1_2:\n        "
+		"ret"
+	));
+
+	module->AddDeclaration(kernel);
+	module->AddEntryFunction(kernel);
+}
+
+template<PTX::Bits B>
+void libr3d3::CreateFunction_like_cache(PTX::Module *module)
+{
+	// Setup kernel
+
+	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
+	kernel->SetName("like_cache");
+	kernel->SetEntry(true);
+	kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
+
+	// Initialize parameters
+
+	auto o_cacheDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("o_cache");
+	auto i_indexesDeclaration = new PTX::PointerDeclaration<B, PTX::Int64Type>("i_indexes");
+	auto i_dataDeclaration = new PTX::PointerDeclaration<B, PTX::Int8Type>("i_data");
+	auto i_sizeDeclaration = new PTX::ParameterDeclaration<PTX::UInt32Type>("i_size");
+
+	kernel->AddParameter(o_cacheDeclaration);
+	kernel->AddParameter(i_indexesDeclaration);
+	kernel->AddParameter(i_dataDeclaration);
+	kernel->AddParameter(i_sizeDeclaration);
+
+	kernel->AddStatement(new PTX::DevInstruction(
+		".reg .pred %p<17>;\n        "
+		".reg .b16 %rs<2>;\n        "
+		".reg .b32 %r<15>;\n        "
+		".reg .b64 %rd<33>;\n        "
+
+		"ld.param.u64 %rd14, [o_cache];\n        "
+		"ld.param.u64 %rd15, [i_indexes];\n        "
+		"ld.param.u64 %rd16, [i_data];\n        "
+		"ld.param.u32 %r2, [i_size];\n        "
+		"mov.u32 %r3, %ntid.x;\n        "
+		"mov.u32 %r4, %ctaid.x;\n        "
+		"mov.u32 %r5, %tid.x;\n        "
+		"mad.lo.s32 %r1, %r3, %r4, %r5;\n        "
+		"setp.ge.u32     %p1, %r1, %r2;\n   "
+		"@%p1 bra BB2_7;\n\n        "
+
+		"cvta.to.global.u64 %rd17, %rd14;\n        "
+		"cvta.to.global.u64 %rd18, %rd15;\n        "
+		"mul.wide.u32 %rd19, %r1, 8;\n        "
+		"add.s64 %rd20, %rd18, %rd19;\n        "
+		"ld.global.u64 %rd1, [%rd20];\n        "
+		"add.s64 %rd31, %rd17, %rd1;\n        "
+		"ld.global.u8 %rs1, [%rd31];\n        "
+		"setp.ne.s16     %p2, %rs1, 0;\n   "
+		"@%p2 bra BB2_7;\n\n        "
+
+		"cvta.to.global.u64 %rd21, %rd16;\n        "
+		"add.s64 %rd32, %rd21, %rd1;\n        "
+		"ld.global.u64 %rd30, [%rd32];\n        "
+		"and.b64 %rd22, %rd30, 255;\n        "
+		"setp.eq.s64     %p3, %rd22, 0;\n   "
+		"@%p3 bra BB2_7;\n\n"
+
+	"BB2_3:\n        "
+		"shr.u64 %rd23, %rd30, 8;\n        "
+		"shl.b64 %rd24, %rd23, 24;\n        "
+		"cvt.u32.u64     %r6, %rd24;\n        "
+		"setp.eq.s32     %p4, %r6, 0;\n        "
+		"shl.b64 %rd25, %rd30, 8;\n        "
+		"cvt.u32.u64     %r7, %rd25;\n        "
+		"and.b32 %r8, %r7, -16777216;\n        "
+		"setp.eq.s32     %p5, %r8, 0;\n        "
+		"or.pred %p6, %p4, %p5;\n        "
+		"and.b64 %rd26, %rd30, 4278190080;\n        "
+		"setp.eq.s64     %p7, %rd26, 0;\n        "
+		"or.pred %p8, %p6, %p7;\n        "
+		"cvt.u32.u64     %r9, %rd23;\n        "
+		"and.b32 %r10, %r9, -16777216;\n        "
+		"setp.eq.s32     %p9, %r10, 0;\n        "
+		"or.pred %p10, %p8, %p9;\n  "
+		"@%p10 bra BB2_6;\n\n        "
+
+		"st.global.u64 [%rd31], %rd30;\n        "
+		"shr.u64 %rd27, %rd30, 16;\n        "
+		"cvt.u32.u64     %r11, %rd27;\n        "
+		"and.b32 %r12, %r11, -16777216;\n        "
+		"setp.eq.s32     %p11, %r12, 0;\n        "
+		"shr.u64 %rd28, %rd30, 24;\n        "
+		"cvt.u32.u64     %r13, %rd28;\n        "
+		"and.b32 %r14, %r13, -16777216;\n        "
+		"setp.eq.s32     %p12, %r14, 0;\n        "
+		"or.pred %p13, %p11, %p12;\n        "
+		"setp.lt.u64     %p14, %rd30, 72057594037927936;\n        "
+		"or.pred %p15, %p13, %p14;\n  "
+		"@%p15 bra BB2_7;\n\n        "
+
+		"add.s64 %rd31, %rd31, 8;\n        "
+		"add.s64 %rd12, %rd32, 8;\n        "
+		"ld.global.u64 %rd30, [%rd32+8];\n        "
+		"and.b64 %rd29, %rd30, 255;\n        "
+		"setp.eq.s64     %p16, %rd29, 0;\n        "
+		"mov.u64 %rd32, %rd12;\n  "
+		"@%p16 bra BB2_7;\n\n        "
+		"bra.uni BB2_3;\n\n"
+
+	"BB2_6:\n        "
+		"st.global.u32 [%rd31], %rd30;\n\n"
+
+	"BB2_7:\n        "
 		"ret"
 	));
 

@@ -35,6 +35,17 @@ void Buffer::Copy(Buffer *destination, const Buffer *source, size_t size, size_t
 	Utils::Chrono::End(start);
 }
 
+void Buffer::Clear(size_t offset)
+{
+	auto clearSize = m_buffer.GetAllocatedSize() - offset;
+
+	auto start = Utils::Chrono::StartCUDA(m_buffer.ChronoDescription("clear", clearSize) + "; offset " + std::to_string(offset) + " bytes");
+
+	checkDriverResult(cuMemsetD8(m_buffer.GetGPUBuffer() + offset, 0, clearSize));
+
+	Utils::Chrono::End(start);
+}
+
 void Buffer::TransferToCPU()
 {
 	auto start = Utils::Chrono::StartCUDA(m_buffer.ChronoDescription("transfer", m_buffer.GetSize()) + " <-");

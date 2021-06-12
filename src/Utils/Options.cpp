@@ -369,6 +369,14 @@ Options::LikeKind Options::GetAlgorithm_LikeKind()
 	{
 		return LikeKind::InternalLike;
 	}
+	else if (likeMode == "gpu")
+	{
+		return LikeKind::GPULike;
+	}
+	else if (likeMode == "gpucache")
+	{
+		return LikeKind::GPULikeCache;
+	}
 	Utils::Logger::LogError("Unknown like mode '" + likeMode + "'");
 }
 
@@ -597,8 +605,10 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 		(Opt_Algo_like, "Like mode\n"
 			"   - pcre         jpcre2 regex library\n"
-			"   - internal     Internal LIKE implementation",
-			cxxopts::value<std::string>()->default_value("internal")
+			"   - internal     Internal LIKE implementation\n"
+			"   - gpu          GPU LIKE implementation\n"
+			"   - gpucache     GPU LIKE (cached data) implementation",
+			cxxopts::value<std::string>()->default_value("gpucache")
 		)
 		(Opt_Algo_unique, "Unique mode\n"
 			"   - sort         Sort based unique\n"

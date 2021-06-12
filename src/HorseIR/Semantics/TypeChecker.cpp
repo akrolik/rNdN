@@ -555,6 +555,8 @@ std::vector<Type *> TypeChecker::AnalyzeCall(const BuiltinFunction *function, co
 			return {new ListType({inputType1->Clone()})};
 		}
 		case BuiltinFunction::Primitive::Like:
+		case BuiltinFunction::Primitive::GPULikeLib:
+		case BuiltinFunction::Primitive::GPULikeCacheLib:
 		{
 			const auto inputType0 = argumentTypes.at(0);
 			const auto inputType1 = argumentTypes.at(1);

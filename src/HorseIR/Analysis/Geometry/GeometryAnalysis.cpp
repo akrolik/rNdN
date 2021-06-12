@@ -404,6 +404,8 @@ const Shape *GeometryAnalysis::AnalyzeCall(const BuiltinFunction *function, cons
 		case BuiltinFunction::Primitive::GPULoopJoinLib:
 		case BuiltinFunction::Primitive::GPUHashJoinLib:
 		case BuiltinFunction::Primitive::GPUHashMemberLib:
+		case BuiltinFunction::Primitive::GPULikeLib:
+		case BuiltinFunction::Primitive::GPULikeCacheLib:
 		{
 			CPU();
 		}

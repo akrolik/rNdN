@@ -32,7 +32,11 @@ static Module *GPUModule = new LibraryModule("GPU", {
 	// Member
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMemberLib),
 	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMemberCreate),
-	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMember)
+	new BuiltinFunction(BuiltinFunction::Primitive::GPUHashMember),
+
+	// Like
+	new BuiltinFunction(BuiltinFunction::Primitive::GPULikeLib),
+	new BuiltinFunction(BuiltinFunction::Primitive::GPULikeCacheLib),
 });
 
 }

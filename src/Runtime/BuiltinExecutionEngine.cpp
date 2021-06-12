@@ -20,6 +20,7 @@
 #include "Runtime/GPU/Library/GroupEngine.h"
 #include "Runtime/GPU/Library/HashJoinEngine.h"
 #include "Runtime/GPU/Library/HashMemberEngine.h"
+#include "Runtime/GPU/Library/LikeEngine.h"
 #include "Runtime/GPU/Library/LoopJoinEngine.h"
 #include "Runtime/GPU/Library/SortEngine.h"
 #include "Runtime/GPU/Library/UniqueEngine.h"
@@ -366,7 +367,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				Error("expects a single pattern argument, received " + std::to_string(patternData->GetElementCount()));
 			}
 
-			const auto& likePatternString = StringBucket::RecoverString(patternData->GetValue(0));
+			const auto likePattern = StringBucket::RecoverString(patternData->GetValue(0));
 
 			const auto size = stringData.size();
 			CUDA::Vector<std::int8_t> likeData(size);
@@ -376,7 +377,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			{
 				for (auto i = 0u; i < size; ++i)
 				{
-					likeData[i] = Utils::String::Like(StringBucket::RecoverString(stringData[i]), likePatternString);
+					likeData[i] = Utils::String::Like(StringBucket::RecoverString(stringData[i]), likePattern);
 				}
 
 			}
@@ -386,8 +387,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				//  - Escape: '.', '*', and '\'
 				//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
 
-				const auto likePatternSize = likePatternString.size();
-				const char *likePattern = likePatternString.c_str();
+				const auto likePatternSize = strlen(likePattern);
 				auto regexPattern = new char[likePatternSize * 2 + 2];
 
 				auto j = 0u;
@@ -422,12 +422,12 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				jpcre2::select<char>::Regex regex(regexPatternString, PCRE2_DOTALL|PCRE2_ANCHORED|PCRE2_NO_UTF_CHECK, jpcre2::JIT_COMPILE);
 				if (!regex)
 				{
-					Error("unable to compile regex pattern '" + regexPatternString + "' from like pattern '" + likePatternString + "'");
+					Error("unable to compile regex pattern '" + regexPatternString + "' from like pattern '" + std::string(likePattern) + "'");
 				}
 
 				for (auto i = 0u; i < size; ++i)
 				{
-					likeData.at(i) = regex.match(&StringBucket::RecoverString(stringData.at(i)));
+					likeData.at(i) = regex.match(StringBucket::RecoverString(stringData.at(i)));
 				}
 			}
 
@@ -501,7 +501,8 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			for (auto i = 0u; i < size; ++i)
 			{
-				substringData[i] = StringBucket::HashString(StringBucket::RecoverString(stringData[i]).substr(position, length));
+				auto string = StringBucket::RecoverString(stringData[i]);
+				substringData[i] = StringBucket::HashString(std::string_view(string + position, length));
 			}
 
 			return {new TypedVectorBuffer(new TypedVectorData<std::uint64_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::String), std::move(substringData)))};
@@ -554,6 +555,17 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 			GPU::HashMemberEngine memberEngine(m_runtime, m_program);
 			return {memberEngine.Member({ std::begin(arguments), std::end(arguments) })};
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPULikeLib:
+		{
+			GPU::LikeEngine likeEngine(m_runtime, m_program);
+			return {likeEngine.Like({ std::begin(arguments), std::end(arguments) })};
+
+		}
+		case HorseIR::BuiltinFunction::Primitive::GPULikeCacheLib:
+		{
+			GPU::LikeEngine likeEngine(m_runtime, m_program);
+			return {likeEngine.Like({ std::begin(arguments), std::end(arguments) }, true)};
 		}
 		default:
 		{
