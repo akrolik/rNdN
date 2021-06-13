@@ -103,16 +103,15 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 
 	// Control-flow graph
 
-	PTX::Analysis::ControlFlowBuilder cfgBuilder;
-	auto cfg = cfgBuilder.Analyze(function);
+	if (function->GetControlFlowGraph() == nullptr)
+	{
+		PTX::Analysis::ControlFlowBuilder cfgBuilder;
+		auto cfg = cfgBuilder.Analyze(function);
 
-	function->SetControlFlowGraph(cfg);
-	function->SetBasicBlocks(cfg->GetNodes());
-	function->InvalidateStatements();
-
-	// Allocate registers
-
-	auto registerAllocation = AllocateRegisters(function);
+		function->SetControlFlowGraph(cfg);
+		function->SetBasicBlocks(cfg->GetNodes());
+		function->InvalidateStatements();
+	}
 
 	// Allocate parameter space
 	
@@ -120,6 +119,10 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	parameterAllocator.Analyze(function);
 
 	auto parameterAllocation = parameterAllocator.GetSpaceAllocation();
+
+	// Allocate registers
+
+	auto registerAllocation = AllocateRegisters(function);
 
 	// Structurize CFG
 

@@ -12,6 +12,7 @@
 
 #include "HorseIR/Semantics/SemanticAnalysis.h"
 
+#include "PTX/Optimizer/Optimizer.h"
 #include "PTX/Utils/PrettyPrinter.h"
 
 #include "Utils/Chrono.h"
@@ -135,14 +136,19 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 	if (Utils::Options::IsOptimize_PTX())
 	{
-		Optimize(ptxProgram);
+		PTX::Optimizer::Optimizer optimizer;
+		optimizer.Optimize(ptxProgram);
+
+		if (Utils::Options::IsFrontend_PrintPTX())
+		{
+			Utils::Logger::LogInfo("Optimized PTX program");
+
+			auto programString = PTX::PrettyPrinter::PrettyString(ptxProgram);
+			Utils::Logger::LogInfo(programString, 0, true, Utils::Logger::NoPrefix);
+		}
 	}
 
 	return ptxProgram;
-}
-
-void Compiler::Optimize(PTX::Program *program) const
-{
 }
 
 }

@@ -14,8 +14,6 @@ public:
 
 	PTX::Program *Compile(const HorseIR::Program *program) const;
 
-	void Optimize(PTX::Program *program) const;
-
 private:
 	std::unique_ptr<CUDA::Device>& m_device;
 };
