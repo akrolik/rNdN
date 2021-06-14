@@ -20,18 +20,19 @@ public:
 
 	std::string ToString() const override
 	{
-		//TODO: Float string
-		// return Utils::Format::HexString(m_value);
-		return "";
+		auto inf = std::numeric_limits<float>::infinity();
+		if (m_value == inf)
+		{
+			return "INF";
+		}
+		return std::to_string(m_value);
 	}
 
 	// Binary
 
 	std::uint64_t ToBinary() const override
 	{
-		//TODO: Float to binary
-		// return m_value;
-		return 0;
+		return reinterpret_cast<const std::uint64_t&>(m_value);
 	}
 
 	// Visitors
