@@ -237,16 +237,23 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 		if (RuntimeUtils::IsDynamicReturnShape(returnShape, returnWriteShape, inputOptions->ThreadGeometry))
 		{
+			// Clear the size buffer for the dynamic output data
+
+			auto timeInitializeSize_start = Utils::Chrono::Start("Initialize buffer");
 			if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::VectorShape>(returnShape))
 			{
-				// Clear the size buffer for the dynamic output data
-
-				auto timeInitializeSize_start = Utils::Chrono::Start("Initialize buffer");
 				sizeBuffer->Clear();
-				Utils::Chrono::End(timeInitializeSize_start);
 			}
-
-			//TODO: Initialize size buffers for dynamic list
+			else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(returnShape))
+			{
+				auto listReturnBuffer = BufferUtils::GetBuffer<ListBuffer>(returnBuffer);
+				for (auto cellBuffer : listReturnBuffer->GetCells())
+				{
+					auto cellSizeBuffer = cellBuffer->GetGPUSizeBuffer();
+					cellSizeBuffer->Clear();
+				}
+			}
+			Utils::Chrono::End(timeInitializeSize_start);
 		}
 
 		invocation.AddParameter(*sizeBuffer);

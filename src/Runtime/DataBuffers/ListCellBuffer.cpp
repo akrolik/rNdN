@@ -88,7 +88,11 @@ void ListCellBuffer::SetTag(const std::string& tag)
 		cell->SetTag((tag == "") ? "" : tag + "_" + std::to_string(i));
 	}
 
-	//TODO: size buffer
+	if (IsAllocatedOnGPU())
+	{
+		m_gpuBuffer->SetTag((tag == "") ? "" : tag + "_list");
+		m_gpuSizeBuffer->SetTag((tag == "") ? "" : + "_list_size");
+	}
 }
 
 void ListCellBuffer::ResizeCells(unsigned int size)
@@ -309,6 +313,14 @@ void ListCellBuffer::AllocateGPUBuffer() const
 	m_gpuSizeBuffer->AllocateOnGPU();
 	m_gpuSizeBuffer->SetCPUBuffer(m_gpuSizePointers);
 	m_gpuSizeBuffer->TransferToGPU();
+
+	// Tags
+
+	if (m_tag != "")
+	{
+		m_gpuBuffer->SetTag(m_tag + "_list");
+		m_gpuSizeBuffer->SetTag(m_tag + "_list_size");
+	}
 }
 
 void ListCellBuffer::TransferToGPU() const

@@ -74,7 +74,6 @@ public:
 	void Visit(const HorseIR::TimeLiteral *literal) override;
 
 private:
-
 	VectorBuffer *Cast(const HorseIR::BasicType *castType, VectorBuffer *input) const;
 	template<class S>
 	VectorBuffer *Cast(const HorseIR::BasicType *castType, VectorBuffer *input) const;

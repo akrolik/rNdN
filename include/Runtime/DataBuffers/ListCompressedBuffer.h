@@ -12,7 +12,7 @@ public:
 	static ListCompressedBuffer *CreateEmpty(const HorseIR::BasicType *type, const HorseIR::Analysis::Shape::RangedSize *size);
 
 	ListCompressedBuffer(const TypedVectorBuffer<std::int64_t> *offsets, VectorBuffer *values);
-	ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values);
+	ListCompressedBuffer(TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values);
 	~ListCompressedBuffer() override;
 	
 	ListCompressedBuffer *Clone() const override;
@@ -73,7 +73,7 @@ private:
 
 	TypedVectorBuffer<CUdeviceptr> *m_dataAddresses = nullptr;
 	TypedVectorBuffer<CUdeviceptr> *m_sizeAddresses = nullptr;
-	const TypedVectorBuffer<std::int32_t> *m_sizes = nullptr;
+	TypedVectorBuffer<std::int32_t> *m_sizes = nullptr;
 	VectorBuffer *m_values = nullptr;
 
 	mutable std::vector<DataBuffer *> m_cells;

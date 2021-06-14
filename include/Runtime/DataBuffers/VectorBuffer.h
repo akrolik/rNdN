@@ -430,8 +430,6 @@ protected:
 	{
 		m_gpuBuffer->SetCPUBuffer(m_cpuBuffer->GetData());
 		m_gpuBuffer->TransferToGPU();
-
-		m_gpuSizeBuffer->TransferToGPU();
 	}
 
 	mutable TypedVectorData<T> *m_cpuBuffer = nullptr;

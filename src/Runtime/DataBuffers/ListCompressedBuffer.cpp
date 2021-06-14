@@ -75,7 +75,7 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int64_t>
 	);
 }
 
-ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
+ListCompressedBuffer::ListCompressedBuffer(TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
 {
 	// Type and shape
 
@@ -132,9 +132,8 @@ void ListCompressedBuffer::SetTag(const std::string& tag)
 {
 	ListBuffer::SetTag(tag);
 
-	//TODO: sizes
-	// m_sizes->SetTag(tag + "_sizes");
-	m_values->SetTag((tag == "") ? "" : tag + "_values");
+	m_sizes->SetTag((tag == "") ? "" : tag + "_list_size");
+	m_values->SetTag((tag == "") ? "" : tag + "_list_values");
 }
 
 std::vector<const DataBuffer *> ListCompressedBuffer::GetCells() const
