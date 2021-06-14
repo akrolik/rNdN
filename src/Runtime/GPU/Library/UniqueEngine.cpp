@@ -1,6 +1,6 @@
 #include "Runtime/GPU/Library/UniqueEngine.h"
 
-#include "Runtime/Interpreter.h"
+#include "Runtime/GPU/ExecutionEngine.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 #include "Runtime/DataBuffers/FunctionBuffer.h"
 #include "Runtime/GPU/Library/SortEngine.h"
@@ -36,10 +36,10 @@ TypedVectorBuffer<std::int64_t> *UniqueEngine::Unique(const std::vector<const Da
 
 	auto timeUnique_start = Utils::Chrono::Start("Unique execution");
 
-	auto uniqueFunction = BufferUtils::GetBuffer<FunctionBuffer>(arguments.at(2 + isShared))->GetFunction();
+	auto uniqueFunction = GetFunction(arguments.at(2 + isShared));
 
-	Interpreter interpreter(m_runtime);
-	auto uniqueBuffers = interpreter.Execute(uniqueFunction, {indexBuffer, dataBuffer});
+	ExecutionEngine engine(m_runtime, m_program);
+	auto uniqueBuffers = engine.Execute(uniqueFunction, {indexBuffer, dataBuffer});
 
 	// Delete all intermediate buffers
 
