@@ -30,9 +30,11 @@ std::uint64_t StringBucket::HashString(const std::string_view& string)
 	}
 
 	auto paddedSize = size + 1;
-	if (paddedSize % 8 != 0)
+	auto paddedFactor = 16;
+
+	if (paddedSize % paddedFactor != 0)
 	{
-		paddedSize = paddedSize + (8 - paddedSize % 8);
+		paddedSize = paddedSize + (paddedFactor - paddedSize % paddedFactor);
 	}
 
 	for (auto j = size; j < paddedSize; ++j)

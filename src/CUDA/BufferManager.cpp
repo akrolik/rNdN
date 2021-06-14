@@ -68,7 +68,7 @@ Buffer *BufferManager::CreateBuffer(size_t size)
 			auto pageBuffer = instance.GetPageBuffer(size);
 			auto buffer = new Buffer(pageBuffer->GetGPUBuffer() + instance.m_sbrk, size);
 
-			instance.m_sbrk += Utils::Math::RoundUp(size, 8);
+			instance.m_sbrk += Utils::Math::RoundUp(size, 16);
 
 			return buffer;
 		}
@@ -91,7 +91,7 @@ ConstantBuffer *BufferManager::CreateConstantBuffer(size_t size)
 			auto pageBuffer = instance.GetPageBuffer(size);
 			auto buffer = new ConstantBuffer(pageBuffer->GetGPUBuffer() + instance.m_sbrk, size);
 
-			instance.m_sbrk += Utils::Math::RoundUp(size, 8);
+			instance.m_sbrk += Utils::Math::RoundUp(size, 16);
 
 			return buffer;
 		}
