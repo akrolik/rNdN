@@ -164,12 +164,12 @@ void Interpreter::Visit(const HorseIR::ExpressionStatement *expressionS)
 
 void Interpreter::Visit(const HorseIR::IfStatement *ifS)
 {
-	Utils::Logger::LogError("Unimpemented");
+	Utils::Logger::LogError("If statement unimpemented");
 }
 
 void Interpreter::Visit(const HorseIR::WhileStatement *whileS)
 {
-	Utils::Logger::LogError("Unimpemented");
+	Utils::Logger::LogError("While loop unimpemented");
 }
 
 void Interpreter::Visit(const HorseIR::RepeatStatement *repeatS)
@@ -435,7 +435,7 @@ void Interpreter::VisitVectorLiteral(const HorseIR::TypedVectorLiteral<T> *liter
 	}	
 	else if constexpr(std::is_convertible<T, HorseIR::ComplexValue *>::value)
 	{
-		//TODO: Complex value storage
+		Utils::Logger::LogError("Complex values unsupported");
 	}	
 	else
 	{
