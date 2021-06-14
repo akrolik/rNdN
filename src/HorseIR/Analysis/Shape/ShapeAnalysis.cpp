@@ -2256,7 +2256,10 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 					Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::ConstantSize(value))}));
 				}
 			}
-			Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call))}));
+
+			auto returnShape = new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call, 1))});
+			auto writeShape = new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call, 2))});
+			return {{returnShape}, {writeShape}};
 		}
 		case BuiltinFunction::Primitive::GPUHashJoinLib:
 		{
@@ -2549,7 +2552,10 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 					Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::ConstantSize(value))}));
 				}
 			}
-			Return(new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call))}));
+
+			auto returnShape = new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call, 1))});
+			auto writeShape = new ListShape(new Shape::ConstantSize(2), {new VectorShape(new Shape::DynamicSize(m_call, 2))});
+			return {{returnShape}, {writeShape}};
 		}
 		case BuiltinFunction::Primitive::GPUHashMemberLib:
 		{
