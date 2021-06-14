@@ -28,7 +28,7 @@ bool Optimizer::VisitIn(FunctionDefinition<VoidType> *function)
 
 	// Parameter constant propagation/dead code
 
-	auto timeOptimizer_start = Utils::Chrono::Start("Optimizer '" + function->GetName() + "'");
+	auto timeOptimizer_start = Utils::Chrono::Start("Frontend optimizer '" + function->GetName() + "'");
 
 	Analysis::DefinitionsAnalysis definitionsAnalysis;
 	definitionsAnalysis.Analyze(function);

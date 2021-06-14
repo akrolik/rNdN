@@ -303,7 +303,7 @@ CallExpression *OutlineLibrary::Outline(const BuiltinFunction *function, const s
 			// Build the library call
 
 			auto isCache = (Utils::Options::GetAlgorithm_LikeKind() == Utils::Options::LikeKind::GPULikeCache);
-			auto name = (isCache) ? "like_cache" : "like";
+			auto name = (isCache) ? "like_cache_lib" : "like_lib";
 			return new CallExpression(new FunctionLiteral(new Identifier("GPU", name)), operands);
 		}
 	}

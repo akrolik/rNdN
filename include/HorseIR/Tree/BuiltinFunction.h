@@ -428,9 +428,9 @@ public:
 			case Primitive::GPUHashMember:
 				return "hash_member";
 			case Primitive::GPULikeLib:
-				return "like";
+				return "like_lib";
 			case Primitive::GPULikeCacheLib:
-				return "like_cache";
+				return "like_cache_lib";
 		}
 		return "<unknown>";
 	}

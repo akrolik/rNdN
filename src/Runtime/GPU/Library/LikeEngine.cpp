@@ -3,7 +3,7 @@
 #include "Runtime/StringBucket.h"
 #include "Runtime/DataBuffers/BufferUtils.h"
 
-#include "CUDA/ConstantBuffer.h"
+#include "CUDA/BufferManager.h"
 #include "CUDA/ConstantMappedBuffer.h"
 #include "CUDA/KernelInvocation.h"
 #include "CUDA/Utils.h"
@@ -58,10 +58,10 @@ TypedVectorBuffer<std::int8_t> *LikeEngine::Like(const std::vector<const DataBuf
 	auto patternString = StringBucket::RecoverString(patternData->GetValue(0));
 	auto patternSize = strlen(patternString);
 
-	CUDA::ConstantBuffer patternDataBuffer(patternSize + 1);
-	patternDataBuffer.SetCPUBuffer(patternString);
-	patternDataBuffer.AllocateOnGPU();
-	patternDataBuffer.TransferToGPU();
+	auto patternDataBuffer = CUDA::BufferManager::CreateConstantBuffer(patternSize + 1);
+	patternDataBuffer->SetCPUBuffer(patternString);
+	patternDataBuffer->AllocateOnGPU();
+	patternDataBuffer->TransferToGPU();
 
 	// Return buffer
 
@@ -84,6 +84,8 @@ TypedVectorBuffer<std::int8_t> *LikeEngine::Like(const std::vector<const DataBuf
 
 	if (cached)
 	{
+		auto timeCache_start = Utils::Chrono::Start("String pad cache");
+
 		// Cache kernel:
 		//   - Cache
 		//   - String
@@ -114,10 +116,14 @@ TypedVectorBuffer<std::int8_t> *LikeEngine::Like(const std::vector<const DataBuf
 		cacheInvocation.Launch();
 
 		likeInvocation.AddParameter(*cacheBuffer);
+		
+		CUDA::Synchronize();
+
+		Utils::Chrono::End(timeCache_start);
 	}
 	else
 	{
-		auto padBuffer = new CUDA::ConstantBuffer(bucket.size());
+		auto padBuffer = CUDA::BufferManager::CreateConstantBuffer(bucket.size());
 		padBuffer->SetCPUBuffer(bucket.data());
 		padBuffer->AllocateOnGPU();
 		padBuffer->TransferToGPU();
@@ -125,7 +131,7 @@ TypedVectorBuffer<std::int8_t> *LikeEngine::Like(const std::vector<const DataBuf
 		likeInvocation.AddParameter(*padBuffer);
 	}
 
-	likeInvocation.AddParameter(patternDataBuffer);
+	likeInvocation.AddParameter(*patternDataBuffer);
 	likeInvocation.AddParameter(sizeConstant);
 
 	// Launch

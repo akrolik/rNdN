@@ -10,7 +10,7 @@ namespace Optimizer {
 
 void Optimizer::Optimize(Function *function)
 {
-	auto timeOptimizer_start = Utils::Chrono::Start("Optimizer '" + function->GetName() + "'");
+	auto timeOptimizer_start = Utils::Chrono::Start("Backend optimizer '" + function->GetName() + "'");
 
 	// Redundant code elimination (MOV R2, R2)
 
