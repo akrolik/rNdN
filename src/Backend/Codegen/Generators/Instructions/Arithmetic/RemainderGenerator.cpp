@@ -36,28 +36,27 @@ void RemainderGenerator::Visit(const PTX::RemainderInstruction<T> *instruction)
 
 	// Generate instruction
 
-	//TODO: Only for 32-bit, 64 bit won't work
 	if constexpr(PTX::is_int_type<T>::value)
 	{
-		// Optimize power of 2 remainder using bitwise &(divisor-1)
-
-		if (auto immediateSourceB = dynamic_cast<SASS::I32Immediate *>(sourceB))
-		{
-			auto value = immediateSourceB->GetValue();
-			if (value == Utils::Math::Power2(value))
-			{
-				immediateSourceB->SetValue(value - 1);
-				this->AddInstruction(new SASS::LOP32IInstruction(
-					destination, sourceA, immediateSourceB, SASS::LOP32IInstruction::BooleanOperator::AND
-				));
-				return;
-			}
-		}
-
 		// Use 32-bit remainder for 16-bits too 
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
 		{
+			// Optimize power of 2 remainder using bitwise &(divisor-1)
+
+			if (auto immediateSourceB = dynamic_cast<SASS::I32Immediate *>(sourceB))
+			{
+				auto value = immediateSourceB->GetValue();
+				if (value == Utils::Math::Power2(value))
+				{
+					immediateSourceB->SetValue(value - 1);
+					this->AddInstruction(new SASS::LOP32IInstruction(
+						destination, sourceA, immediateSourceB, SASS::LOP32IInstruction::BooleanOperator::AND
+					));
+					return;
+				}
+			}
+
 			auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
 
 			// Compute D = S1 % S2
