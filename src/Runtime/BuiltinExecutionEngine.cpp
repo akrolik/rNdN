@@ -112,9 +112,15 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				auto dataIndex = 0;
 				for (const auto data : sortData)
 				{
-					if (!data->IsEqual(i1, i2))
+					if (auto compare = data->Compare(i1, i2))
 					{
-						return (data->IsSorted(i1, i2) == orders.at(dataIndex));
+						// 1=ASC, 0=DESC
+
+						if (orders[dataIndex])
+						{
+							return compare < 0;
+						}
+						return compare > 0;
 					}
 					dataIndex++;
 				}
@@ -168,7 +174,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 			for (const auto& columnHash : columnNames->GetValues())
 			{
-				const auto& columnName = StringBucket::RecoverString(columnHash);
+				const auto columnName = StringBucket::RecoverString(columnHash);
 				columns.push_back({columnName, BufferUtils::GetBuffer<VectorBuffer>(columnValues->GetCell(i++))});
 			}
 			return {new TableBuffer(columns)};
@@ -325,7 +331,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				Error("expects a single column argument, received " + std::to_string(columnSymbol->GetElementCount()));
 			}
 
-			const auto& columnName = StringBucket::RecoverString(columnSymbol->GetValue(0));
+			const auto columnName = StringBucket::RecoverString(columnSymbol->GetValue(0));
 			return {table->GetColumn(columnName)};
 		}
 		case HorseIR::BuiltinFunction::Primitive::LoadTable:
@@ -338,7 +344,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 				Error("expects a single table argument, received " + std::to_string(tableSymbol->GetElementCount()));
 			}
 
-			const auto& tableName = StringBucket::RecoverString(tableSymbol->GetValue(0));
+			const auto tableName = StringBucket::RecoverString(tableSymbol->GetValue(0));
 			return {dataRegistry.GetTable(tableName)};
 		}
 
@@ -427,7 +433,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 
 				for (auto i = 0u; i < size; ++i)
 				{
-					likeData.at(i) = regex.match(StringBucket::RecoverString(stringData.at(i)));
+					likeData[i] = regex.match(StringBucket::RecoverString(stringData[i]));
 				}
 			}
 

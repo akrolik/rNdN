@@ -21,8 +21,7 @@ class VectorData : public DataObject
 public:
 	static VectorData *CreateVector(const HorseIR::BasicType *type, unsigned long size);
 
-	virtual bool IsEqual(unsigned int i1, unsigned int i2) const = 0;
-	virtual bool IsSorted(unsigned int i1, unsigned int i2) const = 0;
+	virtual int Compare(unsigned int i1, unsigned int i2) const = 0;
 
 	virtual size_t GetElementCount() const = 0;
 	virtual size_t GetElementSize() const = 0;
@@ -47,21 +46,18 @@ public:
 
 	const HorseIR::BasicType *GetType() const { return m_type; }
 
-	bool IsEqual(unsigned int i1, unsigned int i2) const override
-	{
-		return (m_data.at(i1) == m_data.at(i2));
-	}
-
-	bool IsSorted(unsigned int i1, unsigned int i2) const override
+	int Compare(unsigned int i1, unsigned int i2) const override
 	{
 		if constexpr(std::is_same<T, std::uint64_t>::value)
 		{
 			if (HorseIR::TypeUtils::IsCharacterType(m_type))
 			{
-				return (StringBucket::RecoverString(m_data.at(i1)) < StringBucket::RecoverString(m_data.at(i2)));
+				const auto s1 = StringBucket::RecoverString(m_data[i1]);
+				const auto s2 = StringBucket::RecoverString(m_data[i2]);
+				return strcmp(s1, s2);
 			}
 		}
-		return (m_data.at(i1) < m_data.at(i2));
+		return (m_data.at(i1) - m_data.at(i2));
 	}
 
 	template<typename C>
