@@ -321,7 +321,7 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 		// Algebraic Binary
 		case BuiltinFunction::Primitive::Order:
 		{
-			auto type0 = arguments.at(0)->GetType();
+			const auto type0 = arguments.at(0)->GetType();
 			if (const auto listType0 = TypeUtils::GetType<ListType>(type0))
 			{
 				if (TypeUtils::ForanyElement(listType0, TypeUtils::IsCharacterType))
@@ -345,13 +345,75 @@ std::pair<GPUAnalysisHelper::Device, GPUAnalysisHelper::Synchronization> GPUAnal
 			return std::make_pair(Device::CPU, Synchronization::None);
 		}
 
+		// Complex independent operations are controlled on the CPU with GPU sections
+
 		// Algebraic Unary
 		case BuiltinFunction::Primitive::Group:
+		{
+			return std::make_pair(Device::GPULibrary, Synchronization::None);
+		}
 
 		// Database
 		case BuiltinFunction::Primitive::JoinIndex:
 		{
-			// Complex independent operations are controlled on the CPU with GPU sections
+			// Ordered string comparison are CPU only
+
+			const auto functionCount = arguments.size() - 2;
+			const auto inputType = arguments.at(functionCount)->GetType();
+
+			if (const auto listType = TypeUtils::GetType<ListType>(inputType))
+			{
+				const auto& elementTypes = listType->GetElementTypes();
+				const auto elementCount = elementTypes.size();
+
+				const auto count = std::max({elementCount, functionCount});
+				for (auto i = 0u; i < count; ++i)
+				{
+					const auto l_inputType = elementTypes.at((elementCount == 1) ? 0 : i);
+
+					if (TypeUtils::IsCharacterType(l_inputType))
+					{
+						const auto functionType = arguments.at((functionCount == 1) ? 0 : i)->GetType();
+						const auto function = TypeUtils::GetType<FunctionType>(functionType)->GetFunctionDeclaration();
+
+						if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Builtin)
+						{
+							const auto builtin = static_cast<const HorseIR::BuiltinFunction *>(function);
+							if (builtin->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::Equal &&
+								builtin->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::NotEqual)
+							{
+								return std::make_pair(Device::CPU, Synchronization::None);
+							}
+						}
+						else
+						{
+							return std::make_pair(Device::CPU, Synchronization::None);
+						}
+					}
+				}
+			}
+			else
+			{
+				if (TypeUtils::IsCharacterType(inputType))
+				{
+					const auto functionType = arguments.at(0)->GetType();
+					const auto function = TypeUtils::GetType<FunctionType>(functionType)->GetFunctionDeclaration();
+
+					if (function->GetKind() == HorseIR::FunctionDeclaration::Kind::Builtin)
+					{
+						const auto builtin = static_cast<const HorseIR::BuiltinFunction *>(function);
+						if (builtin->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::Equal &&
+							builtin->GetPrimitive() != HorseIR::BuiltinFunction::Primitive::NotEqual)
+						{
+							return std::make_pair(Device::CPU, Synchronization::None);
+						}
+					}
+					else
+					{
+						return std::make_pair(Device::CPU, Synchronization::None);
+					}
+				}
+			}
 
 			return std::make_pair(Device::GPULibrary, Synchronization::None);
 		}
