@@ -16,7 +16,7 @@ class SymbolTable;
 class BlockStatement : public Statement
 {
 public:
-	BlockStatement(const std::vector<Statement *>& statements) : m_statements(statements) {}
+	BlockStatement(const std::vector<Statement *>& statements, int line = 0) : Statement(line), m_statements(statements) {}
 
 	BlockStatement *Clone() const override
 	{

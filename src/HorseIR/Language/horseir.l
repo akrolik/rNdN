@@ -6,7 +6,7 @@
 
 #include "HorseIR/Tree/Tree.h"
 
-#define YY_USER_RETURN yylloc.first_line = yylloc.last_line = yylineno;
+#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
 
 bool _functionIdent = false;
 

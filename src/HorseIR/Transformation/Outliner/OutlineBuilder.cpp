@@ -1,5 +1,6 @@
 #include "HorseIR/Transformation/Outliner/OutlineBuilder.h"
 
+#include "HorseIR/Analysis/Dependency/DependencyGraph.h"
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlay.h"
 
 #include "Utils/Chrono.h"
@@ -45,7 +46,7 @@ void OutlineBuilder::Visit(const AssignStatement *assignS)
 void OutlineBuilder::InsertStatement(Statement *statement)
 {
 	auto& statements = m_statements.top();
-	statements.insert(std::begin(statements), statement);
+	statements.push_back(statement);
 }
 
 void OutlineBuilder::InsertDeclaration(DeclarationStatement *declaration)
@@ -68,7 +69,15 @@ void OutlineBuilder::BuildDeclarations()
 {
 	// For each symbol in the current set of symbols, add a declaration to the top of the current function
 
-	for (const auto& symbol : m_symbols.top())
+	auto& top = m_symbols.top();
+	std::vector<const SymbolTable::Symbol *> symbols(std::begin(top), std::end(top));
+
+	std::sort(symbols.begin(), symbols.end(), [](const SymbolTable::Symbol *s1, const SymbolTable::Symbol *s2)
+	{
+		return s1->name > s2->name;
+	});
+
+	for (const auto& symbol : symbols)
 	{
 		auto type = GetType(symbol);
 		InsertDeclaration(new DeclarationStatement(
@@ -94,7 +103,7 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 	// Perform the topological sort and construct the statement list recursively
 
 	const auto subgraph = overlay->GetSubgraph();
-	subgraph->ReverseTopologicalOrderDFS([&](Analysis::DependencySubgraph::OrderContextDFS& context, const Analysis::DependencySubgraphNode& node)
+	subgraph->TopologicalOrderDFS([&](Analysis::DependencySubgraph::OrderContextDFS& context, const Analysis::DependencySubgraphNode& node)
 	{
 		std::visit(overloaded
 		{
@@ -156,6 +165,18 @@ void OutlineBuilder::Visit(const Analysis::DependencyOverlay *overlay)
 
 		std::vector<const SymbolTable::Symbol *> inSymbols(std::begin(inSet), std::end(inSet));
 		std::vector<const SymbolTable::Symbol *> outSymbols(std::begin(outSet), std::end(outSet));
+
+		// Order by name for determinism
+
+		auto sortFunction = [](const SymbolTable::Symbol *s1, const SymbolTable::Symbol *s2)
+		{
+			return s1->name < s2->name;
+		};
+
+		std::sort(inSymbols.begin(), inSymbols.end(), sortFunction);
+		std::sort(outSymbols.begin(), outSymbols.end(), sortFunction);
+
+		// Construct parameters/return types for function signature
 
 		std::vector<Parameter *> parameters;
 		std::vector<Type *> returnTypes;

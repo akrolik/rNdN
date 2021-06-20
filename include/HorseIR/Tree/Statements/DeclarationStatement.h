@@ -18,7 +18,7 @@ namespace HorseIR {
 class DeclarationStatement : public Statement
 {
 public:
-	DeclarationStatement(VariableDeclaration *declaration) : m_declaration(declaration) {}
+	DeclarationStatement(VariableDeclaration *declaration, int line = 0) : Statement(line), m_declaration(declaration) {}
 
 	DeclarationStatement *Clone() const override
 	{

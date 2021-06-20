@@ -1,9 +1,11 @@
 #pragma once
 
 #include <utility>
-#include <variant>
+
+#include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlay.h"
 
 #include "Utils/Graph.h"
+#include "Utils/Variant.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -155,12 +157,80 @@ private:
 };
 
 using DependencyGraphNode = const Statement *;
-using DependencyGraph = DependencyGraphBase<DependencyGraphNode>;
+class DependencyGraph : public DependencyGraphBase<DependencyGraphNode>
+{
+public:
+	using DependencyGraphBase<DependencyGraphNode>::DependencyGraphBase;
 
-class DependencyOverlay;
+private:
+	std::vector<DependencyGraphNode> OrderNodes(const robin_hood::unordered_set<DependencyGraphNode>& unodes) const override
+	{
+		std::vector<DependencyGraphNode> nodes(std::begin(unodes), std::end(unodes));
+		std::sort(std::begin(nodes), std::end(nodes), [](const Statement *s1, const Statement *s2)
+		{
+			return s1->GetLineNumber() < s2->GetLineNumber();
+		});
+		return nodes;
+	}
+};
 
 using DependencySubgraphNode = std::variant<const Statement *, const DependencyOverlay *>;
-using DependencySubgraph = DependencyGraphBase<DependencySubgraphNode>;
+class DependencySubgraph : public DependencyGraphBase<DependencySubgraphNode>
+{
+public:
+	using DependencyGraphBase<DependencySubgraphNode>::DependencyGraphBase;
+
+private:
+	std::vector<DependencySubgraphNode> OrderNodes(const robin_hood::unordered_set<DependencySubgraphNode>& unodes) const override
+	{
+		std::vector<DependencySubgraphNode> nodes(std::begin(unodes), std::end(unodes));
+		std::sort(std::begin(nodes), std::end(nodes), [](const DependencySubgraphNode& n1, const DependencySubgraphNode& n2)
+		{
+			auto l1 = std::visit(overloaded
+			{
+				[&](const Statement *statement)
+				{
+					return statement->GetLineNumber();
+				},
+				[&](const Analysis::DependencyOverlay *overlay)
+				{
+					auto start = std::numeric_limits<int>::max();
+					for (auto& statement : overlay->GetStatements())
+					{
+						if (auto line = statement->GetLineNumber(); line < start)
+						{
+							start = line;
+						}
+					}
+					return start;
+				}},
+				n1
+			);
+			auto l2 = std::visit(overloaded
+			{
+				[&](const Statement *statement)
+				{
+					return statement->GetLineNumber();
+				},
+				[&](const Analysis::DependencyOverlay *overlay)
+				{
+					auto start = std::numeric_limits<int>::max();
+					for (auto& statement : overlay->GetStatements())
+					{
+						if (auto line = statement->GetLineNumber(); line < start)
+						{
+							start = line;
+						}
+					}
+					return start;
+				}},
+				n2
+			);
+			return l1 < l2;
+		});
+		return nodes;
+	}
+};
 
 }
 }

@@ -28,6 +28,16 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	auto optionDual = Utils::Options::IsBackendSchedule_Dual();
 	auto optionCBarrier = Utils::Options::IsBackendSchedule_CBarrier();
 
+	// Break ties using the instruction order, groups together related instructions
+
+	robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionOrder;
+	auto orderValue = 0;
+
+	for (auto instruction : block->GetInstructions())
+	{
+		instructionOrder.emplace(instruction, orderValue++);
+	}
+
 	// Build the schedule for each schedulable section individually (guarantees ordering)
 
 	auto& scheduledInstructions = block->GetInstructions();
@@ -45,13 +55,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	{
 		// Order the instructions based on the length of the longest path
 
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> topologicalOrder;
-		auto orderValue = 0;
-
-		dependencyGraph->ReverseTopologicalOrderBFS([&](
-			// const SASS::Analysis::BlockDependencyGraph::OrderContextBFS& context, SASS::Instruction *instruction
-			SASS::Instruction *instruction
-		) {
+		dependencyGraph->ReverseTopologicalOrderBFS([&](SASS::Instruction *instruction)
+		{
 			auto latency = HardwareProperties::GetLatency(instruction) +
 				HardwareProperties::GetBarrierLatency(instruction) +
 				HardwareProperties::GetReadHold(instruction);
@@ -69,7 +74,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			}
 
 			dependencyGraph->SetNodeValue(instruction, latency + maxSuccessor);
-			topologicalOrder.emplace(instruction, orderValue++);
 			return true;
 		});
 
@@ -120,9 +124,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				return pathLeft < pathRight;
 			}
 
-			// Property 3: Tie breaker (groups sibling instructions)
+			// Property 3: Tie breaker (groups related instructions)
 			
-			return topologicalOrder.at(left) < topologicalOrder.at(right);
+			return instructionOrder.at(left) > instructionOrder.at(right);
 		};
 
 		std::vector<SASS::Instruction *> availableInstructions;

@@ -12,7 +12,7 @@ namespace HorseIR {
 class ContinueStatement : public Statement
 {
 public:
-	ContinueStatement() {}
+	ContinueStatement(int line = 0) : Statement(line) {}
 
 	ContinueStatement *Clone() const override
 	{

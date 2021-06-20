@@ -15,7 +15,7 @@ namespace HorseIR {
 class IfStatement : public Statement
 {
 public:
-	IfStatement(Operand *condition, BlockStatement *trueBlock, BlockStatement *elseBlock = nullptr) : m_condition(condition), m_trueBlock(trueBlock), m_elseBlock(elseBlock) {}
+	IfStatement(Operand *condition, BlockStatement *trueBlock, BlockStatement *elseBlock = nullptr, int line = 0) : Statement(line), m_condition(condition), m_trueBlock(trueBlock), m_elseBlock(elseBlock) {}
 
 	IfStatement *Clone() const override
 	{

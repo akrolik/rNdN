@@ -17,7 +17,7 @@ namespace HorseIR {
 class AssignStatement : public Statement
 {
 public:
-	AssignStatement(const std::vector<LValue *>& targets, Expression *expression) : m_targets(targets), m_expression(expression) {}
+	AssignStatement(const std::vector<LValue *>& targets, Expression *expression, int line = 0) : Statement(line), m_targets(targets), m_expression(expression) {}
 
 	AssignStatement *Clone() const override
 	{

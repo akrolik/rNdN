@@ -15,7 +15,7 @@ namespace HorseIR {
 class WhileStatement : public Statement
 {
 public:
-	WhileStatement(Operand *condition, BlockStatement *body) : m_condition(condition), m_body(body) {}
+	WhileStatement(Operand *condition, BlockStatement *body, int line = 0) : Statement(line), m_condition(condition), m_body(body) {}
 
 	WhileStatement *Clone() const override
 	{

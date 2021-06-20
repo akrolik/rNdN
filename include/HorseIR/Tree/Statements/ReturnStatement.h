@@ -16,7 +16,7 @@ namespace HorseIR {
 class ReturnStatement : public Statement
 {
 public:
-	ReturnStatement(const std::vector<Operand *>& operands) : m_operands(operands) {}
+	ReturnStatement(const std::vector<Operand *>& operands, int line = 0) : Statement(line), m_operands(operands) {}
 
 	ReturnStatement *Clone() const override
 	{

@@ -1,5 +1,6 @@
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayPrinter.h"
 
+#include "HorseIR/Analysis/Dependency/DependencyGraph.h"
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlay.h"
 
 #include "Utils/Logger.h"

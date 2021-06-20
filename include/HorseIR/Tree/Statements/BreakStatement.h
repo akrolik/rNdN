@@ -12,7 +12,7 @@ namespace HorseIR {
 class BreakStatement : public Statement
 {
 public:
-	BreakStatement() {}
+	BreakStatement(int line = 0) : Statement(line) {}
 
 	BreakStatement *Clone() const override
 	{

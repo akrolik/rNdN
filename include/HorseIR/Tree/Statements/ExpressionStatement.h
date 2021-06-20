@@ -14,7 +14,7 @@ namespace HorseIR {
 class ExpressionStatement : public Statement
 {
 public:
-	ExpressionStatement(Expression *expression) : m_expression(expression) {}
+	ExpressionStatement(Expression *expression, int line = 0) : Statement(line), m_expression(expression) {}
 
 	ExpressionStatement *Clone() const override
 	{

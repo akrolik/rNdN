@@ -259,15 +259,15 @@ statements : statements statement                                               
 declaration_statement : tVAR names ':' type ';'                                 { $$ = HorseIR::CreateDeclarationStatements(*$2, $4); }
 		      ;
 
-statement : lvalues '=' expression ';'                                          { $$ = new HorseIR::AssignStatement(*$1, $3); }
-          | expression ';'                                                      { $$ = new HorseIR::ExpressionStatement($1); }
-          | tIF '(' operand ')' control_block                                   { $$ = new HorseIR::IfStatement($3, $5); }
-          | tIF '(' operand ')' control_block tELSE control_block               { $$ = new HorseIR::IfStatement($3, $5, $7); }
-          | tWHILE '(' operand ')' control_block                                { $$ = new HorseIR::WhileStatement($3, $5); }
-          | tREPEAT '(' operand ')' control_block                               { $$ = new HorseIR::RepeatStatement($3, $5); }
-          | tRETURN operandsne ';'                                              { $$ = new HorseIR::ReturnStatement(*$2); }
-          | tBREAK ';'                                                          { $$ = new HorseIR::BreakStatement(); }
-          | tCONTINUE ';'                                                       { $$ = new HorseIR::ContinueStatement(); }
+statement : lvalues '=' expression ';'                                          { $$ = new HorseIR::AssignStatement(*$1, $3, @2.first_line); }
+          | expression ';'                                                      { $$ = new HorseIR::ExpressionStatement($1, @2.first_line); }
+          | tIF '(' operand ')' control_block                                   { $$ = new HorseIR::IfStatement($3, $5, nullptr, @1.first_line); }
+          | tIF '(' operand ')' control_block tELSE control_block               { $$ = new HorseIR::IfStatement($3, $5, $7, @1.first_line); }
+          | tWHILE '(' operand ')' control_block                                { $$ = new HorseIR::WhileStatement($3, $5, @1.first_line); }
+          | tREPEAT '(' operand ')' control_block                               { $$ = new HorseIR::RepeatStatement($3, $5, @1.first_line); }
+          | tRETURN operandsne ';'                                              { $$ = new HorseIR::ReturnStatement(*$2, @1.first_line); }
+          | tBREAK ';'                                                          { $$ = new HorseIR::BreakStatement(@1.first_line); }
+          | tCONTINUE ';'                                                       { $$ = new HorseIR::ContinueStatement(@1.first_line); }
           ;
 
 control_block : '{' statements '}'                                              { $$ = new HorseIR::BlockStatement(*$2); }

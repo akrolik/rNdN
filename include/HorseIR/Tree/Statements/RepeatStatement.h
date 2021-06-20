@@ -15,7 +15,7 @@ namespace HorseIR {
 class RepeatStatement : public Statement
 {
 public:
-	RepeatStatement(Operand *condition, BlockStatement *body) : m_condition(condition), m_body(body) {}
+	RepeatStatement(Operand *condition, BlockStatement *body, int line = 0) : Statement(line), m_condition(condition), m_body(body) {}
 
 	RepeatStatement *Clone() const override
 	{

@@ -304,12 +304,32 @@ protected:
 		return GetOutDegree(node);
 	}
 
+	virtual std::vector<T> OrderNodes(const robin_hood::unordered_set<T>& unodes) const
+	{
+		return { std::begin(unodes), std::end(unodes) };
+	}
+
+	virtual std::vector<T> GetOrderedNodes() const
+	{
+		return OrderNodes(m_nodes);
+	}
+
+	virtual std::vector<T> GetOrderedSuccessors(const T& node) const
+	{
+		return OrderNodes(m_successors.at(node));
+	}
+
+	virtual std::vector<T> GetOrderedPredecessors(const T& node) const
+	{
+		return OrderNodes(m_predecessors.at(node));
+	}
+
 	template<class O>
 	void InitializeOrderContext(O& context) const
 	{
 		// Initialization with root nodes and count for incoming edges of each node
 
-		for (auto& node : GetNodes())
+		for (auto& node : GetOrderedNodes())
 		{
 			auto count = GetLinearInDegree(node);
 			if (count == 0)
@@ -325,7 +345,7 @@ protected:
 	{
 		// Initialization with root nodes and count for incoming edges of each node
 
-		for (auto& node : GetNodes())
+		for (auto& node : GetOrderedNodes())
 		{
 			auto count = GetLinearOutDegree(node);
 			if (count == 0)
@@ -345,7 +365,7 @@ protected:
 		// Decrease the degree of all successors, adding them to the queue
 		// if they are at the front of the ordering
 
-		for (const auto& successor : GetSuccessors(node))
+		for (const auto& successor : GetOrderedSuccessors(node))
 		{
 			if (--edges.at(successor) == 0)
 			{
@@ -363,7 +383,7 @@ protected:
 		// Decrease the degree of all predecessors, adding them to the queue
 		// if they are at the front of the ordering
 
-		for (const auto& predecessor : GetPredecessors(node))
+		for (const auto& predecessor : GetOrderedPredecessors(node))
 		{
 			if (--edges.at(predecessor) == 0)
 			{

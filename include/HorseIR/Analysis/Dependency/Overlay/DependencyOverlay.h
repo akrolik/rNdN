@@ -4,7 +4,6 @@
 #include <string_view>
 #include <vector>
 
-#include "HorseIR/Analysis/Dependency/DependencyGraph.h"
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayVisitor.h"
 #include "HorseIR/Analysis/Dependency/Overlay/DependencyOverlayConstVisitor.h"
 
@@ -16,6 +15,9 @@ using namespace std::literals::string_view_literals;
 
 namespace HorseIR {
 namespace Analysis {
+
+class DependencyGraph;
+class DependencySubgraph;
 
 class DependencyOverlay
 {
