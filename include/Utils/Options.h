@@ -61,7 +61,6 @@ public:
 	static constexpr char const *Opt_Algo_member = "algo-member";
 
 	static constexpr char const *Opt_Data_load_tpch = "data-load-tpch";
-	static constexpr char const *Opt_Data_path_tpch = "data-path-tpch";
 	static constexpr char const *Opt_Data_resize = "data-resize";
 	static constexpr char const *Opt_Data_allocator = "data-allocator";
 	static constexpr char const *Opt_Data_page_size = "data-page-size";

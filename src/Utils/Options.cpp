@@ -412,12 +412,12 @@ Options::MemberKind Options::GetAlgorithm_MemberKind()
 
 bool Options::IsData_LoadTPCH()
 {
-	return Get(Opt_Data_load_tpch);
+	return Present(Opt_Data_load_tpch);
 }
 
 std::string Options::GetData_PathTPCH()
 {
-	return Get<std::string>(Opt_Data_path_tpch); 
+	return Get<std::string>(Opt_Data_load_tpch); 
 }
 
 float Options::GetData_Resize()
@@ -543,11 +543,6 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 			"   - linear     Linear scan register allocator",
 			cxxopts::value<std::string>()->default_value("linear")
 		)
-		(Opt_Backend_scheduler, "Scheduler algorithm\n"
-			"   - linear     Pipelining disabled, instruction order maintained\n"
-			"   - list       Pipelining List scheduler (options below)",
-			cxxopts::value<std::string>()->default_value("list")
-		)
 		(Opt_Backend_inline_branch, "Enable inlined (predicated) control-flow branches", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_inline_branch_threshold, "Maximum statements in inlined branch", cxxopts::value<unsigned int>()->default_value("6"))
 		(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
@@ -572,6 +567,11 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Backend_print_elf, "Print generated ELF file")
 	;
 	m_options.add_options("Backend Scheduler")
+		(Opt_Backend_scheduler, "Scheduler algorithm\n"
+			"   - linear     Pipelining disabled, instruction order maintained\n"
+			"   - list       Pipelining List scheduler (options below)",
+			cxxopts::value<std::string>()->default_value("list")
+		)
 		(Opt_Backend_scheduler_dual, "Dual issue instructions", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_scheduler_reuse, "Enable register reuse flags", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_scheduler_cbarrier, "Data dependence counting barriers", cxxopts::value<bool>()->default_value("true"))
@@ -624,8 +624,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 	m_options.add_options("Backend")
 	;
 	m_options.add_options("Data")
-		(Opt_Data_load_tpch, "Load TPC-H data")
-		(Opt_Data_path_tpch, "TPC-H data path", cxxopts::value<std::string>())
+		(Opt_Data_load_tpch, "Load TPC-H data path", cxxopts::value<std::string>())
 		(Opt_Data_allocator, "GPU allocator algorithm\n"
 			"   - cuda     Default CUDA allocation scheme\n"
 			"   - linear   Pre-allocated data pages",
