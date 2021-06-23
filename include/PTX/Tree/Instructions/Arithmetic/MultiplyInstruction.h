@@ -69,4 +69,33 @@ protected:
 	DispatchMember_Type(T);
 };
 
+template<>
+class MultiplyInstruction<Int32Type> : DispatchInherit(MultiplyInstruction), public InstructionBase_2<Int32Type>, public HalfModifier<Int32Type>
+{
+public:
+	MultiplyInstruction(Register<Int32Type> *destination, TypedOperand<Int32Type> *sourceA, TypedOperand<Int32Type> *sourceB, HalfModifier<Int32Type>::Half half)
+		: InstructionBase_2<Int32Type>(destination, sourceA, sourceB), HalfModifier<Int32Type>(half) {} 
+
+	// Analysis properties
+
+	bool HasSideEffect() const override { return false; }
+
+	// Formatting
+
+	static std::string Mnemonic() { return "mul"; }
+
+	std::string GetOpCode() const override
+	{
+		return Mnemonic() + HalfModifier<Int32Type>::GetOpCodeModifier() + Int32Type::Name();
+	}
+
+	// Visitors
+
+	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstInstructionVisitor& visitor) const override { visitor.Visit(this); }
+
+protected:
+	DispatchMember_Type(Int32Type);
+};
+
 }

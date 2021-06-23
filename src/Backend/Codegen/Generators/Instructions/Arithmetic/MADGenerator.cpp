@@ -27,7 +27,7 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 	//   - Half: Int16, Int32, Int64, UInt16, UInt32, UInt64
 	//   - FlushSubnormal: Float32
 	//   - Rounding: Float32, Float64
-	//   - Saturate: Int32, Float32
+	//   - Saturate: Int32 (Hi only), Float32
 
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
