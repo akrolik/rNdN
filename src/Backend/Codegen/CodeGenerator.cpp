@@ -16,6 +16,11 @@ SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidT
 	m_builder.SetRegisterAllocation(registerAllocation);
 	m_builder.SetParameterSpaceAllocation(parameterAllocation);
 
+	// Properties
+
+	m_builder.SetMaxThreads(function->GetMaxThreads());
+	m_builder.SetRequiredThreads(function->GetRequiredThreads());
+
 	// Traverse function
 
 	function->Accept(*this);

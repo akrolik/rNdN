@@ -68,8 +68,7 @@ void libr3d3::CreateFunction_set(PTX::Module *module, const std::string& typeNam
 
 	// Setup kernel
 
-	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
-	kernel->SetName("set_" + typeName);
+	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>("set_" + typeName);
 	kernel->SetEntry(true);
 	kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
@@ -258,8 +257,7 @@ void libr3d3::CreateFunction_initlist(PTX::Module *module)
 
 	// Setup kernel
 
-	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
-	kernel->SetName("init_list");
+	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>("init_list");
 	kernel->SetEntry(true);
 	kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
@@ -350,8 +348,7 @@ void libr3d3::CreateFunction_like_internal(PTX::Module *module)
 {
 	// Setup kernel
 
-	auto kernel = new PTX::FunctionDefinition<PTX::ParameterVariable<PTX::Bit32Type>>();
-	kernel->SetName("like_internal");
+	auto kernel = new PTX::FunctionDefinition<PTX::ParameterVariable<PTX::Bit32Type>>("like_internal");
 
 	// Initialize parameters
 
@@ -481,8 +478,7 @@ void libr3d3::CreateFunction_like(PTX::Module *module)
 {
 	// Setup kernel
 
-	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
-	kernel->SetName("like");
+	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>("like");
 	kernel->SetEntry(true);
 	kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 
@@ -551,8 +547,7 @@ void libr3d3::CreateFunction_like_cache(PTX::Module *module)
 {
 	// Setup kernel
 
-	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
-	kernel->SetName("like_cache");
+	auto kernel = new PTX::FunctionDefinition<PTX::VoidType>("like_cache");
 	kernel->SetEntry(true);
 	kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
 

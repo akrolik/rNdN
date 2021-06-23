@@ -130,13 +130,6 @@ void PrettyPrinter::Visit(const Function *function)
 	Indent();
 	m_string << ")";
 
-	// Options
-	const auto& options = function->GetOptions();
-	if (options.GetBlockSize() != FunctionOptions::DynamicBlockSize)
-	{
-		m_string << " .reqntid " + std::to_string(options.GetBlockSize());
-	}
-
 	if (!m_definition)
 	{
 		m_string << ";";
@@ -147,6 +140,62 @@ void PrettyPrinter::Visit(const FunctionDefinition<VoidType> *function)
 {
 	m_definition = true;
 	ConstVisitor::Visit(function);
+
+	// Thread options
+
+	if (const auto& [dimX, dimY, dimZ] = function->GetRequiredThreads(); dimX > 0)
+	{
+		m_string << " .reqntid " + std::to_string(dimX);
+		if (dimY != 1)
+		{
+			m_string << ", " + std::to_string(dimY);
+			if (dimZ != 1)
+			{
+				m_string << ", " + std::to_string(dimZ);
+			}
+		}
+	}
+
+	if (const auto& [dimX, dimY, dimZ] = function->GetMaxThreads(); dimX > 0)
+	{
+		m_string << " .maxntid " + std::to_string(dimX);
+		if (dimY != 1)
+		{
+			m_string << ", " + std::to_string(dimY);
+			if (dimZ != 1)
+			{
+				m_string << ", " + std::to_string(dimZ);
+			}
+		}
+	}
+
+	if (const auto& [dimX, dimY, dimZ] = function->GetThreadMultiples(); dimX > 0)
+	{
+		m_string << "/* .multid " + std::to_string(dimX);
+		if (dimY != 1)
+		{
+			m_string << ", " + std::to_string(dimY);
+			if (dimZ != 1)
+			{
+				m_string << ", " + std::to_string(dimZ);
+			}
+		}
+		m_string << " */";
+	}
+
+	// Memory options
+
+	if (const auto maxRegisters = function->GetMaxRegisters(); maxRegisters > 0)
+	{
+		m_string << " .maxnreg " + std::to_string(maxRegisters);
+	}
+
+	if (const auto sharedMemory = function->GetDynamicSharedMemorySize(); sharedMemory > 0)
+	{
+		m_string << "/* .dynsmem " + std::to_string(sharedMemory) << " */";
+	}
+
+	// Function body
 
 	m_string << "{" << std::endl;
 	m_indent++;

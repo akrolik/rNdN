@@ -31,7 +31,7 @@ public:
 	std::vector<DataBuffer *> Execute(const HorseIR::Function *function, const std::vector<const DataBuffer *>& arguments);
 
 private:
-	std::pair<unsigned int, unsigned int> GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions, const CUDA::Kernel& kernel) const;
+	std::pair<unsigned int, unsigned int> GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionDefinition<PTX::VoidType> * kernelCode, const CUDA::Kernel& kernel) const;
 
 	template<typename T>
 	CUDA::TypedConstant<T> *AllocateConstantParameter(CUDA::KernelInvocation& invocation, const T& value, const std::string& description) const;

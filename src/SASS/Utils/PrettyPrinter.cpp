@@ -95,6 +95,7 @@ void PrettyPrinter::Visit(const Function *function)
 	// Register count
 
 	m_string << "// - Registers: " << std::to_string(function->GetRegisters()) << std::endl;
+	m_string << "// - Max Registers: " << std::to_string(function->GetMaxRegisters()) << std::endl;
 
 	// Threads
 

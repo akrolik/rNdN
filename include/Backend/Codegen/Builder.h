@@ -33,6 +33,9 @@ public:
 	void AddParameter(std::size_t size);
 	void AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize);
 
+	void SetMaxThreads(const std::tuple<unsigned int, unsigned int, unsigned int>& threads);
+	void SetRequiredThreads(const std::tuple<unsigned int, unsigned int, unsigned int>& threads);
+
 	void SetCRSStackSize(std::size_t size);
 
 	// Basic Blocks

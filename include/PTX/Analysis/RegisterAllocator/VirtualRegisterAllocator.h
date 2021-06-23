@@ -23,6 +23,7 @@ public:
 	// Functions
 
 	bool VisitIn(const FunctionDefinition<VoidType> *function) override;
+	void VisitOut(const FunctionDefinition<VoidType> *function) override;
 
 	// Declarations
 
@@ -36,6 +37,8 @@ private:
 	std::uint8_t m_registerOffset = 0;
 	std::uint8_t m_predicateOffset = 0;
 	RegisterAllocation *m_allocation = nullptr;
+
+	const FunctionDefinition<VoidType> *m_currentFunction = nullptr;
 };
 
 }

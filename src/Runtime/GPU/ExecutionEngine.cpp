@@ -31,9 +31,8 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 	const auto program = m_runtime.GetGPUManager().GetProgram();
 	const auto kernelName = function->GetName();
-
-	const auto& kernelOptions = program->GetKernelOptions(kernelName);
-	const auto inputOptions = kernelOptions.GetCodegenOptions();
+	const auto kernelCode = program->GetKernelCode(kernelName);
+	const auto inputOptions = kernelCode->GetCodegenOptions();
 
 	if (m_optionsCache.find(function) == m_optionsCache.end())
 	{
@@ -116,7 +115,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 
 	// Configure the runtime thread layout
 
-	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, kernelOptions, kernel);
+	const auto [blockSize, blockCount] = GetBlockShape(runtimeOptions, kernelCode, kernel);
 	invocation.SetBlockShape(blockSize, 1, 1);
 	invocation.SetGridShape(blockCount, 1, 1);
 
@@ -277,7 +276,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 			}
 		}
 
-		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize());
+		invocation.SetDynamicSharedMemorySize(kernelCode->GetDynamicSharedMemorySize());
 	}
 	else if (const auto runtimeListGeometry = HorseIR::Analysis::ShapeUtils::GetShape<HorseIR::Analysis::ListShape>(runtimeOptions->ThreadGeometry))
 	{
@@ -351,7 +350,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 		}
 
 		auto blockCells = blockSize / runtimeOptions->ListCellThreads;
-		invocation.SetDynamicSharedMemorySize(kernelOptions.GetDynamicSharedMemorySize() * blockCells);
+		invocation.SetDynamicSharedMemorySize(kernelCode->GetDynamicSharedMemorySize() * blockCells);
 	}
 
 	// Load extra parameters for the kernel
@@ -426,7 +425,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 	return {returnBuffers};
 }
 
-std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionOptions& kernelOptions, const CUDA::Kernel& kernel) const
+std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::Codegen::InputOptions *runtimeOptions, const PTX::FunctionDefinition<PTX::VoidType> *kernelCode, const CUDA::Kernel& kernel) const
 {
 	// Compute the block size and count based on the kernel, input and target configurations
 	// We assume that all sizes are known at this point
@@ -444,8 +443,8 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 				Utils::Logger::LogError("Zero size kernel for thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(threadGeometry));
 			}
 
-			auto blockSize = kernelOptions.GetBlockSize();
-			if (blockSize == PTX::FunctionOptions::DynamicBlockSize)
+			auto blockSize = std::get<0>(kernelCode->GetRequiredThreads());
+			if (blockSize == 0)
 			{
 				// Fill the multiprocessors, but not more than the data size
 
@@ -458,11 +457,11 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 					blockSize = maxBlockSize;
 				}
 
-				if (kernelOptions.GetThreadMultiple() != 0)
-				{
-					// Maximize the block size based on the GPU and thread multiple
+				// Maximize the block size based on the GPU and thread multiple
 
-					auto multiple = kernelOptions.GetThreadMultiple();
+				auto multiple = std::get<0>(kernelCode->GetThreadMultiples());
+				if (multiple != 0)
+				{
 					blockSize = Utils::Math::RoundUp(blockSize, multiple);
 				}
 			}
@@ -481,11 +480,11 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 				Utils::Logger::LogError("Zero size kernel for thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(threadGeometry));
 			}
 
-			auto cellSize = kernelOptions.GetBlockSize();
+			auto cellSize = std::get<0>(kernelCode->GetRequiredThreads());
 
 			// Check if the cell size is specified as constant or dynamic
 
-			if (cellSize == PTX::FunctionOptions::DynamicBlockSize)
+			if (cellSize == 0)
 			{
 				// The thread number was not specified in the input or kernel properties, but determined
 				// at runtime depending on the cell sizes. Default to max
@@ -496,11 +495,11 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 					cellSize = maxBlockSize;
 				}
 
-				if (kernelOptions.GetThreadMultiple() != 0)
-				{
-					// Ensure the thread number is a multiple of the kernel specification
+				// Ensure the thread number is a multiple of the kernel specification
 
-					auto multiple = kernelOptions.GetThreadMultiple();
+				auto multiple = std::get<0>(kernelCode->GetThreadMultiples());
+				if (multiple != 0)
+				{
 					cellSize = Utils::Math::RoundUp(cellSize, multiple);
 				}
 			}

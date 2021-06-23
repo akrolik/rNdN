@@ -24,6 +24,9 @@ public:
 	void SetRegisters(const std::size_t registers) { m_registers = registers; }
 	std::size_t GetRegisters() const { return m_registers; }
 
+	void SetMaxRegisters(const std::size_t registers) { m_maxRegisters = registers; }
+	std::size_t GetMaxRegisters() const { return m_maxRegisters; }
+
 	// Number of barriers (high water mark)
 
 	std::size_t GetBarriers() const { return m_barriers; }
@@ -201,6 +204,7 @@ public:
 			code += "\n";
 		}
 		code += "// - Registers: " + std::to_string(m_registers) + "\n";
+		code += "// - Max Registers: " + std::to_string(m_maxRegisters) + "\n";
 		code += "// - Barriers: " + std::to_string(m_barriers) + "\n";
 
 		// Metadata offsets formatting
@@ -356,6 +360,7 @@ public:
 private:
 	std::string m_name;
 	std::size_t m_registers = 0;
+	std::size_t m_maxRegisters = 0;
 	std::size_t m_barriers = 0;
 
 	std::vector<std::size_t> m_parameters;

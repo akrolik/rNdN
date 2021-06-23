@@ -272,6 +272,70 @@ public:
 	PTX::Register<PTX::UInt32Type> *GetThreadIndex() const { return m_threadIndex; }
 	void SetThreadIndex(PTX::Register<PTX::UInt32Type> *threadIndex) { m_threadIndex = threadIndex; }
 
+	// Options
+
+	unsigned int GetBlockSize() const { return std::get<0>(m_currentKernel->GetRequiredThreads()); }
+	void SetBlockSize(unsigned int size)
+	{
+		// If the size is dynamic, then we can ignore
+
+		if (size == 0)
+		{
+			return;
+		}
+
+		// Check that the new configuration is compatible with the existing settings
+
+		auto currentSize = GetBlockSize();
+		if (currentSize != 0 && currentSize != size)
+		{
+			Utils::Logger::LogError("Block size " + std::to_string(size) + " incompatible with block size " + std::to_string(currentSize));
+		}
+		else
+		{
+			auto multiple = GetThreadMultiple();
+			if (multiple != 0 && (size % multiple) != 0)
+			{
+				Utils::Logger::LogError("Block size " + std::to_string(size) + " incompatible with thread multiple " + std::to_string(multiple));
+			}
+		}
+
+		m_currentKernel->SetRequiredThreads(size);
+	}
+
+	unsigned int GetThreadMultiple() const { return std::get<0>(m_currentKernel->GetThreadMultiples()); }
+	void SetThreadMultiple(unsigned int multiple)
+	{
+		// If the multiple is dynamic, then we can ignore
+
+		if (multiple == 0)
+		{
+			return;
+		}
+
+		// Check that the new configuration is compatible with the existing settings
+
+		auto currentMultiple = GetThreadMultiple();
+		if (currentMultiple > 0)
+		{
+			if (multiple % currentMultiple != 0 && currentMultiple % multiple != 0)
+			{
+				Utils::Logger::LogError("Thread multiple " + std::to_string(multiple) + " incompatible with thread multiple " + std::to_string(currentMultiple));
+			}
+		}
+
+		auto currentSize = GetBlockSize();
+		if (currentSize % multiple != 0)
+		{
+			Utils::Logger::LogError("Thread multiple " + std::to_string(multiple) + " incompatible with block size " + std::to_string(currentSize));
+		}
+
+		m_currentKernel->SetThreadMultiples(multiple);
+	}
+
+	unsigned int GetDynamicSharedMemorySize() const { return m_currentKernel->GetDynamicSharedMemorySize(); }
+	void SetDynamicSharedMemorySize(unsigned int bytes) { m_currentKernel->SetDynamicSharedMemorySize(bytes); }
+
 	// Resources
 
 	const RegisterAllocator *GetLocalResources() const { return m_localResources.at(GetCurrentBlock()); }
@@ -302,9 +366,6 @@ public:
 	{
 		m_files[function] = file;
 	}
-
-	const PTX::FunctionOptions& GetKernelOptions() const { return m_currentKernel->GetOptions(); }
-	PTX::FunctionOptions& GetKernelOptions() { return m_currentKernel->GetOptions(); }
 
 private:
 	PTX::StatementList *GetCurrentBlock() const { return m_scopes.top(); }

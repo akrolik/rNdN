@@ -32,7 +32,6 @@ public:
 	{
 		auto resources = this->m_builder.GetLocalResources();
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
 		this->m_builder.AddStatement(new PTX::LocationDirective(this->m_builder.GetCurrentFile(), 0));
 
@@ -60,7 +59,7 @@ public:
 		{
 			// Restrict the number of threads in the cell block if we have already specified a size
 
-			kernelOptions.SetBlockSize(inputOptions.ListCellThreads);
+			this->m_builder.SetBlockSize(inputOptions.ListCellThreads);
 		}
 
 		// Load the number of cells from the input if required

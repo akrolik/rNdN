@@ -7,7 +7,7 @@
 
 #include "PTX/Tree/Declarations/Declaration.h"
 #include "PTX/Tree/Directives/Directive.h"
-#include "PTX/Tree/Functions/Function.h"
+#include "PTX/Tree/Functions/FunctionDefinition.h"
 #include "PTX/Tree/Type.h"
 
 #include "Libraries/robin_hood.h"
@@ -31,7 +31,7 @@ public:
 
 	// Entry function
 
-	void AddEntryFunction(Function *function)
+	void AddEntryFunction(FunctionDefinition<VoidType> *function)
 	{
 		m_entryFunctions.insert({function->GetName(), function});
 	}
@@ -39,25 +39,25 @@ public:
 	{
 		return m_entryFunctions.find(name) != m_entryFunctions.end();
 	}
-	const Function *GetEntryFunction(const std::string& name) const
+	const FunctionDefinition<VoidType> *GetEntryFunction(const std::string& name) const
 	{
 		return m_entryFunctions.at(name);
 	}
-	Function *GetEntryFunction(const std::string& name)
+	FunctionDefinition<VoidType> *GetEntryFunction(const std::string& name)
 	{
 		return m_entryFunctions.at(name);
 	}
 
-	const robin_hood::unordered_map<std::string, const Function *> GetEntryFunctions() const
+	const robin_hood::unordered_map<std::string, const FunctionDefinition<VoidType> *> GetEntryFunctions() const
 	{
-		robin_hood::unordered_map<std::string, const Function *> map;
+		robin_hood::unordered_map<std::string, const FunctionDefinition<VoidType> *> map;
 		for (const auto& [name, function] : m_entryFunctions)
 		{
 			map.insert({name, function});
 		}
 		return map;
 	}
-	robin_hood::unordered_map<std::string, Function *>& GetEntryFunctions() { return m_entryFunctions; }
+	robin_hood::unordered_map<std::string, FunctionDefinition<VoidType> *>& GetEntryFunctions() { return m_entryFunctions; }
 
 	// Contents
 
@@ -168,7 +168,7 @@ private:
 	std::vector<Directive *> m_directives;
 	std::vector<Declaration *> m_declarations;
 
-	robin_hood::unordered_map<std::string, Function *> m_entryFunctions;
+	robin_hood::unordered_map<std::string, FunctionDefinition<VoidType> *> m_entryFunctions;
 };
 
 }

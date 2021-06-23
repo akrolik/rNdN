@@ -18,7 +18,6 @@ public:
 
 	using ReturnDeclarationType = TypedVariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
 
-	FunctionDeclarationBase() {}
 	FunctionDeclarationBase(const std::string& name, ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
 
 	// Properties
@@ -49,8 +48,7 @@ template<>
 class FunctionDeclarationBase<VoidType> : public Function
 {
 public:
-	FunctionDeclarationBase() {}
-	FunctionDeclarationBase(const std::string& name, Declaration::LinkDirective linkDirective) : Function(name) {}
+	using Function::Function;
 
 	// Poperties
 

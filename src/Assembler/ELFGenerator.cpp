@@ -455,7 +455,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 		AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_HVAL});
 		AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_MAXREG_COUNT});
-		AppendBytes(functionInfoBuffer, DecomposeShort(255)); // Value
+		AppendBytes(functionInfoBuffer, DecomposeShort(function->GetMaxRegisters())); // Value
 
 		if (auto count = function->GetS2RCTAIDOffsetsCount(); count > 0)
 		{

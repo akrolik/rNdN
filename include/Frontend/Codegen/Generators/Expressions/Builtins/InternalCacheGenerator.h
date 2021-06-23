@@ -34,8 +34,7 @@ public:
 
 	void Generate(const HorseIR::Operand *data, PTX::TypedOperand<PTX::UInt32Type> *index)
 	{
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
-		kernelOptions.SetBlockSize(CACHE_SIZE);
+		this->m_builder.SetBlockSize(CACHE_SIZE);
 
 		m_index = index;
 		data->Accept(*this);

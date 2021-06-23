@@ -240,6 +240,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	}
 	binaryFunction->SetText((char *)binary, sizeof(std::uint64_t) * linearProgram.size());
 	binaryFunction->SetRegisters(function->GetRegisters());
+	binaryFunction->SetMaxRegisters(function->GetMaxRegisters());
 	binaryFunction->SetLinearProgram(linearProgram);
 
 	// Thread information

@@ -28,11 +28,17 @@ bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *funct
 {
 	// Register allocation
 
+	m_currentFunction = function;
 	m_registerOffset = 1; // R0 reserved for dummy
 	m_predicateOffset = 0;
 	m_allocation = new RegisterAllocation();
 
 	return true;
+}
+
+void VirtualRegisterAllocator::VisitOut(const FunctionDefinition<VoidType> *function)
+{
+	m_currentFunction = nullptr;
 }
 
 // Declarations
@@ -59,11 +65,21 @@ void VirtualRegisterAllocator::Visit(const TypedVariableDeclaration<T, S> *decla
 			{
 				if constexpr(std::is_same<T, PredicateType>::value)
 				{
+					if (auto maxPredicates = m_allocation->GetMaxPredicates(); m_predicateOffset >= maxPredicates)
+					{
+						Utils::Logger::LogError("Virtual allocation exceeded max predicate count (" + std::to_string(maxPredicates) + ") for function '" + m_currentFunction->GetName() + "'");
+					}
+
 					m_allocation->AddPredicate(names->GetName(i), m_predicateOffset);
 					m_predicateOffset++;
 				}
 				else
 				{
+					if (auto maxRegisters = m_allocation->GetMaxRegisters(); m_registerOffset >= maxRegisters)
+					{
+						Utils::Logger::LogError("Virtual allocation exceeded max register count (" + std::to_string(maxRegisters) + ") for function '" + m_currentFunction->GetName() + "'");
+					}
+
 					const auto allocations = (BitSize<T::TypeBits>::NumBytes + 3) / 4; 
 					m_allocation->AddRegister(names->GetName(i), m_registerOffset, allocations);
 					m_registerOffset += allocations;

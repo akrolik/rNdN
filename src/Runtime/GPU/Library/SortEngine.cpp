@@ -73,9 +73,9 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(cons
 			if (isShared)
 			{
 				const auto program = m_runtime.GetGPUManager().GetProgram();
-				const auto& kernelOptions = program->GetKernelOptions(sortFunctionShared->GetName());
+				const auto kernelCode = program->GetKernelCode(sortFunctionShared->GetName());
 
-				sharedSize = kernelOptions.GetBlockSize();
+				sharedSize = std::get<0>(kernelCode->GetRequiredThreads());
 			}
 
 			if (subsequenceSize <= sharedSize)

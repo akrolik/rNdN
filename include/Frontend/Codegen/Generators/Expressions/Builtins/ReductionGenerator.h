@@ -198,13 +198,12 @@ public:
 	{
 		// Warp shuffle the values down, reducing at each level until a single value is computed, log_2(WARP_SZ)
 
-		auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
-
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
-		kernelOptions.SetThreadMultiple(activeWarps);
+		this->m_builder.SetThreadMultiple(activeWarps);
 
 		for (unsigned int offset = activeWarps >> 1; offset > 0; offset >>= 1)
 		{
+			auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
+
 			// Generate the shuffle instruction to pull down the other value
 
 			ShuffleGenerator<T> shuffleGenerator(this->m_builder);
@@ -232,14 +231,12 @@ public:
 
 		// Allocate shared memory with 1 slot per warp
 
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
 		auto& targetOptions = this->m_builder.GetTargetOptions();
 		auto& inputOptions = this->m_builder.GetInputOptions();
 
-		int warpSize = targetOptions.WarpSize;
-
+		auto warpSize = targetOptions.WarpSize;
 		auto blockSize = Utils::Math::RoundUp(GetBlockSize(), warpSize);
-		kernelOptions.SetBlockSize(blockSize);
+		this->m_builder.SetBlockSize(blockSize);
 
 		auto sharedMemorySize = blockSize / warpSize;
 		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(sharedMemorySize);
@@ -363,12 +360,11 @@ public:
 
 		auto& targetOptions = this->m_builder.GetTargetOptions();
 		auto& inputOptions = this->m_builder.GetInputOptions();
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
 
 		// Compute the number of threads used in this reduction
 
 		auto blockSize = Utils::Math::Power2(GetBlockSize());
-		kernelOptions.SetBlockSize(blockSize);
+		this->m_builder.SetBlockSize(blockSize);
 
 		auto sharedMemory = globalResources->template AllocateDynamicSharedMemory<T>(blockSize);
 
@@ -392,7 +388,7 @@ public:
 
 		// Perform an iterative reduction on the shared memory in a pyramid type fashion
 
-		int warpSize = targetOptions.WarpSize;
+		int warpSize = targetOptions.WarpSize; // Int for min bound
 
 		for (unsigned int i = (blockSize >> 1); i >= warpSize; i >>= 1)
 		{

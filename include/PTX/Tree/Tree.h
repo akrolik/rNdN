@@ -35,7 +35,6 @@ namespace PTX {
 
 // Functions
 
-#include "PTX/Tree/FunctionOptions.h"
 #include "PTX/Tree/Functions/Function.h"
 #include "PTX/Tree/Functions/FunctionDeclaration.h"
 #include "PTX/Tree/Functions/FunctionDeclarationBase.h"

@@ -47,6 +47,9 @@ public:
 	void SetRegisters(const std::size_t registers) { m_registers = registers; }
 	std::size_t GetRegisters() const { return m_registers; }
 
+	void SetMaxRegisters(const std::size_t registers) { m_maxRegisters = registers; }
+	std::size_t GetMaxRegisters() const { return m_maxRegisters; }
+
 	// Threads
 	
 	const std::tuple<std::size_t, std::size_t, std::size_t>& GetRequiredThreads() const { return m_requiredThreads; }
@@ -115,6 +118,7 @@ private:
 	std::vector<std::size_t> m_parameters;
 	std::vector<BasicBlock *> m_blocks;
 	std::size_t m_registers = 0;
+	std::size_t m_maxRegisters = 0;
 	std::size_t m_crsStackSize = 0;
 
 	std::tuple<std::size_t, std::size_t, std::size_t> m_requiredThreads;

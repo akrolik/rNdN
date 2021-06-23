@@ -35,8 +35,7 @@ public:
 			// The special barrier instruction requires threads be in multiples of the warp size
 
 			auto warpSize = this->m_builder.GetTargetOptions().WarpSize;
-			auto& kernelOptions = this->m_builder.GetKernelOptions();
-			kernelOptions.SetThreadMultiple(warpSize);
+			this->m_builder.SetThreadMultiple(warpSize);
 			
 			// Since some threads may have exited (cells out of range), count the number of active threads
 

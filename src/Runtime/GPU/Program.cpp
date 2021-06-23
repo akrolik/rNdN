@@ -8,9 +8,9 @@ CUDA::Kernel Program::GetKernel(const std::string& name) const
 	return CUDA::Kernel(name, m_binary);
 }
 
-const PTX::FunctionOptions& Program::GetKernelOptions(const std::string& name) const
+const PTX::FunctionDefinition<PTX::VoidType> *Program::GetKernelCode(const std::string& name) const
 {
-	return m_program->GetEntryFunction(name)->GetOptions();
+	return m_program->GetEntryFunction(name);
 }
 
 }

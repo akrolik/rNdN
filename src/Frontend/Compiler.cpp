@@ -113,17 +113,6 @@ PTX::Program *Compiler::Compile(const HorseIR::Program *program) const
 
 		auto programString = PTX::PrettyPrinter::PrettyString(ptxProgram);
 		Utils::Logger::LogInfo(programString, 0, true, Utils::Logger::NoPrefix);
-
-		for (const auto module : ptxProgram->GetModules())
-		{
-			for (const auto& [name, kernel] : module->GetEntryFunctions())
-			{
-				Utils::Logger::LogInfo("Generated kernel '" + name + "' with options");
-
-				const auto& kernelOptions = kernel->GetOptions();
-				Utils::Logger::LogInfo(kernelOptions.ToString(), 1);
-			}
-		}
 	}
 
 	if (Utils::Options::IsFrontend_PrintJSON())

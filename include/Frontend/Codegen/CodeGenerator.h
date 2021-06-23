@@ -119,11 +119,10 @@ public:
 		// PTX modules. Currently there is no use for the link directive, but it
 		// is provided for future proofing.
 
-		auto kernel = new PTX::FunctionDefinition<PTX::VoidType>();
-		kernel->SetName(function->GetName());
+		auto kernel = new PTX::FunctionDefinition<PTX::VoidType>(function->GetName());
 		kernel->SetEntry(true);
 		kernel->SetLinkDirective(PTX::Declaration::LinkDirective::Visible);
-		kernel->GetOptions().SetCodegenOptions(m_builder.GetInputOptions(function));
+		kernel->SetCodegenOptions(m_builder.GetInputOptions(function));
 
 		// Update the state for this function
 
@@ -155,7 +154,7 @@ public:
 
 		// Complete the codegen for the function by setting up the options and closing the scope
 
-		m_builder.GetKernelOptions().SetDynamicSharedMemorySize(m_builder.GetGlobalResources()->GetDynamicSharedMemorySize());
+		m_builder.SetDynamicSharedMemorySize(m_builder.GetGlobalResources()->GetDynamicSharedMemorySize());
 		m_builder.CloseScope();
 		m_builder.CloseKernel();
 	}

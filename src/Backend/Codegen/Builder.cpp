@@ -18,6 +18,7 @@ void Builder::CloseFunction()
 	// Set register count
 
 	m_currentFunction->SetRegisters(m_registerAllocation->GetRegisterCount() + m_temporaryMax);
+	m_currentFunction->SetMaxRegisters(m_registerAllocation->GetMaxRegisters());
 	m_currentFunction->SetConstantMemory(m_constantMemory);
 
 	m_currentFunction = nullptr;
@@ -34,6 +35,16 @@ void Builder::AddParameter(std::size_t size)
 void Builder::AddSharedVariable(const std::string& name, std::size_t size, std::size_t dataSize)
 {
 	m_currentFunction->AddSharedVariable(new SASS::SharedVariable(name, size, dataSize));
+}
+
+void Builder::SetMaxThreads(const std::tuple<unsigned int, unsigned int, unsigned int>& threads)
+{
+	m_currentFunction->SetMaxThreads(std::get<0>(threads), std::get<1>(threads), std::get<2>(threads));
+}
+
+void Builder::SetRequiredThreads(const std::tuple<unsigned int, unsigned int, unsigned int>& threads)
+{
+	m_currentFunction->SetRequiredThreads(std::get<0>(threads), std::get<1>(threads), std::get<2>(threads));
 }
 
 void Builder::SetCRSStackSize(std::size_t size)
@@ -73,9 +84,9 @@ SASS::Predicate *Builder::AllocateTemporaryPredicate()
 
 	// Check within range
 
-	if (allocation >= PTX::Analysis::RegisterAllocation::MaxPredicate)
+	if (auto maxPredicate = m_registerAllocation->GetMaxPredicates(); allocation >= maxPredicate)
 	{
-		Utils::Logger::LogError("Temporary predicate exceeded maximum predicate count (" + std::to_string(PTX::Analysis::RegisterAllocation::MaxPredicate) + ") for function '" + m_currentFunction->GetName() + "'");
+		Utils::Logger::LogError("Temporary predicate exceeded maximum predicate count (" + std::to_string(maxPredicate) + ") for function '" + m_currentFunction->GetName() + "'");
 	}
 
 	return new SASS::Predicate(allocation);
@@ -94,9 +105,9 @@ SASS::Register *Builder::AllocateTemporaryRegister(unsigned int align, unsigned 
 
 	// Check within range
 
-	if (allocation + (range - 1) >= PTX::Analysis::RegisterAllocation::MaxRegister)
+	if (auto maxRegisters = m_registerAllocation->GetMaxRegisters(); allocation + (range - 1) >= maxRegisters)
 	{
-		Utils::Logger::LogError("Temporary register exceeded maximum register count (" + std::to_string(PTX::Analysis::RegisterAllocation::MaxRegister) + ") for function '" + m_currentFunction->GetName() + "'");
+		Utils::Logger::LogError("Temporary register exceeded maximum register count (" + std::to_string(maxRegisters) + ") for function '" + m_currentFunction->GetName() + "'");
 	}
 	m_temporaryCount = range + allocation - offset;
 

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "PTX/Tree/Module.h"
-#include "PTX/Tree/Functions/Function.h"
+#include "PTX/Tree/Functions/FunctionDefinition.h"
 
 #include "Utils/Logger.h"
 
@@ -23,7 +23,7 @@ public:
 	std::vector<Module *>& GetModules() { return m_modules; }
 	void AddModule(Module *module) { m_modules.push_back(module); }
 
-	const Function *GetEntryFunction(const std::string& name) const
+	const FunctionDefinition<VoidType> *GetEntryFunction(const std::string& name) const
 	{
 		for (const auto& module : m_modules)
 		{

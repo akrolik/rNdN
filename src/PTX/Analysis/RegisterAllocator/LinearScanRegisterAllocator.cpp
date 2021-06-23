@@ -56,8 +56,8 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 	// Keep track of allocated registers and predicates
 
-	std::array<bool, RegisterAllocation::MaxPredicate> predicateMap{};
-	std::array<bool, RegisterAllocation::MaxRegister> registerMap{};
+	std::array<bool, RegisterAllocation::DefaultMaxPredicate> predicateMap{};
+	std::array<bool, RegisterAllocation::DefaultMaxRegister> registerMap{};
 
 	// For each live interval, perform allocation
 
@@ -110,7 +110,8 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 			// Find open predicate register
 
-			while (intervalRegister < RegisterAllocation::MaxPredicate)
+			auto maxPredicates = m_allocation->GetMaxPredicates();
+			while (intervalRegister < maxPredicates)
 			{
 				if (predicateMap[intervalRegister] == false)
 				{
@@ -121,9 +122,9 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 			// Check free predicate register found
 
-			if (intervalRegister >= RegisterAllocation::MaxPredicate)
+			if (intervalRegister >= maxPredicates)
 			{
-				Utils::Logger::LogError("Linear scan exceeded max predicate count (" + std::to_string(RegisterAllocation::MaxPredicate) + ") for function '" + function->GetName() + "'");
+				Utils::Logger::LogError("Linear scan exceeded max predicate count (" + std::to_string(maxPredicates) + ") for function '" + function->GetName() + "'");
 			}
 
 			// Allocate predicate register
@@ -135,14 +136,15 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 		{
 			intervalRange = (DynamicBitSize::GetByte(intervalBits) + 3) / 4;
 
-			while (intervalRegister < RegisterAllocation::MaxRegister)
+			auto maxRegisters = m_allocation->GetMaxRegisters();
+			while (intervalRegister < maxRegisters)
 			{
 				// Check to make sure register range fits at this position
 				// -1 to account for current position in range
 
-				if (intervalRegister + intervalRange - 1 >= RegisterAllocation::MaxRegister)
+				if (intervalRegister + intervalRange - 1 >= maxRegisters)
 				{
-					intervalRegister = RegisterAllocation::MaxRegister;
+					intervalRegister = maxRegisters;
 					break;
 				}
 
@@ -166,9 +168,9 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 			// Check free register found
 
-			if (intervalRegister >= RegisterAllocation::MaxRegister)
+			if (intervalRegister >= maxRegisters)
 			{
-				Utils::Logger::LogError("Linear scan exceeded max register count (" + std::to_string(RegisterAllocation::MaxRegister) + ") for function '" + function->GetName() + "'");
+				Utils::Logger::LogError("Linear scan exceeded max register count (" + std::to_string(maxRegisters) + ") for function '" + function->GetName() + "'");
 			}
 
 			// Allocate register for range

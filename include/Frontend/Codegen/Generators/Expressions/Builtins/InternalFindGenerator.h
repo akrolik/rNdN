@@ -610,8 +610,7 @@ public:
 
 		// Maximize the block size
 
-		auto& kernelOptions = this->m_builder.GetKernelOptions();
-		kernelOptions.SetBlockSize(FIND_CACHE_SIZE);
+		this->m_builder.SetBlockSize(FIND_CACHE_SIZE);
 
 		ThreadIndexGenerator<B> threadGenerator(this->m_builder);
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
