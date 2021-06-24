@@ -23,7 +23,7 @@ SASS::ATOMInstruction::Type AtomicGenerator::InstructionType(const PTX::AtomicIn
 	{
 		return SASS::ATOMInstruction::Type::S32;
 	}
-	else if constexpr(std::is_same<T, PTX::UInt64Type>::value)
+	else if constexpr(std::is_same<T, PTX::UInt64Type>::value || std::is_same<T, PTX::Bit64Type>::value)
 	{
 		return SASS::ATOMInstruction::Type::U64;
 	}
@@ -33,15 +33,15 @@ SASS::ATOMInstruction::Type AtomicGenerator::InstructionType(const PTX::AtomicIn
 	}
 	else if constexpr(std::is_same<T, PTX::Float16x2Type>::value)
 	{
-		return SASS::ATOMInstruction::Type::F16;
+		return SASS::ATOMInstruction::Type::F16x2;
 	}
 	else if constexpr(std::is_same<T, PTX::Float32Type>::value)
 	{
 		return SASS::ATOMInstruction::Type::F32;
 	}
-	else if constexpr(std::is_same<T, PTX::Float64Type>::value || std::is_same<T, PTX::Bit64Type>::value)
+	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
-		return SASS::ATOMInstruction::Type::X64;
+		return SASS::ATOMInstruction::Type::F64;
 	}
 	Error(instruction, "unsupported type");
 }
@@ -61,8 +61,6 @@ SASS::ATOMInstruction::Mode AtomicGenerator::InstructionMode(const PTX::AtomicIn
 				return SASS::ATOMInstruction::Mode::XOR;
 			case T::AtomicOperation::Exchange:
 				return SASS::ATOMInstruction::Mode::EXCH;
-			case T::AtomicOperation::CompareAndSwap:
-				return SASS::ATOMInstruction::Mode::CAS;
 		}
 	}
 	else if constexpr(std::is_same<T, PTX::Float16x2Type>::value)
@@ -130,9 +128,10 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 	auto destination = registerGenerator.Generate(instruction->GetDestination());
 	auto value = registerGenerator.Generate(instruction->GetValue());
 
-	// If CAS mode, the new value is sequential to the comparison value
+	AddressGenerator addressGenerator(this->m_builder);
+	auto address = addressGenerator.Generate(instruction->GetAddress());
 
-	SASS::Register *sourceC = nullptr;
+	// If CAS mode, the new value is sequential to the comparison value, and the instruction requires a special opcode
 
 	if constexpr(PTX::is_bit_type<T>::value)
 	{
@@ -172,13 +171,34 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 
 			auto size = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
 
-			value = new SASS::Register(temp0_Lo->GetValue(), size);
-			sourceC = new SASS::Register(temp1_Lo->GetValue(), size);
+			auto sourceA = new SASS::Register(temp0_Lo->GetValue(), size);
+			auto sourceB = new SASS::Register(temp1_Lo->GetValue(), size);
+
+			// Generate instruction
+
+			if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
+			{
+				auto type = SASS::ATOMCASInstruction::Type::X32;
+				if constexpr(T::TypeBits == PTX::Bits::Bits64)
+				{
+					type = SASS::ATOMCASInstruction::Type::X64;
+				}
+
+				auto flags = SASS::ATOMCASInstruction::Flags::None;
+				if constexpr(B == PTX::Bits::Bits64)
+				{
+					flags |= SASS::ATOMCASInstruction::Flags::E;
+				}
+
+				this->AddInstruction(new SASS::ATOMCASInstruction(destination, address, sourceA, sourceB, type, flags));
+				return;
+			}
+			else
+			{
+				Error(instruction, "unsupported space");
+			}
 		}
 	}
-
-	AddressGenerator addressGenerator(this->m_builder);
-	auto address = addressGenerator.Generate(instruction->GetAddress());
 
 	// Generate instruction
 
@@ -192,7 +212,7 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 		}
 		auto mode = InstructionMode(instruction);
 
-		this->AddInstruction(new SASS::ATOMInstruction(destination, address, value, sourceC, type, mode, flags));
+		this->AddInstruction(new SASS::ATOMInstruction(destination, address, value, type, mode, flags));
 	}
 	else
 	{

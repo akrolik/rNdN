@@ -248,6 +248,11 @@ void Visitor::Visit(ATOMInstruction *instruction)
 	Visit(static_cast<PredicatedInstruction *>(instruction));
 }
 
+void Visitor::Visit(ATOMCASInstruction *instruction)
+{
+	Visit(static_cast<PredicatedInstruction *>(instruction));
+}
+
 void Visitor::Visit(LDGInstruction *instruction)
 {
 	Visit(static_cast<PredicatedInstruction *>(instruction));

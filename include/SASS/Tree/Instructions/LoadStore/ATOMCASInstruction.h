@@ -8,7 +8,7 @@
 
 namespace SASS {
 
-class ATOMInstruction : public PredicatedInstruction
+class ATOMCASInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
@@ -19,29 +19,12 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	enum class Type : std::uint64_t {
-		U32 = 0x0000000000000000,
-		S32 = 0x0002000000000000,
-		U64 = 0x0004000000000000,
-		F32 = 0x0006000000000000,
-		F16x2 = 0x0008000000000000,
-		S64 = 0x000a000000000000,
-		F64 = 0x000c000000000000
+		X32 = 0x0000000000000000,
+		X64 = 0x0002000000000000
 	};
 
-	enum class Mode : std::uint64_t {
-		ADD = 0x0000000000000000,
-		MIN = 0x0010000000000000,
-		MAX = 0x0020000000000000,
-		INC = 0x0030000000000000,
-		DEC = 0x0040000000000000,
-		AND = 0x0050000000000000,
-		OR  = 0x0060000000000000,
-		XOR = 0x0070000000000000,
-		EXCH = 0x0080000000000000,
-	};
-
-	ATOMInstruction(Register *destination, Address *address, Register *source, Type type, Mode mode, Flags flags = Flags::None)
-		: m_destination(destination), m_address(address), m_source(source), m_type(type), m_mode(mode), m_flags(flags) {}
+	ATOMCASInstruction(Register *destination, Address *address, Register *sourceA, Register *sourceB, Type type, Flags flags = Flags::None)
+		: m_destination(destination), m_address(address), m_sourceA(sourceA), m_sourceB(sourceB), m_type(type), m_flags(flags) {}
 
 	// Properties
 
@@ -53,15 +36,16 @@ public:
 	Address *GetAddress() { return m_address; }
 	void SetAddress(Address *address) { m_address = address; }
 
-	const Register *GetSource() const { return m_source; }
-	Register *GetSource() { return m_source; }
-	void SetSource(Register *source) { m_source = source; }
+	const Register *GetSourceA() const { return m_sourceA; }
+	Register *GetSourceA() { return m_sourceA; }
+	void SetSourceA(Register *sourceA) { m_sourceA = sourceA; }
+
+	const Register *GetSourceB() const { return m_sourceB; }
+	Register *GetSourceB() { return m_sourceB; }
+	void SetSourceB(Register *sourceB) { m_sourceB = sourceB; }
 
 	Type GetType() const { return m_type; }
 	void SetType(Type type) { m_type = type; }
-
-	Mode GetMode() const { return m_mode; }
-	void SetMode(Mode mode) { m_mode = mode; }
 
 	Flags GetFlags() const { return m_flags; }
 	void SetFlags(Flags flags) { m_flags = flags; }
@@ -75,7 +59,7 @@ public:
 
 	std::vector<Operand *> GetSourceOperands() const override
 	{
-		return { m_source };
+		return { m_sourceA, m_sourceB };
 	}
 
 	// Formatting
@@ -89,27 +73,11 @@ public:
 		{
 			code += ".E";
 		}
-		switch (m_mode)
-		{
-			case Mode::ADD: code += ".ADD"; break;
-			case Mode::MIN: code += ".MIN"; break;
-			case Mode::MAX: code += ".MAX"; break;
-			case Mode::INC: code += ".INC"; break;
-			case Mode::DEC: code += ".DEC"; break;
-			case Mode::AND: code += ".AND"; break;
-			case Mode::OR: code += ".OR"; break;
-			case Mode::XOR: code += ".XOR"; break;
-			case Mode::EXCH: code += ".EXCH"; break;
-		}
+		code += ".CAS";
 		switch (m_type)
 		{
-			// case Type::U32: code += ".U32"; break; // Default
-			case Type::S32: code += ".S32"; break;
-			case Type::U64: code += ".U64"; break;
-			case Type::F32: code += ".F32.FTZ.RN"; break;
-			case Type::F16x2: code += ".F16x2.RN"; break;
-			case Type::S64: code += ".S64"; break;
-			case Type::F64: code += ".F64.RN"; break;
+			// case Type::X32: code += ".32"; break; // Default
+			case Type::X64: code += ".64"; break;
 		}
 		return code;
 	}
@@ -126,8 +94,12 @@ public:
 		code += m_address->ToString();
 		code += ", ";
 
-		// Source
-		code += m_source->ToString();
+		// Source A
+		code += m_sourceA->ToString();
+		code += ", ";
+
+		// Source B
+		code += m_sourceB->ToString();
 
 		return code;
 	}
@@ -136,14 +108,13 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		return 0xed00000000000000;
+		return 0xeef0000000000000;
 	}
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
 		return BinaryUtils::OpModifierFlags(m_flags) |
-		       BinaryUtils::OpModifierFlags(m_type) |
-		       BinaryUtils::OpModifierFlags(m_mode);
+		       BinaryUtils::OpModifierFlags(m_type);
 	}
 
 	std::uint64_t BinaryOperands() const override
@@ -151,7 +122,9 @@ public:
 		return BinaryUtils::OperandRegister0(m_destination) |
 		       BinaryUtils::OperandRegister8(m_address->GetBase()) |
 		       BinaryUtils::OperandAddress28W20(m_address->GetOffset()) |
-		       BinaryUtils::OperandRegister20(m_source);
+		       BinaryUtils::OperandRegister20(m_sourceA);
+
+		// SourceB ignored for bit pattern, must be sequential
 	}
 
 	// Hardware properties
@@ -166,13 +139,13 @@ public:
 private:
 	Register *m_destination = nullptr;
 	Address *m_address = nullptr;
-	Register *m_source = nullptr;
+	Register *m_sourceA = nullptr;
+	Register *m_sourceB = nullptr;
 
 	Type m_type;
-	Mode m_mode;
 	Flags m_flags = Flags::None;
 };
 
-SASS_FLAGS_INLINE(ATOMInstruction)
+SASS_FLAGS_INLINE(ATOMCASInstruction)
 
 }

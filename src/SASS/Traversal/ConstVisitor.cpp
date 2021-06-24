@@ -248,6 +248,11 @@ void ConstVisitor::Visit(const ATOMInstruction *instruction)
 	Visit(static_cast<const PredicatedInstruction *>(instruction));
 }
 
+void ConstVisitor::Visit(const ATOMCASInstruction *instruction)
+{
+	Visit(static_cast<const PredicatedInstruction *>(instruction));
+}
+
 void ConstVisitor::Visit(const LDGInstruction *instruction)
 {
 	Visit(static_cast<const PredicatedInstruction *>(instruction));

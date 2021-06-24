@@ -71,6 +71,7 @@ class MUFUInstruction;
 // LoadStore
 
 class ATOMInstruction;
+class ATOMCASInstruction;
 class LDGInstruction;
 class LDSInstruction;
 class MEMBARInstruction;
@@ -190,6 +191,7 @@ public:
 	// LoadStore
 
 	virtual void Visit(ATOMInstruction *instruction);
+	virtual void Visit(ATOMCASInstruction *instruction);
 	virtual void Visit(LDGInstruction *instruction);
 	virtual void Visit(LDSInstruction *instruction);
 	virtual void Visit(MEMBARInstruction *instruction);

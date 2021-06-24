@@ -67,6 +67,7 @@ namespace SASS {
 #include "SASS/Tree/Instructions/Float/MUFUInstruction.h"
 
 #include "SASS/Tree/Instructions/LoadStore/ATOMInstruction.h"
+#include "SASS/Tree/Instructions/LoadStore/ATOMCASInstruction.h"
 #include "SASS/Tree/Instructions/LoadStore/LDGInstruction.h"
 #include "SASS/Tree/Instructions/LoadStore/LDSInstruction.h"
 #include "SASS/Tree/Instructions/LoadStore/MEMBARInstruction.h"
