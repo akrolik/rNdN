@@ -24,7 +24,6 @@ public:
 		RED  = 0x0000000200000000
 	};
 
-	//TODO: SASS BAR instruction RED destination
 	enum class Reduction : std::uint64_t {
 		POPC = 0x0000000000000000,
 		AND  = 0x0000000800000000,
@@ -34,8 +33,8 @@ public:
 	BARInstruction(Mode mode, Composite *barrier, Composite *threads = nullptr)
 		: m_mode(mode), m_barrier(barrier), m_threads(threads) {}
 
-	BARInstruction(Reduction, Composite *barrier, Composite *threads, Predicate *predicate, Flags flags = Flags::None)
-		: m_mode(Mode::RED), m_barrier(barrier), m_threads(threads), m_predicate(predicate), m_flags(flags) {}
+	BARInstruction(Reduction reduction, Composite *barrier, Composite *threads, Predicate *predicate, Flags flags = Flags::None)
+		: m_mode(Mode::RED), m_reduction(reduction), m_barrier(barrier), m_threads(threads), m_predicate(predicate), m_flags(flags) {}
 
 	// Properties
 
@@ -58,12 +57,12 @@ public:
 	
 	std::vector<Operand *> GetDestinationOperands() const override
 	{
-		return { };
+		return { m_predicate };
 	}
 
 	std::vector<Operand *> GetSourceOperands() const override
 	{
-		return { m_barrier, m_threads, m_predicate };
+		return { m_barrier, m_threads };
 	}
 
 	// Formatting
@@ -127,25 +126,11 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		std::uint64_t code = BinaryUtils::OpModifierFlags(m_mode) | BinaryUtils::OpModifierFlags(m_flags);
+		std::uint64_t code = BinaryUtils::OpModifierFlags(m_mode) |
+					BinaryUtils::OpModifierFlags(m_flags);
 		if (m_mode == Mode::RED)
 		{
 			code |= BinaryUtils::OpModifierFlags(m_reduction);
-		}
-		// Use 4-bit integer for barrier
-		if (dynamic_cast<I32Immediate *>(m_barrier))
-		{
-			code |= 0x0000100000000000;
-		}
-		// Use 12-bit integer for threads
-		if (m_threads == nullptr)//TODO:dynamic_cast<I32Immediate *>(m_threads))
-		{
-			code |= 0x0000080000000000;
-		}
-		// No predicate register
-		if (m_predicate == nullptr)
-		{
-			code |= 0x0000038000000000;
 		}
 		return code;
 	}
@@ -154,35 +139,44 @@ public:
 	{
 		std::uint64_t code = 0x0;
 
+		// Barrier
 		if (auto immediateBarrier = dynamic_cast<I32Immediate *>(m_barrier))
 		{
+			// Use 4-bit integer for barrier
 			code |= BinaryUtils::OperandLiteral8W4(immediateBarrier);
+			code |= 0x0000100000000000;
 		}
 		else if (auto registerBarrier = dynamic_cast<Register *>(m_barrier))
 		{
 			code |= BinaryUtils::OperandRegister8(registerBarrier);
 		}
 
-		if (m_threads != nullptr)
+		// Threads
+		if (auto registerThreads = dynamic_cast<Register *>(m_threads))
 		{
+			code |= BinaryUtils::OperandRegister20(registerThreads);
+		}
+		else
+		{
+			// No threads register
+			code |= 0x0000080000000000;
 			if (auto immediateThreads = dynamic_cast<I32Immediate *>(m_threads))
 			{
+				// Use 12-bit integer for threads
 				code |= BinaryUtils::OperandLiteral20W12(immediateThreads);
 			}
-			else if (auto registerThreads = dynamic_cast<Register *>(m_threads))
-			{
-				code |= BinaryUtils::OperandRegister20(registerThreads);
-			}
 		}
 
-		if (m_mode == Mode::RED)
+		// Destination predicate
+		if (m_predicate != nullptr)
 		{
-			if (m_predicate != nullptr)
-			{
-				code |= BinaryUtils::OperandPredicate39(m_predicate);
-			}
+			code |= BinaryUtils::OperandPredicate39(m_predicate);
 		}
-
+		else
+		{
+			// No predicate register
+			code |= 0x0000038000000000;
+		}
 		return code;
 	}
 
