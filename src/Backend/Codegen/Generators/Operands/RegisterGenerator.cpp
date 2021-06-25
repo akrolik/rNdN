@@ -204,6 +204,12 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 
 			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(value->GetValue())));
 		}
+		else if constexpr(std::is_same<T, PTX::Float32Type>::value)
+		{
+			m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
+
+			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::F32Immediate(value->GetValue())));
+		}
 		else
 		{
 			auto [reg, regHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();

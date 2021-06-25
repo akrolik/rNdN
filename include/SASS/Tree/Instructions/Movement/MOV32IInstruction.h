@@ -3,7 +3,7 @@
 #include "SASS/Tree/Instructions/PredicatedInstruction.h"
 
 #include "SASS/Tree/BinaryUtils.h"
-#include "SASS/Tree/Operands/I32Immediate.h"
+#include "SASS/Tree/Operands/Immediate.h"
 #include "SASS/Tree/Operands/Register.h"
 
 namespace SASS {
@@ -11,8 +11,7 @@ namespace SASS {
 class MOV32IInstruction : public PredicatedInstruction
 {
 public:
-	//TODO: F32Immediate
-	MOV32IInstruction(Register *destination, I32Immediate *source)
+	MOV32IInstruction(Register *destination, SizedImmediate<32> *source)
 		: m_destination(destination), m_source(source) {}
 
 	// Properties
@@ -21,9 +20,9 @@ public:
 	Register *GetDestination() { return m_destination; }
 	void SetDestination(Register *destination) { m_destination = destination; }
 
-	const I32Immediate *GetSource() const { return m_source; }
-	I32Immediate *GetSource() { return m_source; }
-	void SetSource(I32Immediate *source) { m_source = source; }
+	const SizedImmediate<32> *GetSource() const { return m_source; }
+	SizedImmediate<32> *GetSource() { return m_source; }
+	void SetSource(SizedImmediate<32> *source) { m_source = source; }
 
 	// Operands
 	
@@ -84,7 +83,7 @@ public:
 
 private:
 	Register *m_destination = nullptr;
-	I32Immediate *m_source = nullptr;
+	SizedImmediate<32> *m_source = nullptr;
 };
 
 }
