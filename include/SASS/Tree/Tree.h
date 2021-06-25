@@ -42,6 +42,7 @@ namespace SASS {
 #include "SASS/Tree/Instructions/Control/SYNCInstruction.h"
 
 #include "SASS/Tree/Instructions/Conversion/F2IInstruction.h"
+#include "SASS/Tree/Instructions/Conversion/F2FInstruction.h"
 #include "SASS/Tree/Instructions/Conversion/I2FInstruction.h"
 #include "SASS/Tree/Instructions/Conversion/I2IInstruction.h"
 

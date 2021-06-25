@@ -8,13 +8,20 @@
 
 namespace SASS {
 
-class I2FInstruction : public PredicatedInstruction
+class F2FInstruction : public PredicatedInstruction
 {
 public:
 	enum Flags : std::uint64_t {
 		None = 0,
 		NEG  = 0x0000200000000000,
-		ABS  = 0x0002000000000000
+		ABS  = 0x0002000000000000,
+		SAT  = 0x0004000000000000,
+		FTZ  = 0x0000100000000000
+	};
+
+	enum class SourceType : std::uint64_t {
+		F32 = 0x0000000000000800,
+		F64 = 0x0000000000000c00 
 	};
 
 	enum class DestinationType : std::uint64_t {
@@ -22,19 +29,14 @@ public:
 		F64 = 0x0000000000000300
 	};
 
-	enum class SourceType : std::uint64_t {
-		S8  = 0x0000000000002000,
-		S16 = 0x0000000000002400,
-		S32 = 0x0000000000002800,
-		S64 = 0x0000000000002c00,
-
-		U8  = 0x0000000000000000,
-		U16 = 0x0000000000000400,
-		U32 = 0x0000000000000800,
-		U64 = 0x0000000000000c00
-	};
-
 	enum class Round : std::uint64_t {
+		// Integer rounding
+		ROUND = 0x0000040000000000,
+		FLOOR = 0x0000048000000000,
+		CEIL  = 0x0000050000000000,
+		TRUNC = 0x0000058000000000,
+
+		// Float rounding
 		RN = 0x0000000000000000,
 		RM = 0x0000008000000000,
 		RP = 0x0000010000000000,
@@ -43,7 +45,7 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
-	I2FInstruction(Register *destination, Composite *source, DestinationType destinationType, SourceType sourceType, Round round = Round::RN, Flags flags = Flags::None)
+	F2FInstruction(Register *destination, Composite *source, DestinationType destinationType, SourceType sourceType, Round round, Flags flags = Flags::None)
 		: m_destination(destination), m_source(source), m_destinationType(destinationType), m_sourceType(sourceType), m_round(round), m_flags(flags) {}
 
 	// Properties
@@ -76,11 +78,15 @@ public:
 
 	// Formatting
 	
-	std::string OpCode() const override { return "I2F"; }
+	std::string OpCode() const override { return "F2F"; }
 
 	std::string OpModifiers() const override
 	{
 		std::string code;
+		if (m_flags & Flags::FTZ)
+		{
+			code += ".FTZ";
+		}
 		switch (m_destinationType)
 		{
 			case DestinationType::F32: code += ".F32"; break;
@@ -88,22 +94,22 @@ public:
 		}
 		switch (m_sourceType)
 		{
-			case SourceType::S8: code += ".S8"; break;
-			case SourceType::S16: code += ".S16"; break;
-			case SourceType::S32: code += ".S32"; break;
-			case SourceType::S64: code += ".S64"; break;
-
-			case SourceType::U8: code += ".U8"; break;
-			case SourceType::U16: code += ".U16"; break;
-			case SourceType::U32: code += ".U32"; break;
-			case SourceType::U64: code += ".U64"; break;
+			case SourceType::F32: code += ".F32"; break;
+			case SourceType::F64: code += ".F64"; break;
 		}
 		switch (m_round)
 		{
-			case Round::RN: code += ".RN"; break;
+			case Round::FLOOR: code += ".FLOOR"; break;
+			case Round::CEIL: code += ".CEIL"; break;
+			case Round::TRUNC: code += ".TRUNC"; break;
+
 			case Round::RM: code += ".RM"; break;
 			case Round::RP: code += ".RP"; break;
 			case Round::RZ: code += ".RZ"; break;
+		}
+		if (m_flags & Flags::SAT)
+		{
+			code += ".SAT";
 		}
 		return code;
 	}
@@ -142,7 +148,7 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		return BinaryUtils::OpCodeComposite(0x5cb8000000000000, m_source);
+		return BinaryUtils::OpCodeComposite(0x5ca8000000000000, m_source);
 	}
 
 	std::uint64_t BinaryOpModifiers() const override
@@ -169,7 +175,7 @@ public:
 
 	InstructionClass GetInstructionClass() const override
 	{
-		if (m_destinationType == DestinationType::F64)
+		if (m_sourceType == SourceType::F64 || m_destinationType == DestinationType::F64)
 		{
 			return InstructionClass::DoublePrecision;
 		}
@@ -188,10 +194,10 @@ private:
 	DestinationType m_destinationType;
 	SourceType m_sourceType;
 
-	Round m_round = Round::RN;
+	Round m_round;
 	Flags m_flags = Flags::None;
 };
 
-SASS_FLAGS_INLINE(I2FInstruction)
+SASS_FLAGS_INLINE(F2FInstruction)
 
 }

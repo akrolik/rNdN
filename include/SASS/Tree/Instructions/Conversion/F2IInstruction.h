@@ -57,6 +57,9 @@ public:
 	Composite *GetSource() { return m_source; }
 	void SetSource(Composite *source) { m_source = source; }
 
+	Round GetRound() const { return m_round; }
+	void SetRound(Round round) { m_round = round; }
+
 	Flags GetFlags() const { return m_flags; }
 	void SetFlags(Flags flags) { m_flags = flags; }
 
