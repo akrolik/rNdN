@@ -50,9 +50,15 @@ bool Options::IsOptimize_PTX()
 {
 	return Get(Opt_Optimize_ptx);
 }
+
 bool Options::IsOptimize_SASS()
 {
 	return Get(Opt_Optimize_sass);
+}
+
+unsigned int Options::GetOptimize_PtxasLevel()
+{
+	return Get<unsigned int>(Opt_Optimize_ptxas_level);
 }
 
 // Debug
@@ -503,6 +509,9 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		)
 		(Opt_Optimize_ptx, "PTX optimizer")
 		(Opt_Optimize_sass, "SASS optimizer")
+		(Opt_Optimize_ptxas_level, "ptxas optimization level (0 - 4)",
+			cxxopts::value<unsigned int>()->default_value("4")
+		)
 	;
 	m_options.add_options("Debug")
 		(Opt_Debug_load, "Debug data loading")

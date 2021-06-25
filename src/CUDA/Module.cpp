@@ -34,9 +34,9 @@ void Module::Compile()
 
 	auto timeCreate_start = Utils::Chrono::Start("Create");
 
-	CUjit_option optionKeys[6];
-	void *optionVals[6];
-	unsigned int optionCount = 6;
+	constexpr unsigned int optionCount = 8;
+	CUjit_option optionKeys[optionCount];
+	void *optionVals[optionCount];
 
 	float l_wallTime;
 	char l_infoLog[8192];
@@ -60,6 +60,12 @@ void Module::Compile()
 
 	optionKeys[5] = CU_JIT_LOG_VERBOSE;
 	optionVals[5] = (void *)true;
+
+	optionKeys[6] = CU_JIT_FAST_COMPILE;
+	optionVals[6] = (void *)true;
+
+	optionKeys[7] = CU_JIT_OPTIMIZATION_LEVEL;
+	optionVals[7] = (void *)(long)Utils::Options::GetOptimize_PtxasLevel();
 
 	// Create the linker with the options above
 
