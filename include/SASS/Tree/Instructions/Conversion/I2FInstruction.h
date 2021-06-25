@@ -13,16 +13,8 @@ class I2FInstruction : public PredicatedInstruction
 public:
 	enum Flags : std::uint64_t {
 		None = 0,
-		//TODO: Do we need NEG_I?
 		NEG  = 0x0000200000000000,
-		ABS  = 0x0002000000000000,
-
-		H0   = 0x0000000000000000,
-		H1   = 0x0000040000000000,
-		B0   = 0x0000000000000000,
-		B1   = 0x0000020000000000,
-		B2   = 0x0000040000000000,
-		B3   = 0x0000060000000000
+		ABS  = 0x0002000000000000
 	};
 
 	enum class DestinationType : std::uint64_t {
@@ -122,7 +114,7 @@ public:
 		code += ", ";
 
 		// Source
-		if (m_flags & Flags::NEG)
+		if ((m_flags & Flags::NEG) && !m_source->GetOpModifierNegate())
 		{
 			code += "-";
 		}
@@ -131,33 +123,13 @@ public:
 			code += "|";
 		}
 		code += m_source->ToString();
-		if (m_flags & Flags::H0)
-		{
-			code += ".H0";
-		}
-		if (m_flags & Flags::H1)
-		{
-			code += ".H1";
-		}
-		if (m_flags & Flags::B0)
-		{
-			code += ".B0";
-		}
-		if (m_flags & Flags::B1)
-		{
-			code += ".B1";
-		}
-		if (m_flags & Flags::B2)
-		{
-			code += ".B2";
-		}
-		if (m_flags & Flags::B3)
-		{
-			code += ".B3";
-		}
 		if (m_flags & Flags::ABS)
 		{
 			code += "|";
+		}
+		if ((m_flags & Flags::NEG) && m_source->GetOpModifierNegate())
+		{
+			code += ".NEG";
 		}
 
 		return code;
@@ -172,10 +144,16 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_sourceType) |
-		       BinaryUtils::OpModifierFlags(m_destinationType) |
-		       BinaryUtils::OpModifierFlags(m_round) |
-		       BinaryUtils::OpModifierFlags(m_flags);
+		auto code = BinaryUtils::OpModifierFlags(m_sourceType) |
+		            BinaryUtils::OpModifierFlags(m_destinationType) |
+		            BinaryUtils::OpModifierFlags(m_round) |
+		            BinaryUtils::OpModifierFlags(m_flags);
+
+		if (m_source->GetOpModifierNegate())
+		{
+			code |= 0x0100000000000000;
+		}
+		return code;
 	}
 
 	std::uint64_t BinaryOperands() const override

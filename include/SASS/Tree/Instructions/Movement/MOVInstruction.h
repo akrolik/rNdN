@@ -11,15 +11,7 @@ namespace SASS {
 class MOVInstruction : public PredicatedInstruction
 {
 public:
-	enum Flags : std::uint64_t {
-		None  = 0,
-		NEG_I = 0x0100000000000000
-	};
-
-	SASS_FLAGS_FRIEND()
-
-	MOVInstruction(Register *destination, Composite *source, Flags flags = Flags::None)
-		: m_destination(destination), m_source(source), m_flags(flags) {}
+	MOVInstruction(Register *destination, Composite *source) : m_destination(destination), m_source(source) {}
 
 	// Properties
 
@@ -30,9 +22,6 @@ public:
 	const Composite *GetSource() const { return m_source; }
 	Composite *GetSource() { return m_source; }
 	void SetSource(Composite *source) { m_source = source; }
-
-	Flags GetFlags() const { return m_flags; }
-	void SetFlags(Flags flags) { m_flags = flags; }
 
 	// Operands
 	
@@ -59,10 +48,6 @@ public:
 		code += ", ";
 
 		// Source
-		if (m_flags & Flags::NEG_I)
-		{
-			code += "-";
-		}
 		code += m_source->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
 
@@ -78,7 +63,11 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_flags);
+		if (m_source->GetOpModifierNegate())
+		{
+			return 0x0100000000000000;
+		}
+		return 0x0;
 	}
 
 	std::uint64_t BinaryOperands() const override
@@ -99,10 +88,6 @@ public:
 private:
 	Register *m_destination = nullptr;
 	Composite *m_source = nullptr;
-
-	Flags m_flags = Flags::None;
 };
-
-SASS_FLAGS_INLINE(MOVInstruction)
 
 }

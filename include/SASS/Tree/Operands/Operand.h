@@ -11,6 +11,11 @@ public:
 
 	virtual std::string ToString() const = 0;
 	virtual std::uint64_t ToBinary() const = 0;
+
+	virtual std::uint64_t ToBinary(std::uint8_t truncate) const
+	{
+		return ToBinary();
+	}
 };
 
 }

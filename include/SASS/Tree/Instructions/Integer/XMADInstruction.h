@@ -14,7 +14,6 @@ class XMADInstruction : public PredicatedInstruction
 public:
 	enum Flags : std::uint64_t {
 		None  = 0x0,
-		NEG_I = 0x0100000000000000,
 		CC    = 0x0000800000000000,
 		CBCC  = 0x0010000000000000,
 		H1_A  = 0x0020000000000000,
@@ -146,10 +145,6 @@ public:
 		code += ", ";
 
 		// SourceB
-		if (m_flags & Flags::NEG_I)
-		{
-			code += "-";
-		}
 		code += m_sourceB->ToString();
 		if (m_flags & Flags::H1_B)
 		{
@@ -178,7 +173,7 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		std::uint64_t code = BinaryUtils::OpModifierFlags(m_type1) | BinaryUtils::OpModifierFlags(m_type2);
+		auto code = BinaryUtils::OpModifierFlags(m_type1) | BinaryUtils::OpModifierFlags(m_type2);
 		if (dynamic_cast<const Constant *>(m_sourceB))
 		{
 			if (m_flags & Flags::H1_B)
@@ -218,6 +213,10 @@ public:
 		{
 			code |= BinaryUtils::OpModifierFlags(m_flags);
 			code |= BinaryUtils::OpModifierFlags(m_mode);
+		}
+		if (m_sourceB->GetOpModifierNegate())
+		{
+			code |= 0x0100000000000000;
 		}
 		return code;
 	}

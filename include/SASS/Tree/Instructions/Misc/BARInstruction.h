@@ -126,8 +126,8 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		std::uint64_t code = BinaryUtils::OpModifierFlags(m_mode) |
-					BinaryUtils::OpModifierFlags(m_flags);
+		auto code = BinaryUtils::OpModifierFlags(m_mode) |
+		            BinaryUtils::OpModifierFlags(m_flags);
 		if (m_mode == Mode::RED)
 		{
 			code |= BinaryUtils::OpModifierFlags(m_reduction);

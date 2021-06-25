@@ -13,7 +13,6 @@ class DFMAInstruction : public PredicatedInstruction
 public:
 	enum Flags : std::uint64_t {
 		None  = 0,
-		NEG_I = 0x0100000000000000,
 		NEG_B = 0x0001000000000000,
 		NEG_C = 0x0002000000000000
 	};
@@ -96,12 +95,12 @@ public:
 		code += ", ";
 
 		// SourceB
-		if (m_flags & Flags::NEG_I || m_flags & Flags::NEG_B)
+		if ((m_flags & Flags::NEG_B) && !m_sourceB->GetOpModifierNegate())
 		{
 			code += "-";
 		}
 		code += m_sourceB->ToString();
-		if (m_flags & Flags::NEG_I && m_flags & Flags::NEG_B)
+		if ((m_flags & Flags::NEG_B) && m_sourceB->GetOpModifierNegate())
 		{
 			code += ".NEG";
 		}
@@ -128,7 +127,12 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_round) | BinaryUtils::OpModifierFlags(m_flags);
+		auto code = BinaryUtils::OpModifierFlags(m_round) | BinaryUtils::OpModifierFlags(m_flags);
+		if (m_sourceB->GetOpModifierNegate())
+		{
+			code |= 0x0100000000000000;
+		}
+		return code;
 	}
 
 	std::uint64_t BinaryOperands() const override

@@ -13,7 +13,6 @@ class LOPInstruction : public PredicatedInstruction
 public:
 	enum Flags : std::uint64_t {
 		None  = 0,
-		NEG_I = 0x0100000000000000,
 		INV   = 0x0000010000000000
 	};
 
@@ -126,15 +125,7 @@ public:
 		{
 			code += "~";
 		}
-		if (m_flags & Flags::NEG_I)
-		{
-			code += "-";
-		}
 		code += m_sourceB->ToString();
-		if (m_flags & Flags::INV)
-		{
-			code += ".INV";
-		}
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 
 		return code;
@@ -157,6 +148,10 @@ public:
 		else
 		{
 			code |= BinaryUtils::OpModifierFlags(m_predicateZ);
+		}
+		if (m_sourceB->GetOpModifierNegate())
+		{
+			code |= 0x0100000000000000;
 		}
 		return code;
 	}

@@ -13,8 +13,7 @@ class SHRInstruction : public PredicatedInstruction
 public:
 	enum Flags : std::uint64_t {
 		None  = 0,
-		U32   = 0x0001000000000000, 
-		NEG_I = 0x0100000000000000
+		U32   = 0x0001000000000000
 	};
 
 	SASS_FLAGS_FRIEND()
@@ -78,10 +77,6 @@ public:
 		code += ", ";
 
 		// SourceB
-		if (m_flags & Flags::NEG_I)
-		{
-			code += "-";
-		}
 		code += m_sourceB->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 
@@ -97,7 +92,12 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_flags) ^ Flags::U32; // Flip U32 bit
+		auto code = BinaryUtils::OpModifierFlags(m_flags) ^ Flags::U32; // Flip U32 bit
+		if (m_sourceB->GetOpModifierNegate())
+		{
+			code |= 0x0100000000000000;
+		}
+		return code;
 	}
 
 	std::uint64_t BinaryOperands() const override

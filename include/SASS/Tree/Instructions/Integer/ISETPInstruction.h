@@ -17,7 +17,6 @@ public:
 		None  = 0,                    
 		X     = 0x0000080000000000,
 		U32   = 0x0001000000000000,
-		NEG_I = 0x0100000000000000,
 		NOT_C = 0x0000040000000000
 	};
 
@@ -137,10 +136,6 @@ public:
 		code += ", ";
 
 		// SourceB
-		if (m_flags & Flags::NEG_I)
-		{
-			code += "-";
-		}
 		code += m_sourceB->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 		code += ", ";
@@ -164,9 +159,15 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_comparisonOperator) |
-		       BinaryUtils::OpModifierFlags(m_booleanOperator) |
-		       BinaryUtils::OpModifierFlags(m_flags) ^ Flags::U32; // Flipped bit pattern
+		auto code = BinaryUtils::OpModifierFlags(m_comparisonOperator) |
+			    BinaryUtils::OpModifierFlags(m_booleanOperator) |
+			    BinaryUtils::OpModifierFlags(m_flags) ^ Flags::U32; // Flipped bit pattern
+
+		if (m_sourceB->GetOpModifierNegate())
+		{
+			code |= 0x0100000000000000;
+		}
+		return code;
 	}
 
 	std::uint64_t BinaryOperands() const override

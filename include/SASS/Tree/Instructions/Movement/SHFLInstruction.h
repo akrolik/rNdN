@@ -108,10 +108,7 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		std::uint64_t code = 0;
-		
-		// Operation
-		code |= BinaryUtils::OpModifierFlags(m_shuffleOp);
+		auto code = BinaryUtils::OpModifierFlags(m_shuffleOp); 
 
 		// Use 8-bit integer for source B
 		if (dynamic_cast<const I32Immediate *>(m_sourceB))
@@ -129,10 +126,9 @@ public:
 
 	std::uint64_t BinaryOperands() const override
 	{
-		std::uint64_t code = 0x0;
-		code |= BinaryUtils::OperandPredicate48(m_destinationA);
-		code |= BinaryUtils::OperandRegister0(m_destinationB);
-		code |= BinaryUtils::OperandRegister8(m_sourceA);
+		auto code = BinaryUtils::OperandPredicate48(m_destinationA) |
+		            BinaryUtils::OperandRegister0(m_destinationB) |
+		            BinaryUtils::OperandRegister8(m_sourceA);
 
 		if (auto immediateB = dynamic_cast<const I32Immediate *>(m_sourceB))
 		{

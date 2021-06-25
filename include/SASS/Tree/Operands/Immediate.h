@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SASS/Tree/Operands/Operand.h"
+#include "SASS/Tree/Operands/Composite.h"
 
 namespace SASS {
 

@@ -30,6 +30,20 @@ public:
 		return m_value;
 	}
 
+	std::uint64_t ToBinary(std::uint8_t truncate) const override
+	{
+		if (m_value < 0)
+		{
+			return -m_value;
+		}
+		return m_value;
+	}
+
+	bool GetOpModifierNegate() const override
+	{
+		return (m_value < 0);
+	}
+
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }

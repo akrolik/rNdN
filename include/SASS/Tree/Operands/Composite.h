@@ -14,6 +14,7 @@ public:
 	};
 
 	virtual OpCodeKind GetOpCodeKind() const { return OpCodeKind::Base; }
+	virtual bool GetOpModifierNegate() const { return false; }
 };
 
 }
