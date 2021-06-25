@@ -5,7 +5,7 @@ namespace GPU {
 
 CUDA::Kernel Program::GetKernel(const std::string& name) const
 {
-	return CUDA::Kernel(name, m_binary);
+	return CUDA::Kernel(name, *m_binary);
 }
 
 const PTX::FunctionDefinition<PTX::VoidType> *Program::GetKernelCode(const std::string& name) const

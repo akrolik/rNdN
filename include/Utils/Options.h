@@ -34,7 +34,8 @@ public:
 	static constexpr char const *Opt_Backend_inline_branch = "backend-inline-branch";
 	static constexpr char const *Opt_Backend_inline_branch_threshold = "backend-inline-branch-threshold";
 	static constexpr char const *Opt_Backend_scheduler = "backend-scheduler";
-	static constexpr char const *Opt_Backend_dump_elf = "backend-dump-elf";
+	static constexpr char const *Opt_Backend_load_elf = "backend-load-elf";
+	static constexpr char const *Opt_Backend_save_elf = "backend-save-elf";
 	static constexpr char const *Opt_Backend_print_analysis = "backend-print-analysis";
 	static constexpr char const *Opt_Backend_print_analysis_func = "backend-print-analysis-func";
 	static constexpr char const *Opt_Backend_print_analysis_block = "backend-print-analysis-block";
@@ -50,7 +51,9 @@ public:
 	static constexpr char const *Opt_Backend_scheduler_cbarrier = "backend-scheduler-cbarrier";
 	static constexpr char const *Opt_Backend_scheduler_function = "backend-scheduler-function";
 
-	static constexpr char const *Opt_Link_external = "link-external";
+	static constexpr char const *Opt_Assembler_link_external = "assembler-link-external";
+	static constexpr char const *Opt_Assembler_load_elf = "assembler-load-elf";
+	static constexpr char const *Opt_Assembler_save_elf = "assembler-save-elf";
 
 	static constexpr char const *Opt_Algo_reduction = "algo-reduction";
 	static constexpr char const *Opt_Algo_sort = "algo-sort";
@@ -120,7 +123,6 @@ public:
 		LinearScan
 	};
 
-
 	enum class BackendScheduler {
 		Linear,
 		List
@@ -133,7 +135,11 @@ public:
 	static bool IsBackend_InlineBranch();
 	static unsigned int GetBackend_InlineBranchThreshold();
 
-	static bool IsBackend_DumpELF();
+	static bool IsBackend_LoadELF();
+	static bool IsBackend_SaveELF();
+	static const std::string& GetBackend_LoadELFFile();
+	static const std::string& GetBackend_SaveELFFile();
+
 	static bool IsBackend_PrintAnalysis(const std::string& analysis, const std::string& function);
 	static bool IsBackend_PrintAnalysisBlock();
 	static bool IsBackend_PrintCFG();
@@ -155,9 +161,14 @@ public:
 
 	static BackendScheduleHeuristic GetBackendSchedule_Heuristic();
 
-	// Link
+	// Assembler
 
-	static bool IsLink_External();
+	static bool IsAssembler_LinkExternal();
+
+	static bool IsAssembler_LoadELF();
+	static bool IsAssembler_SaveELF();
+	static const std::string& GetAssembler_LoadELFFile();
+	static const std::string& GetAssembler_SaveELFFile();
 
 	// Algorithm
 
@@ -211,7 +222,7 @@ public:
 	// Data
 
 	static bool IsData_LoadTPCH();
-	static std::string GetData_PathTPCH();
+	static const std::string& GetData_PathTPCH();
 
 	static float GetData_Resize();
 
@@ -227,7 +238,7 @@ public:
 	// Input file
 
 	static bool HasInputFile();
-	static std::string GetInputFile();
+	static const std::string& GetInputFile();
 
 private:
 	// Getter

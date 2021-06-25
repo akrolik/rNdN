@@ -750,11 +750,6 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 	std::ostream binaryStream(&buffer);
 	writer.save(binaryStream);
 
-	if (Utils::Options::IsBackend_DumpELF())
-	{
-		writer.save("r3d3_dump.cubin");
-	}
-
 	std::size_t elfSize = 0;
 	auto bufferContent = buffer.getcontent(elfSize);
 

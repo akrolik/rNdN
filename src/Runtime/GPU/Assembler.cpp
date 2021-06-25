@@ -2,89 +2,153 @@
 
 #include "Assembler/Assembler.h"
 #include "Assembler/ELFGenerator.h"
+
 #include "Backend/Compiler.h"
+
+#include "CUDA/Compiler.h"
+#include "CUDA/Module.h"
 
 #include "PTX/Utils/PrettyPrinter.h"
 
 #include "Utils/Chrono.h"
 #include "Utils/Options.h"
 
+#include <fstream>
+
 namespace Runtime {
 namespace GPU {
 
 const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 {
-	// Generate the CUDA module for the program with the program
-	// modules and linked external modules (libraries)
+	// Generate the CUDA module for the program with modules and linked external modules (libraries)
 
 	auto timeAssembler_start = Utils::Chrono::Start("Assembler");
 
-	CUDA::Module cModule;
-	for (const auto& module : program->GetModules())
+	void *binary = nullptr;
+	std::size_t binarySize = 0;
+
+	if (library)
 	{
-		if (library)
+		// Library modules are compiled with ptxas
+
+		CUDA::Compiler compiler;
+		for (const auto& module : program->GetModules())
 		{
-			cModule.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
+			compiler.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
+		}
+		compiler.Compile();
+
+		binary = compiler.GetBinary();
+		binarySize = compiler.GetBinarySize();
+	}
+	else if (Utils::Options::IsAssembler_LoadELF())
+	{
+		// Load the data
+
+		auto stream = std::ifstream(Utils::Options::GetAssembler_LoadELFFile(), std::ios::in | std::ios::binary);
+		std::vector<unsigned char> buffer(std::istreambuf_iterator<char>(stream), {});
+
+		// Copy to new buffer
+
+		binarySize = buffer.size();
+		binary = malloc(binarySize);
+		std::memcpy(binary, buffer.data(), binarySize);
+
+		stream.close();
+	}
+	else
+	{
+		// JIT code is compiled with ptxas or r3d3
+
+		CUDA::Compiler compiler;
+		if (Utils::Options::IsBackend_LoadELF())
+		{
+			compiler.AddFileModule(Utils::Options::GetBackend_LoadELFFile());
 		}
 		else
 		{
-			switch (Utils::Options::GetBackend_Kind())
+			for (const auto& module : program->GetModules())
 			{
-				case Utils::Options::BackendKind::ptxas:
+				switch (Utils::Options::GetBackend_Kind())
 				{
-					cModule.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
-					break;
-				}
-				case Utils::Options::BackendKind::r3d3:
-				{
-					// Generate SASS for PTX program
-
-					auto& device = m_gpuManager.GetCurrentDevice();
-					auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
-
-					if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
+					case Utils::Options::BackendKind::ptxas:
 					{
-						Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
+						compiler.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
+						break;
 					}
+					case Utils::Options::BackendKind::r3d3:
+					{
+						// Generate SASS for PTX program
 
-					Backend::Compiler compiler;
-					auto sassProgram = compiler.Compile(program);
-					sassProgram->SetComputeCapability(compute);
+						auto& device = m_gpuManager.GetCurrentDevice();
+						auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
 
-					// Generate ELF binrary
+						if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
+						{
+							Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
+						}
 
-					auto timeBinary_start = Utils::Chrono::Start("Binary generator");
+						Backend::Compiler backendCompiler;
+						auto sassProgram = backendCompiler.Compile(program);
+						sassProgram->SetComputeCapability(compute);
 
-					::Assembler::Assembler assembler;
-					auto binaryProgram = assembler.Assemble(sassProgram);
+						// Generate ELF binrary
 
-					::Assembler::ELFGenerator elfGenerator;
-					auto elfProgram = elfGenerator.Generate(binaryProgram);
+						auto timeBinary_start = Utils::Chrono::Start("Binary generator");
 
-					Utils::Chrono::End(timeBinary_start);
+						::Assembler::Assembler assembler;
+						auto binaryProgram = assembler.Assemble(sassProgram);
 
-					// Add finalized ELF binary to the module for linking
+						::Assembler::ELFGenerator elfGenerator;
+						auto elfProgram = elfGenerator.Generate(binaryProgram);
 
-					cModule.AddELFModule(*elfProgram);
-					break;
+						Utils::Chrono::End(timeBinary_start);
+
+						// Add finalized ELF binary to the module for linking
+
+						compiler.AddELFModule(*elfProgram);
+
+						if (Utils::Options::IsBackend_SaveELF())
+						{
+							auto stream = std::ofstream(Utils::Options::GetBackend_SaveELFFile(), std::ios::out | std::ios::binary);
+							stream.write((char*)elfProgram->GetData(), elfProgram->GetSize());
+							stream.close();
+						}
+						break;
+					}
 				}
 			}
 		}
-	}
 
-	if (Utils::Options::IsLink_External())
-	{
-		for (const auto& module : m_gpuManager.GetExternalModules())
+		// Add external libraries
+
+		if (Utils::Options::IsAssembler_LinkExternal())
 		{
-			cModule.AddExternalModule(module);
+			for (const auto& module : m_gpuManager.GetExternalModules())
+			{
+				compiler.AddExternalModule(module);
+			}
 		}
+
+		// Compile!
+
+		compiler.Compile();
+
+		binary = compiler.GetBinary();
+		binarySize = compiler.GetBinarySize();
 	}
 
-	// Compile the module and geneate the cuBin
+	if (Utils::Options::IsAssembler_SaveELF())
+	{
+		auto stream = std::ofstream(Utils::Options::GetAssembler_SaveELFFile(), std::ios::out | std::ios::binary);
+		stream.write((char*)binary, binarySize);
+		stream.close();
+	}
 
-	cModule.Compile();
+	// Load the binary onto the GPU
 
-	auto gpuProgram = new Program(program, cModule);
+	auto gpuModule = new CUDA::Module(binary, binarySize);
+	auto gpuProgram = new Program(program, gpuModule);
 
 	Utils::Chrono::End(timeAssembler_start);
 

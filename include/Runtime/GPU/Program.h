@@ -13,14 +13,14 @@ namespace GPU {
 class Program
 {
 public:
-	Program(const PTX::Program *program, const CUDA::Module& binary) : m_program(program), m_binary(binary) {}
+	Program(const PTX::Program *program, const CUDA::Module *binary) : m_program(program), m_binary(binary) {}
 
 	CUDA::Kernel GetKernel(const std::string& name) const;
 	const PTX::FunctionDefinition<PTX::VoidType> *GetKernelCode(const std::string& name) const;
 
 private:
 	const PTX::Program *m_program = nullptr;
-	CUDA::Module m_binary;
+	const CUDA::Module *m_binary = nullptr;
 };
 
 }

@@ -10,7 +10,7 @@ void Options::Initialize(int argc, const char *argv[])
 	auto results = instance.m_options.parse(argc, argv);
 	if (results.count(Opt_Help) > 0)
 	{
-		Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Backend Scheduler", "Link", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
+		Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Backend Scheduler", "Assembler", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
 		std::exit(EXIT_SUCCESS);
 	}
 	instance.m_results = results;
@@ -195,9 +195,24 @@ unsigned int Options::GetBackend_InlineBranchThreshold()
 	return Get<unsigned int>(Opt_Backend_inline_branch_threshold);
 }
 
-bool Options::IsBackend_DumpELF()
+bool Options::IsBackend_LoadELF()
 {
-	return Get(Opt_Backend_dump_elf);
+	return Present(Opt_Backend_load_elf);
+}
+
+bool Options::IsBackend_SaveELF()
+{
+	return Present(Opt_Backend_save_elf);
+}
+
+const std::string& Options::GetBackend_LoadELFFile()
+{
+	return Get<std::string>(Opt_Backend_load_elf);
+}
+
+const std::string& Options::GetBackend_SaveELFFile()
+{
+	return Get<std::string>(Opt_Backend_save_elf);
 }
 
 bool Options::IsBackend_PrintAnalysis(const std::string& analysis, const std::string& function)
@@ -290,11 +305,31 @@ Options::BackendScheduleHeuristic Options::GetBackendSchedule_Heuristic()
 	return BackendScheduleHeuristic::Default;
 }
 
-// Link
+// Assembler
 
-bool Options::IsLink_External()
+bool Options::IsAssembler_LinkExternal()
 {
-	return Get(Opt_Link_external);
+	return Get(Opt_Assembler_link_external);
+}
+
+bool Options::IsAssembler_LoadELF()
+{
+	return Present(Opt_Assembler_load_elf);
+}
+
+bool Options::IsAssembler_SaveELF()
+{
+	return Present(Opt_Assembler_save_elf);
+}
+
+const std::string& Options::GetAssembler_LoadELFFile()
+{
+	return Get<std::string>(Opt_Assembler_load_elf);
+}
+
+const std::string& Options::GetAssembler_SaveELFFile()
+{
+	return Get<std::string>(Opt_Assembler_save_elf);
 }
 
 // Algorithm
@@ -421,7 +456,7 @@ bool Options::IsData_LoadTPCH()
 	return Present(Opt_Data_load_tpch);
 }
 
-std::string Options::GetData_PathTPCH()
+const std::string& Options::GetData_PathTPCH()
 {
 	return Get<std::string>(Opt_Data_load_tpch); 
 }
@@ -462,7 +497,7 @@ bool Options::HasInputFile()
 	return Present(Opt_File);
 }
 
-std::string Options::GetInputFile()
+const std::string& Options::GetInputFile()
 {
 	return Get<std::string>(Opt_File);
 }
@@ -509,7 +544,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		)
 		(Opt_Optimize_ptx, "PTX optimizer")
 		(Opt_Optimize_sass, "SASS optimizer")
-		(Opt_Optimize_ptxas_level, "ptxas optimization level (0 - 4)",
+		(Opt_Optimize_ptxas_level, "ptxas optimization level (0-4)",
 			cxxopts::value<unsigned int>()->default_value("4")
 		)
 	;
@@ -554,7 +589,8 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		)
 		(Opt_Backend_inline_branch, "Enable inlined (predicated) control-flow branches", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_inline_branch_threshold, "Maximum statements in inlined branch", cxxopts::value<unsigned int>()->default_value("6"))
-		(Opt_Backend_dump_elf, "Dump assembled .cubin ELF file")
+		(Opt_Backend_load_elf, "Load relocatable .cubin ELF file", cxxopts::value<std::string>())
+		(Opt_Backend_save_elf, "Save relocatable .cubin ELF file", cxxopts::value<std::string>())
 		(Opt_Backend_print_analysis, "Print backend analyses\n"
 			"   - live       Live variables\n"
 			"   - interval   Live intervals\n"
@@ -586,8 +622,10 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Backend_scheduler_cbarrier, "Data dependence counting barriers", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_scheduler_function, "Schedule heuristic function")
 	;
-	m_options.add_options("Link")
-		(Opt_Link_external, "Link external libraries (libdevice)")
+	m_options.add_options("Assembler")
+		(Opt_Assembler_link_external, "Link external libraries (libdevice)")
+		(Opt_Assembler_load_elf, "Load linked .cubin ELF file", cxxopts::value<std::string>())
+		(Opt_Assembler_save_elf, "Save linked .cubin ELF file", cxxopts::value<std::string>())
 	;
 	m_options.add_options("Algorithm")
 		(Opt_Algo_reduction, "Reduction mode\n"
