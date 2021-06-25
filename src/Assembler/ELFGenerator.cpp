@@ -382,6 +382,20 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 
 		std::vector<char> functionInfoBuffer;
 
+		// EIATTR_CUDA_API_VERSION
+		//     Format: EIFMT_SVAL
+		//
+		//     /*0000*/        .byte   0x04, 0x37
+		//     /*0002*/        .short  (.L_2 - .L_1)
+		// .L_1:
+		//     /*0004*/        .word   0x00000071
+		// .L_2:
+
+		AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_SVAL});
+		AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_CUDA_API_VERSION});
+		AppendBytes(functionInfoBuffer, DecomposeShort(SZ_WORD));     // Size
+		AppendBytes(functionInfoBuffer, DecomposeWord(ELF_VERSION));  // Version
+
 		// EIATTR_SW2393858_WAR
 		//     Format: EIFMT_NVAL
 		// 

@@ -27,7 +27,8 @@ public:
 		EIATTR_INDIRECT_BRANCH_TARGETS  = 0x34,
 		EIATTR_CTAIDZ_USED              = 0x04,
 		EIATTR_MAX_THREADS              = 0x05,
-		EIATTR_REQNTID                  = 0x10
+		EIATTR_REQNTID                  = 0x10,
+		EIATTR_CUDA_API_VERSION         = 0x37
 	};
 
 	enum class Type : char {
