@@ -140,7 +140,7 @@ public:
 		std::uint64_t code = 0x0;
 
 		// Barrier
-		if (auto immediateBarrier = dynamic_cast<I32Immediate *>(m_barrier))
+		if (auto immediateBarrier = dynamic_cast<I8Immediate *>(m_barrier))
 		{
 			// Use 4-bit integer for barrier
 			code |= BinaryUtils::OperandLiteral8W4(immediateBarrier);
@@ -160,7 +160,7 @@ public:
 		{
 			// No threads register
 			code |= 0x0000080000000000;
-			if (auto immediateThreads = dynamic_cast<I32Immediate *>(m_threads))
+			if (auto immediateThreads = dynamic_cast<I16Immediate *>(m_threads))
 			{
 				// Use 12-bit integer for threads
 				code |= BinaryUtils::OperandLiteral20W12(immediateThreads);

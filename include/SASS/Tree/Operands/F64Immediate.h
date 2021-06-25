@@ -4,21 +4,21 @@
 
 namespace SASS {
 
-class F32Immediate : public SizedImmediate<32>
+class F64Immediate : public SizedImmediate<64>
 {
 public:
-	F32Immediate(float value) : m_value(value) {}
+	F64Immediate(double value) : m_value(value) {}
 
 	// Properties
 
-	float GetValue() const { return m_value; }
-	void SetValue(float value) { m_value = value; }
+	double GetValue() const { return m_value; }
+	void SetValue(double value) { m_value = value; }
 
 	// Formatting
 
 	std::string ToString() const override
 	{
-		auto inf = std::numeric_limits<float>::infinity();
+		auto inf = std::numeric_limits<double>::infinity();
 		if (m_value == inf)
 		{
 			return "INF";
@@ -41,7 +41,7 @@ public:
 		// The sign bit is always zero, meaning we have truncate - 1 bits of data
 
 		auto value = (m_value < 0) ? -m_value : m_value;
-		return reinterpret_cast<const std::uint64_t&>(value) >> (32 - truncate);
+		return reinterpret_cast<const std::uint64_t&>(value) >> (64 - truncate);
 	}
 
 	bool GetOpModifierNegate() const override
@@ -55,7 +55,7 @@ public:
 	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 	
 private:
-	float m_value = 0.0f;
+	double m_value = 0.0;
 };
 
 }

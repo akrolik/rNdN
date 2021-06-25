@@ -15,6 +15,7 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 
 	CompositeGenerator compositeGenerator(this->m_builder);
 	compositeGenerator.SetZeroRegister(false);
+	compositeGenerator.SetImmediateSize(4);
 
 	auto barrier = compositeGenerator.Generate(instruction->GetBarrier());
 
@@ -26,6 +27,7 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 
 	if (auto threadsOperand = instruction->GetThreads())
 	{
+		compositeGenerator.SetImmediateSize(12);
 		auto threads = compositeGenerator.Generate(threadsOperand);
 
 		this->AddInstruction(new SASS::BARInstruction(mode, barrier, threads));

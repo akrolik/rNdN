@@ -101,6 +101,7 @@ namespace SASS {
 #include "SASS/Tree/Operands/I16Immediate.h"
 #include "SASS/Tree/Operands/I32Immediate.h"
 #include "SASS/Tree/Operands/F32Immediate.h"
+#include "SASS/Tree/Operands/F64Immediate.h"
 
 #include "SASS/Tree/Operands/Register.h"
 #include "SASS/Tree/Operands/Predicate.h"

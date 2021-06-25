@@ -163,27 +163,76 @@ void CompositeGenerator::Visit(const PTX::Value<T> *value)
 		}
 		else
 		{
-			m_composite = new SASS::I32Immediate(0);
-			if constexpr(T::TypeBits == PTX::Bits::Bits64)
+			m_composite = new SASS::I32Immediate(0x0);
+			if (m_immediateSize <= 8)
 			{
-				m_compositeHi = new SASS::I32Immediate(0);
+				m_composite = new SASS::I8Immediate(0x0);
+			}
+			else if (m_immediateSize <= 16)
+			{
+				m_composite = new SASS::I16Immediate(0x0);
+			}
+			else
+			{
+				m_composite = new SASS::I32Immediate(0x0);
+				if constexpr(T::TypeBits == PTX::Bits::Bits64)
+				{
+					m_compositeHi = new SASS::I32Immediate(0x0);
+				}
 			}
 		}
 	}
 	else
 	{
-		//TODO: Decide which Value<T> types are loading using MOV, constant 0x2, and immediates
+		// If possible, store the value within the instruction itself
 
-		if constexpr(PTX::is_int_type<T>::value)
+		if (m_immediateValue)
 		{
-			if (m_immediateValue)
+			if constexpr(PTX::is_int_type<T>::value)
 			{
-				if (value->GetValue() < 0xffffff)
+				// Ensure the value can be represented in the required number of bits
+
+				auto limit = (1 << (m_immediateSize + 1) - 1);
+				if (auto val = value->GetValue(); val < limit)
 				{
-					m_composite = new SASS::I32Immediate(value->GetValue());
-					if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					if (m_immediateSize <= 8)
 					{
-						m_compositeHi = new SASS::I32Immediate(0x0);
+						m_composite = new SASS::I8Immediate(val);
+					}
+					else if (m_immediateSize <= 16)
+					{
+						m_composite = new SASS::I16Immediate(val);
+					}
+					else
+					{
+						m_composite = new SASS::I32Immediate(val);
+						if constexpr(T::TypeBits == PTX::Bits::Bits64)
+						{
+							m_compositeHi = new SASS::I32Immediate(0x0);
+						}
+					}
+					return;
+				}
+			}
+			else if constexpr(PTX::is_float_type<T>::value)
+			{
+				// For floating point, we keep the beginning bits (opposite to integer)
+
+				auto shift = PTX::BitSize<T::TypeBits>::NumBits - m_immediateSize;
+				auto limit = (1 << (m_immediateSize + 1) - 1) << shift;
+
+				auto val = value->GetValue();
+				auto bitVal = reinterpret_cast<std::uint64_t&>(val);
+
+				if (bitVal & limit == bitVal)
+				{
+					if constexpr(T::TypeBits == PTX::Bits::Bits32)
+					{
+						m_composite = new SASS::F32Immediate(val);
+					}
+					else if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					{
+						m_composite = new SASS::F64Immediate(val);
 					}
 					return;
 				}

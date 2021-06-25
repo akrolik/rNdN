@@ -26,6 +26,9 @@ public:
 	bool GetImmediateValue() const { return m_immediateValue; }
 	void SetImmediateValue(bool immediateValue) { m_immediateValue = immediateValue; }
 
+	std::uint8_t GetImmediateSize() const { return m_immediateSize; }
+	void SetImmediateSize(std::uint8_t size) { m_immediateSize = size; }
+
 	// Generators
 
 	SASS::Composite *Generate(const PTX::Operand *operand);
@@ -71,6 +74,7 @@ private:
 
 	bool m_zeroRegister = true;
 	bool m_immediateValue = true;
+	std::uint8_t m_immediateSize = 20; // Composite size
 };
 
 }

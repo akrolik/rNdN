@@ -111,12 +111,12 @@ public:
 		auto code = BinaryUtils::OpModifierFlags(m_shuffleOp); 
 
 		// Use 8-bit integer for source B
-		if (dynamic_cast<const I32Immediate *>(m_sourceB))
+		if (dynamic_cast<const I8Immediate *>(m_sourceB))
 		{
 			code |= 0x0000000010000000;
 		}
 		// Use 13-bit integer for source C
-		if (dynamic_cast<const I32Immediate *>(m_sourceC))
+		if (dynamic_cast<const I16Immediate *>(m_sourceC))
 		{
 			code |= 0x0000000020000000;
 		}
@@ -130,7 +130,7 @@ public:
 		            BinaryUtils::OperandRegister0(m_destinationB) |
 		            BinaryUtils::OperandRegister8(m_sourceA);
 
-		if (auto immediateB = dynamic_cast<const I32Immediate *>(m_sourceB))
+		if (auto immediateB = dynamic_cast<const I8Immediate *>(m_sourceB))
 		{
 			code |= BinaryUtils::OperandLiteral20W8(immediateB);
 		}
@@ -139,7 +139,7 @@ public:
 			code |= BinaryUtils::OperandRegister20(registerB);
 		}
 
-		if (auto immediateC = dynamic_cast<const I32Immediate *>(m_sourceC))
+		if (auto immediateC = dynamic_cast<const I16Immediate *>(m_sourceC))
 		{
 			code |= BinaryUtils::OperandLiteral34W13(immediateC);
 		}

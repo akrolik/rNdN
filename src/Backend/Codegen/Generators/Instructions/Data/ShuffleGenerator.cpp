@@ -36,7 +36,9 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 		auto destinationP = (destinationP_opt == nullptr) ? SASS::PT : predicateGenerator.Generate(destinationP_opt).first;
 
 		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		compositeGenerator.SetImmediateSize(8);
 		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+		compositeGenerator.SetImmediateSize(13);
 		auto sourceC = compositeGenerator.Generate(instruction->GetSourceC());
 		
 		// Membermask is ignored for 6x targets as the membermask must be the same as activemask

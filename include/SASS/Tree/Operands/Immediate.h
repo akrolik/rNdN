@@ -10,4 +10,10 @@ public:
 	OpCodeKind GetOpCodeKind() const override { return OpCodeKind::Immediate; }
 };
 
+template<unsigned int N>
+class SizedImmediate : public Immediate
+{
+
+};
+
 }

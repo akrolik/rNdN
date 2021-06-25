@@ -6,7 +6,7 @@
 
 namespace SASS {
 
-class I16Immediate : public Immediate
+class I16Immediate : public SizedImmediate<16>
 {
 public:
 	I16Immediate(std::uint16_t value) : m_value(value) {}

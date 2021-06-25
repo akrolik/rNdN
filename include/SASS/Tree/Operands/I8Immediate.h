@@ -6,7 +6,7 @@
 
 namespace SASS {
 
-class I8Immediate : public Immediate
+class I8Immediate : public SizedImmediate<8>
 {
 public:
 	I8Immediate(std::uint8_t value) : m_value(value) {}

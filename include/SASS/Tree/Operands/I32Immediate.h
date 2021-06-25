@@ -6,7 +6,7 @@
 
 namespace SASS {
 
-class I32Immediate : public Immediate
+class I32Immediate : public SizedImmediate<32>
 {
 public:
 	I32Immediate(std::uint32_t value) : m_value(value) {}

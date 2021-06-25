@@ -96,20 +96,16 @@ public:
 	// Composite values are signed via the instruction op code
 	static std::uint64_t OperandComposite(const Composite *value) { return Format(value->ToBinary(20), 20, 0xffffff); }
 
-	static std::uint64_t OperandLiteral8W4(const I32Immediate *value) { return Format(value->ToBinary(), 8, 0x7); }
+	static std::uint64_t OperandLiteral8W4(const I8Immediate *value) { return Format(value->ToBinary(), 8, 0x7); }
 	static std::uint64_t OperandLiteral20W6(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0x3f); }
 	static std::uint64_t OperandLiteral20W8(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0xff); }
-	//TODO: Remove
-	static std::uint64_t OperandLiteral20W8(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xff); }
-	static std::uint64_t OperandLiteral20W12(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xfff); }
+	static std::uint64_t OperandLiteral20W12(const I16Immediate *value) { return Format(value->ToBinary(), 20, 0xfff); }
 	static std::uint64_t OperandLiteral20W24(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xffffff); }
 	// Full 32 bit values are signed via the instruction op code
 	static std::uint64_t OperandLiteral20W32(const SizedImmediate<32> *value) { return Format(value->ToBinary(32), 20, 0xffffffff); }
 
 	static std::uint64_t OperandLiteral28W20(const I32Immediate *value) { return Format(value->ToBinary(), 28, 0xfffff); }
 	static std::uint64_t OperandLiteral34W13(const I16Immediate *value) { return Format(value->ToBinary(), 34, 0x1fff); }
-	//TODO: Remove
-	static std::uint64_t OperandLiteral34W13(const I32Immediate *value) { return Format(value->ToBinary(), 34, 0x1fff); }
 	static std::uint64_t OperandLiteral39W8(const I8Immediate *value) { return Format(value->ToBinary(), 39, 0xff); }
 
 	static std::uint64_t OperandAddress20W24(std::int32_t value) { return Format(value, 20, 0xffffff); }
