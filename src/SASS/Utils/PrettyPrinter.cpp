@@ -87,7 +87,7 @@ void PrettyPrinter::Visit(const Function *function)
 				m_string << ", ";
 			}
 			first = false;
-			m_string<< std::to_string(parameter);
+			m_string<< Utils::Format::HexString(parameter);
 		}
 		m_string << std::endl;
 	}
@@ -116,7 +116,7 @@ void PrettyPrinter::Visit(const Function *function)
 
 	if (const auto constantMemory = function->GetConstantMemory(); constantMemory.size() > 0)
 	{
-		m_string << "// - Constant Memory: " << std::to_string(constantMemory.size()) << " bytes" << std::endl;
+		m_string << "// - Constant Memory: " << Utils::Format::HexString(constantMemory.size()) << " bytes [align = " << Utils::Format::HexString(function->GetConstantMemoryAlign()) << "]" << std::endl;
 	}
 
 	// Shared variables
@@ -159,7 +159,7 @@ void PrettyPrinter::Visit(const Function *function)
 
 	if (const auto crsStackSize = function->GetCRSStackSize(); crsStackSize > 0)
 	{
-		m_string << "// - CRS Stack Size: " << std::to_string(crsStackSize) << " bytes" << std::endl;
+		m_string << "// - CRS Stack Size: " << Utils::Format::HexString(crsStackSize) << " bytes" << std::endl;
 	}
 
 	// Function body

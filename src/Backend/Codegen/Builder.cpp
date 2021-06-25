@@ -19,7 +19,7 @@ void Builder::CloseFunction()
 
 	m_currentFunction->SetRegisters(m_registerAllocation->GetRegisterCount() + m_temporaryMax);
 	m_currentFunction->SetMaxRegisters(m_registerAllocation->GetMaxRegisters());
-	m_currentFunction->SetConstantMemory(m_constantMemory);
+	m_currentFunction->SetConstantMemory(m_constantMemory, m_constantMemoryAlign);
 
 	m_currentFunction = nullptr;
 	m_registerAllocation = nullptr;

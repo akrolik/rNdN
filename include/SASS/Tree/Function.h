@@ -77,9 +77,14 @@ public:
 	// Constant Memory
 
 	std::size_t GetConstantMemorySize() const { return m_constantMemory.size(); }
+	std::size_t GetConstantMemoryAlign() const { return m_constantMemoryAlign; }
 
 	const std::vector<char>& GetConstantMemory() const { return m_constantMemory; }
-	void SetConstantMemory(const std::vector<char>& constantMemory) { m_constantMemory = constantMemory; }
+	void SetConstantMemory(const std::vector<char>& memory, std::size_t align)
+	{
+		m_constantMemory = memory;
+		m_constantMemoryAlign = align;
+	}
 
 	// Relocations
 
@@ -129,6 +134,7 @@ private:
 	std::vector<SharedVariable *> m_sharedVariables;
 
 	std::vector<char> m_constantMemory;
+	std::size_t m_constantMemoryAlign = 0;
 
 	std::vector<Relocation *> m_relocations;
 	std::vector<IndirectBranch *> m_indirectBranches;

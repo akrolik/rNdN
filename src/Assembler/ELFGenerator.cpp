@@ -132,30 +132,45 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		auto globalSection = writer.sections.add(".nv.global");
 		globalSection->set_type(SHT_NOBITS);
 		globalSection->set_flags(SHF_ALLOC | SHF_WRITE);
-		globalSection->set_addr_align(0x4); //TODO: Alignment depends on variables
-
-		dataSegment->add_section_index(globalSection->get_index(), globalSection->get_addr_align());
 
 		symbolWriter.add_symbol(stringWriter,
 			".nv.global", 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, globalSection->get_index()
 		);
 
-		// Add a symbol object for each global variable
+		// Global variables are sorted in order of decreasing size (naturally aligns)
+
+		auto globalVariables = program->GetGlobalVariables();
+		std::sort(std::begin(globalVariables), std::end(globalVariables), [](const BinaryProgram::Variable& v1, const BinaryProgram::Variable& v2)
+		{
+			return v1.Size > v2.Size;
+		});
+
+		// Add a symbol object for each global variable, keeping track of the max size (alignment), and total size (allocation)
 
 		std::size_t totalSize = 0;
-		for (const auto& globalVariable : program->GetGlobalVariables())
+		std::size_t maxSize = 0;
+
+		for (const auto& globalVariable : globalVariables)
 		{
 			auto name = globalVariable.Name;
 			auto offset = totalSize;
 			auto size = globalVariable.Size;
 
-			auto index = symbolWriter.add_symbol(stringWriter,
+			symbolMap[name] = symbolWriter.add_symbol(stringWriter,
 				name.c_str(), offset, size, STB_LOCAL, STT_CUDA_OBJECT, STV_DEFAULT | STO_CUDA_GLOBAL, globalSection->get_index()
 			);
-			symbolMap[name] = index;
+
 			totalSize += size;
+			if (size > maxSize)
+			{
+				maxSize = size;
+			}
 		}
+
+		globalSection->set_addr_align(maxSize);
 		globalSection->set_size(totalSize);
+
+		dataSegment->add_section_index(globalSection->get_index(), globalSection->get_addr_align());
 	}
 
 	// Info buffer for accumulating properties
@@ -198,6 +213,8 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			// Copy constant data
 
 			auto constSize = function->GetConstantMemorySize();
+			auto constAlign = function->GetConstantMemoryAlign();
+
 			auto constData = new char[constSize]();
 			std::memcpy(constData, function->GetConstantMemory().data(), constSize * sizeof(char));
 
@@ -206,9 +223,8 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			constSection = writer.sections.add(".nv.constant2." + function->GetName());
 			constSection->set_type(SHT_PROGBITS);
 			constSection->set_flags(SHF_ALLOC);
-			constSection->set_addr_align(0x4);
+			constSection->set_addr_align(constAlign);
 			constSection->set_data(constData, constSize);
-			// constSection->set_info(textSection->get_index());
 
 			symbolWriter.add_symbol(stringWriter,
 				constSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, constSection->get_index()
@@ -223,27 +239,35 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			sharedSection = writer.sections.add(".nv.shared." + function->GetName());
 			sharedSection->set_type(SHT_NOBITS);
 			sharedSection->set_flags(SHF_WRITE | SHF_ALLOC);
-			sharedSection->set_addr_align(0x8);
 
 			symbolWriter.add_symbol(stringWriter,
 				sharedSection->get_name().c_str(), 0x00000000, 0, STB_LOCAL, STT_SECTION, STV_DEFAULT, sharedSection->get_index()
 			);
 
+			// Add a symbol object for each shared variable, keeping track of the max size (alignment), and total size (allocation)
+
 			std::size_t totalSize = 0;
+			std::size_t maxSize = 0;
+
 			for (const auto& variable : function->GetSharedVariables())
 			{
 				auto name = variable.Name;
 				auto size = variable.Size;
 				auto dataSize = variable.DataSize;
 
-				auto index = symbolWriter.add_symbol(stringWriter,
+				symbolMap[name] = symbolWriter.add_symbol(stringWriter,
 					name.c_str(), dataSize, size, STB_LOCAL, STT_CUDA_OBJECT, STV_DEFAULT | STO_CUDA_SHARED, sharedSection->get_index()
 				);
 
-				symbolMap[name] = index;
 				totalSize += size;
+				if (size > maxSize)
+				{
+					maxSize = size;
+				}
 			}
+
 			sharedSection->set_size(totalSize);
+			sharedSection->set_addr_align(maxSize);
 
 			dataSegment->add_section_index(sharedSection->get_index(), sharedSection->get_addr_align());
 		}
@@ -651,7 +675,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			relocationSection->set_type(SHT_REL);
 			relocationSection->set_info(textSection->get_index());
 			relocationSection->set_link(symbolSection->get_index());
-			relocationSection->set_addr_align(0x4);
+			relocationSection->set_addr_align(0x8);
 			relocationSection->set_entry_size(writer.get_default_entry_size(SHT_REL));
 
 			ELFIO::relocation_section_accessor relocationWriter(writer, relocationSection);

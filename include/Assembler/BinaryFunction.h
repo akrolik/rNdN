@@ -117,9 +117,15 @@ public:
 	// Constant Memory
 
 	std::size_t GetConstantMemorySize() const { return m_constantMemory.size(); }
+	std::size_t GetConstantMemoryAlign() const { return m_constantMemoryAlign; }
+
 	const std::vector<char>& GetConstantMemory() const { return m_constantMemory; }
 
-	void SetConstantMemory(const std::vector<char>& constantMemory) { m_constantMemory = constantMemory; }
+	void SetConstantMemory(const std::vector<char>& memory, std::size_t align)
+	{
+		m_constantMemory = memory;
+		m_constantMemoryAlign = align;
+	}
 
 	// Relocations
 
@@ -199,7 +205,7 @@ public:
 					code += ", ";
 				}
 				first = false;
-				code += std::to_string(parameter);
+				code += Utils::Format::HexString(parameter);
 			}
 			code += "\n";
 		}
@@ -296,7 +302,7 @@ public:
 
 		if (m_constantMemory.size() > 0)
 		{
-			code += "// - Constant Memory: " + std::to_string(m_constantMemory.size()) + " bytes\n";
+			code += "// - Constant Memory: " + Utils::Format::HexString(m_constantMemory.size()) + " bytes [align = " + Utils::Format::HexString(m_constantMemoryAlign) + "]\n";
 		}
 
 		// Relocations
@@ -382,6 +388,7 @@ private:
 
 	std::vector<Variable> m_sharedVariables;
 	std::vector<char> m_constantMemory;
+	std::size_t m_constantMemoryAlign = 0;
 
 	std::vector<Relocation> m_relocations;
 	std::vector<IndirectBranch> m_indirectBranches;

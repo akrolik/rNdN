@@ -263,7 +263,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 	// Constant memory
 
-	binaryFunction->SetConstantMemory(function->GetConstantMemory());
+	binaryFunction->SetConstantMemory(function->GetConstantMemory(), function->GetConstantMemoryAlign());
 
 	return binaryFunction;
 }

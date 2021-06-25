@@ -109,6 +109,11 @@ public:
 				m_constantMemory.push_back(0);
 			}
 		}
+
+		if (sizeof(T) > m_constantMemoryAlign)
+		{
+			m_constantMemoryAlign = sizeof(T);
+		}
 		
 		// Insert data into constant memory
 
@@ -133,6 +138,7 @@ private:
 	std::uint8_t m_temporaryMax = 0;
 
 	std::vector<char> m_constantMemory;
+	std::size_t m_constantMemoryAlign = 0;
 };
 
 }
