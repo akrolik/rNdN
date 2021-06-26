@@ -35,7 +35,8 @@ public:
 	void Visit(const PTX::IndexedRegister<T, S, V> *reg);
 
 private:
-	void GenerateS2R(SASS::SpecialRegister *source);
+	void GenerateS2R(SASS::SpecialRegister::Kind special);
+	void GeneratePM64(SASS::SpecialRegister::Kind specialLo, SASS::SpecialRegister::Kind specialHi);
 
 	SASS::Register *m_destination = nullptr;
 	SASS::Register *m_destinationHi = nullptr;

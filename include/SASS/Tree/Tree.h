@@ -50,6 +50,7 @@ namespace SASS {
 #include "SASS/Tree/Instructions/Integer/FLOInstruction.h"
 #include "SASS/Tree/Instructions/Integer/IADDInstruction.h"
 #include "SASS/Tree/Instructions/Integer/IADD3Instruction.h"
+#include "SASS/Tree/Instructions/Integer/ICMPInstruction.h"
 #include "SASS/Tree/Instructions/Integer/IADD32IInstruction.h"
 #include "SASS/Tree/Instructions/Integer/ISCADDInstruction.h"
 #include "SASS/Tree/Instructions/Integer/ISETPInstruction.h"

@@ -337,12 +337,13 @@ void CodeGenerator::Visit(const PTX::Analysis::SequenceStructure *structure)
 
 bool CodeGenerator::VisitIn(const PTX::BasicBlock *block)
 {
-	m_endBlock = m_builder.CreateBasicBlock(block->GetLabel()->GetName());
+	m_builder.CreateBasicBlock(block->GetLabel()->GetName());
 	return true;
 }
 
 void CodeGenerator::VisitOut(const PTX::BasicBlock *block)
 {
+	m_endBlock = m_builder.GetCurrentBlock();
 	m_builder.CloseBasicBlock();
 }
 

@@ -54,11 +54,10 @@ void Builder::SetCRSStackSize(std::size_t size)
 
 // Basic Blocks
 
-SASS::BasicBlock *Builder::CreateBasicBlock(const std::string& name)
+void Builder::CreateBasicBlock(const std::string& name)
 {
 	m_currentBlock = new SASS::BasicBlock(name);
 	m_currentFunction->AddBasicBlock(m_currentBlock);
-	return m_currentBlock;
 }
 
 void Builder::CloseBasicBlock()

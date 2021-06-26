@@ -40,8 +40,10 @@ public:
 
 	// Basic Blocks
 
-	SASS::BasicBlock *CreateBasicBlock(const std::string& name);
+	void CreateBasicBlock(const std::string& name);
 	void CloseBasicBlock();
+
+	SASS::BasicBlock *GetCurrentBlock() { return m_currentBlock; }
 
 	// Instructions
 
@@ -126,6 +128,13 @@ public:
 		return offset;
 	}
 
+	// Unique identifiers
+
+	std::string UniqueIdentifier(const std::string& name)
+	{
+		return (name + "_" + std::to_string(m_uniqueIndex++));
+	}
+
 private:
 	SASS::Function *m_currentFunction = nullptr;
 	SASS::BasicBlock *m_currentBlock = nullptr;
@@ -139,6 +148,8 @@ private:
 
 	std::vector<char> m_constantMemory;
 	std::size_t m_constantMemoryAlign = 0;
+
+	unsigned int m_uniqueIndex = 0;
 };
 
 }
