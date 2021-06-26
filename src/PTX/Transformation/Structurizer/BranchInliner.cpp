@@ -4,6 +4,7 @@
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
+#include "Utils/Math.h"
 #include "Utils/Options.h"
 
 namespace PTX {
@@ -184,14 +185,65 @@ void BranchInliner::Visit(const PredicatedInstruction *instruction)
 	}
 }
 
+void BranchInliner::Visit(const _MoveSpecialInstruction *instruction)
+{
+	instruction->Dispatch(*this);
+}
+
 void BranchInliner::Visit(const _RemainderInstruction *instruction)
 {
-	m_predicated = false;
+	instruction->Dispatch(*this);
 }
 
 void BranchInliner::Visit(const _DivideInstruction *instruction)
 {
+	instruction->Dispatch(*this);
+}
+
+template<class T>
+void BranchInliner::Visit(const MoveSpecialInstruction<T> *instruction)
+{
+	auto name = instruction->GetSource()->GetName();
+	if (name == PTX::SpecialRegisterName_clock64 || name == PTX::SpecialRegisterName_globaltimer)
+	{
+		m_predicated = false;
+	}
+}
+
+template<class T>
+void BranchInliner::Visit(const RemainderInstruction<T> *instruction)
+{
+	if constexpr(PTX::is_int_type<T>::value && (T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32))
+	{
+		m_power2 = false;
+		instruction->GetSourceB()->Accept(static_cast<ConstOperandVisitor&>(*this));
+		if (m_power2)
+		{
+			return;
+		}
+	}
 	m_predicated = false;
+}
+
+template<class T>
+void BranchInliner::Visit(const DivideInstruction<T> *instruction)
+{
+	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+	{
+		m_power2 = false;
+		instruction->GetSourceB()->Accept(static_cast<ConstOperandVisitor&>(*this));
+		if (m_power2)
+		{
+			return;
+		}
+	}
+	m_predicated = false;
+}
+
+bool BranchInliner::Visit(const _Value *value)
+{
+	value->Dispatch(*this);
+	return false;
 }
 
 bool BranchInliner::Visit(const _Register *reg)
@@ -210,6 +262,19 @@ void BranchInliner::Visit(const Register<T> *reg)
 		if (m_predicate != nullptr && reg->GetName() == m_predicate->GetName())
 		{
 			m_predicated = false;
+		}
+	}
+}
+
+template<class T>
+void BranchInliner::Visit(const Value<T> *value)
+{
+	if constexpr(PTX::is_int_type<T>::value)
+	{
+		auto val = value->GetValue();
+		if (val == Utils::Math::Power2(val))
+		{
+			m_power2 = true;
 		}
 	}
 }

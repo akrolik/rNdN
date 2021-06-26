@@ -29,15 +29,26 @@ public:
 	void Visit(const InstructionStatement *instruction) override;
 	void Visit(const PredicatedInstruction *instruction) override;
 
+	void Visit(const _MoveSpecialInstruction *instruction) override;
 	void Visit(const _RemainderInstruction *instruction) override;
 	void Visit(const _DivideInstruction *instruction) override;
 
+	template<class T>
+	void Visit(const MoveSpecialInstruction<T> *instruction);
+	template<class T>
+	void Visit(const RemainderInstruction<T> *instruction);
+	template<class T>
+	void Visit(const DivideInstruction<T> *instruction);
+
 	// Operands visitor
 
+	bool Visit(const _Value *value) override;
 	bool Visit(const _Register *reg) override;
 
 	template<class T>
 	void Visit(const Register<T> *reg);
+	template<class T>
+	void Visit(const Value<T> *reg);
 
 private:
 	Analysis::SequenceStructure *m_sequenceNode = nullptr;
@@ -49,6 +60,7 @@ private:
 
 	const Register<PredicateType> *m_predicate = nullptr;
 	bool m_predicated = false;
+	bool m_power2 = false;
 };
 
 }
