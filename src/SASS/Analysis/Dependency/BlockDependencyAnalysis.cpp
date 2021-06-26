@@ -105,6 +105,11 @@ void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
 	m_predicated = false;
 }
 
+void BlockDependencyAnalysis::Visit(CS2RInstruction *instruction)
+{
+	BuildControlDependencies(instruction);
+}
+
 void BlockDependencyAnalysis::Visit(BRAInstruction *instruction)
 {
 	BuildControlDependencies(instruction);

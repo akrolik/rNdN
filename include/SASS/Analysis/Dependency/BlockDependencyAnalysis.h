@@ -28,6 +28,7 @@ public:
 	void Visit(Instruction *instruction) override;
 	void Visit(PredicatedInstruction *instruction) override;
 
+	void Visit(CS2RInstruction *instruction) override;
 	void Visit(BRAInstruction *instruction) override;
 	void Visit(BRKInstruction *instruction) override;
 	void Visit(CONTInstruction *instruction) override;
