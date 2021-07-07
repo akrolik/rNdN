@@ -37,13 +37,59 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
 		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
 
-		auto flags1 = SASS::IADDInstruction::Flags::None;
-		auto flags2 = SASS::IADDInstruction::Flags::None;
-
 		// Carry modifier
 
-		if constexpr(T::TypeBits == PTX::Bits::Bits32 || T::TypeBits == PTX::Bits::Bits64)
+		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
 		{
+			// Carry flags
+
+			auto flags = SASS::IADDInstruction::Flags::None;
+			if constexpr(T::TypeBits == PTX::Bits::Bits32)
+			{
+				if (instruction->GetCarryIn())
+				{
+					flags |= SASS::IADDInstruction::Flags::X;
+				}
+				if (instruction->GetCarryOut())
+				{
+					flags |= SASS::IADDInstruction::Flags::CC;
+				}
+			}
+
+			// Saturate modifier
+
+			if constexpr(std::is_same<T, PTX::Int32Type>::value)
+			{
+				if (!instruction->PTX::CarryModifier<T>::IsActive() && instruction->GetSaturate())
+				{
+					flags |= SASS::IADDInstruction::Flags::SAT;
+				}
+			}
+
+			this->AddInstruction(new SASS::IADDInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, flags));
+
+			// Keep in range for 16-bit
+
+			if constexpr(std::is_same<T, PTX::UInt16Type>::value)
+			{
+				this->AddInstruction(new SASS::LOP32IInstruction(
+					destination_Lo, destination_Lo, new SASS::I32Immediate(0xffff), SASS::LOP32IInstruction::BooleanOperator::AND
+				));
+			}
+			else if constexpr(std::is_same<T, PTX::Int16Type>::value)
+			{
+				this->AddInstruction(new SASS::BFEInstruction(
+					destination_Lo, destination_Lo, new SASS::I32Immediate(0x1000))
+				);
+			}
+		}
+		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			// Carry flags
+
+			auto flags1 = SASS::IADDInstruction::Flags::None;
+			auto flags2 = SASS::IADDInstruction::Flags::None;
+
 			if (instruction->GetCarryIn())
 			{
 				flags1 |= SASS::IADDInstruction::Flags::X;
@@ -52,22 +98,9 @@ void AddGenerator::Visit(const PTX::AddInstruction<T> *instruction)
 			{
 				flags2 |= SASS::IADDInstruction::Flags::CC;
 			}
-		}
 
-		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
-		{
-			if constexpr(std::is_same<T, PTX::Int32Type>::value)
-			{
-				if (!instruction->PTX::CarryModifier<T>::IsActive() && instruction->GetSaturate())
-				{
-					flags1 |= SASS::IADDInstruction::Flags::SAT;
-				}
-			}
+			// Extended add
 
-			this->AddInstruction(new SASS::IADDInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, flags1));
-		}
-		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
-		{
 			this->AddInstruction(new SASS::IADDInstruction(
 				destination_Lo, sourceA_Lo, sourceB_Lo, flags1 | SASS::IADDInstruction::Flags::CC
 			));

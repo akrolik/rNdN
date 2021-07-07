@@ -278,21 +278,15 @@ void SetPredicateGenerator::Visit(const PTX::SetPredicateInstruction<T> *instruc
 
 			if constexpr(PTX::is_unsigned_int_type<T>::value || PTX::is_bit_type<T>::value)
 			{
-				this->AddInstruction(new SASS::I2IInstruction(
-					temp0, sourceA_Lo, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
-				));
-				this->AddInstruction(new SASS::I2IInstruction(
-					temp1, sourceB_Lo, SASS::I2IInstruction::DestinationType::U32, SASS::I2IInstruction::SourceType::U16
-				));
+				this->AddInstruction(new SASS::MOVInstruction(temp0, sourceA_Lo));
+				this->AddInstruction(new SASS::MOVInstruction(temp1, sourceB_Lo));
 			}
 			else
 			{
-				this->AddInstruction(new SASS::I2IInstruction(
-					temp0, sourceA_Lo, SASS::I2IInstruction::DestinationType::S32, SASS::I2IInstruction::SourceType::S16
-				));
-				this->AddInstruction(new SASS::I2IInstruction(
-					temp1, sourceB_Lo, SASS::I2IInstruction::DestinationType::S32, SASS::I2IInstruction::SourceType::S16
-				));
+				auto [sourceB_Lo, sourceB_Hi] = registerGenerator.GeneratePair(instruction->GetSourceB());
+
+				this->AddInstruction(new SASS::BFEInstruction(temp0, sourceA_Lo, new SASS::I32Immediate(0x1000)));
+				this->AddInstruction(new SASS::BFEInstruction(temp1, sourceB_Lo, new SASS::I32Immediate(0x1000)));
 			}
 
 			sourceA_Lo = temp0;
