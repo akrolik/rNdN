@@ -137,21 +137,30 @@ private:
 			AddressGenerator<B, T> addressGenerator(this->m_builder);
 			auto s_cacheAddress = addressGenerator.GenerateAddress(s_cache, localIndex);
 
+			std::array<PTX::Register<T> *, N> values;
+
 			for (auto i = 0; i < N; ++i)
 			{
 				OperandGenerator<B, T> operandGenerator(this->m_builder);
 				operandGenerator.SetBoundsCheck(m_boundsCheck);
-				auto value = operandGenerator.GenerateRegister(data, index, this->m_builder.UniqueIdentifier("cache"), cellIndex);
+				values[i] = operandGenerator.GenerateRegister(data, index, this->m_builder.UniqueIdentifier("cache"), cellIndex);
 
+				if (i + 1 < N)
+				{
+					auto newIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(newIndex, index, new PTX::UInt32Value(CACHE_SIZE)));
+					index = newIndex;
+				}
+			}
+
+			for (auto i = 0; i < N; ++i)
+			{
+				auto value = values.at(i);
 				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_cacheAddress, value));
 
 				if (i + 1 < N)
 				{
 					s_cacheAddress = s_cacheAddress->CreateOffsetAddress(CACHE_SIZE);
-
-					auto newIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(newIndex, index, new PTX::UInt32Value(CACHE_SIZE)));
-					index = newIndex;
 				}
 			}
 		}
@@ -265,33 +274,40 @@ private:
 			AddressGenerator<B, T> addressGenerator(this->m_builder);
 			auto s_cacheAddress = addressGenerator.GenerateAddress(s_cache, localIndex);
 
+			std::array<PTX::Register<T> *, N> values;
+
 			for (auto i = 0; i < N; ++i)
 			{
+				auto value = resources->template AllocateTemporary<T>();
+				this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
+				values[i] = value;
+
+				if (i + 1 < N)
+				{
+					s_cacheAddress = s_cacheAddress->CreateOffsetAddress(CACHE_SIZE);
+				}
+			}
+
+			for (auto i = 0; i < N; ++i)
+			{
+				auto value = values.at(i);
 				if (isCell)
 				{
 					auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, T, PTX::GlobalSpace>>>(NameUtils::VariableName(data));
-
-					auto value = resources->template AllocateTemporary<T>();
 					auto globalAddress = addressGenerator.GenerateAddress(parameter, cellIndex, index);
 
-					this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
 					this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(globalAddress, value));
 				}
 				else
 				{
 					auto parameter = kernelResources->template GetParameter<PTX::PointerType<B, T>>(NameUtils::VariableName(data));
-
-					auto value = resources->template AllocateTemporary<T>();
 					auto globalAddress = addressGenerator.GenerateAddress(parameter, index);
 
-					this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::SharedSpace>(value, s_cacheAddress));
 					this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(globalAddress, value));
 				}
 
 				if (i + 1 < N)
 				{
-					s_cacheAddress = s_cacheAddress->CreateOffsetAddress(CACHE_SIZE);
-
 					auto newIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
 					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(newIndex, index, new PTX::UInt32Value(CACHE_SIZE)));
 					index = newIndex;
