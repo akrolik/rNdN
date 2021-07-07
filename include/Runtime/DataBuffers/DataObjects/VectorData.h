@@ -57,7 +57,15 @@ public:
 				return strcmp(s1, s2);
 			}
 		}
-		return (m_data.at(i1) - m_data.at(i2));
+
+		auto& v1 = m_data[i1];
+		auto& v2 = m_data[i2];
+
+		if (v1 < v2)
+		{
+			return -1;
+		}
+		return (v1 > v2);
 	}
 
 	template<typename C>
