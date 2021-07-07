@@ -37,9 +37,7 @@ void DivideGenerator::Visit(const PTX::DivideInstruction<T> *instruction)
 		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
 		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
-		// Generate instruction
-
-		if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+		if constexpr(T::TypeBits == PTX::Bits::Bits32)
 		{
 			if (auto immediateSourceB = dynamic_cast<SASS::I32Immediate *>(sourceB))
 			{
@@ -50,14 +48,23 @@ void DivideGenerator::Visit(const PTX::DivideInstruction<T> *instruction)
 				{
 					auto logValue = Utils::Math::Log2(value);
 					immediateSourceB->SetValue(logValue);
+					
+					auto flags = SASS::SHRInstruction::Flags::None;
+					if constexpr(PTX::is_unsigned_int_type<T>::value)
+					{
+						flags |= SASS::SHRInstruction::Flags::U32;
+					}
 
-					this->AddInstruction(new SASS::SHRInstruction(
-						destination, sourceA, immediateSourceB, SASS::SHRInstruction::Flags::U32
-					));
+					this->AddInstruction(new SASS::SHRInstruction(destination, sourceA, immediateSourceB, flags));
 					return;
 				}
 			}
+		}
 
+		// Generate instruction
+
+		if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+		{
 			auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
 
 			// Compute D = S1 / S2

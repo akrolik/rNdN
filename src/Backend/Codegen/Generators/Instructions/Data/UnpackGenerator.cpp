@@ -47,7 +47,9 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 
 		if constexpr(std::is_same<T, PTX::Bit16Type>::value)
 		{
-			this->AddInstruction(new SASS::SHRInstruction(temp, source_Lo, new SASS::I32Immediate(0x8)));
+			this->AddInstruction(new SASS::SHRInstruction(
+				temp, source_Lo, new SASS::I32Immediate(0x8), SASS::SHRInstruction::Flags::U32
+			));
 			this->AddInstruction(new SASS::LOPInstruction(
 				destinationA, source_Lo, new SASS::I32Immediate(0xff), SASS::LOPInstruction::BooleanOperator::AND
 			));
@@ -55,7 +57,9 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
-			this->AddInstruction(new SASS::SHRInstruction(temp, source_Lo, new SASS::I32Immediate(0x10)));
+			this->AddInstruction(new SASS::SHRInstruction(
+				temp, source_Lo, new SASS::I32Immediate(0x10), SASS::SHRInstruction::Flags::U32
+			));
 			this->AddInstruction(new SASS::LOPInstruction(
 				destinationA, source_Lo, new SASS::I32Immediate(0xffff), SASS::LOPInstruction::BooleanOperator::AND
 			));
