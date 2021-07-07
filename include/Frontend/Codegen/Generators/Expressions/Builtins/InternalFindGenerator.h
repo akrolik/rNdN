@@ -194,7 +194,7 @@ class InternalFindGenerator_Update : public Generator
 public:
 	InternalFindGenerator_Update(
 		Builder& builder, FindOperation findOp,
-		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::UInt32Type> *writeOffset = nullptr
 	) : Generator(builder), m_findOp(findOp), m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
 	std::string Name() const override { return "InternalFindGenerator_Update"; }
@@ -267,13 +267,9 @@ public:
 						auto kernelResources = this->m_builder.GetKernelResources();
 						auto returnParameter = kernelResources->template GetParameter<PTX::PointerType<B, PTX::PointerType<B, PTX::Int64Type, PTX::GlobalSpace>>>(NameUtils::ReturnName(0));
 
-						//TODO: Conversions need to be optimized. Likely by a consistent index size for all data
-
-						auto writeOffset = ConversionGenerator::ConvertSource<PTX::UInt32Type, PTX::Int64Type>(this->m_builder, m_writeOffset);
-
 						AddressGenerator<B, PTX::Int64Type> addressGenerator(this->m_builder);
-						auto returnAddress0 = addressGenerator.GenerateAddress(returnParameter, 0, writeOffset);
-						auto returnAddress1 = addressGenerator.GenerateAddress(returnParameter, 1, writeOffset);
+						auto returnAddress0 = addressGenerator.GenerateAddress(returnParameter, 0, m_writeOffset);
+						auto returnAddress1 = addressGenerator.GenerateAddress(returnParameter, 1, m_writeOffset);
 
 						auto globalIndex64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, globalIndex);
 
@@ -282,7 +278,7 @@ public:
 
 						// End control flow and increment both the matched (predicated) and running counts
 
-						this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(m_writeOffset, m_writeOffset, new PTX::Int64Value(1)));
+						this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(m_writeOffset, m_writeOffset, new PTX::UInt32Value(1)));
 					});
 
 					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(m_targetRegister, m_targetRegister, new PTX::Int64Value(1)));
@@ -296,7 +292,7 @@ public:
 private:
 	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
 	PTX::Register<D> *m_targetRegister = nullptr;
-	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_writeOffset = nullptr;
 
 	FindOperation m_findOp;
 };
@@ -309,7 +305,7 @@ public:
 
 	InternalFindGenerator_Match(
 		Builder& builder, const BaseRegistersTy& baseRegisters, FindOperation findOp, const std::vector<ComparisonOperation>& comparisonOps,
-		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::UInt32Type> *writeOffset = nullptr
 	) : Generator(builder), m_baseRegisters(baseRegisters), m_findOp(findOp), m_comparisonOps(comparisonOps),
 		m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
@@ -416,7 +412,7 @@ private:
 	PTX::Register<PTX::PredicateType> *m_matchPredicate = nullptr;
 	PTX::Register<D> *m_targetRegister = nullptr;
 
-	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_writeOffset = nullptr;
 
 	BaseRegistersTy m_baseRegisters;
 
@@ -430,7 +426,7 @@ class InternalFindGenerator_Constant : public Generator
 public:
 	InternalFindGenerator_Constant(
 		Builder& builder, FindOperation findOp, ComparisonOperation comparisonOp,
-		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::Int64Type> *writeOffset = nullptr
+		PTX::Register<PTX::PredicateType> *runningPredicate, PTX::Register<D>* targetRegister, PTX::Register<PTX::UInt32Type> *writeOffset = nullptr
 	) : Generator(builder), m_findOp(findOp), m_comparisonOp(comparisonOp),
 		m_runningPredicate(runningPredicate), m_targetRegister(targetRegister), m_writeOffset(writeOffset) {}
 
@@ -506,7 +502,7 @@ private:
 	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
 	PTX::Register<D> *m_targetRegister = nullptr;
 
-	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr;
+	PTX::Register<PTX::UInt32Type> *m_writeOffset = nullptr;
 
 	FindOperation m_findOp;
 	ComparisonOperation m_comparisonOp;
@@ -560,13 +556,13 @@ public:
 				{
 					auto resources = this->m_builder.GetLocalResources();
 					m_targetRegister = resources->template AllocateTemporary<PTX::Int64Type>();
-					m_writeOffset = resources->template AllocateTemporary<PTX::Int64Type>();
+					m_writeOffset = resources->template AllocateTemporary<PTX::UInt32Type>();
 
 					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_targetRegister, new PTX::Int64Value(0)));
 
-					OperandGenerator<B, PTX::Int64Type> operandGenerator(this->m_builder);
-					auto writeOffset = operandGenerator.GenerateOperand(arguments.at(2), OperandGenerator<B, PTX::Int64Type>::LoadKind::Vector);
-					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(m_writeOffset, writeOffset));
+					OperandGenerator<B, PTX::UInt32Type> operandGenerator(this->m_builder);
+					auto writeOffset = operandGenerator.GenerateOperand(arguments.at(2), OperandGenerator<B, PTX::UInt32Type>::LoadKind::Vector);
+					this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(m_writeOffset, writeOffset));
 
 					break;
 				}
@@ -848,7 +844,7 @@ private:
 	PTX::Register<PTX::PredicateType> *m_runningPredicate = nullptr;
 	PTX::Register<D> *m_targetRegister = nullptr;
 
-	PTX::Register<PTX::Int64Type> *m_writeOffset = nullptr; // Join output
+	PTX::Register<PTX::UInt32Type> *m_writeOffset = nullptr; // Join output
 
 	const HorseIR::Operand *m_dataX = nullptr;
 
