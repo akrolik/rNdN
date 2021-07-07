@@ -2,6 +2,7 @@
 
 namespace PTX {
 
+class DispatchBase;
 class Label;
 
 class _Constant;
@@ -33,43 +34,44 @@ class _BracedRegister;
 class OperandVisitor
 {
 public:
-	virtual bool Visit(Label *label) { return true; }
+	virtual bool Visit(DispatchBase *operand);
+	virtual bool Visit(Label *label);
 
 	// Constants
 
-	virtual bool Visit(_Constant *constant) { return true; }
-	virtual bool Visit(_ParameterConstant *constant) { return true; }
-	virtual bool Visit(_Value *value) { return true; }
+	virtual bool Visit(_Constant *constant);
+	virtual bool Visit(_ParameterConstant *constant);
+	virtual bool Visit(_Value *value);
 
 	// Extended
 
-	virtual bool Visit(_BracedOperand *operand) { return true; }
-	virtual bool Visit(_DualOperand *operand) { return true; }
-	virtual bool Visit(_InvertedOperand *operand) { return true; }
-	virtual bool Visit(ListOperand *operand) { return true; }
-	virtual bool Visit(StringOperand *operand) { return true; }
+	virtual bool Visit(_BracedOperand *operand);
+	virtual bool Visit(_DualOperand *operand);
+	virtual bool Visit(_InvertedOperand *operand);
+	virtual bool Visit(ListOperand *operand);
+	virtual bool Visit(StringOperand *operand);
 
 	// Address
 
-	virtual bool Visit(_DereferencedAddress *address) { return true; }
-	virtual bool Visit(_MemoryAddress *address) { return true; }
-	virtual bool Visit(_RegisterAddress *address) { return true; }
+	virtual bool Visit(_DereferencedAddress *address);
+	virtual bool Visit(_MemoryAddress *address);
+	virtual bool Visit(_RegisterAddress *address);
 
 	// Variables
 
-	virtual bool Visit(_ConstVariable *variable) { return true; }
-	virtual bool Visit(_GlobalVariable *variable) { return true; }
-	virtual bool Visit(_LocalVariable *variable) { return true; }
-	virtual bool Visit(_ParameterVariable *variable) { return true; }
-	virtual bool Visit(_SharedVariable *variable) { return true; }
+	virtual bool Visit(_ConstVariable *variable);
+	virtual bool Visit(_GlobalVariable *variable);
+	virtual bool Visit(_LocalVariable *variable);
+	virtual bool Visit(_ParameterVariable *variable);
+	virtual bool Visit(_SharedVariable *variable);
 
 	// Registers
 
-	virtual bool Visit(_Register *reg) { return true; }
-	virtual bool Visit(_SpecialRegister *reg) { return true; }
-	virtual bool Visit(_SinkRegister *reg) { return true; }
-	virtual bool Visit(_IndexedRegister *reg) { return true; }
-	virtual bool Visit(_BracedRegister *reg) { return true; }
+	virtual bool Visit(_Register *reg);
+	virtual bool Visit(_SpecialRegister *reg);
+	virtual bool Visit(_SinkRegister *reg);
+	virtual bool Visit(_IndexedRegister *reg);
+	virtual bool Visit(_BracedRegister *reg);
 };
 
 }

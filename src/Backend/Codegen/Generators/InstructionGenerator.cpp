@@ -43,11 +43,22 @@
 namespace Backend {
 namespace Codegen {
 
+void InstructionGenerator::Generate(const PTX::InstructionStatement *instruction)
+{
+	m_instruction = instruction;
+	instruction->Accept(*this);
+}
+
+void InstructionGenerator::Visit(const PTX::DispatchBase *instruction)
+{
+	Error(m_instruction, "Unsupported instruction");
+}
+
 // Arithmetic
 
 void InstructionGenerator::Visit(const PTX::_AbsoluteInstruction *instruction)
 {
-	Error("AbsoluteInstruction");
+	Error(m_instruction, "Unsupported instruction");
 }
 
 void InstructionGenerator::Visit(const PTX::_AddInstruction *instruction)
@@ -94,12 +105,12 @@ void InstructionGenerator::Visit(const PTX::_MultiplyWideInstruction *instructio
 
 void InstructionGenerator::Visit(const PTX::_NegateInstruction *instruction)
 {
-	Error("NegateInstruction");
+	Error(m_instruction, "Unsupported instruction");
 }
 
 void InstructionGenerator::Visit(const PTX::_ReciprocalInstruction *instruction)
 {
-	Error("ReciprocalInstruction");
+	Error(m_instruction, "Unsupported instruction");
 }
 
 void InstructionGenerator::Visit(const PTX::_RemainderInstruction *instruction)
@@ -138,7 +149,7 @@ void InstructionGenerator::Visit(const PTX::BranchInstruction *instruction)
 
 void InstructionGenerator::Visit(const PTX::_CallInstructionBase *instruction)
 {
-	Error("CallInstruction");
+	Error(m_instruction, "Unsupported instruction");
 }
 
 void InstructionGenerator::Visit(const PTX::ReturnInstruction *instruction)

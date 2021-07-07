@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-class DevInstruction : public PredicatedInstruction
+class DevInstruction : public PredicatedInstruction, public DispatchBase
 {
 public:
 	DevInstruction(const std::string& instruction) : m_instruction(instruction) {}

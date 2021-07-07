@@ -6,7 +6,7 @@
 
 namespace PTX {
 
-class BarrierWarpInstruction : public PredicatedInstruction
+class BarrierWarpInstruction : public PredicatedInstruction, public DispatchBase
 {
 public:
 	BarrierWarpInstruction(UInt32Value *memberMask) : m_memberMask(memberMask) {}

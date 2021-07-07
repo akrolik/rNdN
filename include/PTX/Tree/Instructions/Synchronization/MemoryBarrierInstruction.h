@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-class MemoryBarrierInstruction : public PredicatedInstruction
+class MemoryBarrierInstruction : public PredicatedInstruction, public DispatchBase
 {
 public:
 	enum class Level {

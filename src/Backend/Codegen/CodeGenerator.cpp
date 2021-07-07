@@ -358,7 +358,7 @@ bool CodeGenerator::VisitIn(const PTX::InstructionStatement *statement)
 	// Generate instruction
 
 	InstructionGenerator generator(m_builder);
-	statement->Accept(generator);
+	generator.Generate(statement);
 	return false;
 }
 

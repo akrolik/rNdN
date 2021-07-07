@@ -5,7 +5,7 @@
 
 namespace PTX {
 
-class ReturnInstruction : public PredicatedInstruction, public UniformModifier
+class ReturnInstruction : public PredicatedInstruction, public UniformModifier, public DispatchBase
 {
 public:
 	ReturnInstruction(bool uniform = false) : UniformModifier(uniform) {}

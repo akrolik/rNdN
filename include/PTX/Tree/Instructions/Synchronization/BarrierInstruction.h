@@ -7,7 +7,7 @@
 
 namespace PTX {
 
-class BarrierInstruction : public PredicatedInstruction
+class BarrierInstruction : public PredicatedInstruction, public DispatchBase
 {
 public:
 	BarrierInstruction(TypedOperand<UInt32Type> *barrier, bool aligned = false) : m_barrier(barrier), m_wait(true), m_aligned(aligned) {}

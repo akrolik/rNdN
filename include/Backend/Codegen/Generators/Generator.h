@@ -21,7 +21,7 @@ public:
 		Utils::Logger::LogError(Name() + ": Unable to generate " + message);
 	}
 
-	[[noreturn]] void Error(const PTX::Node *node ,const std::string& message)
+	[[noreturn]] void Error(const PTX::Node *node, const std::string& message)
 	{
 		Error("'" + PTX::PrettyPrinter::PrettyString(node) + "', " + message);
 	}

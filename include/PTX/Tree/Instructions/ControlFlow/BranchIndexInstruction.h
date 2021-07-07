@@ -7,7 +7,7 @@
 
 namespace PTX {
 
-class BranchIndexInstruction : public PredicatedInstruction, public UniformModifier
+class BranchIndexInstruction : public PredicatedInstruction, public UniformModifier, public DispatchBase
 {
 public:
 	BranchIndexInstruction(Register<UInt32Type> *index, const std::vector<Label *>& labels, bool uniform = false) : UniformModifier(uniform), m_index(index), m_labels(labels) {}

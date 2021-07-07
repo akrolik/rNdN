@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-class Label : public Operand
+class Label : public Operand, public DispatchBase
 {
 public:
 	Label(const std::string& name) : m_name(name) {}

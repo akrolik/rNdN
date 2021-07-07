@@ -6,7 +6,7 @@
 
 namespace PTX {
 
-class ListOperand : public Operand
+class ListOperand : public Operand, public DispatchBase
 {
 public:
 	ListOperand() {}

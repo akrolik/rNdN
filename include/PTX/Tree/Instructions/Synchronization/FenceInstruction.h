@@ -5,7 +5,7 @@
 
 namespace PTX {
 
-class FenceInstruction : public PredicatedInstruction, public ScopeModifier<>
+class FenceInstruction : public PredicatedInstruction, public ScopeModifier<>, public DispatchBase
 {
 public:
 	using Scope = ScopeModifier<>::Scope;

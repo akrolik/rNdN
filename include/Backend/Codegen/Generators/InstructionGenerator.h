@@ -15,6 +15,12 @@ public:
 
 	std::string Name() const override { return "InstructionGenerator"; }
 
+	void Generate(const PTX::InstructionStatement *instruction);
+
+	// Base error
+
+	void Visit(const PTX::DispatchBase *instruction) override;
+
 	// Arithmetic
 
 	void Visit(const PTX::_AbsoluteInstruction *instruction) override;
@@ -72,6 +78,9 @@ public:
 	void Visit(const PTX::_AtomicInstruction *instruction) override;
 	void Visit(const PTX::BarrierInstruction *instruction) override;
 	void Visit(const PTX::_ReductionInstruction *instruction) override;
+
+private:
+	const PTX::InstructionStatement *m_instruction = nullptr;
 };
 
 }

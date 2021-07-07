@@ -4,7 +4,7 @@
 
 namespace PTX {
 
-class StringOperand : public Operand
+class StringOperand : public Operand, public DispatchBase
 {
 public:
 	StringOperand(const std::string& string) : m_string(string) {}

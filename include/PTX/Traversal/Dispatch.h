@@ -183,8 +183,13 @@ namespace PTX {
 	DispatchType_Void(type); \
 	Utils::Logger::LogError("PTX::Dispatch unsupported type");
 
+class DispatchBase
+{
+
+};
+
 template<template<class, bool = true> class C>
-class Dispatcher
+class Dispatcher : public DispatchBase
 {
 public:
 	template<class V>
@@ -219,7 +224,7 @@ protected:
 };
 
 template<template<class, class, bool = true> class C>
-class Dispatcher_2
+class Dispatcher_2 : public DispatchBase
 {
 public:
 	template<class V>
@@ -280,7 +285,7 @@ protected:
 };
 
 template<template<class, VectorSize, bool = true> class C>
-class Dispatcher_Vector
+class Dispatcher_Vector : public DispatchBase
 {
 public:
 	template<class V>
@@ -345,7 +350,7 @@ protected:
 };
 
 template<template<class, class, VectorSize, bool = true> class C>
-class Dispatcher_VectorSpace
+class Dispatcher_VectorSpace : public DispatchBase
 {
 public:
 	template<class V>
@@ -435,7 +440,7 @@ protected:
 };
 
 template<template<class, class, bool = true> class C>
-class Dispatcher_Space
+class Dispatcher_Space : public DispatchBase
 {
 public:
 	template<class V>
@@ -496,7 +501,7 @@ protected:
 };
 
 template<template<Bits, class, class, bool = true> class C>
-class Dispatcher_Data
+class Dispatcher_Data : public DispatchBase
 {
 public:
 	template<class V>
@@ -586,7 +591,7 @@ protected:
 };
 
 template<typename A, template<Bits, class, class, A, bool = true> class C>
-class Dispatcher_DataAtomic
+class Dispatcher_DataAtomic : public DispatchBase
 {
 public:
 	template<class V, A AA>

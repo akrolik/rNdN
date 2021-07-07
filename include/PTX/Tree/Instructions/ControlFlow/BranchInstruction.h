@@ -7,7 +7,7 @@
 
 namespace PTX {
 
-class BranchInstruction : public PredicatedInstruction, public UniformModifier
+class BranchInstruction : public PredicatedInstruction, public UniformModifier, public DispatchBase
 {
 public:
 	BranchInstruction(Label *label, bool uniform = false) : UniformModifier(uniform), m_label(label) {}
