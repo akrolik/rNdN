@@ -21,6 +21,7 @@
 #include "HorseIR/Analysis/Shape/ShapeUtils.h"
 
 #include "HorseIR/Tree/Tree.h"
+#include "HorseIR/Utils/TypeUtils.h"
 
 #include "PTX/Tree/Tree.h"
 
@@ -437,8 +438,8 @@ public:
 
 	void Generate(const HorseIR::Operand *dataX, const HorseIR::TypedVectorLiteral<L> *dataY)
 	{
-		//TODO: Widest type
-		DispatchType(*this, dataX->GetType(), dataX, dataY);
+		auto widestType = HorseIR::TypeUtils::WidestType(dataX->GetType(), dataY->GetType());
+		DispatchType(*this, widestType, dataX, dataY);
 	}
 
 	template<class T>
