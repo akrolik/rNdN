@@ -47,10 +47,13 @@ public:
 		}
 		else
 		{
-			auto relaxedSource = RelaxType<T>(source);
-			if (relaxedSource)
+			if constexpr(T::TypeBits == S::TypeBits)
 			{
-				return relaxedSource;
+				auto relaxedSource = RelaxType<T>(source);
+				if (relaxedSource)
+				{
+					return relaxedSource;
+				}
 			}
 
 			auto resources = this->m_builder.GetLocalResources();
@@ -217,34 +220,33 @@ private:
 				return new PTX::BitAdapter<PTX::UIntType, B>(source);
 			}
 		}
-		//TODO: Add remaining types and adapters
 		else if constexpr(PTX::is_signed_int_type<D>::value)
 		{
 			if constexpr(PTX::is_unsigned_int_type<S>::value)
 			{
-				// return new PTX::SignedAdapter<B>(source);
+				return new PTX::SignedAdapter<B>(source);
 			}
 			else if constexpr(PTX::is_bit_type<S>::value)
 			{
-				// return new PTX::TypeRegisterAdapter<PTX::IntType, B>(source);
+				return new PTX::TypeAdapter<PTX::IntType, B>(source);
 			}
 		}
 		else if constexpr(PTX::is_unsigned_int_type<D>::value)
 		{
 			if constexpr(PTX::is_signed_int_type<S>::value)
 			{
-				// return new PTX::UnsignedAdapter<B>(source);
+				return new PTX::UnsignedAdapter<B>(source);
 			}
 			else if constexpr(PTX::is_bit_type<S>::value)
 			{
-				// return new PTX::TypeAdapter<PTX::UIntType, B>(source);
+				return new PTX::TypeAdapter<PTX::UIntType, B>(source);
 			}
 		}
 		else if constexpr(PTX::is_float_type<D>::value)
 		{
 			if constexpr(PTX::is_bit_type<S>::value)
 			{
-				// return new PTX::TypeAdapter<PTX::FloatType, B>(source);
+				return new PTX::TypeAdapter<PTX::FloatType, B>(source);
 			}
 		}
 
@@ -354,13 +356,38 @@ private:
 };
 
 template<>
+void ConversionGenerator::ConvertToPredicate<PTX::Bit8Type>(PTX::Register<PTX::PredicateType> *destination, PTX::TypedOperand<PTX::Bit8Type> *source)
+{
+	auto resources = this->m_builder.GetLocalResources();
+	auto temp32 = resources->AllocateTemporary<PTX::Bit32Type>();
+
+	this->m_builder.AddStatement(new PTX::Pack4Instruction<PTX::Bit32Type>(
+		temp32, new PTX::Braced4Operand<PTX::Bit8Type>({source, new PTX::Bit8Value(0), new PTX::Bit8Value(0), new PTX::Bit8Value(0)})
+	));
+	this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Bit32Type>(destination, temp32, new PTX::Bit32Value(0), PTX::Bit32Type::ComparisonOperator::NotEqual));
+}
+
+template<>
+void ConversionGenerator::ConvertFromPredicate<PTX::Bit8Type>(PTX::Register<PTX::Bit8Type> *destination, PTX::TypedOperand<PTX::PredicateType> *source)
+{
+	auto resources = this->m_builder.GetLocalResources();
+	auto temp32 = resources->AllocateTemporary<PTX::Bit32Type>();
+
+	this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::Bit32Type>(temp32, new PTX::Bit32Value(1), new PTX::Bit32Value(0), source));
+	this->m_builder.AddStatement(new PTX::Unpack4Instruction<PTX::Bit32Type>(
+		new PTX::Braced4Register<PTX::Bit8Type>({destination, new PTX::SinkRegister<PTX::Bit8Type>(), new PTX::SinkRegister<PTX::Bit8Type>(), new PTX::SinkRegister<PTX::Bit8Type>()}),
+		temp32
+	));
+}
+
+template<>
 void ConversionGenerator::ConvertToPredicate<PTX::Int8Type>(PTX::Register<PTX::PredicateType> *destination, PTX::TypedOperand<PTX::Int8Type> *source)
 {
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp32 = resources->AllocateTemporary<PTX::Int32Type>();
 
 	this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int32Type, PTX::Int8Type>(temp32, source));
-	this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(destination, temp32, new PTX::Value<PTX::Int32Type>(0), PTX::Int32Type::ComparisonOperator::NotEqual));
+	this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::Int32Type>(destination, temp32, new PTX::Int32Value(0), PTX::Int32Type::ComparisonOperator::NotEqual));
 }
 
 template<>
@@ -369,7 +396,7 @@ void ConversionGenerator::ConvertFromPredicate<PTX::Int8Type>(PTX::Register<PTX:
 	auto resources = this->m_builder.GetLocalResources();
 	auto temp32 = resources->AllocateTemporary<PTX::Int32Type>();
 
-	this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(temp32, new PTX::Value<PTX::Int32Type>(1), new PTX::Value<PTX::Int32Type>(0), source));
+	this->m_builder.AddStatement(new PTX::SelectInstruction<PTX::Int32Type>(temp32, new PTX::Int32Value(1), new PTX::Int32Value(0), source));
 	this->m_builder.AddStatement(new PTX::ConvertInstruction<PTX::Int8Type, PTX::Int32Type>(destination, temp32));
 }
 

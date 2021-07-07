@@ -4,6 +4,29 @@
 
 namespace PTX {
 
+template<template<Bits> class T, Bits B>
+class TypeAdapter : public Adapter<T, BitType, B>
+{
+public:
+	TypeAdapter(TypedOperand<BitType<B>> *operand) : Adapter<T, BitType, B>(operand) {}
+
+	json ToJSON() const override
+	{
+		json j = Adapter<T, BitType, B>::ToJSON();
+		j["kind"] = "PTX::TypeAdapter";
+		return j;
+	}
+};
+
+template<template<Bits> class T>
+using Type8Adapter = TypeAdapter<T, Bits::Bits8>;
+template<template<Bits> class T>
+using Type16Adapter = TypeAdapter<T, Bits::Bits16>;
+template<template<Bits> class T>
+using Type32Adapter = TypeAdapter<T, Bits::Bits32>;
+template<template<Bits> class T>
+using Type64Adapter = TypeAdapter<T, Bits::Bits64>;
+
 template<template<Bits> class T, Bits B, class S>
 class TypeVariableAdapter : public VariableAdapter<T<B>, BitType<B>, S>
 {

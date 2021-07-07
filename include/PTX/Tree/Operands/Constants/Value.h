@@ -79,6 +79,14 @@ protected:
 using BoolValue = Value<PredicateType>;
 
 template<Bits B>
+using BitValue = Value<BitType<B>>;
+
+using Bit8Value = Value<Bit8Type>;
+using Bit16Value = Value<Bit16Type>;
+using Bit32Value = Value<Bit32Type>;
+using Bit64Value = Value<Bit64Type>;
+
+template<Bits B>
 using IntValue = Value<IntType<B>>;
 
 using Int8Value = Value<Int8Type>;

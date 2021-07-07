@@ -4,6 +4,25 @@
 
 namespace PTX {
 
+template<Bits B>
+class SignedAdapter : public Adapter<IntType, UIntType, B>
+{
+public:
+	SignedAdapter(TypedOperand<UIntType<B>> *operand) : Adapter<IntType, UIntType, B>(operand) {}
+
+	json ToJSON() const override
+	{
+		json j = Adapter<IntType, UIntType, B>::ToJSON();
+		j["kind"] = "PTX::SignedAdapter";
+		return j;
+	}
+};
+
+using Signed8Adapter = SignedAdapter<Bits::Bits8>;
+using Signed16Adapter = SignedAdapter<Bits::Bits16>;
+using Signed32Adapter = SignedAdapter<Bits::Bits32>;
+using Signed64Adapter = SignedAdapter<Bits::Bits64>;
+
 template<Bits B, class S>
 class SignedVariableAdapter : public VariableAdapter<IntType<B>, UIntType<B>, S>
 {
