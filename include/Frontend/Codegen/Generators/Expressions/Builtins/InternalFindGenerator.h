@@ -634,12 +634,7 @@ public:
 		auto remainder = resources->template AllocateTemporary<PTX::UInt32Type>();
 		this->m_builder.AddStatement(new PTX::RemainderInstruction<PTX::UInt32Type>(remainder, size, new PTX::UInt32Value(FIND_CACHE_SIZE)));
 
-		auto sizePredicate_1 = resources->template AllocateTemporary<PTX::PredicateType>();
-		this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-			sizePredicate_1, remainder, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
-		));
-
-		this->m_builder.AddWhileLoop("FIND", [&]()
+		this->m_builder.AddIfStatement("FIND_SKIP", [&]()
 		{
 			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
@@ -647,48 +642,63 @@ public:
 			));
 			return std::make_tuple(predicate, false);
 		},
-		[&](Builder::LoopContext& loopContext)
+		[&]()
 		{
-			// Load the data cache into shared memory and synchronize
-
-			InternalCacheGenerator_Load<B, FIND_CACHE_SIZE, 1> cacheGenerator(this->m_builder);
-			cacheGenerator.Generate(identifierY, index, m_dataX->GetType());
-
-			// Setup the inner loop and bound
-			//  - Chunks 0...(N-1): FIND_CACHE_SIZE
-			//  - Chunk N: remainder
-
-			// Increment by the number of threads. Do it here since it will be reused
-
-			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(FIND_CACHE_SIZE)));
-
-			this->m_builder.AddIfElseStatement("FIND", [&]()
+			this->m_builder.AddDoWhileLoop("FIND", [&](Builder::LoopContext& loopContext)
 			{
-				// Chose the correct bound for the inner loop, sizePredicate indicates a complete iteration
+				// Load the data cache into shared memory and synchronize
 
-				auto sizePredicate_2 = resources->template AllocateTemporary<PTX::PredicateType>();
-				auto sizePredicate_3 = resources->template AllocateTemporary<PTX::PredicateType>();
+				InternalCacheGenerator_Load<B, FIND_CACHE_SIZE, 1> cacheGenerator(this->m_builder);
+				cacheGenerator.Generate(identifierY, index, m_dataX->GetType());
 
+				// Setup the inner loop and bound
+				//  - Chunks 0...(N-1): FIND_CACHE_SIZE
+				//  - Chunk N: remainder
+
+				// Increment by the number of threads. Do it here since it will be reused
+
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(FIND_CACHE_SIZE)));
+
+				this->m_builder.AddIfElseStatement("FINDA", [&]()
+				{
+					// Chose the correct bound for the inner loop, sizePredicate indicates a complete iteration
+
+					auto sizePredicate_1 = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto sizePredicate_2 = resources->template AllocateTemporary<PTX::PredicateType>();
+					auto sizePredicate_3 = resources->template AllocateTemporary<PTX::PredicateType>();
+
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+						sizePredicate_1, remainder, new PTX::UInt32Value(0), PTX::UInt32Type::ComparisonOperator::NotEqual
+					));
+					this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+						sizePredicate_2, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+					));
+					this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(sizePredicate_3, sizePredicate_1, sizePredicate_2));
+
+					return std::make_tuple(sizePredicate_3, false);
+				},
+				[&]()
+				{
+					GenerateInnerLoop(identifierY, new PTX::UInt32Value(FIND_CACHE_SIZE), 16);
+				},
+				[&]()
+				{
+					GenerateInnerLoop(identifierY, remainder, 1);
+				});
+
+				// Barrier before the next chunk, otherwise some warps might overwrite the previous values too soon
+
+				BarrierGenerator<B> barrierGenerator(this->m_builder);
+				barrierGenerator.Generate();
+
+				// Exit loop if last chunk
+
+				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-					sizePredicate_2, index, bound, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+					predicate, index, bound, PTX::UInt32Type::ComparisonOperator::Less
 				));
-				this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(sizePredicate_3, sizePredicate_1, sizePredicate_2));
-
-				return std::make_tuple(sizePredicate_3, false);
-			},
-			[&]()
-			{
-				GenerateInnerLoop(identifierY, new PTX::UInt32Value(FIND_CACHE_SIZE), 16);
-			},
-			[&]()
-			{
-				GenerateInnerLoop(identifierY, remainder, 1);
+				return std::make_tuple(predicate, false);
 			});
-
-			// Barrier before the next chunk, otherwise some warps might overwrite the previous values too soon
-
-			BarrierGenerator<B> barrierGenerator(this->m_builder);
-			barrierGenerator.Generate();
 		});
 	}
 
@@ -699,14 +709,17 @@ public:
 		// Loop body
 		//
 		//    j = 0
-		//    START_2: (unroll)
-		//       setp %p2, j, FIND_CACHE_SIZE
-		//       @%p2 br END_2
 		//
+		//    setp.ge %p2, j, FIND_CACHE_SIZE
+		//    @%p2 br END_2
+		//
+		//    START_2: (unroll)
 		//       <check= s[j]> (set found, do NOT break -> slower)
 		//
-		//       <increment, j, 1>
-		//       br START_2
+		//       <increment, j, unroll>
+		//
+		//       setp.lt %p2, j, FIND_CACHE_SIZE
+		//       @%p2 br START_2
 		//
 		//    END_2:
 
@@ -716,7 +729,7 @@ public:
 		InternalFindGenerator_MatchInit<B> initGenerator(this->m_builder);
 		auto baseRegisters = initGenerator.Generate(identifierY, m_dataX->GetType());
 
-		this->m_builder.AddWhileLoop("FINDI", [&]()
+		this->m_builder.AddIfStatement("FINDI_SKIP", [&]()
 		{
 			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
@@ -724,24 +737,35 @@ public:
 			));
 			return std::make_tuple(predicate, false);
 		},
-		[&](Builder::LoopContext& loopContext)
+		[&]()
 		{
-			// Generate match for every unroll factor
-
-			InternalFindGenerator_Match<B, D> matchGenerator(this->m_builder, baseRegisters, m_findOp, m_comparisonOps, m_runningPredicate, m_targetRegister, m_writeOffset);
-			for (auto i = 0; i < factor; ++i)
+			this->m_builder.AddDoWhileLoop("FINDI", [&](Builder::LoopContext& loopContext)
 			{
-				matchGenerator.Generate(m_dataX, identifierY, i);
-			}
+				// Generate match for every unroll factor
 
-			// Increment by the iterations completed
+				InternalFindGenerator_Match<B, D> matchGenerator(this->m_builder, baseRegisters, m_findOp, m_comparisonOps, m_runningPredicate, m_targetRegister, m_writeOffset);
+				for (auto i = 0; i < factor; ++i)
+				{
+					matchGenerator.Generate(m_dataX, identifierY, i);
+				}
 
-			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(factor)));
+				// Increment by the iterations completed
 
-			for (const auto [base, inc] : baseRegisters)
-			{
-				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(base, base, new PTX::UIntValue<B>(factor * inc)));
-			}
+				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(index, index, new PTX::UInt32Value(factor)));
+
+				for (const auto [base, inc] : baseRegisters)
+				{
+					this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UIntType<B>>(base, base, new PTX::UIntValue<B>(factor * inc)));
+				}
+				
+				// Exit loop
+
+				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					predicate, index, bound, PTX::UInt32Type::ComparisonOperator::Less
+				));
+				return std::make_tuple(predicate, false);
+			});
 		});
 	}
 
