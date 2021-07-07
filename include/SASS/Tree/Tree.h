@@ -66,6 +66,7 @@ namespace SASS {
 #include "SASS/Tree/Instructions/Float/DMNMXInstruction.h"
 #include "SASS/Tree/Instructions/Float/DMULInstruction.h"
 #include "SASS/Tree/Instructions/Float/DSETPInstruction.h"
+#include "SASS/Tree/Instructions/Float/FADDInstruction.h"
 #include "SASS/Tree/Instructions/Float/MUFUInstruction.h"
 
 #include "SASS/Tree/Instructions/LoadStore/ATOMInstruction.h"
