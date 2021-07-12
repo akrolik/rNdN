@@ -218,16 +218,25 @@ std::string ListCompressedBuffer::Description() const
 	return description + "}";
 }
 
-std::string ListCompressedBuffer::DebugDump() const
+std::string ListCompressedBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
-	std::string string = "[";
-	string += " < Data offset = " + std::to_string(m_values->GetGPUReadBuffer()->GetGPUBuffer()) + " >\n";
-	string += " - Data addresses: " + m_dataAddresses->DebugDump() + "\n";
-	string += " - Data: " + m_values->DebugDump() + "\n";
-	string += " < Size offset = " + std::to_string(m_sizes->GetGPUReadBuffer()->GetGPUBuffer()) + " >\n";
-	string += " - Size addresses: " + m_sizeAddresses->DebugDump() + "\n";
-	string += " - Sizes: " + m_sizes->DebugDump() + "\n";
-	return string + "]";
+	std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+	std::string indentStringP1((indent + 1) * Utils::Logger::IndentSize, ' ');
+
+	std::string string;
+	if (!preindent)
+	{
+		string += indentString;
+	}
+       
+	string += "[\n";
+	string += indentStringP1 + " < Data offset = " + std::to_string(m_values->GetGPUReadBuffer()->GetGPUBuffer()) + " >\n";
+	string += indentStringP1 + " - Data addresses: " + m_dataAddresses->DebugDump() + "\n";
+	string += indentStringP1 + " - Data: " + m_values->DebugDump() + "\n";
+	string += indentStringP1 + " < Size offset = " + std::to_string(m_sizes->GetGPUReadBuffer()->GetGPUBuffer()) + " >\n";
+	string += indentStringP1 + " - Size addresses: " + m_sizeAddresses->DebugDump() + "\n";
+	string += indentStringP1 + " - Sizes: " + m_sizes->DebugDump() + "\n";
+	return string + indentString + "]";
 }
 
 void ListCompressedBuffer::Clear(ClearMode mode)

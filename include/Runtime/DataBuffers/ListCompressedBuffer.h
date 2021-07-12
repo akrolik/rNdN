@@ -53,7 +53,7 @@ public:
 	// Printers
 
 	std::string Description() const override;
-	std::string DebugDump() const override;
+	std::string DebugDump(unsigned int indent = 0, bool preindent = false) const override;
 
 	// Clear
 

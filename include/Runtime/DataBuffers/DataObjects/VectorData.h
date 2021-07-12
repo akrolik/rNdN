@@ -28,7 +28,7 @@ public:
 
 	virtual void Resize(size_t size) = 0;
 
-	virtual std::string DebugDump(unsigned int index) const = 0;
+	virtual std::string DebugDumpElement(unsigned int index, unsigned int indent = 0, bool preindent = false) const = 0;
 
 	virtual void Clear() = 0;
 };
@@ -104,9 +104,14 @@ public:
 		return (HorseIR::PrettyPrinter::PrettyString(m_type) + "(" + std::to_string(GetElementSize()) + " bytes) x " + std::to_string(GetElementCount()));
 	}
 
-	std::string DebugDump() const
+	std::string DebugDump(unsigned int indent = 0, bool preindent = false) const
 	{
 		std::string string;
+		if (!preindent)
+		{
+			string += std::string(indent * Utils::Logger::IndentSize, ' ');
+		}
+
 		auto count = std::min(m_data.size(), 32ul);
 		if (count != 1)
 		{
@@ -120,7 +125,7 @@ public:
 				string += ", ";
 			}
 			first = false;
-			string += DebugDump(i);
+			string += _DebugDumpElement(i);
 		}
 		if (m_data.size() > count)
 		{
@@ -134,7 +139,25 @@ public:
 		return string;
 	}
 
-	std::string DebugDump(unsigned int index) const override
+	std::string DebugDumpElement(unsigned int index, unsigned int indent = 0, bool preindent = false) const override
+	{
+		if (preindent)
+		{
+			return _DebugDumpElement(index);
+		}
+
+		std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+		return indentString + _DebugDumpElement(index);
+	}
+
+	void Clear() override
+	{
+		m_data.clear();
+		m_data.resize(m_size);
+	}
+
+private:
+	std::string _DebugDumpElement(unsigned int index) const
 	{
 		if constexpr(std::is_pointer<T>::value)
 		{
@@ -203,13 +226,6 @@ public:
 		}
 	}
 
-	void Clear() override
-	{
-		m_data.clear();
-		m_data.resize(m_size);
-	}
-
-private:
 	const HorseIR::BasicType *m_type = nullptr;
 
 	CUDA::Vector<T> m_data;

@@ -252,20 +252,32 @@ std::string ListCellBuffer::Description() const
 	return description + "}";
 }
 
-std::string ListCellBuffer::DebugDump() const
+std::string ListCellBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
-	std::string string = "[";
-	bool first = true;
-	for (const auto& cell : m_cells)
+	std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+	std::string indentStringP1((indent + 1) * Utils::Logger::IndentSize, ' ');
+
+	std::string string;
+	if (!preindent)
 	{
-		if (first)
-		{
-			string += "\n";
-		}
-		string += " - ";
-		first = false;
-		string += cell->DebugDump();
+		string += indentString;
+	}
+       
+	string += "[";
+	if (m_cells.size() > 0)
+	{
 		string += "\n";
+
+		auto index = 0u;
+		for (const auto& cell : m_cells)
+		{
+			string += indentStringP1 + "[" + std::to_string(index) + "] ";
+			string += cell->DebugDump(indent + 1, true);
+			string += "\n";
+
+			index++;
+		}
+		string += indentString;
 	}
 	return string + "]";
 }

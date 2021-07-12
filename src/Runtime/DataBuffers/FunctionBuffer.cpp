@@ -42,9 +42,14 @@ std::string FunctionBuffer::Description() const
 	return HorseIR::PrettyPrinter::PrettyString(m_function, true);
 }
 
-std::string FunctionBuffer::DebugDump() const
+std::string FunctionBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
-	return HorseIR::PrettyPrinter::PrettyString(m_function, true);
+	std::string string;
+	if (!preindent)
+	{
+		string += std::string(indent * Utils::Logger::IndentSize, ' ');
+	}
+	return string + HorseIR::PrettyPrinter::PrettyString(m_function, true);
 }
 
 }

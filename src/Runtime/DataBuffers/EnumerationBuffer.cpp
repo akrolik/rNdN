@@ -66,19 +66,38 @@ std::string EnumerationBuffer::Description() const
 	return description + "}";
 }
 
-std::string EnumerationBuffer::DebugDump() const
+std::string EnumerationBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
-	std::string string = "";
-	for (auto i = 0ul; i < m_size; ++i)
+	std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+	std::string indentStringP1((indent + 1) * Utils::Logger::IndentSize, ' ');
+
+	std::string string;
+	if (!preindent)
 	{
-		string += DebugDump(i) + "\n";
+		string += indentString;
 	}
-	return string;
+
+	string += "[";
+	if (m_size > 0)
+	{
+		string += "\n";
+		for (auto i = 0ul; i < m_size; ++i)
+		{
+			string += indentStringP1 + DebugDumpElement(i, indent + 1, true) + "\n";
+		}
+		string += indentString;
+	}
+	return string + "]";
 }
 
-std::string EnumerationBuffer::DebugDump(unsigned int index) const
+std::string EnumerationBuffer::DebugDumpElement(unsigned int index, unsigned int indent, bool preindent) const
 {
-	return m_values->DebugDump(index) + " -> [" + m_indexes->DebugDump(index) + "]";
+	std::string string;
+	if (!preindent)
+	{
+		string += std::string(indent * Utils::Logger::IndentSize, ' ');
+	}
+	return string + m_values->DebugDump(index) + " -> [" + m_indexes->DebugDump(index) + "]";
 }
 
 void EnumerationBuffer::Clear(ClearMode mode)

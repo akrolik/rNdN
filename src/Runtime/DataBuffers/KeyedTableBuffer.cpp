@@ -67,12 +67,21 @@ std::string KeyedTableBuffer::Description() const
 	return description + "}";
 }
 
-std::string KeyedTableBuffer::DebugDump() const
+std::string KeyedTableBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
-	std::string string = "{";
-	string += m_key->DebugDump() + "\n -> \n";
-	string += m_value->DebugDump();
-	string += "\n}"; 
+	std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+
+	std::string string;
+	if (!preindent)
+	{
+		string += indentString;
+	}
+
+	string += "{\n";
+	string += m_key->DebugDump(indent + 1) + "\n";
+	string += indentString + "->\n";
+	string += m_value->DebugDump(indent + 1) + "\n";
+	string += indentString + "}"; 
 	return string;
 }
 

@@ -132,10 +132,17 @@ std::string TableBuffer::Description() const
 	return description + "}";
 }
 
-std::string TableBuffer::DebugDump() const
+std::string TableBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
+	std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+
 	std::stringstream string;
 	string << std::left;
+	if (!preindent)
+	{
+		string << indentString;
+	}
+
 	for (const auto& [name, data] : m_columns)
 	{
 		if (HorseIR::TypeUtils::IsDatetimeType(data->GetType()))
@@ -148,7 +155,7 @@ std::string TableBuffer::DebugDump() const
 		}
 		string << name;
 	}
-	string << std::endl;
+	string << std::endl << indentString;
 	for (const auto& [name, data] : m_columns)
 	{
 		if (HorseIR::TypeUtils::IsDatetimeType(data->GetType()))
@@ -160,7 +167,7 @@ std::string TableBuffer::DebugDump() const
 			string << std::string(20, '-');
 		}
 	}
-	string << std::endl;
+	string << std::endl << indentString;
 	for (auto i = 0ul; i < m_rows; ++i)
 	{
 		for (const auto& [name, data] : m_columns)
@@ -174,7 +181,7 @@ std::string TableBuffer::DebugDump() const
 			{
 				string << std::setw(20);
 			}
-		       	string << data->DebugDump(i);
+		       	string << data->DebugDumpElement(i, indent, true);
 		}
 		string << std::endl;
 	}

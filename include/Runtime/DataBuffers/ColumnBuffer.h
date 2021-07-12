@@ -19,8 +19,7 @@ public:
 
 	// Colum printing
 
-	virtual std::string DebugDump() const = 0;
-	virtual std::string DebugDump(unsigned int index) const = 0;
+	virtual std::string DebugDumpElement(unsigned int index, unsigned int indent = 0, bool preindent = false) const = 0;
 
 protected:
 	ColumnBuffer(DataBuffer::Kind kind) : DataBuffer(kind) {}

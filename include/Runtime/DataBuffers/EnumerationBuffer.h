@@ -51,8 +51,9 @@ public:
 	// Printers
 
 	std::string Description() const override;
-	std::string DebugDump() const override;
-	std::string DebugDump(unsigned int index) const override;
+
+	std::string DebugDump(unsigned int indent = 0, bool preindent = false) const override;
+	std::string DebugDumpElement(unsigned int index, unsigned int indent = 0, bool preindent = false) const override;
 
 	// Clear
 

@@ -81,18 +81,27 @@ std::string DictionaryBuffer::Description() const
 	return description + "}";
 }
 
-std::string DictionaryBuffer::DebugDump() const
+std::string DictionaryBuffer::DebugDump(unsigned int indent, bool preindent) const
 {
-	std::string string = "{";
+	std::string indentString(indent * Utils::Logger::IndentSize, ' ');
+	std::string indentStringP1((indent + 1) * Utils::Logger::IndentSize, ' ');
+
+	std::string string;
+	if (!preindent)
+	{
+		string += indentString;
+	}
+
+	string += "{";
 	if (m_size > 0)
 	{
 		string += "\n";
-	}
-	for (auto i = 0ul; i < m_size; ++i)
-	{
-		string += "  - [" + m_keys->DebugDump(i) + "] -> ";
-		string += m_values->GetCell(i)->DebugDump();
-		string += "\n";
+		for (auto i = 0ul; i < m_size; ++i)
+		{
+			string += indentStringP1 + "[" + m_keys->DebugDumpElement(i) + "] -> ";
+			string += m_values->GetCell(i)->DebugDump(indent + 1, true) + "\n";
+		}
+		string += indentString;
 	}
 	return string + "}";
 }

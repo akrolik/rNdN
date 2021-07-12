@@ -91,7 +91,7 @@ public:
 	// Printers
 
 	virtual std::string Description() const = 0;
-	virtual std::string DebugDump() const = 0;
+	virtual std::string DebugDump(unsigned int indent = 0, bool preindent = false) const = 0;
 
 	// Clear
 
@@ -123,7 +123,10 @@ protected:
 	mutable bool m_cpuConsistent = false;
 
 	std::string m_tag = "";
-	std::string TransferString(const std::string& name) const { return "Transfer " + ((m_tag == "") ? "" : "'" + m_tag + "' ") + "to " + name; }
+	std::string TransferString(const std::string& name) const
+	{
+		return "Transfer " + ((m_tag == "") ? "" : "'" + m_tag + "' ") + "to " + name;
+	}
 };
 
 }

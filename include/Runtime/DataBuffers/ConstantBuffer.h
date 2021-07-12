@@ -94,9 +94,14 @@ private:
 		return std::to_string(m_value) + ":" + HorseIR::PrettyPrinter::PrettyString(m_type);
 	}
 
-	std::string DebugDump() const override
+	std::string DebugDump(unsigned int indent = 0, bool preindent = false) const override
 	{
-		return std::to_string(m_value) + ":" + HorseIR::PrettyPrinter::PrettyString(m_type);
+		std::string string;
+		if (!preindent)
+		{
+			string += std::string(indent * Utils::Logger::IndentSize, ' ');
+		}
+		return string + std::to_string(m_value) + ":" + HorseIR::PrettyPrinter::PrettyString(m_type);
 	}
 
 protected:

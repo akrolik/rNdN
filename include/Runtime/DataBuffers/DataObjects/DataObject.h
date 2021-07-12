@@ -15,7 +15,7 @@ public:
 	// Printer
 
 	virtual std::string Description() const = 0;
-	virtual std::string DebugDump() const = 0;
+	virtual std::string DebugDump(unsigned int indent = 0, bool preindent = false) const = 0;
 };
 
 }
