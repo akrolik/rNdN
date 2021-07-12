@@ -18,6 +18,8 @@ public:
 	CUDA::Kernel GetKernel(const std::string& name) const;
 	const PTX::FunctionDefinition<PTX::VoidType> *GetKernelCode(const std::string& name) const;
 
+	std::string ToString() const;
+
 private:
 	const PTX::Program *m_program = nullptr;
 	const CUDA::Module *m_binary = nullptr;

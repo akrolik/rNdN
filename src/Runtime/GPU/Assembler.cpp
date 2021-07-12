@@ -11,6 +11,7 @@
 #include "PTX/Utils/PrettyPrinter.h"
 
 #include "Utils/Chrono.h"
+#include "Utils/Logger.h"
 #include "Utils/Options.h"
 
 #include <fstream>
@@ -151,6 +152,11 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 	auto gpuProgram = new Program(program, gpuModule);
 
 	Utils::Chrono::End(timeAssembler_start);
+
+	if (Utils::Options::IsDebug_Print())
+	{
+		Utils::Logger::LogDebug(gpuProgram->ToString());
+	}
 
 	return gpuProgram;
 }
