@@ -266,7 +266,7 @@ private:
 					this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(previous, address));
 
 					ComparisonGenerator<B, PTX::PredicateType> comparisonGeneratorEQ(this->m_builder, ComparisonOperation::Equal);
-					comparisonGeneratorEQ.Generate<T>(predicate, previous, emptyRegister);
+					comparisonGeneratorEQ.template Generate<T>(predicate, previous, emptyRegister);
 
 					// CAS!
 
@@ -295,7 +295,7 @@ private:
 							// Check if slot still empty
 
 							ComparisonGenerator<B, PTX::PredicateType> comparisonGeneratorEQ(this->m_builder, ComparisonOperation::Equal);
-							comparisonGeneratorEQ.Generate<T>(predicate, previous, emptyRegister);
+							comparisonGeneratorEQ.template Generate<T>(predicate, previous, emptyRegister);
 
 							// If empty, store the current value
 
@@ -321,7 +321,7 @@ private:
 					}
 
 					ComparisonGenerator<B, PTX::PredicateType> comparisonGeneratorNE(this->m_builder, ComparisonOperation::NotEqual);
-					comparisonGeneratorNE.Generate<T>(predicate, previous, emptyRegister);
+					comparisonGeneratorNE.template Generate<T>(predicate, previous, emptyRegister);
 
 					// Increment before jumping, so we can make the exit a straight shot
 
