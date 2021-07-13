@@ -117,6 +117,12 @@ int main(int argc, const char *argv[])
 
 	Utils::Chrono::End(timeCompilation_start);
 
+	if (Utils::Options::IsDebug_CompileOnly())
+	{
+		Utils::Chrono::Complete();
+		std::exit(EXIT_SUCCESS);
+	}
+
 	// Load data
 
 	Utils::Logger::LogSection("Loading data");

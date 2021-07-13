@@ -19,6 +19,7 @@ public:
 	static constexpr char const *Opt_Debug_load = "debug-load";
 	static constexpr char const *Opt_Debug_print = "debug-print";
 	static constexpr char const *Opt_Debug_time = "debug-time";
+	static constexpr char const *Opt_Debug_compile_only = "debug-compile-only";
 
 	static constexpr char const *Opt_Frontend_print_hir = "frontend-print-hir";
 	static constexpr char const *Opt_Frontend_print_hir_typed = "frontend-print-hir-typed";
@@ -100,6 +101,7 @@ public:
 	static bool IsDebug_Load();
 	static bool IsDebug_Print();
 	static bool IsDebug_Time();
+	static bool IsDebug_CompileOnly();
 
 	// Frontend
 

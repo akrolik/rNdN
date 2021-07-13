@@ -78,6 +78,11 @@ bool Options::IsDebug_Time()
 	return Get(Opt_Debug_time);
 }
 
+bool Options::IsDebug_CompileOnly()
+{
+	return Get(Opt_Debug_compile_only);
+}
+
 // Frontend
 
 bool Options::IsFrontend_PrintHorseIR()
@@ -552,6 +557,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Debug_load, "Debug data loading")
 		(Opt_Debug_print, "Print debug logs")
 		(Opt_Debug_time, "Print executing timings")
+		(Opt_Debug_compile_only, "Exit after compilation")
 	;
 	m_options.add_options("Frontend")
 		(Opt_Frontend_print_hir, "Pretty print input HorseIR program")
