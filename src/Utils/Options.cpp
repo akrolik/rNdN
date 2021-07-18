@@ -78,6 +78,20 @@ bool Options::IsDebug_Time()
 	return Get(Opt_Debug_time);
 }
 
+Options::TimeUnit Options::GetDebug_TimeUnit()
+{
+	auto& timeUnit = Get<std::string>(Opt_Debug_time_unit);
+	if (timeUnit == "us")
+	{
+		return TimeUnit::Microseconds;
+	}
+	else if (timeUnit == "ns")
+	{
+		return TimeUnit::Nanoseconds;
+	}
+	Utils::Logger::LogError("Unknown time unit '" + timeUnit + "'");
+}
+
 bool Options::IsDebug_CompileOnly()
 {
 	return Get(Opt_Debug_compile_only);
@@ -542,7 +556,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 	;
 	m_options.add_options("Optimization")
 		(Opt_Optimize_outline, "Outline graph optimization\n"
-			"   - none  GPU capable operations executed in isolation\n"
+			"   - none   GPU capable operations executed in isolation\n"
 			"   - flow   Merge data-dependent kernels\n"
 			"   - full   Optimize shared loads/compression",
 			cxxopts::value<std::string>()->default_value("full")
@@ -556,7 +570,12 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 	m_options.add_options("Debug")
 		(Opt_Debug_load, "Debug data loading")
 		(Opt_Debug_print, "Print debug logs")
-		(Opt_Debug_time, "Print executing timings")
+		(Opt_Debug_time, "Print execution timings")
+		(Opt_Debug_time_unit, "Execution timings unit\n"
+			"   - us   Microseconds\n"
+			"   - ns   Nanoseconds",
+			cxxopts::value<std::string>()->default_value("us")
+		)
 		(Opt_Debug_compile_only, "Exit after compilation")
 	;
 	m_options.add_options("Frontend")

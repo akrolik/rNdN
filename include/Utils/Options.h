@@ -19,6 +19,7 @@ public:
 	static constexpr char const *Opt_Debug_load = "debug-load";
 	static constexpr char const *Opt_Debug_print = "debug-print";
 	static constexpr char const *Opt_Debug_time = "debug-time";
+	static constexpr char const *Opt_Debug_time_unit = "debug-time-unit";
 	static constexpr char const *Opt_Debug_compile_only = "debug-compile-only";
 
 	static constexpr char const *Opt_Frontend_print_hir = "frontend-print-hir";
@@ -98,9 +99,15 @@ public:
 
 	// Debug
 
+	enum class TimeUnit {
+		Microseconds,
+		Nanoseconds
+	};
+
 	static bool IsDebug_Load();
 	static bool IsDebug_Print();
 	static bool IsDebug_Time();
+	static TimeUnit GetDebug_TimeUnit();
 	static bool IsDebug_CompileOnly();
 
 	// Frontend

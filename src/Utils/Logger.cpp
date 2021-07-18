@@ -68,9 +68,18 @@ void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 
 void Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
 {
-	auto name = timing->GetName();
-	auto time = double(timing->GetTime()) / 1000;
+	auto ratio = 1;
+	auto unitString = "ns";
+
+	if (Utils::Options::GetDebug_TimeUnit() == Utils::Options::TimeUnit::Microseconds)
+	{
+		ratio = 1000;
+		unitString = "us";
+	}
 	
+	auto name = timing->GetName();
+	auto time = double(timing->GetTime()) / ratio;
+
 	std::string _prefix = "[TIME] ";
 	if (indentation > 0)
 	{
@@ -84,16 +93,17 @@ void Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
 		auto childTime = 0.0;
 		for (auto child : timing->GetChildren())
 		{
-			childTime += double(child->GetTime()) / 1000;
+			childTime += double(child->GetTime()) / ratio;
 			LogTiming(child, indentation + 1);
 		}
+
 		auto overhead = (time - childTime);
 
-		std::cout << std::fixed << std::setprecision(1) << _prefix << name << ": " << time << " us [overhead: " << overhead << " us]" << std::endl;
+		std::cout << std::fixed << std::setprecision(1) << _prefix << name << ": " << time << " " << unitString << " [overhead: " << overhead << " " << unitString << "]" << std::endl;
 	}
 	else
 	{
-		std::cout << _prefix << name << ": " << time << " us" << std::endl;
+		std::cout << _prefix << name << ": " << time << " " << unitString << std::endl;
 	}
 }
 
