@@ -239,7 +239,7 @@ public:
 		return "<unknown>";
 	}
 
-	SpecialRegister(Kind kind) : m_kind(kind) {}
+	SpecialRegister(Kind kind) : Operand(Operand::Kind::SpecialRegister), m_kind(kind) {}
 
 	// Properties
 

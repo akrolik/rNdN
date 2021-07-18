@@ -49,18 +49,18 @@ public:
 
 private:
 	void BuildControlDependencies(Instruction *controlInstruction);
-	void BuildDataDependencies(std::uint32_t operand);
+	void BuildDataDependencies(std::uint16_t operand);
 
-	static const std::uint32_t DataOffset_Register  = 0;   // 256
-	static const std::uint32_t DataOffset_Address   = 256; // 256
-	static const std::uint32_t DataOffset_Carry     = 512; // 1
-	static const std::uint32_t DataOffset_Predicate = 513; // 7
+	static const std::uint16_t DataOffset_Register  = 0;   // 256
+	static const std::uint16_t DataOffset_Address   = 256; // 256
+	static const std::uint16_t DataOffset_Carry     = 512; // 1
+	static const std::uint16_t DataOffset_Predicate = 513; // 7
 
 	std::vector<BlockDependencyGraph *> m_graphs;
 	BlockDependencyGraph *m_graph = nullptr;
 
-	robin_hood::unordered_map<std::uint32_t, robin_hood::unordered_set<Instruction *>> m_readMap;
-	robin_hood::unordered_map<std::uint32_t, robin_hood::unordered_set<Instruction *>> m_writeMap;
+	robin_hood::unordered_map<std::uint16_t, std::vector<Instruction *>> m_readMap;
+	robin_hood::unordered_map<std::uint16_t, std::vector<Instruction *>> m_writeMap;
 
 	SASS::Instruction *m_instruction = nullptr;
 	SASS::BasicBlock *m_block = nullptr;

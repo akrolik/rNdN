@@ -30,84 +30,160 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 	// Break ties using the instruction order, groups together related instructions
 
-	robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionOrder;
-	auto orderValue = 0;
+	auto& scheduledInstructions = block->GetInstructions();
+	auto instructionCount = scheduledInstructions.size();
 
-	for (auto instruction : block->GetInstructions())
+	robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionOrder;
+	instructionOrder.reserve(instructionCount);
+
+	auto orderValue = 0;
+	for (auto& instruction : scheduledInstructions)
 	{
 		instructionOrder.emplace(instruction, orderValue++);
 	}
 
 	// Build the schedule for each schedulable section individually (guarantees ordering)
 
-	auto& scheduledInstructions = block->GetInstructions();
-	auto instructionCount = scheduledInstructions.size();
-
 	scheduledInstructions.clear();
 	scheduledInstructions.reserve(instructionCount);
 
 	// For each barrier, keep track of the number of queued instructions, and the current wait position
 
-	robin_hood::unordered_map<SASS::Schedule::Barrier, std::uint8_t> barrierCount;
-	robin_hood::unordered_map<SASS::Schedule::Barrier, std::uint8_t> barrierWait;
+	constexpr unsigned int BARRIER_COUNT = 6;
+	const SASS::Schedule::Barrier BARRIER_MAP[BARRIER_COUNT] = {
+		SASS::Schedule::Barrier::SB0,
+		SASS::Schedule::Barrier::SB1,
+		SASS::Schedule::Barrier::SB2,
+		SASS::Schedule::Barrier::SB3,
+		SASS::Schedule::Barrier::SB4,
+		SASS::Schedule::Barrier::SB5
+	};
+#define BARRIER_UNMAP(barrier) static_cast<std::underlying_type_t<SASS::Schedule::Barrier>>(barrier)
+
+	std::array<std::uint8_t, BARRIER_COUNT> barrierCount{};
+	std::array<std::uint8_t, BARRIER_COUNT> barrierWait{};
+
+	// Schedule the instructions based on the dependency DAG and hardware properties:
+	//   - Priority function: lowest stall count
+	//   - Pipeline depth & latencies
+
+	// For each instruction maintain:
+	//   - Earliest virtual clock cycle for execution (updated when each parent is scheduled)
+	//   - Stall count required if scheduled next
+	// Together these give the legal execution time for the instruction
+	//
+	// To account for variable latency dependencies, we use a barrier time to hint at the expected execution
+
+	struct InstructionProperties
+	{
+	public:
+		InstructionProperties(std::uint32_t time, std::uint32_t stall, std::uint32_t barrierTime, std::uint32_t barrierStall, std::uint32_t dependencyCount) :
+			m_time(time), m_stall(stall), m_barrierTime(barrierTime), m_barrierStall(stall), m_dependencyCount(dependencyCount) {}
+
+		std::uint32_t GetAvailableTime() const { return m_time; }
+		void SetAvailableTime(std::uint32_t time) { m_time = time; }
+
+		std::uint32_t GetAvailableStall() const { return m_stall; }
+		void SetAvailableStall(std::uint32_t stall) { m_stall = stall; }
+
+		std::uint32_t GetBarrierTime() const { return m_barrierTime; }
+		void SetBarrierTime(std::uint32_t barrierTime) { m_barrierTime = barrierTime; }
+
+		std::uint32_t GetBarrierStall() const { return m_barrierTime; }
+		void SetBarrierStall(std::uint32_t barrierStall) { m_barrierTime = barrierStall; }
+
+		std::uint32_t GetDependencyCount() const { return m_dependencyCount; }
+		void SetDependencyCount(std::uint32_t dependencyCount) { m_dependencyCount = dependencyCount; }
+
+	private:
+		std::uint32_t m_time = 0;
+		std::uint32_t m_stall = 0;
+		std::uint32_t m_barrierTime = 0;
+		std::uint32_t m_barrierStall = 0;
+
+		std::uint32_t m_dependencyCount = 0;
+	};
+
+	robin_hood::unordered_map<SASS::Instruction *, InstructionProperties> instructionProperties;
+	instructionProperties.reserve(instructionCount);
+
+	// Maintain a list of barriered instructions, used to insert DEPBAR. Paired integer indicates
+	// the position in the barrier list, used for partial barriers
+
+	robin_hood::unordered_map<SASS::Instruction *, std::pair<SASS::Schedule::Barrier, std::uint8_t>> writeDependencyBarriers;
+	robin_hood::unordered_map<SASS::Instruction *, std::pair<SASS::Schedule::Barrier, std::uint8_t>> readDependencyBarriers;
+
+	writeDependencyBarriers.reserve(instructionCount);
+	readDependencyBarriers.reserve(instructionCount);
 
 	for (const auto& dependencyGraph : dependencyAnalysis.GetGraphs())
 	{
 		// Order the instructions based on the length of the longest path
 
-		dependencyGraph->ReverseTopologicalOrderBFS([&](SASS::Instruction *instruction)
+		dependencyGraph->ReverseTopologicalOrderBFS([&](SASS::Instruction *instruction, SASS::Analysis::BlockDependencyGraph::Node& node)
 		{
-			auto latency = HardwareProperties::GetLatency(instruction) +
-				HardwareProperties::GetBarrierLatency(instruction) +
-				HardwareProperties::GetReadHold(instruction);
+			auto latency = HardwareProperties::GetLatency(instruction);
+			auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction);
+			auto readHold = HardwareProperties::GetReadHold(instruction);
 
 			auto maxSuccessor = 0;
-
-			for (auto edge : dependencyGraph->GetOutgoingEdges(instruction))
+			for (auto& edge : node.GetOutgoingEdges())
 			{
 				auto successor = edge->GetEnd();
 				auto successorValue = dependencyGraph->GetNodeValue(successor);
+
+				for (auto dependency : edge->GetDependencies())
+				{
+					switch (dependency)
+					{
+						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
+						{
+							successorValue += latency + barrierLatency;
+							break;
+						}
+						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
+						{
+							successorValue += latency;
+							break;
+						}
+						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
+						{
+							successorValue += 1;
+							break;
+						}
+						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
+						{
+							successorValue += 1 + readHold;
+							break;
+						}
+					}
+				}
+
 				if (successorValue > maxSuccessor)
 				{
 					maxSuccessor = successorValue;
 				}
 			}
 
-			dependencyGraph->SetNodeValue(instruction, latency + maxSuccessor);
-			return true;
+			node.SetValue(maxSuccessor);
 		});
 
-		// Schedule the instructions based on the dependency DAG and hardware properties
-		//   - Priority function: lowest stall count
-		//   - Pipeline depth & latencies
-
-		// For each instruction maintain:
-		//   - (all) Earliest virtual clock cycle for execution (updated when each parent is scheduled)
-		//   - (avail) Stall count required if scheduled next
-		// Together these give the legal execution time for the instruction
-		//
-		// Also maintain the unit availability time, used for independent instructions which share
+		// maintain the unit availability time, used for independent instructions which share
 		// the same functional unit. Used as a hint to the instruction, as the GPU will insert stalls if needed
-		//
-		// For variable latency dependencies, we use a second map to hint at the expected execution time
 
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionTime;
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionStall;
 		robin_hood::unordered_map<HardwareProperties::FunctionalUnit, std::uint32_t> unitTime;
-
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionBarrierTime;
-		robin_hood::unordered_map<SASS::Instruction *, std::uint32_t> instructionBarrierStall;
 
 		// Construct a priority queue for available instructions (all dependencies scheduled)
 		//
 		// Priority queue comparator returns false if values in correct order (true to reorder).
 		// i.e. if the left item comes AFTER the right
 
-		auto priorityFunction = [&](SASS::Instruction *left, SASS::Instruction *right) {
+		auto priorityFunction = [&](SASS::Instruction *left, SASS::Instruction *right)
+		{
 			// Property 1: Stall count [lower]
 
-			auto stallLeft = instructionBarrierStall.at(left);
-			auto stallRight = instructionBarrierStall.at(right);
+			auto stallLeft = instructionProperties.at(left).GetBarrierStall();
+			auto stallRight = instructionProperties.at(right).GetBarrierStall();
 
 			if (stallLeft != stallRight)
 			{
@@ -129,34 +205,26 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			return instructionOrder.at(left) > instructionOrder.at(right);
 		};
 
-		std::vector<SASS::Instruction *> availableInstructions;
-		availableInstructions.reserve(dependencyGraph->GetNodeCount());
+		std::deque<SASS::Instruction *> availableInstructions;
 
 		// Initialize available instructions
 
-		robin_hood::unordered_map<SASS::Instruction *, unsigned int> dependencyCount;
-
-		for (auto& instruction : dependencyGraph->GetNodes())
+		for (auto& [instruction, node] : dependencyGraph->GetNodes())
 		{
-			auto count = dependencyGraph->GetInDegree(instruction);
+			auto count = node.GetInDegree();
 			if (count == 0)
 			{
-				instructionTime.emplace(instruction, 0);
-				instructionStall.emplace(instruction, 1);
-
-				instructionBarrierTime.emplace(instruction, 0);
-				instructionBarrierStall.emplace(instruction, 1);
-
 				availableInstructions.push_back(instruction);
 			}
-			dependencyCount.emplace(instruction, count);
+
+			// Time, stall, barrier time, barrier stall, dependency count
+
+			instructionProperties.emplace(
+				std::piecewise_construct,
+				std::forward_as_tuple(instruction),
+				std::forward_as_tuple(0, 1, 0, 1, count)
+			);
 		}
-
-		// Maintain a list of barriered instructions, used to insert DEPBAR. Paired integer indicates
-		// the position in the barrier list, used for partial barriers
-
-		robin_hood::unordered_map<SASS::Instruction *, std::pair<SASS::Schedule::Barrier, std::uint8_t>> writeDependencyBarriers;
-		robin_hood::unordered_map<SASS::Instruction *, std::pair<SASS::Schedule::Barrier, std::uint8_t>> readDependencyBarriers;
 
 		// Main schedule loop, maintain the current virtual cycle count to schedule/stall instructions
 
@@ -171,39 +239,38 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto instruction = *it;
 			availableInstructions.erase(it);
 
-			auto& schedule = instruction->GetSchedule();
-
 			// Get stall count to the previous instruction
 
-			auto stall = instructionStall.at(instruction);
-			instructionStall.erase(instruction);
-			instructionTime.erase(instruction);
+			auto& schedule = instruction->GetSchedule();
+			auto stall = instructionProperties.at(instruction).GetAvailableStall();
 
 			// Add wait barriers for each predecessor that has not been waited
 
-			robin_hood::unordered_map<SASS::Schedule::Barrier, std::uint8_t> waitBarriers;
 			robin_hood::unordered_set<SASS::Schedule::Barrier> instructionBarriers;
+			robin_hood::unordered_set<SASS::Schedule::Barrier> partialBarriers;
+			std::array<std::uint8_t, BARRIER_COUNT> waitBarriers{};
 
 			if (first)
 			{
 				// Clear all previous barriers
 
-				for (auto& [barrier, count] : barrierCount)
+				for (auto i = 0u; i < BARRIER_COUNT; ++i)
 				{
-					if (count > barrierWait[barrier])
+					auto& wait = barrierWait[i];
+					auto& count = barrierCount[i];
+					if (count > wait)
 					{
-						instructionBarriers.insert(barrier);
+						instructionBarriers.insert(BARRIER_MAP[i]);
 					}
+					wait = 0;
+					count = 0;
 				}
-
-				barrierCount.clear();
-				barrierWait.clear();
 			}
 
-			for (auto edge : dependencyGraph->GetIncomingEdges(instruction))
+			for (auto& edge : dependencyGraph->GetIncomingEdges(instruction))
 			{
 				auto predecessor = edge->GetStart();
-				for (auto dependency : edge->GetDependencies())
+				for (auto& dependency : edge->GetDependencies())
 				{
 					switch (dependency)
 					{
@@ -211,50 +278,57 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
 						{
-							if (auto it = writeDependencyBarriers.find(predecessor); it != writeDependencyBarriers.end())
+							if (auto w_it = writeDependencyBarriers.find(predecessor); w_it != writeDependencyBarriers.end())
 							{
 								// Check for any active wait barriers
 
-								auto& [barrier, position] = it->second;
-								if (position > barrierWait[barrier])
+								auto& [barrier, position] = w_it->second;
+
+								if (position > barrierWait[BARRIER_UNMAP(barrier)])
 								{
-									if (position > waitBarriers[barrier])
+									auto& val = waitBarriers[BARRIER_UNMAP(barrier)];
+									if (position > val)
 									{
-										waitBarriers.at(barrier) = position;
+										val = position;
+										partialBarriers.insert(barrier);
 									}
 								}
-								writeDependencyBarriers.erase(it);
+								writeDependencyBarriers.erase(w_it);
 
 								// If waiting on a write barrier, the associated read barrier can
 								// be cleared if it is still active
 
-								if (auto it = readDependencyBarriers.find(predecessor); it != readDependencyBarriers.end())
+								if (auto r_it = readDependencyBarriers.find(predecessor); r_it != readDependencyBarriers.end())
 								{
-									auto& [barrier, position] = it->second;
-									if (position > barrierWait[barrier])
+									auto& [barrier, position] = r_it->second;
+
+									auto& wait = barrierWait[BARRIER_UNMAP(barrier)];
+									if (position > wait)
 									{
-										barrierWait.at(barrier) = position;
+										wait = position;
 									}
-									readDependencyBarriers.erase(it);
+									readDependencyBarriers.erase(r_it);
 								}
 							}
 							break;
 						}
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
 						{
-							if (auto it = readDependencyBarriers.find(predecessor); it != readDependencyBarriers.end())
+							if (auto r_it = readDependencyBarriers.find(predecessor); r_it != readDependencyBarriers.end())
 							{
 								// Check for any active wait barriers
 
-								auto& [barrier, position] = it->second;
-								if (position > barrierWait[barrier])
+								auto& [barrier, position] = r_it->second;
+								if (position > barrierWait[BARRIER_UNMAP(barrier)])
 								{
-									if (position > waitBarriers[barrier])
+									auto& val = waitBarriers[BARRIER_UNMAP(barrier)];
+									if (position > val)
 									{
-										waitBarriers.at(barrier) = position;
+										val = position;
+										partialBarriers.insert(barrier);
 									}
 								}
-								readDependencyBarriers.erase(it);
+								readDependencyBarriers.erase(r_it);
 							}
 							break;
 						}
@@ -266,8 +340,10 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			auto barrierStall = 1u;
 
-			for (const auto& [barrier, position] : waitBarriers)
+			for (auto barrier : partialBarriers)
 			{
+				auto position = waitBarriers[BARRIER_UNMAP(barrier)];
+
 				// Only some barriers may be processed out of order (certain memory ops)
 
 				auto outOfOrder = false;
@@ -282,7 +358,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// A partial barrier is used when there are additional instructions queued after
 
-				if (outOfOrder && position < barrierCount.at(barrier))
+				if (outOfOrder && position < barrierCount[BARRIER_UNMAP(barrier)])
 				{
 					// Shorten previous instruction stall (if possible)
 
@@ -317,7 +393,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					// Convert to the instruction barrier type
 
 					auto barrierI = GetInstructionBarrier(barrier);
-					auto waitCount = barrierCount.at(barrier) - position;
+					auto waitCount = barrierCount[BARRIER_UNMAP(barrier)] - position;
 
 					// Insert barrier to wait until the instruction queue is ready
 
@@ -354,19 +430,19 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					// Update the current wait position for the barrier
 
-					barrierWait.insert_or_assign(barrier, position);
+					barrierWait[BARRIER_UNMAP(barrier)] = position;
 				}
 				else
 				{
 					// Clear the entire barrier
 
 					instructionBarriers.insert(barrier);
-					barrierWait.insert_or_assign(barrier, barrierCount.at(barrier));
+					barrierWait[BARRIER_UNMAP(barrier)] = barrierCount[BARRIER_UNMAP(barrier)];
 				}
 			}
 
 			schedule.SetWaitBarriers(instructionBarriers);
-			
+
 			// Add new barriers to schedule for both read and write dependencies
 
 			if (HardwareProperties::GetBarrierLatency(instruction) > 0)
@@ -398,7 +474,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Maintain barrier set
 
-				writeDependencyBarriers.emplace(instruction, std::make_pair(barrier, ++barrierCount[barrier]));
+				writeDependencyBarriers.emplace(instruction, std::make_pair(barrier, ++barrierCount[BARRIER_UNMAP(barrier)]));
 			}
 
 			if (HardwareProperties::GetReadHold(instruction) > 0)
@@ -431,7 +507,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Maintain barrier set
 
-				readDependencyBarriers.emplace(instruction, std::make_pair(barrier, ++barrierCount[barrier]));
+				readDependencyBarriers.emplace(instruction, std::make_pair(barrier, ++barrierCount[BARRIER_UNMAP(barrier)]));
 			}
 
 			// Cap the stall by the maximum value. Legal since throughput is hardware regulated, and
@@ -512,7 +588,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			if (optionReuse && !first && stall > 0 && HardwareProperties::GetReuseFlags(instruction))
 			{
-				auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
+				auto previousInstruction = scheduledInstructions[scheduledInstructions.size() - 2];
 				if (HardwareProperties::GetReuseFlags(previousInstruction))
 				{
 					auto previousOperands = previousInstruction->GetSourceOperands();
@@ -525,11 +601,20 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					auto count = std::min(previousOperands.size(), currentOperands.size());
 					for (auto i = 0u; i < count; ++i)
 					{
-						auto previousRegister = dynamic_cast<SASS::Register *>(previousOperands.at(i));
-						auto currentRegister = dynamic_cast<SASS::Register *>(currentOperands.at(i));
+						auto previousOperand = previousOperands[i];
+						auto currentOperand = currentOperands[i];
 
-						if (previousRegister != nullptr && currentRegister != nullptr)
+						if (previousOperand == nullptr || currentOperand == nullptr)
 						{
+							continue;
+						}
+
+						if (previousOperand->GetKind() == SASS::Operand::Kind::Register &&
+							currentOperand->GetKind() == SASS::Operand::Kind::Register)
+						{
+							auto previousRegister = static_cast<SASS::Register *>(previousOperand);
+							auto currentRegister = static_cast<SASS::Register *>(currentOperand);
+
 							auto previousValue = previousRegister->GetValue();
 							auto currentValue = currentRegister->GetValue();
 
@@ -540,8 +625,13 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 								auto overwritten = false;
 								for (auto previousTarget : previousInstruction->GetDestinationOperands())
 								{
-									if (auto targetRegister = dynamic_cast<SASS::Register *>(previousTarget))
+									if (previousTarget == nullptr)
 									{
+										continue;
+									}
+									if (previousTarget->GetKind() == SASS::Operand::Kind::Register)
+									{
+										auto targetRegister = static_cast<SASS::Register *>(previousTarget);
 										if (targetRegister->GetValue() == currentRegister->GetValue())
 										{
 											overwritten = true;
@@ -551,8 +641,14 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 								for (auto target : instruction->GetDestinationOperands())
 								{
-									if (auto targetRegister = dynamic_cast<SASS::Register *>(target))
+									if (target == nullptr)
 									{
+										continue;
+									}
+
+									if (target->GetKind() == SASS::Operand::Kind::Register)
+									{
+										auto targetRegister = static_cast<SASS::Register *>(target);
 										if (targetRegister->GetValue() == currentRegister->GetValue())
 										{
 											overwritten = true;
@@ -567,24 +663,12 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 								// Translate from index to the operand cache entry
 
-								switch (i)
-								{
-									case 0:
-									{
-										reuseCache.insert(SASS::Schedule::ReuseCache::OperandA);
-										break;
-									}
-									case 1:
-									{
-										reuseCache.insert(SASS::Schedule::ReuseCache::OperandB);
-										break;
-									}
-									case 2:
-									{
-										reuseCache.insert(SASS::Schedule::ReuseCache::OperandC);
-										break;
-									}
-								}
+								const SASS::Schedule::ReuseCache CACHE_MAP[3] = {
+									SASS::Schedule::ReuseCache::OperandA,
+									SASS::Schedule::ReuseCache::OperandB,
+									SASS::Schedule::ReuseCache::OperandC
+								};
+								reuseCache.insert(CACHE_MAP[i]);
 							}
 						}
 					}
@@ -607,7 +691,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			// Decrease the degree of all successors, adding them to the priority queue if next
 
-			for (auto edge : dependencyGraph->GetOutgoingEdges(instruction))
+			for (auto& edge : dependencyGraph->GetOutgoingEdges(instruction))
 			{
 				// Update the earliest time at which the instruction can be executed
 				//  - Write/Read (true): instruction latency - read latency
@@ -715,16 +799,20 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					}
 				}
 
+				// Update instruction schedule properties
+
+				auto& properties = instructionProperties.at(successor);
+
 				// Record the latest schedulable time (dependends on all predecessors)
-			       
+
 				auto availableTime = time + delay;
 
-				auto it = instructionTime.find(successor);
-				if (it == instructionTime.end() || availableTime > it->second)
+				if (availableTime > properties.GetAvailableTime())
 				{
-					instructionTime.insert_or_assign(successor, availableTime);
+					properties.SetAvailableTime(availableTime);
 				}
 
+				// Record the latest schedulable time (dependends on all predecessors)
 				// Also record the expected instruction availability (satisfying all barriers)
 
 				if (barrierDelay < delay)
@@ -734,15 +822,17 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				auto barrierTime = time + barrierDelay;
 
-                                auto it2 = instructionBarrierTime.find(successor);
-				if (it2 == instructionBarrierTime.end() || barrierTime > it2->second)
+				if (barrierTime > properties.GetBarrierTime())
 				{
-					instructionBarrierTime.insert_or_assign(successor, barrierTime);
+					properties.SetBarrierTime(barrierTime);
 				}
 
 				// Priority queue management
 
-				if (--dependencyCount.at(successor) == 0)
+				auto dependencyCount = properties.GetDependencyCount() - 1;
+				properties.SetDependencyCount(dependencyCount);
+
+				if (dependencyCount == 0)
 				{
 					availableInstructions.push_back(successor);
 				}
@@ -752,9 +842,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			for (auto availableInstruction : availableInstructions)
 			{
+				auto& properties = instructionProperties.at(availableInstruction);
+
 				// Get time when the instruction dependencies are satisfied
 
-				auto availableTime = instructionTime.at(availableInstruction);
+				auto availableTime = properties.GetAvailableTime();
 
 				// Check if the unit is busy with another (independent) instruction
 
@@ -786,33 +878,30 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				if (optionDual && availableTime <= time && HardwareProperties::GetDualIssue(instruction) &&
 					availableUnit != HardwareProperties::GetFunctionalUnit(instruction))
 				{
-					auto constant1 = false;
+					auto constant = false;
 					for (auto operand : instruction->GetSourceOperands())
 					{
-						if (auto composite = dynamic_cast<SASS::Composite *>(operand))
+						if (operand->GetKind() == SASS::Operand::Kind::Constant)
 						{
-							if (composite->GetOpCodeKind() == SASS::Composite::OpCodeKind::Constant)
-							{
-								constant1 = true;
-							}
+							constant = true;
 						}
 					}
 
-					auto constant2 = false;
-					for (auto operand : availableInstruction->GetSourceOperands())
+					auto constantClash = false;
+					if (constant)
 					{
-						if (auto composite = dynamic_cast<SASS::Composite *>(operand))
+						for (auto operand : availableInstruction->GetSourceOperands())
 						{
-							if (composite->GetOpCodeKind() == SASS::Composite::OpCodeKind::Constant)
+							if (operand->GetKind() == SASS::Operand::Kind::Constant)
 							{
-								constant2 = true;
+								constantClash = true;
 							}
 						}
 					}
 
 					// Cannot dual issue instructions which both load constants
 
-					if (!constant1 || !constant2)
+					if (!constantClash)
 					{
 						// First instruction may be dual issued with second
 
@@ -824,7 +913,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						{
 							// Otherwise, make sure there was not already a dual issue in the previous pair
 
-							auto previousInstruction = scheduledInstructions.at(scheduledInstructions.size() - 2);
+							auto previousInstruction = scheduledInstructions[scheduledInstructions.size() - 2];
 							if (previousInstruction->GetSchedule().GetStall() != 0)
 							{
 								stall = 0;
@@ -833,11 +922,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					}
 				}
 
-				instructionStall.insert_or_assign(availableInstruction, stall);
+				properties.SetAvailableStall(stall);
 
 				// Hint for instruction execution
 
-				auto barrierTime = instructionBarrierTime.at(availableInstruction);
+				auto barrierTime = properties.GetBarrierTime();
 
 				std::int32_t barrierStall = barrierTime - time;
 				if (barrierStall < stall)
@@ -845,7 +934,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					barrierStall = stall;
 				}
 
-				instructionBarrierStall.insert_or_assign(availableInstruction, barrierStall);
+				properties.SetBarrierStall(barrierStall);
 			}
 
 			first = false;
@@ -854,18 +943,18 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 	// For all active barriers at the end of the block, insert a barrier instruction
 
-	for (const auto& [barrier, count] : barrierCount)
+	for (auto i = 0u; i < BARRIER_COUNT; ++i)
 	{
 		// Only wait if active
 
-		if (barrierWait[barrier] >= count)
+		if (barrierWait[i] >= barrierCount[i])
 		{
 			continue;
 		}
 
 		// Convert to the instruction barrier type
 
-		auto barrierI = GetInstructionBarrier(barrier);
+		auto barrierI = GetInstructionBarrier(BARRIER_MAP[i]);
 
 		// Insert barrier to wait until zero
 

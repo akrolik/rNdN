@@ -7,13 +7,8 @@ namespace SASS {
 class Composite : public Operand
 {
 public:
-	enum OpCodeKind {
-		Base,
-		Immediate,
-		Constant
-	};
+	using Operand::Operand;
 
-	virtual OpCodeKind GetOpCodeKind() const { return OpCodeKind::Base; }
 	virtual bool GetOpModifierNegate() const { return false; }
 };
 

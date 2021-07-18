@@ -9,7 +9,7 @@ class Predicate : public Operand
 public:
 	constexpr static std::uint8_t TrueIndex = 7;
 
-	Predicate(std::uint8_t value) : m_value(value) {}
+	Predicate(std::uint8_t value) : Operand(Operand::Kind::Predicate), m_value(value) {}
 	
 	// Properties
 

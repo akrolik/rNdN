@@ -41,14 +41,14 @@ public:
 
 	static std::uint64_t OpCodeComposite(std::uint64_t opCode, const Composite *operand)
 	{
-		switch (operand->GetOpCodeKind())
+		switch (operand->GetKind())
 		{
-			case Composite::OpCodeKind::Constant:
+			case Operand::Kind::Constant:
 			{
 				opCode ^= static_cast<std::uint64_t>(0x10) << 56;
 				break;
 			}
-			case Composite::OpCodeKind::Immediate:
+			case Operand::Kind::Immediate:
 			{
 				auto shortCode = (opCode >> 56);
 				if (shortCode == 0x5c)

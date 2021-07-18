@@ -18,12 +18,12 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 	// Add all CFG nodes (basic blocks) in the graph
 
-	for (const auto& node : GetNodes())
+	for (const auto& [instruction, node] : m_nodes)
 	{
-		indexMap[node] = index;
+		indexMap[instruction] = index;
 
 		auto name = "n_" + std::to_string(index);
-		auto label = SASS::PrettyPrinter::PrettyString(node);
+		auto label = SASS::PrettyPrinter::PrettyString(instruction);
 
 		string += "\t" + name + "[label=\"" + label + "\", shape=plaintext]\n"; 
 
@@ -33,13 +33,13 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 	// Add all edges in the graph
 
-	for (const auto& node : m_nodes)
+	for (const auto& [instruction, node] : m_nodes)
 	{
-		for (const auto& edge : m_outgoingEdges.at(node))
+		for (const auto& edge : node.GetOutgoingEdges())
 		{
 			auto successor = edge->GetEnd();
 
-			auto nodeIndex = std::to_string(indexMap[node]);
+			auto nodeIndex = std::to_string(indexMap[instruction]);
 			auto successorIndex = std::to_string(indexMap[successor]);
 
 			string += "\tn_" + nodeIndex + " -> n_" + successorIndex + " [style=bold, label=\"";

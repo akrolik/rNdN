@@ -14,7 +14,11 @@ using DependencyGraphNode = Instruction *;
 class BlockDependencyGraph
 {
 public:
-	BlockDependencyGraph(BasicBlock *block) : m_block(block) {}
+	BlockDependencyGraph(BasicBlock *block) : m_block(block)
+	{
+		auto size = block->GetInstructions().size();
+		m_nodes.reserve(size);
+	}
 
 	enum class DependencyKind {
 		ReadWrite,
@@ -23,41 +27,18 @@ public:
 		WriteWrite
 	};
 
-	// Nodes
-
-	const robin_hood::unordered_set<DependencyGraphNode>& GetNodes() const { return m_nodes; }
-	unsigned int GetNodeCount() const { return m_nodes.size(); }
-	bool ContainsNode(const DependencyGraphNode& node) const { return (m_nodes.find(node) != m_nodes.end()); }
-
-	void InsertNode(const DependencyGraphNode& node, std::uint32_t value = 0)
-	{
-		m_nodes.insert(node);
-		m_values.emplace(node, value);
-
-		m_outgoingEdges[node];
-		m_incomingEdges[node];
-	}
-
-	void SetNodeValue(const DependencyGraphNode& node, std::uint32_t value)
-	{
-		m_values.at(node) = value;
-	}
-
-	std::uint32_t GetNodeValue(const DependencyGraphNode& node) const
-	{
-		return m_values.at(node);
-	}
-
-	// Edges
-
 	struct Edge
 	{
 	public:
 		Edge(DependencyGraphNode start, DependencyGraphNode end, DependencyKind kind)
-			: m_start(start), m_end(end), m_dependencies({kind}) {}
+			: m_start(start), m_end(end)
+		{
+			m_dependencies.reserve(4);
+			m_dependencies.push_back(kind);
+		}
 
-		DependencyGraphNode GetStart() const { return m_start; }
-		DependencyGraphNode GetEnd() const { return m_end; }
+		const DependencyGraphNode& GetStart() const { return m_start; }
+		const DependencyGraphNode& GetEnd() const { return m_end; }
 
 		const std::vector<DependencyKind>& GetDependencies() const { return m_dependencies; }
 		std::vector<DependencyKind>& GetDependencies() { return m_dependencies; }
@@ -70,11 +51,62 @@ public:
 		std::vector<DependencyKind> m_dependencies;
 	};
 
+	struct Node
+	{
+	public:
+		Node(std::uint32_t value) : m_value(value)
+		{
+			m_incomingEdges.reserve(8);
+			m_outgoingEdges.reserve(8);
+		}
+
+		std::size_t GetInDegree() const { return m_incomingEdges.size(); }
+		std::size_t GetOutDegree() const { return m_outgoingEdges.size(); }
+
+		std::uint32_t GetValue() const { return m_value; }
+		void SetValue(std::uint32_t value) { m_value = value; }
+
+		const std::vector<Edge *>& GetIncomingEdges() const { return m_incomingEdges; }
+		const std::vector<Edge *>& GetOutgoingEdges() const { return m_outgoingEdges; }
+
+		void InsertIncomingEdge(Edge *edge) { m_incomingEdges.push_back(edge); }
+		void InsertOutgoingEdge(Edge *edge) { m_outgoingEdges.push_back(edge); }
+
+	private:
+		std::uint32_t m_value = 0;
+		std::vector<Edge *> m_incomingEdges;
+		std::vector<Edge *> m_outgoingEdges;
+	};
+
+	// Nodes
+
+	const robin_hood::unordered_flat_map<DependencyGraphNode, Node>& GetNodes() const { return m_nodes; }
+	unsigned int GetNodeCount() const { return m_nodes.size(); }
+	bool ContainsNode(const DependencyGraphNode& node) const { return (m_nodes.find(node) != m_nodes.end()); }
+
+	void InsertNode(const DependencyGraphNode& node, std::uint32_t value = 0)
+	{
+		m_nodes.emplace(node, value);
+	}
+
+	void SetNodeValue(const DependencyGraphNode& node, std::uint32_t value)
+	{
+		m_nodes.at(node).SetValue(value);
+	}
+
+	std::uint32_t GetNodeValue(const DependencyGraphNode& node) const
+	{
+		return m_nodes.at(node).GetValue();
+	}
+
+	// Edges
+
  	void InsertEdge(const DependencyGraphNode& source, const DependencyGraphNode& destination, DependencyKind dependency)
 	{
 		// Augment existing edge with new dependency if one exists
 
-		for (auto& edge : m_outgoingEdges.at(source))
+		auto& node = m_nodes.at(source);
+		for (auto& edge : node.GetOutgoingEdges())
 		{
 			if (edge->GetEnd() == destination)
 			{
@@ -87,33 +119,34 @@ public:
 
 		auto edge = new Edge(source, destination, dependency);
 
-		m_outgoingEdges.at(source).push_back(edge);
-		m_incomingEdges.at(destination).push_back(edge);
+		node.InsertOutgoingEdge(edge);
+		m_nodes.at(destination).InsertIncomingEdge(edge);
 	}
 
 	std::size_t GetInDegree(const DependencyGraphNode& node) const
 	{
-		return m_incomingEdges.at(node).size();
-	}
-	std::size_t GetOutDegree(const DependencyGraphNode& node) const
-	{
-		return m_outgoingEdges.at(node).size();
+		return m_nodes.at(node).GetInDegree();
 	}
 
-	const std::vector<Edge *>& GetOutgoingEdges(const DependencyGraphNode& source) const
+	std::size_t GetOutDegree(const DependencyGraphNode& node) const
 	{
-		return m_outgoingEdges.at(source);
+		return m_nodes.at(node).GetOutDegree();
 	}
 
 	const std::vector<Edge *>& GetIncomingEdges(const DependencyGraphNode& destination) const
 	{
-		return m_incomingEdges.at(destination);
+		return m_nodes.at(destination).GetIncomingEdges();
+	}
+
+	const std::vector<Edge *>& GetOutgoingEdges(const DependencyGraphNode& source) const
+	{
+		return m_nodes.at(source).GetOutgoingEdges();
 	}
 
 	// Traversal
 
 	template <typename F> 
-	void ReverseTopologicalOrderBFS(F function) const
+	void ReverseTopologicalOrderBFS(F function)
 	{
 		// Construct the topological sorting structure
 		//     Queue: store the current nodes 0 out-degree
@@ -122,36 +155,41 @@ public:
 		std::deque<DependencyGraphNode> queue;
 		robin_hood::unordered_map<DependencyGraphNode, unsigned int> edges;
 
-		for (auto& node : GetNodes())
+		edges.reserve(m_nodes.size());
+
+		for (auto& [instruction, node] : m_nodes)
 		{
-			auto count = GetOutDegree(node);
+			auto count = node.GetOutDegree();
 			if (count == 0)
 			{
-				queue.push_back(node);
+				queue.push_back(instruction);
 			}
-			edges.emplace(node, count);
+			else
+			{
+				edges.emplace(instruction, count);
+			}
 		}
 
 		// Perform the topological sort
 
 		while (!queue.empty())
 		{
-			auto node = queue.front();
+			auto instruction = queue.front();
 			queue.pop_front();
 
 			// Apply the given function
 
-			if (function(node))
-			{
-				// Process all predecessors of the node
+			auto& node = m_nodes.at(instruction);
+			function(instruction, node);
 
-				for (const auto& edge : m_incomingEdges.at(node))
+			// Process all predecessors of the node
+
+			for (const auto& edge : node.GetIncomingEdges())
+			{
+				auto predecessor = edge->GetStart();
+				if (--edges.at(predecessor) == 0)
 				{
-					auto predecessor = edge->GetStart();
-					if (--edges.at(predecessor) == 0)
-					{
-						queue.push_back(predecessor);
-					}
+					queue.push_back(predecessor);
 				}
 			}
 		}
@@ -164,11 +202,7 @@ public:
 private:
 	BasicBlock *m_block = nullptr;
 
-	robin_hood::unordered_set<DependencyGraphNode> m_nodes;
-	robin_hood::unordered_map<DependencyGraphNode, std::uint32_t> m_values;
-
-	robin_hood::unordered_map<DependencyGraphNode, std::vector<Edge *>> m_incomingEdges;
-	robin_hood::unordered_map<DependencyGraphNode, std::vector<Edge *>> m_outgoingEdges;
+	robin_hood::unordered_flat_map<DependencyGraphNode, Node> m_nodes;
 };
 
 }

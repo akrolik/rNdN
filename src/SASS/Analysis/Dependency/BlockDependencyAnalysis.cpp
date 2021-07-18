@@ -53,6 +53,9 @@ void BlockDependencyAnalysis::InitializeSection()
 
 	m_readMap.clear();
 	m_writeMap.clear();
+
+	m_readMap.reserve(32);
+	m_writeMap.reserve(32);
 }
 
 void BlockDependencyAnalysis::Visit(Instruction *instruction)
@@ -238,10 +241,13 @@ void BlockDependencyAnalysis::BuildControlDependencies(Instruction *controlInstr
 	m_graph = nullptr;
 }
 
-void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
+void BlockDependencyAnalysis::BuildDataDependencies(std::uint16_t operand)
 {
 	auto& reads = m_readMap[operand];
 	auto& writes = m_writeMap[operand];
+
+	reads.reserve(8);
+	writes.reserve(8);
 
 	if (m_destination)
 	{
@@ -272,7 +278,7 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
 			writes.clear();
 			reads.clear();
 		}
-		writes.insert(m_instruction);
+		writes.push_back(m_instruction);
 	}
 	else
 	{
@@ -295,7 +301,7 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint32_t operand)
 
 		// Add read for this instruction
 
-		reads.insert(m_instruction);
+		reads.push_back(m_instruction);
 	}
 }
 

@@ -7,6 +7,8 @@ namespace SASS {
 class CarryFlag : public Operand
 {
 public:
+	CarryFlag() : Operand(Operand::Kind::Flag) {}
+
 	// Formatting
 
 	std::string ToString() const override

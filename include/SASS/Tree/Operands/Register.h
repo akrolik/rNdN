@@ -9,7 +9,7 @@ class Register : public Composite
 public:
 	constexpr static std::uint8_t ZeroIndex = 255;
 
-	Register(std::uint8_t value, std::uint8_t range = 1) : m_value(value), m_range(range) {}
+	Register(std::uint8_t value, std::uint8_t range = 1) : Composite(Operand::Kind::Register), m_value(value), m_range(range) {}
 
 	// Properties
 

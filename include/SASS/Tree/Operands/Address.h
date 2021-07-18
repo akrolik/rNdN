@@ -11,7 +11,7 @@ namespace SASS {
 class Address : public Operand
 {
 public:
-	Address(Register *base, std::int32_t offset = 0) : m_base(base), m_offset(offset) {}
+	Address(Register *base, std::int32_t offset = 0) : Operand(Operand::Kind::Address), m_base(base), m_offset(offset) {}
 
 	// Properties
 

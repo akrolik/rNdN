@@ -9,7 +9,7 @@ namespace SASS {
 class Constant : public Composite
 {
 public:
-	Constant(std::uint32_t bank, std::uint32_t address) : m_bank(bank), m_address(address) {}
+	Constant(std::uint32_t bank, std::uint32_t address) : Composite(Operand::Kind::Constant), m_bank(bank), m_address(address) {}
 
 	// Properties
 
@@ -32,8 +32,6 @@ public:
 	{
 		return (m_bank << 14) + (m_address / sizeof(std::uint32_t));
 	}
-
-	OpCodeKind GetOpCodeKind() const override { return OpCodeKind::Constant; }
 
 	// Visitors
 
