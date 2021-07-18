@@ -1850,7 +1850,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 				if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape0->GetSize()))
 				{
 					auto powerSize = Utils::Math::Power2(constantSize->GetValue());
-					//TODO: Is this needed?
+					// Minimum size required for sorting
 					if (powerSize < 2048)
 					{
 						powerSize = 2048;
@@ -1873,6 +1873,7 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 					if (const auto constantSize = ShapeUtils::GetSize<Shape::ConstantSize>(vectorShape->GetSize()))
 					{
 						auto powerSize = Utils::Math::Power2(constantSize->GetValue());
+						// Minimum size required for sorting
 						if (powerSize < 2048)
 						{
 							powerSize = 2048;
