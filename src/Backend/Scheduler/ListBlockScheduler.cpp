@@ -89,8 +89,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		std::uint32_t GetBarrierTime() const { return m_barrierTime; }
 		void SetBarrierTime(std::uint32_t barrierTime) { m_barrierTime = barrierTime; }
 
-		std::uint32_t GetBarrierStall() const { return m_barrierTime; }
-		void SetBarrierStall(std::uint32_t barrierStall) { m_barrierTime = barrierStall; }
+		std::uint32_t GetBarrierStall() const { return m_barrierStall; }
+		void SetBarrierStall(std::uint32_t barrierStall) { m_barrierStall = barrierStall; }
 
 		std::uint32_t GetDependencyCount() const { return m_dependencyCount; }
 		void SetDependencyCount(std::uint32_t dependencyCount) { m_dependencyCount = dependencyCount; }
@@ -123,46 +123,63 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		dependencyGraph->ReverseTopologicalOrderBFS([&](SASS::Instruction *instruction, SASS::Analysis::BlockDependencyGraph::Node& node)
 		{
 			auto latency = HardwareProperties::GetLatency(instruction);
+			auto readLatency = HardwareProperties::GetReadLatency(instruction);
 			auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction);
 			auto readHold = HardwareProperties::GetReadHold(instruction);
 
 			auto maxSuccessor = 0;
 			for (auto& edge : node.GetOutgoingEdges())
 			{
-				auto successor = edge->GetEnd();
-				auto successorValue = dependencyGraph->GetNodeValue(successor);
-
+				auto maxDependency = 0;
 				for (auto dependency : edge->GetDependencies())
 				{
+					auto dependencyValue = 0;
 					switch (dependency)
 					{
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
 						{
-							successorValue += latency + barrierLatency;
+							if (barrierLatency > 0)
+							{
+								dependencyValue = barrierLatency;
+							}
+							else
+							{
+								dependencyValue = (int)latency - (int)readLatency;
+							}
 							break;
 						}
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
 						{
-							successorValue += latency;
+							dependencyValue = latency;
 							break;
 						}
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
 						{
-							successorValue += 1;
+							dependencyValue = 1;
 							break;
 						}
 						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
 						{
-							successorValue += 1 + readHold;
+							if (readHold > 0)
+							{
+								dependencyValue = readHold;
+							}
+							else
+							{
+								dependencyValue = 1;
+							}
 							break;
 						}
 					}
+
+					if (dependencyValue > maxDependency)
+					{
+						maxDependency = dependencyValue;
+					}
 				}
 
-				if (successorValue > maxSuccessor)
-				{
-					maxSuccessor = successorValue;
-				}
+				auto successor = edge->GetEnd();
+				maxSuccessor = maxDependency + dependencyGraph->GetNodeValue(successor);
 			}
 
 			node.SetValue(maxSuccessor);
