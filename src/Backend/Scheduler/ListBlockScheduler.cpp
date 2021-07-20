@@ -191,7 +191,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		// maintain the unit availability time, used for independent instructions which share
 		// the same functional unit. Used as a hint to the instruction, as the GPU will insert stalls if needed
 
-		robin_hood::unordered_map<HardwareProperties::FunctionalUnit, std::uint32_t> unitTime;
+		std::array<std::uint32_t, 6> unitTime{};
 
 		// Construct a priority queue for available instructions (all dependencies scheduled)
 		//
@@ -619,7 +619,10 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			// Store the time the functional unit becomes free
 
 			auto instructionUnit = HardwareProperties::GetFunctionalUnit(instruction);
-			unitTime.insert_or_assign(instructionUnit, time + HardwareProperties::GetThroughputLatency(instruction));
+			auto instructionUnitIndex = HardwareProperties::FunctionalUnitIndex(instructionUnit);
+
+			auto unitAvailable = HardwareProperties::GetThroughputLatency(instruction);
+			unitTime[instructionUnitIndex] = unitAvailable;
 
 			// Register reuse cache
 
@@ -831,7 +834,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// Record the latest schedulable time (dependends on all predecessors)
 
 				auto availableTime = time + delay;
-
 				if (availableTime > properties.GetAvailableTime())
 				{
 					properties.SetAvailableTime(availableTime);
@@ -846,7 +848,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				}
 
 				auto barrierTime = time + barrierDelay;
-
 				if (barrierTime > properties.GetBarrierTime())
 				{
 					properties.SetBarrierTime(barrierTime);
@@ -876,14 +877,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// Check if the unit is busy with another (independent) instruction
 
 				auto availableUnit = HardwareProperties::GetFunctionalUnit(availableInstruction);
+				auto availableUnitIndex = HardwareProperties::FunctionalUnitIndex(availableUnit);
 
-				if (auto it = unitTime.find(availableUnit); it != unitTime.end())
+				if (auto unitAvailableTime = unitTime[availableUnitIndex]; availableTime < unitAvailableTime)
 				{
-					auto unitAvailableTime = it->second;
-					if (availableTime < unitAvailableTime)
-					{
-						availableTime = unitAvailableTime;
-					}
+					availableTime = unitAvailableTime;
 				}
 
 				// Compute the stall time
