@@ -179,7 +179,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Record the max successor only
 
-				if (auto value = maxDependency + dependencyGraph->GetNodeValue(successor); value > maxSuccessor)
+				if (auto value = maxDependency + edge->GetEndNode().GetValue(); value > maxSuccessor)
 				{
 					maxSuccessor = value;
 				}
@@ -259,6 +259,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto instruction = *it;
 			availableInstructions.erase(it);
 
+			auto& instructionNode = dependencyGraph->GetNode(instruction);
+
 			// Get stall count to the previous instruction
 
 			auto& schedule = instruction->GetSchedule();
@@ -287,11 +289,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				}
 			}
 
-			for (auto& edge : dependencyGraph->GetIncomingEdges(instruction))
+			for (auto& edge : instructionNode.GetIncomingEdges())
 			{
 				auto predecessor = edge->GetStart();
-
 				auto dependencies = edge->GetDependencies();
+
 				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead ||
 					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate ||
 					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
@@ -724,9 +726,12 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				}
 			}
 
+// Utils::Chrono::End(temp6);
+// auto temp7 = Utils::Chrono::Start("temp7");
+
 			// Decrease the degree of all successors, adding them to the priority queue if next
 
-			for (auto& edge : dependencyGraph->GetOutgoingEdges(instruction))
+			for (auto& edge : instructionNode.GetOutgoingEdges())
 			{
 				// Update the earliest time at which the instruction can be executed
 				//  - Write/Read (true): instruction latency - read latency

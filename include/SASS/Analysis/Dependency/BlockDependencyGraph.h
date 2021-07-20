@@ -29,14 +29,18 @@ public:
 
 	SASS_ENUM_FRIEND(DependencyKind)
 
+	struct Node;
 	struct Edge
 	{
 	public:
-		Edge(DependencyGraphNode start, DependencyGraphNode end, DependencyKind dependencies)
-			: m_start(start), m_end(end), m_dependencies(dependencies) {}
+		Edge(DependencyGraphNode start, DependencyGraphNode end, Node& startNode, Node& endNode, DependencyKind dependencies)
+			: m_start(start), m_end(end), m_startNode(startNode), m_endNode(endNode), m_dependencies(dependencies) {}
 
 		const DependencyGraphNode& GetStart() const { return m_start; }
 		const DependencyGraphNode& GetEnd() const { return m_end; }
+
+		Node& GetStartNode() { return m_startNode; }
+		Node& GetEndNode() { return m_endNode; }
 
 		DependencyKind GetDependencies() const { return m_dependencies; }
 		DependencyKind& GetDependencies() { return m_dependencies; }
@@ -46,6 +50,8 @@ public:
 	private:
 		DependencyGraphNode m_start = nullptr;
 		DependencyGraphNode m_end = nullptr;
+		Node& m_startNode;
+		Node& m_endNode;
 		DependencyKind m_dependencies;
 	};
 
@@ -78,7 +84,11 @@ public:
 
 	// Nodes
 
+	const Node& GetNode(const DependencyGraphNode& node) const { return m_nodes.at(node); }
+	Node& GetNode(const DependencyGraphNode& node) { return m_nodes.at(node); }
+
 	const robin_hood::unordered_flat_map<DependencyGraphNode, Node>& GetNodes() const { return m_nodes; }
+
 	unsigned int GetNodeCount() const { return m_nodes.size(); }
 	bool ContainsNode(const DependencyGraphNode& node) const { return (m_nodes.find(node) != m_nodes.end()); }
 
@@ -103,8 +113,8 @@ public:
 	{
 		// Augment existing edge with new dependency if one exists
 
-		auto& node = m_nodes.at(source);
-		for (auto& edge : node.GetOutgoingEdges())
+		auto& sourceNode = m_nodes.at(source);
+		for (auto& edge : sourceNode.GetOutgoingEdges())
 		{
 			if (edge->GetEnd() == destination)
 			{
@@ -115,10 +125,12 @@ public:
 
 		// Create a new edge - shared between the source/destination for value
 
-		auto edge = new Edge(source, destination, dependency);
+		auto& destinationNode = m_nodes.at(destination);
 
-		node.InsertOutgoingEdge(edge);
-		m_nodes.at(destination).InsertIncomingEdge(edge);
+		auto edge = new Edge(source, destination, sourceNode, destinationNode, dependency);
+
+		sourceNode.InsertOutgoingEdge(edge);
+		destinationNode.InsertIncomingEdge(edge);
 	}
 
 	std::size_t GetInDegree(const DependencyGraphNode& node) const
