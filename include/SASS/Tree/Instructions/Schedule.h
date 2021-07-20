@@ -8,20 +8,104 @@ class Schedule
 {
 public:
 	enum class Barrier : std::uint8_t {
-		SB0  = 0,
-		SB1  = 1,
-		SB2  = 2,
-		SB3  = 3,
-		SB4  = 4,
-		SB5  = 5,
-		None = 7
+		None = 0,
+		SB0  = (1 << 0),
+		SB1  = (1 << 1),
+		SB2  = (1 << 2),
+		SB3  = (1 << 3),
+		SB4  = (1 << 4),
+		SB5  = (1 << 5)
 	};
 
 	enum class ReuseCache : std::uint8_t {
-		OperandA = 0,
-		OperandB = 1,
-		OperandC = 2
+		None     = 0,
+		OperandA = (1 << 0),
+		OperandB = (1 << 1),
+		OperandC = (1 << 2)
 	};
+
+	static std::string BarrierString(Barrier barrier)
+	{
+		if (barrier == Barrier::None)
+		{
+			return "-";
+		}
+
+		std::string code;
+		if (!!(barrier & Barrier::SB0))
+		{
+			code += "0";
+		}
+		if (!!(barrier & Barrier::SB1))
+		{
+			code += "1";
+		}
+		if (!!(barrier & Barrier::SB2))
+		{
+			code += "2";
+		}
+		if (!!(barrier & Barrier::SB3))
+		{
+			code += "3";
+		}
+		if (!!(barrier & Barrier::SB4))
+		{
+			code += "4";
+		}
+		if (!!(barrier & Barrier::SB5))
+		{
+			code += "5";
+		}
+		return code;
+	}
+
+	static std::uint8_t BarrierIndex(Barrier barrier)
+	{
+		auto logValue = __builtin_ctz(static_cast<std::underlying_type_t<Barrier>>(barrier));
+		return static_cast<std::uint8_t>(logValue);
+	}
+
+	static Barrier BarrierFromIndex(std::uint8_t index)
+	{
+		return static_cast<Barrier>(1 << index);
+	}
+
+	static std::string ReuseCacheString(ReuseCache cache)
+	{
+		if (cache == ReuseCache::None)
+		{
+			return "-";
+		}
+
+		std::string code;
+		if (!!(cache & ReuseCache::OperandA))
+		{
+			code += "0";
+		}
+		if (!!(cache & ReuseCache::OperandB))
+		{
+			code += "1";
+		}
+		if (!!(cache & ReuseCache::OperandC))
+		{
+			code += "2";
+		}
+		return code;
+	}
+
+	static std::uint8_t ReuseCacheIndex(ReuseCache cache)
+	{
+		auto logValue = __builtin_ctz(static_cast<std::underlying_type_t<ReuseCache>>(cache));
+		return static_cast<std::uint8_t>(logValue);
+	}
+
+	static ReuseCache ReuseCacheFromIndex(std::uint8_t index)
+	{
+		return static_cast<ReuseCache>(1 << index);
+	}
+
+	SASS_ENUM_FRIEND(Barrier)
+	SASS_ENUM_FRIEND(ReuseCache)
 
 	static constexpr std::uint8_t DualIssue = 0;
 
@@ -43,26 +127,23 @@ public:
 	Barrier GetReadBarrier() const { return m_readBarrier; }
 	void SetReadBarrier(Barrier barrier) { m_readBarrier = barrier; }
 
-	const robin_hood::unordered_set<Barrier>& GetWaitBarriers() const { return m_waitBarriers; }
-	robin_hood::unordered_set<Barrier>& GetWaitBarriers() { return m_waitBarriers; }
-	void SetWaitBarriers(const robin_hood::unordered_set<Barrier>& barriers) { m_waitBarriers = barriers; }
+	Barrier GetWaitBarriers() const { return m_waitBarriers; }
+	Barrier& GetWaitBarriers() { return m_waitBarriers; }
+	void SetWaitBarriers(Barrier barriers) { m_waitBarriers = barriers; }
 
 	// Register reuse cache
 
-	const robin_hood::unordered_set<ReuseCache>& GetReuseCache() const { return m_reuseCache; }
-	robin_hood::unordered_set<ReuseCache>& GetReuseCache() { return m_reuseCache; }
-	void SetReuseCache(const robin_hood::unordered_set<ReuseCache>& reuseCache) { m_reuseCache = reuseCache; }
+	ReuseCache GetReuseCache() const { return m_reuseCache; }
+	ReuseCache& GetReuseCache() { return m_reuseCache; }
+	void SetReuseCache(ReuseCache reuseCache) { m_reuseCache = reuseCache; }
 
 	// Format
 
 	std::string OperandModifier(ReuseCache operand) const
 	{
-		for (auto reuse : m_reuseCache)
+		if (!!(m_reuseCache & operand))
 		{
-			if (reuse == operand)
-			{
-				return ".reuse";
-			}
+			return ".reuse";
 		}
 		return "";
 	}
@@ -72,60 +153,18 @@ public:
 		std::string code = "[";
 
 		// Reuse cache
-		code += "C";
-		if (m_reuseCache.size() == 0)
-		{
-			code += "-";
-		}
-		else
-		{
-			for (auto reuse : m_reuseCache)
-			{
-				code += std::to_string(static_cast<std::uint8_t>(reuse));
-			}
-		}
-		code += ";";
+		code += "C" + ReuseCacheString(m_reuseCache) + ";";
 
 		// Wait barriers
-		code += "B";
-		if (m_waitBarriers.size() == 0)
-		{
-			code += "-";
-		}
-		else
-		{
-			for (auto wait : m_waitBarriers)
-			{
-				code += std::to_string(static_cast<std::uint8_t>(wait));
-			}
-		}
-		code += ";";
+		code += "B" + BarrierString(m_waitBarriers) + ";";
 
 		// Write barrier
 
-		code += "R";
-		if (m_readBarrier == Barrier::None)
-		{
-			code += "-";
-		}
-		else
-		{
-			code += std::to_string(static_cast<std::uint8_t>(m_readBarrier));
-		}
-		code += ";";
+		code += "R" + BarrierString(m_readBarrier) + ";";
 
 		// Read barrier
 
-		code += "W";
-		if (m_writeBarrier == Barrier::None)
-		{
-			code += "-";
-		}
-		else
-		{
-			code += std::to_string(static_cast<std::uint8_t>(m_writeBarrier));
-		}
-		code += ";";
+		code += "W" + BarrierString(m_writeBarrier) + ";";
 
 		// Yield/stall
 
@@ -138,18 +177,28 @@ public:
 	std::uint32_t GenCode() const
 	{
 		std::uint32_t code = 0u;
-		for (auto reuse : m_reuseCache)
+		code |= (static_cast<std::uint8_t>(m_reuseCache)   << 17);
+		code |= (static_cast<std::uint8_t>(m_waitBarriers) << 11);
+
+		if (m_readBarrier == Barrier::None)
 		{
-			code |= ((1 << static_cast<std::uint8_t>(reuse)) << 17);
+			code |= (7 << 8);
 		}
-		for (auto wait : m_waitBarriers)
+		else
 		{
-			code |= ((1 << static_cast<std::uint8_t>(wait))  << 11);
+			code |= (BarrierIndex(m_readBarrier) << 8);
 		}
-		code |= (static_cast<std::uint8_t>(m_readBarrier)        << 8);
-		code |= (static_cast<std::uint8_t>(m_writeBarrier)       << 5);
-		code |= (m_yield                                         << 4);
-		code |= (m_stall                                         << 0);
+		if (m_writeBarrier == Barrier::None)
+		{
+			code |= (7 << 5);
+		}
+		else
+		{
+			code |= (BarrierIndex(m_writeBarrier) << 5);
+		}
+
+		code |= (m_yield << 4);
+		code |= (m_stall << 0);
 		return code;
 	}
 
@@ -158,8 +207,11 @@ private:
 	bool m_yield = false;
 	Barrier m_writeBarrier = Barrier::None;
 	Barrier m_readBarrier = Barrier::None;
-	robin_hood::unordered_set<Barrier> m_waitBarriers;
-	robin_hood::unordered_set<ReuseCache> m_reuseCache;
+	Barrier m_waitBarriers = Barrier::None;
+	ReuseCache m_reuseCache = ReuseCache::None;
 };
+
+SASS_ENUM_INLINE(Schedule, Barrier)
+SASS_ENUM_INLINE(Schedule, ReuseCache)
 
 }

@@ -50,16 +50,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	// For each barrier, keep track of the number of queued instructions, and the current wait position
 
 	constexpr unsigned int BARRIER_COUNT = 6;
-	const SASS::Schedule::Barrier BARRIER_MAP[BARRIER_COUNT] = {
-		SASS::Schedule::Barrier::SB0,
-		SASS::Schedule::Barrier::SB1,
-		SASS::Schedule::Barrier::SB2,
-		SASS::Schedule::Barrier::SB3,
-		SASS::Schedule::Barrier::SB4,
-		SASS::Schedule::Barrier::SB5
-	};
-#define BARRIER_UNMAP(barrier) static_cast<std::underlying_type_t<SASS::Schedule::Barrier>>(barrier)
-
 	std::array<std::uint8_t, BARRIER_COUNT> barrierCount{};
 	std::array<std::uint8_t, BARRIER_COUNT> barrierWait{};
 
@@ -110,8 +100,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	// Maintain a list of barriered instructions, used to insert DEPBAR. Paired integer indicates
 	// the position in the barrier list, used for partial barriers
 
-	robin_hood::unordered_map<SASS::Instruction *, std::pair<SASS::Schedule::Barrier, std::uint8_t>> writeDependencyBarriers;
-	robin_hood::unordered_map<SASS::Instruction *, std::pair<SASS::Schedule::Barrier, std::uint8_t>> readDependencyBarriers;
+	robin_hood::unordered_map<SASS::Instruction *, std::uint16_t> writeDependencyBarriers;
+	robin_hood::unordered_map<SASS::Instruction *, std::uint16_t> readDependencyBarriers;
 
 	writeDependencyBarriers.reserve(instructionCount);
 	readDependencyBarriers.reserve(instructionCount);
@@ -123,7 +113,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		dependencyGraph->ReverseTopologicalOrderBFS([&](SASS::Instruction *instruction, SASS::Analysis::BlockDependencyGraph::Node& node)
 		{
 			auto latency = HardwareProperties::GetLatency(instruction);
-			auto readLatency = HardwareProperties::GetReadLatency(instruction);
 			auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction);
 			auto readHold = HardwareProperties::GetReadHold(instruction);
 
@@ -131,55 +120,69 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			for (auto& edge : node.GetOutgoingEdges())
 			{
 				auto maxDependency = 0;
-				for (auto dependency : edge->GetDependencies())
+				auto successor = edge->GetEnd();
+
+				// Compute the expected delay before the next instruction
+
+				auto dependencies = edge->GetDependencies();
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
 				{
-					auto dependencyValue = 0;
-					switch (dependency)
+					if (barrierLatency > 0)
 					{
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
+						if (barrierLatency > maxDependency)
 						{
-							if (barrierLatency > 0)
-							{
-								dependencyValue = barrierLatency;
-							}
-							else
-							{
-								dependencyValue = (int)latency - (int)readLatency;
-							}
-							break;
-						}
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
-						{
-							dependencyValue = latency;
-							break;
-						}
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
-						{
-							dependencyValue = 1;
-							break;
-						}
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
-						{
-							if (readHold > 0)
-							{
-								dependencyValue = readHold;
-							}
-							else
-							{
-								dependencyValue = 1;
-							}
-							break;
+							maxDependency = barrierLatency;
 						}
 					}
-
-					if (dependencyValue > maxDependency)
+					else
 					{
-						maxDependency = dependencyValue;
+						auto readLatency = HardwareProperties::GetReadLatency(successor);
+
+						auto diff = (int)latency - (int)readLatency;
+						if (diff > maxDependency)
+						{
+							maxDependency = diff;
+						}
 					}
 				}
 
-				auto successor = edge->GetEnd();
-				maxSuccessor = maxDependency + dependencyGraph->GetNodeValue(successor);
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
+				{
+					if (latency > maxDependency)
+					{
+						maxDependency = latency;
+					}
+				}
+
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
+				{
+					if (1 > maxDependency)
+					{
+						maxDependency = 1;
+					}
+				}
+
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
+				{
+					if (readHold > 0)
+					{
+						if (readHold > maxDependency)
+						{
+							maxDependency = readHold;
+						}
+					}
+					else if (1 > maxDependency)
+					{
+						maxDependency = 1;
+					}
+				}
+
+				// Record the max successor only
+
+				if (auto value = maxDependency + dependencyGraph->GetNodeValue(successor); value > maxSuccessor)
+				{
+					maxSuccessor = value;
+				}
 			}
 
 			node.SetValue(maxSuccessor);
@@ -263,8 +266,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			// Add wait barriers for each predecessor that has not been waited
 
-			robin_hood::unordered_set<SASS::Schedule::Barrier> instructionBarriers;
-			robin_hood::unordered_set<SASS::Schedule::Barrier> partialBarriers;
+			auto instructionBarriers = SASS::Schedule::Barrier::None;
+			auto partialBarriers = SASS::Schedule::Barrier::None;
 			std::array<std::uint8_t, BARRIER_COUNT> waitBarriers{};
 
 			if (first)
@@ -277,7 +280,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					auto& count = barrierCount[i];
 					if (count > wait)
 					{
-						instructionBarriers.insert(BARRIER_MAP[i]);
+						instructionBarriers |= SASS::Schedule::BarrierFromIndex(i);
 					}
 					wait = 0;
 					count = 0;
@@ -287,79 +290,88 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			for (auto& edge : dependencyGraph->GetIncomingEdges(instruction))
 			{
 				auto predecessor = edge->GetStart();
-				for (auto& dependency : edge->GetDependencies())
+
+				auto dependencies = edge->GetDependencies();
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead ||
+					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate ||
+					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
 				{
-					switch (dependency)
+					if (auto w_it = writeDependencyBarriers.find(predecessor); w_it != writeDependencyBarriers.end())
 					{
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
+						// Check for any active wait barriers
+
+						auto& packedBarrier = w_it->second;
+
+						auto barrier = (packedBarrier & 0xff);
+						auto position = (packedBarrier >> 8);
+
+						if (position > barrierWait[barrier])
 						{
-							if (auto w_it = writeDependencyBarriers.find(predecessor); w_it != writeDependencyBarriers.end())
+							auto& wait = waitBarriers[barrier];
+							if (position > wait)
 							{
-								// Check for any active wait barriers
-
-								auto& [barrier, position] = w_it->second;
-
-								if (position > barrierWait[BARRIER_UNMAP(barrier)])
-								{
-									auto& val = waitBarriers[BARRIER_UNMAP(barrier)];
-									if (position > val)
-									{
-										val = position;
-										partialBarriers.insert(barrier);
-									}
-								}
-								writeDependencyBarriers.erase(w_it);
-
-								// If waiting on a write barrier, the associated read barrier can
-								// be cleared if it is still active
-
-								if (auto r_it = readDependencyBarriers.find(predecessor); r_it != readDependencyBarriers.end())
-								{
-									auto& [barrier, position] = r_it->second;
-
-									auto& wait = barrierWait[BARRIER_UNMAP(barrier)];
-									if (position > wait)
-									{
-										wait = position;
-									}
-									readDependencyBarriers.erase(r_it);
-								}
+								wait = position;
+								partialBarriers |= SASS::Schedule::BarrierFromIndex(barrier);
 							}
-							break;
 						}
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
-						{
-							if (auto r_it = readDependencyBarriers.find(predecessor); r_it != readDependencyBarriers.end())
-							{
-								// Check for any active wait barriers
+						writeDependencyBarriers.erase(w_it);
 
-								auto& [barrier, position] = r_it->second;
-								if (position > barrierWait[BARRIER_UNMAP(barrier)])
-								{
-									auto& val = waitBarriers[BARRIER_UNMAP(barrier)];
-									if (position > val)
-									{
-										val = position;
-										partialBarriers.insert(barrier);
-									}
-								}
-								readDependencyBarriers.erase(r_it);
+						// If waiting on a write barrier, the associated read barrier can be cleared if it is still active
+
+						if (auto r_it = readDependencyBarriers.find(predecessor); r_it != readDependencyBarriers.end())
+						{
+							auto& packedBarrier = r_it->second;
+
+							auto barrier = (packedBarrier & 0xff);
+							auto position = (packedBarrier >> 8);
+
+							auto& wait = barrierWait[barrier];
+							if (position > wait)
+							{
+								wait = position;
 							}
-							break;
+							readDependencyBarriers.erase(r_it);
 						}
 					}
 				}
+				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
+				{
+					if (auto r_it = readDependencyBarriers.find(predecessor); r_it != readDependencyBarriers.end())
+					{
+						// Check for any active wait barriers
+
+						auto& packedBarrier = r_it->second;
+
+						auto barrier = (packedBarrier & 0xff);
+						auto position = (packedBarrier >> 8);
+
+						if (position > barrierWait[barrier])
+						{
+							auto& wait = waitBarriers[barrier];
+							if (position > wait)
+							{
+								wait = position;
+								partialBarriers |= SASS::Schedule::BarrierFromIndex(barrier);
+							}
+						}
+						readDependencyBarriers.erase(r_it);
+					}
+				}                              
 			}
 			
 			// Insert instruction barriers, partial and full
 
 			auto barrierStall = 1u;
 
-			for (auto barrier : partialBarriers)
+			for (auto i = 0u; i < BARRIER_COUNT; ++i)
 			{
-				auto position = waitBarriers[BARRIER_UNMAP(barrier)];
+				auto barrier = SASS::Schedule::BarrierFromIndex(i);
+				if (!(partialBarriers & barrier))
+				{
+					continue;
+				}	
+
+				auto position = waitBarriers[i];
 
 				// Only some barriers may be processed out of order (certain memory ops)
 
@@ -375,7 +387,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// A partial barrier is used when there are additional instructions queued after
 
-				if (outOfOrder && position < barrierCount[BARRIER_UNMAP(barrier)])
+				if (outOfOrder && position < barrierCount[i])
 				{
 					// Shorten previous instruction stall (if possible)
 
@@ -402,7 +414,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					auto previousStall = previousSchedule.GetStall();
 					previousSchedule.SetStall(barrierStall);
 
-					if (previousSchedule.GetReuseCache().size() == 0)
+					if (previousSchedule.GetReuseCache() == SASS::Schedule::ReuseCache::None)
 					{
 						previousSchedule.SetYield(barrierStall < 13);
 					}
@@ -410,7 +422,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					// Convert to the instruction barrier type
 
 					auto barrierI = GetInstructionBarrier(barrier);
-					auto waitCount = barrierCount[BARRIER_UNMAP(barrier)] - position;
+					auto waitCount = barrierCount[i] - position;
 
 					// Insert barrier to wait until the instruction queue is ready
 
@@ -447,14 +459,14 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					// Update the current wait position for the barrier
 
-					barrierWait[BARRIER_UNMAP(barrier)] = position;
+					barrierWait[i] = position;
 				}
 				else
 				{
 					// Clear the entire barrier
 
-					instructionBarriers.insert(barrier);
-					barrierWait[BARRIER_UNMAP(barrier)] = barrierCount[BARRIER_UNMAP(barrier)];
+					instructionBarriers |= barrier;
+					barrierWait[i] = barrierCount[i];
 				}
 			}
 
@@ -491,7 +503,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Maintain barrier set
 
-				writeDependencyBarriers.emplace(instruction, std::make_pair(barrier, ++barrierCount[BARRIER_UNMAP(barrier)]));
+				auto barrierIndex = SASS::Schedule::BarrierIndex(barrier);
+				auto barrierPosition = ++barrierCount[barrierIndex];
+
+				auto packedBarrier = static_cast<std::uint16_t>(barrierIndex) | (static_cast<std::uint16_t>(barrierPosition) << 8);
+				writeDependencyBarriers.emplace(instruction, packedBarrier);
 			}
 
 			if (HardwareProperties::GetReadHold(instruction) > 0)
@@ -524,7 +540,11 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Maintain barrier set
 
-				readDependencyBarriers.emplace(instruction, std::make_pair(barrier, ++barrierCount[BARRIER_UNMAP(barrier)]));
+				auto barrierIndex = SASS::Schedule::BarrierIndex(barrier);
+				auto barrierPosition = ++barrierCount[barrierIndex];
+
+				auto packedBarrier = static_cast<std::uint16_t>(barrierIndex) | (static_cast<std::uint16_t>(barrierPosition) << 8);
+				readDependencyBarriers.emplace(instruction, packedBarrier);
 			}
 
 			// Cap the stall by the maximum value. Legal since throughput is hardware regulated, and
@@ -555,8 +575,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					// Check if this instruction waits on a barrier set in the previous instruction
 
-					if (instructionBarriers.find(readBarrier) != instructionBarriers.end() ||
-						instructionBarriers.find(writeBarrier) != instructionBarriers.end())
+					if (!!(instructionBarriers & readBarrier) || !!(instructionBarriers & writeBarrier))
 					{
 						stall = 2;
 					}
@@ -567,7 +586,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto previousStall = previousSchedule.GetStall();
 				previousSchedule.SetStall(stall);
 
-				if (previousSchedule.GetReuseCache().size() == 0) {
+				if (previousSchedule.GetReuseCache() == SASS::Schedule::ReuseCache::None)
+				{
 					previousSchedule.SetYield(stall < 13);
 				}
 
@@ -613,7 +633,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					// Iterate pairwise through source operands, checking for register matches that are not overwritten
 
-					robin_hood::unordered_set<SASS::Schedule::ReuseCache> reuseCache;
+					auto reuseCache = SASS::Schedule::ReuseCache::None;
 
 					auto count = std::min(previousOperands.size(), currentOperands.size());
 					for (auto i = 0u; i < count; ++i)
@@ -680,19 +700,14 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 								// Translate from index to the operand cache entry
 
-								const SASS::Schedule::ReuseCache CACHE_MAP[3] = {
-									SASS::Schedule::ReuseCache::OperandA,
-									SASS::Schedule::ReuseCache::OperandB,
-									SASS::Schedule::ReuseCache::OperandC
-								};
-								reuseCache.insert(CACHE_MAP[i]);
+								reuseCache |= SASS::Schedule::ReuseCacheFromIndex(i);
 							}
 						}
 					}
 
 					// Set current reuse flags, and add reuse flags to previous instruction
 
-					if (reuseCache.size() > 0)
+					if (reuseCache != SASS::Schedule::ReuseCache::None)
 					{
 						schedule.SetReuseCache(reuseCache);
 						schedule.SetYield(false); // May not yield and reuse
@@ -700,7 +715,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						auto& previousSchedule = previousInstruction->GetSchedule();
 						auto& previousCache = previousSchedule.GetReuseCache();
 
-						previousCache.insert(std::begin(reuseCache), std::end(reuseCache));
+						previousCache |= reuseCache;
 						previousSchedule.SetYield(false);
 					}
 				}
@@ -720,99 +735,92 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto delay = 0u;
 				auto barrierDelay = 0u;
 
-				for (auto dependency : edge->GetDependencies())
+				auto dependencies = edge->GetDependencies();
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
 				{
-					switch (dependency)
+					if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
 					{
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead:
+						// If the previous instruction sets a barrier, minimum 2 cycle stall
+
+						auto latency = 2;
+						if (delay < latency)
 						{
-							if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
-							{
-								// If the previous instruction sets a barrier, minimum 2 cycle stall
-
-								auto latency = 2;
-								if (delay < latency)
-								{
-									delay = latency;
-								}
-
-								if (barrierDelay < barrierLatency)
-								{
-									barrierDelay = barrierLatency;
-								}
-							}
-							else
-							{
-								// If no barrier, wait the full instruction length
-
-								auto latency = HardwareProperties::GetLatency(instruction);
-								auto readLatency = HardwareProperties::GetReadLatency(successor);
-
-								auto diff = (int)latency - (int)readLatency;
-								if (delay < diff)
-								{
-									delay = diff;
-								}
-							}
-							break;
-						}
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate:
-						{
-							// Predicate dependencies used for masking have no read latency
-
-							auto latency = HardwareProperties::GetLatency(instruction);
-							if (delay < latency)
-							{
-								delay = latency;
-							}
-							break;
+							delay = latency;
 						}
 
-						// For both RAW/WAW, if the previous instruction sets a barrier, wait a minimum of 2 cycles.
-						// Otherwise, must wait until the next cycle before executing
-
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite:
+						if (barrierDelay < barrierLatency)
 						{
-							if (auto barrierLatency = HardwareProperties::GetReadHold(instruction); barrierLatency > 0)
-							{
-								auto latency = 2;
-								if (delay < latency)
-								{
-									delay = latency;
-								}
-
-								if (barrierDelay < barrierLatency)
-								{
-									barrierDelay = barrierLatency;
-								}
-							}
-							else if (delay < 1)
-							{
-								delay = 1;
-							}
-							break;
+							barrierDelay = barrierLatency;
 						}
-						case SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite:
+					}
+					else
+					{
+						// If no barrier, wait the full instruction length
+
+						auto latency = HardwareProperties::GetLatency(instruction);
+						auto readLatency = HardwareProperties::GetReadLatency(successor);
+
+						auto diff = (int)latency - (int)readLatency;
+						if (delay < diff)
 						{
-							if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
-							{
-								auto latency = 2;
-								if (delay < latency)
-								{
-									delay = latency;
-								}
-
-								if (barrierDelay < barrierLatency)
-								{
-									barrierDelay = barrierLatency;
-								}
-							}
-							else if (delay < 1)
-							{
-								delay = 1;
-							}
-							break;
+							delay = diff;
 						}
+					}
+				}
+
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
+				{
+					// Predicate dependencies used for masking have no read latency
+
+					auto latency = HardwareProperties::GetLatency(instruction);
+					if (delay < latency)
+					{
+						delay = latency;
+					}
+				}
+				
+				// For both RAW/WAW, if the previous instruction sets a barrier, wait a minimum of 2 cycles.
+				// Otherwise, must wait until the next cycle before executing
+
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
+				{
+					if (auto barrierLatency = HardwareProperties::GetReadHold(instruction); barrierLatency > 0)
+					{
+						auto latency = 2;
+						if (delay < latency)
+						{
+							delay = latency;
+						}
+
+						if (barrierDelay < barrierLatency)
+						{
+							barrierDelay = barrierLatency;
+						}
+					}
+					else if (delay < 1)
+					{
+						delay = 1;
+					}
+				}
+
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
+				{
+					if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
+					{
+						auto latency = 2;
+						if (delay < latency)
+						{
+							delay = latency;
+						}
+
+						if (barrierDelay < barrierLatency)
+						{
+							barrierDelay = barrierLatency;
+						}
+					}
+					else if (delay < 1)
+					{
+						delay = 1;
 					}
 				}
 
@@ -971,7 +979,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 		// Convert to the instruction barrier type
 
-		auto barrierI = GetInstructionBarrier(BARRIER_MAP[i]);
+		auto barrierI = GetInstructionBarrier(SASS::Schedule::BarrierFromIndex(i));
 
 		// Insert barrier to wait until zero
 

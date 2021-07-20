@@ -44,33 +44,23 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 			string += "\tn_" + nodeIndex + " -> n_" + successorIndex + " [style=bold, label=\"";
 
-			for (auto dependency : edge->GetDependencies())
+			auto dependencies = edge->GetDependencies();
+			if (dependencies & DependencyKind::ReadWrite)
 			{
-				switch (dependency)
-				{
-					case DependencyKind::ReadWrite:
-					{
-						string += "a";
-						break;
-					}
-					case DependencyKind::WriteRead:
-					{
-						string += "t";
-						break;
-					}
-					case DependencyKind::WriteReadPredicate:
-					{
-						string += "p";
-						break;
-					}
-					case DependencyKind::WriteWrite:
-					{
-						string += "w";
-						break;
-					}
-				}
+				string += "a";
 			}
-
+			if (dependencies & DependencyKind::WriteRead)
+			{
+				string += "t";
+			}
+			if (dependencies & DependencyKind::WriteReadPredicate)
+			{
+				string += "p";
+			}
+			if (dependencies & DependencyKind::WriteWrite)
+			{
+				string += "w";
+			}
 			string += "\"];\n";
 		}
 	}

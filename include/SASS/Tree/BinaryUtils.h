@@ -12,27 +12,45 @@
 
 namespace SASS {
 
-#define SASS_FLAGS_FRIEND() \
-	friend Flags operator|(Flags a, Flags b); \
-	friend Flags operator&(Flags a, Flags b);
+#define SASS_ENUM_FRIEND(x) \
+	friend bool operator!(x a); \
+	friend x operator|(x a, x b); \
+	friend x operator&(x a, x b); \
+	friend x& operator|=(x& a, x b); \
+	friend x& operator&=(x& a, x b);
 
-#define SASS_FLAGS_INLINE(x) \
-	inline x::Flags operator&(x::Flags a, x::Flags b) \
+#define SASS_ENUM_INLINE(x,y) \
+	inline bool operator!(x::y a) \
 	{ \
-		return static_cast<x::Flags>(static_cast<std::uint64_t>(a) & static_cast<std::uint64_t>(b)); \
+		return static_cast<std::underlying_type_t<x::y>>(a) == 0; \
 	} \
-	inline x::Flags& operator&=(x::Flags& a, x::Flags b) \
+	inline x::y operator&(x::y a, x::y b) \
+	{ \
+		return static_cast<x::y>( \
+			static_cast<std::underlying_type_t<x::y>>(a) & \
+			static_cast<std::underlying_type_t<x::y>>(b) \
+		); \
+	} \
+	inline x::y& operator&=(x::y& a, x::y b) \
 	{ \
 		    return a = a & b; \
 	} \
-	inline x::Flags operator|(x::Flags a, x::Flags b) \
+	inline x::y operator|(x::y a, x::y b) \
 	{ \
-		return static_cast<x::Flags>(static_cast<std::uint64_t>(a) | static_cast<std::uint64_t>(b)); \
+		return static_cast<x::y>( \
+			static_cast<std::underlying_type_t<x::y>>(a) | \
+			static_cast<std::underlying_type_t<x::y>>(b) \
+		); \
 	} \
-	inline x::Flags& operator|=(x::Flags& a, x::Flags b) \
+	inline x::y& operator|=(x::y& a, x::y b) \
 	{ \
 		    return a = a | b; \
 	}
+
+#define SASS_FLAGS_FRIEND() SASS_ENUM_FRIEND(Flags)
+#define SASS_FLAGS_INLINE(x) SASS_ENUM_INLINE(x, Flags)
+
+
 
 class BinaryUtils
 {

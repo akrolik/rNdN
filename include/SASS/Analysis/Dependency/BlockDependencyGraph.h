@@ -20,35 +20,33 @@ public:
 		m_nodes.reserve(size);
 	}
 
-	enum class DependencyKind {
-		ReadWrite,
-		WriteRead,
-		WriteReadPredicate,
-		WriteWrite
+	enum DependencyKind {
+		ReadWrite          = (1 << 0),
+		WriteRead          = (1 << 1),
+		WriteReadPredicate = (1 << 2),
+		WriteWrite         = (1 << 3)
 	};
+
+	SASS_ENUM_FRIEND(DependencyKind)
 
 	struct Edge
 	{
 	public:
-		Edge(DependencyGraphNode start, DependencyGraphNode end, DependencyKind kind)
-			: m_start(start), m_end(end)
-		{
-			m_dependencies.reserve(4);
-			m_dependencies.push_back(kind);
-		}
+		Edge(DependencyGraphNode start, DependencyGraphNode end, DependencyKind dependencies)
+			: m_start(start), m_end(end), m_dependencies(dependencies) {}
 
 		const DependencyGraphNode& GetStart() const { return m_start; }
 		const DependencyGraphNode& GetEnd() const { return m_end; }
 
-		const std::vector<DependencyKind>& GetDependencies() const { return m_dependencies; }
-		std::vector<DependencyKind>& GetDependencies() { return m_dependencies; }
+		DependencyKind GetDependencies() const { return m_dependencies; }
+		DependencyKind& GetDependencies() { return m_dependencies; }
 
-		void SetDependencies(const std::vector<DependencyKind>& dependencies) { m_dependencies = dependencies; }
+		void SetDependencies(DependencyKind dependencies) { m_dependencies = dependencies; }
 
 	private:
 		DependencyGraphNode m_start = nullptr;
 		DependencyGraphNode m_end = nullptr;
-		std::vector<DependencyKind> m_dependencies;
+		DependencyKind m_dependencies;
 	};
 
 	struct Node
@@ -110,7 +108,7 @@ public:
 		{
 			if (edge->GetEnd() == destination)
 			{
-				edge->GetDependencies().push_back(dependency);
+				edge->GetDependencies() |= dependency;
 				return;
 			}
 		}
@@ -204,6 +202,8 @@ private:
 
 	robin_hood::unordered_flat_map<DependencyGraphNode, Node> m_nodes;
 };
+
+SASS_ENUM_INLINE(BlockDependencyGraph, DependencyKind)
 
 }
 }
