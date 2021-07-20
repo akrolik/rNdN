@@ -127,12 +127,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto dependencies = edge->GetDependencies();
 				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
 				{
-					if (barrierLatency > 0)
+					if (barrierLatency > maxDependency)
 					{
-						if (barrierLatency > maxDependency)
-						{
-							maxDependency = barrierLatency;
-						}
+						maxDependency = barrierLatency;
 					}
 					else
 					{
@@ -145,16 +142,14 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						}
 					}
 				}
-
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
+				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
 				{
 					if (latency > maxDependency)
 					{
 						maxDependency = latency;
 					}
 				}
-
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
+				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
 				{
 					if (1 > maxDependency)
 					{
@@ -164,12 +159,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
 				{
-					if (readHold > 0)
+					if (readHold > maxDependency)
 					{
-						if (readHold > maxDependency)
-						{
-							maxDependency = readHold;
-						}
+						maxDependency = readHold;
 					}
 					else if (1 > maxDependency)
 					{
@@ -726,9 +718,6 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				}
 			}
 
-// Utils::Chrono::End(temp6);
-// auto temp7 = Utils::Chrono::Start("temp7");
-
 			// Decrease the degree of all successors, adding them to the priority queue if next
 
 			for (auto& edge : instructionNode.GetOutgoingEdges())
@@ -775,8 +764,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						}
 					}
 				}
-
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
+				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
 				{
 					// Predicate dependencies used for masking have no read latency
 
@@ -790,9 +778,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// For both RAW/WAW, if the previous instruction sets a barrier, wait a minimum of 2 cycles.
 				// Otherwise, must wait until the next cycle before executing
 
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
+				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
 				{
-					if (auto barrierLatency = HardwareProperties::GetReadHold(instruction); barrierLatency > 0)
+					if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
 					{
 						auto latency = 2;
 						if (delay < latency)
@@ -811,9 +799,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					}
 				}
 
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
 				{
-					if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
+					if (auto barrierLatency = HardwareProperties::GetReadHold(instruction); barrierLatency > 0)
 					{
 						auto latency = 2;
 						if (delay < latency)
@@ -912,6 +900,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						if (operand->GetKind() == SASS::Operand::Kind::Constant)
 						{
 							constant = true;
+							break;
 						}
 					}
 
@@ -923,6 +912,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 							if (operand->GetKind() == SASS::Operand::Kind::Constant)
 							{
 								constantClash = true;
+								break;
 							}
 						}
 					}
