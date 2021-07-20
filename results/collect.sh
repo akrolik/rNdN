@@ -4,12 +4,12 @@ FILE=$1
 
 function collect {
 	echo -n "$1: "
-	grep "$1:" $FILE | sed -E -e "s/.*: (.*) us($| \[.*)/\1/" | awk '{s+=$1} END {print s}'
+	grep "$1:" $FILE | sed -E -e "s/.*: (.*) .s($| \[.*)/\1/" | awk '{s+=$1} END {print s}'
 }
 
 function collect_1 {
 	echo -n "$1: "
-	grep "$1:" $FILE | awk 'END {print}' | sed -E -e "s/.*: (.*) us($| \[.*)/\1/"
+	grep "$1:" $FILE | awk 'END {print}' | sed -E -e "s/.*: (.*) .s($| \[.*)/\1/"
 }
 
 
