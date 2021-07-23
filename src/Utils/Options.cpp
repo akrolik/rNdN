@@ -612,7 +612,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 			"   - linear     Linear scan register allocator",
 			cxxopts::value<std::string>()->default_value("linear")
 		)
-		(Opt_Backend_inline_branch, "Enable inlined (predicated) control-flow branches", cxxopts::value<bool>()->default_value("true"))
+		(Opt_Backend_inline_branch, "Inlined (predicated) control-flow branches", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_inline_branch_threshold, "Maximum statements in inlined branch", cxxopts::value<unsigned int>()->default_value("6"))
 		(Opt_Backend_load_elf, "Load relocatable .cubin ELF file", cxxopts::value<std::string>())
 		(Opt_Backend_save_elf, "Save relocatable .cubin ELF file", cxxopts::value<std::string>())
@@ -642,8 +642,8 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 			"   - list       Pipelining List scheduler (options below)",
 			cxxopts::value<std::string>()->default_value("list")
 		)
-		(Opt_Backend_scheduler_dual, "Dual issue instructions", cxxopts::value<bool>()->default_value("true"))
-		(Opt_Backend_scheduler_reuse, "Enable register reuse flags", cxxopts::value<bool>()->default_value("true"))
+		(Opt_Backend_scheduler_dual, "Dual issue instructions", cxxopts::value<bool>()->default_value("false"))
+		(Opt_Backend_scheduler_reuse, "Register reuse flags", cxxopts::value<bool>()->default_value("false"))
 		(Opt_Backend_scheduler_cbarrier, "Data dependence counting barriers", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Backend_scheduler_function, "Schedule heuristic function")
 	;
