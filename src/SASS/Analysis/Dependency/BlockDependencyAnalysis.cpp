@@ -64,11 +64,11 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 
 	if (!m_predicated)
 	{
-		m_graph->InsertNode(instruction);
+		m_node = m_graph->InsertNode(instruction);
 	}
 
 	m_destination = false;
-	for (auto& operand : instruction->GetSourceOperands())
+	for (auto& operand : instruction->GetCachedSourceOperands())
 	{
 		if (operand != nullptr)
 		{
@@ -77,7 +77,7 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 	}
 
 	m_destination = true;
-	for (auto& operand : instruction->GetDestinationOperands())
+	for (auto& operand : instruction->GetCachedDestinationOperands())
 	{
 		if (operand != nullptr)
 		{
@@ -88,7 +88,7 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 
 void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
 {
-	m_graph->InsertNode(instruction);
+	m_node = m_graph->InsertNode(instruction);
 
 	if (auto predicate = instruction->GetPredicate())
 	{
@@ -255,9 +255,9 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint16_t operand)
 
 		for (auto& readInstruction : reads)
 		{
-			if (readInstruction != m_instruction)
+			if (readInstruction.get().GetInstruction() != m_instruction)
 			{
-				m_graph->InsertEdge(readInstruction, m_instruction, BlockDependencyGraph::DependencyKind::ReadWrite);
+				m_graph->InsertEdge(readInstruction, m_node, BlockDependencyGraph::DependencyKind::ReadWrite);
 			}
 		}
 
@@ -265,9 +265,9 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint16_t operand)
 
 		for (auto& writeInstruction : writes)
 		{
-			if (writeInstruction != m_instruction)
+			if (writeInstruction.get().GetInstruction() != m_instruction)
 			{
-				m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteWrite);
+				m_graph->InsertEdge(writeInstruction, m_node, BlockDependencyGraph::DependencyKind::WriteWrite);
 			}
 		}
 
@@ -278,7 +278,7 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint16_t operand)
 			writes.clear();
 			reads.clear();
 		}
-		writes.push_back(m_instruction);
+		writes.push_back(m_node);
 	}
 	else
 	{
@@ -286,22 +286,22 @@ void BlockDependencyAnalysis::BuildDataDependencies(std::uint16_t operand)
 
 		for (auto& writeInstruction : writes)
 		{
-			if (writeInstruction != m_instruction)
+			if (writeInstruction.get().GetInstruction() != m_instruction)
 			{
 				if (operand >= DataOffset_Predicate)
 				{
-					m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteReadPredicate);
+					m_graph->InsertEdge(writeInstruction, m_node, BlockDependencyGraph::DependencyKind::WriteReadPredicate);
 				}
 				else
 				{
-					m_graph->InsertEdge(writeInstruction, m_instruction, BlockDependencyGraph::DependencyKind::WriteRead);
+					m_graph->InsertEdge(writeInstruction, m_node, BlockDependencyGraph::DependencyKind::WriteRead);
 				}
 			}
 		}
 
 		// Add read for this instruction
 
-		reads.push_back(m_instruction);
+		reads.push_back(m_node);
 	}
 }
 

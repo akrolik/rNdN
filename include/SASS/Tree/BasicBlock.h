@@ -23,7 +23,15 @@ public:
 	}
 	std::vector<Instruction *>& GetInstructions() { return m_instructions; }
 
-	void AddInstruction(Instruction *instruction) { m_instructions.push_back(instruction); }
+	void AddInstruction(Instruction *instruction)
+	{
+		// Setup properties
+
+		instruction->SetLineNumber(m_instructions.size() + 1);
+		instruction->BuildCachedOperands();
+
+		m_instructions.push_back(instruction);
+	}
 	void SetInstructions(const std::vector<Instruction *>& instructions) { m_instructions = instructions; }
 
 	// Name

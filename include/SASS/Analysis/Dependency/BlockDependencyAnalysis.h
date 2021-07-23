@@ -18,7 +18,7 @@ public:
 
 	// Public API
 
-	BlockDependencyAnalysis(const Function *function) : m_function(function) {}
+	BlockDependencyAnalysis(const Function *function) : m_function(function), m_node(m_tempNode), m_tempNode(nullptr) {}
 
 	void Build(BasicBlock *block);
 	const std::vector<BlockDependencyGraph *>& GetGraphs() const { return m_graphs; }
@@ -59,11 +59,14 @@ private:
 	std::vector<BlockDependencyGraph *> m_graphs;
 	BlockDependencyGraph *m_graph = nullptr;
 
-	robin_hood::unordered_map<std::uint16_t, std::vector<Instruction *>> m_readMap;
-	robin_hood::unordered_map<std::uint16_t, std::vector<Instruction *>> m_writeMap;
+	robin_hood::unordered_flat_map<std::uint16_t, std::vector<std::reference_wrapper<Analysis::BlockDependencyGraph::Node>>> m_readMap;
+	robin_hood::unordered_flat_map<std::uint16_t, std::vector<std::reference_wrapper<Analysis::BlockDependencyGraph::Node>>> m_writeMap;
 
-	SASS::Instruction *m_instruction = nullptr;
-	SASS::BasicBlock *m_block = nullptr;
+	BasicBlock *m_block = nullptr;
+	Instruction *m_instruction = nullptr;
+
+	std::reference_wrapper<Analysis::BlockDependencyGraph::Node> m_node;
+	Analysis::BlockDependencyGraph::Node m_tempNode;
 
 	void InitializeSection();
 

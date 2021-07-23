@@ -35,16 +35,18 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 	for (const auto& [instruction, node] : m_nodes)
 	{
-		for (const auto& edge : node.GetOutgoingEdges())
+		for (const auto& edgeRef : node.GetOutgoingEdges())
 		{
-			auto successor = edge->GetEnd();
+			const auto& edge = edgeRef.get();
+
+			auto successor = edge.GetEndInstruction();
 
 			auto nodeIndex = std::to_string(indexMap[instruction]);
 			auto successorIndex = std::to_string(indexMap[successor]);
 
 			string += "\tn_" + nodeIndex + " -> n_" + successorIndex + " [style=bold, label=\"";
 
-			auto dependencies = edge->GetDependencies();
+			auto dependencies = edge.GetDependencies();
 			if (dependencies & DependencyKind::ReadWrite)
 			{
 				string += "a";

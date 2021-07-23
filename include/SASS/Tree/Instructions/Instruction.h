@@ -18,7 +18,21 @@ public:
 
 	void SetSchedule(const Schedule& schedule) { m_schedule = schedule; }
 
+	// Line number
+
+	unsigned int GetLineNumber() const { return m_lineNumber; }
+	void SetLineNumber(unsigned int lineNumber) { m_lineNumber = lineNumber; }
+
 	// Operands
+
+	void BuildCachedOperands()
+	{
+		m_sourceCache = std::move(GetSourceOperands());
+		m_destinationCache = std::move(GetDestinationOperands());
+	}
+
+	std::vector<Operand *>& GetCachedSourceOperands() const { return m_sourceCache; }
+	std::vector<Operand *>& GetCachedDestinationOperands() const { return m_destinationCache; }
 
 	virtual std::vector<Operand *> GetSourceOperands() const = 0;
 	virtual std::vector<Operand *> GetDestinationOperands() const = 0;
@@ -65,7 +79,12 @@ public:
 	}
 
 protected:
+	unsigned int m_lineNumber = 0;
 	Schedule m_schedule;
+
+	mutable std::vector<Operand *> m_destinationCache;
+	mutable std::vector<Operand *> m_sourceCache;
+
 };
 
 }
