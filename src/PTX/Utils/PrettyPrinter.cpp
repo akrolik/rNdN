@@ -89,6 +89,9 @@ void PrettyPrinter::Visit(const BasicBlock *block)
 
 void PrettyPrinter::Visit(const Function *function)
 {
+	auto definition = m_definition;
+	m_definition = true;
+
 	// Linking
 	auto linkDirective = function->GetLinkDirective();
 	if (linkDirective != Function::LinkDirective::None)
@@ -130,6 +133,7 @@ void PrettyPrinter::Visit(const Function *function)
 	Indent();
 	m_string << ")";
 
+	m_definition = definition;
 	if (!m_definition)
 	{
 		m_string << ";";
