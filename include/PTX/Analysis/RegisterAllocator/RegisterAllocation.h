@@ -15,6 +15,12 @@ public:
 	constexpr static unsigned int DefaultMaxRegister = 255;
 	constexpr static unsigned int DefaultMaxPredicate = 7;
 
+	RegisterAllocation()
+	{
+		m_registerMap.reserve(DefaultMaxRegister);
+		m_predicateMap.reserve(DefaultMaxPredicate);
+	}
+
 	unsigned int GetMaxRegisters() const { return m_maxRegisters; }
 	void SetMaxRegisters(unsigned int registers) { m_maxRegisters = registers; }
 

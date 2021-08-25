@@ -8,7 +8,15 @@ void LiveIntervals::Analyze(const FunctionDefinition<VoidType> *function)
 	auto& functionName = function->GetName();
 
 	auto timeIntervals_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
+
+	m_liveIntervals.clear();
+	m_statementIndex = 0;
+
+	m_reserved = false;
+	m_intervalCount = 0;
+
 	function->Accept(*this);
+
 	Utils::Chrono::End(timeIntervals_start);
 
 	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
@@ -18,8 +26,24 @@ void LiveIntervals::Analyze(const FunctionDefinition<VoidType> *function)
 	}
 }
 
+bool LiveIntervals::VisitIn(const VariableDeclaration *declaration)
+{
+	// Record to reserve size
+
+	m_intervalCount += declaration->GetNameCount();
+	return false;
+}
+
 bool LiveIntervals::VisitIn(const InstructionStatement *statement)
 {
+	// Reserve for all intervals
+
+	if (!m_reserved)
+	{
+		m_liveIntervals.reserve(m_intervalCount);
+		m_reserved = true;
+	}
+
 	// Construct live ranges
 
 	for (const auto& element : m_liveVariables.GetOutSet(statement))

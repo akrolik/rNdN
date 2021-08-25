@@ -28,6 +28,7 @@ public:
 
 	// Visitors
 
+	bool VisitIn(const VariableDeclaration *declaration) override;
 	bool VisitIn(const InstructionStatement *statement) override;
 
 	// Formatting
@@ -39,6 +40,9 @@ private:
 
 	unsigned int m_statementIndex = 0;
 	robin_hood::unordered_map<std::string, LiveInterval> m_liveIntervals;
+
+	bool m_reserved = false;
+	unsigned int m_intervalCount = 0;
 };
 
 }

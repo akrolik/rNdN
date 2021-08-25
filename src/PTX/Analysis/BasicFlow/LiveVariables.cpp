@@ -18,7 +18,7 @@ void LiveVariables::Visit(const InstructionStatement *statement)
 
 void LiveVariables::Visit(const PredicatedInstruction *instruction)
 {
-	ConstVisitor::Visit(instruction);
+	Visit(static_cast<const InstructionStatement *>(instruction)); // ConstVisitor::Visit(instruction);
 
 	if (auto [predicate, negate] = instruction->GetPredicate(); predicate != nullptr)
 	{
@@ -60,7 +60,7 @@ void LiveVariables::Visit(const Register<T> *reg)
 	}
 	else
 	{
-		m_currentSet.insert(new LiveVariablesValue::Type(name));
+		m_currentSet.emplace(&name);
 	}
 }
 
@@ -80,10 +80,10 @@ LiveVariables::Properties LiveVariables::TemporaryFlow(const FunctionDefinition<
 
 LiveVariables::Properties LiveVariables::Merge(const Properties& s1, const Properties& s2) const
 {
-	// Simple merge operation, add all non-duplicate eelements to the out set
+	// Simple merge operation, add all non-duplicate elements to the out set
 
 	Properties outSet(s1);
-	outSet.insert(s2.begin(), s2.end());
+	outSet.insert(std::begin(s2), std::end(s2));
 
 	return outSet;
 }

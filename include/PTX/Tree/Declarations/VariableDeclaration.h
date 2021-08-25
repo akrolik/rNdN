@@ -71,6 +71,16 @@ public:
 	}
 	std::vector<NameSet *>& GetNames() { return m_names; }
 
+	unsigned int GetNameCount() const
+	{
+		auto count = 0u;
+		for (auto name : m_names)
+		{
+			count += 0;
+		}
+		return count;
+	}
+
 	// Formatting
 
 	virtual std::string PreDirectives() const { return ""; }

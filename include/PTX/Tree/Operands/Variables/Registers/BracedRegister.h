@@ -36,7 +36,7 @@ public:
 
 	// Formatting
 
-	std::string GetName() const override
+	std::string& GetName() const override
 	{
 		std::string code = "{";
 		auto first = true;
@@ -49,8 +49,10 @@ public:
 			first = false;
 			code += reg->ToString();
 		}
-		return code + "}";
+		m_name = code + "}";
+		return m_name;
 	}
+	mutable std::string m_name;
 
 	json ToJSON() const override
 	{

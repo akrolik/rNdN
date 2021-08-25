@@ -30,9 +30,10 @@ public:
 
 	// Properties
 
-	virtual std::string GetName() const
+	virtual std::string& GetName() const
 	{
-		return m_nameSet->GetName(m_nameIndex);
+		m_name = std::move(m_nameSet->GetName(m_nameIndex));
+		return m_name;
 	}
 
 	// Formatting
@@ -54,6 +55,8 @@ public:
 
 protected:
 	VariableBase(const NameSet *nameSet, unsigned int nameIndex) : m_nameSet(nameSet), m_nameIndex(nameIndex) {}
+
+	mutable std::string m_name;
 
 	const NameSet *m_nameSet = nullptr;
 	unsigned int m_nameIndex = 0;

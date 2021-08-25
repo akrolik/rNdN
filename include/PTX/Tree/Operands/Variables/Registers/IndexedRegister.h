@@ -26,10 +26,13 @@ public:
 	VectorElement GetVectorElement() const { return m_vectorElement; }
 	void SetVectorElement(VectorElement vectorElement) { m_vectorElement = vectorElement; }
 
-	std::string GetName() const override
+	std::string& GetName() const override
 	{
-		return VariableAdapter<T, VectorType<T, V, Assert>, S>::GetName() + GetVectorElementName(m_vectorElement);
+		m_name = VariableAdapter<T, VectorType<T, V, Assert>, S>::GetName() + GetVectorElementName(m_vectorElement);
+		return m_name;
 	}
+
+	mutable std::string m_name;
 
 	// Formatting
 

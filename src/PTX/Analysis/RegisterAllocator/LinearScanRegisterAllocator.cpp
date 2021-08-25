@@ -30,8 +30,12 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 
 	// Construct vector of live interval tuples (name, start, end)
 
+	const auto& inputIntervals = m_liveIntervals.GetLiveIntervals();
+
 	std::vector<std::tuple<std::string, unsigned int, unsigned int>> liveIntervals;
-	for (const auto& [name, interval] : m_liveIntervals.GetLiveIntervals())
+	liveIntervals.reserve(inputIntervals.size());
+
+	for (const auto& [name, interval] : inputIntervals)
 	{
 		liveIntervals.emplace_back(name, interval.first, interval.second);
 	}
@@ -53,6 +57,7 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 	// Initialize empty vector of active records (end, register, range). Range=0 for predicates
 
 	std::vector<std::tuple<unsigned int, std::uint8_t, std::uint8_t>> activeIntervals;
+	activeIntervals.reserve(liveIntervals.size());
 
 	// Keep track of allocated registers and predicates
 
