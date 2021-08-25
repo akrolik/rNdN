@@ -48,7 +48,7 @@ void Manager::InitializeCUDA()
 
 	// By default we use the first CUDA capable GPU for computations
 
-	std::unique_ptr<CUDA::Device>& device = m_platform.GetDevice(0);
+	auto& device = GetCurrentDevice();
 	device->SetActive();
 
 	// Complete the CUDA initialization by creating a CUDA context for the device
