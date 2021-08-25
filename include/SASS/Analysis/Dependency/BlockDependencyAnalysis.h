@@ -68,7 +68,7 @@ private:
 	std::reference_wrapper<Analysis::BlockDependencyGraph::Node> m_node;
 	Analysis::BlockDependencyGraph::Node m_tempNode;
 
-	void InitializeSection();
+	void InitializeSection(bool control = false);
 
 	bool m_destination = false;
 	bool m_predicated = false;

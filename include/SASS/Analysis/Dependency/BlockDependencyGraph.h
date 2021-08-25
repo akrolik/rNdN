@@ -14,9 +14,9 @@ using DependencyGraphNode = Instruction *;
 class BlockDependencyGraph
 {
 public:
-	BlockDependencyGraph(BasicBlock *block) : m_block(block)
+	BlockDependencyGraph(BasicBlock *block, bool control = false) : m_block(block)
 	{
-		auto size = block->GetInstructions().size();
+		auto size = (control) ? 1 : block->GetInstructions().size();
 		m_nodes.reserve(size);
 	}
 
@@ -132,6 +132,23 @@ public:
 		void InsertIncomingEdge(Edge& edge) { m_incomingEdges.emplace_back(edge); }
 		void InsertOutgoingEdge(Edge& edge) { m_outgoingEdges.emplace_back(edge); }
 
+		struct Hash
+		{
+			size_t operator()(const Node& node) const
+			{
+				auto instruction = node.GetInstruction();
+				return std::hash<DependencyGraphNode>()(instruction);
+			}
+		};
+
+		struct Equals
+		{
+			bool operator()(const Node& val1, const Node& val2) const
+			{
+				return val1.GetInstruction() == val2.GetInstruction();
+			}
+		};
+
 	private:
 		DependencyGraphNode m_instruction;
 		ScheduleProperties m_properties;
@@ -146,7 +163,7 @@ public:
 
 	Node& InsertNode(const DependencyGraphNode& node)
 	{
-		return m_nodes.emplace(node, node).first->second;
+		return *m_nodes.emplace(node).first;
 	}
 
 	// Edges
@@ -187,7 +204,7 @@ public:
 
 		edges.reserve(m_nodes.size());
 
-		for (auto& [instruction, node] : m_nodes)
+		for (auto& node : m_nodes)
 		{
 			auto count = node.GetOutDegree();
 			if (count == 0)
@@ -231,7 +248,7 @@ public:
 private:
 	BasicBlock *m_block = nullptr;
 
-	robin_hood::unordered_node_map<DependencyGraphNode, Node> m_nodes;
+	robin_hood::unordered_node_set<Node, Node::Hash, Node::Equals> m_nodes;
 	std::deque<Edge> m_edges;
 };
 

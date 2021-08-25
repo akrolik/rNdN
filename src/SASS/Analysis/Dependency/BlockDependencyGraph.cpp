@@ -18,8 +18,9 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 	// Add all CFG nodes (basic blocks) in the graph
 
-	for (const auto& [instruction, node] : m_nodes)
+	for (const auto& node : m_nodes)
 	{
+		auto instruction = node.GetInstruction();
 		indexMap[instruction] = index;
 
 		auto name = "n_" + std::to_string(index);
@@ -33,8 +34,9 @@ std::string BlockDependencyGraph::ToDOTString() const
 
 	// Add all edges in the graph
 
-	for (const auto& [instruction, node] : m_nodes)
+	for (const auto& node : m_nodes)
 	{
+		auto instruction = node.GetInstruction();
 		for (const auto& edgeRef : node.GetOutgoingEdges())
 		{
 			const auto& edge = edgeRef.get();

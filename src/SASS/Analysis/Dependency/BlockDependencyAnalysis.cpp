@@ -46,16 +46,19 @@ void BlockDependencyAnalysis::Build(BasicBlock *block)
 	}
 }
 
-void BlockDependencyAnalysis::InitializeSection()
+void BlockDependencyAnalysis::InitializeSection(bool control)
 {
-	m_graph = new BlockDependencyGraph(m_block);
+	m_graph = new BlockDependencyGraph(m_block, control);
 	m_graphs.push_back(m_graph);
 
 	m_readMap.clear();
 	m_writeMap.clear();
 
-	m_readMap.reserve(32);
-	m_writeMap.reserve(32);
+	if (!control)
+	{
+		m_readMap.reserve(32);
+		m_writeMap.reserve(32);
+	}
 }
 
 void BlockDependencyAnalysis::Visit(Instruction *instruction)
@@ -234,7 +237,7 @@ void BlockDependencyAnalysis::BuildControlDependencies(Instruction *controlInstr
 
 	if (m_graph->GetNodeCount() > 0)
 	{
-		InitializeSection();
+		InitializeSection(true);
 	}
 
 	m_graph->InsertNode(controlInstruction);
