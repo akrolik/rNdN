@@ -2,7 +2,7 @@
 
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
-#include "llvm/CodeGen/CommandFlags.inc"
+#include "llvm/CodeGen/CommandFlags.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Linker/Linker.h"
@@ -128,11 +128,12 @@ std::string Generate(const std::string& compute)
 		Utils::Logger::LogError("Cannot lookup target '" + targetString + "' : " + error, "LLVM ERROR");
 	}
 
-	llvm::TargetOptions targetOptions = InitTargetOptionsFromCodeGenFlags();
+	llvm::TargetOptions targetOptions;
 	targetOptions.AllowFPOpFusion = llvm::FPOpFusion::Fast;
 	targetOptions.UnsafeFPMath = true;
 	targetOptions.NoInfsFPMath = true;
 	targetOptions.NoNaNsFPMath = true;
+	targetOptions.MCOptions = llvm::mc::InitMCTargetOptionsFromFlags();
 
 	auto machine(target->createTargetMachine(
 		targetString,
@@ -175,7 +176,7 @@ std::string Generate(const std::string& compute)
 		llvm::legacy::PassManager codegenPasses;
 		llvm::raw_string_ostream stream(ptxCode);
 		llvm::buffer_ostream pstream(stream);
-		machine->addPassesToEmitFile(codegenPasses, pstream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
+		machine->addPassesToEmitFile(codegenPasses, pstream, nullptr, llvm::CGFT_AssemblyFile, true);
 		codegenPasses.run(*module);
 	}
 
