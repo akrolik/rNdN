@@ -84,4 +84,11 @@ static void Synchronize()
 	checkRuntimeError(cudaDeviceSynchronize());
 }
 
+static int RuntimeVersion()
+{
+	int version;
+	checkRuntimeError(cudaRuntimeGetVersion(&version));
+	return version;
+}
+
 }

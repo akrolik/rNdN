@@ -18,6 +18,11 @@ void Platform::Initialize()
 		if (Utils::Options::IsDebug_Print())
 		{
 			Utils::Logger::LogDebug("CUDA driver initialized");
+
+			auto version = RuntimeVersion();
+			auto major = (version / 1000);
+			auto minor = (version % 1000) / 10;
+			Utils::Logger::LogDebug("Runtime version: " + std::to_string(major) + "." + std::to_string(minor));
 		}
 
 		LoadDevices();
