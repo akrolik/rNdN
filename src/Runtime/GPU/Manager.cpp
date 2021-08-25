@@ -4,8 +4,10 @@
 
 #include "CUDA/libdevice.h"
 #include "CUDA/libr3d3.h"
+#include "CUDA/Utils.h"
 
 #include "Utils/Chrono.h"
+#include "Utils/Options.h"
 #include "Utils/Logger.h"
 
 namespace Runtime {
@@ -66,11 +68,14 @@ void Manager::InitializeLibraries()
 	// cost that is not included in the compile time since the library must only be
 	// compiled once
 
-	auto timeLibrary_start = Utils::Chrono::Start("CUDA external libraries");
+	if (Utils::Options::IsAssembler_LinkExternal())
+	{
+		auto timeLibrary_start = Utils::Chrono::Start("CUDA external libraries");
 
-	m_externalModules.push_back(CUDA::libdevice::CreateModule(GetCurrentDevice()));
+		m_externalModules.push_back(CUDA::libdevice::CreateModule(GetCurrentDevice()));
 
-	Utils::Chrono::End(timeLibrary_start);
+		Utils::Chrono::End(timeLibrary_start);
+	}
 
 	// Instantiate the libr3d3 library, used for utility functions. The library
 	// will be access separately and not linked to the main program

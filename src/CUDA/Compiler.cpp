@@ -78,12 +78,72 @@ void Compiler::Compile()
 
 	auto timeAssemble_start = Utils::Chrono::Start("Assemble");
 
+	if (m_ptxModules.size() > 0)
+	{
+		if (Utils::Options::IsDebug_Print())
+		{
+			unsigned int minorVer, majorVer;
+			checkNVPTXResult(nvPTXCompilerGetVersion(&majorVer, &minorVer));
+
+			Utils::Logger::LogDebug("nvPTX compiler version: " + std::to_string(majorVer) + "." + std::to_string(minorVer));
+		}
+	}
+
 	// Add the PTX source code to the linker for compilation. Note that this will invoke the compiler
 	// despite the name only pertaining to the linker
 
 	for (const auto& code : m_ptxModules)
 	{
-		auto result = cuLinkAddData(linkerState, CU_JIT_INPUT_PTX, (void *)code.c_str(), code.length() + 1, "PTX Module", 0, nullptr, nullptr);
+		//TODO: GPU name
+		const char* compileOptions[] = { "--gpu-name=sm_61", "--compile-only" };
+
+		nvPTXCompilerHandle compiler = NULL;
+		checkNVPTXResult(nvPTXCompilerCreate(&compiler, code.length(), code.c_str()));
+
+		auto status = nvPTXCompilerCompile(compiler, 2, compileOptions);
+		if (status != NVPTXCOMPILE_SUCCESS)
+		{
+			size_t errorSize;
+			checkNVPTXResult(nvPTXCompilerGetErrorLogSize(compiler, &errorSize));
+
+			if (errorSize != 0)
+			{
+				auto errorLog = new char[errorSize + 1];
+				checkNVPTXResult(nvPTXCompilerGetErrorLog(compiler, errorLog));
+
+				Utils::Logger::LogErrorPart("PTX failed to compile", Utils::Logger::ErrorPrefix);
+				Utils::Logger::LogErrorPart(errorLog, Utils::Logger::NoPrefix);
+
+				delete[] errorLog;
+			}
+			checkNVPTXResult(status);
+		}
+
+		size_t elfSize;
+		checkNVPTXResult(nvPTXCompilerGetCompiledProgramSize(compiler, &elfSize));
+
+		auto elf = malloc(elfSize);
+		checkNVPTXResult(nvPTXCompilerGetCompiledProgram(compiler, (void*)elf));
+
+		if (Utils::Options::IsDebug_Print())
+		{
+			size_t infoSize;
+			checkNVPTXResult(nvPTXCompilerGetInfoLogSize(compiler, &infoSize));
+
+			if (infoSize != 0)
+			{
+				auto infoLog = new char[infoSize + 1];
+				checkNVPTXResult(nvPTXCompilerGetInfoLog(compiler, infoLog));
+
+				Utils::Logger::LogDebug(infoLog);
+
+				delete[] infoLog;
+			}
+		}
+
+		checkNVPTXResult(nvPTXCompilerDestroy(&compiler));
+
+		auto result = cuLinkAddData(linkerState, CU_JIT_INPUT_CUBIN, elf, elfSize, "PTX Module", 0, nullptr, nullptr);
 		if (result != CUDA_SUCCESS)
 		{
 			Utils::Logger::LogErrorPart("PTX failed to compile", Utils::Logger::ErrorPrefix);

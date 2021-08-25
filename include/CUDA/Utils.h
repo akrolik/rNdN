@@ -1,12 +1,14 @@
 #pragma once
 
 #include <nvvm.h>
+#include "nvPTXCompiler.h"
 
 #include "Utils/Logger.h"
 
 #define checkDriverResult(result) CUDA::_checkDriverResult(result, __FILE__, __LINE__)
 #define checkRuntimeError(error) CUDA::_checkRuntimeError(error, __FILE__, __LINE__)
 #define checkNVVMResult(result) CUDA::_checkNVVMResult(result, __FILE__, __LINE__)
+#define checkNVPTXResult(result) CUDA::_checkNVPTXResult(result, __FILE__, __LINE__)
 
 namespace CUDA {
 
@@ -50,6 +52,31 @@ static void _checkNVVMResult(nvvmResult result, const char *file, int line)
 	}
 
 	Utils::Logger::LogError(std::string(nvvmGetErrorString(result)) + " <" + std::string(file) + ":" + std::to_string(line) + ">", "NVVM ERROR");
+}
+
+static void _checkNVPTXResult(nvPTXCompileResult result, const char *file, int line)
+{
+	if (result == NVPTXCOMPILE_SUCCESS)
+	{
+		return;
+	}
+
+
+	std::string error;
+	switch (result)
+	{
+#define NVPTXCASE(c) case c: error = #c; break;
+
+		NVPTXCASE(NVPTXCOMPILE_SUCCESS)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_INVALID_COMPILER_HANDLE)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_INVALID_INPUT)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_COMPILATION_FAILURE)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_INTERNAL)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_OUT_OF_MEMORY)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_COMPILER_INVOCATION_INCOMPLETE)
+		NVPTXCASE(NVPTXCOMPILE_ERROR_UNSUPPORTED_PTX_VERSION)
+	}
+	Utils::Logger::LogError(error + " <" + std::string(file) + ":" + std::to_string(line) + ">", "NVPTX ERROR");
 }
 
 static void Synchronize()

@@ -35,11 +35,13 @@ bison_target(HorseIRParser ${CMAKE_SOURCE_DIR}/HorseIR/Language/horseir.y ${CMAK
 flex_target(HorseIRScanner ${CMAKE_SOURCE_DIR}/HorseIR/Language/horseir.l ${CMAKE_CURRENT_BINARY_DIR}/Language/HorseIR_Scanner.cpp)
 ADD_FLEX_BISON_DEPENDENCY(HorseIRScanner HorseIRParser)
 
-file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*/*.cpp")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_executable(r3d3 ${SOURCES} ${BISON_HorseIRParser_OUTPUTS} ${FLEX_HorseIRScanner_OUTPUTS})
-target_link_libraries(r3d3 cuda ${CUDA_LIBRARIES} libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
+add_library(r3d3_common STATIC ${SOURCES})
+add_executable(r3d3 ${CMAKE_SOURCE_DIR}/Main.cpp ${BISON_HorseIRParser_OUTPUTS} ${FLEX_HorseIRScanner_OUTPUTS})
+
+target_link_libraries(r3d3 r3d3_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
