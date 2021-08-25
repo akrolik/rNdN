@@ -138,7 +138,7 @@ protected:
 			std::vector<BasicBlock *> sortedWork(std::begin(m_unqueuedWork), std::end(m_unqueuedWork));
 			std::sort(std::begin(sortedWork), std::end(sortedWork), [&](auto& left, auto& right)
 			{
-				return m_blockOrder[left] < m_blockOrder[right];
+				return m_blockOrder.at(left) < m_blockOrder.at(right);
 			});
 
 			// Queue the sorted work
