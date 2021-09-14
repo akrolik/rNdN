@@ -28,6 +28,8 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 	void *binary = nullptr;
 	std::size_t binarySize = 0;
 
+	auto& device = m_gpuManager.GetCurrentDevice();
+
 	if (library)
 	{
 		// Library modules are compiled with ptxas
@@ -37,7 +39,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 		{
 			compiler.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
 		}
-		compiler.Compile();
+		compiler.Compile(device);
 
 		binary = compiler.GetBinary();
 		binarySize = compiler.GetBinarySize();
@@ -81,9 +83,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 					{
 						// Generate SASS for PTX program
 
-						auto& device = m_gpuManager.GetCurrentDevice();
 						auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
-
 						if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
 						{
 							Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
@@ -133,7 +133,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 
 		// Compile!
 
-		compiler.Compile();
+		compiler.Compile(device);
 
 		binary = compiler.GetBinary();
 		binarySize = compiler.GetBinarySize();

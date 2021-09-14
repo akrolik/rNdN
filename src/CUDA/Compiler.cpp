@@ -28,7 +28,7 @@ void Compiler::AddFileModule(const std::string& file)
 	m_fileModules.push_back(file);
 }
 
-void Compiler::Compile()
+void Compiler::Compile(const std::unique_ptr<Device>& device)
 {
 	auto timeAssembler_start = Utils::Chrono::Start("CUDA assembler");
 
@@ -94,8 +94,8 @@ void Compiler::Compile()
 
 	for (const auto& code : m_ptxModules)
 	{
-		//TODO: GPU name
-		const char* compileOptions[] = { "--gpu-name=sm_61", "--compile-only" };
+		auto sm = "--gpu-name=" + device->GetComputeCapability();
+		const char* compileOptions[] = { sm.c_str(), "--compile-only" };
 
 		nvPTXCompilerHandle compiler = NULL;
 		checkNVPTXResult(nvPTXCompilerCreate(&compiler, code.length(), code.c_str()));

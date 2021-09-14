@@ -23,7 +23,7 @@ public:
 
 	// Compilation
 
-	void Compile();
+	void Compile(const std::unique_ptr<Device>& device);
 	bool IsCompiled() const { return (m_binary != nullptr); }
 
 	void *GetBinary() { return m_binary; }

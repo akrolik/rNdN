@@ -7,6 +7,8 @@ namespace Codegen {
 
 struct TargetOptions
 {
+	// Default options
+
 	std::string ComputeCapability = "sm_61";
 	std::uint32_t MaxBlockSize = 512;
 	std::uint32_t WarpSize = 32;
