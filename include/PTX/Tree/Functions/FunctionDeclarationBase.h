@@ -1,35 +1,25 @@
 #pragma once
 
-#include "PTX/Tree/StateSpace.h"
+#include "PTX/Tree/Functions/Function.h"
+
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Declarations/VariableDeclaration.h"
-#include "PTX/Tree/Functions/Function.h"
 
 namespace PTX {
 
-template<class R>
+template<class RT, class RS>
 class FunctionDeclarationBase : public Function
 {
 public:
-	REQUIRE_SPACE_PARAM(FunctionDeclarationBase,
-		REQUIRE_EXACT(typename R::VariableSpace, RegisterSpace) ||
-		REQUIRE_BASE(typename R::VariableSpace, ParameterSpace)
-	);
-
-	using ReturnDeclarationType = TypedVariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
+	using ReturnDeclarationType = TypedVariableDeclaration<RT, RS>;
 
 	FunctionDeclarationBase(const std::string& name, ReturnDeclarationType *ret = nullptr, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : Function(name, linkDirective), m_return(ret) {}
 
 	// Properties
 
-	const ReturnDeclarationType *GetReturnDeclaration() const override { return m_return; }
-	ReturnDeclarationType *GetReturnDeclaration() override { return m_return; }
+	const ReturnDeclarationType *GetReturnDeclaration() const { return m_return; }
+	ReturnDeclarationType *GetReturnDeclaration() { return m_return; }
 	void SetReturnDeclaration(ReturnDeclarationType *ret) { m_return = ret; }
-
-	std::string GetDirectives() const override
-	{
-		return ".func";
-	}
 
 	// Formatting
 
@@ -44,31 +34,39 @@ protected:
 	ReturnDeclarationType *m_return = nullptr;
 };
 
-template<>
-class FunctionDeclarationBase<VoidType> : public Function
+template<class RS>
+class FunctionDeclarationBase<VoidType, RS> : public Function
 {
 public:
 	using Function::Function;
 
 	// Poperties
 
-	bool GetEntry() const { return m_entry; }
+	bool IsEntry() const { return m_entry; }
 	void SetEntry(bool entry) { m_entry = entry; }
 
-	const VariableDeclaration *GetReturnDeclaration() const { return nullptr; }
-	VariableDeclaration *GetReturnDeclaration() { return nullptr; }
+	bool IsNoreturn() const { return m_noreturn; }
+	void SetNoreturn(bool noret) { m_noreturn = noret; }
 
-	std::string GetDirectives() const override
+	// Formatting
+
+	json ToJSON() const override
 	{
+		json j = Function::ToJSON();
 		if (m_entry)
 		{
-			return ".entry";
+			j["entry"] = true;
 		}
-		return ".func";
+		if (m_noreturn)
+		{
+			j["no_entry"] = true;
+		}
+		return j;
 	}
 
 protected:
 	bool m_entry = false;
+	bool m_noreturn = false;
 };
 
 }

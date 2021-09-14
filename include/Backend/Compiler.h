@@ -2,6 +2,7 @@
 
 #include "PTX/Traversal/HierarchicalVisitor.h"
 #include "PTX/Traversal/ConstDeclarationVisitor.h"
+#include "PTX/Traversal/FunctionVisitor.h"
 
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
 #include "PTX/Tree/Tree.h"
@@ -10,12 +11,21 @@
 
 namespace Backend {
 
-class Compiler : public PTX::HierarchicalVisitor, public PTX::ConstDeclarationVisitor
+class Compiler : public PTX::HierarchicalVisitor, public PTX::ConstDeclarationVisitor, public PTX::FunctionVisitor
 {
 public:
 	SASS::Program *Compile(PTX::Program *program);
+	SASS::Function *Compile(PTX::FunctionDefinition<PTX::VoidType> *function);
 
-	bool VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function) override;
+	// Functions
+
+	bool VisitIn(PTX::Function *function) override;
+
+	void Visit(PTX::_FunctionDeclaration *function) override;
+	void Visit(PTX::_FunctionDefinition *function) override;
+
+	template<class T, class S>
+	void Visit(PTX::FunctionDefinition<T, S> *function);
 
 	// Declarations
 

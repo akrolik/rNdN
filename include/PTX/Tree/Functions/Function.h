@@ -4,8 +4,9 @@
 
 #include "PTX/Tree/Declarations/Declaration.h"
 
-#include "PTX/Tree/Statements/StatementList.h"
-#include "PTX/Tree/Statements/Statement.h"
+#include "PTX/Traversal/Dispatch.h"
+#include "PTX/Traversal/ConstFunctionVisitor.h"
+#include "PTX/Traversal/FunctionVisitor.h"
 
 namespace PTX {
 
@@ -19,14 +20,6 @@ public:
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
 
-	virtual const VariableDeclaration *GetReturnDeclaration() const = 0;
-	virtual VariableDeclaration *GetReturnDeclaration() = 0;
-
-	virtual std::vector<const VariableDeclaration *> GetParameters() const = 0;
-	virtual std::vector<VariableDeclaration *>& GetParameters() = 0;
-
-	virtual std::string GetDirectives() const = 0;
-
 	// Formatting
 
 	json ToJSON() const override
@@ -34,11 +27,28 @@ public:
 		json j;
 		j["kind"] = "PTX::Function";
 		j["name"] = m_name;
-		j["directives"] = GetDirectives();
-		j["return"] = json::object();
-		j["parameters"] = json::array();
 		return j;
 	}
+
+	// Visitors
+
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
+
+	void Accept(HierarchicalVisitor& visitor) override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	void Accept(ConstHierarchicalVisitor& visitor) const override
+	{
+		visitor.VisitIn(this);
+		visitor.VisitOut(this);
+	}
+
+	virtual void Accept(FunctionVisitor& visitor) = 0;
+	virtual void Accept(ConstFunctionVisitor& visitor) const = 0;
 
 private:
 	std::string m_name;

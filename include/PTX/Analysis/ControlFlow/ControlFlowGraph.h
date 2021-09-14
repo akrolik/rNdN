@@ -3,9 +3,9 @@
 #include "Utils/Graph.h"
 
 #include "PTX/Tree/BasicBlock.h"
+#include "PTX/Tree/Functions/Function.h"
 #include "PTX/Tree/Operands/Label.h"
 #include "PTX/Tree/Operands/Variables/Registers/Register.h"
-#include "PTX/Tree/Type.h"
 
 #include <stack>
 #include <string>
@@ -16,15 +16,13 @@
 
 namespace PTX {
 
-template<class T> class FunctionDefinition;
-
 namespace Analysis {
 
 using ControlFlowNode = BasicBlock *;
 class ControlFlowGraph : public Utils::Graph<ControlFlowNode>
 {
 public:
-	ControlFlowGraph(FunctionDefinition<VoidType> *function) : m_function(function) {}
+	ControlFlowGraph(Function *function) : m_function(function) {}
 
 	// Nodes
 
@@ -163,7 +161,7 @@ public:
 	std::string ToDOTString() const;
 
 private:
-	FunctionDefinition<VoidType> *m_function = nullptr;
+	Function *m_function = nullptr;
 	robin_hood::unordered_map<const Label *, ControlFlowNode> m_labelMap;
 
 	using EdgeType = typename Utils::Graph<ControlFlowNode>::EdgeType;

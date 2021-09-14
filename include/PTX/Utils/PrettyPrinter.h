@@ -4,10 +4,12 @@
 #include <sstream>
 
 #include "PTX/Traversal/ConstVisitor.h"
+#include "PTX/Traversal/ConstFunctionVisitor.h"
+#include "PTX/Tree/Tree.h"
 
 namespace PTX {
 
-class PrettyPrinter : public ConstVisitor
+class PrettyPrinter : public ConstVisitor, public ConstFunctionVisitor
 {
 public:
 	static std::string PrettyString(const Node *node, bool quick = false);
@@ -21,7 +23,14 @@ public:
 	// Functions
 
 	void Visit(const Function *function) override;
-	void Visit(const FunctionDefinition<VoidType> *function) override;
+
+	void Visit(const _FunctionDeclaration *function) override;
+	void Visit(const _FunctionDefinition *function) override;
+
+	template<class T, class S>
+	void Visit(const FunctionDeclaration<T, S> *function);
+	template<class T, class S>
+	void Visit(const FunctionDefinition<T, S> *function);
 
 	// Declarations
 

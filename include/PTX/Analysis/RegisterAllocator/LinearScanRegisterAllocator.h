@@ -25,10 +25,6 @@ public:
 	void Analyze(const FunctionDefinition<VoidType> *function);
 	const RegisterAllocation *GetRegisterAllocation() { return m_allocation; }
 
-	// Functions
-
-	void VisitOut(const FunctionDefinition<VoidType> *function) override;
-
 	// Declarations
 
 	bool VisitIn(const VariableDeclaration *declaration) override;

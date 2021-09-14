@@ -20,7 +20,6 @@ public:
 
 	// Declarations
 
-	bool VisitIn(const FunctionDefinition<VoidType> *function) override;
 	bool VisitIn(const VariableDeclaration *declaration) override;
 
 	template<class T, class S>

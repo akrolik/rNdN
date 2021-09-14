@@ -23,19 +23,6 @@ SASS::Function *CodeGenerator::Generate(const PTX::FunctionDefinition<PTX::VoidT
 
 	// Traverse function
 
-	function->Accept(*this);
-
-	// Close function and return
-
-	m_builder.SetCRSStackSize(m_maxStack);
-	m_builder.CloseFunction();
-	return sassFunction;
-}
-
-bool CodeGenerator::VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *function)
-{
-	// Construct parameters
-
 	for (const auto& parameter : function->GetParameters())
 	{
 		parameter->Accept(static_cast<ConstHierarchicalVisitor&>(*this));
@@ -45,7 +32,11 @@ bool CodeGenerator::VisitIn(const PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	function->GetStructuredGraph()->Accept(*this);
 
-	return false;
+	// Close function and return
+
+	m_builder.SetCRSStackSize(m_maxStack);
+	m_builder.CloseFunction();
+	return sassFunction;
 }
 
 // Declarations

@@ -348,7 +348,7 @@ void libr3d3::CreateFunction_like_internal(PTX::Module *module)
 {
 	// Setup kernel
 
-	auto kernel = new PTX::FunctionDefinition<PTX::ParameterVariable<PTX::Bit32Type>>("like_internal");
+	auto kernel = new PTX::FunctionDefinition<PTX::Bit32Type>("like_internal");
 
 	// Initialize parameters
 

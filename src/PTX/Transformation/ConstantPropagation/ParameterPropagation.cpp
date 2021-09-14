@@ -9,13 +9,6 @@ void ParameterPropagation::Transform(FunctionDefinition<VoidType> *function)
 {
 	auto timePropagation_start = Utils::Chrono::Start("Parameter propagation '" + function->GetName() + "'");
 
-	function->Accept(*this);
-
-	Utils::Chrono::End(timePropagation_start);
-}
-
-void ParameterPropagation::Visit(FunctionDefinition<VoidType> *function)
-{
 	if (auto cfg = function->GetControlFlowGraph())
 	{
 		cfg->LinearOrdering([&](Analysis::ControlFlowNode& block)
@@ -30,6 +23,8 @@ void ParameterPropagation::Visit(FunctionDefinition<VoidType> *function)
 			statement->Accept(*this);
 		}
 	}
+
+	Utils::Chrono::End(timePropagation_start);
 }
 
 void ParameterPropagation::Visit(BasicBlock *block)

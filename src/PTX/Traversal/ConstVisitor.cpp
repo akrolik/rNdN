@@ -35,16 +35,6 @@ void ConstVisitor::Visit(const Function *function)
 	Visit(static_cast<const Node*>(function));
 }
 
-void ConstVisitor::Visit(const FunctionDeclaration<VoidType> *function)
-{
-	Visit(static_cast<const Function*>(function));
-}
-
-void ConstVisitor::Visit(const FunctionDefinition<VoidType> *function)
-{
-	Visit(static_cast<const FunctionDeclaration<VoidType>*>(function));
-}
-
 // Declarations
 
 void ConstVisitor::Visit(const Declaration *declaration)

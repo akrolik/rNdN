@@ -19,7 +19,6 @@ public:
 
 	// Structural visitors
 
-	void Visit(FunctionDefinition<VoidType> *function) override;
 	void Visit(BasicBlock *block) override;
 	void Visit(InstructionStatement *instruction) override;
 

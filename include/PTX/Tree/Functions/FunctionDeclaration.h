@@ -1,43 +1,50 @@
 #pragma once
 
-#include <tuple>
-#include <sstream>
+#include "PTX/Tree/Functions/FunctionDeclarationBase.h"
 
 #include "PTX/Tree/StateSpace.h"
 #include "PTX/Tree/Tuple.h"
 #include "PTX/Tree/Type.h"
 #include "PTX/Tree/Declarations/Declaration.h"
 #include "PTX/Tree/Declarations/VariableDeclaration.h"
-#include "PTX/Tree/Functions/FunctionDeclarationBase.h"
 
 namespace PTX {
 
-class VoidType;
+DispatchInterface_Space(FunctionDeclaration)
 
-template<class R>
-class FunctionDeclaration : public FunctionDeclarationBase<R>
+template<class RT, class RS = ParameterSpace, bool Assert = true>
+class FunctionDeclaration : DispatchInherit(FunctionDeclaration), public FunctionDeclarationBase<RT, RS>
 {
 public:
-	using FunctionDeclarationBase<R>::FunctionDeclarationBase;
-	using Signature = R;
+	REQUIRE_TYPE_PARAM(FunctionDeclaration,
+		REQUIRE_BASE(RT, ScalarType) || REQUIRE_EXACT(RT, VoidType)
+	);
+	REQUIRE_SPACE_PARAM(FunctionDeclaration,
+		REQUIRE_EXACT(RS, RegisterSpace, ParameterSpace)
+	);
+
+	using FunctionDeclarationBase<RT, RS>::FunctionDeclarationBase;
 
 	// Properties
 
-	std::vector<const VariableDeclaration *> GetParameters() const override
+	std::vector<const VariableDeclaration *> GetParameters() const
 	{
 		return { std::begin(m_parameters), std::end(m_parameters) };
 	}
-	std::vector<VariableDeclaration *>& GetParameters() override { return m_parameters; }
+	std::vector<VariableDeclaration *>& GetParameters() { return m_parameters; }
 
 	template<class T, class S>
 	std::enable_if_t<REQUIRE_EXACT(S, RegisterSpace) || REQUIRE_BASE(S, ParameterSpace), void>
-	AddParameter(TypedVariableDeclaration<T, S> *parameter) { m_parameters.push_back(parameter); }
+	AddParameter(TypedVariableDeclaration<T, S> *parameter)
+	{
+		m_parameters.push_back(parameter);
+	}
 
 	// Formatting
 
 	json ToJSON() const override
 	{
-		json j = FunctionDeclarationBase<R>::ToJSON();
+		json j = FunctionDeclarationBase<RT, RS>::ToJSON();
 		for (const auto& parameter : m_parameters)
 		{
 			j["parameters"].push_back(parameter->ToJSON());
@@ -47,149 +54,71 @@ public:
 
 	// Visitors
 
-	void Accept(Visitor& visitor) override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			visitor.Visit(this);
-		}
-	}
-
-	void Accept(ConstVisitor& visitor) const override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			visitor.Visit(this);
-		}
-	}
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 
 	void Accept(HierarchicalVisitor& visitor) override
 	{
-		if constexpr(std::is_same<R, VoidType>::value)
+		if (visitor.VisitIn(this))
 		{
-			if (visitor.VisitIn(this))
+			for (auto& parameter : m_parameters)
 			{
-				for (auto& parameter : m_parameters)
-				{
-					parameter->Accept(visitor);
-				}
+				parameter->Accept(visitor);
 			}
-			visitor.VisitOut(this);
 		}
+		visitor.VisitOut(this);
 	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
-		if constexpr(std::is_same<R, VoidType>::value)
+		if (visitor.VisitIn(this))
 		{
-			if (visitor.VisitIn(this))
+			for (const auto& parameter : m_parameters)
 			{
-				for (const auto& parameter : m_parameters)
-				{
-					parameter->Accept(visitor);
-				}
+				parameter->Accept(visitor);
 			}
-			visitor.VisitOut(this);
 		}
+		visitor.VisitOut(this);
 	}
 
+	void Accept(FunctionVisitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstFunctionVisitor& visitor) const { visitor.Visit(this); }
+
 protected:
+	DispatchMember_Type(RT);
+	DispatchMember_Space(RS);
+
 	std::vector<VariableDeclaration *> m_parameters;
 };
 
 template<class R, typename... Args>
-class FunctionDeclaration<R(Args...)> : public FunctionDeclarationBase<R>
+class FunctionDeclaration<R(Args...)> : public FunctionDeclaration<typename R::VariableType, typename R::VariableSpace>
 {
 public:
 	REQUIRE_SPACE_PARAM(FunctionDeclaration,
 		is_all<REQUIRE_EXACT(typename Args::VariableSpace, RegisterSpace) || REQUIRE_BASE(typename Args::VariableSpace, ParameterSpace)...>::value
 	);
 
+	using ReturnDeclarationType = TypedVariableDeclaration<typename R::VariableType, typename R::VariableSpace>;
 	using Signature = R(Args...);
 
 	FunctionDeclaration() {}
-	FunctionDeclaration(const std::string& name, typename FunctionDeclarationBase<R>::ReturnDeclarationType *ret, TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters, Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None) : FunctionDeclarationBase<R>(name, ret, linkDirective)
+	FunctionDeclaration(const std::string& name, ReturnDeclarationType *ret,
+			TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters,
+			Declaration::LinkDirective linkDirective = Declaration::LinkDirective::None
+	) : FunctionDeclaration<typename R::VariableType, typename R::VariableSpace>(name, ret, linkDirective)
 	{
 		auto tuple = std::make_tuple(parameters...);
-		ExpandTuple(m_parameters, tuple, int_<sizeof...(Args)>());
+		ExpandTuple(this->m_parameters, tuple, int_<sizeof...(Args)>());
 	}
 
 	// Properties
 
-	std::vector<const VariableDeclaration *> GetParameters() const override
-	{
-		return { std::begin(m_parameters), std::end(m_parameters) };
-	}
-	std::vector<VariableDeclaration *>& GetParameters() override { return m_parameters; }
-
 	void SetParameters(TypedVariableDeclaration<typename Args::VariableType, typename Args::VariableSpace>* ...parameters)
 	{
 		auto tuple = std::make_tuple(parameters...);
-		ExpandTuple(m_parameters, tuple, int_<sizeof...(Args)>());
+		ExpandTuple(this->m_parameters, tuple, int_<sizeof...(Args)>());
 	}
-
-	// Formatting
-
-	json ToJSON() const override
-	{
-		json j = FunctionDeclarationBase<R>::ToJSON();
-		for (const auto& parameter : m_parameters)
-		{
-			j["parameters"].push_back(parameter->ToJSON());
-		}
-		return j;
-	}
-
-	// Visitors
-
-	void Accept(Visitor& visitor) override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			visitor.Visit(this);
-		}
-	}
-
-	void Accept(ConstVisitor& visitor) const override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			visitor.Visit(this);
-		}
-	}
-
-	void Accept(HierarchicalVisitor& visitor) override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			if (visitor.VisitIn(this))
-			{
-				for (auto& parameter : m_parameters)
-				{
-					parameter->Accept(visitor);
-				}
-			}
-			visitor.VisitOut(this);
-		}
-	}
-
-	void Accept(ConstHierarchicalVisitor& visitor) const override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			if (visitor.VisitIn(this))
-			{
-				for (const auto& parameter : m_parameters)
-				{
-					parameter->Accept(visitor);
-				}
-			}
-			visitor.VisitOut(this);
-		}
-	}
-
-protected:
-	std::vector<VariableDeclaration *> m_parameters;
 };
 
 }

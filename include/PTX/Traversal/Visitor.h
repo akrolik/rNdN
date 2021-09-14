@@ -8,11 +8,7 @@ class Program;
 class Module;
 class BasicBlock;
 
-// Type used for functions
-class VoidType;
 class Function;
-template<class T> class FunctionDeclaration;
-template<class T> class FunctionDefinition;
 
 class Declaration;
 class VariableDeclaration;
@@ -48,9 +44,7 @@ public:
 
 	// Functions
 
-	virtual void Visit(Function *function);
-	virtual void Visit(FunctionDeclaration<VoidType> *function);
-	virtual void Visit(FunctionDefinition<VoidType> *function);
+	virtual void Visit(Function *function); // Dispatch
 
 	// Declarations
 

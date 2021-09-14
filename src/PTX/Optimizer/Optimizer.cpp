@@ -17,7 +17,36 @@ void Optimizer::Optimize(Program *program)
 	program->Accept(*this);
 }
 
-bool Optimizer::VisitIn(FunctionDefinition<VoidType> *function)
+bool Optimizer::VisitIn(Function *function)
+{
+	function->Accept(static_cast<FunctionVisitor&>(*this));
+	return false;
+}
+
+void Optimizer::Visit(_FunctionDeclaration *function)
+{
+	Utils::Logger::LogError("PTX optimizer requires function definition");
+}
+
+void Optimizer::Visit(_FunctionDefinition *function)
+{
+	function->Dispatch(*this);
+}
+
+template<class T, class S>
+void Optimizer::Visit(FunctionDefinition<T, S> *function)
+{
+	if constexpr(std::is_same<T, VoidType>::value && std::is_same<S, ParameterSpace>::value)
+	{
+		Optimize(function);
+	}
+	else
+	{
+		Utils::Logger::LogError("PTX optimizer requires VoidType function");
+	}
+}
+
+void Optimizer::Optimize(FunctionDefinition<VoidType> *function)
 {
 	Analysis::ControlFlowBuilder cfgBuilder;
 	auto cfg = cfgBuilder.Analyze(function);
@@ -48,8 +77,6 @@ bool Optimizer::VisitIn(FunctionDefinition<VoidType> *function)
 	}
 
 	Utils::Chrono::End(timeOptimizer_start);
-
-	return false;
 }
 
 }

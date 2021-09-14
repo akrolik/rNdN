@@ -9,15 +9,6 @@ bool DeadCodeElimination::Transform(FunctionDefinition<VoidType> *function)
 {
 	auto timeElimination_start = Utils::Chrono::Start("Dead code elimination '" + function->GetName() + "'");
 
-	function->Accept(*this);
-
-	Utils::Chrono::End(timeElimination_start);
-
-	return m_transform;
-}
-
-void DeadCodeElimination::Visit(FunctionDefinition<VoidType> *function)
-{
 	if (auto cfg = function->GetControlFlowGraph())
 	{
 		cfg->LinearOrdering([&](Analysis::ControlFlowNode& block)
@@ -32,6 +23,10 @@ void DeadCodeElimination::Visit(FunctionDefinition<VoidType> *function)
 			statement->Accept(*this);
 		}
 	}
+
+	Utils::Chrono::End(timeElimination_start);
+
+	return m_transform;
 }
 
 void DeadCodeElimination::Visit(BasicBlock *block)

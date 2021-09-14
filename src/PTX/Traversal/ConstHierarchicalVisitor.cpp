@@ -55,29 +55,9 @@ bool ConstHierarchicalVisitor::VisitIn(const Function *function)
 	return VisitIn(static_cast<const Node*>(function));
 }
 
-bool ConstHierarchicalVisitor::VisitIn(const FunctionDeclaration<VoidType> *function)
-{
-	return VisitIn(static_cast<const Function*>(function));
-}
-
-bool ConstHierarchicalVisitor::VisitIn(const FunctionDefinition<VoidType> *function)
-{
-	return VisitIn(static_cast<const FunctionDeclaration<VoidType>*>(function));
-}
-
 void ConstHierarchicalVisitor::VisitOut(const Function *function)
 {
 	VisitOut(static_cast<const Node*>(function));
-}
-
-void ConstHierarchicalVisitor::VisitOut(const FunctionDeclaration<VoidType> *function)
-{
-	VisitOut(static_cast<const Function*>(function));
-}
-
-void ConstHierarchicalVisitor::VisitOut(const FunctionDefinition<VoidType> *function)
-{
-	VisitOut(static_cast<const FunctionDeclaration<VoidType>*>(function));
 }
 
 // Declarations

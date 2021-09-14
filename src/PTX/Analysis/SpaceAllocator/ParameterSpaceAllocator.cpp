@@ -11,8 +11,13 @@ void ParameterSpaceAllocator::Analyze(const FunctionDefinition<VoidType> *functi
 	auto& functionName = function->GetName();
 
 	auto timeAllocation_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
+
 	m_allocation = new ParameterSpaceAllocation();
-	function->Accept(*this);
+	for (const auto& parameter : function->GetParameters())
+	{
+		parameter->Accept(static_cast<ConstHierarchicalVisitor&>(*this));
+	}
+
 	Utils::Chrono::End(timeAllocation_start);
 
 	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
@@ -23,17 +28,6 @@ void ParameterSpaceAllocator::Analyze(const FunctionDefinition<VoidType> *functi
 }
 
 // Declarations
-
-bool ParameterSpaceAllocator::VisitIn(const FunctionDefinition<VoidType> *function)
-{
-	// Traverse only parameters
-
-	for (const auto& parameter : function->GetParameters())
-	{
-		parameter->Accept(static_cast<ConstHierarchicalVisitor&>(*this));
-	}
-	return false;
-}
 
 bool ParameterSpaceAllocator::VisitIn(const VariableDeclaration *declaration)
 {

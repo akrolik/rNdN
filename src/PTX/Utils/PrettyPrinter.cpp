@@ -89,6 +89,22 @@ void PrettyPrinter::Visit(const BasicBlock *block)
 
 void PrettyPrinter::Visit(const Function *function)
 {
+	function->Accept(static_cast<ConstFunctionVisitor&>(*this));
+}
+
+void PrettyPrinter::Visit(const _FunctionDeclaration *function)
+{
+	function->Dispatch(*this);
+}
+
+void PrettyPrinter::Visit(const _FunctionDefinition *function)
+{
+	function->Dispatch(*this);
+}
+
+template<class T, class S>
+void PrettyPrinter::Visit(const FunctionDeclaration<T, S> *function)
+{
 	auto definition = m_definition;
 	m_definition = true;
 
@@ -98,15 +114,32 @@ void PrettyPrinter::Visit(const Function *function)
 	{
 		m_string << Function::LinkDirectiveString(linkDirective) + " ";
 	}
-	m_string << function->GetDirectives() + " ";
+
+	if constexpr(std::is_same<T, VoidType>::value)
+	{
+		if (function->IsEntry())
+		{
+			m_string << ".entry ";
+		}
+		else
+		{
+			m_string << ".func ";
+		}
+	}
+	else
+	{
+		m_string << ".func ";
+	}
 
 	// Return
-	if (const auto returnDeclaration = function->GetReturnDeclaration())
+	if constexpr(!std::is_same<T, VoidType>::value)
 	{
 		m_string << "(";
-		returnDeclaration->Accept(*this);
+		static_cast<const VariableDeclaration *>(function->GetReturnDeclaration())->Accept(*this);
 		m_string << ") ";
 	}
+
+	// Name
 	m_string << function->GetName();
 	
 	// Parameters
@@ -134,16 +167,27 @@ void PrettyPrinter::Visit(const Function *function)
 	m_string << ")";
 
 	m_definition = definition;
+
+	// Post properties
+	if constexpr(std::is_same<T, VoidType>::value)
+	{
+		if (function->IsNoreturn())
+		{
+			m_string << " .noreturn";
+		}
+	}
+
 	if (!m_definition)
 	{
 		m_string << ";";
 	}
 }
 
-void PrettyPrinter::Visit(const FunctionDefinition<VoidType> *function)
+template<class T, class S>
+void PrettyPrinter::Visit(const FunctionDefinition<T, S> *function)
 {
 	m_definition = true;
-	ConstVisitor::Visit(function);
+	Visit(static_cast<const FunctionDeclaration<T, S> *>(function));
 
 	// Thread options
 

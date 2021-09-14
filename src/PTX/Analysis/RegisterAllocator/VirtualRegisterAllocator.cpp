@@ -12,20 +12,7 @@ void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *funct
 	auto& functionName = function->GetName();
 
 	auto timeAllocation_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
-	function->Accept(*this);
-	Utils::Chrono::End(timeAllocation_start);
 
-	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
-	{
-		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
-		Utils::Logger::LogInfo(m_allocation->ToString());
-	}
-}
-
-// Functions
-
-bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *function)
-{
 	// Register allocation
 
 	m_currentFunction = function;
@@ -33,12 +20,15 @@ bool VirtualRegisterAllocator::VisitIn(const FunctionDefinition<VoidType> *funct
 	m_predicateOffset = 0;
 	m_allocation = new RegisterAllocation();
 
-	return true;
-}
+	function->Accept(*this);
 
-void VirtualRegisterAllocator::VisitOut(const FunctionDefinition<VoidType> *function)
-{
-	m_currentFunction = nullptr;
+	Utils::Chrono::End(timeAllocation_start);
+
+	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
+	{
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
+		Utils::Logger::LogInfo(m_allocation->ToString());
+	}
 }
 
 // Declarations

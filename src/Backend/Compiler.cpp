@@ -97,7 +97,37 @@ void Compiler::Visit(const PTX::TypedVariableDeclaration<T, S> *declaration)
 	}
 }
 
-bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
+bool Compiler::VisitIn(PTX::Function *function)
+{
+	function->Accept(static_cast<FunctionVisitor&>(*this));
+	return false;
+}
+
+void Compiler::Visit(PTX::_FunctionDeclaration *function)
+{
+	Utils::Logger::LogError("PTX compiler requires function definition");
+}
+
+void Compiler::Visit(PTX::_FunctionDefinition *function)
+{
+	function->Dispatch(*this);
+}
+
+template<class T, class S>
+void Compiler::Visit(PTX::FunctionDefinition<T, S> *function)
+{
+	if constexpr(std::is_same<T, PTX::VoidType>::value && std::is_same<S, PTX::ParameterSpace>::value)
+	{
+		auto sassFunction = Compile(function);
+		m_program->AddFunction(sassFunction);
+	}
+	else
+	{
+		Utils::Logger::LogError("PTX compiler requires VoidType function");
+	}
+}
+
+SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *function)
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Backend compiler '" + function->GetName() + "'");
 
@@ -218,9 +248,8 @@ bool Compiler::VisitIn(PTX::FunctionDefinition<PTX::VoidType> *function)
 	}
 
 	Utils::Chrono::End(timeScheduler_start);
-	m_program->AddFunction(sassFunction);
 
-	return false;
+	return sassFunction;
 }
 
 const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function)

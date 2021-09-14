@@ -12,18 +12,11 @@ void LinearScanRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *fu
 	auto& functionName = function->GetName();
 
 	auto timeAllocation_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
+
+	// Collect all register sizes
+
 	function->Accept(*this);
-	Utils::Chrono::End(timeAllocation_start);
 
-	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
-	{
-		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
-		Utils::Logger::LogInfo(m_allocation->ToString());
-	}
-}
-
-void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* function)
-{
 	// Initialize blank register allocation
 
 	m_allocation = new RegisterAllocation();
@@ -205,6 +198,13 @@ void LinearScanRegisterAllocator::VisitOut(const FunctionDefinition<VoidType>* f
 		{
 			activeIntervals.emplace_back(intervalEnd, intervalRegister, intervalRange);
 		}
+	}
+	Utils::Chrono::End(timeAllocation_start);
+
+	if (Utils::Options::IsBackend_PrintAnalysis(ShortName, functionName))
+	{
+		Utils::Logger::LogInfo(Name + " '" + functionName + "'");
+		Utils::Logger::LogInfo(m_allocation->ToString());
 	}
 }
 

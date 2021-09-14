@@ -15,13 +15,20 @@ namespace Frontend { namespace Codegen { class InputOptions; } }
 
 namespace PTX {
 
-class VoidType;
+DispatchInterface_Space(FunctionDefinition)
 
-template<class R>
-class FunctionDefinition : public FunctionDeclaration<R>, public StatementList
+template<class RT, class RS = ParameterSpace, bool Assert = true>
+class FunctionDefinition : DispatchInherit(FunctionDefinition), public FunctionDeclaration<RT, RS, Assert>, public StatementList
 {
 public:
-	using FunctionDeclaration<R>::FunctionDeclaration;
+	REQUIRE_TYPE_PARAM(FunctionDefinition,
+		REQUIRE_BASE(RT, ScalarType) || REQUIRE_EXACT(RT, VoidType)
+	);
+	REQUIRE_SPACE_PARAM(FunctionDefinition,
+		REQUIRE_EXACT(RS, RegisterSpace, ParameterSpace)
+	);
+
+	using FunctionDeclaration<RT, RS, Assert>::FunctionDeclaration;
 
 	// Control-flow graph
 
@@ -68,7 +75,7 @@ public:
 
 	json ToJSON() const override
 	{
-		json j = FunctionDeclaration<R>::ToJSON();
+		json j = FunctionDeclaration<RT, RS, Assert>::ToJSON();
 		if (m_cfg == nullptr)
 		{
 			j["statements"] = StatementList::ToJSON();
@@ -88,82 +95,69 @@ public:
 
 	// Visitors
 
-	void Accept(Visitor& visitor) override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			visitor.Visit(this);
-		}
-	}
-
-	void Accept(ConstVisitor& visitor) const override
-	{
-		if constexpr(std::is_same<R, VoidType>::value)
-		{
-			visitor.Visit(this);
-		}
-	}
+	void Accept(Visitor& visitor) override { visitor.Visit(this); }
+	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 
 	void Accept(HierarchicalVisitor& visitor) override
 	{
-		if constexpr(std::is_same<R, VoidType>::value)
+		if (visitor.VisitIn(this))
 		{
-			if (visitor.VisitIn(this))
+			for (auto& parameter : FunctionDeclaration<RT, RS, Assert>::m_parameters)
 			{
-				for (auto& parameter : FunctionDeclaration<R>::m_parameters)
-				{
-					parameter->Accept(visitor);
-				}
+				parameter->Accept(visitor);
+			}
 
-				if (m_cfg != nullptr)
+			if (m_cfg != nullptr)
+			{
+				m_cfg->LinearOrdering([&](Analysis::ControlFlowNode& block)
 				{
-					m_cfg->LinearOrdering([&](Analysis::ControlFlowNode& block)
-					{
-						block->Accept(visitor);
-					});
-				}
-				else
+					block->Accept(visitor);
+				});
+			}
+			else
+			{
+				for (auto& statement : m_statements)
 				{
-					for (auto& statement : m_statements)
-					{
-						statement->Accept(visitor);
-					}
+					statement->Accept(visitor);
 				}
 			}
-			visitor.VisitOut(this);
 		}
+		visitor.VisitOut(this);
 	}
 
 	void Accept(ConstHierarchicalVisitor& visitor) const override
 	{
-		if constexpr(std::is_same<R, VoidType>::value)
+		if (visitor.VisitIn(this))
 		{
-			if (visitor.VisitIn(this))
+			for (const auto& parameter : FunctionDeclaration<RT, RS, Assert>::m_parameters)
 			{
-				for (const auto& parameter : FunctionDeclaration<R>::m_parameters)
+				parameter->Accept(visitor);
+			}
+			if (m_cfg != nullptr)
+			{
+				m_cfg->LinearOrdering([&](const Analysis::ControlFlowNode& block)
 				{
-					parameter->Accept(visitor);
-				}
-				if (m_cfg != nullptr)
+					block->Accept(visitor);
+				});
+			}
+			else
+			{
+				for (const auto& statement : m_statements)
 				{
-					m_cfg->LinearOrdering([&](const Analysis::ControlFlowNode& block)
-					{
-						block->Accept(visitor);
-					});
-				}
-				else
-				{
-					for (const auto& statement : m_statements)
-					{
-						statement->Accept(visitor);
-					}
+					statement->Accept(visitor);
 				}
 			}
-			visitor.VisitOut(this);
 		}
+		visitor.VisitOut(this);
 	}
 
+	void Accept(FunctionVisitor& visitor) override { visitor.Visit(static_cast<_FunctionDefinition *>(this)); }
+	void Accept(ConstFunctionVisitor& visitor) const { visitor.Visit(static_cast<const _FunctionDefinition *>(this)); }
+
 protected:
+	DispatchMember_Type(RT);
+	DispatchMember_Space(RS);
+
 	robin_hood::unordered_set<BasicBlock *> m_basicBlocks;
 	Analysis::ControlFlowGraph *m_cfg = nullptr;
 	Analysis::StructureNode *m_structuredGraph = nullptr;
