@@ -14,6 +14,8 @@
 
 #include "Libraries/robin_hood.h"
 
+#include "Utils/Math.h"
+
 namespace Frontend {
 namespace Codegen {
 
@@ -274,6 +276,27 @@ public:
 
 	// Options
 
+	bool GetBlockPower2() const { return m_currentKernel->GetThreadsPower2(); }
+	void SetBlockPower2(bool power2)
+	{
+		// Verify other thread properties are satisfied
+
+		if (power2)
+		{
+			if (auto size = GetBlockSize(); size != Utils::Math::Power2(size))
+			{
+				Utils::Logger::LogError("Power 2 incompatible with block size " + std::to_string(size));
+			}
+
+			if (auto multiple = GetThreadMultiple(); multiple != Utils::Math::Power2(multiple))
+			{
+				Utils::Logger::LogError("Power 2 incompatible with thread multiple " + std::to_string(multiple));
+			}
+		}
+
+		m_currentKernel->SetThreadsPower2(power2);
+	}
+
 	unsigned int GetBlockSize() const { return std::get<0>(m_currentKernel->GetRequiredThreads()); }
 	void SetBlockSize(unsigned int size)
 	{
@@ -297,6 +320,14 @@ public:
 			if (multiple != 0 && (size % multiple) != 0)
 			{
 				Utils::Logger::LogError("Block size " + std::to_string(size) + " incompatible with thread multiple " + std::to_string(multiple));
+			}
+
+			if (GetBlockPower2())
+			{
+				if (size != Utils::Math::Power2(size))
+				{
+					Utils::Logger::LogError("Block size " + std::to_string(size) + " incompatible with power 2");
+				}
 			}
 		}
 
@@ -328,6 +359,14 @@ public:
 		if (currentSize % multiple != 0)
 		{
 			Utils::Logger::LogError("Thread multiple " + std::to_string(multiple) + " incompatible with block size " + std::to_string(currentSize));
+		}
+
+		if (GetBlockPower2())
+		{
+			if (multiple != Utils::Math::Power2(multiple))
+			{
+				Utils::Logger::LogError("Thread multiple " + std::to_string(multiple) + " incompatible with power 2");
+			}
 		}
 
 		m_currentKernel->SetThreadMultiples(multiple);

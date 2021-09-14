@@ -56,6 +56,9 @@ public:
 	unsigned int GetMaxRegisters() const { return m_maxRegisters; }
 	void SetMaxRegisters(unsigned int registers) { m_maxRegisters = registers; }
 
+	bool GetThreadsPower2() const { return m_threadsPower2; }
+	void SetThreadsPower2(bool threadsPower2) { m_threadsPower2 = threadsPower2; }
+
 	const std::tuple<unsigned int, unsigned int, unsigned int>& GetThreadMultiples() const { return m_threadMultiples; }
 	void SetThreadMultiples(unsigned int dimX, unsigned int dimY = 1, unsigned int dimZ = 1) { m_threadMultiples = { dimX, dimY, dimZ }; }
 
@@ -87,6 +90,7 @@ public:
 				j["basic_blocks"].push_back(block->ToJSON());
 			}
 		}
+		j["power2_threads"] = m_threadsPower2;
 		j["required_threads"] = m_requiredThreads;
 		j["max_threads"] = m_maxThreads;
 		j["shared_memory"] = m_dynamicSharedMemorySize;
@@ -162,6 +166,7 @@ protected:
 	Analysis::ControlFlowGraph *m_cfg = nullptr;
 	Analysis::StructureNode *m_structuredGraph = nullptr;
 
+	bool m_threadsPower2 = false;
 	std::tuple<unsigned int, unsigned int, unsigned int> m_threadMultiples;
 	std::tuple<unsigned int, unsigned int, unsigned int> m_requiredThreads;
 	std::tuple<unsigned int, unsigned int, unsigned int> m_maxThreads;

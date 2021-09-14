@@ -464,6 +464,20 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 				{
 					blockSize = Utils::Math::RoundUp(blockSize, multiple);
 				}
+
+				// Power 2 number of threads (e.g order)
+
+				if (kernelCode->GetThreadsPower2())
+				{
+					blockSize = Utils::Math::Power2Floor(blockSize);
+				}
+			}
+			else
+			{
+				if (blockSize > maxBlockSize)
+				{
+					Utils::Logger::LogError("Block size exceeds maximum [" + std::to_string(blockSize) + " > " + std::to_string(maxBlockSize) + "]");
+				}
 			}
 
 			auto blockCount = ((size + blockSize - 1) / blockSize);
@@ -501,6 +515,13 @@ std::pair<unsigned int, unsigned int> ExecutionEngine::GetBlockShape(Frontend::C
 				if (multiple != 0)
 				{
 					cellSize = Utils::Math::RoundUp(cellSize, multiple);
+				}
+
+				// Power 2 number of threads (e.g order)
+
+				if (kernelCode->GetThreadsPower2())
+				{
+					cellSize = Utils::Math::Power2Floor(cellSize);
 				}
 			}
 

@@ -21,6 +21,12 @@ static T Power2(T value)
 	return static_cast<T>(std::pow(2, std::ceil(std::log2(value))));
 }
 
+template<typename T>
+static T Power2Floor(T value)
+{
+	return static_cast<T>(std::pow(2, std::floor(std::log2(value))));
+}
+
 template<typename V>
 static typename V::value_type Average(const V& values)
 {

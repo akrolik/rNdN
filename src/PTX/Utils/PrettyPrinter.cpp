@@ -191,6 +191,11 @@ void PrettyPrinter::Visit(const FunctionDefinition<T, S> *function)
 
 	// Thread options
 
+	if (function->GetThreadsPower2())
+	{
+		m_string << " /* .pow2 */";
+	}
+
 	if (const auto& [dimX, dimY, dimZ] = function->GetRequiredThreads(); dimX > 0)
 	{
 		m_string << " .reqntid " + std::to_string(dimX);
