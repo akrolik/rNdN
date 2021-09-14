@@ -1,17 +1,16 @@
 #pragma once
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
-#include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
 
 namespace PTX {
 
-DispatchInterface(Exp2Instruction)
+DispatchInterface(TanhInstruction)
 
 template<class T = Float32Type, bool Assert = true>
-class Exp2Instruction : DispatchInherit(Exp2Instruction), public InstructionBase_1<T>, public FlushSubnormalModifier<T>
+class TanhInstruction : DispatchInherit(TanhInstruction), public InstructionBase_1<T>
 {
 public:
-	REQUIRE_TYPE_PARAM(Exp2Instruction,
+	REQUIRE_TYPE_PARAM(TanhInstruction,
 		REQUIRE_EXACT(T, Float16Type, Float16x2Type, Float32Type)
 	);
 
@@ -23,11 +22,11 @@ public:
 
 	// Formatting
 
-	static std::string Mnemonic() { return "ex2"; }
+	static std::string Mnemonic() { return "tanh"; }
 
 	std::string GetOpCode() const override
 	{
-		return Mnemonic() + ".approx" + FlushSubnormalModifier<T>::GetOpCodeModifier() + T::Name();
+		return Mnemonic() + ".approx" + T::Name();
 	}
 
 	// Visitors

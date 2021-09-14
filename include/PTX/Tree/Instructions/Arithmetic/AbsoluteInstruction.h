@@ -14,7 +14,7 @@ public:
 	REQUIRE_TYPE_PARAM(AbsoluteInstruction,
 		REQUIRE_EXACT(T,
 			Int16Type, Int32Type, Int64Type,
-			Float32Type, Float64Type
+			Float16Type, Float16x2Type, Float32Type, Float64Type
 		)
 	);
 

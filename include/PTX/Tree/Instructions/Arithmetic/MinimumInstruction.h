@@ -2,13 +2,15 @@
 
 #include "PTX/Tree/Instructions/InstructionBase.h"
 #include "PTX/Tree/Instructions/Modifiers/FlushSubnormalModifier.h"
+#include "PTX/Tree/Instructions/Modifiers/NaNModifier.h"
+#include "PTX/Tree/Instructions/Modifiers/SignChangeModifier.h"
 
 namespace PTX {
 
 DispatchInterface(MinimumInstruction)
 
 template<class T, bool Assert = true>
-class MinimumInstruction : DispatchInherit(MinimumInstruction), public InstructionBase_2<T>, public FlushSubnormalModifier<T>
+class MinimumInstruction : DispatchInherit(MinimumInstruction), public InstructionBase_2<T>, public FlushSubnormalModifier<T>, public NaNModifier<T>, public SignChangeModifier<T>
 {
 public:
 	REQUIRE_TYPE_PARAM(MinimumInstruction,
@@ -35,6 +37,14 @@ public:
 		if constexpr(FlushSubnormalModifier<T>::Enabled)
 		{
 			code += FlushSubnormalModifier<T>::GetOpCodeModifier();
+		}
+		if constexpr(NaNModifier<T>::Enabled)
+		{
+			code += NaNModifier<T>::GetOpCodeModifier();
+		}
+		if constexpr(SignChangeModifier<T>::Enabled)
+		{
+			code += SignChangeModifier<T>::GetOpCodeModifier();
 		}
 		return code + T::Name();
 	}

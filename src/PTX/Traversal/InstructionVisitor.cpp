@@ -159,6 +159,11 @@ void InstructionVisitor::Visit(_SubtractInstruction *instruction)
 	Visit(static_cast<DispatchBase *>(instruction));
 }
 
+void InstructionVisitor::Visit(_TanhInstruction *instruction)
+{
+	Visit(static_cast<DispatchBase *>(instruction));
+}
+
 void InstructionVisitor::Visit(_TestPropertyInstruction *instruction)
 {
 	Visit(static_cast<DispatchBase *>(instruction));
@@ -384,6 +389,11 @@ void InstructionVisitor::Visit(_ReductionInstruction *instruction)
 	Visit(static_cast<DispatchBase *>(instruction));
 }
 
+void InstructionVisitor::Visit(_ReduxInstruction *instruction)
+{
+	Visit(static_cast<DispatchBase *>(instruction));
+}
+
 void InstructionVisitor::Visit(_VoteInstruction *instruction)
 {
 	Visit(static_cast<DispatchBase *>(instruction));
@@ -402,6 +412,28 @@ void InstructionVisitor::Visit(_ShiftLeftInstruction *instruction)
 }
 
 void InstructionVisitor::Visit(_ShiftRightInstruction *instruction)
+{
+	Visit(static_cast<DispatchBase *>(instruction));
+}
+
+// Misc
+
+void InstructionVisitor::Visit(BreakpointInstruction *instruction) // Untyped
+{
+	Visit(static_cast<DispatchBase *>(instruction));
+}
+
+void InstructionVisitor::Visit(_NanosleepInstruction *instruction)
+{
+	Visit(static_cast<DispatchBase *>(instruction));
+}
+
+void InstructionVisitor::Visit(PerformanceEventInstruction *instruction) // Untyped
+{
+	Visit(static_cast<DispatchBase *>(instruction));
+}
+
+void InstructionVisitor::Visit(TrapInstruction *instruction) // Untyped
 {
 	Visit(static_cast<DispatchBase *>(instruction));
 }

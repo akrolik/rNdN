@@ -36,6 +36,7 @@ class _RootInstruction;
 class _SADInstruction;
 class _SineInstruction;
 class _SubtractInstruction;
+class _TanhInstruction;
 class _TestPropertyInstruction;
 
 // Comparison
@@ -94,6 +95,7 @@ class _MatchAllInstruction;
 class _MatchAnyInstruction;
 class MemoryBarrierInstruction;
 class _ReductionInstruction;
+class _ReduxInstruction;
 class _VoteInstruction;
 
 // Shift
@@ -101,6 +103,13 @@ class _VoteInstruction;
 class _FunnelShiftInstruction;
 class _ShiftLeftInstruction;
 class _ShiftRightInstruction;
+
+// Misc
+
+class BreakpointInstruction;
+class _NanosleepInstruction;
+class PerformanceEventInstruction;
+class TrapInstruction;
 
 class InstructionVisitor
 {
@@ -139,6 +148,7 @@ public:
 	virtual void Visit(_SADInstruction *instruction);
 	virtual void Visit(_SineInstruction *instruction);
 	virtual void Visit(_SubtractInstruction *instruction);
+	virtual void Visit(_TanhInstruction *instruction);
         virtual void Visit(_TestPropertyInstruction *instruction);
  
 	// Comparison
@@ -197,6 +207,7 @@ public:
 	virtual void Visit(_MatchAnyInstruction *instruction);
 	virtual void Visit(MemoryBarrierInstruction *instruction); // Untyped
 	virtual void Visit(_ReductionInstruction *instruction);
+	virtual void Visit(_ReduxInstruction *instruction);
 	virtual void Visit(_VoteInstruction *instruction);
 
 	// Shift
@@ -204,6 +215,13 @@ public:
 	virtual void Visit(_FunnelShiftInstruction *instruction);
 	virtual void Visit(_ShiftLeftInstruction *instruction);
 	virtual void Visit(_ShiftRightInstruction *instruction);
+
+	// Misc
+
+	virtual void Visit(BreakpointInstruction *instruction); // Untyped
+	virtual void Visit(_NanosleepInstruction *instruction);
+	virtual void Visit(PerformanceEventInstruction *instruction); // Untyped
+	virtual void Visit(TrapInstruction *instruction); // Untyped
 };
 
 }

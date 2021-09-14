@@ -1,9 +1,44 @@
 #pragma once
 
 namespace PTX {
-	constexpr unsigned int MAJOR_VERSION = 6;
-	constexpr unsigned int MINOR_VERSION = 3;
+	constexpr unsigned int MAJOR_VERSION = 7;
+	constexpr unsigned int MINOR_VERSION = 4;
 }
+
+// Templated NVIDIA PTX 7.4 Framework for representing programs with type correctness
+//
+//   Unsupported types:
+//      - bf16
+//      - tf32
+//
+//   Unsupported instruction categories:
+//      - Texture
+//      - Surface
+//      - MMA
+//      - Stack (preview feature)
+//      - Video
+//
+//   Other unsupported instructions/modifiers:
+//      - Cache eviction policy
+//      - Async copy
+//      - mbarrier
+//      - cvt.pack
+//      - .relu modifiers (fma, cvt)
+//      - dp2a/dp4a
+//
+//   Unsupported directives:
+//      - .alias
+//      - .branchtargets
+//      - .calltargets
+//      - .callprototype
+//      - .loc inline
+//      - .minnctapersm
+//      - .pragma
+//      - @@dwarf
+//
+//   Unsupported operands:
+//      - Array indexing
+//      - mask()
 
 // Utility
 
@@ -157,6 +192,7 @@ namespace PTX {
 #include "PTX/Tree/Instructions/Arithmetic/SADInstruction.h"
 #include "PTX/Tree/Instructions/Arithmetic/SineInstruction.h"
 #include "PTX/Tree/Instructions/Arithmetic/SubtractInstruction.h"
+#include "PTX/Tree/Instructions/Arithmetic/TanhInstruction.h"
 #include "PTX/Tree/Instructions/Arithmetic/TestPropertyInstruction.h"
 
 #include "PTX/Tree/Instructions/Comparison/SelectInstruction.h"
@@ -188,6 +224,7 @@ namespace PTX {
 #include "PTX/Tree/Instructions/Synchronization/BarrierReductionInstruction.h"
 #include "PTX/Tree/Instructions/Synchronization/MatchInstruction.h"
 #include "PTX/Tree/Instructions/Synchronization/AtomicInstruction.h"
+#include "PTX/Tree/Instructions/Synchronization/ReduxInstruction.h"
 
 #include "PTX/Tree/Instructions/Data/Modifiers/ConvertFlushSubnormalModifier.h"
 #include "PTX/Tree/Instructions/Data/Modifiers/ConvertRoundingModifier.h"
@@ -214,3 +251,8 @@ namespace PTX {
 #include "PTX/Tree/Instructions/Shift/ShiftLeftInstruction.h"
 #include "PTX/Tree/Instructions/Shift/ShiftRightInstruction.h"
 #include "PTX/Tree/Instructions/Shift/FunnelShiftInstruction.h"
+
+#include "PTX/Tree/Instructions/Misc/BreakpointInstruction.h"
+#include "PTX/Tree/Instructions/Misc/NanosleepInstruction.h"
+#include "PTX/Tree/Instructions/Misc/PerformanceEventInstruction.h"
+#include "PTX/Tree/Instructions/Misc/TrapInstruction.h"
