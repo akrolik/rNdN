@@ -507,6 +507,17 @@ public:
 		DataIndexGenerator<B> indexGenerator(this->m_builder);
 		auto index = indexGenerator.GenerateDataIndex();
 
+		// Require thread layout
+
+		if (m_mode == OrderMode::Shared)
+		{
+			m_builder.SetBlockSize(SORT_CACHE_SIZE);
+		}
+		else
+		{
+			m_builder.SetBlockPower2(true);
+		}
+
 		// Add stage/substage parameters and load values
 
 		ParameterGenerator<B> parameterGenerator(this->m_builder);
