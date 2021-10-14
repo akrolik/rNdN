@@ -15,8 +15,12 @@ public:
 	int GetIndex() const { return m_index; }
 
 	std::string GetName() const { return std::string(m_properties.name); }
-	size_t GetMemorySize() const { return m_properties.totalGlobalMem; }
+
+	size_t GetGlobalMemorySize() const { return m_properties.totalGlobalMem; }
 	size_t GetSharedMemorySize() const { return m_properties.sharedMemPerBlock; }
+	int GetRegisterCount() const { return m_properties.regsPerBlock; }
+
+	int GetMultiProcessorCount() const { return m_properties.multiProcessorCount; }
 	int GetMaxThreadsDimension(unsigned int dim) const { return m_properties.maxThreadsDim[dim]; }
 	int GetWarpSize() const { return m_properties.warpSize; }
 

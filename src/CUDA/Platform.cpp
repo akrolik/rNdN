@@ -48,17 +48,21 @@ void Platform::LoadDevices()
 		auto i = 0;
 		for (const auto& device : m_devices)
 		{
-			float mem_f = float(device->GetMemorySize()) / 1024 / 1024 / 1024;
+			auto gmem_f = float(device->GetGlobalMemorySize()) / 1024 / 1024 / 1024;
 			std::stringstream gstream;
-			gstream << std::setprecision(3) << mem_f;
-			std::string mem = gstream.str();
+			gstream << std::setprecision(3) << gmem_f;
+			auto gmem = "gmem=" + gstream.str() + "GB";
 
-			float smem_f = float(device->GetSharedMemorySize()) / 1024;
+			auto smem_f = float(device->GetSharedMemorySize()) / 1024;
 			std::stringstream sstream;
 			sstream << std::setprecision(3) << smem_f;
-			std::string smem = sstream.str();
+			auto smem = "smem" + sstream.str() + "KB";
 
-			Utils::Logger::LogDebug("[" + std::to_string(i++) + "] " + device->GetName() + " (gmem=" + mem + "GB|smem=" + smem + "KB)");
+			auto regs = "regs=" + std::to_string(device->GetRegisterCount());
+			auto mp = "mp=" + std::to_string(device->GetMultiProcessorCount());
+			auto deviceString = gmem + "|" + smem + "|" + regs + "|" + mp;
+
+			Utils::Logger::LogDebug("[" + std::to_string(i++) + "] " + device->GetName() + " (" + deviceString + ")");
 		}
 	}
 }
