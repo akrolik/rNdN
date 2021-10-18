@@ -15,6 +15,7 @@ public:
 	static constexpr char const *Opt_Optimize_ptx = "optimize-ptx";
 	static constexpr char const *Opt_Optimize_sass = "optimize-sass";
 	static constexpr char const *Opt_Optimize_ptxas_level = "optimize-ptxas-level";
+	static constexpr char const *Opt_Optimize_ptxas_expensive = "optimize-ptxas-expensive";
 
 	static constexpr char const *Opt_Debug_load = "debug-load";
 	static constexpr char const *Opt_Debug_print = "debug-print";
@@ -96,6 +97,7 @@ public:
 	static bool IsOptimize_SASS();
 
 	static unsigned int GetOptimize_PtxasLevel();
+	static bool IsOptimize_PtxasExpensive();
 
 	// Debug
 

@@ -61,6 +61,11 @@ unsigned int Options::GetOptimize_PtxasLevel()
 	return Get<unsigned int>(Opt_Optimize_ptxas_level);
 }
 
+bool Options::IsOptimize_PtxasExpensive()
+{
+	return Get(Opt_Optimize_ptxas_expensive);
+}
+
 // Debug
 
 bool Options::IsDebug_Load()
@@ -566,6 +571,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Optimize_ptxas_level, "ptxas optimization level (0-4)",
 			cxxopts::value<unsigned int>()->default_value("4")
 		)
+		(Opt_Optimize_ptxas_expensive, "ptxas expensive optimizations", cxxopts::value<bool>()->default_value("true"))
 	;
 	m_options.add_options("Debug")
 		(Opt_Debug_load, "Debug data loading")

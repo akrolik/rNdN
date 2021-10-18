@@ -95,12 +95,14 @@ void Compiler::Compile(const std::unique_ptr<Device>& device)
 	for (const auto& code : m_ptxModules)
 	{
 		auto sm = "--gpu-name=" + device->GetComputeCapability();
-		const char* compileOptions[] = { sm.c_str(), "--compile-only" };
+		auto level = "--opt-level=" + std::to_string(Utils::Options::GetOptimize_PtxasLevel());
+		auto exp = std::string("--allow-expensive-optimizations=") + (Utils::Options::IsOptimize_PtxasExpensive() ? "true" : "false");
+		const char* compileOptions[] = { sm.c_str(), "--compile-only", level.c_str(), exp.c_str() };
 
 		nvPTXCompilerHandle compiler = NULL;
 		checkNVPTXResult(nvPTXCompilerCreate(&compiler, code.length(), code.c_str()));
 
-		auto status = nvPTXCompilerCompile(compiler, 2, compileOptions);
+		auto status = nvPTXCompilerCompile(compiler, 4, compileOptions);
 		if (status != NVPTXCOMPILE_SUCCESS)
 		{
 			size_t errorSize;
