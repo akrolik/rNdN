@@ -65,18 +65,8 @@ public:
 
 	// Binary
 
-	virtual std::uint64_t BinaryOpCode() const = 0;
-	virtual std::uint64_t BinaryOpModifiers() const { return 0; }
-	virtual std::uint64_t BinaryOperands() const { return 0; }
-
-	virtual std::uint64_t ToBinary() const
-	{
-		std::uint64_t code = 0x0;
-		code |= BinaryOpCode();
-		code |= BinaryOpModifiers();
-		code |= BinaryOperands();
-		return code;
-	}
+	virtual std::uint64_t ToBinary() const = 0;
+	virtual std::uint64_t ToBinaryHi() const = 0;
 
 protected:
 	unsigned int m_lineNumber = 0;
