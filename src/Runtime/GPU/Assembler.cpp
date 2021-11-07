@@ -61,7 +61,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 	}
 	else
 	{
-		// JIT code is compiled with ptxas or r3d3
+		// JIT code is compiled with ptxas or r4d4
 
 		CUDA::Compiler compiler;
 		if (Utils::Options::IsBackend_LoadELF())
@@ -79,7 +79,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 						compiler.AddPTXModule(PTX::PrettyPrinter::PrettyString(module));
 						break;
 					}
-					case Utils::Options::BackendKind::r3d3:
+					case Utils::Options::BackendKind::r4d4:
 					{
 						// Generate SASS for PTX program
 
