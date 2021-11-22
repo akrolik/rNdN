@@ -7,10 +7,11 @@ namespace Scheduler {
 
 class ListBlockScheduler : public BlockScheduler
 {
+public:
+	using BlockScheduler::BlockScheduler;
+
 protected:
 	void ScheduleBlock(SASS::BasicBlock *block) override;
-
-	SASS::DEPBARInstruction::Barrier GetInstructionBarrier(SASS::Schedule::Barrier barrier) const;
 };
 
 }

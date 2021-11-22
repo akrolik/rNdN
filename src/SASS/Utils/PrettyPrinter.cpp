@@ -264,7 +264,18 @@ void PrettyPrinter::Visit(const Instruction *instruction)
 	}
 }
 
-void PrettyPrinter::Visit(const PredicatedInstruction *instruction)
+void PrettyPrinter::Visit(const Maxwell::PredicatedInstruction *instruction)
+{
+	VisitPredicatedInstruction(instruction);
+}
+
+void PrettyPrinter::Visit(const Volta::PredicatedInstruction *instruction)
+{
+	VisitPredicatedInstruction(instruction);
+}
+
+template<class I>
+void PrettyPrinter::VisitPredicatedInstruction(const I *instruction)
 {
 	if (const auto predicate = instruction->GetPredicate(); predicate != nullptr)
 	{

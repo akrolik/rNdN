@@ -22,6 +22,12 @@ public:
 	template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
 	void Visit(const PTX::StoreInstruction<B, T, S, A> *instruction);
 
+	template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
+	void GenerateMaxwell(const PTX::StoreInstruction<B, T, S, A> *instruction);
+
+	template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
+	void GenerateVolta(const PTX::StoreInstruction<B, T, S, A> *instruction);
+
 private:
 	template<typename I, class T>
 	I InstructionType();

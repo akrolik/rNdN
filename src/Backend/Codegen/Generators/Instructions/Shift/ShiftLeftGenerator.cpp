@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -22,6 +24,12 @@ void ShiftLeftGenerator::Visit(const PTX::ShiftLeftInstruction<T> *instruction)
 	//   - Bit16, Bit32, Bit64    
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void ShiftLeftGenerator::GenerateMaxwell(const PTX::ShiftLeftInstruction<T> *instruction)
+{
 	if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 	{
 		// Generate operands
@@ -35,16 +43,22 @@ void ShiftLeftGenerator::Visit(const PTX::ShiftLeftInstruction<T> *instruction)
 
 		// Flags
 
-		auto flags = SASS::SHLInstruction::Flags::None;
+		auto flags = SASS::Maxwell::SHLInstruction::Flags::None;
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::SHLInstruction(destination, sourceA, sourceB, flags));
+		this->AddInstruction(new SASS::Maxwell::SHLInstruction(destination, sourceA, sourceB, flags));
 	}
 	else
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void ShiftLeftGenerator::GenerateVolta(const PTX::ShiftLeftInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

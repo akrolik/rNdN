@@ -2,6 +2,8 @@
 
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -20,6 +22,12 @@ void CountLeadingZerosGenerator::Visit(const PTX::CountLeadingZerosInstruction<T
 	// Types:
 	//   - Bit32, Bit64    
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void CountLeadingZerosGenerator::GenerateMaxwell(const PTX::CountLeadingZerosInstruction<T> *instruction)
+{
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -31,9 +39,9 @@ void CountLeadingZerosGenerator::Visit(const PTX::CountLeadingZerosInstruction<T
 		// FLO.U32 D, S ;
 		// IADD32I D, -D, 0x1f ;
 
-		this->AddInstruction(new SASS::FLOInstruction(destination, source_Lo));
-		this->AddInstruction(new SASS::IADD32IInstruction(
-			destination, destination, new SASS::I32Immediate(0x1f), SASS::IADD32IInstruction::Flags::NEG_A
+		this->AddInstruction(new SASS::Maxwell::FLOInstruction(destination, source_Lo));
+		this->AddInstruction(new SASS::Maxwell::IADD32IInstruction(
+			destination, destination, new SASS::I32Immediate(0x1f), SASS::Maxwell::IADD32IInstruction::Flags::NEG_A
 		));
 	}
 	else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
@@ -48,23 +56,30 @@ void CountLeadingZerosGenerator::Visit(const PTX::CountLeadingZerosInstruction<T
 		auto temp = this->m_builder.AllocateTemporaryRegister();
 		auto predicate = this->m_builder.AllocateTemporaryPredicate();
 
-		this->AddInstruction(new SASS::ISETPInstruction(
+		this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
 			predicate, SASS::PT, source_Hi, SASS::RZ, SASS::PT,
-			SASS::ISETPInstruction::ComparisonOperator::EQ, SASS::ISETPInstruction::BooleanOperator::AND
+			SASS::Maxwell::ISETPInstruction::ComparisonOperator::EQ,
+			SASS::Maxwell::ISETPInstruction::BooleanOperator::AND
 		));
 
-		this->AddInstruction(new SASS::SELInstruction(
-			temp, SASS::RZ, new SASS::I32Immediate(0x20), predicate, SASS::SELInstruction::Flags::NOT_C
+		this->AddInstruction(new SASS::Maxwell::SELInstruction(
+			temp, SASS::RZ, new SASS::I32Immediate(0x20), predicate, SASS::Maxwell::SELInstruction::Flags::NOT_C
 		));
-		this->AddInstruction(new SASS::SELInstruction(destination, source_Lo, source_Hi, predicate));
+		this->AddInstruction(new SASS::Maxwell::SELInstruction(destination, source_Lo, source_Hi, predicate));
 
-		this->AddInstruction(new SASS::FLOInstruction(destination, destination));
-		this->AddInstruction(new SASS::IADD32IInstruction(
-			destination, destination, new SASS::I32Immediate(0x1f), SASS::IADD32IInstruction::Flags::NEG_A
+		this->AddInstruction(new SASS::Maxwell::FLOInstruction(destination, destination));
+		this->AddInstruction(new SASS::Maxwell::IADD32IInstruction(
+			destination, destination, new SASS::I32Immediate(0x1f), SASS::Maxwell::IADD32IInstruction::Flags::NEG_A
 		));
 
-		this->AddInstruction(new SASS::IADDInstruction(destination, destination, temp));
+		this->AddInstruction(new SASS::Maxwell::IADDInstruction(destination, destination, temp));
 	}
+}
+
+template<class T>
+void CountLeadingZerosGenerator::GenerateVolta(const PTX::CountLeadingZerosInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

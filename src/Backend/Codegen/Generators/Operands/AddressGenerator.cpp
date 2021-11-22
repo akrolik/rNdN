@@ -1,5 +1,6 @@
 #include "Backend/Codegen/Generators/Operands/AddressGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
 #include "PTX/Utils/PrettyPrinter.h"
@@ -46,20 +47,41 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		// Global addresses are initially zero and relocated at runtime
 
 		auto [temp_Lo, temp_Hi] = this->m_builder.AllocateTemporaryRegisterPair<B>();
-		auto inst0 = new SASS::MOV32IInstruction(temp_Lo, new SASS::I32Immediate(0x0));
 
-		this->m_builder.AddInstruction(inst0);
-		this->m_builder.AddRelocation(inst0, name, SASS::Relocation::Kind::ABS32_LO_20);
-
-		// Extended addresses (64-bit)
-
-		if constexpr(B == PTX::Bits::Bits64)
+		ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
 		{
-			auto inst1 = new SASS::MOV32IInstruction(temp_Hi, new SASS::I32Immediate(0x0));
+			auto inst0 = new SASS::Maxwell::MOV32IInstruction(temp_Lo, new SASS::I32Immediate(0x0));
 
-			this->m_builder.AddInstruction(inst1);
-			this->m_builder.AddRelocation(inst1, name, SASS::Relocation::Kind::ABS32_HI_20);
-		}
+			this->m_builder.AddInstruction(inst0);
+			this->m_builder.AddRelocation(inst0, name, SASS::Relocation::Kind::ABS32_LO_20);
+
+			// Extended addresses (64-bit)
+
+			if constexpr(B == PTX::Bits::Bits64)
+			{
+				auto inst1 = new SASS::Maxwell::MOV32IInstruction(temp_Hi, new SASS::I32Immediate(0x0));
+
+				this->m_builder.AddInstruction(inst1);
+				this->m_builder.AddRelocation(inst1, name, SASS::Relocation::Kind::ABS32_HI_20);
+			}
+		},
+		[&]() // Volta instruction set
+		{
+			auto inst0 = new SASS::Volta::MOVInstruction(temp_Lo, new SASS::I32Immediate(0x0));
+
+			this->m_builder.AddInstruction(inst0);
+			this->m_builder.AddRelocation(inst0, name, SASS::Relocation::Kind::ABS32_LO_32);
+
+			// Extended addresses (64-bit)
+
+			if constexpr(B == PTX::Bits::Bits64)
+			{
+				auto inst1 = new SASS::Volta::MOVInstruction(temp_Hi, new SASS::I32Immediate(0x0));
+
+				this->m_builder.AddInstruction(inst1);
+				this->m_builder.AddRelocation(inst1, name, SASS::Relocation::Kind::ABS32_HI_32);
+			}
+		});
 
 		// Form the address with the offset
 
@@ -68,16 +90,42 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 
 		if (addressOffset >= (1 << 24))
 		{
-			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
-				temp_Lo, temp_Lo, new SASS::I32Immediate(addressOffset), SASS::IADD32IInstruction::Flags::CC
-			));
+			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			if constexpr(B == PTX::Bits::Bits64)
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
 			{
-				this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
-					temp_Hi, temp_Hi, new SASS::I32Immediate(0x0), SASS::IADD32IInstruction::Flags::X
+				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(
+					temp_Lo, temp_Lo, addressImmediate, SASS::Maxwell::IADD32IInstruction::Flags::CC
 				));
-			}
+
+				if constexpr(B == PTX::Bits::Bits64)
+				{
+					this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(
+						temp_Hi, temp_Hi, new SASS::I32Immediate(0x0), SASS::Maxwell::IADD32IInstruction::Flags::X
+					));
+				}
+			},
+			[&]() // Volta instruction set
+			{
+				if constexpr(B == PTX::Bits::Bits32)
+				{
+					this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(
+						temp_Lo, temp_Lo, addressImmediate, SASS::RZ
+					));
+				}
+				else
+				{
+					auto CC = this->m_builder.AllocateTemporaryPredicate();
+
+					this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(
+						temp_Lo, CC, temp_Lo, addressImmediate, SASS::RZ
+					));
+
+					this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(
+						temp_Hi, temp_Hi, SASS::RZ, SASS::RZ, CC, SASS::PT, SASS::Volta::IADD3Instruction::Flags::NOT_E
+					));
+				}
+			});
 
 			m_address = new SASS::Address(temp);
 		}
@@ -91,16 +139,37 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		// Shared addresses are initially zero and relocated at runtime
 
 		auto temp = this->m_builder.AllocateTemporaryRegister();
-		auto inst = new SASS::MOV32IInstruction(temp, new SASS::I32Immediate(0x0));
 
-		this->m_builder.AddInstruction(inst);
-		this->m_builder.AddRelocation(inst, name, SASS::Relocation::Kind::ABS24_20);
+		ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+		{
+			auto inst = new SASS::Maxwell::MOV32IInstruction(temp, new SASS::I32Immediate(0x0));
+
+			this->m_builder.AddInstruction(inst);
+			this->m_builder.AddRelocation(inst, name, SASS::Relocation::Kind::ABS24_20);
+		},
+		[&]() // Volta instruction set
+		{
+			auto inst = new SASS::Volta::MOVInstruction(temp, new SASS::I32Immediate(0x0));
+
+			this->m_builder.AddInstruction(inst);
+			this->m_builder.AddRelocation(inst, name, SASS::Relocation::Kind::ABS32_32);
+		});
 
 		// Form the address with the offset
 
 		if (addressOffset >= (1 << 24))
 		{
-			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, temp, new SASS::I32Immediate(addressOffset)));
+			auto addressImmediate = new SASS::I32Immediate(addressOffset);
+
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp, temp, addressImmediate));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(temp, temp, addressImmediate, SASS::RZ));
+			});
+
 			m_address = new SASS::Address(temp);
 		}
 		else
@@ -128,42 +197,75 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
+		auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+
+		// Inline offset has maximum size
+
 		if (addressOffset >= (1 << 24))
 		{
 			auto [temp_Lo, temp_Hi] = this->m_builder.AllocateTemporaryRegisterPair<B>();
+			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
-				temp_Lo, reg_Lo, new SASS::I32Immediate(addressOffset), SASS::IADD32IInstruction::Flags::CC
-			));
-
-			if constexpr(B == PTX::Bits::Bits64)
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
 			{
-				this->m_builder.AddInstruction(new SASS::IADD32IInstruction(
-					temp_Hi, reg_Hi, new SASS::I32Immediate(0x0), SASS::IADD32IInstruction::Flags::X
+				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(
+					temp_Lo, reg_Lo, addressImmediate, SASS::Maxwell::IADD32IInstruction::Flags::CC
 				));
-			}
 
-			auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
+				if constexpr(B == PTX::Bits::Bits64)
+				{
+					this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(
+						temp_Hi, reg_Hi, new SASS::I32Immediate(0x0), SASS::Maxwell::IADD32IInstruction::Flags::X
+					));
+				}
+			},
+			[&]() // Volta instruction set
+			{
+				if constexpr(B == PTX::Bits::Bits32)
+				{
+					this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(
+						temp_Lo, reg_Lo, addressImmediate, SASS::RZ
+					));
+				}
+				else
+				{
+					auto CC = this->m_builder.AllocateTemporaryPredicate();
+
+					this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(
+						temp_Lo, CC, reg_Lo, addressImmediate, SASS::RZ
+					));
+					this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(
+						temp_Hi, reg_Hi, SASS::RZ, SASS::RZ, CC, SASS::PT, SASS::Volta::IADD3Instruction::Flags::NOT_E
+					));
+				}
+			});
+
 			auto temp = new SASS::Register(temp_Lo->GetValue(), size);
-
 			m_address = new SASS::Address(temp);
 		}
 		else
 		{
-			auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
 			auto reg = new SASS::Register(reg_Lo->GetValue(), size);
-
 			m_address = new SASS::Address(reg, addressOffset);
 		}
 	}
 	else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
 	{
+		// Inline offset has maximum size
+
 		if (addressOffset >= (1 << 24))
 		{
 			auto temp = this->m_builder.AllocateTemporaryRegister();
+			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			this->m_builder.AddInstruction(new SASS::IADD32IInstruction(temp, reg_Lo, new SASS::I32Immediate(addressOffset)));
-
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp, reg_Lo, addressImmediate));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::IADD3Instruction(temp, reg_Lo, addressImmediate, SASS::RZ));
+			});
 			m_address = new SASS::Address(temp);
 		}
 		else

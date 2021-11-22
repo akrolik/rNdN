@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -24,6 +26,12 @@ void ShiftRightGenerator::Visit(const PTX::ShiftRightInstruction<T> *instruction
 	//   - Int16, Int32, Int64    
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void ShiftRightGenerator::GenerateMaxwell(const PTX::ShiftRightInstruction<T> *instruction)
+{
 	if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
 		// Generate operands
@@ -37,20 +45,26 @@ void ShiftRightGenerator::Visit(const PTX::ShiftRightInstruction<T> *instruction
 
 		// Flags
 
-		auto flags = SASS::SHRInstruction::Flags::None;
+		auto flags = SASS::Maxwell::SHRInstruction::Flags::None;
 		if constexpr(PTX::is_unsigned_int_type<T>::value || PTX::is_bit_type<T>::value)
 		{
-			flags |= SASS::SHRInstruction::Flags::U32;
+			flags |= SASS::Maxwell::SHRInstruction::Flags::U32;
 		}
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::SHRInstruction(destination, sourceA, sourceB, flags));
+		this->AddInstruction(new SASS::Maxwell::SHRInstruction(destination, sourceA, sourceB, flags));
 	}
 	else
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void ShiftRightGenerator::GenerateVolta(const PTX::ShiftRightInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

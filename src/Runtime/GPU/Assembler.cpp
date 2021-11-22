@@ -83,16 +83,8 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 					{
 						// Generate SASS for PTX program
 
-						auto compute = device->GetComputeMajor() * 10 + device->GetComputeMinor();
-						if (compute < SASS::COMPUTE_MIN || compute > SASS::COMPUTE_MAX)
-						{
-							Utils::Logger::LogError("Unsupported CUDA compute capability " + device->GetComputeCapability());
-						}
-
 						Backend::Compiler backendCompiler;
 						auto sassProgram = backendCompiler.Compile(program);
-						sassProgram->SetComputeCapability(compute);
-
 						// Generate ELF binrary
 
 						auto timeBinary_start = Utils::Chrono::Start("Binary generator");

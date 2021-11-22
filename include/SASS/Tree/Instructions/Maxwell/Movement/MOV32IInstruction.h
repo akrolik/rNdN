@@ -1,12 +1,13 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
-#include "SASS/Tree/BinaryUtils.h"
 #include "SASS/Tree/Operands/Immediate.h"
 #include "SASS/Tree/Operands/Register.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class MOV32IInstruction : public PredicatedInstruction
 {
@@ -86,4 +87,5 @@ private:
 	SizedImmediate<32> *m_source = nullptr;
 };
 
+}
 }

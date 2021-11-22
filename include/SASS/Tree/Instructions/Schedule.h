@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SASS/Tree/Instructions/BinaryUtils.h"
+
 #include "Libraries/robin_hood.h"
 
 namespace SASS {
@@ -174,7 +176,7 @@ public:
 		return code + "]";
 	}
 
-	std::uint32_t GenCode() const
+	std::uint32_t ToBinary() const
 	{
 		std::uint32_t code = 0u;
 		code |= (static_cast<std::uint8_t>(m_reuseCache)   << 17);

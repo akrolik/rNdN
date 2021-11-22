@@ -1,7 +1,10 @@
 #include "Backend/Codegen/CodeGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
 #include "Backend/Codegen/Generators/InstructionGenerator.h"
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
+
+#include "Utils/Logger.h"
 
 namespace Backend {
 namespace Codegen {
@@ -101,22 +104,106 @@ void CodeGenerator::Visit(const PTX::Analysis::StructureNode *structure)
 
 void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 {
+	ArchitectureDispatch::DispatchInline(m_builder, [&]()
+	{
+		GenerateBranchStructure<
+			SASS::Maxwell::SSYInstruction,
+			SASS::Maxwell::SYNCInstruction,
+			SASS::Maxwell::BRAInstruction
+		>(structure);
+	},
+	[&]()
+	{
+		GenerateBranchStructure<
+			SASS::Volta::BSSYInstruction,
+			SASS::Volta::BSYNCInstruction,
+			SASS::Volta::BRAInstruction,
+			true
+		>(structure);
+	});
+}
+
+void CodeGenerator::Visit(const PTX::Analysis::ExitStructure *structure)
+{
+	ArchitectureDispatch::DispatchInline(m_builder, [&]()
+	{
+		GenerateExitStructure<SASS::Maxwell::SYNCInstruction>(structure);
+	},
+	[&]()
+	{
+		GenerateExitStructure<SASS::Volta::BSYNCInstruction, true>(structure);
+	});
+}
+
+void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
+{
+	ArchitectureDispatch::DispatchInline(m_builder, [&]()
+	{
+		GenerateLoopStructure<
+			SASS::Maxwell::SSYInstruction,
+			SASS::Maxwell::BRAInstruction
+		>(structure);
+	},
+	[&]()
+	{
+		GenerateLoopStructure<
+			SASS::Volta::BSSYInstruction,
+			SASS::Volta::BRAInstruction,
+			true
+		>(structure);
+	});
+}
+
+void CodeGenerator::Visit(const PTX::Analysis::SequenceStructure *structure)
+{
+	// Generate current block
+
+	structure->GetBlock()->Accept(*this);
+	auto sequenceBlock = m_endBlock;
+
+	// Process next structure
+
+	PTX::Analysis::ConstStructuredGraphVisitor::Visit(structure);
+	m_beginBlock = sequenceBlock;
+}
+
+template<class SSY, class SYNC, class BRA, bool BARRIER>
+void CodeGenerator::GenerateBranchStructure(const PTX::Analysis::BranchStructure *structure)
+{
 	// Generate current block, including condition generation
 
 	structure->GetBlock()->Accept(*this);
 	auto branchBlock = m_endBlock;
 
-	auto ssyInstruction = new SASS::SSYInstruction("");
+	SSY *ssyInstruction = nullptr;
+	SYNC *syncInstruction1 = nullptr;
+	SYNC *syncInstruction2 = nullptr;
+
+	if constexpr(BARRIER)
+	{
+		if (m_stackDepth > SASS::Volta::MAX_SSY_STACK_DEPTH)
+		{
+			Utils::Logger::LogError("Stack depth " + std::to_string(m_stackDepth) + " exceeded maximum (" + std::to_string(SASS::Volta::MAX_SSY_STACK_DEPTH) + ")");
+		}
+
+		ssyInstruction = new SSY("", m_stackDepth);
+		syncInstruction1 = new SYNC(m_stackDepth);
+		syncInstruction2 = new SYNC(m_stackDepth);
+	}
+	else
+	{
+		ssyInstruction = new SSY("");
+		syncInstruction1 = new SYNC();
+		syncInstruction2 = new SYNC();
+	}
 	branchBlock->AddInstruction(ssyInstruction);
 
 	m_stackSize += SASS::SSY_STACK_SIZE;
+	m_stackDepth++;
 	if (m_stackSize > m_maxStack)
 	{
 		m_maxStack = m_stackSize;
 	}
-
-	auto syncInstruction1 = new SASS::SYNCInstruction();
-	auto syncInstruction2 = new SASS::SYNCInstruction();
 
 	// Generate the condition to predicate threads
 
@@ -125,7 +212,7 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 
 	if (auto trueStructure = structure->GetTrueBranch())
 	{
-		SASS::BRAInstruction *branchInstruction = nullptr;
+		BRA *branchInstruction = nullptr;
 
 		if (auto falseStructure = structure->GetFalseBranch())
 		{
@@ -142,7 +229,7 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 
 			// Branch true threads
 
-			branchInstruction = new SASS::BRAInstruction("");
+			branchInstruction = new BRA("");
 			branchInstruction->SetPredicate(predicate, negate);
 			branchBlock->AddInstruction(branchInstruction);
 
@@ -211,6 +298,7 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 	}
 
 	m_stackSize -= SASS::SSY_STACK_SIZE;
+	m_stackDepth--;
 
 	// Process next structure
 
@@ -227,7 +315,8 @@ void CodeGenerator::Visit(const PTX::Analysis::BranchStructure *structure)
 	m_beginBlock = branchBlock;
 }
 
-void CodeGenerator::Visit(const PTX::Analysis::ExitStructure *structure)
+template<class SYNC, bool BARRIER>
+void CodeGenerator::GenerateExitStructure(const PTX::Analysis::ExitStructure *structure)
 {
 	// Exit pattern
 	//
@@ -247,7 +336,17 @@ void CodeGenerator::Visit(const PTX::Analysis::ExitStructure *structure)
 
 	// Predicate threads for exit
 
-	auto syncInstruction = new SASS::SYNCInstruction();
+	SYNC *syncInstruction = nullptr;
+	if constexpr(BARRIER)
+	{
+		// Reduce by 1 to match SSY instruction
+
+		syncInstruction = new SYNC(m_stackDepth - 1);
+	}
+	else
+	{
+		syncInstruction = new SYNC();
+	}
 	syncInstruction->SetPredicate(predicate, negate ^ structureNegate);
 
 	m_loopExits.push_back(syncInstruction);
@@ -260,7 +359,8 @@ void CodeGenerator::Visit(const PTX::Analysis::ExitStructure *structure)
 	m_beginBlock = block;
 }
 
-void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
+template<class SSY, class BRA, bool BARRIER>
+void CodeGenerator::GenerateLoopStructure(const PTX::Analysis::LoopStructure *structure)
 {
 	// Loop pattern
 	//
@@ -271,10 +371,24 @@ void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 	// L2: 
 	//     <Next>
 
-	auto ssyInstruction = new SASS::SSYInstruction("");
+	SSY *ssyInstruction = nullptr;
+	if constexpr(BARRIER)
+	{
+		if (m_stackDepth > SASS::Volta::MAX_SSY_STACK_DEPTH)
+		{
+			Utils::Logger::LogError("Stack depth " + std::to_string(m_stackDepth) + " exceeded maximum (" + std::to_string(SASS::Volta::MAX_SSY_STACK_DEPTH) + ")");
+		}
+
+		ssyInstruction = new SSY("", m_stackDepth);
+	}
+	else
+	{
+		ssyInstruction = new SSY("");
+	}
 	m_endBlock->AddInstruction(ssyInstruction);
 
 	m_stackSize += SASS::SSY_STACK_SIZE;
+	m_stackDepth++;
 	if (m_stackSize > m_maxStack)
 	{
 		m_maxStack = m_stackSize;
@@ -286,13 +400,14 @@ void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 	m_loopExits.clear();
 
 	structure->GetBody()->Accept(*this);
-	m_endBlock->AddInstruction(new SASS::BRAInstruction(m_beginBlock->GetName()));
+	m_endBlock->AddInstruction(new BRA(m_beginBlock->GetName()));
 
 	auto headerBlock = m_beginBlock;
 	auto loopExits = m_loopExits;
 	m_loopExits = oldExits;
 
 	m_stackSize -= SASS::SSY_STACK_SIZE;
+	m_stackDepth--;
 
 	// Process next structure
 
@@ -309,19 +424,6 @@ void CodeGenerator::Visit(const PTX::Analysis::LoopStructure *structure)
 	}
 
 	m_beginBlock = headerBlock;
-}
-
-void CodeGenerator::Visit(const PTX::Analysis::SequenceStructure *structure)
-{
-	// Generate current block
-
-	structure->GetBlock()->Accept(*this);
-	auto sequenceBlock = m_endBlock;
-
-	// Process next structure
-
-	PTX::Analysis::ConstStructuredGraphVisitor::Visit(structure);
-	m_beginBlock = sequenceBlock;
 }
 
 // Basic Block

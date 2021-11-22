@@ -3,6 +3,7 @@
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class SYNCInstruction : public PredicatedInstruction
 {
@@ -40,4 +41,5 @@ public:
 	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 };
 
+}
 }

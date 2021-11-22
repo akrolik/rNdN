@@ -33,7 +33,12 @@ public:
 		return reinterpret_cast<const std::uint64_t&>(m_value);
 	}
 
-	std::uint64_t ToBinary(std::uint8_t truncate) const override
+	std::uint64_t ToTruncatedBinary(std::uint8_t truncate) const override
+	{
+		return reinterpret_cast<const std::uint64_t&>(m_value) >> (32 - truncate);
+	}
+
+	std::uint64_t ToAbsoluteBinary(std::uint8_t truncate) const override
 	{
 		// Composite truncated binary representation:
 		//  - Sign removed

@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -29,6 +31,12 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 	//   - Rounding: Float32, Float64
 	//   - Saturate: Int32 (Hi only), Float32
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void MADGenerator::GenerateMaxwell(const PTX::MADInstruction<T> *instruction)
+{
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
 		if (instruction->GetCarryIn() || instruction->GetCarryOut())
@@ -58,13 +66,15 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 			auto temp0 = this->m_builder.AllocateTemporaryRegister();
 			auto temp1 = this->m_builder.AllocateTemporaryRegister();
 
-			this->AddInstruction(new SASS::XMADInstruction(temp0, sourceA, sourceB, sourceC));
-			this->AddInstruction(new SASS::XMADInstruction(
-				temp1, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::MRG, SASS::XMADInstruction::Flags::H1_B
+			this->AddInstruction(new SASS::Maxwell::XMADInstruction(temp0, sourceA, sourceB, sourceC));
+			this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+				temp1, sourceA, sourceB, SASS::RZ,
+				SASS::Maxwell::XMADInstruction::Mode::MRG, SASS::Maxwell::XMADInstruction::Flags::H1_B
 			));
-			this->AddInstruction(new SASS::XMADInstruction(
-				destination, sourceA, temp1, temp0, SASS::XMADInstruction::Mode::PSL,
-				SASS::XMADInstruction::Flags::CBCC | SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
+			this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+				destination, sourceA, temp1, temp0, SASS::Maxwell::XMADInstruction::Mode::PSL,
+				SASS::Maxwell::XMADInstruction::Flags::CBCC | SASS::Maxwell::XMADInstruction::Flags::H1_A |
+				SASS::Maxwell::XMADInstruction::Flags::H1_B
 			));
 		}
 		else
@@ -76,6 +86,12 @@ void MADGenerator::Visit(const PTX::MADInstruction<T> *instruction)
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void MADGenerator::GenerateVolta(const PTX::MADInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

@@ -4,6 +4,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -12,60 +14,66 @@ void ReductionGenerator::Generate(const PTX::_ReductionInstruction *instruction)
 	instruction->Dispatch(*this);
 }
 
-template<PTX::Bits B, class T, class S>
-SASS::REDInstruction::Type ReductionGenerator::InstructionType(const PTX::ReductionInstruction<B, T, S> *instruction)
+template<class I, PTX::Bits B, class T, class S>
+typename I::Type ReductionGenerator::InstructionType(const PTX::ReductionInstruction<B, T, S> *instruction)
 {
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
-		return SASS::REDInstruction::Type::U32;
+		return I::Type::U32;
 	}
 	else if constexpr(std::is_same<T, PTX::Int32Type>::value)
 	{
-		return SASS::REDInstruction::Type::S32;
+		return I::Type::S32;
 	}
 	else if constexpr(std::is_same<T, PTX::UInt64Type>::value)
 	{
-		return SASS::REDInstruction::Type::U64;
+		return I::Type::U64;
 	}
 	else if constexpr(std::is_same<T, PTX::Int64Type>::value)
 	{
-		return SASS::REDInstruction::Type::S64;
+		return I::Type::S64;
 	}
 	else if constexpr(std::is_same<T, PTX::Float16x2Type>::value)
 	{
-		return SASS::REDInstruction::Type::F16;
+		return I::Type::F16;
 	}
 	else if constexpr(std::is_same<T, PTX::Float32Type>::value)
 	{
-		return SASS::REDInstruction::Type::F32;
+		return I::Type::F32;
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
-		return SASS::REDInstruction::Type::F64;
+		return I::Type::F64;
 	}
 	Error(instruction, "unsupported type");
 }
 
-template<PTX::Bits B, class T, class S>
-SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(const PTX::ReductionInstruction<B, T, S> *instruction)
+template<class I, PTX::Bits B, class T, class S>
+typename I::Mode ReductionGenerator::InstructionMode(const PTX::ReductionInstruction<B, T, S> *instruction)
 {
 	if constexpr(PTX::is_bit_type<T>::value)
 	{
 		switch (instruction->GetOperation())
 		{
 			case T::ReductionOperation::And:
-				return SASS::REDInstruction::Mode::AND;
+			{
+				return I::Mode::AND;
+			}
 			case T::ReductionOperation::Or:
-				return SASS::REDInstruction::Mode::OR;
+			{
+				return I::Mode::OR;
+			}
 			case T::ReductionOperation::Xor:
-				return SASS::REDInstruction::Mode::XOR;
+			{
+				return I::Mode::XOR;
+			}
 		}
 	}
 	else if constexpr(std::is_same<T, PTX::Float16x2Type>::value)
 	{
 		if (instruction->GetOperation() == T::ReductionOperation::Add)
 		{
-			return SASS::REDInstruction::Mode::ADD;
+			return I::Mode::ADD;
 		}
 	}
 	else
@@ -73,15 +81,25 @@ SASS::REDInstruction::Mode ReductionGenerator::InstructionMode(const PTX::Reduct
 		switch (instruction->GetOperation())
 		{
 			case T::ReductionOperation::Add:
-				return SASS::REDInstruction::Mode::ADD;
+			{
+				return I::Mode::ADD;
+			}
 			case T::ReductionOperation::Increment:
-				return SASS::REDInstruction::Mode::INC;
+			{
+				return I::Mode::INC;
+			}
 			case T::ReductionOperation::Decrement:
-				return SASS::REDInstruction::Mode::DEC;
+			{
+				return I::Mode::DEC;
+			}
 			case T::ReductionOperation::Minimum:
-				return SASS::REDInstruction::Mode::MIN;
+			{
+				return I::Mode::MIN;
+			}
 			case T::ReductionOperation::Maximum:
-				return SASS::REDInstruction::Mode::MAX;
+			{
+				return I::Mode::MAX;
+			}
 		}
 	}
 	Error(instruction, "unsupported operation");
@@ -106,6 +124,12 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 	// Modifiers
 	//   - Scope: *
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<PTX::Bits B, class T, class S>
+void ReductionGenerator::GenerateMaxwell(const PTX::ReductionInstruction<B, T, S> *instruction)
+{
 	// Verify permissible properties
 
 	auto synchronization = instruction->GetSynchronization();
@@ -131,16 +155,22 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
-		auto type = InstructionType(instruction);
-		auto flags = SASS::REDInstruction::Flags::None;
+		auto type = InstructionType<SASS::Maxwell::REDInstruction>(instruction);
+		auto flags = SASS::Maxwell::REDInstruction::Flags::None;
 		if constexpr(B == PTX::Bits::Bits64)
 		{
-			flags |= SASS::REDInstruction::Flags::E;
+			flags |= SASS::Maxwell::REDInstruction::Flags::E;
 		}
-		auto mode = InstructionMode(instruction);
+		auto mode = InstructionMode<SASS::Maxwell::REDInstruction>(instruction);
 
-		this->AddInstruction(new SASS::REDInstruction(address, value, type, mode, flags));
+		this->AddInstruction(new SASS::Maxwell::REDInstruction(address, value, type, mode, flags));
 	}
+}
+
+template<PTX::Bits B, class T, class S>
+void ReductionGenerator::GenerateVolta(const PTX::ReductionInstruction<B, T, S> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

@@ -11,9 +11,12 @@
 namespace Backend { 
 namespace Codegen {
 
+class ArchitectureDispatch;
 class Generator
 {
 public:
+	friend class ArchitectureDispatch;
+
 	Generator(Builder& builder) : m_builder(builder) {}
 
 	[[noreturn]] void Error(const std::string& message)

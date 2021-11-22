@@ -15,6 +15,13 @@ namespace Codegen {
 class Builder
 {
 public:
+	Builder(unsigned int computeCapability) : m_computeCapability(computeCapability) {}
+
+	// Compute capability
+
+	unsigned int GetComputeCapability() const { return m_computeCapability; }
+	void SetComputeCapability(unsigned int computeCapability) { m_computeCapability = computeCapability; }
+
 	// Register Allocation
 
 	const PTX::Analysis::RegisterAllocation *GetRegisterAllocation() const { return m_registerAllocation; }
@@ -150,6 +157,7 @@ private:
 	std::size_t m_constantMemoryAlign = 0;
 
 	unsigned int m_uniqueIndex = 0;
+	unsigned int m_computeCapability = 0;
 };
 
 }

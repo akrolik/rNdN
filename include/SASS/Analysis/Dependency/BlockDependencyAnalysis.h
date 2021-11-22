@@ -26,21 +26,8 @@ public:
 	// Visitors
 
 	void Visit(Instruction *instruction) override;
-	void Visit(PredicatedInstruction *instruction) override;
-
-	void Visit(CS2RInstruction *instruction) override;
-	void Visit(BRAInstruction *instruction) override;
-	void Visit(BRKInstruction *instruction) override;
-	void Visit(CONTInstruction *instruction) override;
-	void Visit(EXITInstruction *instruction) override;
-	void Visit(PBKInstruction *instruction) override;
-	void Visit(PCNTInstruction *instruction) override;
-	void Visit(RETInstruction *instruction) override;
-	void Visit(SSYInstruction *instruction) override;
-	void Visit(SYNCInstruction *instruction) override;
-	void Visit(DEPBARInstruction *instruction) override;
-	void Visit(BARInstruction *instruction) override;
-	void Visit(MEMBARInstruction *instruction) override;
+	void Visit(Maxwell::PredicatedInstruction *instruction) override;
+	void Visit(Volta::PredicatedInstruction *instruction) override;
 
 	void Visit(Address *address) override;
 	void Visit(Register *reg) override;
@@ -48,6 +35,9 @@ public:
 	void Visit(CarryFlag *carry) override;
 
 private:
+	template<class T>
+	void BuildPredicatedInstruction(T *instruction);
+
 	void BuildControlDependencies(Instruction *controlInstruction);
 	void BuildDataDependencies(std::uint16_t operand);
 

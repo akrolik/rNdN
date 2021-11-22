@@ -1,6 +1,6 @@
 #include "Backend/Scheduler/LinearBlockScheduler.h"
 
-#include "Backend/Scheduler/HardwareProperties.h"
+#include "Backend/Scheduler/BarrierGenerator.h"
 
 #include "Utils/Chrono.h"
 
@@ -17,9 +17,9 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 	{
 		scheduledInstructions.push_back(instruction);
 
-		auto latency = HardwareProperties::GetLatency(instruction);
-		auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction);
-		auto readHold = HardwareProperties::GetReadHold(instruction);
+		auto latency = m_profile.GetLatency(instruction);
+		auto barrierLatency = m_profile.GetBarrierLatency(instruction);
+		auto readHold = m_profile.GetReadHold(instruction);
 
 		auto& schedule = instruction->GetSchedule();
 		schedule.SetStall(latency);
@@ -36,14 +36,8 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				schedule.SetReadBarrier(SASS::Schedule::Barrier::SB0);
 			}
 
-			auto barrier = new SASS::DEPBARInstruction(
-				SASS::DEPBARInstruction::Barrier::SB0, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-			);
-			auto& barrierSchedule = barrier->GetSchedule();
-			barrierSchedule.SetStall(HardwareProperties::GetLatency(barrier));
-			barrierSchedule.SetYield(true);
-
-			scheduledInstructions.push_back(barrier);
+			auto barrierInstruction = m_barrierGenerator.Generate(SASS::Schedule::Barrier::SB0);
+			scheduledInstructions.push_back(barrierInstruction);
 		}
 	}
 

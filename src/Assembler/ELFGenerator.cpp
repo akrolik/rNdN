@@ -12,8 +12,9 @@
 #include "Utils/Options.h"
 
 #define ELFABI_NVIDIA_VERSION 7
-#define ELF_VERSION 110
-#define ELF_SREG_SIZE 0x140
+#define ELF_VERSION 114
+#define ELF_SREG_SIZE_MAXWELL 0x140
+#define ELF_SREG_SIZE_VOLTA 0x160
 
 #define EF_CUDA_SM(x) (x)
 #define EF_CUDA_VIRTUAL_SM(x) (x << 16)
@@ -32,7 +33,10 @@
 
 #define R_CUDA_ABS32_HI_20 0x2c
 #define R_CUDA_ABS32_LO_20 0x2b
+#define R_CUDA_ABS32_HI_32 0x38
+#define R_CUDA_ABS32_LO_32 0x39
 #define R_CUDA_ABS24_20 0x2d
+#define R_CUDA_ABS32_32 0x37
 
 #define SZ_SHORT 2
 #define SZ_WORD 4
@@ -189,10 +193,29 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		functionInfoSection->set_link(symbolSection->get_index());
 
 		// Add constant data section:
-		//   - 0x140 base
+		//   - 0x140/0x160 base depending on architecture
 		//   - Space for each parameter
 
-		auto dataSize = ELF_SREG_SIZE + function->GetParametersSize();
+		ELFIO::Elf_Half sregSize = 0;
+		ELFIO::Elf_Xword textAlign = 0; 
+
+		auto computeCapability = program->GetComputeCapability();
+		if (SASS::Maxwell::IsSupported(computeCapability))
+		{
+			sregSize = ELF_SREG_SIZE_MAXWELL;
+			textAlign = 0x20;
+		}
+		else if (SASS::Volta::IsSupported(computeCapability))
+		{
+			sregSize = ELF_SREG_SIZE_VOLTA;
+			textAlign = 0x80;
+		}
+		else
+		{
+			Utils::Logger::LogError("Unsupported compute capability for ELF 'sm_" + std::to_string(computeCapability) + "'");
+		}
+
+		auto dataSize = sregSize + function->GetParametersSize();
 		auto data = new char[dataSize](); // Zero initialized
 
 		auto dataSection = writer.sections.add(".nv.constant0." + function->GetName());
@@ -277,7 +300,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		auto textSection = writer.sections.add(".text." + function->GetName());
 		textSection->set_type(SHT_PROGBITS);
 		textSection->set_flags(SHF_BARRIERS(function->GetBarriers()) | SHF_ALLOC | SHF_EXECINSTR);
-		textSection->set_addr_align(0x20);
+		textSection->set_addr_align(textAlign);
 		textSection->set_link(symbolSection->get_index());
 		textSection->set_data(function->GetText(), function->GetSize());
 
@@ -396,25 +419,44 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		AppendBytes(functionInfoBuffer, DecomposeShort(SZ_WORD));     // Size
 		AppendBytes(functionInfoBuffer, DecomposeWord(ELF_VERSION));  // Version
 
-		// EIATTR_SW2393858_WAR
-		//     Format: EIFMT_NVAL
-		// 
-		//     /*0000*/        .byte   0x01, 0x30
-		//     .zero           2
+		if (SASS::Maxwell::IsSupported(computeCapability))
+		{
+			// EIATTR_SW2393858_WAR
+			//     Format: EIFMT_NVAL
+			// 
+			//     /*0000*/        .byte   0x01, 0x30
+			//     .zero           2
 
-		AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_NVAL});
-		AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_SW2393858_WAR});
-		AppendBytes(functionInfoBuffer, {0, 0}); // Zero
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_NVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_SW2393858_WAR});
+			AppendBytes(functionInfoBuffer, {0, 0}); // Zero
 
-		// EIATTR_SW1850030_WAR
-		//     Format: EIFMT_NVAL
-		//
-		//     /*0004*/        .byte   0x01, 0x2a
-		//     .zero           2
+			// EIATTR_SW1850030_WAR
+			//     Format: EIFMT_NVAL
+			//
+			//     /*0004*/        .byte   0x01, 0x2a
+			//     .zero           2
 
-		AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_NVAL});
-		AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_SW1850030_WAR});
-		AppendBytes(functionInfoBuffer, {0, 0}); // Zero
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_NVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_SW1850030_WAR});
+			AppendBytes(functionInfoBuffer, {0, 0}); // Zero
+		}
+		else if (SASS::Volta::IsSupported(computeCapability))
+		{
+			// EIATTR_SW2861232_WAR
+			//     Format: EIFMT_NVAL
+			//
+			//     /*0004*/        .byte   0x01, 0x35
+			//     .zero           2
+
+			AppendBytes(functionInfoBuffer, {(char)Type::EIFMT_NVAL});
+			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_SW2861232_WAR});
+			AppendBytes(functionInfoBuffer, {0, 0}); // Zero
+		}
+		else
+		{
+			Utils::Logger::LogError("Unsupported compute capability for ELF 'sm_" + std::to_string(computeCapability) + "'");
+		}
 
 		if (function->GetParametersCount() > 0)
 		{
@@ -434,7 +476,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 			AppendBytes(functionInfoBuffer, {(char)Attribute::EIATTR_PARAM_CBANK});
 			AppendBytes(functionInfoBuffer, DecomposeShort(SZ_WORD + 2*SZ_SHORT));          // Size
 			AppendBytes(functionInfoBuffer, DecomposeWord(dataSymbol));                     // Data section index
-			AppendBytes(functionInfoBuffer, DecomposeShort(ELF_SREG_SIZE));                 // Param offset
+			AppendBytes(functionInfoBuffer, DecomposeShort(sregSize));                 // Param offset
 			AppendBytes(functionInfoBuffer, DecomposeShort(function->GetParametersSize())); // Param size
 
 			// EIATTR_CBANK_PARAM_SIZE
@@ -675,7 +717,7 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		//   - Global .text symbol
 
 		symbolWriter.add_symbol(stringWriter,
-			"_param", ELF_SREG_SIZE, function->GetParametersSize(), STB_LOCAL, STT_CUDA_OBJECT, STV_INTERNAL| STO_CUDA_CONSTANT, dataSection->get_index()
+			"_param", sregSize, function->GetParametersSize(), STB_LOCAL, STT_CUDA_OBJECT, STV_INTERNAL| STO_CUDA_CONSTANT, dataSection->get_index()
 		);
 		symbolWriter.add_symbol(stringWriter,
 			function->GetName().c_str(), 0x00000000, textSection->get_size(), STB_GLOBAL, STT_FUNC, STV_DEFAULT | STO_CUDA_ENTRY, textSection->get_index()
@@ -698,11 +740,6 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 				auto symbolIndex = symbolMap.at(relocation.Name);
 				switch (relocation.Kind)
 				{
-					case BinaryFunction::RelocationKind::ABS24_20:
-					{
-						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS24_20);
-						break;
-					}
 					case BinaryFunction::RelocationKind::ABS32_LO_20:
 					{
 						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_LO_20);
@@ -713,10 +750,29 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_HI_20);
 						break;
 					}
+					case BinaryFunction::RelocationKind::ABS32_LO_32:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_LO_32);
+						break;
+					}
+					case BinaryFunction::RelocationKind::ABS32_HI_32:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_HI_32);
+						break;
+					}
+					case BinaryFunction::RelocationKind::ABS24_20:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS24_20);
+						break;
+					}
+					case BinaryFunction::RelocationKind::ABS32_32:
+					{
+						relocationWriter.add_entry(relocation.Address, symbolIndex, (unsigned char)R_CUDA_ABS32_32);
+						break;
+					}
 				}
 			}
 		}
-
 	}
 
 	// Update the symbol count

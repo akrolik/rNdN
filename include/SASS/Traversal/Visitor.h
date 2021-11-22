@@ -20,83 +20,172 @@ class IndirectBranch;
 // Instructions
 
 class Instruction;
-class PredicatedInstruction;
-class SCHIInstruction;
+
+namespace Maxwell {
+	class Instruction;
+	class PredicatedInstruction;
+	class SCHIInstruction;
+}
+
+namespace Volta {
+	class Instruction;
+	class PredicatedInstruction;
+}
 
 // Control
 
-class DivergenceInstruction;
+namespace Maxwell {
+	class DivergenceInstruction;
+	class BRAInstruction;
+	class BRKInstruction;
+	class CONTInstruction;
+	class EXITInstruction;
+	class PBKInstruction;
+	class PCNTInstruction;
+	class RETInstruction;
+	class SSYInstruction;
+	class SYNCInstruction;
+}
 
-class BRAInstruction;
-class BRKInstruction;
-class CONTInstruction;
-class EXITInstruction;
-class PBKInstruction;
-class PCNTInstruction;
-class RETInstruction;
-class SSYInstruction;
-class SYNCInstruction;
+namespace Volta {
+	class ControlInstruction;
+	class DivergenceInstruction;
+	class BRAInstruction;
+	class EXITInstruction;
+	class BSSYInstruction;
+	class BSYNCInstruction;
+}
 
 // Conversion
 
-class F2IInstruction;
-class I2FInstruction;
-class I2IInstruction;
+namespace Maxwell {
+	class F2FInstruction;
+	class F2IInstruction;
+	class I2FInstruction;
+	class I2IInstruction;
+}
+
+namespace Volta {
+	class F2FInstruction;
+	class F2IInstruction;
+	class I2FInstruction;
+	class I2IInstruction;
+	class FRNDInstruction;
+}
 
 // Integer
 
-class BFEInstruction;
-class FLOInstruction;
-class IADDInstruction;
-class IADD3Instruction;
-class IADD32IInstruction;
-class ISCADDInstruction;
-class ISETPInstruction;
-class LOPInstruction;
-class LOP32IInstruction;
-class POPCInstruction;
-class SHLInstruction;
-class SHRInstruction;
-class XMADInstruction;
+namespace Maxwell {
+	class BFEInstruction;
+	class FLOInstruction;
+	class IADDInstruction;
+	class IADD3Instruction;
+	class IADD32IInstruction;
+	class ISCADDInstruction;
+	class ISETPInstruction;
+	class LOPInstruction;
+	class LOP32IInstruction;
+	class POPCInstruction;
+	class SHLInstruction;
+	class SHRInstruction;
+	class XMADInstruction;
+}
+
+namespace Volta {
+	class FLOInstruction;
+	class IADD3Instruction;
+	class IMADInstruction;
+	class ISETPInstruction;
+	class LOP3Instruction;
+	class SHFInstruction;
+}
 
 // Float
 
-class DADDInstruction;
-class DFMAInstruction;
-class DMNMXInstruction;
-class DMULInstruction;
-class DSETPInstruction;
-class MUFUInstruction;
+namespace Maxwell {
+	class DADDInstruction;
+	class DFMAInstruction;
+	class DMNMXInstruction;
+	class DMULInstruction;
+	class DSETPInstruction;
+	class FADDInstruction;
+	class MUFUInstruction;
+}
+
+namespace Volta {
+	class DADDInstruction;
+	class DFMAInstruction;
+	class DMULInstruction;
+	class DSETPInstruction;
+	class FADDInstruction;
+	class MUFUInstruction;
+}
 
 // LoadStore
 
-class ATOMInstruction;
-class ATOMCASInstruction;
-class LDGInstruction;
-class LDSInstruction;
-class MEMBARInstruction;
-class REDInstruction;
-class STGInstruction;
-class STSInstruction;
+namespace Maxwell {
+	class ATOMInstruction;
+	class ATOMCASInstruction;
+	class LDGInstruction;
+	class LDSInstruction;
+	class MEMBARInstruction;
+	class REDInstruction;
+	class STGInstruction;
+	class STSInstruction;
+}
+
+namespace Volta {
+	class ATOMGInstruction;
+	class LDGInstruction;
+	class LDSInstruction;
+	class MEMBARInstruction;
+	class REDInstruction;
+	class STGInstruction;
+	class STSInstruction;
+}
 
 // Misc
 
-class CS2RInstruction;
-class DEPBARInstruction;
-class BARInstruction;
-class NOPInstruction;
-class S2RInstruction;
+namespace Maxwell {
+	class CS2RInstruction;
+	class DEPBARInstruction;
+	class BARInstruction;
+	class NOPInstruction;
+	class S2RInstruction;
+}
+
+namespace Volta {
+	class CS2RInstruction;
+	class DEPBARInstruction;
+	class BARInstruction;
+	class NOPInstruction;
+	class S2RInstruction;
+}
 
 // Movement
 
-class MOVInstruction;
-class MOV32IInstruction;
-class SELInstruction;
-class SHFLInstruction;
+namespace Maxwell {
+	class MOVInstruction;
+	class MOV32IInstruction;
+	class SELInstruction;
+	class SHFLInstruction;
+}
+
+namespace Volta {
+	class MOVInstruction;
+	class SELInstruction;
+	class SHFLInstruction;
+}
 
 // Predicate
 
-class PSETPInstruction;
+namespace Maxwell {
+	class PSETPInstruction;
+}
+
+namespace Volta {
+	class PLOP3Instruction;
+}
 
 // Operands
 
@@ -138,85 +227,140 @@ public:
 	// Instructions
 
 	virtual void Visit(Instruction *instruction);
-	virtual void Visit(PredicatedInstruction *instruction);
-	virtual void Visit(SCHIInstruction *instruction);
+
+	virtual void Visit(Maxwell::Instruction *instruction);
+	virtual void Visit(Maxwell::PredicatedInstruction *instruction);
+	virtual void Visit(Maxwell::SCHIInstruction *instruction);
+
+	virtual void Visit(Volta::Instruction *instruction);
+	virtual void Visit(Volta::PredicatedInstruction *instruction);
 
 	// Control
 
-	virtual void Visit(DivergenceInstruction *instruction);
+	virtual void Visit(Maxwell::DivergenceInstruction *instruction);
 
-	virtual void Visit(SSYInstruction *instruction);
-	virtual void Visit(PBKInstruction *instruction);
-	virtual void Visit(PCNTInstruction *instruction);
+	virtual void Visit(Maxwell::SSYInstruction *instruction);
+	virtual void Visit(Maxwell::PBKInstruction *instruction);
+	virtual void Visit(Maxwell::PCNTInstruction *instruction);
 
-	virtual void Visit(SYNCInstruction *instruction);
-	virtual void Visit(BRKInstruction *instruction);
-	virtual void Visit(CONTInstruction *instruction);
+	virtual void Visit(Maxwell::SYNCInstruction *instruction);
+	virtual void Visit(Maxwell::BRKInstruction *instruction);
+	virtual void Visit(Maxwell::CONTInstruction *instruction);
 
-	virtual void Visit(BRAInstruction *instruction);
-	virtual void Visit(EXITInstruction *instruction);
-	virtual void Visit(RETInstruction *instruction);
+	virtual void Visit(Maxwell::BRAInstruction *instruction);
+	virtual void Visit(Maxwell::EXITInstruction *instruction);
+	virtual void Visit(Maxwell::RETInstruction *instruction);
+
+	virtual void Visit(Volta::ControlInstruction *instruction);
+	virtual void Visit(Volta::DivergenceInstruction *instruction);
+
+	virtual void Visit(Volta::BRAInstruction *instruction);
+	virtual void Visit(Volta::EXITInstruction *instruction);
+	virtual void Visit(Volta::BSSYInstruction *instruction);
+	virtual void Visit(Volta::BSYNCInstruction *instruction);
 
 	// Conversion
 
-	virtual void Visit(F2IInstruction *instruction);
-	virtual void Visit(I2FInstruction *instruction);
-	virtual void Visit(I2IInstruction *instruction);
+	virtual void Visit(Maxwell::F2FInstruction *instruction);
+	virtual void Visit(Maxwell::F2IInstruction *instruction);
+	virtual void Visit(Maxwell::I2FInstruction *instruction);
+	virtual void Visit(Maxwell::I2IInstruction *instruction);
+
+	virtual void Visit(Volta::F2FInstruction *instruction);
+	virtual void Visit(Volta::F2IInstruction *instruction);
+	virtual void Visit(Volta::I2FInstruction *instruction);
+	virtual void Visit(Volta::I2IInstruction *instruction);
+	virtual void Visit(Volta::FRNDInstruction *instruction);
 
 	// Integer
 
-	virtual void Visit(BFEInstruction *instruction);
-	virtual void Visit(FLOInstruction *instruction);
-	virtual void Visit(IADDInstruction *instruction);
-	virtual void Visit(IADD3Instruction *instruction);
-	virtual void Visit(IADD32IInstruction *instruction);
-	virtual void Visit(ISCADDInstruction *instruction);
-	virtual void Visit(ISETPInstruction *instruction);
-	virtual void Visit(LOPInstruction *instruction);
-	virtual void Visit(LOP32IInstruction *instruction);
-	virtual void Visit(POPCInstruction *instruction);
-	virtual void Visit(SHLInstruction *instruction);
-	virtual void Visit(SHRInstruction *instruction);
-	virtual void Visit(XMADInstruction *instruction);
+	virtual void Visit(Maxwell::BFEInstruction *instruction);
+	virtual void Visit(Maxwell::FLOInstruction *instruction);
+	virtual void Visit(Maxwell::IADDInstruction *instruction);
+	virtual void Visit(Maxwell::IADD3Instruction *instruction);
+	virtual void Visit(Maxwell::IADD32IInstruction *instruction);
+	virtual void Visit(Maxwell::ISCADDInstruction *instruction);
+	virtual void Visit(Maxwell::ISETPInstruction *instruction);
+	virtual void Visit(Maxwell::LOPInstruction *instruction);
+	virtual void Visit(Maxwell::LOP32IInstruction *instruction);
+	virtual void Visit(Maxwell::POPCInstruction *instruction);
+	virtual void Visit(Maxwell::SHLInstruction *instruction);
+	virtual void Visit(Maxwell::SHRInstruction *instruction);
+	virtual void Visit(Maxwell::XMADInstruction *instruction);
+
+	virtual void Visit(Volta::FLOInstruction *instruction);
+	virtual void Visit(Volta::IADD3Instruction *instruction);
+	virtual void Visit(Volta::IMADInstruction *instruction);
+	virtual void Visit(Volta::ISETPInstruction *instruction);
+	virtual void Visit(Volta::LOP3Instruction *instruction);
+	virtual void Visit(Volta::SHFInstruction *instruction);
 
 	// Float
 
-	virtual void Visit(DADDInstruction *instruction);
-	virtual void Visit(DFMAInstruction *instruction);
-	virtual void Visit(DMNMXInstruction *instruction);
-	virtual void Visit(DMULInstruction *instruction);
-	virtual void Visit(DSETPInstruction *instruction);
-	virtual void Visit(MUFUInstruction *instruction);
+	virtual void Visit(Maxwell::DADDInstruction *instruction);
+	virtual void Visit(Maxwell::DFMAInstruction *instruction);
+	virtual void Visit(Maxwell::DMNMXInstruction *instruction);
+	virtual void Visit(Maxwell::DMULInstruction *instruction);
+	virtual void Visit(Maxwell::DSETPInstruction *instruction);
+	virtual void Visit(Maxwell::FADDInstruction *instruction);
+	virtual void Visit(Maxwell::MUFUInstruction *instruction);
+
+	virtual void Visit(Volta::DADDInstruction *instruction);
+	virtual void Visit(Volta::DFMAInstruction *instruction);
+	virtual void Visit(Volta::DMULInstruction *instruction);
+	virtual void Visit(Volta::DSETPInstruction *instruction);
+	virtual void Visit(Volta::FADDInstruction *instruction);
+	virtual void Visit(Volta::MUFUInstruction *instruction);
 
 	// LoadStore
 
-	virtual void Visit(ATOMInstruction *instruction);
-	virtual void Visit(ATOMCASInstruction *instruction);
-	virtual void Visit(LDGInstruction *instruction);
-	virtual void Visit(LDSInstruction *instruction);
-	virtual void Visit(MEMBARInstruction *instruction);
-	virtual void Visit(REDInstruction *instruction);
-	virtual void Visit(STGInstruction *instruction);
-	virtual void Visit(STSInstruction *instruction);
+	virtual void Visit(Maxwell::ATOMInstruction *instruction);
+	virtual void Visit(Maxwell::ATOMCASInstruction *instruction);
+	virtual void Visit(Maxwell::LDGInstruction *instruction);
+	virtual void Visit(Maxwell::LDSInstruction *instruction);
+	virtual void Visit(Maxwell::MEMBARInstruction *instruction);
+	virtual void Visit(Maxwell::REDInstruction *instruction);
+	virtual void Visit(Maxwell::STGInstruction *instruction);
+	virtual void Visit(Maxwell::STSInstruction *instruction);
+
+	virtual void Visit(Volta::ATOMGInstruction *instruction);
+	virtual void Visit(Volta::LDGInstruction *instruction);
+	virtual void Visit(Volta::LDSInstruction *instruction);
+	virtual void Visit(Volta::MEMBARInstruction *instruction);
+	virtual void Visit(Volta::REDInstruction *instruction);
+	virtual void Visit(Volta::STGInstruction *instruction);
+	virtual void Visit(Volta::STSInstruction *instruction);
 
 	// Misc
 
-	virtual void Visit(CS2RInstruction *instruction);
-	virtual void Visit(DEPBARInstruction *instruction);
-	virtual void Visit(BARInstruction *instruction);
-	virtual void Visit(NOPInstruction *instruction);
-	virtual void Visit(S2RInstruction *instruction);
+	virtual void Visit(Maxwell::CS2RInstruction *instruction);
+	virtual void Visit(Maxwell::DEPBARInstruction *instruction);
+	virtual void Visit(Maxwell::BARInstruction *instruction);
+	virtual void Visit(Maxwell::NOPInstruction *instruction);
+	virtual void Visit(Maxwell::S2RInstruction *instruction);
+
+	virtual void Visit(Volta::CS2RInstruction *instruction);
+	virtual void Visit(Volta::DEPBARInstruction *instruction);
+	virtual void Visit(Volta::BARInstruction *instruction);
+	virtual void Visit(Volta::NOPInstruction *instruction);
+	virtual void Visit(Volta::S2RInstruction *instruction);
 
 	// Movement
 
-	virtual void Visit(MOVInstruction *instruction);
-	virtual void Visit(MOV32IInstruction *instruction);
-	virtual void Visit(SELInstruction *instruction);
-	virtual void Visit(SHFLInstruction *instruction);
+	virtual void Visit(Maxwell::MOVInstruction *instruction);
+	virtual void Visit(Maxwell::MOV32IInstruction *instruction);
+	virtual void Visit(Maxwell::SELInstruction *instruction);
+	virtual void Visit(Maxwell::SHFLInstruction *instruction);
+
+	virtual void Visit(Volta::MOVInstruction *instruction);
+	virtual void Visit(Volta::SELInstruction *instruction);
+	virtual void Visit(Volta::SHFLInstruction *instruction);
 
 	// Predicate
 
-	virtual void Visit(PSETPInstruction *instruction);
+	virtual void Visit(Maxwell::PSETPInstruction *instruction);
+
+	virtual void Visit(Volta::PLOP3Instruction *instruction);
 
 	// Operands
 

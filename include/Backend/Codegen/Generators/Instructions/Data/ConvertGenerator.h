@@ -19,8 +19,14 @@ public:
 
 	void Generate(const PTX::_ConvertInstruction *instruction);
 
-	template<class T1, class T2>
-	void Visit(const PTX::ConvertInstruction<T1, T2> *instruction);
+	template<class D, class S>
+	void Visit(const PTX::ConvertInstruction<D, S> *instruction);
+
+	template<class D, class S>
+	void GenerateMaxwell(const PTX::ConvertInstruction<D, S> *instruction);
+
+	template<class D, class S>
+	void GenerateVolta(const PTX::ConvertInstruction<D, S> *instruction);
 
 private:
 	template<class E, class T>

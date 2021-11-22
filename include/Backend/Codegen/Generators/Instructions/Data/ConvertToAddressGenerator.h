@@ -21,6 +21,12 @@ public:
 
 	template<PTX::Bits B, class T, class S>
 	void Visit(const PTX::ConvertToAddressInstruction<B, T, S> *instruction);
+
+	template<PTX::Bits B, class T, class S>
+	void GenerateMaxwell(const PTX::ConvertToAddressInstruction<B, T, S> *instruction);
+
+	template<PTX::Bits B, class T, class S>
+	void GenerateVolta(const PTX::ConvertToAddressInstruction<B, T, S> *instruction);
 };
 
 }

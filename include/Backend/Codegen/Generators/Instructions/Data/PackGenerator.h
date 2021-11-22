@@ -21,6 +21,12 @@ public:
 
 	template<class T, PTX::VectorSize V>
 	void Visit(const PTX::PackInstruction<T, V> *instruction);
+
+	template<class T, PTX::VectorSize V>
+	void GenerateMaxwell(const PTX::PackInstruction<T, V> *instruction);
+
+	template<class T, PTX::VectorSize V>
+	void GenerateVolta(const PTX::PackInstruction<T, V> *instruction);
 };
 
 }

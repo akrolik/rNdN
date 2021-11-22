@@ -63,7 +63,15 @@ void BlockDependencyAnalysis::InitializeSection(bool control)
 
 void BlockDependencyAnalysis::Visit(Instruction *instruction)
 {
-	// Process source followed by destination operands
+	// Control instructions create new blocks
+
+	if (instruction->GetInstructionClass() == Instruction::InstructionClass::Control)
+	{
+		BuildControlDependencies(instruction);
+		return;
+	}
+
+	// Process source followed by destination operands. Node already added if predicated
 
 	if (!m_predicated)
 	{
@@ -89,8 +97,29 @@ void BlockDependencyAnalysis::Visit(Instruction *instruction)
 	}
 }
 
-void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
+void BlockDependencyAnalysis::Visit(Maxwell::PredicatedInstruction *instruction)
 {
+	BuildPredicatedInstruction(instruction);
+}
+
+void BlockDependencyAnalysis::Visit(Volta::PredicatedInstruction *instruction)
+{
+	BuildPredicatedInstruction(instruction);
+}
+
+template<class T>
+void BlockDependencyAnalysis::BuildPredicatedInstruction(T *instruction)
+{
+	// Control instructions create new blocks
+
+	if (instruction->GetInstructionClass() == Instruction::InstructionClass::Control)
+	{
+		BuildControlDependencies(instruction);
+		return;
+	}
+
+	// Insert new instruction node before handling dependencies
+
 	m_node = m_graph->InsertNode(instruction);
 
 	if (auto predicate = instruction->GetPredicate())
@@ -109,71 +138,6 @@ void BlockDependencyAnalysis::Visit(PredicatedInstruction *instruction)
 	Visit(static_cast<Instruction *>(instruction));
 
 	m_predicated = false;
-}
-
-void BlockDependencyAnalysis::Visit(CS2RInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(BRAInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(BRKInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(CONTInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(EXITInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(PBKInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(PCNTInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(RETInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(SSYInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(SYNCInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(DEPBARInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(BARInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
-}
-
-void BlockDependencyAnalysis::Visit(MEMBARInstruction *instruction)
-{
-	BuildControlDependencies(instruction);
 }
 
 void BlockDependencyAnalysis::Visit(Address *address)

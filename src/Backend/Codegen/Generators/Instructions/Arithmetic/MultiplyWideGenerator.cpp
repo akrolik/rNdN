@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -23,6 +25,12 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 	//   - UInt16, UInt32
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void MultiplyWideGenerator::GenerateMaxwell(const PTX::MultiplyWideInstruction<T> *instruction)
+{
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -43,14 +51,14 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 			auto value = immediateSourceB->GetValue();
 			if (value == 0)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, SASS::RZ));
-				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, SASS::RZ));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, SASS::RZ));
 				return;
 			}
 			else if (value == 1)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, sourceA));
-				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, sourceA));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, SASS::RZ));
 				return;
 			}
 			else if (value == Utils::Math::Power2(value))
@@ -60,17 +68,17 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 				auto logValue = Utils::Math::Log2(value);
 				immediateSourceB->SetValue(logValue);
 
-				auto flagsSHR = SASS::SHRInstruction::Flags::None;
+				auto flagsSHR = SASS::Maxwell::SHRInstruction::Flags::None;
 				if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 				{
-					flagsSHR |= SASS::SHRInstruction::Flags::U32;
+					flagsSHR |= SASS::Maxwell::SHRInstruction::Flags::U32;
 				}
 
-				this->AddInstruction(new SASS::SHLInstruction(temp, sourceA, immediateSourceB));
-				this->AddInstruction(new SASS::SHRInstruction(
+				this->AddInstruction(new SASS::Maxwell::SHLInstruction(temp, sourceA, immediateSourceB));
+				this->AddInstruction(new SASS::Maxwell::SHRInstruction(
 					destination_Hi, sourceA, new SASS::I32Immediate(32 - logValue), flagsSHR
 				));
-				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, temp));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, temp));
 				return;
 			}
 
@@ -100,33 +108,43 @@ void MultiplyWideGenerator::Visit(const PTX::MultiplyWideInstruction<T> *instruc
 		auto temp3 = this->m_builder.AllocateTemporaryRegister();
 		auto temp4 = this->m_builder.AllocateTemporaryRegister();
 
-		this->AddInstruction(new SASS::XMADInstruction(temp0, sourceA, sourceB, SASS::RZ));
-		this->AddInstruction(new SASS::XMADInstruction(temp1, sourceA, sourceB, SASS::RZ));
-		this->AddInstruction(new SASS::XMADInstruction(
-			temp2, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::MRG, SASS::XMADInstruction::Flags::H1_B
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(temp0, sourceA, sourceB, SASS::RZ));
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(temp1, sourceA, sourceB, SASS::RZ));
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			temp2, sourceA, sourceB, SASS::RZ,
+			SASS::Maxwell::XMADInstruction::Mode::MRG, SASS::Maxwell::XMADInstruction::Flags::H1_B
 		));
-		this->AddInstruction(new SASS::XMADInstruction(
-			temp3, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::None, SASS::XMADInstruction::Flags::H1_B
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			temp3, sourceA, sourceB, SASS::RZ,
+			SASS::Maxwell::XMADInstruction::Mode::None, SASS::Maxwell::XMADInstruction::Flags::H1_B
 		));
-		this->AddInstruction(new SASS::XMADInstruction(
-			temp0, sourceA, sourceB, temp0, SASS::XMADInstruction::Mode::CHI, SASS::XMADInstruction::Flags::H1_A
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			temp0, sourceA, sourceB, temp0,
+			SASS::Maxwell::XMADInstruction::Mode::CHI, SASS::Maxwell::XMADInstruction::Flags::H1_A
 		));
-		this->AddInstruction(new SASS::XMADInstruction(
-			temp4, sourceA, sourceB, SASS::RZ, SASS::XMADInstruction::Mode::None,
-			SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			temp4, sourceA, sourceB, SASS::RZ, SASS::Maxwell::XMADInstruction::Mode::None,
+			SASS::Maxwell::XMADInstruction::Flags::H1_A | SASS::Maxwell::XMADInstruction::Flags::H1_B
 		));
-		this->AddInstruction(new SASS::XMADInstruction(
-			destination_Lo, sourceA, temp2, temp1, SASS::XMADInstruction::Mode::PSL,
-			SASS::XMADInstruction::Flags::CBCC | SASS::XMADInstruction::Flags::H1_A | SASS::XMADInstruction::Flags::H1_B
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			destination_Lo, sourceA, temp2, temp1, SASS::Maxwell::XMADInstruction::Mode::PSL,
+			SASS::Maxwell::XMADInstruction::Flags::CBCC | SASS::Maxwell::XMADInstruction::Flags::H1_A |
+			SASS::Maxwell::XMADInstruction::Flags::H1_B
 		));
-		this->AddInstruction(new SASS::IADD3Instruction(
-			destination_Hi, temp0, temp3, temp4, SASS::IADD3Instruction::Flags::RS
+		this->AddInstruction(new SASS::Maxwell::IADD3Instruction(
+			destination_Hi, temp0, temp3, temp4, SASS::Maxwell::IADD3Instruction::Flags::RS
 		));
 	}
 	else
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void MultiplyWideGenerator::GenerateVolta(const PTX::MultiplyWideInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

@@ -12,21 +12,30 @@ class Relocation : public Node
 {
 public:
 	enum class Kind {
-		ABS24_20,
 		ABS32_LO_20,
-		ABS32_HI_20
+		ABS32_HI_20,
+		ABS32_LO_32,
+		ABS32_HI_32,
+		ABS24_20,
+		ABS32_32
 	};
 
 	static std::string KindString(Kind kind)
 	{
 		switch (kind)
 		{
-			case Kind::ABS24_20:
-				return "ABS24_20";
 			case Kind::ABS32_LO_20:
 				return "ABS32_LO_20";
 			case Kind::ABS32_HI_20:
 				return "ABS32_HI_20";
+			case Kind::ABS32_LO_32:
+				return "ABS32_LO_32";
+			case Kind::ABS32_HI_32:
+				return "ABS32_HI_32";
+			case Kind::ABS24_20:
+				return "ABS24_20";
+			case Kind::ABS32_32:
+				return "ABS32_32";
 		}
 		return "<unknown>";
 	}

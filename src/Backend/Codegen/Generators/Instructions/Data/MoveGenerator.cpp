@@ -4,6 +4,8 @@
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -27,6 +29,12 @@ void MoveGenerator::Visit(const PTX::MoveInstruction<T> *instruction)
 	//   - Float32, Float64
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void MoveGenerator::GenerateMaxwell(const PTX::MoveInstruction<T> *instruction)
+{
 	if constexpr(std::is_same<T, PTX::PredicateType>::value)
 	{
 		// Generate operands
@@ -37,18 +45,18 @@ void MoveGenerator::Visit(const PTX::MoveInstruction<T> *instruction)
 
 		// Flags
 
-		auto flags = SASS::PSETPInstruction::Flags::None;
+		auto flags = SASS::Maxwell::PSETPInstruction::Flags::None;
 		if (source_Not)
 		{
-			flags |= SASS::PSETPInstruction::Flags::NOT_A;
+			flags |= SASS::Maxwell::PSETPInstruction::Flags::NOT_A;
 		}
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::PSETPInstruction(
+		this->AddInstruction(new SASS::Maxwell::PSETPInstruction(
 			destination, SASS::PT, source, SASS::PT, SASS::PT,
-			SASS::PSETPInstruction::BooleanOperator1::AND,
-			SASS::PSETPInstruction::BooleanOperator2::AND,
+			SASS::Maxwell::PSETPInstruction::BooleanOperator1::AND,
+			SASS::Maxwell::PSETPInstruction::BooleanOperator2::AND,
 			flags
 		));
 	}
@@ -64,12 +72,18 @@ void MoveGenerator::Visit(const PTX::MoveInstruction<T> *instruction)
 
 		// Generate instruction (no overlap unless equal)
 
-		this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
+		this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(destination_Hi, source_Hi));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, source_Hi));
 		}
 	}
+}
+
+template<class T>
+void MoveGenerator::GenerateVolta(const PTX::MoveInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

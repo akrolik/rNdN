@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/AddressGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -11,32 +13,32 @@ void LoadNCGenerator::Generate(const PTX::_LoadNCInstruction *instruction)
 	instruction->Dispatch(*this);
 }
 
-template<class T>
-SASS::LDGInstruction::Type LoadNCGenerator::InstructionType()
+template<class I, class T>
+typename I::Type LoadNCGenerator::InstructionType()
 {
 	if constexpr(std::is_same<T, PTX::UInt8Type>::value)
 	{
-		return SASS::LDGInstruction::Type::U8;
+		return I::Type::U8;
 	}
 	else if constexpr(std::is_same<T, PTX::Int8Type>::value)
 	{
-		return SASS::LDGInstruction::Type::S8;
+		return I::Type::S8;
 	}
 	else if constexpr(std::is_same<T, PTX::UInt16Type>::value)
 	{
-		return SASS::LDGInstruction::Type::U16;
+		return I::Type::U16;
 	}
 	else if constexpr(std::is_same<T, PTX::Int16Type>::value)
 	{
-		return SASS::LDGInstruction::Type::S16;
+		return I::Type::S16;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits32)
 	{
-		return SASS::LDGInstruction::Type::X32;
+		return I::Type::X32;
 	}
 	else if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		return SASS::LDGInstruction::Type::X64;
+		return I::Type::X64;
 	}
 	Error("load.nc for type " + T::Name());
 }
@@ -52,6 +54,12 @@ void LoadNCGenerator::Visit(const PTX::LoadNCInstruction<B, T, S> *instruction)
 	// Spaces: Global
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<PTX::Bits B, class T, class S>
+void LoadNCGenerator::GenerateMaxwell(const PTX::LoadNCInstruction<B, T, S> *instruction)
+{
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
 		// Generate operands
@@ -64,20 +72,26 @@ void LoadNCGenerator::Visit(const PTX::LoadNCInstruction<B, T, S> *instruction)
 
 		// Generate instruction
 
-		auto type = InstructionType<T>();
-		auto flags = SASS::LDGInstruction::Flags::None;
+		auto type = InstructionType<SASS::Maxwell::LDGInstruction, T>();
+		auto flags = SASS::Maxwell::LDGInstruction::Flags::None;
 		if constexpr(B == PTX::Bits::Bits64)
 		{
-			flags = SASS::LDGInstruction::Flags::E;
+			flags = SASS::Maxwell::LDGInstruction::Flags::E;
 		}
-		auto cache = SASS::LDGInstruction::Cache::CI;
+		auto cache = SASS::Maxwell::LDGInstruction::Cache::CI;
 
-		this->AddInstruction(new SASS::LDGInstruction(destination, address, type, cache, flags));
+		this->AddInstruction(new SASS::Maxwell::LDGInstruction(destination, address, type, cache, flags));
 	}
 	else
 	{
 		Error(instruction, "unsupported space");
 	}
+}
+
+template<PTX::Bits B, class T, class S>
+void LoadNCGenerator::GenerateVolta(const PTX::LoadNCInstruction<B, T, S> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

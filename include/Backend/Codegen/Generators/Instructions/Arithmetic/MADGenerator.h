@@ -21,6 +21,12 @@ public:
 
 	template<class T>
 	void Visit(const PTX::MADInstruction<T> *instruction);
+
+	template<class T>
+	void GenerateMaxwell(const PTX::MADInstruction<T> *instruction);
+
+	template<class T>
+	void GenerateVolta(const PTX::MADInstruction<T> *instruction);
 };
 
 }

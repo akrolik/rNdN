@@ -15,6 +15,8 @@ public:
 	inline const static std::string Name = "Parameter space allocator";
 	inline const static std::string ShortName = "param";
 
+	ParameterSpaceAllocator(unsigned int computeCapability) : m_computeCapability(computeCapability) {}
+
 	void Analyze(const FunctionDefinition<VoidType> *function);
 	const ParameterSpaceAllocation *GetSpaceAllocation() { return m_allocation; }
 
@@ -27,6 +29,9 @@ public:
 	void Visit(const _TypedVariableDeclaration *declaration) override;
 
 private:
+	std::size_t GetParameterOffset() const;
+
+	unsigned int m_computeCapability = 0;
 	ParameterSpaceAllocation *m_allocation = nullptr;
 };
 

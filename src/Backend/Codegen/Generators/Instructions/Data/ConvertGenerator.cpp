@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -84,6 +86,12 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 	//       - D == S == Float*
 	//   - ConvertFlushSubnormal: Float32<D/S>
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class D, class S>
+void ConvertGenerator::GenerateMaxwell(const PTX::ConvertInstruction<D, S> *instruction)
+{
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -107,10 +115,10 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			{
 				// Converting to same type, no modifier possible, simple move
 
-				this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
 				if constexpr(S::TypeBits == PTX::Bits::Bits64)
 				{
-					this->AddInstruction(new SASS::MOVInstruction(destination_Hi, source_Hi));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, source_Hi));
 				}
 			}
 			else
@@ -132,16 +140,16 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 						}
 						else
 						{
-							auto flags = SASS::I2IInstruction::Flags::SAT;
+							auto flags = SASS::Maxwell::I2IInstruction::Flags::SAT;
 
 							// Conversion types
 
-							auto destinationType = GetConversionType<SASS::I2IInstruction::DestinationType, D>();
-							auto sourceType = GetConversionType<SASS::I2IInstruction::SourceType, S>();
+							auto destinationType = GetConversionType<SASS::Maxwell::I2IInstruction::DestinationType, D>();
+							auto sourceType = GetConversionType<SASS::Maxwell::I2IInstruction::SourceType, S>();
 
 							// Instruction
 
-							this->AddInstruction(new SASS::I2IInstruction(
+							this->AddInstruction(new SASS::Maxwell::I2IInstruction(
 								destination_Lo, source_Lo, destinationType, sourceType, flags
 							));
 						}
@@ -152,8 +160,8 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 						{
 							// Simple move for 64-bit to 64-bit
 
-							this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
-							this->AddInstruction(new SASS::MOVInstruction(destination_Hi, source_Hi));
+							this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
+							this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, source_Hi));
 						}
 						else // Also valid for S::TypeBits == PTX::Bits::Bits64, as we ignore the upper bits
 						{
@@ -161,7 +169,7 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 
 							if constexpr(D::TypeBits == PTX::Bits::Bits32)
 							{
-								this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
+								this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
 							}
 							else
 							{
@@ -171,9 +179,9 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 
 									auto mask = std::numeric_limits<typename D::SystemType>::max();
 
-									this->AddInstruction(new SASS::LOP32IInstruction(
+									this->AddInstruction(new SASS::Maxwell::LOP32IInstruction(
 										destination_Lo, source_Lo, new SASS::I32Immediate(mask),
-										SASS::LOP32IInstruction::BooleanOperator::AND
+										SASS::Maxwell::LOP32IInstruction::BooleanOperator::AND
 									));
 								}
 								else
@@ -183,7 +191,7 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 									auto msb = PTX::BitSize<D::TypeBits>::NumBits;
 									auto extend = msb << 8;
 
-									this->AddInstruction(new SASS::BFEInstruction(
+									this->AddInstruction(new SASS::Maxwell::BFEInstruction(
 										destination_Lo, source_Lo, new SASS::I32Immediate(extend)
 									));
 								}
@@ -195,13 +203,13 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 				{
 					if constexpr(PTX::is_unsigned_int_type<S>::value)
 					{
-						this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
+						this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
 
 						// Sign extend by setting to zero
 
 						if constexpr(D::TypeBits == PTX::Bits::Bits64)
 						{
-							this->AddInstruction(new SASS::MOVInstruction(destination_Hi, SASS::RZ));
+							this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, SASS::RZ));
 						}
 					}
 					else
@@ -210,7 +218,7 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 
 						if constexpr(S::TypeBits == PTX::Bits::Bits32)
 						{
-							this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
+							this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
 						}
 						else
 						{
@@ -219,14 +227,14 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 							auto msb = PTX::BitSize<S::TypeBits>::NumBits;
 							auto extend = msb << 8;
 
-							this->AddInstruction(new SASS::BFEInstruction(
+							this->AddInstruction(new SASS::Maxwell::BFEInstruction(
 								destination_Lo, source_Lo, new SASS::I32Immediate(extend)
 							));
 						}
 
 						if constexpr(D::TypeBits == PTX::Bits::Bits64)
 						{
-							this->AddInstruction(new SASS::SHRInstruction(
+							this->AddInstruction(new SASS::Maxwell::SHRInstruction(
 								destination_Hi, destination_Lo, new SASS::I32Immediate(0x1f)
 							));
 						}
@@ -238,34 +246,34 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 		{
 			// Rounding modifier
 
-			auto round = SASS::F2IInstruction::Round::ROUND;
+			auto round = SASS::Maxwell::F2IInstruction::Round::ROUND;
 			switch (instruction->GetRoundingMode())
 			{
 				// case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Nearest:
 				// {
-				// 	round = SASS::F2IInstruction::Round::ROUND;
+				// 	round = SASS::Maxwell::F2IInstruction::Round::ROUND;
 				// 	break;
 				// }
 				case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Zero:
 				{
-					round = SASS::F2IInstruction::Round::TRUNC;
+					round = SASS::Maxwell::F2IInstruction::Round::TRUNC;
 					break;
 				}
 				case PTX::ConvertRoundingModifier<D, S>::RoundingMode::NegativeInfinity:
 				{
-					round = SASS::F2IInstruction::Round::FLOOR;
+					round = SASS::Maxwell::F2IInstruction::Round::FLOOR;
 					break;
 				}
 				case PTX::ConvertRoundingModifier<D, S>::RoundingMode::PositiveInfinity:
 				{
-					round = SASS::F2IInstruction::Round::CEIL;
+					round = SASS::Maxwell::F2IInstruction::Round::CEIL;
 					break;
 				}
 			}
 
 			// Saturate, ftz modifiers
 
-			auto flags = SASS::F2IInstruction::Flags::None;
+			auto flags = SASS::Maxwell::F2IInstruction::Flags::None;
 			if (instruction->GetSaturate())
 			{
 				// Redundant, no effect
@@ -274,18 +282,18 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			{
 				if (instruction->GetFlushSubnormal())
 				{
-					flags |= SASS::F2IInstruction::Flags::FTZ;
+					flags |= SASS::Maxwell::F2IInstruction::Flags::FTZ;
 				}
 			}
 
 			// Conversion types
 
-			auto destinationType = GetConversionType<SASS::F2IInstruction::DestinationType, D>();
-			auto sourceType = GetConversionType<SASS::F2IInstruction::SourceType, S>();
+			auto destinationType = GetConversionType<SASS::Maxwell::F2IInstruction::DestinationType, D>();
+			auto sourceType = GetConversionType<SASS::Maxwell::F2IInstruction::SourceType, S>();
 
 			// Instruction
 
-			this->AddInstruction(new SASS::F2IInstruction(
+			this->AddInstruction(new SASS::Maxwell::F2IInstruction(
 				destination, source, destinationType, sourceType, round, flags
 			));
 		}
@@ -300,34 +308,34 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 		{
 			// Rounding modifier
 
-			auto round = SASS::I2FInstruction::Round::RN;
+			auto round = SASS::Maxwell::I2FInstruction::Round::RN;
 			switch (instruction->GetRoundingMode())
 			{
 				// case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Nearest:
 				// {
-				// 	round = SASS::I2FInstruction::Round::RN;
+				// 	round = SASS::Maxwell::I2FInstruction::Round::RN;
 				// 	break;
 				// }
 				case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Zero:
 				{
-					round = SASS::I2FInstruction::Round::RZ;
+					round = SASS::Maxwell::I2FInstruction::Round::RZ;
 					break;
 				}
 				case PTX::ConvertRoundingModifier<D, S>::RoundingMode::NegativeInfinity:
 				{
-					round = SASS::I2FInstruction::Round::RM;
+					round = SASS::Maxwell::I2FInstruction::Round::RM;
 					break;
 				}
 				case PTX::ConvertRoundingModifier<D, S>::RoundingMode::PositiveInfinity:
 				{
-					round = SASS::I2FInstruction::Round::RP;
+					round = SASS::Maxwell::I2FInstruction::Round::RP;
 					break;
 				}
 			}
 
 			// ftz modifier
 
-			auto flags = SASS::I2FInstruction::Flags::None;
+			auto flags = SASS::Maxwell::I2FInstruction::Flags::None;
 			if constexpr(std::is_same<D, PTX::Float32Type>::value)
 			{
 				if (instruction->GetFlushSubnormal())
@@ -338,12 +346,12 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 
 			// Conversion types
 
-			auto destinationType = GetConversionType<SASS::I2FInstruction::DestinationType, D>();
-			auto sourceType = GetConversionType<SASS::I2FInstruction::SourceType, S>();
+			auto destinationType = GetConversionType<SASS::Maxwell::I2FInstruction::DestinationType, D>();
+			auto sourceType = GetConversionType<SASS::Maxwell::I2FInstruction::SourceType, S>();
 
 			// Instruction
 
-			this->AddInstruction(new SASS::I2FInstruction(
+			this->AddInstruction(new SASS::Maxwell::I2FInstruction(
 				destination, source, destinationType, sourceType, round, flags
 			));
 
@@ -353,17 +361,17 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			{
 				if constexpr(std::is_same<D, PTX::Float32Type>::value)
 				{
-					this->AddInstruction(new SASS::FADDInstruction(
-						destination, destination, SASS::RZ, SASS::FADDInstruction::Round::RN,
-						SASS::FADDInstruction::Flags::SAT | SASS::FADDInstruction::Flags::NEG_B
+					this->AddInstruction(new SASS::Maxwell::FADDInstruction(
+						destination, destination, SASS::RZ, SASS::Maxwell::FADDInstruction::Round::RN,
+						SASS::Maxwell::FADDInstruction::Flags::SAT | SASS::Maxwell::FADDInstruction::Flags::NEG_B
 					));
 				}
 				else if constexpr(std::is_same<D, PTX::Float64Type>::value)
 				{
-					this->AddInstruction(new SASS::DMNMXInstruction(
-						destination, SASS::RZ, destination, SASS::PT, SASS::DMNMXInstruction::Flags::NOT_C
+					this->AddInstruction(new SASS::Maxwell::DMNMXInstruction(
+						destination, SASS::RZ, destination, SASS::PT, SASS::Maxwell::DMNMXInstruction::Flags::NOT_C
 					));
-					this->AddInstruction(new SASS::DMNMXInstruction(
+					this->AddInstruction(new SASS::Maxwell::DMNMXInstruction(
 						destination, destination, new SASS::F64Immediate(1), SASS::PT
 					));
 				}
@@ -373,7 +381,7 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 		{
 			// Rounding modifier
 
-			auto round = SASS::F2FInstruction::Round::RN;
+			auto round = SASS::Maxwell::F2FInstruction::Round::RN;
 			if constexpr(std::is_same<D, S>::value)
 			{
 				if (instruction->GetRoundingMode() == PTX::ConvertRoundingModifier<D, S>::RoundingMode::Nearest)
@@ -381,10 +389,10 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 					auto [source_Lo, source_Hi] = compositeGenerator.GeneratePair(instruction->GetSource());
 					auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 
-					this->AddInstruction(new SASS::MOVInstruction(destination_Lo, source_Lo));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
 					if constexpr(D::TypeBits == PTX::Bits::Bits64)
 					{
-						this->AddInstruction(new SASS::MOVInstruction(destination_Hi, source_Hi));
+						this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, source_Hi));
 					}
 				}
 				else
@@ -395,22 +403,22 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 					{
 						// case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Nearest:
 						// {
-						// 	round = SASS::F2FInstruction::Round::ROUND;
+						// 	round = SASS::Maxwell::F2FInstruction::Round::ROUND;
 						// 	break;
 						// }
 						case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Zero:
 						{
-							round = SASS::F2FInstruction::Round::TRUNC;
+							round = SASS::Maxwell::F2FInstruction::Round::TRUNC;
 							break;
 						}
 						case PTX::ConvertRoundingModifier<D, S>::RoundingMode::NegativeInfinity:
 						{
-							round = SASS::F2FInstruction::Round::FLOOR;
+							round = SASS::Maxwell::F2FInstruction::Round::FLOOR;
 							break;
 						}
 						case PTX::ConvertRoundingModifier<D, S>::RoundingMode::PositiveInfinity:
 						{
-							round = SASS::F2FInstruction::Round::CEIL;
+							round = SASS::Maxwell::F2FInstruction::Round::CEIL;
 							break;
 						}
 					}
@@ -424,28 +432,28 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 				{
 					// case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Nearest:
 					// {
-					// 	round = SASS::F2FInstruction::Round::RN;
+					// 	round = SASS::Maxwell::F2FInstruction::Round::RN;
 					// 	break;
 					// }
 					case PTX::ConvertRoundingModifier<D, S>::RoundingMode::Zero:
 					{
-						round = SASS::F2FInstruction::Round::RZ;
+						round = SASS::Maxwell::F2FInstruction::Round::RZ;
 						break;
 					}
 					case PTX::ConvertRoundingModifier<D, S>::RoundingMode::NegativeInfinity:
 					{
-						round = SASS::F2FInstruction::Round::RM;
+						round = SASS::Maxwell::F2FInstruction::Round::RM;
 						break;
 					}
 					case PTX::ConvertRoundingModifier<D, S>::RoundingMode::PositiveInfinity:
 					{
-						round = SASS::F2FInstruction::Round::RP;
+						round = SASS::Maxwell::F2FInstruction::Round::RP;
 						break;
 					}
 				}
 			}
 
-			auto flags = SASS::F2FInstruction::Flags::None;
+			auto flags = SASS::Maxwell::F2FInstruction::Flags::None;
 
 			// ftz modifier
 
@@ -453,7 +461,7 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 			{
 				if (instruction->GetFlushSubnormal())
 				{
-					flags |= SASS::F2FInstruction::Flags::FTZ;
+					flags |= SASS::Maxwell::F2FInstruction::Flags::FTZ;
 				}
 			}
 
@@ -461,17 +469,17 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 
 			if (instruction->GetSaturate())
 			{
-				flags |= SASS::F2FInstruction::Flags::SAT;
+				flags |= SASS::Maxwell::F2FInstruction::Flags::SAT;
 			}
 
 			// Conversion types
 
-			auto destinationType = GetConversionType<SASS::F2FInstruction::DestinationType, D>();
-			auto sourceType = GetConversionType<SASS::F2FInstruction::SourceType, S>();
+			auto destinationType = GetConversionType<SASS::Maxwell::F2FInstruction::DestinationType, D>();
+			auto sourceType = GetConversionType<SASS::Maxwell::F2FInstruction::SourceType, S>();
 
 			// Instruction
 
-			this->AddInstruction(new SASS::F2FInstruction(
+			this->AddInstruction(new SASS::Maxwell::F2FInstruction(
 				destination, source, destinationType, sourceType, round, flags
 			));
 		}
@@ -484,6 +492,12 @@ void ConvertGenerator::Visit(const PTX::ConvertInstruction<D, S> *instruction)
 	{
 		Error(instruction, "unsupported destination type");
 	}
+}
+
+template<class D, class S>
+void ConvertGenerator::GenerateVolta(const PTX::ConvertInstruction<D, S> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

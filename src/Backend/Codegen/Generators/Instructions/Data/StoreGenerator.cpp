@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/AddressGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -52,6 +54,12 @@ void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 	// Spaces: *
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
+void StoreGenerator::GenerateMaxwell(const PTX::StoreInstruction<B, T, S, A> *instruction)
+{
 	// Verify permissible synchronization
 
 	if constexpr(A == PTX::StoreSynchronization::Weak)
@@ -70,55 +78,55 @@ void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 		{
 			// Generate instruction
 
-			auto type = InstructionType<SASS::STGInstruction::Type, T>();
-			auto flags = SASS::STGInstruction::Flags::None;
+			auto type = InstructionType<SASS::Maxwell::STGInstruction::Type, T>();
+			auto flags = SASS::Maxwell::STGInstruction::Flags::None;
 			if constexpr(B == PTX::Bits::Bits64)
 			{
-				flags = SASS::STGInstruction::Flags::E;
+				flags = SASS::Maxwell::STGInstruction::Flags::E;
 			}
 
-			auto cache = SASS::STGInstruction::Cache::None;
+			auto cache = SASS::Maxwell::STGInstruction::Cache::None;
 			switch (instruction->GetCacheOperator())
 			{
 				// case PTX::StoreInstruction<B, T, S, A>::CacheOperator::WriteBack:
 				// {
-				// 	cache = SASS::STGInstruction::Cache::None;
+				// 	cache = SASS::Maxwell::STGInstruction::Cache::None;
 				// 	break;
 				// }
 				case PTX::StoreInstruction<B, T, S, A>::CacheOperator::Global:
 				{
-					cache = SASS::STGInstruction::Cache::CG;
+					cache = SASS::Maxwell::STGInstruction::Cache::CG;
 					break;
 				}
 				case PTX::StoreInstruction<B, T, S, A>::CacheOperator::Streaming:
 				{
-					cache = SASS::STGInstruction::Cache::CS;
+					cache = SASS::Maxwell::STGInstruction::Cache::CS;
 					break;
 				}
 				case PTX::StoreInstruction<B, T, S, A>::CacheOperator::WriteThrough:
 				{
-					cache = SASS::STGInstruction::Cache::WT;
+					cache = SASS::Maxwell::STGInstruction::Cache::WT;
 					break;
 				}
 			}
 
-			this->AddInstruction(new SASS::STGInstruction(address, source, type, cache, flags));
+			this->AddInstruction(new SASS::Maxwell::STGInstruction(address, source, type, cache, flags));
 		}
 		else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
 		{
 			// Generate instruction
 
-			auto type = InstructionType<SASS::STSInstruction::Type, T>();
-			auto flags = SASS::STSInstruction::Flags::None;
+			auto type = InstructionType<SASS::Maxwell::STSInstruction::Type, T>();
+			auto flags = SASS::Maxwell::STSInstruction::Flags::None;
 
 			// Flag not necessary for shared variables
 			//
 			// if constexpr(B == PTX::Bits::Bits64)
 			// {
-			// 	flags |= SASS::STSInstruction::Flags::E;
+			// 	flags |= SASS::Maxwell::STSInstruction::Flags::E;
 			// }
 
-			this->AddInstruction(new SASS::STSInstruction(address, source, type, flags));
+			this->AddInstruction(new SASS::Maxwell::STSInstruction(address, source, type, flags));
 		}
 		else
 		{
@@ -129,6 +137,12 @@ void StoreGenerator::Visit(const PTX::StoreInstruction<B, T, S, A> *instruction)
 	{
 		Error(instruction, "unsupported synchronzation modifier");
 	}
+}
+
+template<PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
+void StoreGenerator::GenerateVolta(const PTX::StoreInstruction<B, T, S, A> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

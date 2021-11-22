@@ -18,6 +18,9 @@ public:
 	// Generators
 
 	void Generate(const PTX::ReturnInstruction *instruction);
+
+	void GenerateMaxwell(const PTX::ReturnInstruction *instruction);
+	void GenerateVolta(const PTX::ReturnInstruction *instruction);
 };
 
 }

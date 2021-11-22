@@ -4,6 +4,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -53,6 +55,12 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 	// Spaces: *
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<PTX::Bits B, class T, class S, PTX::LoadSynchronization A>
+void LoadGenerator::GenerateMaxwell(const PTX::LoadInstruction<B, T, S, A> *instruction)
+{
 	// Verify permissible synchronization
 
 	if constexpr(A == PTX::LoadSynchronization::Weak)
@@ -71,13 +79,13 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 
 			// Generate instruction
 
-			this->AddInstruction(new SASS::MOVInstruction(destination_Lo, address_Lo));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, address_Lo));
 
 			// Extended datatypes
 
 			if constexpr(T::TypeBits == PTX::Bits::Bits64)
 			{
-				this->AddInstruction(new SASS::MOVInstruction(destination_Hi, address_Hi));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, address_Hi));
 			}
 		}
 		else
@@ -96,52 +104,52 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 			{
 				// Generate instruction
 
-				auto type = InstructionType<SASS::LDGInstruction::Type, T>();
-				auto flags = SASS::LDGInstruction::Flags::None;
+				auto type = InstructionType<SASS::Maxwell::LDGInstruction::Type, T>();
+				auto flags = SASS::Maxwell::LDGInstruction::Flags::None;
 				if constexpr(B == PTX::Bits::Bits64)
 				{
-					flags |= SASS::LDGInstruction::Flags::E;
+					flags |= SASS::Maxwell::LDGInstruction::Flags::E;
 				}
 
-				auto cache = SASS::LDGInstruction::Cache::None;
+				auto cache = SASS::Maxwell::LDGInstruction::Cache::None;
 				switch (instruction->GetCacheOperator())
 				{
 					// case PTX::LoadInstruction<B, T, S, A>::CacheOperator::All:
 					// case PTX::LoadInstruction<B, T, S, A>::CacheOperator::Streaming:
 					// {
-					// 	cache = SASS::LDGInstruction::Cache::None;
+					// 	cache = SASS::Maxwell::LDGInstruction::Cache::None;
 					// 	break;
 					// }
 					case PTX::LoadInstruction<B, T, S, A>::CacheOperator::Global:
 					case PTX::LoadInstruction<B, T, S, A>::CacheOperator::LastUse:
 					{
-						cache = SASS::LDGInstruction::Cache::CG;
+						cache = SASS::Maxwell::LDGInstruction::Cache::CG;
 						break;
 					}
 					case PTX::LoadInstruction<B, T, S, A>::CacheOperator::Invalidate:
 					{
-						cache = SASS::LDGInstruction::Cache::CV;
+						cache = SASS::Maxwell::LDGInstruction::Cache::CV;
 						break;
 					}
 				}
 
-				this->AddInstruction(new SASS::LDGInstruction(destination, address, type, cache, flags));
+				this->AddInstruction(new SASS::Maxwell::LDGInstruction(destination, address, type, cache, flags));
 			}
 			else if constexpr(std::is_same<S, PTX::SharedSpace>::value)
 			{
 				// Generate instruction
 
-				auto type = InstructionType<SASS::LDSInstruction::Type, T>();
-				auto flags = SASS::LDSInstruction::Flags::None;
+				auto type = InstructionType<SASS::Maxwell::LDSInstruction::Type, T>();
+				auto flags = SASS::Maxwell::LDSInstruction::Flags::None;
 
 				// Flag not necessary for shared variables
 				//
 				// if constexpr(B == PTX::Bits::Bits64)
 				// {
-				// 	flags |= SASS::LDSInstruction::Flags::E;
+				// 	flags |= SASS::Maxwell::LDSInstruction::Flags::E;
 				// }
 
-				this->AddInstruction(new SASS::LDSInstruction(destination, address, type, flags));
+				this->AddInstruction(new SASS::Maxwell::LDSInstruction(destination, address, type, flags));
 			}
 			else
 			{
@@ -153,7 +161,12 @@ void LoadGenerator::Visit(const PTX::LoadInstruction<B, T, S, A> *instruction)
 	{
 		Error(instruction, "unsupported synchronzation modifier");
 	}
+}
 
+template<PTX::Bits B, class T, class S, PTX::LoadSynchronization A>
+void LoadGenerator::GenerateVolta(const PTX::LoadInstruction<B, T, S, A> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

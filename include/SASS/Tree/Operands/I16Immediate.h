@@ -30,7 +30,7 @@ public:
 		return m_value;
 	}
 
-	std::uint64_t ToBinary(std::uint8_t truncate) const override
+	std::uint64_t ToAbsoluteBinary(std::uint8_t truncate) const override
 	{
 		if (m_value < 0)
 		{

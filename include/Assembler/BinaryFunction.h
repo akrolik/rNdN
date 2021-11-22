@@ -14,7 +14,7 @@ namespace Assembler {
 class BinaryFunction
 {
 public:
-	BinaryFunction(const std::string& name) : m_name(name) {}
+	BinaryFunction(const std::string& name, std::uint8_t instructionSize) : m_name(name), m_instructionSize(instructionSize) {}
 
 	const std::string& GetName() const { return m_name; }
 	void SetName(const std::string& name) { m_name = name; }
@@ -132,7 +132,10 @@ public:
 	enum class RelocationKind {
 		ABS32_LO_20,
 		ABS32_HI_20,
-		ABS24_20
+		ABS32_LO_32,
+		ABS32_HI_32,
+		ABS24_20,
+		ABS32_32
 	};
 
 	static std::string RelocationKindString(RelocationKind kind)
@@ -143,8 +146,14 @@ public:
 				return "ABS32_LO_20";
 			case RelocationKind::ABS32_HI_20:
 				return "ABS32_HI_20";
+			case RelocationKind::ABS32_LO_32:
+				return "ABS32_HI_32";
+			case RelocationKind::ABS32_HI_32:
+				return "ABS32_HI_32";
 			case RelocationKind::ABS24_20:
 				return "ABS24_20";
+			case RelocationKind::ABS32_32:
+				return "ABS32_32";
 		}
 		return "<unknown>";
 	}
@@ -339,9 +348,14 @@ public:
 		auto first = true;
 		for (auto i = 0u; i < m_linearProgram.size(); ++i)
 		{
+			if (!first)
+			{
+				code += "\n";
+			}
+
 			auto instruction = m_linearProgram.at(i);
 
-			auto address = "/* " + Utils::Format::HexString(i * sizeof(std::uint64_t), 4) + " */    ";
+			auto address = "/* " + Utils::Format::HexString(i * m_instructionSize, 4) + " */    ";
 			auto mnemonic = SASS::PrettyPrinter::PrettyString(instruction);
 			auto binary = "/* " + Utils::Format::HexString(instruction->ToBinary(), 16) + " */";
 
@@ -353,18 +367,25 @@ public:
 			}
 			std::string spacing(indent, ' ');
 
-			if (!first)
-			{
-				code += "\n";
-			}
 			first = false;
 			code += address + mnemonic + spacing + binary;
+
+			if (m_instructionSize == 16)
+			{
+				auto addressHi = "/* " + Utils::Format::HexString(i * m_instructionSize + sizeof(std::uint64_t), 4) + " */    ";
+				auto binaryHi = "/* " + Utils::Format::HexString(instruction->ToBinaryHi(), 16) + " */";
+				std::string spacingHi(48, ' ');
+
+				code += "\n" + addressHi + spacingHi + binaryHi;
+			}
 		}
 		return code;
 	}
 
 private:
 	std::string m_name;
+	std::uint8_t m_instructionSize = 0;
+
 	std::size_t m_registers = 0;
 	std::size_t m_maxRegisters = 0;
 	std::size_t m_barriers = 0;

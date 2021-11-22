@@ -2,11 +2,10 @@
 
 #include "SASS/Tree/Instructions/Maxwell/Instruction.h"
 
-#include "Utils/Format.h"
-
 namespace SASS {
+namespace Maxwell {
 
-class SCHIInstruction : public Maxwell::Instruction
+class SCHIInstruction : public Instruction
 {
 public:
 	SCHIInstruction(std::uint64_t schedule) : m_schedule(schedule) {}
@@ -46,4 +45,5 @@ private:
 	std::uint64_t m_schedule = 0;
 };
 
+}
 }

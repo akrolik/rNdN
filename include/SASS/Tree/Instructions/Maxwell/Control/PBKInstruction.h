@@ -3,6 +3,7 @@
 #include "SASS/Tree/Instructions/Maxwell/Control/DivergenceInstruction.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class PBKInstruction : public DivergenceInstruction
 {
@@ -32,14 +33,11 @@ public:
 		return 0xe2a0000000000000;
 	}
 
-	// Hardware properties
-
-	InstructionClass GetInstructionClass() const override { return InstructionClass::Control; }
-
 	// Visitors
 
 	void Accept(Visitor& visitor) override { visitor.Visit(this); }
 	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 };
 
+}
 }

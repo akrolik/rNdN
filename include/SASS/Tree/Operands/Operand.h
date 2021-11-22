@@ -24,11 +24,6 @@ public:
 
 	Kind GetKind() const { return m_kind; }
 
-	virtual std::uint64_t ToBinary(std::uint8_t truncate) const
-	{
-		return ToBinary();
-	}
-
 protected:
 	Operand(Kind kind) : m_kind(kind) {}
 	Kind m_kind;

@@ -18,6 +18,9 @@ public:
 	// Instruction
 
 	void Generate(const PTX::BarrierInstruction *instruction);
+
+	void GenerateMaxwell(const PTX::BarrierInstruction *instruction);
+	void GenerateVolta(const PTX::BarrierInstruction *instruction);
 };
 
 }

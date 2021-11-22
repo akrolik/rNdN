@@ -2,6 +2,8 @@
 
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -10,7 +12,12 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 	// Instruction predicate
 
 	this->SetPredicatedInstruction(instruction);
+	
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
 
+void BarrierGenerator::GenerateMaxwell(const PTX::BarrierInstruction *instruction)
+{
 	// Generate barrier operand
 
 	CompositeGenerator compositeGenerator(this->m_builder);
@@ -21,7 +28,7 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 
 	// Mode
 
-	auto mode = (instruction->GetWait()) ? SASS::BARInstruction::Mode::SYNC : SASS::BARInstruction::Mode::ARV;
+	auto mode = (instruction->GetWait()) ? SASS::Maxwell::BARInstruction::Mode::SYNC : SASS::Maxwell::BARInstruction::Mode::ARV;
 
 	// Generate instruction, checking for threads (optional)
 
@@ -30,13 +37,18 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 		compositeGenerator.SetImmediateSize(12);
 		auto threads = compositeGenerator.Generate(threadsOperand);
 
-		this->AddInstruction(new SASS::BARInstruction(mode, barrier, threads));
+		this->AddInstruction(new SASS::Maxwell::BARInstruction(mode, barrier, threads));
 	}
 	else
 	{
-		this->AddInstruction(new SASS::BARInstruction(mode, barrier));
+		this->AddInstruction(new SASS::Maxwell::BARInstruction(mode, barrier));
 	}
-	this->AddInstruction(new SASS::MEMBARInstruction(SASS::MEMBARInstruction::Mode::CTA));
+	this->AddInstruction(new SASS::Maxwell::MEMBARInstruction(SASS::Maxwell::MEMBARInstruction::Mode::CTA));
+}
+
+void BarrierGenerator::GenerateVolta(const PTX::BarrierInstruction *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

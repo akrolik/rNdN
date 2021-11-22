@@ -23,6 +23,12 @@ public:
 	template<class T>
 	void Visit(const PTX::MoveSpecialInstruction<T> *instruction);
 
+	template<class T>
+	void GenerateMaxwell(const PTX::MoveSpecialInstruction<T> *instruction);
+
+	template<class T>
+	void GenerateVolta(const PTX::MoveSpecialInstruction<T> *instruction);
+
 	// Special Register
 
 	bool Visit(const PTX::_SpecialRegister *reg) override;

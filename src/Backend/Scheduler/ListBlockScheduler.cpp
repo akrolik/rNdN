@@ -1,6 +1,6 @@
 #include "Backend/Scheduler/ListBlockScheduler.h"
 
-#include "Backend/Scheduler/HardwareProperties.h"
+#include "Backend/Scheduler/BarrierGenerator.h"
 
 #include "SASS/Analysis/Dependency/BlockDependencyAnalysis.h"
 
@@ -38,9 +38,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 	// For each barrier, keep track of the number of queued instructions, and the current wait position
 
-	constexpr unsigned int BARRIER_COUNT = 6;
-	std::array<std::uint8_t, BARRIER_COUNT> barrierCount{};
-	std::array<std::uint8_t, BARRIER_COUNT> barrierWait{};
+	std::array<std::uint8_t, HardwareProfile::BARRIER_COUNT> barrierCount{};
+	std::array<std::uint8_t, HardwareProfile::BARRIER_COUNT> barrierWait{};
 
 	// Schedule the instructions based on the dependency DAG and hardware properties:
 	//   - Priority function: lowest stall count
@@ -56,9 +55,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		{
 			auto instruction = node.GetInstruction();
 
-			auto latency = HardwareProperties::GetLatency(instruction);
-			auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction);
-			auto readHold = HardwareProperties::GetReadHold(instruction);
+			auto latency = m_profile.GetLatency(instruction);
+			auto barrierLatency = m_profile.GetBarrierLatency(instruction);
+			auto readHold = m_profile.GetReadHold(instruction);
 			
 			// Find the successor with the longest dependency chain
 
@@ -81,7 +80,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					else
 					{
 						auto successor = edge.GetEndInstruction();
-						auto readLatency = HardwareProperties::GetReadLatency(successor);
+						auto readLatency = m_profile.GetReadLatency(successor);
 
 						auto diff = (int)latency - (int)readLatency;
 						if (diff > maxDependency)
@@ -144,7 +143,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 		// Maintain the unit availability time, used for independent instructions which share the same
 		// functional unit. Used as a hint to the instruction, as the GPU will insert stalls if needed
 
-		std::array<std::uint32_t, 6> unitTime{};
+		std::array<std::uint32_t, HardwareProfile::UNIT_COUNT> unitTime{};
 
 		// Construct a priority queue for available instructions (all dependencies scheduled)
 		//
@@ -208,13 +207,13 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			auto instructionBarriers = SASS::Schedule::Barrier::None;
 			auto partialBarriers = SASS::Schedule::Barrier::None;
-			std::array<std::uint8_t, BARRIER_COUNT> waitBarriers{};
+			std::array<std::uint8_t, HardwareProfile::BARRIER_COUNT> waitBarriers{};
 
 			if (first)
 			{
 				// Clear all previous barriers at the beginning of the block
 
-				for (auto i = 0u; i < BARRIER_COUNT; ++i)
+				for (auto i = 0u; i < HardwareProfile::BARRIER_COUNT; ++i)
 				{
 					auto& wait = barrierWait[i];
 					auto& count = barrierCount[i];
@@ -304,7 +303,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			auto barrierStall = 1u;
 
-			for (auto i = 0u; i < BARRIER_COUNT; ++i)
+			for (auto i = 0u; i < HardwareProfile::BARRIER_COUNT; ++i)
 			{
 				auto barrier = SASS::Schedule::BarrierFromIndex(i);
 				if (!(partialBarriers & barrier))
@@ -360,28 +359,22 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 						previousSchedule.SetYield(barrierStall < 13);
 					}
 
-					// Convert to the instruction barrier type
-
-					auto barrierI = GetInstructionBarrier(barrier);
-					auto waitCount = barrierCount[i] - position;
-
 					// Insert barrier to wait until the instruction queue is ready
 
-					auto barrierInstruction = new SASS::DEPBARInstruction(
-						barrierI, new SASS::I8Immediate(waitCount), SASS::DEPBARInstruction::Flags::LE
-					);
-					auto& barrierSchedule = barrierInstruction->GetSchedule();
+					auto waitCount = barrierCount[i] - position;
 
 					// Adjust the stall count to ensure prior instruction finished
 
-					auto barrierLatency = HardwareProperties::GetLatency(barrierInstruction);
-					std::int32_t currentStall = previousStall - barrierStall;
+					auto barrierInstruction = m_barrierGenerator.Generate(barrier, waitCount);
+					auto barrierLatency = m_profile.GetLatency(barrierInstruction);
 
+					std::int32_t currentStall = previousStall - barrierStall;
 					if (barrierLatency > currentStall)
 					{
 						currentStall = barrierLatency;
 					}
 
+					auto& barrierSchedule = barrierInstruction->GetSchedule();
 					barrierSchedule.SetStall(currentStall);
 					barrierSchedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
 
@@ -415,7 +408,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			// Add new barriers to schedule for both read and write dependencies
 
-			if (HardwareProperties::GetBarrierLatency(instruction) > 0)
+			if (m_profile.GetBarrierLatency(instruction) > 0)
 			{
 				// Select next free barrier resource for the instruction
 
@@ -451,7 +444,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				instructionNode->GetScheduleProperties().SetWriteDependencyBarrier(packedBarrier);
 			}
 
-			if (HardwareProperties::GetReadHold(instruction) > 0)
+			if (m_profile.GetReadHold(instruction) > 0)
 			{
 				// Select the next free barrier resource for the instruction
 
@@ -532,7 +525,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					previousSchedule.SetYield(stall < 13);
 				}
 
-				auto latency = HardwareProperties::GetLatency(instruction);
+				auto latency = m_profile.GetLatency(instruction);
 				std::int32_t currentStall = previousStall - stall;
 
 				if (latency > currentStall)
@@ -549,7 +542,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			{
 				// For the first instruction, stall the entire pipeline depth (corrected later)
 
-				auto latency = HardwareProperties::GetLatency(instruction);
+				auto latency = m_profile.GetLatency(instruction);
 
 				schedule.SetStall(latency);
 				schedule.SetYield(latency < 13); // Higher stall counts cannot yield
@@ -559,18 +552,18 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 			// Store the time the functional unit becomes free
 
-			auto instructionUnit = HardwareProperties::GetFunctionalUnit(instruction);
-			auto instructionUnitIndex = HardwareProperties::FunctionalUnitIndex(instructionUnit);
+			auto instructionUnit = m_profile.GetFunctionalUnit(instruction);
+			auto instructionUnitIndex = HardwareProfile::FunctionalUnitIndex(instructionUnit);
 
-			auto unitAvailable = HardwareProperties::GetThroughputLatency(instruction);
+			auto unitAvailable = m_profile.GetThroughputLatency(instruction);
 			unitTime[instructionUnitIndex] = unitAvailable;
 
 			// Register reuse cache
 
-			if (optionReuse && !first && stall > 0 && HardwareProperties::GetReuseFlags(instruction))
+			if (optionReuse && !first && stall > 0 && m_profile.GetReuseFlags(instruction))
 			{
 				auto previousInstruction = scheduledInstructions[scheduledInstructions.size() - 2];
-				if (HardwareProperties::GetReuseFlags(previousInstruction))
+				if (m_profile.GetReuseFlags(previousInstruction))
 				{
 					auto previousOperands = previousInstruction->GetCachedSourceOperands();
 					auto currentOperands = instruction->GetCachedSourceOperands();
@@ -686,7 +679,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto dependencies = edge.GetDependencies();
 				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
 				{
-					if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
+					if (auto barrierLatency = m_profile.GetBarrierLatency(instruction); barrierLatency > 0)
 					{
 						// If the previous instruction sets a barrier, minimum 2 cycle stall
 
@@ -705,8 +698,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					{
 						// If no barrier, wait the full instruction length
 
-						auto latency = HardwareProperties::GetLatency(instruction);
-						auto readLatency = HardwareProperties::GetReadLatency(successor);
+						auto latency = m_profile.GetLatency(instruction);
+						auto readLatency = m_profile.GetReadLatency(successor);
 
 						auto diff = (int)latency - (int)readLatency;
 						if (delay < diff)
@@ -719,7 +712,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				{
 					// Predicate dependencies used for masking have no read latency
 
-					auto latency = HardwareProperties::GetLatency(instruction);
+					auto latency = m_profile.GetLatency(instruction);
 					if (delay < latency)
 					{
 						delay = latency;
@@ -731,7 +724,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
 				{
-					if (auto barrierLatency = HardwareProperties::GetBarrierLatency(instruction); barrierLatency > 0)
+					if (auto barrierLatency = m_profile.GetBarrierLatency(instruction); barrierLatency > 0)
 					{
 						auto latency = 2;
 						if (delay < latency)
@@ -752,7 +745,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
 				{
-					if (auto barrierLatency = HardwareProperties::GetReadHold(instruction); barrierLatency > 0)
+					if (auto barrierLatency = m_profile.GetReadHold(instruction); barrierLatency > 0)
 					{
 						auto latency = 2;
 						if (delay < latency)
@@ -821,8 +814,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Check if the unit is busy with another (independent) instruction
 
-				auto availableUnit = HardwareProperties::GetFunctionalUnit(availableInstruction);
-				auto availableUnitIndex = HardwareProperties::FunctionalUnitIndex(availableUnit);
+				auto availableUnit = m_profile.GetFunctionalUnit(availableInstruction);
+				auto availableUnitIndex = HardwareProfile::FunctionalUnitIndex(availableUnit);
 
 				if (auto unitAvailableTime = unitTime[availableUnitIndex]; availableTime < unitAvailableTime)
 				{
@@ -835,7 +828,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Require minimum stall count for some instructions (control)
 
-				auto minimumStall = HardwareProperties::GetMinimumLatency(instruction);
+				auto minimumStall = m_profile.GetMinimumLatency(instruction);
 				if (stall < minimumStall)
 				{
 					stall = minimumStall;
@@ -843,8 +836,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Dual issue eligible instructions
 
-				if (optionDual && availableTime <= time && HardwareProperties::GetDualIssue(instruction) &&
-					availableUnit != HardwareProperties::GetFunctionalUnit(instruction))
+				if (optionDual && availableTime <= time && m_profile.GetDualIssue(instruction) &&
+					availableUnit != m_profile.GetFunctionalUnit(instruction))
 				{
 					auto constant = false;
 					for (auto operand : instruction->GetCachedSourceOperands())
@@ -913,7 +906,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 	// For all active barriers at the end of the block, insert a barrier instruction
 
-	for (auto i = 0u; i < BARRIER_COUNT; ++i)
+	for (auto i = 0u; i < HardwareProfile::BARRIER_COUNT; ++i)
 	{
 		// Only wait if active
 
@@ -922,55 +915,15 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			continue;
 		}
 
-		// Convert to the instruction barrier type
-
-		auto barrierI = GetInstructionBarrier(SASS::Schedule::BarrierFromIndex(i));
-
 		// Insert barrier to wait until zero
 
-		auto barrierInstruction = new SASS::DEPBARInstruction(
-			barrierI, new SASS::I8Immediate(0x0), SASS::DEPBARInstruction::Flags::LE
-		);
-		scheduledInstructions.push_back(barrierInstruction);
+		auto barrier = SASS::Schedule::BarrierFromIndex(i);
+		auto barrierInstruction = m_barrierGenerator.Generate(barrier);
 
-		auto& barrierSchedule = barrierInstruction->GetSchedule();
-		barrierSchedule.SetStall(HardwareProperties::GetLatency(barrierInstruction));
-		barrierSchedule.SetYield(true);
+		scheduledInstructions.push_back(barrierInstruction);
 	}
 
 	Utils::Chrono::End(timeScheduler_start);
-}
-
-SASS::DEPBARInstruction::Barrier ListBlockScheduler::GetInstructionBarrier(SASS::Schedule::Barrier barrier) const
-{
-	switch (barrier)
-	{
-		case SASS::Schedule::Barrier::SB0:
-		{
-			return SASS::DEPBARInstruction::Barrier::SB0;
-		}
-		case SASS::Schedule::Barrier::SB1:
-		{
-			return SASS::DEPBARInstruction::Barrier::SB1;
-		}
-		case SASS::Schedule::Barrier::SB2:
-		{
-			return SASS::DEPBARInstruction::Barrier::SB2;
-		}
-		case SASS::Schedule::Barrier::SB3:
-		{
-			return SASS::DEPBARInstruction::Barrier::SB3;
-		}
-		case SASS::Schedule::Barrier::SB4:
-		{
-			return SASS::DEPBARInstruction::Barrier::SB4;
-		}
-		case SASS::Schedule::Barrier::SB5:
-		{
-			return SASS::DEPBARInstruction::Barrier::SB5;
-		}
-	}
-	Utils::Logger::LogError("Unsupported barrier kind");
 }
 
 }

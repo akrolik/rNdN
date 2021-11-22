@@ -1,10 +1,10 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
-
-#include "SASS/Tree/BinaryUtils.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class MEMBARInstruction : public PredicatedInstruction
 {
@@ -74,4 +74,5 @@ private:
 	Mode m_mode;
 };
 
+}
 }

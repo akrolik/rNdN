@@ -4,6 +4,8 @@
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -24,6 +26,12 @@ void AndGenerator::Visit(const PTX::AndInstruction<T> *instruction)
 	//   - Bit16, Bit32, Bit64    
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void AndGenerator::GenerateMaxwell(const PTX::AndInstruction<T> *instruction)
+{
 	if constexpr(std::is_same<T, PTX::PredicateType>::value)
 	{
 		// Generate operands
@@ -35,22 +43,22 @@ void AndGenerator::Visit(const PTX::AndInstruction<T> *instruction)
 
 		// Flags
 
-		auto flags = SASS::PSETPInstruction::Flags::None;
+		auto flags = SASS::Maxwell::PSETPInstruction::Flags::None;
 		if (sourceA_Not)
 		{
-			flags |= SASS::PSETPInstruction::Flags::NOT_A;
+			flags |= SASS::Maxwell::PSETPInstruction::Flags::NOT_A;
 		}
 		if (sourceB_Not)
 		{
-			flags |= SASS::PSETPInstruction::Flags::NOT_B;
+			flags |= SASS::Maxwell::PSETPInstruction::Flags::NOT_B;
 		}
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::PSETPInstruction(
+		this->AddInstruction(new SASS::Maxwell::PSETPInstruction(
 			destination, SASS::PT, sourceA, sourceB, SASS::PT,
-			SASS::PSETPInstruction::BooleanOperator1::AND,
-			SASS::PSETPInstruction::BooleanOperator2::AND,
+			SASS::Maxwell::PSETPInstruction::BooleanOperator1::AND,
+			SASS::Maxwell::PSETPInstruction::BooleanOperator2::AND,
 			flags
 		));
 	}
@@ -63,17 +71,23 @@ void AndGenerator::Visit(const PTX::AndInstruction<T> *instruction)
 		CompositeGenerator compositeGenerator(this->m_builder);
 		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
 
-		this->AddInstruction(new SASS::LOPInstruction(
-			destination_Lo, sourceA_Lo, sourceB_Lo, SASS::LOPInstruction::BooleanOperator::AND
+		this->AddInstruction(new SASS::Maxwell::LOPInstruction(
+			destination_Lo, sourceA_Lo, sourceB_Lo, SASS::Maxwell::LOPInstruction::BooleanOperator::AND
 		));
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
-			this->AddInstruction(new SASS::LOPInstruction(
-				destination_Hi, sourceA_Hi, sourceB_Hi, SASS::LOPInstruction::BooleanOperator::AND
+			this->AddInstruction(new SASS::Maxwell::LOPInstruction(
+				destination_Hi, sourceA_Hi, sourceB_Hi, SASS::Maxwell::LOPInstruction::BooleanOperator::AND
 			));
 		}
 	}
+}
+
+template<class T>
+void AndGenerator::GenerateVolta(const PTX::AndInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

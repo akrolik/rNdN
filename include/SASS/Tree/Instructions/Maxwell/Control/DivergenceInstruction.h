@@ -1,16 +1,16 @@
 #pragma once
 
-#include "SASS/Tree/Instructions/Maxwell/Instruction.h"
-
-#include "SASS/Tree/BinaryUtils.h"
+#include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
 #include "Utils/Format.h"
 
 #include <string>
 
 namespace SASS {
+namespace Maxwell {
 
-class DivergenceInstruction : public Maxwell::Instruction
+class DivergenceInstruction : public PredicatedInstruction
 {
 public:
 	DivergenceInstruction(const std::string& target) : m_target(target) {}
@@ -46,6 +46,10 @@ public:
 		return BinaryUtils::Format(relativeAddress, 20, 0xffffff);
 	}
 
+	// Hardware properties
+
+	InstructionClass GetInstructionClass() const override { return InstructionClass::Control; }
+
 private:
 	std::string m_target;
 
@@ -53,4 +57,5 @@ private:
 	std::size_t m_currentAddress = 0;
 };
 
+}
 }

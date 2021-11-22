@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -28,6 +30,12 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 	//   - Rounding: Float16, Float16x2, Float32, Float64
 	//   - Saturate: Int32, Float16, Float16x2, Float32
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void SubtractGenerator::GenerateMaxwell(const PTX::SubtractInstruction<T> *instruction)
+{
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -45,16 +53,16 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 		{
 			// Carry flags
 
-			auto flags = SASS::IADDInstruction::Flags::NEG_B;
+			auto flags = SASS::Maxwell::IADDInstruction::Flags::NEG_B;
 			if constexpr(T::TypeBits == PTX::Bits::Bits32)
 			{
 				if (instruction->GetCarryIn())
 				{
-					flags |= SASS::IADDInstruction::Flags::X;
+					flags |= SASS::Maxwell::IADDInstruction::Flags::X;
 				}
 				if (instruction->GetCarryOut())
 				{
-					flags |= SASS::IADDInstruction::Flags::CC;
+					flags |= SASS::Maxwell::IADDInstruction::Flags::CC;
 				}
 			}
 
@@ -64,23 +72,23 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 			{
 				if (!instruction->PTX::CarryModifier<T>::IsActive() && instruction->GetSaturate())
 				{
-					flags |= SASS::IADDInstruction::Flags::SAT;
+					flags |= SASS::Maxwell::IADDInstruction::Flags::SAT;
 				}
 			}
 
-			this->AddInstruction(new SASS::IADDInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, flags));
+			this->AddInstruction(new SASS::Maxwell::IADDInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, flags));
 
 			// Keep within range for 16-bit
 
 			if constexpr(std::is_same<T, PTX::UInt16Type>::value)
 			{
-				this->AddInstruction(new SASS::LOP32IInstruction(
-					destination_Lo, destination_Lo, new SASS::I32Immediate(0xffff), SASS::LOP32IInstruction::BooleanOperator::AND
+				this->AddInstruction(new SASS::Maxwell::LOP32IInstruction(
+					destination_Lo, destination_Lo, new SASS::I32Immediate(0xffff), SASS::Maxwell::LOP32IInstruction::BooleanOperator::AND
 				));
 			}
 			else if constexpr(std::is_same<T, PTX::Int16Type>::value)
 			{
-				this->AddInstruction(new SASS::BFEInstruction(
+				this->AddInstruction(new SASS::Maxwell::BFEInstruction(
 					destination_Lo, destination_Lo, new SASS::I32Immediate(0x1000))
 				);
 			}
@@ -89,25 +97,25 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 		{
 			// Carry flags
 
-			auto flags1 = SASS::IADDInstruction::Flags::NEG_B;
-			auto flags2 = SASS::IADDInstruction::Flags::NEG_B;
+			auto flags1 = SASS::Maxwell::IADDInstruction::Flags::NEG_B;
+			auto flags2 = SASS::Maxwell::IADDInstruction::Flags::NEG_B;
 
 			if (instruction->GetCarryIn())
 			{
-				flags1 |= SASS::IADDInstruction::Flags::X;
+				flags1 |= SASS::Maxwell::IADDInstruction::Flags::X;
 			}
 			if (instruction->GetCarryOut())
 			{
-				flags2 |= SASS::IADDInstruction::Flags::CC;
+				flags2 |= SASS::Maxwell::IADDInstruction::Flags::CC;
 			}
 
 			// Extended subtract
 
-			this->AddInstruction(new SASS::IADDInstruction(
-				destination_Lo, sourceA_Lo, sourceB_Lo, flags1 | SASS::IADDInstruction::Flags::CC
+			this->AddInstruction(new SASS::Maxwell::IADDInstruction(
+				destination_Lo, sourceA_Lo, sourceB_Lo, flags1 | SASS::Maxwell::IADDInstruction::Flags::CC
 			));
-			this->AddInstruction(new SASS::IADDInstruction(
-				destination_Hi, sourceA_Hi, sourceB_Hi, flags2 | SASS::IADDInstruction::Flags::X
+			this->AddInstruction(new SASS::Maxwell::IADDInstruction(
+				destination_Hi, sourceA_Hi, sourceB_Hi, flags2 | SASS::Maxwell::IADDInstruction::Flags::X
 			));
 		}
 	}
@@ -117,38 +125,46 @@ void SubtractGenerator::Visit(const PTX::SubtractInstruction<T> *instruction)
 		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
 		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
-		auto round = SASS::DADDInstruction::Round::RN;
+		auto round = SASS::Maxwell::DADDInstruction::Round::RN;
 		switch (instruction->GetRoundingMode())
 		{
 			// case T::RoundingMode::None:
 			// case T::RoundingMode::Nearest:
 			// {
-			// 	round = SASS::DADDInstruction::Round::RN;
+			// 	round = SASS::Maxwell::DADDInstruction::Round::RN;
 			// 	break;
 			// }
 			case T::RoundingMode::Zero:
 			{
-				round = SASS::DADDInstruction::Round::RZ;
+				round = SASS::Maxwell::DADDInstruction::Round::RZ;
 				break;
 			}
 			case T::RoundingMode::NegativeInfinity:
 			{
-				round = SASS::DADDInstruction::Round::RM;
+				round = SASS::Maxwell::DADDInstruction::Round::RM;
 				break;
 			}
 			case T::RoundingMode::PositiveInfinity:
 			{
-				round = SASS::DADDInstruction::Round::RP;
+				round = SASS::Maxwell::DADDInstruction::Round::RP;
 				break;
 			}
 		}
 
-		this->AddInstruction(new SASS::DADDInstruction(destination, sourceA, sourceB, round, SASS::DADDInstruction::Flags::NEG_B));
+		this->AddInstruction(new SASS::Maxwell::DADDInstruction(
+			destination, sourceA, sourceB, round, SASS::Maxwell::DADDInstruction::Flags::NEG_B
+		));
 	}
 	else
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void SubtractGenerator::GenerateVolta(const PTX::SubtractInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

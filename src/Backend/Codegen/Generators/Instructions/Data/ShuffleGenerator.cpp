@@ -4,6 +4,8 @@
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -22,6 +24,12 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 	// Types: Bit32
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void ShuffleGenerator::GenerateMaxwell(const PTX::ShuffleInstruction<T> *instruction)
+{
 	if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 	{
 		// Generate operands
@@ -45,34 +53,34 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 
 		// Mode
 
-		SASS::SHFLInstruction::ShuffleOperator shuffleOperator;
+		SASS::Maxwell::SHFLInstruction::ShuffleOperator shuffleOperator;
 		switch (instruction->GetMode())
 		{
 			case PTX::ShuffleInstruction<T>::Mode::Up:
 			{
-				shuffleOperator = SASS::SHFLInstruction::ShuffleOperator::UP;
+				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::UP;
 				break;
 			}
 			case PTX::ShuffleInstruction<T>::Mode::Down:
 			{
-				shuffleOperator = SASS::SHFLInstruction::ShuffleOperator::DOWN;
+				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::DOWN;
 				break;
 			}
 			case PTX::ShuffleInstruction<T>::Mode::Butterfly:
 			{
-				shuffleOperator = SASS::SHFLInstruction::ShuffleOperator::BFLY;
+				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::BFLY;
 				break;
 			}
 			case PTX::ShuffleInstruction<T>::Mode::Index:
 			{
-				shuffleOperator = SASS::SHFLInstruction::ShuffleOperator::IDX;
+				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::IDX;
 				break;
 			}
 		}
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::SHFLInstruction(
+		this->AddInstruction(new SASS::Maxwell::SHFLInstruction(
 			destinationP, destinationD, sourceA, sourceB, sourceC, shuffleOperator
 		));
 	}
@@ -80,6 +88,12 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void ShuffleGenerator::GenerateVolta(const PTX::ShuffleInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

@@ -12,9 +12,11 @@ class RedundantCodeElimination : public Visitor
 public:
 	void Transform(Function *function);
 
-	void Visit(MOVInstruction *instruction) override;
+	void Visit(Maxwell::MOVInstruction *instruction) override;
+	void Visit(Volta::MOVInstruction *instruction) override;
 
 private:
+	bool CheckRedundant(const Register *destination, const Composite *source) const;
 	bool m_redundant = false;
 };
 

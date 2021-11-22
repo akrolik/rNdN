@@ -1,9 +1,9 @@
-#include "Backend/Scheduler/HardwareProperties.h"
+#include "Backend/Scheduler/Profiles/Compute61Profile.h"
 
 namespace Backend {
 namespace Scheduler {
 
-HardwareProperties::FunctionalUnit HardwareProperties::GetFunctionalUnit(const SASS::Instruction *instruction)
+Compute61Profile::FunctionalUnit Compute61Profile::GetFunctionalUnit(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -27,6 +27,7 @@ HardwareProperties::FunctionalUnit HardwareProperties::GetFunctionalUnit(const S
 			return FunctionalUnit::SpecialFunction;
 		}
 		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		case SASS::Instruction::InstructionClass::Control:
 		{
 			return FunctionalUnit::Core;
@@ -40,7 +41,7 @@ HardwareProperties::FunctionalUnit HardwareProperties::GetFunctionalUnit(const S
 	return FunctionalUnit::Core;
 }
 
-std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction)
+std::uint8_t Compute61Profile::GetLatency(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -71,7 +72,7 @@ std::uint8_t HardwareProperties::GetLatency(const SASS::Instruction *instruction
 	return 15;
 }
 
-std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *instruction)
+std::uint8_t Compute61Profile::GetMinimumLatency(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -99,7 +100,7 @@ std::uint8_t HardwareProperties::GetMinimumLatency(const SASS::Instruction *inst
 	return 15;
 }
 
-std::uint8_t HardwareProperties::GetBarrierLatency(const SASS::Instruction *instruction)
+std::uint8_t Compute61Profile::GetBarrierLatency(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -136,7 +137,7 @@ std::uint8_t HardwareProperties::GetBarrierLatency(const SASS::Instruction *inst
 	return 0;
 }
 
-std::uint8_t HardwareProperties::GetReadLatency(const SASS::Instruction *instruction)
+std::uint8_t Compute61Profile::GetReadLatency(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -164,7 +165,7 @@ std::uint8_t HardwareProperties::GetReadLatency(const SASS::Instruction *instruc
 	return 0;
 }
 
-std::uint8_t HardwareProperties::GetReadHold(const SASS::Instruction *instruction)
+std::uint8_t Compute61Profile::GetReadHold(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -189,7 +190,7 @@ std::uint8_t HardwareProperties::GetReadHold(const SASS::Instruction *instructio
 	return 0;
 }
 
-std::uint8_t HardwareProperties::GetThroughputLatency(const SASS::Instruction *instruction)
+std::uint8_t Compute61Profile::GetThroughputLatency(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -220,7 +221,7 @@ std::uint8_t HardwareProperties::GetThroughputLatency(const SASS::Instruction *i
 	return 1;
 }
 
-bool HardwareProperties::GetDualIssue(const SASS::Instruction *instruction)
+bool Compute61Profile::GetDualIssue(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{
@@ -245,7 +246,7 @@ bool HardwareProperties::GetDualIssue(const SASS::Instruction *instruction)
 	return false;
 }
 
-bool HardwareProperties::GetReuseFlags(const SASS::Instruction *instruction)
+bool Compute61Profile::GetReuseFlags(const SASS::Instruction *instruction) const
 {
 	switch (instruction->GetInstructionClass())
 	{

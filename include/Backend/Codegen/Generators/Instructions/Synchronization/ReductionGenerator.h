@@ -22,12 +22,18 @@ public:
 	template<PTX::Bits B, class T, class S>
 	void Visit(const PTX::ReductionInstruction<B, T, S> *instruction);
 
-private:
 	template<PTX::Bits B, class T, class S>
-	SASS::REDInstruction::Type InstructionType(const PTX::ReductionInstruction<B, T, S> *instruction);
+	void GenerateMaxwell(const PTX::ReductionInstruction<B, T, S> *instruction);
 
 	template<PTX::Bits B, class T, class S>
-	SASS::REDInstruction::Mode InstructionMode(const PTX::ReductionInstruction<B, T, S> *instruction);
+	void GenerateVolta(const PTX::ReductionInstruction<B, T, S> *instruction);
+
+private:
+	template<class I, PTX::Bits B, class T, class S>
+	typename I::Type InstructionType(const PTX::ReductionInstruction<B, T, S> *instruction);
+
+	template<class I, PTX::Bits B, class T, class S>
+	typename I::Mode InstructionMode(const PTX::ReductionInstruction<B, T, S> *instruction);
 };
 
 }

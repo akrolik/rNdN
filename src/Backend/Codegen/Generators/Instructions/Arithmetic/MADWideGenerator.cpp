@@ -3,6 +3,8 @@
 #include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -22,6 +24,12 @@ void MADWideGenerator::Visit(const PTX::MADWideInstruction<T> *instruction)
 	//   - Int16, Int32
 	//   - UInt16, UInt32
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void MADWideGenerator::GenerateMaxwell(const PTX::MADWideInstruction<T> *instruction)
+{
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
 		// Generate operands
@@ -45,21 +53,27 @@ void MADWideGenerator::Visit(const PTX::MADWideInstruction<T> *instruction)
 			auto value = immediateSourceB->GetValue();
 			if (value == 1)
 			{
-				this->AddInstruction(new SASS::IADDInstruction(destination_Lo, sourceA, sourceC_Lo, SASS::IADDInstruction::Flags::CC)); 
-				this->AddInstruction(new SASS::IADDInstruction(destination_Hi, SASS::RZ, sourceC_Hi, SASS::IADDInstruction::Flags::X));
+				this->AddInstruction(new SASS::Maxwell::IADDInstruction(
+					destination_Lo, sourceA, sourceC_Lo, SASS::Maxwell::IADDInstruction::Flags::CC
+				)); 
+				this->AddInstruction(new SASS::Maxwell::IADDInstruction(
+					destination_Hi, SASS::RZ, sourceC_Hi, SASS::Maxwell::IADDInstruction::Flags::X
+				));
 			}
 			else if (value == Utils::Math::Power2(value))
 			{
 				auto temp = this->m_builder.AllocateTemporaryRegister();
 				auto logValue = Utils::Math::Log2(value);
 
-				this->AddInstruction(new SASS::SHRInstruction(
-					temp, sourceA, new SASS::I32Immediate(32 - logValue), SASS::SHRInstruction::Flags::U32
+				this->AddInstruction(new SASS::Maxwell::SHRInstruction(
+					temp, sourceA, new SASS::I32Immediate(32 - logValue), SASS::Maxwell::SHRInstruction::Flags::U32
 				));
-				this->AddInstruction(new SASS::ISCADDInstruction(
-					destination_Lo, sourceA, sourceC_Lo, new SASS::I8Immediate(logValue), SASS::ISCADDInstruction::Flags::CC
+				this->AddInstruction(new SASS::Maxwell::ISCADDInstruction(
+					destination_Lo, sourceA, sourceC_Lo, new SASS::I8Immediate(logValue), SASS::Maxwell::ISCADDInstruction::Flags::CC
 				));
-				this->AddInstruction(new SASS::IADDInstruction(destination_Hi, temp, sourceC_Hi, SASS::IADDInstruction::Flags::X));
+				this->AddInstruction(new SASS::Maxwell::IADDInstruction(
+					destination_Hi, temp, sourceC_Hi, SASS::Maxwell::IADDInstruction::Flags::X
+				));
 			}
 			else
 			{
@@ -75,6 +89,12 @@ void MADWideGenerator::Visit(const PTX::MADWideInstruction<T> *instruction)
 	{
 		Error(instruction, "unsupported type");
 	}
+}
+
+template<class T>
+void MADWideGenerator::GenerateVolta(const PTX::MADWideInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
 }
 
 }

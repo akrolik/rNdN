@@ -1,12 +1,13 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
-#include "SASS/Tree/BinaryUtils.h"
 #include "SASS/Tree/Operands/Register.h"
 #include "SASS/Tree/Operands/SpecialRegister.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class CS2RInstruction : public PredicatedInstruction
 {
@@ -59,7 +60,7 @@ public:
 
 	// Hardware properties
 
-	InstructionClass GetInstructionClass() const override { return InstructionClass::Integer; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::Control; }
 
 	// Visitors
 
@@ -71,4 +72,5 @@ private:
 	SpecialRegister *m_source = nullptr;
 };
 
+}
 }

@@ -7,6 +7,8 @@
 #include "PTX/Analysis/RegisterAllocator/RegisterAllocation.h"
 #include "PTX/Tree/Tree.h"
 
+#include "Backend/Scheduler/Profiles/HardwareProfile.h"
+
 #include "SASS/Tree/Tree.h"
 
 namespace Backend {
@@ -20,6 +22,7 @@ public:
 	// Functions
 
 	bool VisitIn(PTX::Function *function) override;
+	bool VisitIn(PTX::Module *module) override;
 
 	void Visit(PTX::_FunctionDeclaration *function) override;
 	void Visit(PTX::_FunctionDefinition *function) override;
@@ -37,6 +40,7 @@ public:
 
 private:
 	const PTX::Analysis::RegisterAllocation *AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function);
+	const Scheduler::HardwareProfile *GetHardwareProfile(unsigned int computeCapability);
 
 	SASS::Program *m_program = nullptr;
 };

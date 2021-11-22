@@ -16,8 +16,27 @@ BinaryProgram *Assembler::Assemble(const SASS::Program *program)
 
 	// Collect the device properties for codegen
 
+	m_computeCapability = program->GetComputeCapability();
+
 	auto binaryProgram = new BinaryProgram();
-	binaryProgram->SetComputeCapability(program->GetComputeCapability());
+	binaryProgram->SetComputeCapability(m_computeCapability);
+
+	if (SASS::Maxwell::IsSupported(m_computeCapability))
+	{
+		m_instructionSize = sizeof(std::uint64_t);
+		m_instructionPad = 6;
+		m_scheduleGroup = 3;
+	}
+	else if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		m_instructionSize = 2 * sizeof(std::uint64_t);
+		m_instructionPad = 16;
+		m_scheduleGroup = 0;
+	}
+	else
+	{
+		Utils::Logger::LogError("Unsupported compute capability for assembler 'sm_" + std::to_string(m_computeCapability) + "'");
+	}
 
 	// Global variables
 
@@ -60,7 +79,7 @@ BinaryProgram *Assembler::Assemble(const SASS::Program *program)
 
 BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 {
-	auto binaryFunction = new BinaryFunction(function->GetName());
+	auto binaryFunction = new BinaryFunction(function->GetName(), m_instructionSize);
 
 	for (auto parameter : function->GetParameters())
 	{
@@ -81,7 +100,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	//    (d) SHFL instructions
 
 	auto blockOffset = 0u;
-	m_blockIndex.clear();
+	m_blockAddress.clear();
 
 	std::vector<const SASS::Instruction *> linearProgram;
 	for (const auto block : function->GetBasicBlocks())
@@ -93,63 +112,68 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 		// Keep track of the start address to resolve branches
 
-		m_blockIndex.insert({block->GetName(), blockOffset});
-		blockOffset += instructions.size();
+		m_blockAddress.insert({block->GetName(), blockOffset});
+		blockOffset += instructions.size() * m_instructionSize;
 	}
 
 	// Insert self-loop
 
 	auto selfName = "_END";
 	auto selfBlock = new SASS::BasicBlock(selfName);
-	auto selfBranch = new SASS::BRAInstruction(selfName);
-
-	auto& selfSchedule = selfBranch->GetSchedule();
-	selfSchedule.SetStall(15);
-	selfSchedule.SetYield(true);
+	auto selfBranch = GenerateSelfBranchInstruction(selfName);
 
 	linearProgram.push_back(selfBranch);
-	m_blockIndex.insert({selfName, blockOffset++});
+	m_blockAddress.insert({selfName, blockOffset});
+	blockOffset += m_instructionSize;
 
-	// Padding to multiple of 6
+	// Padding to multiple of instructions with NOPs
 
-	const auto PAD_SIZE = 6u;
-	const auto pad = PAD_SIZE - (linearProgram.size() % PAD_SIZE);
+	const auto padding = m_instructionPad - (linearProgram.size() % m_instructionPad);
 
-	for (auto i = 0u; i < pad; i++)
+	for (auto i = 0u; i < padding; i++)
 	{
 		// Insert NOPs with scheduling directive:
 		//   0000 000000 111 111 0 0000
 
-		auto nop = new SASS::NOPInstruction();
+		auto nop = GeneratePaddingInstruction();
 		auto& nopSchedule = nop->GetSchedule();
 		nopSchedule.SetStall(0);
 
 		linearProgram.push_back(nop);
 	}
 
-	// Construct SCHI instructions
+	// Insert SCHI instructions for each schedule group
 
-	for (auto i = 0u; i < linearProgram.size(); i += 4)
+	if (m_scheduleGroup == 3)
 	{
-		auto inst1 = linearProgram.at(i);
-		auto inst2 = linearProgram.at(i+1);
-		auto inst3 = linearProgram.at(i+2);
+		// Construct SCHI instructions
 
-		std::uint64_t assembled = 0u;
-		assembled <<= 1;
-		assembled |= inst3->GetSchedule().GenCode();
-		assembled <<= 21;
-		assembled |= inst2->GetSchedule().GenCode();
-		assembled <<= 21;
-		assembled |= inst1->GetSchedule().GenCode();
+		for (auto i = 0u; i < linearProgram.size(); i += 4)
+		{
+			auto inst1 = linearProgram.at(i);
+			auto inst2 = linearProgram.at(i+1);
+			auto inst3 = linearProgram.at(i+2);
 
-		linearProgram.insert(std::begin(linearProgram) + i, new SASS::SCHIInstruction(assembled));
+			std::uint64_t assembled = 0u;
+			assembled <<= 1;
+			assembled |= inst3->GetSchedule().ToBinary();
+			assembled <<= 21;
+			assembled |= inst2->GetSchedule().ToBinary();
+			assembled <<= 21;
+			assembled |= inst1->GetSchedule().ToBinary();
+
+			linearProgram.insert(std::begin(linearProgram) + i, new SASS::Maxwell::SCHIInstruction(assembled));
+		}
+	}
+	else if (m_scheduleGroup != 0)
+	{
+		Utils::Logger::LogError("Unsupported schedule group size '" + std::to_string(m_scheduleGroup) + "'");
 	}
 
 	// Resolve branches and control reconvergence instructions
 	// Collect special NVIDIA ELF properties
 
-	m_index = 0;
+	m_currentAddress = 0;
 	m_barrierCount = 0;
 	m_binaryFunction = binaryFunction;
 
@@ -158,7 +182,7 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		auto instruction = const_cast<SASS::Instruction *>(linearProgram.at(i));
 		instruction->Accept(*this);
 
-		m_index++;
+		m_currentAddress += m_instructionSize;
 	}
 
 	// Setup barriers
@@ -174,16 +198,11 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	for (const auto& relocation : function->GetRelocations())
 	{
 		auto it = std::find(std::begin(linearProgram), std::end(linearProgram), relocation->GetInstruction());
-		auto address = (it - linearProgram.begin()) * sizeof(std::uint64_t);
+		auto address = (it - linearProgram.begin()) * m_instructionSize;
 
 		BinaryFunction::RelocationKind kind;
 		switch (relocation->GetKind())
 		{
-			case SASS::Relocation::Kind::ABS24_20:
-			{
-				kind = BinaryFunction::RelocationKind::ABS24_20;
-				break;
-			}
 			case SASS::Relocation::Kind::ABS32_LO_20:
 			{
 				kind = BinaryFunction::RelocationKind::ABS32_LO_20;
@@ -192,6 +211,26 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 			case SASS::Relocation::Kind::ABS32_HI_20:
 			{
 				kind = BinaryFunction::RelocationKind::ABS32_HI_20;
+				break;
+			}
+			case SASS::Relocation::Kind::ABS32_LO_32:
+			{
+				kind = BinaryFunction::RelocationKind::ABS32_LO_32;
+				break;
+			}
+			case SASS::Relocation::Kind::ABS32_HI_32:
+			{
+				kind = BinaryFunction::RelocationKind::ABS32_HI_32;
+				break;
+			}
+			case SASS::Relocation::Kind::ABS24_20:
+			{
+				kind = BinaryFunction::RelocationKind::ABS24_20;
+				break;
+			}
+			case SASS::Relocation::Kind::ABS32_32:
+			{
+				kind = BinaryFunction::RelocationKind::ABS32_32;
 				break;
 			}
 			default:
@@ -210,21 +249,15 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 		// Compute offset of branch (SYNC) instruction
 
 		auto it = std::find(std::begin(linearProgram), std::end(linearProgram), indirectBranch->GetBranch());
-		auto offset = (it - linearProgram.begin())  * sizeof(std::uint64_t);
+		auto offsetAddress = (it - linearProgram.begin())  * m_instructionSize;
 
 		// Compute offset of target block
 
-		auto unpaddedIndex = m_blockIndex.at(indirectBranch->GetTarget());
-		auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
-		if (paddedIndex % 4 == 1)
-		{
-			paddedIndex--; // Begin at previous SCHI instruction
-		}
-		auto target = paddedIndex * sizeof(std::uint64_t);
+		auto targetAddress = GetTargetAddress(indirectBranch->GetTarget());
 
 		// Add indirect branch
 
-		binaryFunction->AddIndirectBranch(offset, target);
+		binaryFunction->AddIndirectBranch(offsetAddress, targetAddress);
 	}
 
 	// Stack size
@@ -233,12 +266,19 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 
 	// Assemble into binary
 
-	auto binary = new std::uint64_t[linearProgram.size()];
+	auto binaryFactor = m_instructionSize / sizeof(std::uint64_t);
+	auto binary = new std::uint64_t[linearProgram.size() * binaryFactor];
 	for (auto i = 0u; i < linearProgram.size(); ++i)
 	{
-		binary[i] = linearProgram.at(i)->ToBinary();
+		auto instruction = linearProgram[i];
+		binary[i * binaryFactor] = instruction->ToBinary();
+
+		if (m_instructionSize == 16)
+		{
+			binary[i * binaryFactor + 1] = instruction->ToBinaryHi();
+		}
 	}
-	binaryFunction->SetText((char *)binary, sizeof(std::uint64_t) * linearProgram.size());
+	binaryFunction->SetText((char *)binary, m_instructionSize * linearProgram.size());
 	binaryFunction->SetRegisters(function->GetRegisters());
 	binaryFunction->SetMaxRegisters(function->GetMaxRegisters());
 	binaryFunction->SetLinearProgram(linearProgram);
@@ -268,53 +308,100 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 	return binaryFunction;
 }
 
-// Address resolution
+// Padding instructions
 
-void Assembler::Visit(SASS::DivergenceInstruction *instruction)
+SASS::Instruction *Assembler::GeneratePaddingInstruction() const
 {
-	auto unpaddedIndex = m_blockIndex.at(instruction->GetTarget());
-	auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
-	if (paddedIndex % 4 == 1)
+	if (SASS::Maxwell::IsSupported(m_computeCapability))
 	{
-		paddedIndex--; // Begin at previous SCHI instruction
+		return new SASS::Maxwell::NOPInstruction();
+	}
+	else if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		return new SASS::Volta::NOPInstruction();
 	}
 
-	instruction->SetTargetAddress(
-		paddedIndex * sizeof(std::uint64_t),
-		m_index * sizeof(std::uint64_t)
-	);
+	Utils::Logger::LogError("Unsupported compute capability for padding instruction '" + std::to_string(m_computeCapability) + "'");
 }
 
-void Assembler::Visit(SASS::BRAInstruction *instruction)
+SASS::Instruction *Assembler::GenerateSelfBranchInstruction(const std::string& name) const
 {
-	auto unpaddedIndex = m_blockIndex.at(instruction->GetTarget());
-	auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / 3);
-	if (paddedIndex % 4 == 1)
+	if (SASS::Maxwell::IsSupported(m_computeCapability))
+	{
+		auto instruction = new SASS::Maxwell::BRAInstruction(name);
+		auto& schedule = instruction->GetSchedule();
+
+		schedule.SetStall(15);
+		schedule.SetYield(true);
+
+		return instruction;
+	}
+	else if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		auto instruction = new SASS::Volta::BRAInstruction(name);
+		auto& schedule = instruction->GetSchedule();
+		schedule.SetStall(0);
+		return instruction;
+	}
+
+	Utils::Logger::LogError("Unsupported compute capability for branch instruction '" + std::to_string(m_computeCapability) + "'");
+}
+
+// Address resolution
+
+std::uint64_t Assembler::GetTargetAddress(const std::string& target) const
+{
+	auto unpaddedAddress = m_blockAddress.at(target);
+
+	// Inline scheduling directives are not padded
+
+	if (m_scheduleGroup == 0)
+	{
+		return unpaddedAddress;
+	}
+
+	// Separate SCHI instructions require padding for address resolution
+
+	auto unpaddedIndex = unpaddedAddress / m_instructionSize;
+	auto paddedIndex = 1 + unpaddedIndex + (unpaddedIndex / m_scheduleGroup);
+
+	if (paddedIndex % (m_scheduleGroup + 1) == 1)
 	{
 		paddedIndex--; // Begin at previous SCHI instruction
 	}
 
-	instruction->SetTargetAddress(
-		paddedIndex * sizeof(std::uint64_t),
-		m_index * sizeof(std::uint64_t)
-	);
+	return paddedIndex * m_instructionSize;
+}
+
+void Assembler::Visit(SASS::Maxwell::DivergenceInstruction *instruction)
+{
+	auto targetAddress = GetTargetAddress(instruction->GetTarget());
+
+	instruction->SetTargetAddress(targetAddress, m_currentAddress);
+}
+
+void Assembler::Visit(SASS::Volta::DivergenceInstruction *instruction)
+{
+	auto targetAddress = GetTargetAddress(instruction->GetTarget());
+
+	instruction->SetTargetAddress(targetAddress, m_currentAddress);
 }
 
 // NVIDIA custom ELF
 
-void Assembler::Visit(SASS::EXITInstruction *instruction)
+void Assembler::Visit(SASS::Maxwell::EXITInstruction *instruction)
 {
-	m_binaryFunction->AddExitOffset(m_index * sizeof(std::uint64_t));
+	m_binaryFunction->AddExitOffset(m_currentAddress);
 }
 
-void Assembler::Visit(SASS::S2RInstruction *instruction)
+void Assembler::Visit(SASS::Maxwell::S2RInstruction *instruction)
 {
 	auto kind = instruction->GetSource()->GetKind();
 	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_X ||
 		kind == SASS::SpecialRegister::Kind::SR_CTAID_Y ||
 		kind == SASS::SpecialRegister::Kind::SR_CTAID_X)
 	{
-		m_binaryFunction->AddS2RCTAIDOffset(m_index * sizeof(std::uint64_t));
+		m_binaryFunction->AddS2RCTAIDOffset(m_currentAddress);
 	}
 	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_Z)
 	{
@@ -322,12 +409,12 @@ void Assembler::Visit(SASS::S2RInstruction *instruction)
 	}
 }
 
-void Assembler::Visit(SASS::SHFLInstruction *instruction)
+void Assembler::Visit(SASS::Maxwell::SHFLInstruction *instruction)
 {
-	m_binaryFunction->AddCoopOffset(m_index * sizeof(std::uint64_t));
+	m_binaryFunction->AddCoopOffset(m_currentAddress);
 }
 
-void Assembler::Visit(SASS::BARInstruction *instruction)
+void Assembler::Visit(SASS::Maxwell::BARInstruction *instruction)
 {
 	auto barrier = instruction->GetBarrier();
 	if (dynamic_cast<const SASS::Register *>(barrier))
@@ -341,6 +428,41 @@ void Assembler::Visit(SASS::BARInstruction *instruction)
 		{
 			m_barrierCount = value + 1;
 		}
+	}
+}
+
+void Assembler::Visit(SASS::Volta::EXITInstruction *instruction)
+{
+	m_binaryFunction->AddExitOffset(m_currentAddress);
+}
+
+void Assembler::Visit(SASS::Volta::S2RInstruction *instruction)
+{
+	auto kind = instruction->GetSource()->GetKind();
+	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_X ||
+		kind == SASS::SpecialRegister::Kind::SR_CTAID_Y ||
+		kind == SASS::SpecialRegister::Kind::SR_CTAID_X)
+	{
+		m_binaryFunction->AddS2RCTAIDOffset(m_currentAddress);
+	}
+	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_Z)
+	{
+		m_binaryFunction->SetCTAIDZUsed(true);
+	}
+}
+
+void Assembler::Visit(SASS::Volta::SHFLInstruction *instruction)
+{
+	m_binaryFunction->AddCoopOffset(m_currentAddress);
+}
+
+void Assembler::Visit(SASS::Volta::BARInstruction *instruction)
+{
+	auto barrier = instruction->GetBarrier();
+	auto value = barrier->GetValue();
+	if (value + 1 > m_barrierCount)
+	{
+		m_barrierCount = value + 1;
 	}
 }
 

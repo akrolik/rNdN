@@ -33,18 +33,26 @@ void RedundantCodeElimination::Transform(Function *function)
 	Utils::Chrono::End(timeTransform_start);
 }
 
-void RedundantCodeElimination::Visit(MOVInstruction *instruction)
+void RedundantCodeElimination::Visit(Maxwell::MOVInstruction *instruction)
 {
-	auto destination = instruction->GetDestination();
-	auto source = instruction->GetSource();
+	m_redundant = CheckRedundant(instruction->GetDestination(), instruction->GetSource());
+}
 
-	if (auto sourceRegister = dynamic_cast<Register *>(source))
+void RedundantCodeElimination::Visit(Volta::MOVInstruction *instruction)
+{
+	if (instruction->GetSourceB() == nullptr)
 	{
-		if (destination->GetValue() == sourceRegister->GetValue())
-		{
-			m_redundant = true;
-		}
+		m_redundant = CheckRedundant(instruction->GetDestination(), instruction->GetSourceA());
 	}
+}
+
+bool RedundantCodeElimination::CheckRedundant(const Register *destination, const Composite *source) const
+{
+	if (auto sourceRegister = dynamic_cast<const Register *>(source))
+	{
+		return (destination->GetValue() == sourceRegister->GetValue());
+	}
+	return false;
 }
 
 }

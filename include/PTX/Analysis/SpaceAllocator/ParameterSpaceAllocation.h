@@ -12,6 +12,7 @@ namespace Analysis {
 class ParameterSpaceAllocation
 {
 public:
+	ParameterSpaceAllocation(std::size_t parameterOffset) : m_parameterOffset(parameterOffset) {}
 	// Parameters
 
 	void AddParameter(const std::string& name, std::size_t size);
@@ -25,7 +26,7 @@ public:
 
 private:
 	robin_hood::unordered_map<std::string, std::size_t> m_parameterMap;
-	std::size_t m_parameterOffset = SASS::CBANK_ParametersOffset;
+	std::size_t m_parameterOffset = 0;
 };
 
 }

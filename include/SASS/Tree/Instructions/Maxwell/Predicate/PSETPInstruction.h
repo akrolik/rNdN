@@ -1,11 +1,12 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
-#include "SASS/Tree/BinaryUtils.h"
 #include "SASS/Tree/Operands/Predicate.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class PSETPInstruction : public PredicatedInstruction
 {
@@ -181,4 +182,5 @@ private:
 
 SASS_FLAGS_INLINE(PSETPInstruction)
 
+}
 }

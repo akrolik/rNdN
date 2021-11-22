@@ -24,7 +24,18 @@ void PredicatedInstructionGenerator::SetPredicatedInstruction(const PTX::Predica
 	m_instruction = instruction;
 }
 
-void PredicatedInstructionGenerator::AddInstruction(SASS::PredicatedInstruction *instruction, SASS::Predicate *predicate, bool negatePredicate)
+void PredicatedInstructionGenerator::AddInstruction(SASS::Maxwell::PredicatedInstruction *instruction, SASS::Predicate *predicate, bool negatePredicate)
+{
+	_AddInstruction(instruction, predicate, negatePredicate);
+}
+
+void PredicatedInstructionGenerator::AddInstruction(SASS::Volta::PredicatedInstruction *instruction, SASS::Predicate *predicate, bool negatePredicate)
+{
+	_AddInstruction(instruction, predicate, negatePredicate);
+}
+
+template<class I>
+void PredicatedInstructionGenerator::_AddInstruction(I *instruction, SASS::Predicate *predicate, bool negatePredicate)
 {
 	if (predicate != nullptr && m_predicate != nullptr)
 	{

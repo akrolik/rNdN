@@ -1,11 +1,14 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/Instruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
+
 #include "SASS/Tree/Operands/Predicate.h"
 
 namespace SASS {
+namespace Maxwell {
 
-class PredicatedInstruction : public Maxwell::Instruction
+class PredicatedInstruction : public Instruction
 {
 public:
 	using Instruction::Instruction;
@@ -49,4 +52,5 @@ private:
 	bool m_negatePredicate = false;
 };
 
+}
 }

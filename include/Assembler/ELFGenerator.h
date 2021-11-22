@@ -14,6 +14,7 @@ public:
 		EIATTR_MIN_STACK_SIZE  = 0x12,
 		EIATTR_FRAME_SIZE      = 0x11,
 
+		EIATTR_SW2861232_WAR            = 0x35,
 		EIATTR_SW2393858_WAR            = 0x30,
 		EIATTR_SW1850030_WAR            = 0x2a,
 		EIATTR_PARAM_CBANK              = 0x0a,

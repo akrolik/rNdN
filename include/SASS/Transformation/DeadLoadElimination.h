@@ -12,10 +12,14 @@ class DeadLoadElimination : public Visitor
 public:
 	void Transform(Function *function);
 
-	void Visit(LDGInstruction *instruction) override;
-	void Visit(LDSInstruction *instruction) override;
+	void Visit(Maxwell::LDGInstruction *instruction) override;
+	void Visit(Maxwell::LDSInstruction *instruction) override;
+
+	void Visit(Volta::LDGInstruction *instruction) override;
+	void Visit(Volta::LDSInstruction *instruction) override;
 
 private:
+	bool CheckDeadLoad(const Register *destination);
 	bool m_dead = false;
 };
 

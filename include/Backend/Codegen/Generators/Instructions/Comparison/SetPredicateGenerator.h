@@ -22,18 +22,24 @@ public:
 	template<class T>
 	void Visit(const PTX::SetPredicateInstruction<T> *instruction);
 
+	template<class T>
+	void GenerateMaxwell(const PTX::SetPredicateInstruction<T> *instruction);
+
+	template<class T>
+	void GenerateVolta(const PTX::SetPredicateInstruction<T> *instruction);
+
 private:
-	template<class T>
-	SASS::ISETPInstruction::ComparisonOperator IInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class I, class T>
+	typename I::ComparisonOperator IInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
-	template<class T>
-	SASS::ISETPInstruction::BooleanOperator IInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class I, class T>
+	typename I::BooleanOperator IInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
-	template<class T>
-	SASS::DSETPInstruction::ComparisonOperator DInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class I, class T>
+	typename I::ComparisonOperator DInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
-	template<class T>
-	SASS::DSETPInstruction::BooleanOperator DInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class I, class T>
+	typename I::BooleanOperator DInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
 };
 
 }

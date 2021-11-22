@@ -4,6 +4,8 @@
 #include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -26,6 +28,12 @@ void SelectGenerator::Visit(const PTX::SelectInstruction<T> *instruction)
 	//   - Float32, Float64
 	// Modifiers: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void SelectGenerator::GenerateMaxwell(const PTX::SelectInstruction<T> *instruction)
+{
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -40,19 +48,25 @@ void SelectGenerator::Visit(const PTX::SelectInstruction<T> *instruction)
 
 	// Flags
 
-	auto flags = SASS::SELInstruction::Flags::None;
+	auto flags = SASS::Maxwell::SELInstruction::Flags::None;
 	if (sourceC_Not)
 	{
-		flags |= SASS::SELInstruction::Flags::NOT_C;
+		flags |= SASS::Maxwell::SELInstruction::Flags::NOT_C;
 	}
 
 	// Generate instruction
 
-	this->AddInstruction(new SASS::SELInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, sourceC, flags));
+	this->AddInstruction(new SASS::Maxwell::SELInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, sourceC, flags));
 	if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		this->AddInstruction(new SASS::SELInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, sourceC, flags));
+		this->AddInstruction(new SASS::Maxwell::SELInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, sourceC, flags));
 	}
+}
+
+template<class T>
+void SelectGenerator::GenerateVolta(const PTX::SelectInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported instruction");
 }
 
 }

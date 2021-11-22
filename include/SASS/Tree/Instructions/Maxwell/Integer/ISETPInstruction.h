@@ -1,14 +1,15 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
-#include "SASS/Tree/BinaryUtils.h"
 #include "SASS/Tree/Operands/CarryFlag.h"
 #include "SASS/Tree/Operands/Composite.h"
 #include "SASS/Tree/Operands/Predicate.h"
 #include "SASS/Tree/Operands/Register.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class ISETPInstruction : public PredicatedInstruction
 {
@@ -60,7 +61,7 @@ public:
 
 	const Predicate *GetSourceC() const { return m_sourceC; }
 	Predicate *GetSourceC() { return m_sourceC; }
-	void SetSourceB(Predicate *sourceC) { m_sourceC = sourceC; }
+	void SetSourceC(Predicate *sourceC) { m_sourceC = sourceC; }
 
 	ComparisonOperator GetComparisonOperator() const { return m_comparisonOperator; }
 	void SetComparisonOperator(ComparisonOperator comparisonOperator) { m_comparisonOperator = comparisonOperator; }
@@ -202,4 +203,5 @@ private:
 
 SASS_FLAGS_INLINE(ISETPInstruction)
 
+}
 }

@@ -12,7 +12,9 @@ void ParameterSpaceAllocator::Analyze(const FunctionDefinition<VoidType> *functi
 
 	auto timeAllocation_start = Utils::Chrono::Start(Name + " '" + functionName + "'");
 
-	m_allocation = new ParameterSpaceAllocation();
+	auto parameterOffset = GetParameterOffset();
+	m_allocation = new ParameterSpaceAllocation(parameterOffset);
+
 	for (const auto& parameter : function->GetParameters())
 	{
 		parameter->Accept(static_cast<ConstHierarchicalVisitor&>(*this));
@@ -58,6 +60,19 @@ void ParameterSpaceAllocator::Visit(const TypedVariableDeclaration<T, S> *declar
 			}
 		}
 	}
+}
+
+std::size_t ParameterSpaceAllocator::GetParameterOffset() const
+{
+	if (SASS::Maxwell::IsSupported(m_computeCapability))
+	{
+		return SASS::Maxwell::CBANK_PARAM_OFFSET;
+	}
+	else if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		return SASS::Volta::CBANK_PARAM_OFFSET;
+	}
+	Utils::Logger::LogError("Unsupported CUDA compute capability for parameter allocation 'sm_" + std::to_string(m_computeCapability) + "'");
 }
 
 }

@@ -20,6 +20,10 @@ namespace Codegen {
 class CodeGenerator : public PTX::ConstHierarchicalVisitor, public PTX::ConstDeclarationVisitor, public PTX::Analysis::ConstStructuredGraphVisitor
 {
 public:
+	CodeGenerator(unsigned int computeCapability) : m_builder(computeCapability) {}
+
+	// Generator
+
 	SASS::Function *Generate(const PTX::FunctionDefinition<PTX::VoidType> *function, const PTX::Analysis::RegisterAllocation *registerAllocation, const PTX::Analysis::ParameterSpaceAllocation *parameterAllocation);
 	
 	// Declarations
@@ -47,7 +51,21 @@ public:
 
 	bool VisitIn(const PTX::InstructionStatement *statement) override;
 
+	// Compute capability
+
+	unsigned int GetComputeCapability() const { return m_builder.GetComputeCapability(); }
+	void SetComputeCapability(unsigned int computeCapability) { m_builder.SetComputeCapability(computeCapability); }
+
 private:
+	template<class SSY, class SYNC, class BRA, bool BARRIER = false>
+	void GenerateBranchStructure(const PTX::Analysis::BranchStructure *structure);
+
+	template<class SYNC, bool BARRIER = false>
+	void GenerateExitStructure(const PTX::Analysis::ExitStructure *structure);
+
+	template<class SSY, class BRA, bool BARRIER = false>
+	void GenerateLoopStructure(const PTX::Analysis::LoopStructure *structure);
+
 	Builder m_builder;
 
 	SASS::BasicBlock *m_beginBlock = nullptr;
@@ -56,6 +74,7 @@ private:
 	std::vector<SASS::Instruction *> m_loopExits;
 	std::size_t m_stackSize = 0;
 	std::size_t m_maxStack = 0;
+	std::size_t m_stackDepth = 0;
 };
 
 }

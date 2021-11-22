@@ -1,5 +1,7 @@
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 #include "PTX/Utils/PrettyPrinter.h"
 
 namespace Backend {
@@ -136,28 +138,37 @@ void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
 {
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
+		m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
+		
 		// Architecture property
 
 		if (constant->GetName() == PTX::SpecialConstantName_WARP_SZ)
 		{
-			m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
-		
-			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(SASS::WARP_SIZE)));
+			auto immediate = new SASS::I32Immediate(SASS::WARP_SIZE);
+
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::MOV32IInstruction(m_register, immediate));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(m_register, immediate));
+			});
+
 			return;
 		}
 	}
-
 	Error(constant, "constant not found");
 }
 
 template<class T>
-void RegisterGenerator::Visit(const PTX::ParameterConstant<T> *constant)
+void RegisterGenerator::Visit(const PTX::ParameterConstant<T> *parameter)
 {
 	const auto& allocations = this->m_builder.GetParameterSpaceAllocation();
 
 	// Verify parameter allocated
 
-	const auto& name = constant->GetName();
+	const auto& name = parameter->GetName();
 	if (allocations->ContainsParameter(name))
 	{
 		auto [reg, regHi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>();
@@ -169,19 +180,39 @@ void RegisterGenerator::Visit(const PTX::ParameterConstant<T> *constant)
 		// Load value from constant space into registers (hi for 64-bit types)
 
 		auto constant = new SASS::Constant(0x0, offset);
-		this->m_builder.AddInstruction(new SASS::MOVInstruction(reg, constant));
+
+		ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+		{
+			this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(reg, constant));
+		},
+		[&]() // Volta instruction set
+		{
+			this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(reg, constant));
+		});
+
 		m_register = reg;
+
+		// 64-bit value Hi bits
 
 		if constexpr(T::TypeBits == PTX::Bits::Bits64)
 		{
 			auto constantHi = new SASS::Constant(0x0, offset + 0x4);
-			this->m_builder.AddInstruction(new SASS::MOVInstruction(regHi, constantHi));
+
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(regHi, constantHi));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(regHi, constantHi));
+			});
+
 			m_registerHi = regHi;
 		}
 	}
 	else
 	{
-		Error(constant, "parameter not found");
+		Error(parameter, "parameter not found");
 	}
 }
 
@@ -202,13 +233,31 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 		{
 			m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
 
-			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::I32Immediate(value->GetValue())));
+			auto immediate = new SASS::I32Immediate(value->GetValue());
+
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::MOV32IInstruction(m_register, immediate));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(m_register, immediate));
+			});
 		}
 		else if constexpr(std::is_same<T, PTX::Float32Type>::value)
 		{
 			m_register = this->m_builder.AllocateTemporaryRegister<T::TypeBits>();
 
-			this->m_builder.AddInstruction(new SASS::MOV32IInstruction(m_register, new SASS::F32Immediate(value->GetValue())));
+			auto immediate = new SASS::F32Immediate(value->GetValue());
+
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::MOV32IInstruction(m_register, immediate));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(m_register, immediate));
+			});
 		}
 		else
 		{
@@ -221,12 +270,28 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 			// Load value from constant space into registers (hi for 64-bit types)
 
 			auto constant = new SASS::Constant(0x2, offset);
-			this->m_builder.AddInstruction(new SASS::MOVInstruction(reg, constant));
+
+			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(reg, constant));
+			},
+			[&]() // Volta instruction set
+			{
+				this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(reg, constant));
+			});
 
 			if constexpr(T::TypeBits == PTX::Bits::Bits64)
 			{
 				auto constantHi = new SASS::Constant(0x2, offset + 0x4);
-				this->m_builder.AddInstruction(new SASS::MOVInstruction(regHi, constantHi));
+
+				ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+				{
+					this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(regHi, constantHi));
+				},
+				[&]() // Volta instruction set
+				{
+					this->m_builder.AddInstruction(new SASS::Volta::MOVInstruction(regHi, constantHi));
+				});
 			}
 
 			if (m_pair)

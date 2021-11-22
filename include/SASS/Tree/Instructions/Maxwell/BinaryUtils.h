@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SASS/Tree/Instructions/BinaryUtils.h"
+
 #include "SASS/Tree/Operands/Composite.h"
 #include "SASS/Tree/Operands/Constant.h"
 #include "SASS/Tree/Operands/I8Immediate.h"
@@ -11,48 +13,9 @@
 #include "SASS/Tree/Operands/SpecialRegister.h"
 
 namespace SASS {
+namespace Maxwell {
 
-#define SASS_ENUM_FRIEND(x) \
-	friend bool operator!(x a); \
-	friend x operator|(x a, x b); \
-	friend x operator&(x a, x b); \
-	friend x& operator|=(x& a, x b); \
-	friend x& operator&=(x& a, x b);
-
-#define SASS_ENUM_INLINE(x,y) \
-	inline bool operator!(x::y a) \
-	{ \
-		return static_cast<std::underlying_type_t<x::y>>(a) == 0; \
-	} \
-	inline x::y operator&(x::y a, x::y b) \
-	{ \
-		return static_cast<x::y>( \
-			static_cast<std::underlying_type_t<x::y>>(a) & \
-			static_cast<std::underlying_type_t<x::y>>(b) \
-		); \
-	} \
-	inline x::y& operator&=(x::y& a, x::y b) \
-	{ \
-		    return a = a & b; \
-	} \
-	inline x::y operator|(x::y a, x::y b) \
-	{ \
-		return static_cast<x::y>( \
-			static_cast<std::underlying_type_t<x::y>>(a) | \
-			static_cast<std::underlying_type_t<x::y>>(b) \
-		); \
-	} \
-	inline x::y& operator|=(x::y& a, x::y b) \
-	{ \
-		    return a = a | b; \
-	}
-
-#define SASS_FLAGS_FRIEND() SASS_ENUM_FRIEND(Flags)
-#define SASS_FLAGS_INLINE(x) SASS_ENUM_INLINE(x, Flags)
-
-
-
-class BinaryUtils
+class BinaryUtils : public SASS::BinaryUtils
 {
 public:
 	// Op Code
@@ -112,7 +75,7 @@ public:
 	// Immediates
 
 	// Composite values are signed via the instruction op code
-	static std::uint64_t OperandComposite(const Composite *value) { return Format(value->ToBinary(20), 20, 0xffffff); }
+	static std::uint64_t OperandComposite(const Composite *value) { return Format(value->ToAbsoluteBinary(20), 20, 0xffffff); }
 
 	static std::uint64_t OperandLiteral8W4(const I8Immediate *value) { return Format(value->ToBinary(), 8, 0x7); }
 	static std::uint64_t OperandLiteral20W6(const I8Immediate *value) { return Format(value->ToBinary(), 20, 0x3f); }
@@ -120,7 +83,7 @@ public:
 	static std::uint64_t OperandLiteral20W12(const I16Immediate *value) { return Format(value->ToBinary(), 20, 0xfff); }
 	static std::uint64_t OperandLiteral20W24(const I32Immediate *value) { return Format(value->ToBinary(), 20, 0xffffff); }
 	// Full 32 bit values are signed via the instruction op code
-	static std::uint64_t OperandLiteral20W32(const SizedImmediate<32> *value) { return Format(value->ToBinary(32), 20, 0xffffffff); }
+	static std::uint64_t OperandLiteral20W32(const SizedImmediate<32> *value) { return Format(value->ToAbsoluteBinary(32), 20, 0xffffffff); }
 
 	static std::uint64_t OperandLiteral28W20(const I32Immediate *value) { return Format(value->ToBinary(), 28, 0xfffff); }
 	static std::uint64_t OperandLiteral34W13(const I16Immediate *value) { return Format(value->ToBinary(), 34, 0x1fff); }
@@ -142,8 +105,7 @@ public:
 	static std::uint64_t OperandPredicate48(const Predicate *value) { return Format(value->ToBinary(), 48, 0x7); }
 	static std::uint64_t OperandPredicate56(const Predicate *value) { return Format(value->ToBinary(), 56, 0x7); }
 	static std::uint64_t OperandPredicate58(const Predicate *value) { return Format(value->ToBinary(), 58, 0x7); }
-
-	static std::uint64_t Format(std::uint64_t value, std::uint8_t shift, std::uint64_t mask) { return (value & mask) << shift; }
 };
 
+}
 }

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "SASS/Tree/Instructions/Maxwell/PredicatedInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/BinaryUtils.h"
 
-#include "SASS/Tree/BinaryUtils.h"
 #include "SASS/Tree/Operands/Register.h"
 
 namespace SASS {
+namespace Maxwell {
 
 class POPCInstruction : public PredicatedInstruction
 {
@@ -80,4 +81,5 @@ private:
 	Register *m_source = nullptr;
 };
 
+}
 }

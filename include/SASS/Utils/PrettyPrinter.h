@@ -29,10 +29,15 @@ public:
 	// Instructions
 
 	void Visit(const Instruction *instruction) override;
-	void Visit(const PredicatedInstruction *instruction) override;
+
+	void Visit(const Maxwell::PredicatedInstruction *instruction) override;
+	void Visit(const Volta::PredicatedInstruction *instruction) override;
 
 protected:
 	void Indent();
+
+	template<class I>
+	void VisitPredicatedInstruction(const I *instruction);
 
 	std::stringstream m_string;
 	unsigned int m_indent = 0;

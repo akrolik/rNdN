@@ -3,6 +3,8 @@
 #include "Backend/Codegen/CodeGenerator.h"
 #include "Backend/Scheduler/LinearBlockScheduler.h"
 #include "Backend/Scheduler/ListBlockScheduler.h"
+#include "Backend/Scheduler/Profiles/Compute61Profile.h"
+#include "Backend/Scheduler/Profiles/Compute86Profile.h"
 
 #include "PTX/Analysis/BasicFlow/LiveIntervals.h"
 #include "PTX/Analysis/BasicFlow/LiveVariables.h"
@@ -37,6 +39,17 @@ SASS::Program *Compiler::Compile(PTX::Program *program)
 	Utils::Chrono::End(timeCompiler_start);
 
 	return m_program;
+}
+
+bool Compiler::VisitIn(PTX::Module *module)
+{
+	// Get compute capability for module
+
+	auto target = module->GetTarget();
+	auto compute = std::stoi(target.substr(3,2));
+	m_program->SetComputeCapability(compute);
+
+	return true;
 }
 
 bool Compiler::VisitIn(PTX::VariableDeclaration *declaration)
@@ -145,7 +158,7 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	// Allocate parameter space
 	
-	PTX::Analysis::ParameterSpaceAllocator parameterAllocator;
+	PTX::Analysis::ParameterSpaceAllocator parameterAllocator(m_program->GetComputeCapability());
 	parameterAllocator.Analyze(function);
 
 	auto parameterAllocation = parameterAllocator.GetSpaceAllocation();
@@ -185,7 +198,7 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS codegen '" + function->GetName() + "'");
 
-	Codegen::CodeGenerator codegen;
+	Codegen::CodeGenerator codegen(m_program->GetComputeCapability());
 	auto sassFunction = codegen.Generate(function, registerAllocation, parameterAllocation);
 
 	Utils::Chrono::End(timeSASS_start);
@@ -219,17 +232,18 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	auto timeScheduler_start = Utils::Chrono::Start("Scheduler '" + function->GetName() + "'");
 
+	auto profile = GetHardwareProfile(m_program->GetComputeCapability());
 	switch (Utils::Options::GetBackend_Scheduler())
 	{
 		case Utils::Options::BackendScheduler::Linear:
 		{
-			Scheduler::LinearBlockScheduler scheduler;
+			Scheduler::LinearBlockScheduler scheduler(*profile);
 			scheduler.Schedule(sassFunction);
 			break;
 		}
 		case Utils::Options::BackendScheduler::List:
 		{
-			Scheduler::ListBlockScheduler scheduler;
+			Scheduler::ListBlockScheduler scheduler(*profile);
 			scheduler.Schedule(sassFunction);
 			break;
 		}
@@ -281,6 +295,26 @@ const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::
 		}
 	}
 	Utils::Logger::LogError("Unknown register allocation scheme");
+}
+
+const Scheduler::HardwareProfile *Compiler::GetHardwareProfile(unsigned int computeCapability)
+{
+	// Pick the required profile. Note that profiles are not 1-1 with instruction formats as instructions span capabilities
+
+	switch (computeCapability)
+	{
+		// Pascal
+		case 61:
+		{
+			return new Scheduler::Compute61Profile();
+		}
+		// Ampere
+		case 86:
+		{
+			return new Scheduler::Compute86Profile();
+		}
+	}
+	Utils::Logger::LogError("Unsupported CUDA compute capability for scheduler 'sm_" + std::to_string(computeCapability) + "'");
 }
 
 }

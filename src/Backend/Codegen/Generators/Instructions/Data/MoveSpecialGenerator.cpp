@@ -2,6 +2,8 @@
 
 #include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
 
+#include "Backend/Codegen/Generators/ArchitectureDispatch.h"
+
 namespace Backend {
 namespace Codegen {
 
@@ -23,6 +25,12 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	//   - Vector2<UInt32>, Vector4<UInt32>
 	// Modifies: --
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<class T>
+void MoveSpecialGenerator::GenerateMaxwell(const PTX::MoveSpecialInstruction<T> *instruction)
+{
 	// Generate destination
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -36,9 +44,15 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	instruction->GetSource()->Accept(*this);
 }
 
+template<class T>
+void MoveSpecialGenerator::GenerateVolta(const PTX::MoveSpecialInstruction<T> *instruction)
+{
+	Error(instruction, "unsupported architecture");
+}
+
 void MoveSpecialGenerator::GenerateS2R(SASS::SpecialRegister::Kind special)
 {
-	this->AddInstruction(new SASS::S2RInstruction(m_destination, new SASS::SpecialRegister(special)));
+	this->AddInstruction(new SASS::Maxwell::S2RInstruction(m_destination, new SASS::SpecialRegister(special)));
 }
 
 void MoveSpecialGenerator::GeneratePM64(SASS::SpecialRegister::Kind specialLo, SASS::SpecialRegister::Kind specialHi)
@@ -50,11 +64,11 @@ void MoveSpecialGenerator::GeneratePM64(SASS::SpecialRegister::Kind specialLo, S
 
 	auto temp = this->m_builder.AllocateTemporaryRegister();
 
-	this->AddInstruction(new SASS::CS2RInstruction(temp, new SASS::SpecialRegister(specialHi)));
-	this->AddInstruction(new SASS::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
-	this->AddInstruction(new SASS::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
-	this->AddInstruction(new SASS::ICMPInstruction(
-		m_destinationHi, temp, m_destinationHi, m_destination, SASS::ICMPInstruction::ComparisonOperator::LT
+	this->AddInstruction(new SASS::Maxwell::CS2RInstruction(temp, new SASS::SpecialRegister(specialHi)));
+	this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
+	this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
+	this->AddInstruction(new SASS::Maxwell::ICMPInstruction(
+		m_destinationHi, temp, m_destinationHi, m_destination, SASS::Maxwell::ICMPInstruction::ComparisonOperator::LT
 	));
 }
 
@@ -86,20 +100,20 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 		}
 		else if (name == PTX::SpecialRegisterName_nwarpid)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::I32Immediate(0x40)));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::I32Immediate(0x40)));
 		}
 		else if (name == PTX::SpecialRegisterName_smid)
 		{
 			GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTID);
-			this->AddInstruction(new SASS::BFEInstruction(
-				m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::BFEInstruction::Flags::U32
+			this->AddInstruction(new SASS::Maxwell::BFEInstruction(
+				m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::Maxwell::BFEInstruction::Flags::U32
 			));
 		}
 		else if (name == PTX::SpecialRegisterName_nsmid)
 		{
 			GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTCFG);
-			this->AddInstruction(new SASS::BFEInstruction(
-				m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::BFEInstruction::Flags::U32
+			this->AddInstruction(new SASS::Maxwell::BFEInstruction(
+				m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::Maxwell::BFEInstruction::Flags::U32
 			));
 		}
 		else if (name == PTX::SpecialRegisterName_lanemask_eq)
@@ -176,15 +190,15 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 		}
 		else if (name == PTX::SpecialRegisterName_dynamic_smem)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xfc)));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xfc)));
 		}
 	}
 	else if constexpr(std::is_same<T, PTX::UInt64Type>::value)
 	{
 		if (name == PTX::SpecialRegisterName_gridid)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x28)));
-			this->AddInstruction(new SASS::MOVInstruction(m_destinationHi, new SASS::Constant(0x0, 0x2c)));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x28)));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destinationHi, new SASS::Constant(0x0, 0x2c)));
 		}
 		else if (name == PTX::SpecialRegisterName_clock64 || name == PTX::SpecialRegisterName_globaltimer)
 		{
@@ -212,7 +226,7 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 			auto label1 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_MID");
 			auto label2 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_END");
 
-			this->AddInstruction(new SASS::MOVInstruction(temp0, SASS::RZ));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp0, SASS::RZ));
 
 			this->m_builder.CloseBasicBlock();
 			this->m_builder.CreateBasicBlock(label0);
@@ -222,28 +236,30 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 			auto specialHi = (name == PTX::SpecialRegisterName_clock64) ?
 				SASS::SpecialRegister::Kind::SR_CLOCKHI : SASS::SpecialRegister::Kind::SR_GLOBALTIMERHI;
 
-			this->AddInstruction(new SASS::CS2RInstruction(temp1, new SASS::SpecialRegister(specialHi)));
-			this->AddInstruction(new SASS::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
-			this->AddInstruction(new SASS::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
-			this->AddInstruction(new SASS::ISETPInstruction(
+			this->AddInstruction(new SASS::Maxwell::CS2RInstruction(temp1, new SASS::SpecialRegister(specialHi)));
+			this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
+			this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
+			this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
 				predicate, SASS::PT, temp1, m_destinationHi, SASS::PT,
-				SASS::ISETPInstruction::ComparisonOperator::NE, SASS::ISETPInstruction::BooleanOperator::AND,
-				SASS::ISETPInstruction::Flags::U32
+				SASS::Maxwell::ISETPInstruction::ComparisonOperator::NE,
+				SASS::Maxwell::ISETPInstruction::BooleanOperator::AND,
+				SASS::Maxwell::ISETPInstruction::Flags::U32
 			));
 
-			this->AddInstruction(new SASS::BRAInstruction(label1), predicate, true);
+			this->AddInstruction(new SASS::Maxwell::BRAInstruction(label1), predicate, true);
 
 			this->m_builder.CloseBasicBlock();
 			this->m_builder.CreateBasicBlock(label1);
 
-			this->AddInstruction(new SASS::IADD32IInstruction(temp0, temp0, new SASS::I32Immediate(0x1)));
-			this->AddInstruction(new SASS::ISETPInstruction(
+			this->AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp0, temp0, new SASS::I32Immediate(0x1)));
+			this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
 				predicate, SASS::PT, temp1, new SASS::Constant(0x0, 0x10c), SASS::PT,
-				SASS::ISETPInstruction::ComparisonOperator::GE, SASS::ISETPInstruction::BooleanOperator::AND,
-				SASS::ISETPInstruction::Flags::U32
+				SASS::Maxwell::ISETPInstruction::ComparisonOperator::GE,
+				SASS::Maxwell::ISETPInstruction::BooleanOperator::AND,
+				SASS::Maxwell::ISETPInstruction::Flags::U32
 			));
 
-			this->AddInstruction(new SASS::BRAInstruction(label0), predicate, true);
+			this->AddInstruction(new SASS::Maxwell::BRAInstruction(label0), predicate, true);
 
 			this->m_builder.CloseBasicBlock();
 			this->m_builder.CreateBasicBlock(label2);
@@ -285,7 +301,7 @@ void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 	{
 		if (name.find(PTX::SpecialRegisterName_envreg) == 0)
 		{
-			this->AddInstruction(new SASS::MOVInstruction(m_destination, SASS::RZ));
+			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, SASS::RZ));
 		}
 	}
 }
@@ -327,17 +343,17 @@ void MoveSpecialGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 			{
 				case PTX::VectorElement::X:
 				{
-					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x8)));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x8)));
 					break;
 				}
 				case PTX::VectorElement::Y:
 				{
-					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xc)));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xc)));
 					break;
 				}
 				case PTX::VectorElement::Z:
 				{
-					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x10)));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x10)));
 					break;
 				}
 			}
@@ -373,17 +389,17 @@ void MoveSpecialGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 			{
 				case PTX::VectorElement::X:
 				{
-					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x14)));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x14)));
 					break;
 				}
 				case PTX::VectorElement::Y:
 				{
-					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x18)));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x18)));
 					break;
 				}
 				case PTX::VectorElement::Z:
 				{
-					this->AddInstruction(new SASS::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x1c)));
+					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x1c)));
 					break;
 				}
 			}

@@ -33,20 +33,29 @@ void DeadLoadElimination::Transform(Function *function)
 	Utils::Chrono::End(timeTransform_start);
 }
 
-void DeadLoadElimination::Visit(LDGInstruction *instruction)
+void DeadLoadElimination::Visit(Maxwell::LDGInstruction *instruction)
 {
-	if (instruction->GetDestination()->GetValue() == SASS::Register::ZeroIndex)
-	{
-		m_dead = true;
-	}
+	m_dead = CheckDeadLoad(instruction->GetDestination());
 }
 
-void DeadLoadElimination::Visit(LDSInstruction *instruction)
+void DeadLoadElimination::Visit(Maxwell::LDSInstruction *instruction)
 {
-	if (instruction->GetDestination()->GetValue() == SASS::Register::ZeroIndex)
-	{
-		m_dead = true;
-	}
+	m_dead = CheckDeadLoad(instruction->GetDestination());
+}
+
+void DeadLoadElimination::Visit(Volta::LDGInstruction *instruction)
+{
+	m_dead = CheckDeadLoad(instruction->GetDestinationB());
+}
+
+void DeadLoadElimination::Visit(Volta::LDSInstruction *instruction)
+{
+	m_dead = CheckDeadLoad(instruction->GetDestination());
+}
+
+bool DeadLoadElimination::CheckDeadLoad(const Register *destination)
+{
+	return (destination->GetValue() == SASS::Register::ZeroIndex);
 }
 
 }
