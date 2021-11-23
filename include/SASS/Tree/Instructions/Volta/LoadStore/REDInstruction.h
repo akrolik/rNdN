@@ -50,7 +50,7 @@ public:
 	enum class Type : std::uint64_t {
 		U32 = 0x0,
 		S32 = 0x1,
-		X64 = 0x2,
+		U64 = 0x2,
 		F32 = 0x3,
 		F16 = 0x4,
 		S64 = 0x5,
@@ -142,7 +142,7 @@ public:
 		{
 			// case Type::U32: code += ".U32"; break;
 			case Type::S32: code += ".S32"; break;
-			case Type::X64: code += ".64"; break;
+			case Type::U64: code += ".64"; break;
 			case Type::F32: code += ".F32.FTZ.RN"; break;
 			case Type::F16: code += ".F16x2.RN"; break;
 			case Type::S64: code += ".S64"; break;
