@@ -22,11 +22,14 @@ void ConvertToAddressGenerator::Visit(const PTX::ConvertToAddressInstruction<B, 
 	// Types: *
 	// Spaces: Addressable subspace
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
+	ArchitectureDispatch::DispatchInstruction<
+		SASS::Maxwell::MOVInstruction,
+		SASS::Volta::MOVInstruction
+	>(*this, instruction);
 }
 
-template<PTX::Bits B, class T, class S>
-void ConvertToAddressGenerator::GenerateMaxwell(const PTX::ConvertToAddressInstruction<B, T, S> *instruction)
+template<class MOVInstruction, PTX::Bits B, class T, class S>
+void ConvertToAddressGenerator::GenerateInstruction(const PTX::ConvertToAddressInstruction<B, T, S> *instruction)
 {
 	// Generate source and destination registers (the source is always a register address)
 
@@ -36,17 +39,11 @@ void ConvertToAddressGenerator::GenerateMaxwell(const PTX::ConvertToAddressInstr
 
 	// Move address from source to destination
 
-	this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, source_Lo));
+	this->AddInstruction(new MOVInstruction(destination_Lo, source_Lo));
 	if constexpr(B == PTX::Bits::Bits64)
 	{
-		this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, source_Hi));
+		this->AddInstruction(new MOVInstruction(destination_Hi, source_Hi));
 	}
-}
-
-template<PTX::Bits B, class T, class S>
-void ConvertToAddressGenerator::GenerateVolta(const PTX::ConvertToAddressInstruction<B, T, S> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 }
