@@ -30,6 +30,26 @@ public:
 		}
 	}
 
+	template<class IMaxwell, class IVolta, class G, class I>
+	static void DispatchInstruction(G& generator, const I& instruction)
+	{
+		// Dispatch for each compute version
+
+		auto computeCapability = generator.m_builder.GetComputeCapability();
+		if (SASS::Maxwell::IsSupported(computeCapability))
+		{
+			generator.template GenerateInstruction<IMaxwell>(instruction);
+		}
+		else if (SASS::Volta::IsSupported(computeCapability))
+		{
+			generator.template GenerateInstruction<IVolta>(instruction);
+		}
+		else
+		{
+			Utils::Logger::LogError("Unsupported CUDA compute capability for dispatch 'sm_" + std::to_string(computeCapability) + "'");
+		}
+	}
+
 	template<class M, class V>
 	static void DispatchInline(const Builder& builder, M maxwellFunc, V voltaFunc)
 	{
