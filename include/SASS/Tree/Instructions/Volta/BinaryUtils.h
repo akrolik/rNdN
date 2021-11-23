@@ -86,8 +86,8 @@ public:
 	static std::uint64_t OperandPredicate0(const Predicate *predicate, bool negate) { return FormatPredicate(predicate, negate, 0); }
 	static std::uint64_t OperandPredicate4(const Predicate *predicate, bool negate) { return FormatPredicate(predicate, negate, 4); }
 	static std::uint64_t OperandPredicate13(const Predicate *predicate, bool negate) { return FormatPredicate(predicate, negate, 13); }
-	static std::uint64_t OperandPredicate17(const Predicate *predicate) { return Format(predicate->ToBinary(), 17, 0x7); }
-	static std::uint64_t OperandPredicate20(const Predicate *predicate) { return Format(predicate->ToBinary(), 20, 0x7); }
+	static std::uint64_t OperandPredicate17(const Predicate *predicate) { return FormatPredicate(predicate, false, 17); }
+	static std::uint64_t OperandPredicate20(const Predicate *predicate) { return FormatPredicate(predicate, false, 20); }
 	static std::uint64_t OperandPredicate23(const Predicate *predicate, bool negate) { return FormatPredicate(predicate, negate, 23); }
 
 	static std::uint64_t InstructionPredicate(const Predicate *predicate, bool negate) { return FormatPredicate(predicate, negate, 12); }
@@ -95,7 +95,7 @@ public:
 
 	// Formatting
 
-	static std::uint64_t FormatRegister(const Register *value, std;:uint8_t shift) { return Format(value->ToBinary(), shift, 0xff); }
+	static std::uint64_t FormatRegister(const Register *value, std::uint8_t shift) { return Format(value->ToBinary(), shift, 0xff); }
 	static std::uint64_t FormatPredicate(const Predicate *predicate, bool negate, std::uint8_t shift)
 	{
 		std::uint64_t code = 0x0;

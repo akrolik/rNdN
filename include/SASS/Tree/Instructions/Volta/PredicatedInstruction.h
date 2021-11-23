@@ -29,21 +29,11 @@ public:
 
 	std::uint64_t ToBinary() const override
 	{
-		// Add predicate to instruction, negate if necessary
-
 		auto code = Instruction::ToBinary();
-		if (m_predicate != nullptr)
-		{
-			code |= BinaryUtils::InstructionPredicate(m_predicate);
-			if (m_negatePredicate)
-			{
-				code |= BinaryUtils::Format(0x8, 12, 0x8);
-			}
-		}
-		else
-		{
-			code |= BinaryUtils::Format(0x7, 12, 0x7);
-		}
+
+		// Add predicate to instruction, negate if necessary
+		code |= BinaryUtils::InstructionPredicate(m_predicate, m_negatePredicate);
+
 		return code;
 	}
 
