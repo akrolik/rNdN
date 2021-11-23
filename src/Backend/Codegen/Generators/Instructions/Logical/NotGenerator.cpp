@@ -85,7 +85,63 @@ void NotGenerator::GenerateMaxwell(const PTX::NotInstruction<T> *instruction)
 template<class T>
 void NotGenerator::GenerateVolta(const PTX::NotInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	if constexpr(std::is_same<T, PTX::PredicateType>::value)
+	{
+		// Generate operands
+
+		PredicateGenerator predicateGenerator(this->m_builder);
+		auto destination = predicateGenerator.Generate(instruction->GetDestination()).first;
+		auto [source, source_Not] = predicateGenerator.Generate(instruction->GetSource());
+
+		// Flags
+
+		auto flags = SASS::Volta::PLOP3Instruction::Flags::NOT_A;
+		if (source_Not)
+		{
+			flags = SASS::Volta::PLOP3Instruction::Flags::None;
+		}
+
+		// Generate instruction
+
+		auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation([](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Predicate function
+		{
+			return ((~A) & B & C);
+		});
+
+		this->AddInstruction(new SASS::Volta::PLOP3Instruction(
+			destination, SASS::PT, source, SASS::PT, SASS::PT,
+			new SASS::I8Immediate(logicOperation), new SASS::I8Immediate(0x0), flags
+		));
+	}
+	else
+	{
+		// Generate operands
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+
+		CompositeGenerator compositeGenerator(this->m_builder);
+		compositeGenerator.SetImmediateSize(32);
+		auto [source_Lo, source_Hi] = compositeGenerator.GeneratePair(instruction->GetSource());
+
+		// Generate instruction
+
+		auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation([](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Predicate function
+		{
+			return (A | (~B) | C);
+		});
+
+		this->AddInstruction(new SASS::Volta::LOP3Instruction(
+			destination_Lo, SASS::RZ, source_Lo, SASS::RZ, new SASS::I8Immediate(logicOperation), SASS::PT
+		));
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			this->AddInstruction(new SASS::Volta::LOP3Instruction(
+				destination_Hi, SASS::RZ, source_Hi, SASS::RZ, new SASS::I8Immediate(logicOperation), SASS::PT
+			));
+		}
+	}
 }
 
 }

@@ -1,9 +1,5 @@
 #include "Backend/Codegen/Generators/Instructions/Logical/XorGenerator.h"
 
-#include "Backend/Codegen/Generators/Operands/CompositeGenerator.h"
-#include "Backend/Codegen/Generators/Operands/PredicateGenerator.h"
-#include "Backend/Codegen/Generators/Operands/RegisterGenerator.h"
-
 #include "Backend/Codegen/Generators/ArchitectureDispatch.h"
 
 namespace Backend {
@@ -32,62 +28,25 @@ void XorGenerator::Visit(const PTX::XorInstruction<T> *instruction)
 template<class T>
 void XorGenerator::GenerateMaxwell(const PTX::XorInstruction<T> *instruction)
 {
-	if constexpr(std::is_same<T, PTX::PredicateType>::value)
-	{
-		// Generate operands
-
-		PredicateGenerator predicateGenerator(this->m_builder);
-		auto destination = predicateGenerator.Generate(instruction->GetDestination()).first;
-		auto [sourceA, sourceA_Not] = predicateGenerator.Generate(instruction->GetSourceA());
-		auto [sourceB, sourceB_Not] = predicateGenerator.Generate(instruction->GetSourceB());
-
-		// Flags
-
-		auto flags = SASS::Maxwell::PSETPInstruction::Flags::None;
-		if (sourceA_Not)
-		{
-			flags |= SASS::Maxwell::PSETPInstruction::Flags::NOT_A;
-		}
-		if (sourceB_Not)
-		{
-			flags |= SASS::Maxwell::PSETPInstruction::Flags::NOT_B;
-		}
-
-		// Generate instruction
-
-		this->AddInstruction(new SASS::Maxwell::PSETPInstruction(
-			destination, SASS::PT, sourceA, sourceB, SASS::PT,
-			SASS::Maxwell::PSETPInstruction::BooleanOperator1::XOR,
-			SASS::Maxwell::PSETPInstruction::BooleanOperator2::AND,
-			flags
-		));
-	}
-	else
-	{
-		RegisterGenerator registerGenerator(this->m_builder);
-		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
-		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
-
-		CompositeGenerator compositeGenerator(this->m_builder);
-		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
-
-		this->AddInstruction(new SASS::Maxwell::LOPInstruction(
-			destination_Lo, sourceA_Lo, sourceB_Lo, SASS::Maxwell::LOPInstruction::BooleanOperator::XOR
-		));
-
-		if constexpr(T::TypeBits == PTX::Bits::Bits64)
-		{
-			this->AddInstruction(new SASS::Maxwell::LOPInstruction(
-				destination_Hi, sourceA_Hi, sourceB_Hi, SASS::Maxwell::LOPInstruction::BooleanOperator::XOR
-			));
-		}
-	}
+	this->GenerateLogicMaxwell(instruction,
+		SASS::Maxwell::PSETPInstruction::BooleanOperator1::XOR,
+		SASS::Maxwell::LOPInstruction::BooleanOperator::XOR
+	);
 }
 
 template<class T>
 void XorGenerator::GenerateVolta(const PTX::XorInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	this->GenerateLogicVolta(instruction,
+		[](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Predicate function
+		{
+			return (A ^ B & C);
+		},
+		[](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Integer function
+		{
+			return (A ^ B | C);
+		}
+	);
 }
 
 }

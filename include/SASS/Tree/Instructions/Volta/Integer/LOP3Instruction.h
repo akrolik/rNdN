@@ -23,6 +23,9 @@ public:
 	LOP3Instruction(Predicate *destinationA, Register *destinationB, Register *sourceA, Composite *sourceB, Register *sourceC, I8Immediate *sourceD, Predicate *sourceE, Flags flags = Flags::None)
 		: m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_sourceD(sourceD), m_sourceE(sourceE), m_flags(flags) {}
 
+	LOP3Instruction(Register *destinationB, Register *sourceA, Composite *sourceB, Register *sourceC, I8Immediate *sourceD, Predicate *sourceE, Flags flags = Flags::None)
+		: LOP3Instruction(nullptr, destinationB, sourceA, sourceB, sourceC, sourceD, sourceE, flags) {}
+
 	// Properties
 
 	const Predicate *GetDestinationA() const { return m_destinationA; }
@@ -97,13 +100,16 @@ public:
 		// SourceB
 		code += m_sourceB->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
+		code += ", ";
 
 		// SourceC
 		code += m_sourceC->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandC);
+		code += ", ";
 
 		// SourceD
 		code += m_sourceD->ToString();
+		code += ", ";
 
 		// SourceE
 		if (m_flags & Flags::NOT_E)

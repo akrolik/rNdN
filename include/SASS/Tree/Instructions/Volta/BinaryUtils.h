@@ -8,6 +8,14 @@ namespace Volta {
 class BinaryUtils : public SASS::BinaryUtils
 {
 public:
+	// Operands
+
+	template<typename F>
+	static constexpr std::uint8_t LogicOperation(F function)
+	{
+		return function(0xF0, 0xCC, 0xAA);
+	}
+
 	// OpCode
 
 	static std::uint64_t OpCode(const Composite *value, std::uint64_t reg, std::uint64_t immediate, std::uint64_t constant)

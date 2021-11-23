@@ -107,6 +107,14 @@ public:
 			code += "!";
 		}
 		code += m_sourceC->ToString();
+		code += ", ";
+
+		// SourceD
+		code += m_sourceD->ToString();
+		code += ", ";
+
+		// SourceE
+		code += m_sourceE->ToString();
 
 		return code;
 	}

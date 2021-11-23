@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Backend/Codegen/Generators/Instructions/PredicatedInstructionGenerator.h"
+#include "Backend/Codegen/Generators/Instructions/Logical/LogicGenerator.h"
 
 #include "PTX/Tree/Tree.h"
 #include "SASS/Tree/Tree.h"
@@ -8,10 +8,10 @@
 namespace Backend {
 namespace Codegen {
 
-class OrGenerator : public PredicatedInstructionGenerator
+class OrGenerator : public LogicGenerator
 {
 public:
-	using PredicatedInstructionGenerator::PredicatedInstructionGenerator;
+	using LogicGenerator::LogicGenerator;
 
 	std::string Name() const override { return "OrGenerator"; }
 
