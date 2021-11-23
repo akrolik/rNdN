@@ -391,10 +391,52 @@ void Assembler::Visit(SASS::Volta::DivergenceInstruction *instruction)
 
 void Assembler::Visit(SASS::Maxwell::EXITInstruction *instruction)
 {
-	m_binaryFunction->AddExitOffset(m_currentAddress);
+	VisitEXIT(instruction);
 }
 
 void Assembler::Visit(SASS::Maxwell::S2RInstruction *instruction)
+{
+	VisitS2R(instruction);
+}
+
+void Assembler::Visit(SASS::Maxwell::SHFLInstruction *instruction)
+{
+	VisitSHFL(instruction);
+}
+
+void Assembler::Visit(SASS::Maxwell::BARInstruction *instruction)
+{
+	VisitBAR(instruction);
+}
+
+void Assembler::Visit(SASS::Volta::EXITInstruction *instruction)
+{
+	VisitEXIT(instruction);
+}
+
+void Assembler::Visit(SASS::Volta::S2RInstruction *instruction)
+{
+	VisitS2R(instruction);
+}
+
+void Assembler::Visit(SASS::Volta::SHFLInstruction *instruction)
+{
+	VisitSHFL(instruction);
+}
+
+void Assembler::Visit(SASS::Volta::BARInstruction *instruction)
+{
+	VisitBAR(instruction);
+}
+
+template<class T>
+void Assembler::VisitEXIT(T *instruction)
+{
+	m_binaryFunction->AddExitOffset(m_currentAddress);
+}
+
+template<class T>
+void Assembler::VisitS2R(T *instruction)
 {
 	auto kind = instruction->GetSource()->GetKind();
 	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_X ||
@@ -409,12 +451,14 @@ void Assembler::Visit(SASS::Maxwell::S2RInstruction *instruction)
 	}
 }
 
-void Assembler::Visit(SASS::Maxwell::SHFLInstruction *instruction)
+template<class T>
+void Assembler::VisitSHFL(T *instruction)
 {
 	m_binaryFunction->AddCoopOffset(m_currentAddress);
 }
 
-void Assembler::Visit(SASS::Maxwell::BARInstruction *instruction)
+template<class T>
+void Assembler::VisitBAR(T *instruction)
 {
 	auto barrier = instruction->GetBarrier();
 	if (dynamic_cast<const SASS::Register *>(barrier))
@@ -428,41 +472,6 @@ void Assembler::Visit(SASS::Maxwell::BARInstruction *instruction)
 		{
 			m_barrierCount = value + 1;
 		}
-	}
-}
-
-void Assembler::Visit(SASS::Volta::EXITInstruction *instruction)
-{
-	m_binaryFunction->AddExitOffset(m_currentAddress);
-}
-
-void Assembler::Visit(SASS::Volta::S2RInstruction *instruction)
-{
-	auto kind = instruction->GetSource()->GetKind();
-	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_X ||
-		kind == SASS::SpecialRegister::Kind::SR_CTAID_Y ||
-		kind == SASS::SpecialRegister::Kind::SR_CTAID_X)
-	{
-		m_binaryFunction->AddS2RCTAIDOffset(m_currentAddress);
-	}
-	if (kind == SASS::SpecialRegister::Kind::SR_CTAID_Z)
-	{
-		m_binaryFunction->SetCTAIDZUsed(true);
-	}
-}
-
-void Assembler::Visit(SASS::Volta::SHFLInstruction *instruction)
-{
-	m_binaryFunction->AddCoopOffset(m_currentAddress);
-}
-
-void Assembler::Visit(SASS::Volta::BARInstruction *instruction)
-{
-	auto barrier = instruction->GetBarrier();
-	auto value = barrier->GetValue();
-	if (value + 1 > m_barrierCount)
-	{
-		m_barrierCount = value + 1;
 	}
 }
 

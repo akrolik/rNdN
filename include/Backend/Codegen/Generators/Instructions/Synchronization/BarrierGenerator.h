@@ -21,6 +21,10 @@ public:
 
 	void GenerateMaxwell(const PTX::BarrierInstruction *instruction);
 	void GenerateVolta(const PTX::BarrierInstruction *instruction);
+
+private:
+	template<class BARInstruction, class MEMBARInstruction>
+	void GenerateBarrier(const PTX::BarrierInstruction *instruction);
 };
 
 }

@@ -3,8 +3,7 @@
 #include "SASS/Tree/Instructions/Volta/Control/ControlInstruction.h"
 #include "SASS/Tree/Instructions/Volta/BinaryUtils.h"
 
-#include "SASS/Tree/Operands/I8Immediate.h"
-#include "SASS/Tree/Operands/I16Immediate.h"
+#include "SASS/Tree/Operands/Composite.h"
 #include "SASS/Tree/Operands/Predicate.h"
 
 namespace SASS {
@@ -36,13 +35,15 @@ public:
 
 	BARInstruction(Flags flags = Flags::None) : m_mode(Mode::SYNCALL), m_flags(flags) {}
 
-	BARInstruction(Mode mode, I8Immediate *barrier, I16Immediate *threads = nullptr, Flags flags = Flags::None)
+	// Note: Both registers must be the same (bits 0..3 for barrier, bits 16..27 for threads)
+
+	BARInstruction(Mode mode, Composite *barrier, Composite *threads = nullptr, Flags flags = Flags::None)
 		: m_mode(mode), m_barrier(barrier), m_threads(threads), m_flags(flags) {}
 
-	BARInstruction(I8Immediate *barrier, I16Immediate *threads, Predicate *predicate, bool predicateNegate = false, Flags flags = Flags::None)
+	BARInstruction(Composite *barrier, Composite *threads, Predicate *predicate, bool predicateNegate = false, Flags flags = Flags::None)
 		: ControlInstruction(predicate, predicateNegate), m_mode(Mode::SCAN), m_barrier(barrier), m_threads(threads), m_flags(flags) {}
 
-	BARInstruction(Reduction reduction, I8Immediate *barrier, I16Immediate *threads, Predicate *predicate, bool predicateNegate = false, Flags flags = Flags::None)
+	BARInstruction(Reduction reduction, Composite *barrier, Composite *threads, Predicate *predicate, bool predicateNegate = false, Flags flags = Flags::None)
 		: ControlInstruction(predicate, predicateNegate), m_mode(Mode::RED), m_reduction(reduction), m_barrier(barrier), m_threads(threads), m_flags(flags) {}
 
 	// Properties
@@ -50,13 +51,13 @@ public:
 	Mode GetMode() const { return m_mode; }
 	void SetMode(Mode mode) { m_mode = mode; }
 
-	const I8Immediate *GetBarrier() const { return m_barrier; }
-	I8Immediate *GetBarrier() { return m_barrier; }
-	void SetBarrier(I8Immediate *barrier) { m_barrier = barrier; }
+	const Composite *GetBarrier() const { return m_barrier; }
+	Composite *GetBarrier() { return m_barrier; }
+	void SetBarrier(Composite *barrier) { m_barrier = barrier; }
 
-	const I16Immediate *GetThreads() const { return m_threads; }
-	I16Immediate *GetThreads() { return m_threads; }
-	void SetThreads(I16Immediate *threads) { m_threads = threads; }
+	const Composite *GetThreads() const { return m_threads; }
+	Composite *GetThreads() { return m_threads; }
+	void SetThreads(Composite *threads) { m_threads = threads; }
 
 	// Operands
 	
@@ -136,7 +137,19 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		return 0xb1d;
+		if (m_barrier == nullptr || m_barrier->GetKind() == Operand::Kind::Immediate)
+		{
+			if (m_threads == nullptr || m_threads->GetKind() == Operand::Kind::Immediate)
+			{
+				return 0xb1d; // Barrier = Immediate; Threads = Immediate
+			}
+			return 0x91d; // Barrier = Immediate; Threads = Register
+		}
+		else if (m_threads == nullptr || m_threads->GetKind() == Operand::Kind::Immediate)
+		{
+			return 0x51d; // Barier = Register; Threads = Immediate
+		}
+		return 0x313; // Barrier = Register; Threads = Register;
 	}
 
 	std::uint64_t ToBinary() const override
@@ -190,8 +203,8 @@ private:
 	Mode m_mode;
 	Reduction m_reduction;
 
-	I8Immediate *m_barrier = nullptr;
-	I16Immediate *m_threads = nullptr;
+	Composite *m_barrier = nullptr;
+	Composite *m_threads = nullptr;
 
 	Flags m_flags = Flags::None;
 };

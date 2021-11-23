@@ -23,15 +23,15 @@ public:
 		VC  = 0x5
 	};
 
-	MEMBARInstruction(Type type, Scope scope) : m_type(type), m_scope(scope) {}
+	MEMBARInstruction(Scope scope, Type type = Type::Default) : m_scope(scope), m_type(type) {}
 
 	// Properties
 
-	Type GetType() const { return m_type; }
-	void SetType(Type type) { m_type = type; }
-
 	Scope GetScope() const { return m_scope; }
 	void SetScope(Scope scope) { m_scope = scope; }
+
+	Type GetType() const { return m_type; }
+	void SetType(Type type) { m_type = type; }
 
 	// Operands
 	
@@ -98,8 +98,8 @@ public:
 	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 
 private:
-	Type m_type;
 	Scope m_scope;
+	Type m_type;
 };
 
 }

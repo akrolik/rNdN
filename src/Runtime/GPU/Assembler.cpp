@@ -85,6 +85,7 @@ const Program *Assembler::Assemble(PTX::Program *program, bool library) const
 
 						Backend::Compiler backendCompiler;
 						auto sassProgram = backendCompiler.Compile(program);
+
 						// Generate ELF binrary
 
 						auto timeBinary_start = Utils::Chrono::Start("Binary generator");

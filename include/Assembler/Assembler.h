@@ -39,6 +39,11 @@ protected:
 	SASS::Instruction *GeneratePaddingInstruction() const;
 	SASS::Instruction *GenerateSelfBranchInstruction(const std::string& name) const;
 
+	template<class T> void VisitEXIT(T *instruction);
+	template<class T> void VisitS2R(T *instruction);
+	template<class T> void VisitSHFL(T *instruction);
+	template<class T> void VisitBAR(T *instruction);
+
 	BinaryFunction *m_binaryFunction = nullptr;
 	unsigned int m_computeCapability = 0;
 

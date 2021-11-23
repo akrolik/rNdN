@@ -18,6 +18,17 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 
 void BarrierGenerator::GenerateMaxwell(const PTX::BarrierInstruction *instruction)
 {
+	GenerateBarrier<SASS::Maxwell::BARInstruction, SASS::Maxwell::MEMBARInstruction>(instruction);
+}
+
+void BarrierGenerator::GenerateVolta(const PTX::BarrierInstruction *instruction)
+{
+	GenerateBarrier<SASS::Volta::BARInstruction, SASS::Volta::MEMBARInstruction>(instruction);
+}
+
+template<class BARInstruction, class MEMBARInstruction>
+void BarrierGenerator::GenerateBarrier(const PTX::BarrierInstruction *instruction)
+{
 	// Generate barrier operand
 
 	CompositeGenerator compositeGenerator(this->m_builder);
@@ -28,7 +39,7 @@ void BarrierGenerator::GenerateMaxwell(const PTX::BarrierInstruction *instructio
 
 	// Mode
 
-	auto mode = (instruction->GetWait()) ? SASS::Maxwell::BARInstruction::Mode::SYNC : SASS::Maxwell::BARInstruction::Mode::ARV;
+	auto mode = (instruction->GetWait()) ? BARInstruction::Mode::SYNC : BARInstruction::Mode::ARV;
 
 	// Generate instruction, checking for threads (optional)
 
@@ -37,18 +48,18 @@ void BarrierGenerator::GenerateMaxwell(const PTX::BarrierInstruction *instructio
 		compositeGenerator.SetImmediateSize(12);
 		auto threads = compositeGenerator.Generate(threadsOperand);
 
-		this->AddInstruction(new SASS::Maxwell::BARInstruction(mode, barrier, threads));
+		if (barrier->GetKind() == SASS::Operand::Kind::Register && threads->GetKind() == SASS::Operand::Kind::Register)
+		{
+			Error(instruction, "unsupported barrier and threads both register");
+		}
+
+		this->AddInstruction(new BARInstruction(mode, barrier, threads));
 	}
 	else
 	{
-		this->AddInstruction(new SASS::Maxwell::BARInstruction(mode, barrier));
+		this->AddInstruction(new BARInstruction(mode, barrier));
 	}
-	this->AddInstruction(new SASS::Maxwell::MEMBARInstruction(SASS::Maxwell::MEMBARInstruction::Mode::CTA));
-}
-
-void BarrierGenerator::GenerateVolta(const PTX::BarrierInstruction *instruction)
-{
-	Error(instruction, "unsupported architecture");
+	this->AddInstruction(new MEMBARInstruction(MEMBARInstruction::Scope::CTA));
 }
 
 }

@@ -9,18 +9,18 @@ namespace Maxwell {
 class MEMBARInstruction : public PredicatedInstruction
 {
 public:
-	enum class Mode : std::uint64_t {
+	enum class Scope : std::uint64_t {
 		CTA = 0x0000000000000000,
 		GL  = 0x0000000000000100,
 		SYS = 0x0000000000000200
 	};
 
-	MEMBARInstruction(Mode mode) : m_mode(mode) {}
+	MEMBARInstruction(Scope scope) : m_scope(scope) {}
 
 	// Properties
 
-	Mode GetMode() const { return m_mode; }
-	void SetMode(Mode mode) { m_mode = mode; }
+	Scope GetScope() const { return m_scope; }
+	void SetScope(Scope scope) { m_scope = scope; }
 
 	// Operands
 	
@@ -40,11 +40,11 @@ public:
 
 	std::string OpModifiers() const override
 	{
-		switch (m_mode)
+		switch (m_scope)
 		{
-			case Mode::CTA: return ".CTA";
-			case Mode::GL: return ".GL";
-			case Mode::SYS: return ".SYS";
+			case Scope::CTA: return ".CTA";
+			case Scope::GL: return ".GL";
+			case Scope::SYS: return ".SYS";
 		}
 		return "";
 	}
@@ -58,7 +58,7 @@ public:
 
 	std::uint64_t BinaryOpModifiers() const override
 	{
-		return BinaryUtils::OpModifierFlags(m_mode);
+		return BinaryUtils::OpModifierFlags(m_scope);
 	}
 
 	// Hardware properties
@@ -71,7 +71,7 @@ public:
 	void Accept(ConstVisitor& visitor) const override { visitor.Visit(this); }
 
 private:
-	Mode m_mode;
+	Scope m_scope;
 };
 
 }
