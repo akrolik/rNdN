@@ -71,12 +71,12 @@ public:
 		// SourceA
 		code += m_sourceA->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandA);
-		code += ",";
+		code += ", ";
 
 		// SourceB
 		code += m_sourceB->ToString();
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
-		code += ",";
+		code += ", ";
 
 		// SourceC
 		if (m_flags & Flags::NOT_C)

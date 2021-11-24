@@ -28,16 +28,24 @@ void SelectGenerator::Visit(const PTX::SelectInstruction<T> *instruction)
 	//   - Float32, Float64
 	// Modifiers: --
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
+	ArchitectureDispatch::DispatchInstruction<
+		SASS::Maxwell::SELInstruction,
+		SASS::Volta::SELInstruction
+	>(*this, instruction);
 }
 
-template<class T>
-void SelectGenerator::GenerateMaxwell(const PTX::SelectInstruction<T> *instruction)
+template<class SELInstruction, class T>
+void SelectGenerator::GenerateInstruction(const PTX::SelectInstruction<T> *instruction)
 {
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
 	CompositeGenerator compositeGenerator(this->m_builder);
+
+	if constexpr(std::is_same<SELInstruction, SASS::Volta::SELInstruction>::value)
+	{
+		compositeGenerator.SetImmediateSize(32);
+	}
 
 	auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 	auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
@@ -48,25 +56,19 @@ void SelectGenerator::GenerateMaxwell(const PTX::SelectInstruction<T> *instructi
 
 	// Flags
 
-	auto flags = SASS::Maxwell::SELInstruction::Flags::None;
+	auto flags = SELInstruction::Flags::None;
 	if (sourceC_Not)
 	{
-		flags |= SASS::Maxwell::SELInstruction::Flags::NOT_C;
+		flags |= SELInstruction::Flags::NOT_C;
 	}
 
 	// Generate instruction
 
-	this->AddInstruction(new SASS::Maxwell::SELInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, sourceC, flags));
+	this->AddInstruction(new SELInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, sourceC, flags));
 	if constexpr(T::TypeBits == PTX::Bits::Bits64)
 	{
-		this->AddInstruction(new SASS::Maxwell::SELInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, sourceC, flags));
+		this->AddInstruction(new SELInstruction(destination_Hi, sourceA_Hi, sourceB_Hi, sourceC, flags));
 	}
-}
-
-template<class T>
-void SelectGenerator::GenerateVolta(const PTX::SelectInstruction<T> *instruction)
-{
-	Error(instruction, "unsupported instruction");
 }
 
 }
