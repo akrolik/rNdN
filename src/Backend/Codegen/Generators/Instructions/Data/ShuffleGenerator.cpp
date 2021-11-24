@@ -24,11 +24,14 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 	// Types: Bit32
 	// Modifiers: --
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
+	ArchitectureDispatch::DispatchInstruction<
+		SASS::Maxwell::SHFLInstruction,
+		SASS::Volta::SHFLInstruction
+	>(*this, instruction);
 }
 
-template<class T>
-void ShuffleGenerator::GenerateMaxwell(const PTX::ShuffleInstruction<T> *instruction)
+template<class SHFLInstruction, class T>
+void ShuffleGenerator::GenerateInstruction(const PTX::ShuffleInstruction<T> *instruction)
 {
 	if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 	{
@@ -50,37 +53,38 @@ void ShuffleGenerator::GenerateMaxwell(const PTX::ShuffleInstruction<T> *instruc
 		auto sourceC = compositeGenerator.Generate(instruction->GetSourceC());
 		
 		// Membermask is ignored for 6x targets as the membermask must be the same as activemask
+		//TODO: Membermask for Volta
 
 		// Mode
 
-		SASS::Maxwell::SHFLInstruction::ShuffleOperator shuffleOperator;
+		typename SHFLInstruction::ShuffleOperator shuffleOperator;
 		switch (instruction->GetMode())
 		{
 			case PTX::ShuffleInstruction<T>::Mode::Up:
 			{
-				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::UP;
+				shuffleOperator = SHFLInstruction::ShuffleOperator::UP;
 				break;
 			}
 			case PTX::ShuffleInstruction<T>::Mode::Down:
 			{
-				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::DOWN;
+				shuffleOperator = SHFLInstruction::ShuffleOperator::DOWN;
 				break;
 			}
 			case PTX::ShuffleInstruction<T>::Mode::Butterfly:
 			{
-				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::BFLY;
+				shuffleOperator = SHFLInstruction::ShuffleOperator::BFLY;
 				break;
 			}
 			case PTX::ShuffleInstruction<T>::Mode::Index:
 			{
-				shuffleOperator = SASS::Maxwell::SHFLInstruction::ShuffleOperator::IDX;
+				shuffleOperator = SHFLInstruction::ShuffleOperator::IDX;
 				break;
 			}
 		}
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::Maxwell::SHFLInstruction(
+		this->AddInstruction(new SHFLInstruction(
 			destinationP, destinationD, sourceA, sourceB, sourceC, shuffleOperator
 		));
 	}
@@ -88,12 +92,6 @@ void ShuffleGenerator::GenerateMaxwell(const PTX::ShuffleInstruction<T> *instruc
 	{
 		Error(instruction, "unsupported type");
 	}
-}
-
-template<class T>
-void ShuffleGenerator::GenerateVolta(const PTX::ShuffleInstruction<T> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 }

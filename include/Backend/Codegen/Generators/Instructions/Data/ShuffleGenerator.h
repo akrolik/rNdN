@@ -22,11 +22,8 @@ public:
 	template<class T>
 	void Visit(const PTX::ShuffleInstruction<T> *instruction);
 
-	template<class T>
-	void GenerateMaxwell(const PTX::ShuffleInstruction<T> *instruction);
-
-	template<class T>
-	void GenerateVolta(const PTX::ShuffleInstruction<T> *instruction);
+	template<class SHFLInstruction, class T>
+	void GenerateInstruction(const PTX::ShuffleInstruction<T> *instruction);
 };
 
 }
