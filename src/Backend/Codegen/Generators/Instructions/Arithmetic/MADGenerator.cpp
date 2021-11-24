@@ -39,48 +39,48 @@ void MADGenerator::GenerateMaxwell(const PTX::MADInstruction<T> *instruction)
 {
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 	{
+		// Verify allowed modifiers
+
 		if (instruction->GetCarryIn() || instruction->GetCarryOut())
 		{
 			Error(instruction, "unsupported carry modifier");
 		}
 
-		if (instruction->GetHalf() == PTX::MADInstruction<T>::Half::Lower)
+		if (instruction->GetHalf() != PTX::MADInstruction<T>::Half::Lower)
 		{
-			// Generate operands
-
-			RegisterGenerator registerGenerator(this->m_builder);
-			CompositeGenerator compositeGenerator(this->m_builder);
-			compositeGenerator.SetImmediateValue(false);
-
-			auto destination = registerGenerator.Generate(instruction->GetDestination());
-			auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
-			auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
-			auto sourceC = registerGenerator.Generate(instruction->GetSourceC());
-
-			// Compute D = (S1 * S2 + S3).lo
-			//
-			//   XMAD TMP0, S1, S2, S3 ;
-			//   XMAD.MRG TMP1, S1, S2.H1, RZ ;
-			//   XMAD.PSL.CBCC D, S1.H1, TMP1.H1, TMP0 ;
-
-			auto temp0 = this->m_builder.AllocateTemporaryRegister();
-			auto temp1 = this->m_builder.AllocateTemporaryRegister();
-
-			this->AddInstruction(new SASS::Maxwell::XMADInstruction(temp0, sourceA, sourceB, sourceC));
-			this->AddInstruction(new SASS::Maxwell::XMADInstruction(
-				temp1, sourceA, sourceB, SASS::RZ,
-				SASS::Maxwell::XMADInstruction::Mode::MRG, SASS::Maxwell::XMADInstruction::Flags::H1_B
-			));
-			this->AddInstruction(new SASS::Maxwell::XMADInstruction(
-				destination, sourceA, temp1, temp0, SASS::Maxwell::XMADInstruction::Mode::PSL,
-				SASS::Maxwell::XMADInstruction::Flags::CBCC | SASS::Maxwell::XMADInstruction::Flags::H1_A |
-				SASS::Maxwell::XMADInstruction::Flags::H1_B
-			));
+			Error(instruction, "unsupported half modifier");
 		}
-		else
-		{
-			Error(instruction, "unsuppoorted half modifier");
-		}
+
+		// Generate operands
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		CompositeGenerator compositeGenerator(this->m_builder);
+		compositeGenerator.SetImmediateValue(false);
+
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+		auto sourceC = registerGenerator.Generate(instruction->GetSourceC());
+
+		// Compute D = (S1 * S2 + S3).lo
+		//
+		//   XMAD TMP0, S1, S2, S3 ;
+		//   XMAD.MRG TMP1, S1, S2.H1, RZ ;
+		//   XMAD.PSL.CBCC D, S1.H1, TMP1.H1, TMP0 ;
+
+		auto temp0 = this->m_builder.AllocateTemporaryRegister();
+		auto temp1 = this->m_builder.AllocateTemporaryRegister();
+
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(temp0, sourceA, sourceB, sourceC));
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			temp1, sourceA, sourceB, SASS::RZ,
+			SASS::Maxwell::XMADInstruction::Mode::MRG, SASS::Maxwell::XMADInstruction::Flags::H1_B
+		));
+		this->AddInstruction(new SASS::Maxwell::XMADInstruction(
+			destination, sourceA, temp1, temp0, SASS::Maxwell::XMADInstruction::Mode::PSL,
+			SASS::Maxwell::XMADInstruction::Flags::CBCC | SASS::Maxwell::XMADInstruction::Flags::H1_A |
+			SASS::Maxwell::XMADInstruction::Flags::H1_B
+		));
 	}
 	else
 	{
@@ -91,7 +91,39 @@ void MADGenerator::GenerateMaxwell(const PTX::MADInstruction<T> *instruction)
 template<class T>
 void MADGenerator::GenerateVolta(const PTX::MADInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+	{
+		// Verify allowed modifiers
+
+		if (instruction->GetCarryIn() || instruction->GetCarryOut())
+		{
+			Error(instruction, "unsupported carry modifier");
+		}
+
+		if (instruction->GetHalf() != PTX::MADInstruction<T>::Half::Lower)
+		{
+			Error(instruction, "unsupported half modifier");
+		}
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		CompositeGenerator compositeGenerator(this->m_builder);
+		compositeGenerator.SetImmediateSize(32);
+
+		// Generate operands
+
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
+		auto sourceC = compositeGenerator.Generate(instruction->GetSourceC());
+
+		// Generate instruction
+
+		this->AddInstruction(new SASS::Volta::IMADInstruction(destination, nullptr, sourceA, sourceB, sourceC, nullptr));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }

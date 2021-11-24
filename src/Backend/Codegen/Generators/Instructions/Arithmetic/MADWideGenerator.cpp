@@ -94,7 +94,42 @@ void MADWideGenerator::GenerateMaxwell(const PTX::MADWideInstruction<T> *instruc
 template<class T>
 void MADWideGenerator::GenerateVolta(const PTX::MADWideInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+	{
+		RegisterGenerator registerGenerator(this->m_builder);
+		CompositeGenerator compositeGenerator(this->m_builder);
+		compositeGenerator.SetImmediateSize(32);
+
+		// Generate operands
+
+		auto temp = this->m_builder.AllocateTemporaryRegister<PTX::Bits::Bits64>();
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+		this->AddInstruction(new SASS::Volta::IMADInstruction(
+			temp, nullptr, sourceA, sourceB, SASS::RZ, nullptr, SASS::Volta::IMADInstruction::Mode::WIDE
+		));
+
+		// Add sourceC
+
+		auto temp_Lo = new SASS::Register(temp->GetValue());
+		auto temp_Hi = new SASS::Register(temp->GetValue() + 1);
+		auto CC = this->m_builder.AllocateTemporaryPredicate();
+
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+		auto [sourceC_Lo, sourceC_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceC());
+
+		this->AddInstruction(new SASS::Volta::IADD3Instruction(
+			destination_Lo, CC, temp_Lo, sourceC_Lo, SASS::RZ
+		));
+		this->AddInstruction(new SASS::Volta::IADD3Instruction(
+			destination_Hi, temp_Hi, sourceC_Hi, SASS::RZ, CC, SASS::PT, SASS::Volta::IADD3Instruction::Flags::NOT_E
+		));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }
