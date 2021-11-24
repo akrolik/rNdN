@@ -58,7 +58,30 @@ void ShiftLeftGenerator::GenerateMaxwell(const PTX::ShiftLeftInstruction<T> *ins
 template<class T>
 void ShiftLeftGenerator::GenerateVolta(const PTX::ShiftLeftInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	if constexpr(std::is_same<T, PTX::Bit32Type>::value)
+	{
+		// Generate operands
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+
+		CompositeGenerator compositeGenerator(this->m_builder);
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+		// Flags
+
+		auto direction = SASS::Volta::SHFInstruction::Direction::L;
+		auto type = SASS::Volta::SHFInstruction::Type::U32;
+
+		// Generate instruction
+
+		this->AddInstruction(new SASS::Volta::SHFInstruction(destination, sourceA, sourceB, SASS::RZ, direction, type));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }
