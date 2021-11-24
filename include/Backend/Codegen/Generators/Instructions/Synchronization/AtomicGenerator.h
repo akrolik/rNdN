@@ -29,11 +29,14 @@ public:
 	void GenerateVolta(const PTX::AtomicInstruction<B, T, S> *instruction);
 
 private:
-	template<class I, PTX::Bits B, class T, class S>
-	typename I::Type InstructionType(const PTX::AtomicInstruction<B, T, S> *instruction);
+	template<class ATOMInstruction, PTX::Bits B, class T, class S>
+	typename ATOMInstruction::Type InstructionType(const PTX::AtomicInstruction<B, T, S> *instruction);
 
-	template<class I, PTX::Bits B, class T, class S>
-	typename I::Mode InstructionMode(const PTX::AtomicInstruction<B, T, S> *instruction);
+	template<class ATOMInstruction, PTX::Bits B, class T, class S>
+	typename ATOMInstruction::Mode InstructionMode(const PTX::AtomicInstruction<B, T, S> *instruction);
+
+	template<class ATOMInstruction, class CASInstruction, class MOVInstruction, PTX::Bits B, class T, class S>
+	void GenerateInstruction(const PTX::AtomicInstruction<B, T, S> *instruction);
 };
 
 }

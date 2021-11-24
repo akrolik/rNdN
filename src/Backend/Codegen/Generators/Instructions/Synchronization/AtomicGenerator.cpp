@@ -14,42 +14,42 @@ void AtomicGenerator::Generate(const PTX::_AtomicInstruction *instruction)
 	instruction->Dispatch(*this);
 }
 
-template<class I, PTX::Bits B, class T, class S>
-typename I::Type AtomicGenerator::InstructionType(const PTX::AtomicInstruction<B, T, S> *instruction)
+template<class ATOMInstruction, PTX::Bits B, class T, class S>
+typename ATOMInstruction::Type AtomicGenerator::InstructionType(const PTX::AtomicInstruction<B, T, S> *instruction)
 {
 	if constexpr(std::is_same<T, PTX::UInt32Type>::value || std::is_same<T, PTX::Bit32Type>::value)
 	{
-		return I::Type::U32;
+		return ATOMInstruction::Type::U32;
 	}
 	else if constexpr(std::is_same<T, PTX::Int32Type>::value)
 	{
-		return I::Type::S32;
+		return ATOMInstruction::Type::S32;
 	}
 	else if constexpr(std::is_same<T, PTX::UInt64Type>::value || std::is_same<T, PTX::Bit64Type>::value)
 	{
-		return I::Type::U64;
+		return ATOMInstruction::Type::U64;
 	}
 	else if constexpr(std::is_same<T, PTX::Int64Type>::value)
 	{
-		return I::Type::S64;
+		return ATOMInstruction::Type::S64;
 	}
 	else if constexpr(std::is_same<T, PTX::Float16x2Type>::value)
 	{
-		return I::Type::F16x2;
+		return ATOMInstruction::Type::F16x2;
 	}
 	else if constexpr(std::is_same<T, PTX::Float32Type>::value)
 	{
-		return I::Type::F32;
+		return ATOMInstruction::Type::F32;
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
-		return I::Type::F64;
+		return ATOMInstruction::Type::F64;
 	}
 	Error(instruction, "unsupported type");
 }
 
-template<class I, PTX::Bits B, class T, class S>
-typename I::Mode AtomicGenerator::InstructionMode(const PTX::AtomicInstruction<B, T, S> *instruction)
+template<class ATOMInstruction, PTX::Bits B, class T, class S>
+typename ATOMInstruction::Mode AtomicGenerator::InstructionMode(const PTX::AtomicInstruction<B, T, S> *instruction)
 {
 	if constexpr(PTX::is_bit_type<T>::value)
 	{
@@ -57,19 +57,19 @@ typename I::Mode AtomicGenerator::InstructionMode(const PTX::AtomicInstruction<B
 		{
 			case T::AtomicOperation::And:
 			{
-				return I::Mode::AND;
+				return ATOMInstruction::Mode::AND;
 			}
 			case T::AtomicOperation::Or:
 			{
-				return I::Mode::OR;
+				return ATOMInstruction::Mode::OR;
 			}
 			case T::AtomicOperation::Xor:
 			{
-				return I::Mode::XOR;
+				return ATOMInstruction::Mode::XOR;
 			}
 			case T::AtomicOperation::Exchange:
 			{
-				return I::Mode::EXCH;
+				return ATOMInstruction::Mode::EXCH;
 			}
 		}
 	}
@@ -77,7 +77,7 @@ typename I::Mode AtomicGenerator::InstructionMode(const PTX::AtomicInstruction<B
 	{
 		if (instruction->GetOperation() == T::AtomicOperation::Add)
 		{
-			return I::Mode::ADD;
+			return ATOMInstruction::Mode::ADD;
 		}
 	}
 	else
@@ -86,23 +86,23 @@ typename I::Mode AtomicGenerator::InstructionMode(const PTX::AtomicInstruction<B
 		{
 			case T::AtomicOperation::Add:
 			{
-				return I::Mode::ADD;
+				return ATOMInstruction::Mode::ADD;
 			}
 			case T::AtomicOperation::Increment:
 			{
-				return I::Mode::INC;
+				return ATOMInstruction::Mode::INC;
 			}
 			case T::AtomicOperation::Decrement:
 			{
-				return I::Mode::DEC;
+				return ATOMInstruction::Mode::DEC;
 			}
 			case T::AtomicOperation::Minimum:
 			{
-				return I::Mode::MIN;
+				return ATOMInstruction::Mode::MIN;
 			}
 			case T::AtomicOperation::Maximum:
 			{
-				return I::Mode::MAX;
+				return ATOMInstruction::Mode::MAX;
 			}
 		}
 	}
@@ -129,13 +129,7 @@ void AtomicGenerator::Visit(const PTX::AtomicInstruction<B, T, S> *instruction)
 	// Modifiers
 	//   - Scope: *
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
-}
-
-template<PTX::Bits B, class T, class S>
-void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *instruction)
-{
-	// // Verify permissible properties
+	// Verify permissible properties
 
 	auto synchronization = instruction->GetSynchronization();
 	if (synchronization != PTX::AtomicInstruction<B, T, S>::Synchronization::None)
@@ -148,6 +142,32 @@ void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *ins
 		Error(instruction, "unsupported scope modifier");
 	}
 
+	ArchitectureDispatch::Dispatch(*this, instruction);
+}
+
+template<PTX::Bits B, class T, class S>
+void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *instruction)
+{
+	GenerateInstruction<
+		SASS::Maxwell::ATOMInstruction,
+		SASS::Maxwell::ATOMCASInstruction,
+		SASS::Maxwell::MOVInstruction
+	>(instruction);
+}
+
+template<PTX::Bits B, class T, class S>
+void AtomicGenerator::GenerateVolta(const PTX::AtomicInstruction<B, T, S> *instruction)
+{
+	GenerateInstruction<
+		SASS::Volta::ATOMGInstruction,
+		SASS::Volta::ATOMGInstruction,
+		SASS::Volta::MOVInstruction
+	>(instruction);
+}
+
+template<class ATOMInstruction, class ATOMCASInstruction, class MOVInstruction, PTX::Bits B, class T, class S>
+void AtomicGenerator::GenerateInstruction(const PTX::AtomicInstruction<B, T, S> *instruction)
+{
 	// Generate operands
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -175,10 +195,10 @@ void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *ins
 
 			auto [value_Lo, value_Hi] = registerGenerator.GeneratePair(instruction->GetValue());
 			
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp0_Lo, value_Lo));
+			this->AddInstruction(new MOVInstruction(temp0_Lo, value_Lo));
 			if constexpr(T::TypeBits == PTX::Bits::Bits64)
 			{
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp0_Hi, value_Hi));
+				this->AddInstruction(new MOVInstruction(temp0_Hi, value_Hi));
 			}
 
 			if (auto valueExtra = instruction->GetValueC())
@@ -186,10 +206,10 @@ void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *ins
 				CompositeGenerator compositeGenerator(this->m_builder);
 				auto [valueC_Lo, valueC_Hi] = compositeGenerator.GeneratePair(valueExtra);
 
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp1_Lo, valueC_Lo));
+				this->AddInstruction(new MOVInstruction(temp1_Lo, valueC_Lo));
 				if constexpr(T::TypeBits == PTX::Bits::Bits64)
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp1_Hi, valueC_Hi));
+					this->AddInstruction(new MOVInstruction(temp1_Hi, valueC_Hi));
 				}
 			}
 
@@ -204,19 +224,34 @@ void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *ins
 
 			if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 			{
-				auto type = SASS::Maxwell::ATOMCASInstruction::Type::X32;
-				if constexpr(T::TypeBits == PTX::Bits::Bits64)
-				{
-					type = SASS::Maxwell::ATOMCASInstruction::Type::X64;
-				}
-
-				auto flags = SASS::Maxwell::ATOMCASInstruction::Flags::None;
+				auto flags = ATOMCASInstruction::Flags::None;
 				if constexpr(B == PTX::Bits::Bits64)
 				{
-					flags |= SASS::Maxwell::ATOMCASInstruction::Flags::E;
+					flags |= ATOMCASInstruction::Flags::E;
 				}
 
-				this->AddInstruction(new SASS::Maxwell::ATOMCASInstruction(destination, address, sourceA, sourceB, type, flags));
+				if constexpr(std::is_same<ATOMCASInstruction, SASS::Volta::ATOMGInstruction>::value)
+				{
+					auto mode = ATOMCASInstruction::Mode::CAS;
+					auto cache = ATOMCASInstruction::Cache::STRONG_GPU;
+					auto type = ATOMCASInstruction::Type::U32;
+					if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					{
+						type = ATOMCASInstruction::Type::U64;
+					}
+
+					this->AddInstruction(new ATOMCASInstruction(SASS::PT, destination, address, sourceA, sourceB, type, mode, cache, flags));
+				}
+				else
+				{
+					auto type = ATOMCASInstruction::Type::X32;
+					if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					{
+						type = ATOMCASInstruction::Type::X64;
+					}
+
+					this->AddInstruction(new ATOMCASInstruction(destination, address, sourceA, sourceB, type, flags));
+				}
 				return;
 			}
 			else
@@ -230,26 +265,30 @@ void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *ins
 
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
-		auto type = InstructionType<SASS::Maxwell::ATOMInstruction>(instruction);
-		auto flags = SASS::Maxwell::ATOMInstruction::Flags::None;
+		auto type = InstructionType<ATOMInstruction>(instruction);
+		auto mode = InstructionMode<ATOMInstruction>(instruction);
+
+		auto flags = ATOMInstruction::Flags::None;
 		if constexpr(B == PTX::Bits::Bits64)
 		{
-			flags |= SASS::Maxwell::ATOMInstruction::Flags::E;
+			flags |= ATOMInstruction::Flags::E;
 		}
-		auto mode = InstructionMode<SASS::Maxwell::ATOMInstruction>(instruction);
 
-		this->AddInstruction(new SASS::Maxwell::ATOMInstruction(destination, address, value, type, mode, flags));
+		if constexpr(std::is_same<ATOMInstruction, SASS::Volta::ATOMGInstruction>::value)
+		{
+			auto cache = ATOMInstruction::Cache::STRONG_GPU;
+
+			this->AddInstruction(new ATOMInstruction(SASS::PT, destination, address, value, nullptr, type, mode, cache, flags));
+		}
+		else
+		{
+			this->AddInstruction(new ATOMInstruction(destination, address, value, type, mode, flags));
+		}
 	}
 	else
 	{
 		Error(instruction, "unsupported space");
 	}
-}
-
-template<PTX::Bits B, class T, class S>
-void AtomicGenerator::GenerateVolta(const PTX::AtomicInstruction<B, T, S> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 }

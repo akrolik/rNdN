@@ -144,7 +144,7 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 }
 
 template<class REDInstruction, PTX::Bits B, class T, class S>
-void ReductionGenerator::GenerateReduction(const PTX::ReductionInstruction<B, T, S> *instruction)
+void ReductionGenerator::GenerateInstruction(const PTX::ReductionInstruction<B, T, S> *instruction)
 {
 	// Generate operands
 
