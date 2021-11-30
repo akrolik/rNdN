@@ -315,15 +315,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Only some barriers may be processed out of order (certain memory ops)
 
-				auto outOfOrder = false;
-				if (optionCBarrier)
-				{
-					if (barrier == SASS::Schedule::Barrier::SB0 || barrier == SASS::Schedule::Barrier::SB1 ||
-						barrier == SASS::Schedule::Barrier::SB4 || barrier == SASS::Schedule::Barrier::SB5)
-					{
-						outOfOrder = true;
-					}
-				}
+				auto outOfOrder = optionCBarrier && m_profile.GetScoreboardBarrier(barrier);
 
 				// A partial barrier is used when there are additional instructions queued after
 
@@ -412,27 +404,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			{
 				// Select next free barrier resource for the instruction
 
-				auto barrier = SASS::Schedule::Barrier::SB0;
-				switch (instruction->GetInstructionClass())
-				{
-					case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
-					{
-						barrier = SASS::Schedule::Barrier::SB0;
-						break;
-					}
-					case SASS::Instruction::InstructionClass::SharedMemoryLoad:
-					{
-						barrier = SASS::Schedule::Barrier::SB1;
-						break;
-					}
-					case SASS::Instruction::InstructionClass::S2R:
-					case SASS::Instruction::InstructionClass::DoublePrecision:
-					case SASS::Instruction::InstructionClass::SpecialFunction:
-					{
-						barrier = SASS::Schedule::Barrier::SB2;
-						break;
-					}
-				}
+				auto barrier = m_profile.GetWriteBarrier(instruction);
 				schedule.SetWriteBarrier(barrier);
 
 				// Maintain barrier set
@@ -448,28 +420,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			{
 				// Select the next free barrier resource for the instruction
 
-				auto barrier = SASS::Schedule::Barrier::SB3;
-				switch (instruction->GetInstructionClass())
-				{
-					case SASS::Instruction::InstructionClass::DoublePrecision:
-					case SASS::Instruction::InstructionClass::SpecialFunction:
-					{
-						barrier = SASS::Schedule::Barrier::SB3;
-						break;
-					}
-					case SASS::Instruction::InstructionClass::SharedMemoryLoad:
-					case SASS::Instruction::InstructionClass::SharedMemoryStore:
-					{
-						barrier = SASS::Schedule::Barrier::SB4;
-						break;
-					}
-					case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
-					case SASS::Instruction::InstructionClass::GlobalMemoryStore:
-					{
-						barrier = SASS::Schedule::Barrier::SB5;
-						break;
-					}
-				}
+				auto barrier = m_profile.GetReadBarrier(instruction);
 				schedule.SetReadBarrier(barrier);
 
 				// Maintain barrier set

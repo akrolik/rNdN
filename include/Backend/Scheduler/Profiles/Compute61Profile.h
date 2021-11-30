@@ -21,6 +21,12 @@ public:
 	std::uint8_t GetThroughputLatency(const SASS::Instruction *instruction) const override;
 	bool GetDualIssue(const SASS::Instruction *instruction) const override;
 	bool GetReuseFlags(const SASS::Instruction *instruction) const override;
+
+	// Barriers
+
+	SASS::Schedule::Barrier GetReadBarrier(const SASS::Instruction *instruction) const override;
+	SASS::Schedule::Barrier GetWriteBarrier(const SASS::Instruction *instruction) const override;
+	bool GetScoreboardBarrier(SASS::Schedule::Barrier barrier) const override;
 };
 
 }

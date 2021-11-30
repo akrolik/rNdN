@@ -203,7 +203,7 @@ public:
 		{
 			return InstructionClass::DoublePrecision;
 		}
-		return InstructionClass::SinglePrecision;
+		return InstructionClass::SpecialFunction;
 	}
 
 	// Visitors

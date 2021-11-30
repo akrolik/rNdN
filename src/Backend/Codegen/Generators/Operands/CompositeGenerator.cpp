@@ -192,7 +192,7 @@ void CompositeGenerator::Visit(const PTX::Value<T> *value)
 			{
 				// Ensure the value can be represented in the required number of bits
 
-				auto limit = (1 << (m_immediateSize + 1) - 1);
+				auto limit = (static_cast<std::uint64_t>(1) << (m_immediateSize + 1) - 1);
 				if (auto val = value->GetValue(); val < limit)
 				{
 					if (m_immediateSize <= 8)

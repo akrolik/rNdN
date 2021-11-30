@@ -47,6 +47,12 @@ public:
 	virtual std::uint8_t GetThroughputLatency(const SASS::Instruction *instruction) const = 0;
 	virtual bool GetDualIssue(const SASS::Instruction *instruction) const = 0;
 	virtual bool GetReuseFlags(const SASS::Instruction *instruction) const = 0;
+
+	// Barriers
+
+	virtual SASS::Schedule::Barrier GetReadBarrier(const SASS::Instruction *instruction) const = 0;
+	virtual SASS::Schedule::Barrier GetWriteBarrier(const SASS::Instruction *instruction) const = 0;
+	virtual bool GetScoreboardBarrier(SASS::Schedule::Barrier barrier) const = 0;
 };
 
 }

@@ -127,7 +127,7 @@ public:
 
 	// Hardware properties
 
-	InstructionClass GetInstructionClass() const override { return InstructionClass::SinglePrecision; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::Integer; }
 
 	// Visitors
 

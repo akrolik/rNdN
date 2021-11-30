@@ -20,6 +20,11 @@ public:
 
 	SASS::Address *Generate(const PTX::Operand *operand);
 
+	// Options
+
+	bool GetUseOffset() const { return m_useOffset; }
+	void SetUseOffset(bool useOffset) { m_useOffset = useOffset; }
+
 	// Addresss
 
 	bool Visit(const PTX::_MemoryAddress *address) override;
@@ -33,6 +38,7 @@ public:
 
 private:
 	SASS::Address *m_address = nullptr;
+	bool m_useOffset = true;
 };
 
 }

@@ -243,7 +243,7 @@ public:
 
 	// Hardware properties
 
-	InstructionClass GetInstructionClass() const override { return InstructionClass::Integer; }
+	InstructionClass GetInstructionClass() const override { return InstructionClass::DoublePrecision; }
 
 	// Visitors
 

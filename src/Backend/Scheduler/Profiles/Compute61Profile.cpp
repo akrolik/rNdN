@@ -61,6 +61,7 @@ std::uint8_t Compute61Profile::GetLatency(const SASS::Instruction *instruction) 
 		}
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
 			return 6; // Fixed pipeline depth
 		}
@@ -93,6 +94,7 @@ std::uint8_t Compute61Profile::GetMinimumLatency(const SASS::Instruction *instru
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Shift:
 		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
 			return 1; // Immediately available
 		}
@@ -128,6 +130,7 @@ std::uint8_t Compute61Profile::GetBarrierLatency(const SASS::Instruction *instru
 		case SASS::Instruction::InstructionClass::Control:
 		case SASS::Instruction::InstructionClass::Shift:
 		case SASS::Instruction::InstructionClass::Comparison:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
 		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
@@ -148,6 +151,7 @@ std::uint8_t Compute61Profile::GetReadLatency(const SASS::Instruction *instructi
 		case SASS::Instruction::InstructionClass::SpecialFunction:
 		case SASS::Instruction::InstructionClass::Comparison:
 		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
 			return 0;
 		}
@@ -174,6 +178,7 @@ std::uint8_t Compute61Profile::GetReadHold(const SASS::Instruction *instruction)
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Comparison:
 		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
 			return 0;
 		}
@@ -197,6 +202,7 @@ std::uint8_t Compute61Profile::GetThroughputLatency(const SASS::Instruction *ins
 		case SASS::Instruction::InstructionClass::S2R:
 		case SASS::Instruction::InstructionClass::Control:
 		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
 			return 1;
 		}
@@ -230,6 +236,7 @@ bool Compute61Profile::GetDualIssue(const SASS::Instruction *instruction) const
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Comparison:
 		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
 			return false;
@@ -253,6 +260,7 @@ bool Compute61Profile::GetReuseFlags(const SASS::Instruction *instruction) const
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Comparison:
 		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::SinglePrecision:
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
 			return true;
@@ -266,6 +274,68 @@ bool Compute61Profile::GetReuseFlags(const SASS::Instruction *instruction) const
 		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
 			return false;
+		}
+	}
+	return false;
+}
+
+SASS::Schedule::Barrier Compute61Profile::GetWriteBarrier(const SASS::Instruction *instruction) const
+{
+	switch (instruction->GetInstructionClass())
+	{
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		{
+			return SASS::Schedule::Barrier::SB0;
+		}
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		{
+			return SASS::Schedule::Barrier::SB1;
+		}
+		case SASS::Instruction::InstructionClass::S2R:
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		{
+			return SASS::Schedule::Barrier::SB2;
+		}
+	}
+	return SASS::Schedule::Barrier::SB0;
+}
+
+SASS::Schedule::Barrier Compute61Profile::GetReadBarrier(const SASS::Instruction *instruction) const
+{
+	switch (instruction->GetInstructionClass())
+	{
+		case SASS::Instruction::InstructionClass::DoublePrecision:
+		case SASS::Instruction::InstructionClass::SpecialFunction:
+		{
+			return SASS::Schedule::Barrier::SB3;
+		}
+		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		case SASS::Instruction::InstructionClass::SharedMemoryStore:
+		{
+			return SASS::Schedule::Barrier::SB4;
+		}
+		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		{
+			return SASS::Schedule::Barrier::SB5;
+		}
+	}
+	return SASS::Schedule::Barrier::SB3;
+}
+
+bool Compute61Profile::GetScoreboardBarrier(SASS::Schedule::Barrier barrier) const
+{
+	switch (barrier)
+	{
+		// Loads
+		case SASS::Schedule::Barrier::SB0:
+		case SASS::Schedule::Barrier::SB1:
+		// Stores
+		case SASS::Schedule::Barrier::SB4:
+		case SASS::Schedule::Barrier::SB5:
+		{
+			return true;
 		}
 	}
 	return false;

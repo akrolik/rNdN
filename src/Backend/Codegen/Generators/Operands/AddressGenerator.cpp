@@ -88,7 +88,7 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		auto size = Utils::Math::DivUp(PTX::BitSize<B>::NumBits, 32);
 		auto temp = new SASS::Register(temp_Lo->GetValue(), size);
 
-		if (addressOffset >= (1 << 24))
+		if (addressOffset >= (1 << 24) || !m_useOffset)
 		{
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
@@ -157,7 +157,7 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 
 		// Form the address with the offset
 
-		if (addressOffset >= (1 << 24))
+		if (addressOffset >= (1 << 24) || !m_useOffset)
 		{
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
@@ -201,7 +201,7 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 
 		// Inline offset has maximum size
 
-		if (addressOffset >= (1 << 24))
+		if (addressOffset >= (1 << 24) || !m_useOffset)
 		{
 			auto [temp_Lo, temp_Hi] = this->m_builder.AllocateTemporaryRegisterPair<B>();
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
@@ -253,7 +253,7 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 	{
 		// Inline offset has maximum size
 
-		if (addressOffset >= (1 << 24))
+		if (addressOffset >= (1 << 24) || !m_useOffset)
 		{
 			auto temp = this->m_builder.AllocateTemporaryRegister();
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
