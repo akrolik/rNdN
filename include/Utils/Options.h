@@ -126,7 +126,7 @@ public:
 
 	enum class BackendKind {
 		ptxas,
-		r3d3
+		r4d4
 	};
 
 	enum class BackendRegisterAllocator {

@@ -174,9 +174,9 @@ Options::BackendKind Options::GetBackend_Kind()
 	{
 		return BackendKind::ptxas;
 	}
-	else if (backend == "r3d3")
+	else if (backend == "r4d4")
 	{
-		return BackendKind::r3d3;
+		return BackendKind::r4d4;
 	}
 	Utils::Logger::LogError("Unknown backend '" + backend + "'");
 }
@@ -610,8 +610,8 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 	m_options.add_options("Backend")
 		(Opt_Backend, "Backend assembler\n"
 			"   - ptxas      Official NVIDIA assembler\n"
-			"   - r3d3       Homegrown assembler",
-			cxxopts::value<std::string>()->default_value("r3d3")
+			"   - r4d4       Homegrown assembler",
+			cxxopts::value<std::string>()->default_value("r4d4")
 		)
 		(Opt_Backend_reg_alloc, "Register allocation algorithm\n"
 			"   - virtual    Each variable assigned a virtual register\n"
