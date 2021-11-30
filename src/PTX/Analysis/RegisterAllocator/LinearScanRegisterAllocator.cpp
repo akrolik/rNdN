@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "SASS/Tree/Tree.h"
+
 #include "Utils/Chrono.h"
 
 namespace PTX {
@@ -17,9 +19,16 @@ void LinearScanRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *fu
 
 	function->Accept(*this);
 
-	// Initialize blank register allocation
+	// Initialize blank register allocation, depending on the architecture
 
-	m_allocation = new RegisterAllocation();
+	if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		m_allocation = new RegisterAllocation();
+	}
+	else
+	{
+		m_allocation = new RegisterAllocation(RegisterAllocation::MaxRegisters - 2);
+	}
 
 	// Construct vector of live interval tuples (name, start, end)
 
@@ -54,8 +63,8 @@ void LinearScanRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *fu
 
 	// Keep track of allocated registers and predicates
 
-	std::array<bool, RegisterAllocation::DefaultMaxPredicate> predicateMap{};
-	std::array<bool, RegisterAllocation::DefaultMaxRegister> registerMap{};
+	std::array<bool, RegisterAllocation::MaxPredicates> predicateMap{};
+	std::array<bool, RegisterAllocation::MaxRegisters> registerMap{};
 
 	// For each live interval, perform allocation
 

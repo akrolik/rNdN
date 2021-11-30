@@ -18,7 +18,8 @@ public:
 	inline const static std::string Name = "Linear scan allocator";
 	inline const static std::string ShortName = "reg";
 
-	LinearScanRegisterAllocator(const LiveIntervals& liveIntervals) : m_liveIntervals(liveIntervals) {}
+	LinearScanRegisterAllocator(const LiveIntervals& liveIntervals, unsigned int computeCapability)
+		: m_liveIntervals(liveIntervals), m_computeCapability(computeCapability) {}
 
 	// Public API
 
@@ -35,6 +36,7 @@ public:
 
 private:
 	const LiveIntervals& m_liveIntervals;
+	unsigned int m_computeCapability = 0;
 
 	RegisterAllocation *m_allocation = nullptr;
 	robin_hood::unordered_map<std::string, Bits> m_registerBits;

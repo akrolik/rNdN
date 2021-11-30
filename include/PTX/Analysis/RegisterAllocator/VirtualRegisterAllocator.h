@@ -15,6 +15,8 @@ public:
 	inline const static std::string Name = "Virtual registers allocator";
 	inline const static std::string ShortName = "reg";
 
+	VirtualRegisterAllocator(unsigned int computeCapability) : m_computeCapability(computeCapability) {}
+
 	// Public API
 
 	void Analyze(const FunctionDefinition<VoidType> *function);
@@ -29,6 +31,8 @@ public:
 	void Visit(const _TypedVariableDeclaration *declaration) override;
 
 private:
+	unsigned int m_computeCapability = 0;
+
 	std::uint8_t m_registerOffset = 0;
 	std::uint8_t m_predicateOffset = 0;
 	RegisterAllocation *m_allocation = nullptr;

@@ -144,6 +144,8 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 {
 	auto timeCodegen_start = Utils::Chrono::Start("Backend compiler '" + function->GetName() + "'");
 
+	auto computeCapability = m_program->GetComputeCapability();
+
 	// Control-flow graph
 
 	if (function->GetControlFlowGraph() == nullptr)
@@ -158,14 +160,14 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	// Allocate parameter space
 	
-	PTX::Analysis::ParameterSpaceAllocator parameterAllocator(m_program->GetComputeCapability());
+	PTX::Analysis::ParameterSpaceAllocator parameterAllocator(computeCapability);
 	parameterAllocator.Analyze(function);
 
 	auto parameterAllocation = parameterAllocator.GetSpaceAllocation();
 
 	// Allocate registers
 
-	auto registerAllocation = AllocateRegisters(function);
+	auto registerAllocation = AllocateRegisters(function, computeCapability);
 
 	// Structurize CFG
 
@@ -198,7 +200,7 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	auto timeSASS_start = Utils::Chrono::Start("SASS codegen '" + function->GetName() + "'");
 
-	Codegen::CodeGenerator codegen(m_program->GetComputeCapability());
+	Codegen::CodeGenerator codegen(computeCapability);
 	auto sassFunction = codegen.Generate(function, registerAllocation, parameterAllocation);
 
 	Utils::Chrono::End(timeSASS_start);
@@ -232,7 +234,7 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 
 	auto timeScheduler_start = Utils::Chrono::Start("Scheduler '" + function->GetName() + "'");
 
-	auto profile = GetHardwareProfile(m_program->GetComputeCapability());
+	auto profile = GetHardwareProfile(computeCapability);
 	switch (Utils::Options::GetBackend_Scheduler())
 	{
 		case Utils::Options::BackendScheduler::Linear:
@@ -266,7 +268,7 @@ SASS::Function *Compiler::Compile(PTX::FunctionDefinition<PTX::VoidType> *functi
 	return sassFunction;
 }
 
-const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function)
+const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function, unsigned int computeCapability)
 {
 	Utils::ScopedChrono chrono("Register allocation '" + function->GetName() + "'");
 
@@ -274,7 +276,7 @@ const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::
 	{
 		case Utils::Options::BackendRegisterAllocator::Virtual:
 		{
-			PTX::Analysis::VirtualRegisterAllocator allocator;
+			PTX::Analysis::VirtualRegisterAllocator allocator(computeCapability);
 			allocator.Analyze(function);
 
 			return allocator.GetRegisterAllocation();
@@ -288,7 +290,7 @@ const PTX::Analysis::RegisterAllocation *Compiler::AllocateRegisters(const PTX::
 			PTX::Analysis::LiveIntervals liveIntervals(liveVariables);
 			liveIntervals.Analyze(function);
 
-			PTX::Analysis::LinearScanRegisterAllocator allocator(liveIntervals);
+			PTX::Analysis::LinearScanRegisterAllocator allocator(liveIntervals, computeCapability);
 			allocator.Analyze(function);
 
 			return allocator.GetRegisterAllocation();

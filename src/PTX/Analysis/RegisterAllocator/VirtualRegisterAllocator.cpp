@@ -1,5 +1,7 @@
 #include "PTX/Analysis/RegisterAllocator/VirtualRegisterAllocator.h"
 
+#include "SASS/Tree/Tree.h"
+
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
 #include "Utils/Options.h"
@@ -18,7 +20,17 @@ void VirtualRegisterAllocator::Analyze(const FunctionDefinition<VoidType> *funct
 	m_currentFunction = function;
 	m_registerOffset = 1; // R0 reserved for dummy
 	m_predicateOffset = 0;
-	m_allocation = new RegisterAllocation();
+
+	// Max registers depends on the architecture
+
+	if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		m_allocation = new RegisterAllocation();
+	}
+	else
+	{
+		m_allocation = new RegisterAllocation(RegisterAllocation::MaxRegisters - 2);
+	}
 
 	function->Accept(*this);
 

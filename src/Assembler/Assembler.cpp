@@ -278,9 +278,19 @@ BinaryFunction *Assembler::Assemble(const SASS::Function *function)
 			binary[i * binaryFactor + 1] = instruction->ToBinaryHi();
 		}
 	}
-	binaryFunction->SetText((char *)binary, m_instructionSize * linearProgram.size());
-	binaryFunction->SetRegisters(function->GetRegisters());
+	if (SASS::Maxwell::IsSupported(m_computeCapability))
+	{
+		binaryFunction->SetRegisters(function->GetRegisters());
+	}
+	else if (SASS::Volta::IsSupported(m_computeCapability))
+	{
+		// Volta+ requires 2 extra registers for the PC register
+		// https://stackoverflow.com/questions/47535903/register-consumption-of-per-thread-program-counters-in-volta
+
+		binaryFunction->SetRegisters(function->GetRegisters() + 2);
+	}
 	binaryFunction->SetMaxRegisters(function->GetMaxRegisters());
+	binaryFunction->SetText((char *)binary, m_instructionSize * linearProgram.size());
 	binaryFunction->SetLinearProgram(linearProgram);
 
 	// Thread information

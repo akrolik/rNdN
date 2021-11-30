@@ -12,13 +12,14 @@ namespace Analysis {
 class RegisterAllocation
 {
 public:
-	constexpr static unsigned int DefaultMaxRegister = 255;
-	constexpr static unsigned int DefaultMaxPredicate = 7;
+	constexpr static unsigned int MaxRegisters = 255;
+	constexpr static unsigned int MaxPredicates = 7;
 
-	RegisterAllocation()
+	RegisterAllocation(unsigned int maxRegisters = MaxRegisters, unsigned int maxPredicates = MaxPredicates)
+		: m_maxRegisters(maxRegisters), m_maxPredicates(maxPredicates)
 	{
-		m_registerMap.reserve(DefaultMaxRegister);
-		m_predicateMap.reserve(DefaultMaxPredicate);
+		m_registerMap.reserve(maxRegisters);
+		m_predicateMap.reserve(maxPredicates);
 	}
 
 	unsigned int GetMaxRegisters() const { return m_maxRegisters; }
@@ -55,8 +56,8 @@ private:
 	std::uint8_t m_registerCount = 0;
 	std::uint8_t m_predicateCount = 0;
 
-	unsigned int m_maxRegisters = DefaultMaxRegister;
-	unsigned int m_maxPredicates = DefaultMaxPredicate;
+	unsigned int m_maxRegisters = MaxRegisters;
+	unsigned int m_maxPredicates = MaxPredicates;
 };
 
 }
