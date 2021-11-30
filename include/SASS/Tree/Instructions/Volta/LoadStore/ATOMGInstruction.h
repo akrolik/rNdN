@@ -21,22 +21,22 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	enum class Cache : std::uint64_t {
-		Default              = 0x0,
+		None                 = 0x0,
+		CONSTANT             = 0x4,
+		CONSTANT_GPU         = 0xf,
 		CONSTANT_PRIVATE     = 0x1,
 		CONSTANT_CTA         = 0x2,
 		CONSTANT_CTA_PRIVATE = 0x3,
-		CONSTANT             = 0x4,
-		STRONG_SM            = 0x5,
-		STRONG_GPU_PRIVATE   = 0x6,
-		STRONG_GPU           = 0x7,
-		MMIO_GPU             = 0x8,
 		CONSTANT_SM          = 0x9,
-		STRONG_SYS           = 0xa,
 		CONSTANT_SM_PRIVATE  = 0xb,
-		MMIO_SYS             = 0xc,
 		CONSTANT_VC          = 0xd,
 		CONSTANT_VC_PRIVATE  = 0xe,
-		CONSTANT_GPU         = 0xf
+		STRONG_SM            = 0x5,
+		STRONG_SYS           = 0xa,
+		STRONG_GPU           = 0x7,
+		STRONG_GPU_PRIVATE   = 0x6,
+		MMIO_GPU             = 0x8,
+		MMIO_SYS             = 0xc
 	};
 
 	enum class Evict : std::uint64_t {
@@ -72,8 +72,11 @@ public:
 		CAS     = 0xa
 	};
 
-	ATOMGInstruction(Predicate *destinationA, Register *destinationB, Address *address, Register *sourceA, Register *sourceB, Type type, Mode mode, Cache cache = Cache::Default, Flags flags = Flags::None)
+	ATOMGInstruction(Predicate *destinationA, Register *destinationB, Address *address, Register *sourceA, Register *sourceB, Type type, Mode mode, Cache cache = Cache::None, Flags flags = Flags::None)
 		: m_destinationA(destinationA), m_destinationB(destinationB), m_address(address), m_sourceA(sourceA), m_sourceB(sourceB), m_type(type), m_mode(mode), m_cache(cache), m_flags(flags) {}
+
+	ATOMGInstruction(Register *destinationB, Address *address, Register *sourceA, Type type, Mode mode, Cache cache = Cache::None, Flags flags = Flags::None)
+		: ATOMGInstruction(PT, destinationB, address, sourceA, nullptr, type, mode, cache, flags) {}
 
 	// Properties
 
@@ -126,7 +129,7 @@ public:
 
 	// Formatting
 
-	std::string OpCode() const override { return "ATOM"; }
+	std::string OpCode() const override { return "ATOMG"; }
 
 	std::string OpModifiers() const override
 	{
@@ -169,21 +172,21 @@ public:
 		}
 		switch (m_cache)
 		{
+			case Cache::CONSTANT: code += ".CONSTANT"; break;
+			case Cache::CONSTANT_GPU: code += ".CONSTANT.GPU"; break;
 			case Cache::CONSTANT_PRIVATE: code += ".CONSTANT.PRIVATE"; break;
 			case Cache::CONSTANT_CTA: code += ".CONSTANT.CTA"; break;
 			case Cache::CONSTANT_CTA_PRIVATE: code += ".CONSTANT.CTA.PRIVATE"; break;
-			case Cache::CONSTANT: code += ".CONSTANT"; break;
-			case Cache::STRONG_SM: code += ".STRONG.SM"; break;
-			case Cache::STRONG_GPU_PRIVATE: code += ".STRONG.GPU.PRIVATE"; break;
-			case Cache::STRONG_GPU: code += ".STRONG.GPU"; break;
-			case Cache::MMIO_GPU: code += ".MMIO.GPU"; break;
 			case Cache::CONSTANT_SM: code += ".CONSTANT.SM"; break;
-			case Cache::STRONG_SYS: code += ".STRONG.SYS"; break;
 			case Cache::CONSTANT_SM_PRIVATE: code += ".CONSTANT.SM.PRIVATE"; break;
-			case Cache::MMIO_SYS: code += ".MMIO.SYS"; break;
 			case Cache::CONSTANT_VC: code += ".CONSTANT.VC"; break;
 			case Cache::CONSTANT_VC_PRIVATE: code += ".CONSTANT.VC.PRIVATE"; break;
-			case Cache::CONSTANT_GPU: code += ".CONSTANT.GPU"; break;
+			case Cache::STRONG_SM: code += ".STRONG.SM"; break;
+			case Cache::STRONG_SYS: code += ".STRONG.SYS"; break;
+			case Cache::STRONG_GPU: code += ".STRONG.GPU"; break;
+			case Cache::STRONG_GPU_PRIVATE: code += ".STRONG.GPU.PRIVATE"; break;
+			case Cache::MMIO_GPU: code += ".MMIO.GPU"; break;
+			case Cache::MMIO_SYS: code += ".MMIO.SYS"; break;
 		}
 		return code;
 	}
@@ -221,7 +224,11 @@ public:
 
 	std::uint64_t BinaryOpCode() const override
 	{
-		if (m_flags & Flags::E)
+		if (m_mode == Mode::CAS)
+		{
+			return 0x3a9;
+		}
+		else if (m_flags & Flags::E)
 		{
 			return 0x9a8;
 		}
@@ -237,7 +244,7 @@ public:
 		code |= BinaryUtils::OperandAddress40(m_address->GetOffset());
 
 		// DestinationB
-		code |= BinaryUtils::OperandRegister32(m_destinationB);
+		code |= BinaryUtils::OperandRegister16(m_destinationB);
 
 		// SourceA
 		code |= BinaryUtils::OperandRegister32(m_sourceA);
@@ -305,7 +312,7 @@ private:
 	Type m_type;
 	Mode m_mode;
 	Evict m_evict = Evict::None;
-	Cache m_cache = Cache::Default;
+	Cache m_cache = Cache::None;
 	Flags m_flags = Flags::None;
 };
 

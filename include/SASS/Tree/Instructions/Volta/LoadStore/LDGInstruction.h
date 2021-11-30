@@ -22,22 +22,22 @@ public:
 	SASS_FLAGS_FRIEND()
 
 	enum class Cache : std::uint64_t {
-		Default              = 0x0,
+		None                 = 0x0,
+		CONSTANT             = 0x4,
+		CONSTANT_GPU         = 0xf,
 		CONSTANT_PRIVATE     = 0x1,
 		CONSTANT_CTA         = 0x2,
 		CONSTANT_CTA_PRIVATE = 0x3,
-		CONSTANT             = 0x4,
-		STRONG_SM            = 0x5,
-		STRONG_GPU_PRIVATE   = 0x6,
-		STRONG_GPU           = 0x7,
-		MMIO_GPU             = 0x8,
 		CONSTANT_SM          = 0x9,
-		STRONG_SYS           = 0xa,
 		CONSTANT_SM_PRIVATE  = 0xb,
-		MMIO_SYS             = 0xc,
 		CONSTANT_VC          = 0xd,
 		CONSTANT_VC_PRIVATE  = 0xe,
-		CONSTANT_GPU         = 0xf
+		STRONG_SM            = 0x5,
+		STRONG_SYS           = 0xa,
+		STRONG_GPU           = 0x7,
+		STRONG_GPU_PRIVATE   = 0x6,
+		MMIO_GPU             = 0x8,
+		MMIO_SYS             = 0xc
 	};
 
 	enum class Evict : std::uint64_t {
@@ -66,8 +66,11 @@ public:
 		X128 = 0x6
 	};
 
-	LDGInstruction(Predicate *destinationA, Register *destinationB, Address *sourceA, Predicate *sourceB, Type type, Cache cache = Cache::Default, Flags flags = Flags::None)
-		: m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_type(type), m_cache(cache), m_flags(flags) {}
+	LDGInstruction(Predicate *destinationA, Register *destinationB, Address *sourceA, Predicate *sourceB, Type type, Cache cache = Cache::None, Evict evict = Evict::None, Prefetch prefetch = Prefetch::None, Flags flags = Flags::None)
+		: m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_type(type), m_cache(cache), m_evict(evict), m_prefetch(prefetch), m_flags(flags) {}
+
+	LDGInstruction(Register *destinationB, Address *sourceA, Type type, Cache cache = Cache::None, Evict evict = Evict::None, Prefetch prefetch = Prefetch::None, Flags flags = Flags::None)
+		: LDGInstruction(nullptr, destinationB, sourceA, nullptr, type, cache, evict, prefetch, flags) {}
 
 	// Properties
 
@@ -151,21 +154,21 @@ public:
 		}
 		switch (m_cache)
 		{
+			case Cache::CONSTANT: code += ".CONSTANT"; break;
+			case Cache::CONSTANT_GPU: code += ".CONSTANT.GPU"; break;
 			case Cache::CONSTANT_PRIVATE: code += ".CONSTANT.PRIVATE"; break;
 			case Cache::CONSTANT_CTA: code += ".CONSTANT.CTA"; break;
 			case Cache::CONSTANT_CTA_PRIVATE: code += ".CONSTANT.CTA.PRIVATE"; break;
-			case Cache::CONSTANT: code += ".CONSTANT"; break;
-			case Cache::STRONG_SM: code += ".STRONG.SM"; break;
-			case Cache::STRONG_GPU_PRIVATE: code += ".STRONG.GPU.PRIVATE"; break;
-			case Cache::STRONG_GPU: code += ".STRONG.GPU"; break;
-			case Cache::MMIO_GPU: code += ".MMIO.GPU"; break;
 			case Cache::CONSTANT_SM: code += ".CONSTANT.SM"; break;
-			case Cache::STRONG_SYS: code += ".STRONG.SYS"; break;
 			case Cache::CONSTANT_SM_PRIVATE: code += ".CONSTANT.SM.PRIVATE"; break;
-			case Cache::MMIO_SYS: code += ".MMIO.SYS"; break;
 			case Cache::CONSTANT_VC: code += ".CONSTANT.VC"; break;
 			case Cache::CONSTANT_VC_PRIVATE: code += ".CONSTANT.VC.PRIVATE"; break;
-			case Cache::CONSTANT_GPU: code += ".CONSTANT.GPU"; break;
+			case Cache::STRONG_SM: code += ".STRONG.SM"; break;
+			case Cache::STRONG_SYS: code += ".STRONG.SYS"; break;
+			case Cache::STRONG_GPU: code += ".STRONG.GPU"; break;
+			case Cache::STRONG_GPU_PRIVATE: code += ".STRONG.GPU.PRIVATE"; break;
+			case Cache::MMIO_GPU: code += ".MMIO.GPU"; break;
+			case Cache::MMIO_SYS: code += ".MMIO.SYS"; break;
 		}
 		return code;
 	}
@@ -243,7 +246,12 @@ public:
 		code |= BinaryUtils::OperandPredicate17(m_destinationA);
 
 		// SourceB
-		code |= BinaryUtils::OperandPredicate0(m_sourceB, m_flags & Flags::NOT_B);
+		if (m_sourceB != nullptr)
+		{
+			auto invertedPredicate = ~(m_sourceB->ToBinary());
+			code |= BinaryUtils::Format(invertedPredicate, 0, 0x7);
+		}
+		code |= BinaryUtils::FlagBit(m_flags & Flags::NOT_B, 3);
 
 		// Prefetch
 		code |= BinaryUtils::Format(m_prefetch, 4, 0x3);
@@ -281,7 +289,7 @@ private:
 	Type m_type;
 	Evict m_evict = Evict::None;
 	Prefetch m_prefetch = Prefetch::None;
-	Cache m_cache = Cache::Default;
+	Cache m_cache = Cache::None;
 	Flags m_flags = Flags::None;
 };
 

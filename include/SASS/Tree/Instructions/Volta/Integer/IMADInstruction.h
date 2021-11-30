@@ -30,8 +30,21 @@ public:
 		HI      = 0x7
 	};
 
+	// Full
 	IMADInstruction(Register *destinationA, Predicate *destinationB, Register *sourceA, Composite *sourceB, Composite *sourceC, Predicate *sourceD, Mode mode = Mode::Default, Flags flags = Flags::None)
 		: m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_sourceD(sourceD), m_mode(mode), m_flags(flags) {}
+
+	// MAD
+	IMADInstruction(Register *destinationA, Register *sourceA, Composite *sourceB, Composite *sourceC, Mode mode = Mode::Default, Flags flags = Flags::None)
+		: IMADInstruction(destinationA, nullptr, sourceA, sourceB, sourceC, nullptr, mode, flags) {}
+
+	// Carry-out
+	IMADInstruction(Register *destinationA, Predicate *destinationB, Register *sourceA, Composite *sourceB, Composite *sourceC, Mode mode = Mode::Default, Flags flags = Flags::None)
+		: IMADInstruction(destinationA, destinationB, sourceA, sourceB, sourceC, nullptr, mode, flags) {}
+
+	// Carry-in
+	IMADInstruction(Register *destinationA, Register *sourceA, Composite *sourceB, Composite *sourceC, Predicate *sourceD, Mode mode = Mode::Default, Flags flags = Flags::None)
+		: IMADInstruction(destinationA, nullptr, sourceA, sourceB, sourceC, sourceD, mode, flags) {}
 
 	// Properties
 
@@ -88,8 +101,30 @@ public:
 		{
 			case Mode::WIDE: code += ".WIDE"; break;
 			case Mode::HI: code += ".HI"; break;
+			case Mode::Default:
+			{
+				if (m_sourceA == RZ || m_sourceB == RZ)
+				{
+					code += ".MOV";
+				}
+				else if (m_sourceB->GetKind() == Operand::Kind::Immediate)
+				{
+					auto value = static_cast<I32Immediate *>(m_sourceB)->GetValue();
+					if (value == 0)
+					{
+						code += ".MOV";
+					}
+					else if (value == 1)
+					{
+						code += ".ADD";
+					}
+					else if (value == 2 && m_sourceC == RZ)
+					{
+						code += ".SHL";
+					}
+				}
+			}
 		}
-		//TODO: Implicit flags (MOV, SHL)
 		if (m_flags & Flags::U32)
 		{
 			code += ".U32";
@@ -194,7 +229,7 @@ public:
 		}
 		else
 		{
-			code |= BinaryUtils::OperandComposite(m_sourceC);
+			code |= BinaryUtils::OperandComposite(m_sourceC, m_flags & NEG_C);
 		}
 
 		return code;
@@ -222,7 +257,11 @@ public:
 		// Flags
 		code |= BinaryUtils::FlagBit(!(m_flags & Flags::U32), 9);
 		code |= BinaryUtils::FlagBit(m_flags & Flags::X, 10);
-		code |= BinaryUtils::FlagBit(m_flags & Flags::NEG_C || m_flags & Flags::INV_C, 11);
+
+		if (m_sourceC->GetKind() != Operand::Kind::Immediate)
+		{
+			code |= BinaryUtils::FlagBit(m_flags & Flags::NEG_C || m_flags & Flags::INV_C, 11);
+		}
 
 		// SourceD
 		code |= BinaryUtils::OperandPredicate23(m_sourceD, m_flags & Flags::NOT_D);

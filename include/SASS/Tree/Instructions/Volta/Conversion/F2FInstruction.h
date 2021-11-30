@@ -164,7 +164,7 @@ public:
 		code |= BinaryUtils::OperandRegister16(m_destination);
 
 		// Source
-		code |= BinaryUtils::OperandComposite(m_source);
+		code |= BinaryUtils::OperandComposite(m_source, m_flags & Flags::NEG, m_flags & Flags::ABS);
 
 		// Flags (constant/register Source)
 		if (m_source->GetKind() != Operand::Kind::Immediate)

@@ -88,6 +88,13 @@ public:
 		// SourceA
 		code |= BinaryUtils::OperandComposite(m_sourceA);
 
+		return code;
+	}
+
+	std::uint64_t ToBinaryHi() const override
+	{
+		auto code = PredicatedInstruction::ToBinaryHi();
+
 		// SourceB
 		if (m_sourceB != nullptr)
 		{

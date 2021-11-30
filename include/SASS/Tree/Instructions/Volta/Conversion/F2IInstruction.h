@@ -104,18 +104,18 @@ public:
 
 			case DestinationType::S8: code += ".S8"; break;
 			case DestinationType::S16: code += ".S16"; break;
-			case DestinationType::S32: code += ".S32"; break;
+			// case DestinationType::S32: code += ".S32"; break;
 			case DestinationType::S64: code += ".S64"; break;
 		}
 		switch (m_sourceType)
 		{
 			case SourceType::F16: code += ".F16"; break;
-			case SourceType::F32: code += ".F32"; break;
+			// case SourceType::F32: code += ".F32"; break;
 			case SourceType::F64: code += ".F64"; break;
 		}
 		switch (m_round)
 		{
-			case Round::ROUND: code += ""; break;
+			// case Round::ROUND: code += ""; break;
 			case Round::FLOOR: code += ".FLOOR"; break;
 			case Round::CEIL: code += ".CEIL"; break;
 			case Round::TRUNC: code += ".TRUNC"; break;
@@ -183,7 +183,7 @@ public:
 		code |= BinaryUtils::OperandRegister16(m_destination);
 
 		// Source
-		code |= BinaryUtils::OperandComposite(m_source);
+		code |= BinaryUtils::OperandComposite(m_source, m_flags & Flags::NEG, m_flags & Flags::ABS);
 
 		// Flags (constant/register Source)
 		if (m_source->GetKind() != Operand::Kind::Immediate)

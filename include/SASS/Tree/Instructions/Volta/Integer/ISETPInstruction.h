@@ -40,8 +40,13 @@ public:
 
 	SASS_FLAGS_FRIEND()
 
+	// Carry-in
 	ISETPInstruction(Predicate *destinationA, Predicate *destinationB, Register *sourceA, Composite *sourceB, Predicate *sourceC, Predicate *sourceD, ComparisonOperator comparisonOperator, BooleanOperator booleanOperator, Flags flags = Flags::None)
 		: m_destinationA(destinationA), m_destinationB(destinationB), m_sourceA(sourceA), m_sourceB(sourceB), m_sourceC(sourceC), m_sourceD(sourceD), m_comparisonOperator(comparisonOperator), m_booleanOperator(booleanOperator), m_flags(flags) {}
+
+	// No-carry
+	ISETPInstruction(Predicate *destinationA, Predicate *destinationB, Register *sourceA, Composite *sourceB, Predicate *sourceC, ComparisonOperator comparisonOperator, BooleanOperator booleanOperator, Flags flags = Flags::None)
+		: ISETPInstruction(destinationA, destinationB, sourceA, sourceB, sourceC, nullptr, comparisonOperator, booleanOperator, flags) {}
 
 	// Properties
 
@@ -152,8 +157,8 @@ public:
 		}
 		code += m_sourceC->ToString();
 
-		// SourceD
-		if (m_sourceD != nullptr)
+		// SourceD (only in .EX mode)
+		if (m_flags & Flags::EX)
 		{
 			code += ", ";
 			if (m_flags & Flags::NOT_D)
@@ -197,8 +202,8 @@ public:
 		// SourceD
 		code |= BinaryUtils::OperandPredicate4(m_sourceD, m_flags & Flags::NOT_D);
 
-		// Flags
-		code |= BinaryUtils::Format(m_flags, 8, 0x3);
+		// Flags (invert .U32 bits, default signed)
+		code |= BinaryUtils::Format(m_flags ^ Flags::U32, 8, 0x3);
 
 		// Boolean
 		code |= BinaryUtils::Format(m_booleanOperator, 10, 0x3);

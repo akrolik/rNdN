@@ -80,7 +80,7 @@ public:
 		}
 		switch (m_type)
 		{
-			case Type::F32: code += ".F32"; break;
+			// case Type::F32: code += ".F32"; break;
 			case Type::F64: code += ".F64"; break;
 		}
 		switch (m_round)
@@ -147,7 +147,7 @@ public:
 		code |= BinaryUtils::OperandRegister16(m_destination);
 
 		// Source
-		code |= BinaryUtils::OperandComposite(m_source);
+		code |= BinaryUtils::OperandComposite(m_source, m_flags & Flags::NEG, m_flags & Flags::ABS);
 
 		// Flags (constant/register Source)
 		if (m_source->GetKind() != Operand::Kind::Immediate)
@@ -171,8 +171,6 @@ public:
 
 		// Flags
 		code |= BinaryUtils::FlagBit(m_flags & Flags::FTZ, 16);
-
-		//TODO: NTZ?
 
 		// Rounding
 		code |= BinaryUtils::Format(m_round, 14, 0x3);

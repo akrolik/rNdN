@@ -40,7 +40,7 @@ public:
 
 	// Composite
 
-	static std::uint64_t OperandComposite(const Composite *value)
+	static std::uint64_t OperandComposite(const Composite *value, bool negate = false, bool absolute = false)
 	{
 		switch (value->GetKind())
 		{
@@ -50,7 +50,20 @@ public:
 			}
 			case Operand::Kind::Immediate:
 			{
-				return Format(value->ToTruncatedBinary(32), 32, 0xffffffff);
+				std::uint64_t code = 0x0;
+				if (absolute)
+				{
+					code = Format(value->ToAbsoluteBinary(32), 32, 0xffffffff);
+				}
+				else
+				{
+					code = Format(value->ToTruncatedBinary(32), 32, 0xffffffff);
+				}
+				if (negate)
+				{
+					return -code;
+				}
+				return code;
 			}
 			case Operand::Kind::Constant:
 			{

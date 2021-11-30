@@ -119,10 +119,6 @@ public:
 		{
 			code += "|";
 		}
-		if (m_flags & Flags::NEG_B)
-		{
-			code += ".NEG";
-		}
 		code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandB);
 
 		return code;
@@ -150,9 +146,9 @@ public:
 		code |= BinaryUtils::OperandRegister24(m_sourceA);
 
 		// SourceB
-		code |= BinaryUtils::OperandComposite(m_sourceB);
+		code |= BinaryUtils::OperandComposite(m_sourceB, m_flags & Flags::NEG_B, m_flags & Flags::ABS_B);
 
-		// Flags (SourceB register/constantr)
+		// Flags (SourceB register/constant)
 		if (m_sourceB->GetKind() != Operand::Kind::Immediate)
 		{
 			code |= BinaryUtils::FlagBit(m_flags & Flags::ABS_B, 62);

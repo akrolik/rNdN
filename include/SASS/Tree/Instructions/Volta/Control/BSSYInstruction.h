@@ -63,7 +63,7 @@ public:
 	{
 		// Do not include Hi bits of address
 
-		return ControlInstruction::ToBinary();
+		return ControlInstruction::ToBinaryHi();
 	}
 
 	// Visitors

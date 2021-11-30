@@ -205,7 +205,7 @@ public:
 		code |= BinaryUtils::OperandRegister24(m_sourceA);
 
 		// SourceB
-		code |= BinaryUtils::OperandComposite(m_sourceB);
+		code |= BinaryUtils::OperandComposite(m_sourceB, m_flags & Flags::NEG_B);
 		if (m_sourceB->GetKind() != Operand::Kind::Immediate)
 		{
 			code |= BinaryUtils::FlagBit(m_flags & Flags::NEG_B || m_flags & Flags::INV_B, 63);

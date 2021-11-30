@@ -94,7 +94,7 @@ public:
 		switch (m_destinationType)
 		{
 			case DestinationType::F16: code += ".F16"; break;
-			case DestinationType::F32: code += ".F32"; break;
+			// case DestinationType::F32: code += ".F32"; break;
 			case DestinationType::F64: code += ".F64"; break;
 		}
 		switch (m_sourceType)
@@ -106,12 +106,12 @@ public:
 
 			case SourceType::S8: code += ".S8"; break;
 			case SourceType::S16: code += ".S16"; break;
-			case SourceType::S32: code += ".S32"; break;
+			// case SourceType::S32: code += ".S32"; break;
 			case SourceType::S64: code += ".S64"; break;
 		}
 		switch (m_round)
 		{
-			case Round::RN: code += ""; break;
+			// case Round::RN: code += ""; break;
 			case Round::RM: code += ".RM"; break;
 			case Round::RP: code += ".RP"; break;
 			case Round::RZ: code += ".RZ"; break;
@@ -198,7 +198,9 @@ public:
 			case SourceType::U8:
 			case SourceType::S8:
 			{
-				code |= BinaryUtils::Format(m_flags, 60, 0x3);
+				code |= BinaryUtils::FlagBit(m_flags & Flags::B1, 60);
+				code |= BinaryUtils::FlagBit(m_flags & Flags::B2, 61);
+				code |= BinaryUtils::FlagBit(m_flags & Flags::B3, 62);
 				break;
 			}
 			case SourceType::U16:

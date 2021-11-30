@@ -118,6 +118,7 @@ public:
 		// SourceC
 		if (m_sourceC != nullptr)
 		{
+			code += ", ";
 			code += m_sourceC->ToString();
 			code += m_schedule.OperandModifier(Schedule::ReuseCache::OperandC);
 		}

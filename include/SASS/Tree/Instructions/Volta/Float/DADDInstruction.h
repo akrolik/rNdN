@@ -152,7 +152,7 @@ public:
 		// SourceB
 		if (m_sourceB->GetKind() != Operand::Kind::Register)
 		{
-			code |= BinaryUtils::OperandComposite(m_sourceB);
+			code |= BinaryUtils::OperandComposite(m_sourceB, m_flags & Flags::NEG_B, m_flags & Flags::ABS_B);
 
 			// Flags (constant SourceB)
 			if (m_sourceB->GetKind() == Operand::Kind::Constant)
@@ -176,8 +176,13 @@ public:
 			code |= BinaryUtils::OperandRegister0(registerB);
 
 			// Flags (register SourceB)
-			code |= BinaryUtils::Format(m_flags, 8, 0xf);
+			code |= BinaryUtils::FlagBit(m_flags & Flags::ABS_B, 10);
+			code |= BinaryUtils::FlagBit(m_flags & Flags::NEG_B, 11);
 		}
+
+		// Flags (SourceA)
+		code |= BinaryUtils::FlagBit(m_flags & Flags::NEG_A, 8);
+		code |= BinaryUtils::FlagBit(m_flags & Flags::ABS_A, 9);
 
 		// Rounding
 		code |= BinaryUtils::Format(m_round, 14, 0x3);

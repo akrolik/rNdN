@@ -157,7 +157,7 @@ public:
 		code |= BinaryUtils::OperandRegister24(m_sourceA);
 
 		// SourceB
-		code |= BinaryUtils::OperandComposite(m_sourceB);
+		code |= BinaryUtils::OperandComposite(m_sourceB, m_flags & Flags::NEG_B, m_flags & Flags::ABS_B);
 
 		// Flags (SourceB)
 		if (m_sourceB->GetKind() != Operand::Kind::Immediate)

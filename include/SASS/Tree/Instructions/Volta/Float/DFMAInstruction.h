@@ -78,7 +78,7 @@ public:
 	{
 		switch (m_round)
 		{
-			case Round::RN: return ".RN";
+			// case Round::RN: return ".RN";
 			case Round::RM: return ".RM";
 			case Round::RP: return ".RP";
 			case Round::RZ: return ".RZ";
@@ -183,7 +183,7 @@ public:
 		// SourceB/SourceC (immediate/constant)
 		if (m_sourceC->GetKind() == Operand::Kind::Register)
 		{
-			code |= BinaryUtils::OperandComposite(m_sourceB);
+			code |= BinaryUtils::OperandComposite(m_sourceB, m_flags & Flags::NEG_B, m_flags & Flags::ABS_B);
 
 			// Flags (SourceB constant)
 			if (m_sourceB->GetKind() != Operand::Kind::Immediate)
@@ -194,7 +194,7 @@ public:
 		}
 		else
 		{
-			code |= BinaryUtils::OperandComposite(m_sourceC);
+			code |= BinaryUtils::OperandComposite(m_sourceC, m_flags & Flags::NEG_C, m_flags & Flags::ABS_C);
 
 			// Flags (SourceC)
 			if (m_sourceC->GetKind() != Operand::Kind::Immediate)
