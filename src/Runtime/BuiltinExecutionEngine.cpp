@@ -42,11 +42,6 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 	switch (function->GetPrimitive())
 	{
 		// Algebraic Unary
-		case HorseIR::BuiltinFunction::Primitive::Flip:
-		{
-			//TODO: @flip
-			Error("unimplemented");
-		}
 		case HorseIR::BuiltinFunction::Primitive::Order:
 		{
 			// Collect the columns for the sort - decomposing the list into individual vectors
@@ -131,18 +126,6 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			return {new TypedVectorBuffer<std::int64_t>(indexData)};
 		}
 
-		// Algebraic binary
-		case HorseIR::BuiltinFunction::Primitive::Append:
-		{
-			//TODO: @append enum/list
-			Error("unimplemented");
-		}
-		case HorseIR::BuiltinFunction::Primitive::Replicate:
-		{
-			//TODO: @replicate
-			Error("unimplemented");
-		}
-
 		// List
 		case HorseIR::BuiltinFunction::Primitive::List:
 		{
@@ -150,16 +133,6 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 		}
 
 		// Database
-		case HorseIR::BuiltinFunction::Primitive::Enum:
-		{
-			//TODO: @enum
-			Error("unimplemented");	
-		}
-		case HorseIR::BuiltinFunction::Primitive::Dictionary:
-		{
-			//TODO: @dict
-			Error("unimplemented");	
-		}
 		case HorseIR::BuiltinFunction::Primitive::Table:
 		{
 			auto columnNames = BufferUtils::GetVectorBuffer<std::uint64_t>(arguments.at(0))->GetCPUReadBuffer();
