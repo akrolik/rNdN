@@ -20,11 +20,13 @@ void MoveAddressGenerator::Visit(const PTX::MoveAddressInstruction<B, T, S> *ins
 
 	this->SetPredicatedInstruction(instruction);
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
+	ArchitectureDispatch::DispatchInstruction<
+		SASS::Maxwell::MOVInstruction, SASS::Volta::MOVInstruction
+	>(*this, instruction);
 }
 
-template<PTX::Bits B, class T, class S>
-void MoveAddressGenerator::GenerateMaxwell(const PTX::MoveAddressInstruction<B, T, S> *instruction)
+template<class MOVInstruction, PTX::Bits B, class T, class S>
+void MoveAddressGenerator::GenerateInstruction(const PTX::MoveAddressInstruction<B, T, S> *instruction)
 {
 	// Generate operands
 
@@ -32,12 +34,13 @@ void MoveAddressGenerator::GenerateMaxwell(const PTX::MoveAddressInstruction<B, 
 	auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
 
 	AddressGenerator addressGenerator(this->m_builder);
+	addressGenerator.SetUseOffset(false); // Add offset to base
 	auto address = addressGenerator.Generate(instruction->GetAddress());
 
 	// Generate instruction (no overlap unless equal)
 
 	auto addressRegister_Lo = address->GetBase();
-	this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, addressRegister_Lo));
+	this->AddInstruction(new MOVInstruction(destination_Lo, addressRegister_Lo));
 
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
@@ -45,12 +48,12 @@ void MoveAddressGenerator::GenerateMaxwell(const PTX::MoveAddressInstruction<B, 
 		{
 			if (addressRegister_Lo->GetValue() == SASS::Register::ZeroIndex)
 			{
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, SASS::RZ));
+				this->AddInstruction(new MOVInstruction(destination_Hi, SASS::RZ));
 			}
 			else
 			{
 				auto addressRegister_Hi = new SASS::Register(addressRegister_Lo->GetValue() + 1);
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, addressRegister_Hi));
+				this->AddInstruction(new MOVInstruction(destination_Hi, addressRegister_Hi));
 			}
 		}
 	}
@@ -58,39 +61,6 @@ void MoveAddressGenerator::GenerateMaxwell(const PTX::MoveAddressInstruction<B, 
 	{
 		Error(instruction, "unsupported space");
 	}
-
-	// Offset computation
-
-	if (auto addressOffset = address->GetOffset() * static_cast<int>(sizeof(typename T::SystemType)))
-	{
-		if constexpr(std::is_same<S, PTX::SharedSpace>::value)
-		{
-			this->AddInstruction(new SASS::Maxwell::IADDInstruction(destination_Lo, destination_Lo, new SASS::I32Immediate(addressOffset)));
-		}
-		else if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
-		{
-			this->AddInstruction(new SASS::Maxwell::IADDInstruction(
-				destination_Lo, destination_Lo, new SASS::I32Immediate(addressOffset), SASS::Maxwell::IADDInstruction::Flags::CC
-			));
-
-			if constexpr(T::TypeBits == PTX::Bits::Bits64)
-			{
-				this->AddInstruction(new SASS::Maxwell::IADDInstruction(
-					destination_Hi, destination_Hi, SASS::RZ, SASS::Maxwell::IADDInstruction::Flags::X
-				));
-			}
-		}
-		else
-		{
-			Error(instruction, "unsupported space");
-		}
-	}
-}
-
-template<PTX::Bits B, class T, class S>
-void MoveAddressGenerator::GenerateVolta(const PTX::MoveAddressInstruction<B, T, S> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 }

@@ -164,7 +164,129 @@ void AddGenerator::GenerateMaxwell(const PTX::AddInstruction<T> *instruction)
 template<class T>
 void AddGenerator::GenerateVolta(const PTX::AddInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	RegisterGenerator registerGenerator(this->m_builder);
+	CompositeGenerator compositeGenerator(this->m_builder);
+	compositeGenerator.SetImmediateSize(32);
+
+	if constexpr(PTX::is_int_type<T>::value)
+	{
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
+		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
+
+		// Carry modifier
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
+		{
+			// Carry flags
+
+			if constexpr(T::TypeBits == PTX::Bits::Bits32)
+			{
+				if (instruction->GetCarryIn() || instruction->GetCarryOut())
+				{
+					Error(instruction, "unsupported carry modifier");
+				}
+			}
+
+			// Saturate modifier
+
+			if constexpr(std::is_same<T, PTX::Int32Type>::value)
+			{
+				if (!instruction->PTX::CarryModifier<T>::IsActive() && instruction->GetSaturate())
+				{
+					Error(instruction, "unsupported saturate modifier");
+				}
+			}
+
+			this->AddInstruction(new SASS::Volta::IADD3Instruction(destination_Lo, sourceA_Lo, sourceB_Lo, SASS::RZ));
+
+			// Keep in range for 16-bit
+
+			if constexpr(std::is_same<T, PTX::UInt16Type>::value)
+			{
+				auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation(
+					[](std::uint8_t A, std::uint8_t B, std::uint8_t C)
+					{
+						return ((A & B) | C);
+					}
+				);
+
+				this->AddInstruction(new SASS::Volta::LOP3Instruction(
+					destination_Lo, destination_Lo, new SASS::I32Immediate(0xffff), SASS::RZ,
+					new SASS::I8Immediate(logicOperation), SASS::PT
+				));
+			}
+			else if constexpr(std::is_same<T, PTX::Int16Type>::value)
+			{
+				this->AddInstruction(new SASS::Volta::PRMTInstruction(
+					destination_Lo, destination_Lo, new SASS::I32Immediate(0x9910), SASS::RZ
+				));
+			}
+		}
+		else if constexpr(T::TypeBits == PTX::Bits::Bits64)
+		{
+			// Carry flags not supported
+
+			if (instruction->GetCarryIn() || instruction->GetCarryOut())
+			{
+				Error(instruction, "unsupported carry modifier");
+			}
+
+			// Extended add
+
+			auto CC = this->m_builder.AllocateTemporaryPredicate();
+
+			this->AddInstruction(new SASS::Volta::IADD3Instruction(
+				destination_Lo, CC, sourceA_Lo, sourceB_Lo, SASS::RZ
+			));
+			this->AddInstruction(new SASS::Volta::IADD3Instruction(
+				destination_Hi, sourceA_Hi, sourceB_Hi, SASS::RZ, CC, SASS::PT,
+				SASS::Volta::IADD3Instruction::Flags::NOT_E
+			));
+		}
+	}
+	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
+	{
+		// Generate operands
+
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+		// Generate instruction
+
+		auto round = SASS::Volta::DADDInstruction::Round::RN;
+		switch (instruction->GetRoundingMode())
+		{
+			// case T::RoundingMode::None:
+			// case T::RoundingMode::Nearest:
+			// {
+			// 	round = SASS::Volta::DADDInstruction::Round::RN;
+			// 	break;
+			// }
+			case T::RoundingMode::Zero:
+			{
+				round = SASS::Volta::DADDInstruction::Round::RZ;
+				break;
+			}
+			case T::RoundingMode::NegativeInfinity:
+			{
+				round = SASS::Volta::DADDInstruction::Round::RM;
+				break;
+			}
+			case T::RoundingMode::PositiveInfinity:
+			{
+				round = SASS::Volta::DADDInstruction::Round::RP;
+				break;
+			}
+		}
+
+		this->AddInstruction(new SASS::Volta::DADDInstruction(destination, sourceA, sourceB, round));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }

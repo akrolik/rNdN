@@ -29,8 +29,11 @@ public:
 	void GenerateVolta(const PTX::StoreInstruction<B, T, S, A> *instruction);
 
 private:
-	template<typename I, class T>
-	I InstructionType();
+	template<typename STInstruction, class T>
+	typename STInstruction::Type InstructionType();
+
+	template<class STGInstruction, class STSInstruction, PTX::Bits B, class T, class S, PTX::StoreSynchronization A>
+	void GenerateInstruction(const PTX::StoreInstruction<B, T, S, A> *instruction);
 };
 
 }

@@ -23,12 +23,6 @@ public:
 	template<class T>
 	void Visit(const PTX::MoveSpecialInstruction<T> *instruction);
 
-	template<class T>
-	void GenerateMaxwell(const PTX::MoveSpecialInstruction<T> *instruction);
-
-	template<class T>
-	void GenerateVolta(const PTX::MoveSpecialInstruction<T> *instruction);
-
 	// Special Register
 
 	bool Visit(const PTX::_SpecialRegister *reg) override;
@@ -42,10 +36,13 @@ public:
 
 private:
 	void GenerateS2R(SASS::SpecialRegister::Kind special);
+	void GenerateMOV(std::uint32_t maxwellConstant, std::uint32_t voltaConstant);
 	void GeneratePM64(SASS::SpecialRegister::Kind specialLo, SASS::SpecialRegister::Kind specialHi);
 
 	SASS::Register *m_destination = nullptr;
 	SASS::Register *m_destinationHi = nullptr;
+
+	const PTX::InstructionStatement *m_instruction = nullptr;
 };
 
 }

@@ -22,15 +22,12 @@ public:
 	template<PTX::Bits B, class T, class S>
 	void Visit(const PTX::LoadNCInstruction<B, T, S> *instruction);
 
-	template<PTX::Bits B, class T, class S>
-	void GenerateMaxwell(const PTX::LoadNCInstruction<B, T, S> *instruction);
-
-	template<PTX::Bits B, class T, class S>
-	void GenerateVolta(const PTX::LoadNCInstruction<B, T, S> *instruction);
+	template<class LDGInstruction, PTX::Bits B, class T, class S>
+	void GenerateInstruction(const PTX::LoadNCInstruction<B, T, S> *instruction);
 
 private:
-	template<class I, class T>
-	typename I::Type InstructionType();
+	template<class LDGInstruction, class T>
+	typename LDGInstruction::Type InstructionType();
 };
 
 }

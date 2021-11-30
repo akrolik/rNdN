@@ -40,11 +40,11 @@ void AndGenerator::GenerateVolta(const PTX::AndInstruction<T> *instruction)
 	this->GenerateLogicVolta(instruction,
 		[](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Predicate function
 		{
-			return (A & B & C);
+			return ((A & B) & C);
 		},
 		[](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Integer function
 		{
-			return (A & B | C);
+			return ((A & B) | C);
 		}
 	);
 }

@@ -48,7 +48,8 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 
 		auto [temp_Lo, temp_Hi] = this->m_builder.AllocateTemporaryRegisterPair<B>();
 
-		ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+		ArchitectureDispatch::DispatchInline(m_builder,
+		[&]() // Maxwell instruction set
 		{
 			auto inst0 = new SASS::Maxwell::MOV32IInstruction(temp_Lo, new SASS::I32Immediate(0x0));
 
@@ -92,7 +93,8 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		{
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(
 					temp_Lo, temp_Lo, addressImmediate, SASS::Maxwell::IADD32IInstruction::Flags::CC
@@ -140,7 +142,8 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 
 		auto temp = this->m_builder.AllocateTemporaryRegister();
 
-		ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+		ArchitectureDispatch::DispatchInline(m_builder,
+		[&]() // Maxwell instruction set
 		{
 			auto inst = new SASS::Maxwell::MOV32IInstruction(temp, new SASS::I32Immediate(0x0));
 
@@ -161,7 +164,8 @@ void AddressGenerator::Visit(const PTX::MemoryAddress<B, T, S> *address)
 		{
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp, temp, addressImmediate));
 			},
@@ -206,7 +210,8 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 			auto [temp_Lo, temp_Hi] = this->m_builder.AllocateTemporaryRegisterPair<B>();
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(
 					temp_Lo, reg_Lo, addressImmediate, SASS::Maxwell::IADD32IInstruction::Flags::CC
@@ -258,7 +263,8 @@ void AddressGenerator::Visit(const PTX::RegisterAddress<B, T, S> *address)
 			auto temp = this->m_builder.AllocateTemporaryRegister();
 			auto addressImmediate = new SASS::I32Immediate(addressOffset);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp, reg_Lo, addressImmediate));
 			},

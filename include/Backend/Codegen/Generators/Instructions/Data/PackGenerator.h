@@ -27,6 +27,10 @@ public:
 
 	template<class T, PTX::VectorSize V>
 	void GenerateVolta(const PTX::PackInstruction<T, V> *instruction);
+
+private:
+	template<class MOVInstruction, class PRMTInstruction, class T, PTX::VectorSize V>
+	void GenerateInstruction(const PTX::PackInstruction<T, V> *instruction);
 };
 
 }

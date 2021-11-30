@@ -118,7 +118,7 @@ void MADGenerator::GenerateVolta(const PTX::MADInstruction<T> *instruction)
 
 		// Generate instruction
 
-		this->AddInstruction(new SASS::Volta::IMADInstruction(destination, nullptr, sourceA, sourceB, sourceC, nullptr));
+		this->AddInstruction(new SASS::Volta::IMADInstruction(destination, sourceA, sourceB, sourceC));
 	}
 	else
 	{

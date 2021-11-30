@@ -288,6 +288,11 @@ void ConstVisitor::Visit(const Volta::FLOInstruction *instruction)
 	Visit(static_cast<const Volta::PredicatedInstruction *>(instruction));
 }
 
+void ConstVisitor::Visit(const Volta::IABSInstruction *instruction)
+{
+	Visit(static_cast<const Volta::PredicatedInstruction *>(instruction));
+}
+
 void ConstVisitor::Visit(const Volta::IADD3Instruction *instruction)
 {
 	Visit(static_cast<const Volta::PredicatedInstruction *>(instruction));
@@ -520,6 +525,11 @@ void ConstVisitor::Visit(const Maxwell::MOV32IInstruction *instruction)
 	Visit(static_cast<const Maxwell::PredicatedInstruction *>(instruction));
 }
 
+void ConstVisitor::Visit(const Maxwell::PRMTInstruction *instruction)
+{
+	Visit(static_cast<const Maxwell::PredicatedInstruction *>(instruction));
+}
+
 void ConstVisitor::Visit(const Maxwell::SELInstruction *instruction)
 {
 	Visit(static_cast<const Maxwell::PredicatedInstruction *>(instruction));
@@ -531,6 +541,11 @@ void ConstVisitor::Visit(const Maxwell::SHFLInstruction *instruction)
 }
 
 void ConstVisitor::Visit(const Volta::MOVInstruction *instruction)
+{
+	Visit(static_cast<const Volta::PredicatedInstruction *>(instruction));
+}
+
+void ConstVisitor::Visit(const Volta::PRMTInstruction *instruction)
 {
 	Visit(static_cast<const Volta::PredicatedInstruction *>(instruction));
 }

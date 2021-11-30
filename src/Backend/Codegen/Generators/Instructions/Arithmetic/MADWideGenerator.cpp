@@ -107,7 +107,7 @@ void MADWideGenerator::GenerateVolta(const PTX::MADWideInstruction<T> *instructi
 		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
 		this->AddInstruction(new SASS::Volta::IMADInstruction(
-			temp, nullptr, sourceA, sourceB, SASS::RZ, nullptr, SASS::Volta::IMADInstruction::Mode::WIDE
+			temp, sourceA, sourceB, SASS::RZ, SASS::Volta::IMADInstruction::Mode::WIDE
 		));
 
 		// Add sourceC

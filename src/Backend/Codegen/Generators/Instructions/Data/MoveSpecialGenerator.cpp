@@ -25,12 +25,6 @@ void MoveSpecialGenerator::Visit(const PTX::MoveSpecialInstruction<T> *instructi
 	//   - Vector2<UInt32>, Vector4<UInt32>
 	// Modifies: --
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
-}
-
-template<class T>
-void MoveSpecialGenerator::GenerateMaxwell(const PTX::MoveSpecialInstruction<T> *instruction)
-{
 	// Generate destination
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -41,18 +35,34 @@ void MoveSpecialGenerator::GenerateMaxwell(const PTX::MoveSpecialInstruction<T> 
 
 	// Generate instruction depending on source
 
+	m_instruction = instruction;
 	instruction->GetSource()->Accept(*this);
-}
-
-template<class T>
-void MoveSpecialGenerator::GenerateVolta(const PTX::MoveSpecialInstruction<T> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 void MoveSpecialGenerator::GenerateS2R(SASS::SpecialRegister::Kind special)
 {
-	this->AddInstruction(new SASS::Maxwell::S2RInstruction(m_destination, new SASS::SpecialRegister(special)));
+	ArchitectureDispatch::DispatchInline(m_builder,
+	[&]() // Maxwell instruction set
+	{
+		this->AddInstruction(new SASS::Maxwell::S2RInstruction(m_destination, new SASS::SpecialRegister(special)));
+	},
+	[&]() // Volta instruction set
+	{
+		this->AddInstruction(new SASS::Volta::S2RInstruction(m_destination, new SASS::SpecialRegister(special)));
+	});
+}
+
+void MoveSpecialGenerator::GenerateMOV(std::uint32_t maxwellConstant, std::uint32_t voltaConstant)
+{
+	ArchitectureDispatch::DispatchInline(m_builder,
+	[&]() // Maxwell instruction set
+	{
+		this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, maxwellConstant)));
+	},
+	[&]() // Volta instruction set
+	{
+		this->AddInstruction(new SASS::Volta::MOVInstruction(m_destination, new SASS::Constant(0x0, voltaConstant)));
+	});
 }
 
 void MoveSpecialGenerator::GeneratePM64(SASS::SpecialRegister::Kind specialLo, SASS::SpecialRegister::Kind specialHi)
@@ -62,14 +72,23 @@ void MoveSpecialGenerator::GeneratePM64(SASS::SpecialRegister::Kind specialLo, S
 	// CS2R R3, SR_PM_HI0 ;
 	// ICMP.LT R3, R0, R3, R2 ;
 
-	auto temp = this->m_builder.AllocateTemporaryRegister();
+	ArchitectureDispatch::DispatchInline(m_builder,
+	[&]() // Maxwell instruction set
+	{
+		auto temp = this->m_builder.AllocateTemporaryRegister();
 
-	this->AddInstruction(new SASS::Maxwell::CS2RInstruction(temp, new SASS::SpecialRegister(specialHi)));
-	this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
-	this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
-	this->AddInstruction(new SASS::Maxwell::ICMPInstruction(
-		m_destinationHi, temp, m_destinationHi, m_destination, SASS::Maxwell::ICMPInstruction::ComparisonOperator::LT
-	));
+		this->AddInstruction(new SASS::Maxwell::CS2RInstruction(temp, new SASS::SpecialRegister(specialHi)));
+		this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
+		this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
+		this->AddInstruction(new SASS::Maxwell::ICMPInstruction(
+			m_destinationHi, temp, m_destinationHi, m_destination, SASS::Maxwell::ICMPInstruction::ComparisonOperator::LT
+		));
+	},
+	[&]() // Volta instruction set
+	{
+		//TODO: PM64 Volta
+		Error(m_instruction, "unsupported architecture");
+	});
 }
 
 bool MoveSpecialGenerator::Visit(const PTX::_SpecialRegister *reg)
@@ -87,223 +106,232 @@ bool MoveSpecialGenerator::Visit(const PTX::_IndexedRegister *reg)
 template<class T>
 void MoveSpecialGenerator::Visit(const PTX::SpecialRegister<T> *reg)
 {
-	const auto& name = reg->GetName();
-	if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+	ArchitectureDispatch::DispatchInline(m_builder,
+	[&]() // Maxwell instruction set
 	{
-		if (name == PTX::SpecialRegisterName_laneid)
+		const auto& name = reg->GetName();
+		if constexpr(std::is_same<T, PTX::UInt32Type>::value)
 		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_LANEID);
+			if (name == PTX::SpecialRegisterName_laneid)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_LANEID);
+			}
+			else if (name == PTX::SpecialRegisterName_warpid)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTID);
+			}
+			else if (name == PTX::SpecialRegisterName_nwarpid)
+			{
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::I32Immediate(0x40)));
+			}
+			else if (name == PTX::SpecialRegisterName_smid)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTID);
+				this->AddInstruction(new SASS::Maxwell::BFEInstruction(
+					m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::Maxwell::BFEInstruction::Flags::U32
+				));
+			}
+			else if (name == PTX::SpecialRegisterName_nsmid)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTCFG);
+				this->AddInstruction(new SASS::Maxwell::BFEInstruction(
+					m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::Maxwell::BFEInstruction::Flags::U32
+				));
+			}
+			else if (name == PTX::SpecialRegisterName_lanemask_eq)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_EQMASK);
+			}
+			else if (name == PTX::SpecialRegisterName_lanemask_le)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_LEMASK);
+			}
+			else if (name == PTX::SpecialRegisterName_lanemask_lt)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_LTMASK);
+			}
+			else if (name == PTX::SpecialRegisterName_lanemask_ge)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_GEMASK);
+			}
+			else if (name == PTX::SpecialRegisterName_lanemask_gt)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_GTMASK);
+			}
+			else if (name == PTX::SpecialRegisterName_clock)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_CLOCKLO);
+			}
+			else if (name == PTX::SpecialRegisterName_clock_hi)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_CLOCKHI);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "0")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM0);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "1")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM1);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "2")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM2);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "3")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM3);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "4")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM4);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "5")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM5);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "6")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM6);
+			}
+			else if (name == std::string(PTX::SpecialRegisterName_pm) + "7")
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_PM7);
+			}
+			else if (name == PTX::SpecialRegisterName_globaltimer32_lo)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_GLOBALTIMERLO);
+			}
+			else if (name == PTX::SpecialRegisterName_globaltimer32_hi)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_GLOBALTIMERHI);
+			}
+			else if (name == PTX::SpecialRegisterName_total_smem)
+			{
+				GenerateS2R(SASS::SpecialRegister::Kind::SR_SMEMSZ);
+			}
+			else if (name == PTX::SpecialRegisterName_dynamic_smem)
+			{
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xfc)));
+			}
 		}
-		else if (name == PTX::SpecialRegisterName_warpid)
+		else if constexpr(std::is_same<T, PTX::UInt64Type>::value)
 		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTID);
+			if (name == PTX::SpecialRegisterName_gridid)
+			{
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x28)));
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destinationHi, new SASS::Constant(0x0, 0x2c)));
+			}
+			else if (name == PTX::SpecialRegisterName_clock64 || name == PTX::SpecialRegisterName_globaltimer)
+			{
+				//      MOV R4, RZ ;
+				// .L0:
+				//      CS2R R0, SR_CLOCKHI/SR_GLOBALTIMERHI ;
+				//      CS2R R2, SR_CLOCKLO/SR_GLOBALTIMERLO ;
+				//      CS2R R3, SR_CLOCKHI/SR_GLOBALTIMERHI ;
+				//      ISETP.NE.U32.AND P0, PT, R0, R3, PT ;
+				// @!P0 BRA L1 ;
+				//      IADD32I R4, R4, 0x1 ;
+				//      ISETP.GE.U32.AND P0, PT, R4, c[0x0][0x10c], PT ;
+				// @!P0 BRA L0 ;
+				//
+				// .L1:
+
+				auto temp0 = this->m_builder.AllocateTemporaryRegister();
+				auto temp1 = this->m_builder.AllocateTemporaryRegister();
+				auto predicate = this->m_builder.AllocateTemporaryPredicate();
+
+				auto currentBlock = this->m_builder.GetCurrentBlock();
+				auto currentName = currentBlock->GetName();
+
+				auto label0 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_START");
+				auto label1 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_MID");
+				auto label2 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_END");
+
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp0, SASS::RZ));
+
+				this->m_builder.CloseBasicBlock();
+				this->m_builder.CreateBasicBlock(label0);
+
+				auto specialLo = (name == PTX::SpecialRegisterName_clock64) ?
+					SASS::SpecialRegister::Kind::SR_CLOCKLO : SASS::SpecialRegister::Kind::SR_GLOBALTIMERLO;
+				auto specialHi = (name == PTX::SpecialRegisterName_clock64) ?
+					SASS::SpecialRegister::Kind::SR_CLOCKHI : SASS::SpecialRegister::Kind::SR_GLOBALTIMERHI;
+
+				this->AddInstruction(new SASS::Maxwell::CS2RInstruction(temp1, new SASS::SpecialRegister(specialHi)));
+				this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
+				this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
+				this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
+					predicate, SASS::PT, temp1, m_destinationHi, SASS::PT,
+					SASS::Maxwell::ISETPInstruction::ComparisonOperator::NE,
+					SASS::Maxwell::ISETPInstruction::BooleanOperator::AND,
+					SASS::Maxwell::ISETPInstruction::Flags::U32
+				));
+
+				this->AddInstruction(new SASS::Maxwell::BRAInstruction(label1), predicate, true);
+
+				this->m_builder.CloseBasicBlock();
+				this->m_builder.CreateBasicBlock(label1);
+
+				this->AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp0, temp0, new SASS::I32Immediate(0x1)));
+				this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
+					predicate, SASS::PT, temp1, new SASS::Constant(0x0, 0x10c), SASS::PT,
+					SASS::Maxwell::ISETPInstruction::ComparisonOperator::GE,
+					SASS::Maxwell::ISETPInstruction::BooleanOperator::AND,
+					SASS::Maxwell::ISETPInstruction::Flags::U32
+				));
+
+				this->AddInstruction(new SASS::Maxwell::BRAInstruction(label0), predicate, true);
+
+				this->m_builder.CloseBasicBlock();
+				this->m_builder.CreateBasicBlock(label2);
+			}
+			else if (name == PTX::SpecialRegisterName_pm0_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM0, SASS::SpecialRegister::Kind::SR_PM_HI0);
+			}
+			else if (name == PTX::SpecialRegisterName_pm1_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM1, SASS::SpecialRegister::Kind::SR_PM_HI1);
+			}
+			else if (name == PTX::SpecialRegisterName_pm2_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM2, SASS::SpecialRegister::Kind::SR_PM_HI2);
+			}
+			else if (name == PTX::SpecialRegisterName_pm3_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM3, SASS::SpecialRegister::Kind::SR_PM_HI3);
+			}
+			else if (name == PTX::SpecialRegisterName_pm4_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM4, SASS::SpecialRegister::Kind::SR_PM_HI4);
+			}
+			else if (name == PTX::SpecialRegisterName_pm5_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM5, SASS::SpecialRegister::Kind::SR_PM_HI5);
+			}
+			else if (name == PTX::SpecialRegisterName_pm6_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM6, SASS::SpecialRegister::Kind::SR_PM_HI6);
+			}
+			else if (name == PTX::SpecialRegisterName_pm7_64)
+			{
+				GeneratePM64(SASS::SpecialRegister::Kind::SR_PM7, SASS::SpecialRegister::Kind::SR_PM_HI7);
+			}
 		}
-		else if (name == PTX::SpecialRegisterName_nwarpid)
+		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::I32Immediate(0x40)));
+			if (name.find(PTX::SpecialRegisterName_envreg) == 0)
+			{
+				this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, SASS::RZ));
+			}
 		}
-		else if (name == PTX::SpecialRegisterName_smid)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTID);
-			this->AddInstruction(new SASS::Maxwell::BFEInstruction(
-				m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::Maxwell::BFEInstruction::Flags::U32
-			));
-		}
-		else if (name == PTX::SpecialRegisterName_nsmid)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_VIRTCFG);
-			this->AddInstruction(new SASS::Maxwell::BFEInstruction(
-				m_destination, m_destination, new SASS::I32Immediate(0x914), SASS::Maxwell::BFEInstruction::Flags::U32
-			));
-		}
-		else if (name == PTX::SpecialRegisterName_lanemask_eq)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_EQMASK);
-		}
-		else if (name == PTX::SpecialRegisterName_lanemask_le)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_LEMASK);
-		}
-		else if (name == PTX::SpecialRegisterName_lanemask_lt)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_LTMASK);
-		}
-		else if (name == PTX::SpecialRegisterName_lanemask_ge)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_GEMASK);
-		}
-		else if (name == PTX::SpecialRegisterName_lanemask_gt)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_GTMASK);
-		}
-		else if (name == PTX::SpecialRegisterName_clock)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_CLOCKLO);
-		}
-		else if (name == PTX::SpecialRegisterName_clock_hi)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_CLOCKHI);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "0")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM0);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "1")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM1);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "2")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM2);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "3")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM3);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "4")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM4);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "5")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM5);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "6")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM6);
-		}
-		else if (name == std::string(PTX::SpecialRegisterName_pm) + "7")
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_PM7);
-		}
-		else if (name == PTX::SpecialRegisterName_globaltimer32_lo)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_GLOBALTIMERLO);
-		}
-		else if (name == PTX::SpecialRegisterName_globaltimer32_hi)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_GLOBALTIMERHI);
-		}
-		else if (name == PTX::SpecialRegisterName_total_smem)
-		{
-			GenerateS2R(SASS::SpecialRegister::Kind::SR_SMEMSZ);
-		}
-		else if (name == PTX::SpecialRegisterName_dynamic_smem)
-		{
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xfc)));
-		}
-	}
-	else if constexpr(std::is_same<T, PTX::UInt64Type>::value)
+	},
+	[&]() // Volta instruction set
 	{
-		if (name == PTX::SpecialRegisterName_gridid)
-		{
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x28)));
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destinationHi, new SASS::Constant(0x0, 0x2c)));
-		}
-		else if (name == PTX::SpecialRegisterName_clock64 || name == PTX::SpecialRegisterName_globaltimer)
-		{
-			//      MOV R4, RZ ;
-			// .L0:
-			//      CS2R R0, SR_CLOCKHI/SR_GLOBALTIMERHI ;
-			//      CS2R R2, SR_CLOCKLO/SR_GLOBALTIMERLO ;
-			//      CS2R R3, SR_CLOCKHI/SR_GLOBALTIMERHI ;
-			//      ISETP.NE.U32.AND P0, PT, R0, R3, PT ;
-			// @!P0 BRA L1 ;
-			//      IADD32I R4, R4, 0x1 ;
-			//      ISETP.GE.U32.AND P0, PT, R4, c[0x0][0x10c], PT ;
-			// @!P0 BRA L0 ;
-			//
-			// .L1:
-
-			auto temp0 = this->m_builder.AllocateTemporaryRegister();
-			auto temp1 = this->m_builder.AllocateTemporaryRegister();
-			auto predicate = this->m_builder.AllocateTemporaryPredicate();
-
-			auto currentBlock = this->m_builder.GetCurrentBlock();
-			auto currentName = currentBlock->GetName();
-
-			auto label0 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_START");
-			auto label1 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_MID");
-			auto label2 = this->m_builder.UniqueIdentifier(currentName + "_CLOCK_END");
-
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp0, SASS::RZ));
-
-			this->m_builder.CloseBasicBlock();
-			this->m_builder.CreateBasicBlock(label0);
-
-			auto specialLo = (name == PTX::SpecialRegisterName_clock64) ?
-				SASS::SpecialRegister::Kind::SR_CLOCKLO : SASS::SpecialRegister::Kind::SR_GLOBALTIMERLO;
-			auto specialHi = (name == PTX::SpecialRegisterName_clock64) ?
-				SASS::SpecialRegister::Kind::SR_CLOCKHI : SASS::SpecialRegister::Kind::SR_GLOBALTIMERHI;
-
-			this->AddInstruction(new SASS::Maxwell::CS2RInstruction(temp1, new SASS::SpecialRegister(specialHi)));
-			this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destination, new SASS::SpecialRegister(specialLo)));
-			this->AddInstruction(new SASS::Maxwell::CS2RInstruction(m_destinationHi, new SASS::SpecialRegister(specialHi)));
-			this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
-				predicate, SASS::PT, temp1, m_destinationHi, SASS::PT,
-				SASS::Maxwell::ISETPInstruction::ComparisonOperator::NE,
-				SASS::Maxwell::ISETPInstruction::BooleanOperator::AND,
-				SASS::Maxwell::ISETPInstruction::Flags::U32
-			));
-
-			this->AddInstruction(new SASS::Maxwell::BRAInstruction(label1), predicate, true);
-
-			this->m_builder.CloseBasicBlock();
-			this->m_builder.CreateBasicBlock(label1);
-
-			this->AddInstruction(new SASS::Maxwell::IADD32IInstruction(temp0, temp0, new SASS::I32Immediate(0x1)));
-			this->AddInstruction(new SASS::Maxwell::ISETPInstruction(
-				predicate, SASS::PT, temp1, new SASS::Constant(0x0, 0x10c), SASS::PT,
-				SASS::Maxwell::ISETPInstruction::ComparisonOperator::GE,
-				SASS::Maxwell::ISETPInstruction::BooleanOperator::AND,
-				SASS::Maxwell::ISETPInstruction::Flags::U32
-			));
-
-			this->AddInstruction(new SASS::Maxwell::BRAInstruction(label0), predicate, true);
-
-			this->m_builder.CloseBasicBlock();
-			this->m_builder.CreateBasicBlock(label2);
-		}
-		else if (name == PTX::SpecialRegisterName_pm0_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM0, SASS::SpecialRegister::Kind::SR_PM_HI0);
-		}
-		else if (name == PTX::SpecialRegisterName_pm1_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM1, SASS::SpecialRegister::Kind::SR_PM_HI1);
-		}
-		else if (name == PTX::SpecialRegisterName_pm2_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM2, SASS::SpecialRegister::Kind::SR_PM_HI2);
-		}
-		else if (name == PTX::SpecialRegisterName_pm3_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM3, SASS::SpecialRegister::Kind::SR_PM_HI3);
-		}
-		else if (name == PTX::SpecialRegisterName_pm4_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM4, SASS::SpecialRegister::Kind::SR_PM_HI4);
-		}
-		else if (name == PTX::SpecialRegisterName_pm5_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM5, SASS::SpecialRegister::Kind::SR_PM_HI5);
-		}
-		else if (name == PTX::SpecialRegisterName_pm6_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM6, SASS::SpecialRegister::Kind::SR_PM_HI6);
-		}
-		else if (name == PTX::SpecialRegisterName_pm7_64)
-		{
-			GeneratePM64(SASS::SpecialRegister::Kind::SR_PM7, SASS::SpecialRegister::Kind::SR_PM_HI7);
-		}
-	}
-	else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
-	{
-		if (name.find(PTX::SpecialRegisterName_envreg) == 0)
-		{
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, SASS::RZ));
-		}
-	}
+		//TODO: Special registers Volta
+		Error(m_instruction, "unsupported architecture");
+	});
 }
 
 template<class T, class S, PTX::VectorSize V>
@@ -343,17 +371,17 @@ void MoveSpecialGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 			{
 				case PTX::VectorElement::X:
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x8)));
+					GenerateMOV(0x8, 0x0);
 					break;
 				}
 				case PTX::VectorElement::Y:
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0xc)));
+					GenerateMOV(0xc, 0x4);
 					break;
 				}
 				case PTX::VectorElement::Z:
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x10)));
+					GenerateMOV(0x10, 0x8);
 					break;
 				}
 			}
@@ -389,17 +417,17 @@ void MoveSpecialGenerator::Visit(const PTX::IndexedRegister<T, S, V> *reg)
 			{
 				case PTX::VectorElement::X:
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x14)));
+					GenerateMOV(0x14, 0xc);
 					break;
 				}
 				case PTX::VectorElement::Y:
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x18)));
+					GenerateMOV(0x18, 0x10);
 					break;
 				}
 				case PTX::VectorElement::Z:
 				{
-					this->AddInstruction(new SASS::Maxwell::MOVInstruction(m_destination, new SASS::Constant(0x0, 0x1c)));
+					GenerateMOV(0x1c, 0x14);
 					break;
 				}
 			}

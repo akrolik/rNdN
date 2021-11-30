@@ -18,16 +18,20 @@ void BarrierGenerator::Generate(const PTX::BarrierInstruction *instruction)
 
 void BarrierGenerator::GenerateMaxwell(const PTX::BarrierInstruction *instruction)
 {
-	GenerateBarrier<SASS::Maxwell::BARInstruction, SASS::Maxwell::MEMBARInstruction>(instruction);
+	GenerateInstruction<
+		SASS::Maxwell::BARInstruction, SASS::Maxwell::MEMBARInstruction
+	>(instruction);
 }
 
 void BarrierGenerator::GenerateVolta(const PTX::BarrierInstruction *instruction)
 {
-	GenerateBarrier<SASS::Volta::BARInstruction, SASS::Volta::MEMBARInstruction>(instruction);
+	GenerateInstruction<
+		SASS::Volta::BARInstruction, SASS::Volta::MEMBARInstruction
+	>(instruction);
 }
 
 template<class BARInstruction, class MEMBARInstruction>
-void BarrierGenerator::GenerateBarrier(const PTX::BarrierInstruction *instruction)
+void BarrierGenerator::GenerateInstruction(const PTX::BarrierInstruction *instruction)
 {
 	// Generate barrier operand
 
@@ -47,6 +51,8 @@ void BarrierGenerator::GenerateBarrier(const PTX::BarrierInstruction *instructio
 	{
 		compositeGenerator.SetImmediateSize(12);
 		auto threads = compositeGenerator.Generate(threadsOperand);
+
+		// If both threads and barrier are stored in registers, they must be merged into a single register
 
 		if (barrier->GetKind() == SASS::Operand::Kind::Register && threads->GetKind() == SASS::Operand::Kind::Register)
 		{

@@ -93,6 +93,7 @@ namespace Maxwell {
 
 namespace Volta {
 	class FLOInstruction;
+	class IABSInstruction;
 	class IADD3Instruction;
 	class IMADInstruction;
 	class ISETPInstruction;
@@ -167,12 +168,14 @@ namespace Volta {
 namespace Maxwell {
 	class MOVInstruction;
 	class MOV32IInstruction;
+	class PRMTInstruction;
 	class SELInstruction;
 	class SHFLInstruction;
 }
 
 namespace Volta {
 	class MOVInstruction;
+	class PRMTInstruction;
 	class SELInstruction;
 	class SHFLInstruction;
 }
@@ -289,6 +292,7 @@ public:
 	virtual void Visit(Maxwell::XMADInstruction *instruction);
 
 	virtual void Visit(Volta::FLOInstruction *instruction);
+	virtual void Visit(Volta::IABSInstruction *instruction);
 	virtual void Visit(Volta::IADD3Instruction *instruction);
 	virtual void Visit(Volta::IMADInstruction *instruction);
 	virtual void Visit(Volta::ISETPInstruction *instruction);
@@ -349,10 +353,12 @@ public:
 
 	virtual void Visit(Maxwell::MOVInstruction *instruction);
 	virtual void Visit(Maxwell::MOV32IInstruction *instruction);
+	virtual void Visit(Maxwell::PRMTInstruction *instruction);
 	virtual void Visit(Maxwell::SELInstruction *instruction);
 	virtual void Visit(Maxwell::SHFLInstruction *instruction);
 
 	virtual void Visit(Volta::MOVInstruction *instruction);
+	virtual void Visit(Volta::PRMTInstruction *instruction);
 	virtual void Visit(Volta::SELInstruction *instruction);
 	virtual void Visit(Volta::SHFLInstruction *instruction);
 

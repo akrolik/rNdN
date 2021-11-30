@@ -146,7 +146,8 @@ void RegisterGenerator::Visit(const PTX::Constant<T> *constant)
 		{
 			auto immediate = new SASS::I32Immediate(SASS::WARP_SIZE);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::MOV32IInstruction(m_register, immediate));
 			},
@@ -181,7 +182,8 @@ void RegisterGenerator::Visit(const PTX::ParameterConstant<T> *parameter)
 
 		auto constant = new SASS::Constant(0x0, offset);
 
-		ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+		ArchitectureDispatch::DispatchInline(m_builder,
+		[&]() // Maxwell instruction set
 		{
 			this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(reg, constant));
 		},
@@ -198,7 +200,8 @@ void RegisterGenerator::Visit(const PTX::ParameterConstant<T> *parameter)
 		{
 			auto constantHi = new SASS::Constant(0x0, offset + 0x4);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(regHi, constantHi));
 			},
@@ -235,7 +238,8 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 
 			auto immediate = new SASS::I32Immediate(value->GetValue());
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::MOV32IInstruction(m_register, immediate));
 			},
@@ -250,7 +254,8 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 
 			auto immediate = new SASS::F32Immediate(value->GetValue());
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::MOV32IInstruction(m_register, immediate));
 			},
@@ -271,7 +276,8 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 
 			auto constant = new SASS::Constant(0x2, offset);
 
-			ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+			ArchitectureDispatch::DispatchInline(m_builder,
+			[&]() // Maxwell instruction set
 			{
 				this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(reg, constant));
 			},
@@ -284,7 +290,8 @@ void RegisterGenerator::Visit(const PTX::Value<T> *value)
 			{
 				auto constantHi = new SASS::Constant(0x2, offset + 0x4);
 
-				ArchitectureDispatch::DispatchInline(m_builder, [&]() // Maxwell instruction set
+				ArchitectureDispatch::DispatchInline(m_builder,
+				[&]() // Maxwell instruction set
 				{
 					this->m_builder.AddInstruction(new SASS::Maxwell::MOVInstruction(regHi, constantHi));
 				},

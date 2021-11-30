@@ -29,17 +29,17 @@ public:
 	void GenerateVolta(const PTX::SetPredicateInstruction<T> *instruction);
 
 private:
-	template<class I, class T>
-	typename I::ComparisonOperator IInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class ISETPInstruction, class T>
+	typename ISETPInstruction::ComparisonOperator IInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
-	template<class I, class T>
-	typename I::BooleanOperator IInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class DSETPInstruction, class T>
+	typename DSETPInstruction::ComparisonOperator DInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
-	template<class I, class T>
-	typename I::ComparisonOperator DInstructionComparisonOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class SETPInstruction, class T>
+	typename SETPInstruction::BooleanOperator InstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
 
-	template<class I, class T>
-	typename I::BooleanOperator DInstructionBooleanOperator(const PTX::SetPredicateInstruction<T> *instruction);
+	template<class ISETPInstruction, class DSETPInstruction, class PRMTInstruction, class T>
+	void GenerateInstruction(const PTX::SetPredicateInstruction<T> *instruction);
 };
 
 }

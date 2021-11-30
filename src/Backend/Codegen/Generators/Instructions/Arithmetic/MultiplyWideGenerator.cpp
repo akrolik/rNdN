@@ -144,7 +144,35 @@ void MultiplyWideGenerator::GenerateMaxwell(const PTX::MultiplyWideInstruction<T
 template<class T>
 void MultiplyWideGenerator::GenerateVolta(const PTX::MultiplyWideInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	if constexpr(T::TypeBits == PTX::Bits::Bits32)
+	{
+		// Generate operands
+
+		RegisterGenerator registerGenerator(this->m_builder);
+		CompositeGenerator compositeGenerator(this->m_builder);
+		compositeGenerator.SetImmediateSize(32);
+
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+		// Flags
+
+		auto mode = SASS::Volta::IMADInstruction::Mode::WIDE;
+		auto flags = SASS::Volta::IMADInstruction::Flags::None;
+		if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+		{
+			flags |= SASS::Volta::IMADInstruction::Flags::U32;
+		}
+
+		// Generate instruction
+
+		this->AddInstruction(new SASS::Volta::IMADInstruction(destination, sourceA, sourceB, SASS::RZ, mode, flags));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }

@@ -73,6 +73,7 @@ void ShiftRightGenerator::GenerateVolta(const PTX::ShiftRightInstruction<T> *ins
 		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
 
 		CompositeGenerator compositeGenerator(this->m_builder);
+		compositeGenerator.SetImmediateSize(32);
 		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
 
 		// Flags

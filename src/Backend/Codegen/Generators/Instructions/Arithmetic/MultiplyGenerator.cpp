@@ -169,6 +169,10 @@ void MultiplyGenerator::GenerateMaxwell(const PTX::MultiplyInstruction<T> *instr
 				Error(instruction, "unsupported half modifier");
 			}
 		}
+		else
+		{
+			Error(instruction, "unsupported type");
+		}
 	}
 	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
 	{
@@ -217,7 +221,114 @@ void MultiplyGenerator::GenerateMaxwell(const PTX::MultiplyInstruction<T> *instr
 template<class T>
 void MultiplyGenerator::GenerateVolta(const PTX::MultiplyInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	RegisterGenerator registerGenerator(this->m_builder);
+	CompositeGenerator compositeGenerator(this->m_builder);
+	compositeGenerator.SetImmediateSize(32);
+
+	if constexpr(PTX::is_int_type<T>::value)
+	{
+		// Generate operands
+
+		auto [destination_Lo, destination_Hi] = registerGenerator.GeneratePair(instruction->GetDestination());
+		auto [sourceA_Lo, sourceA_Hi] = registerGenerator.GeneratePair(instruction->GetSourceA());
+		auto [sourceB_Lo, sourceB_Hi] = compositeGenerator.GeneratePair(instruction->GetSourceB());
+
+		if constexpr(std::is_same<T, PTX::UInt32Type>::value || std::is_same<T, PTX::Int32Type>::value)
+		{
+			if (instruction->GetHalf() == PTX::MADInstruction<T>::Half::Lower)
+			{
+				this->AddInstruction(new SASS::Volta::IMADInstruction(destination_Lo, sourceA_Lo, sourceB_Lo, SASS::RZ));
+			}
+			else if (instruction->GetHalf() == PTX::MADInstruction<T>::Half::Upper)
+			{
+				auto mode = SASS::Volta::IMADInstruction::Mode::HI;
+				auto flags = SASS::Volta::IMADInstruction::Flags::None;
+				if constexpr(std::is_same<T, PTX::UInt32Type>::value)
+				{
+					flags |= SASS::Volta::IMADInstruction::Flags::U32;
+				}
+
+				this->AddInstruction(new SASS::Volta::IMADInstruction(
+					destination_Lo, sourceA_Lo, sourceB_Lo, SASS::RZ, mode, flags
+				));
+			}
+		}
+		else if constexpr(std::is_same<T, PTX::Int64Type>::value || std::is_same<T, PTX::UInt64Type>::value)
+		{
+			if (instruction->GetHalf() == PTX::MADInstruction<T>::Half::Lower)
+			{
+				// Compute D = (S1 * S2).lo
+				//
+				//   IMAD TMP, S1_HI, S2_LO, RZ
+				//   IMAD TMP, S1_LO, S2_HI, TMP
+				//   IMAD.WIDE.U32 D_LO, S1_LO, S2_LO, RZ
+				//   IADD3 D_HI, D_HI, TMP, RZ
+
+				// Wide IMAD uses both registers
+				auto destination = registerGenerator.Generate(instruction->GetDestination());
+				auto temp = this->m_builder.AllocateTemporaryRegister();
+
+				this->AddInstruction(new SASS::Volta::IMADInstruction(temp, sourceA_Hi, sourceB_Lo, SASS::RZ));
+				this->AddInstruction(new SASS::Volta::IMADInstruction(temp, sourceA_Lo, sourceB_Hi, temp));
+				this->AddInstruction(new SASS::Volta::IMADInstruction(
+					destination, sourceA_Lo, sourceB_Lo, SASS::RZ,
+					SASS::Volta::IMADInstruction::Mode::WIDE,
+					SASS::Volta::IMADInstruction::Flags::U32
+				));
+				this->AddInstruction(new SASS::Volta::IADD3Instruction(destination_Hi, destination_Hi, temp, SASS::RZ));
+			}
+			else
+			{
+				Error(instruction, "unsupported half modifier");
+			}
+		}
+		else
+		{
+			Error(instruction, "unsupported type");
+		}
+	}
+	else if constexpr(std::is_same<T, PTX::Float64Type>::value)
+	{
+		// Generate operands
+
+		auto destination = registerGenerator.Generate(instruction->GetDestination());
+		auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+		auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+		// Generate instruction
+
+		auto round = SASS::Volta::DMULInstruction::Round::RN;
+		switch (instruction->GetRoundingMode())
+		{
+			// case T::RoundingMode::None:
+			// case T::RoundingMode::Nearest:
+			// {
+			// 	round = SASS::Volta::DMULInstruction::Round::RN;
+			// 	break;
+			// }
+			case T::RoundingMode::Zero:
+			{
+				round = SASS::Volta::DMULInstruction::Round::RZ;
+				break;
+			}
+			case T::RoundingMode::NegativeInfinity:
+			{
+				round = SASS::Volta::DMULInstruction::Round::RM;
+				break;
+			}
+			case T::RoundingMode::PositiveInfinity:
+			{
+				round = SASS::Volta::DMULInstruction::Round::RP;
+				break;
+			}
+		}
+
+		this->AddInstruction(new SASS::Volta::DMULInstruction(destination, sourceA, sourceB, round));
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }

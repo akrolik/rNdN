@@ -138,8 +138,7 @@ void ReductionGenerator::Visit(const PTX::ReductionInstruction<B, T, S> *instruc
 	}
 
 	ArchitectureDispatch::DispatchInstruction<
-		SASS::Maxwell::REDInstruction,
-		SASS::Volta::REDInstruction
+		SASS::Maxwell::REDInstruction, SASS::Volta::REDInstruction
 	>(*this, instruction);
 }
 
@@ -158,6 +157,8 @@ void ReductionGenerator::GenerateInstruction(const PTX::ReductionInstruction<B, 
 
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
+		// Flags
+
 		auto type = InstructionType<REDInstruction>(instruction);
 		auto mode = InstructionMode<REDInstruction>(instruction);
 
@@ -169,7 +170,9 @@ void ReductionGenerator::GenerateInstruction(const PTX::ReductionInstruction<B, 
 
 		if constexpr(std::is_same<REDInstruction, SASS::Volta::REDInstruction>::value)
 		{
-			auto cache = REDInstruction::Cache::STRONG_GPU;
+			// Volta instruction requires cache type
+
+			auto cache = REDInstruction::Cache::None;
 
 			this->AddInstruction(new REDInstruction(address, value, type, mode, cache, flags));
 		}

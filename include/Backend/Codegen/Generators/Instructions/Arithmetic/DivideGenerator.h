@@ -27,6 +27,10 @@ public:
 
 	template<class T>
 	void GenerateVolta(const PTX::DivideInstruction<T> *instruction);
+
+private:
+	template<class MOVInstruction, class DMULInstruction, class DFMAInstruction, class MUFUInstruction>
+	void GenerateF64(const PTX::DivideInstruction<PTX::Float64Type> *instruction);
 };
 
 }

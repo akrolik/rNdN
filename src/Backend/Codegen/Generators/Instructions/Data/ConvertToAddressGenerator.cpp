@@ -23,8 +23,7 @@ void ConvertToAddressGenerator::Visit(const PTX::ConvertToAddressInstruction<B, 
 	// Spaces: Addressable subspace
 
 	ArchitectureDispatch::DispatchInstruction<
-		SASS::Maxwell::MOVInstruction,
-		SASS::Volta::MOVInstruction
+		SASS::Maxwell::MOVInstruction, SASS::Volta::MOVInstruction
 	>(*this, instruction);
 }
 

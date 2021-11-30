@@ -31,6 +31,22 @@ void PackGenerator::Visit(const PTX::PackInstruction<T, V> *instruction)
 template<class T, PTX::VectorSize V>
 void PackGenerator::GenerateMaxwell(const PTX::PackInstruction<T, V> *instruction)
 {
+	GenerateInstruction<
+		SASS::Maxwell::MOVInstruction, SASS::Maxwell::PRMTInstruction
+	>(instruction);
+}
+
+template<class T, PTX::VectorSize V>
+void PackGenerator::GenerateVolta(const PTX::PackInstruction<T, V> *instruction)
+{
+	GenerateInstruction<
+		SASS::Volta::MOVInstruction, SASS::Volta::PRMTInstruction
+	>(instruction);
+}
+
+template<class MOVInstruction, class PRMTInstruction, class T, PTX::VectorSize V>
+void PackGenerator::GenerateInstruction(const PTX::PackInstruction<T, V> *instruction)
+{
 	// Generate destination register
 
 	RegisterGenerator registerGenerator(this->m_builder);
@@ -53,30 +69,24 @@ void PackGenerator::GenerateMaxwell(const PTX::PackInstruction<T, V> *instructio
 
 		if constexpr(std::is_same<T, PTX::Bit16Type>::value)
 		{
-			this->AddInstruction(new SASS::Maxwell::SHLInstruction(temp, sourceB, new SASS::I32Immediate(0x8)));
-			this->AddInstruction(new SASS::Maxwell::LOPInstruction(
-				destination_Lo, sourceA, temp, SASS::Maxwell::LOPInstruction::BooleanOperator::OR
-			));
+			this->AddInstruction(new PRMTInstruction(destination_Lo, sourceA, new SASS::I32Immediate(0x6540), sourceB));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
 		{
-			this->AddInstruction(new SASS::Maxwell::SHLInstruction(temp, sourceB, new SASS::I32Immediate(0x16)));
-			this->AddInstruction(new SASS::Maxwell::LOPInstruction(
-				destination_Lo, sourceA, temp, SASS::Maxwell::LOPInstruction::BooleanOperator::OR
-			));
+			this->AddInstruction(new PRMTInstruction(destination_Lo, sourceA, new SASS::I32Immediate(0x5410), sourceB));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
 			if (destination_Lo->GetValue() != sourceB->GetValue())
 			{
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, sourceA));
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, sourceB));
+				this->AddInstruction(new MOVInstruction(destination_Lo, sourceA));
+				this->AddInstruction(new MOVInstruction(destination_Hi, sourceB));
 			}
 			else
 			{
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp, sourceA));
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Hi, sourceB));
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destination_Lo, temp));
+				this->AddInstruction(new MOVInstruction(temp, sourceA));
+				this->AddInstruction(new MOVInstruction(destination_Hi, sourceB));
+				this->AddInstruction(new MOVInstruction(destination_Lo, temp));
 			}
 		}
 	}
@@ -84,12 +94,6 @@ void PackGenerator::GenerateMaxwell(const PTX::PackInstruction<T, V> *instructio
 	{
 		Error(instruction, "unsupported vector size");
 	}
-}
-
-template<class T, PTX::VectorSize V>
-void PackGenerator::GenerateVolta(const PTX::PackInstruction<T, V> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 }

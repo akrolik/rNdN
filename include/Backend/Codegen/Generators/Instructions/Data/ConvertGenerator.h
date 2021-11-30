@@ -31,6 +31,18 @@ public:
 private:
 	template<class E, class T>
 	E GetConversionType();
+
+	template<class MOVInstruction, class I2IInstruction, class LOPInstruction, class PRMTInstruction, class SHRInstruction, class D, class S>
+	void GenerateI2I(const PTX::ConvertInstruction<D, S> *instruction);
+
+	template<class F2IInstruction, class D, class S>
+	void GenerateF2I(const PTX::ConvertInstruction<D, S> *instruction);
+
+	template<class F2IInstruction, class D, class S>
+	void GenerateI2F(const PTX::ConvertInstruction<D, S> *instruction);
+
+	template<class MOVInstruction, class F2IInstruction, class D, class S>
+	void GenerateF2F(const PTX::ConvertInstruction<D, S> *instruction);
 };
 
 }

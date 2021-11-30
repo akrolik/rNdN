@@ -25,11 +25,13 @@ void UnpackGenerator::Visit(const PTX::UnpackInstruction<T, V> *instruction)
 	//   - Vector2
 	//   - Vector4
 
-	ArchitectureDispatch::Dispatch(*this, instruction);
+	ArchitectureDispatch::DispatchInstruction<
+		SASS::Maxwell::MOVInstruction, SASS::Volta::MOVInstruction
+	>(*this, instruction);
 }
 
-template<class T, PTX::VectorSize V>
-void UnpackGenerator::GenerateMaxwell(const PTX::UnpackInstruction<T, V> *instruction)
+template<class MOVInstruction, class T, PTX::VectorSize V>
+void UnpackGenerator::GenerateInstruction(const PTX::UnpackInstruction<T, V> *instruction)
 {
 	// Generate source register
 
@@ -53,38 +55,57 @@ void UnpackGenerator::GenerateMaxwell(const PTX::UnpackInstruction<T, V> *instru
 
 		auto temp = this->m_builder.AllocateTemporaryRegister();
 
-		if constexpr(std::is_same<T, PTX::Bit16Type>::value)
+		if constexpr(std::is_same<T, PTX::Bit16Type>::value || std::is_same<T, PTX::Bit32Type>::value)
 		{
-			this->AddInstruction(new SASS::Maxwell::SHRInstruction(
-				temp, source_Lo, new SASS::I32Immediate(0x8), SASS::Maxwell::SHRInstruction::Flags::U32
-			));
-			this->AddInstruction(new SASS::Maxwell::LOPInstruction(
-				destinationA, source_Lo, new SASS::I32Immediate(0xff), SASS::Maxwell::LOPInstruction::BooleanOperator::AND
-			));
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(destinationB, temp));
-		}
-		else if constexpr(std::is_same<T, PTX::Bit32Type>::value)
-		{
-			this->AddInstruction(new SASS::Maxwell::SHRInstruction(
-				temp, source_Lo, new SASS::I32Immediate(0x10), SASS::Maxwell::SHRInstruction::Flags::U32
-			));
-			this->AddInstruction(new SASS::Maxwell::LOPInstruction(
-				destinationA, source_Lo, new SASS::I32Immediate(0xffff), SASS::Maxwell::LOPInstruction::BooleanOperator::AND
-			));
-			this->AddInstruction(new SASS::Maxwell::MOVInstruction(destinationB, temp));
+			// Unpack by shifting (for high bits) and masking (for low bits)
+
+			auto shift = PTX::BitSize<T::TypeBits>::NumBits / 2;
+			auto mask = (1 << shift) - 1;
+
+			ArchitectureDispatch::DispatchInline(this->m_builder,
+			[&]() // Maxwell instruction set
+			{
+				this->AddInstruction(new SASS::Maxwell::SHRInstruction(
+					temp, source_Lo, new SASS::I32Immediate(shift), SASS::Maxwell::SHRInstruction::Flags::U32
+				));
+				this->AddInstruction(new SASS::Maxwell::LOPInstruction(
+					destinationA, source_Lo, new SASS::I32Immediate(mask), SASS::Maxwell::LOPInstruction::BooleanOperator::AND
+				));
+			},
+			[&]() // Volta instruction set
+			{
+				auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation(
+					[](std::uint8_t A, std::uint8_t B, std::uint8_t C)
+					{
+						return ((A & B) | C);
+					}
+				);
+
+				this->AddInstruction(new SASS::Volta::SHFInstruction(
+					temp, SASS::RZ, new SASS::I32Immediate(shift), source_Lo, 
+					SASS::Volta::SHFInstruction::Direction::R,
+					SASS::Volta::SHFInstruction::Type::U32,
+					SASS::Volta::SHFInstruction::Flags::HI
+				));
+				this->AddInstruction(new SASS::Volta::LOP3Instruction(
+					destinationA, source_Lo, new SASS::I32Immediate(mask), SASS::RZ, new SASS::I8Immediate(logicOperation), SASS::PT
+				));
+			});
+
+			this->AddInstruction(new MOVInstruction(destinationB, temp));
 		}
 		else if constexpr(std::is_same<T, PTX::Bit64Type>::value)
 		{
 			if (destinationA->GetValue() != source_Hi->GetValue())
 			{
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destinationA, source_Lo));
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destinationB, source_Hi));
+				this->AddInstruction(new MOVInstruction(destinationA, source_Lo));
+				this->AddInstruction(new MOVInstruction(destinationB, source_Hi));
 			}
 			else
 			{
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(temp, source_Lo));
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destinationB, source_Hi));
-				this->AddInstruction(new SASS::Maxwell::MOVInstruction(destinationA, temp));
+				this->AddInstruction(new MOVInstruction(temp, source_Lo));
+				this->AddInstruction(new MOVInstruction(destinationB, source_Hi));
+				this->AddInstruction(new MOVInstruction(destinationA, temp));
 			}
 		}
 	}
@@ -92,12 +113,6 @@ void UnpackGenerator::GenerateMaxwell(const PTX::UnpackInstruction<T, V> *instru
 	{
 		Error(instruction, "unsupported vector size");
 	}
-}
-
-template<class T, PTX::VectorSize V>
-void UnpackGenerator::GenerateVolta(const PTX::UnpackInstruction<T, V> *instruction)
-{
-	Error(instruction, "unsupported architecture");
 }
 
 }

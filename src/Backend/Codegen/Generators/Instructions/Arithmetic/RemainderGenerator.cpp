@@ -233,7 +233,144 @@ void RemainderGenerator::GenerateMaxwell(const PTX::RemainderInstruction<T> *ins
 template<class T>
 void RemainderGenerator::GenerateVolta(const PTX::RemainderInstruction<T> *instruction)
 {
-	Error(instruction, "unsupported architecture");
+	// Generate operands
+
+	RegisterGenerator registerGenerator(this->m_builder);
+	CompositeGenerator compositeGenerator(this->m_builder);
+	compositeGenerator.SetImmediateSize(32);
+
+	auto destination = registerGenerator.Generate(instruction->GetDestination());
+	auto sourceA = registerGenerator.Generate(instruction->GetSourceA());
+	auto sourceB = compositeGenerator.Generate(instruction->GetSourceB());
+
+	// Generate instruction
+
+	if constexpr(PTX::is_int_type<T>::value)
+	{
+		// Use 32-bit remainder for 16-bits too 
+
+		if constexpr(T::TypeBits == PTX::Bits::Bits16 || T::TypeBits == PTX::Bits::Bits32)
+		{
+			// Optimize power of 2 remainder using bitwise &(divisor-1)
+
+			if (auto immediateSourceB = dynamic_cast<SASS::I32Immediate *>(sourceB))
+			{
+				auto value = immediateSourceB->GetValue();
+				if (value == Utils::Math::Power2(value))
+				{
+					immediateSourceB->SetValue(value - 1);
+
+					auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation(
+						[](std::uint8_t A, std::uint8_t B, std::uint8_t C)
+						{
+							return ((A & B) | C);
+						}
+					);
+
+					this->AddInstruction(new SASS::Volta::LOP3Instruction(
+						destination, sourceA, sourceB, SASS::RZ, new SASS::I8Immediate(logicOperation), SASS::PT
+					));
+					return;
+				}
+			}
+
+			auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
+
+			auto [temp1, temp2] = this->m_builder.AllocateTemporaryRegisterPair<PTX::Bits::Bits64>(); // Paired for IMAD.HI
+			auto temp3 = this->m_builder.AllocateTemporaryRegister();
+
+			auto pred = this->m_builder.AllocateTemporaryPredicate();
+
+			// I2F.U32.RP TMP1, S2 ;
+			// IMAD.MOV TMP3, RZ, RZ, -S2 ;
+			// MUFU.RCP TMP1, TMP1 ;
+
+			this->AddInstruction(new SASS::Volta::I2FInstruction(
+				temp1, sourceB, SASS::Volta::I2FInstruction::DestinationType::F32, SASS::Volta::I2FInstruction::SourceType::U32,
+				SASS::Volta::I2FInstruction::Round::RP
+			));
+			this->AddInstruction(new SASS::Volta::IMADInstruction(
+				temp3, SASS::RZ, SASS::RZ, sourceB, SASS::Volta::IMADInstruction::Mode::Default, SASS::Volta::IMADInstruction::Flags::NEG_C
+			));
+			this->AddInstruction(new SASS::Volta::MUFUInstruction(temp1, temp1, SASS::Volta::MUFUInstruction::Function::RCP));
+
+			// IADD3 TMP1, TMP1, 0xffffffe, RZ ;
+			// F2I.FTZ.U32.TRUNC.NTZ TMP2, TMP1 ;
+
+			this->AddInstruction(new SASS::Volta::IADD3Instruction(temp1, temp1, new SASS::I32Immediate(0xffffffe), SASS::RZ));
+			this->AddInstruction(new SASS::Volta::F2IInstruction(
+				temp2, temp1, SASS::Volta::F2IInstruction::DestinationType::U32, SASS::Volta::F2IInstruction::SourceType::F32,
+				SASS::Volta::F2IInstruction::Round::TRUNC,
+				SASS::Volta::F2IInstruction::Flags::FTZ | SASS::Volta::F2IInstruction::Flags::NTZ
+			));
+
+			// IMAD TMP3, TMP3, TMP2, RZ ;
+			// IMAD.HI.U32 TMP2, TMP2, TMP3, TMP1 ;
+			// IMAD.HI.U32 TMP2, TMP2, S2, RZ ;
+			// IMAD.MOV TMP2, RZ, RZ, -TMP2 ;
+			// IMAD D, S2, TMP2, S1 ;
+
+			this->AddInstruction(new SASS::Volta::MOVInstruction(temp1, SASS::RZ));
+			this->AddInstruction(new SASS::Volta::IMADInstruction(temp3, temp3, temp2, SASS::RZ));
+			this->AddInstruction(new SASS::Volta::IMADInstruction(
+				temp2, temp2, temp3, temp1, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
+			));
+			this->AddInstruction(new SASS::Volta::IMADInstruction(
+				temp2, temp2, sourceA, SASS::RZ, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
+			));
+			this->AddInstruction(new SASS::Volta::IMADInstruction(
+				temp2, SASS::RZ, SASS::RZ, temp2, SASS::Volta::IMADInstruction::Mode::Default, SASS::Volta::IMADInstruction::Flags::NEG_C
+			));
+			this->AddInstruction(new SASS::Volta::IMADInstruction(destination, sourceB, temp2, sourceA));
+
+			// ISETP.GE.U32.AND PTMP, PT, D, S2, PT ;
+			// @PTMP IADD3 D, -S2, D, RZ ;
+
+			this->AddInstruction(new SASS::Volta::ISETPInstruction(
+				pred, SASS::PT, destination, sourceB, SASS::PT,
+				SASS::Volta::ISETPInstruction::ComparisonOperator::GE,
+				SASS::Volta::ISETPInstruction::BooleanOperator::AND,
+				SASS::Volta::ISETPInstruction::Flags::U32
+			));
+			this->AddInstruction(new SASS::Volta::IADD3Instruction(
+				destination, sourceB, destination, SASS::RZ, SASS::Volta::IADD3Instruction::Flags::NEG_A
+			), pred);
+
+			// ISETP.GE.U32.AND PTMP, PT, D, S2, PT ;
+			// @PTMP IADD3 D, -S2, D, RZ ;
+
+			this->AddInstruction(new SASS::Volta::ISETPInstruction(
+				pred, SASS::PT, destination, sourceB, SASS::PT,
+				SASS::Volta::ISETPInstruction::ComparisonOperator::GE,
+				SASS::Volta::ISETPInstruction::BooleanOperator::AND,
+				SASS::Volta::ISETPInstruction::Flags::U32
+			));
+			this->AddInstruction(new SASS::Volta::IADD3Instruction(
+				destination, sourceB, destination, SASS::RZ, SASS::Volta::IADD3Instruction::Flags::NEG_A
+			), pred); 
+
+			// ISETP.EQ.U32.AND PTMP, PT, S2, RZ, PT ;
+			// @PTMP LOP3.LUT D, RZ, S2, RZ, 0x33, !PT ;
+
+			this->AddInstruction(new SASS::Volta::ISETPInstruction(
+				pred, SASS::PT, sourceB, SASS::RZ, SASS::PT,
+				SASS::Volta::ISETPInstruction::ComparisonOperator::EQ,
+				SASS::Volta::ISETPInstruction::BooleanOperator::AND,
+				SASS::Volta::ISETPInstruction::Flags::U32
+			));
+			this->AddInstruction(new SASS::Volta::LOP3Instruction(
+				destination, SASS::RZ, sourceB, SASS::RZ, new SASS::I8Immediate(0x33), SASS::PT, SASS::Volta::LOP3Instruction::Flags::NOT_E
+			), pred);
+		}
+		else
+		{
+			Error(instruction, "unsupported non-constant type");
+		}
+	}
+	else
+	{
+		Error(instruction, "unsupported type");
+	}
 }
 
 }

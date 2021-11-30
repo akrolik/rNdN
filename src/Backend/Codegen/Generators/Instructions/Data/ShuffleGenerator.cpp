@@ -25,8 +25,7 @@ void ShuffleGenerator::Visit(const PTX::ShuffleInstruction<T> *instruction)
 	// Modifiers: --
 
 	ArchitectureDispatch::DispatchInstruction<
-		SASS::Maxwell::SHFLInstruction,
-		SASS::Volta::SHFLInstruction
+		SASS::Maxwell::SHFLInstruction, SASS::Volta::SHFLInstruction
 	>(*this, instruction);
 }
 
@@ -52,8 +51,13 @@ void ShuffleGenerator::GenerateInstruction(const PTX::ShuffleInstruction<T> *ins
 		compositeGenerator.SetImmediateSize(13);
 		auto sourceC = compositeGenerator.Generate(instruction->GetSourceC());
 		
-		// Membermask is ignored for 6x targets as the membermask must be the same as activemask
-		//TODO: Membermask for Volta
+		// Membermask is ignored for 6x targets as the membermask must be the same as activemask. 7x is allowed, but unimplemented
+
+		auto memberMask = instruction->GetMemberMask();
+		if (memberMask->GetValue() != 0xffffffff)
+		{
+			Error(instruction, "unsupported membermask");
+		}
 
 		// Mode
 

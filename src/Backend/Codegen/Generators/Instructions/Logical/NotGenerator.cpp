@@ -95,17 +95,17 @@ void NotGenerator::GenerateVolta(const PTX::NotInstruction<T> *instruction)
 
 		// Flags
 
-		auto flags = SASS::Volta::PLOP3Instruction::Flags::NOT_A;
+		auto flags = SASS::Volta::PLOP3Instruction::Flags::None;
 		if (source_Not)
 		{
-			flags = SASS::Volta::PLOP3Instruction::Flags::None;
+			flags = SASS::Volta::PLOP3Instruction::Flags::NOT_A;
 		}
 
 		// Generate instruction
 
 		auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation([](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Predicate function
 		{
-			return ((~A) & B & C);
+			return (((~A) & B) & C);
 		});
 
 		this->AddInstruction(new SASS::Volta::PLOP3Instruction(
@@ -128,7 +128,7 @@ void NotGenerator::GenerateVolta(const PTX::NotInstruction<T> *instruction)
 
 		auto logicOperation = SASS::Volta::BinaryUtils::LogicOperation([](std::uint8_t A, std::uint8_t B, std::uint8_t C) // Predicate function
 		{
-			return (A | (~B) | C);
+			return ((A | (~B)) | C);
 		});
 
 		this->AddInstruction(new SASS::Volta::LOP3Instruction(

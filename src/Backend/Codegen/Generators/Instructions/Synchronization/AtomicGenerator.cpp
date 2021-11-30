@@ -149,9 +149,7 @@ template<PTX::Bits B, class T, class S>
 void AtomicGenerator::GenerateMaxwell(const PTX::AtomicInstruction<B, T, S> *instruction)
 {
 	GenerateInstruction<
-		SASS::Maxwell::ATOMInstruction,
-		SASS::Maxwell::ATOMCASInstruction,
-		SASS::Maxwell::MOVInstruction
+		SASS::Maxwell::ATOMInstruction, SASS::Maxwell::ATOMCASInstruction, SASS::Maxwell::MOVInstruction
 	>(instruction);
 }
 
@@ -159,9 +157,7 @@ template<PTX::Bits B, class T, class S>
 void AtomicGenerator::GenerateVolta(const PTX::AtomicInstruction<B, T, S> *instruction)
 {
 	GenerateInstruction<
-		SASS::Volta::ATOMGInstruction,
-		SASS::Volta::ATOMGInstruction,
-		SASS::Volta::MOVInstruction
+		SASS::Volta::ATOMGInstruction, SASS::Volta::ATOMGInstruction, SASS::Volta::MOVInstruction
 	>(instruction);
 }
 
@@ -183,67 +179,84 @@ void AtomicGenerator::GenerateInstruction(const PTX::AtomicInstruction<B, T, S> 
 	{
 		if (instruction->GetOperation() == T::AtomicOperation::CompareAndSwap)
 		{
-			// The first temporary *must* be aligned to a multiple of (2xBitSize)
-
-			auto align1 = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits * 2, 32);
-			auto align2 = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
-
-			auto [temp0_Lo, temp0_Hi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align1);
-			auto [temp1_Lo, temp1_Hi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align2);
-
-			// Move values into temporaries
-
-			auto [value_Lo, value_Hi] = registerGenerator.GeneratePair(instruction->GetValue());
-			
-			this->AddInstruction(new MOVInstruction(temp0_Lo, value_Lo));
-			if constexpr(T::TypeBits == PTX::Bits::Bits64)
-			{
-				this->AddInstruction(new MOVInstruction(temp0_Hi, value_Hi));
-			}
-
-			if (auto valueExtra = instruction->GetValueC())
-			{
-				CompositeGenerator compositeGenerator(this->m_builder);
-				auto [valueC_Lo, valueC_Hi] = compositeGenerator.GeneratePair(valueExtra);
-
-				this->AddInstruction(new MOVInstruction(temp1_Lo, valueC_Lo));
-				if constexpr(T::TypeBits == PTX::Bits::Bits64)
-				{
-					this->AddInstruction(new MOVInstruction(temp1_Hi, valueC_Hi));
-				}
-			}
-
-			// Assign temporaries for use with atomic operation
-
-			auto size = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
-
-			auto sourceA = new SASS::Register(temp0_Lo->GetValue(), size);
-			auto sourceB = new SASS::Register(temp1_Lo->GetValue(), size);
-
 			// Generate instruction
 
 			if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 			{
-				auto flags = ATOMCASInstruction::Flags::None;
-				if constexpr(B == PTX::Bits::Bits64)
-				{
-					flags |= ATOMCASInstruction::Flags::E;
-				}
-
 				if constexpr(std::is_same<ATOMCASInstruction, SASS::Volta::ATOMGInstruction>::value)
 				{
+					// Flag
+
+					auto flags = ATOMCASInstruction::Flags::None;
+					if constexpr(B == PTX::Bits::Bits64)
+					{
+						flags |= ATOMCASInstruction::Flags::E;
+					}
+
+					// Volta instruction requies the cache type and mode
+
 					auto mode = ATOMCASInstruction::Mode::CAS;
-					auto cache = ATOMCASInstruction::Cache::STRONG_GPU;
+					auto cache = ATOMCASInstruction::Cache::None;
+
+					// Type defaults to unsigned for size-based comparison (signed makes no difference)
+
 					auto type = ATOMCASInstruction::Type::U32;
 					if constexpr(T::TypeBits == PTX::Bits::Bits64)
 					{
 						type = ATOMCASInstruction::Type::U64;
 					}
 
-					this->AddInstruction(new ATOMCASInstruction(SASS::PT, destination, address, sourceA, sourceB, type, mode, cache, flags));
+					auto value = registerGenerator.Generate(instruction->GetValue());
+					auto valueC = registerGenerator.Generate(instruction->GetValueC());
+
+					this->AddInstruction(new ATOMCASInstruction(SASS::PT, destination, address, value, valueC, type, mode, cache, flags));
 				}
 				else
 				{
+					// The first temporary *must* be aligned to a multiple of (2xBitSize)
+
+					auto align1 = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits * 2, 32);
+					auto align2 = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
+
+					auto [temp0_Lo, temp0_Hi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align1);
+					auto [temp1_Lo, temp1_Hi] = this->m_builder.AllocateTemporaryRegisterPair<T::TypeBits>(align2);
+
+					// Move values into temporaries
+
+					auto [value_Lo, value_Hi] = registerGenerator.GeneratePair(instruction->GetValue());
+					
+					this->AddInstruction(new MOVInstruction(temp0_Lo, value_Lo));
+					if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					{
+						this->AddInstruction(new MOVInstruction(temp0_Hi, value_Hi));
+					}
+
+					CompositeGenerator compositeGenerator(this->m_builder);
+					auto [valueC_Lo, valueC_Hi] = compositeGenerator.GeneratePair(instruction->GetValueC());
+
+					this->AddInstruction(new MOVInstruction(temp1_Lo, valueC_Lo));
+					if constexpr(T::TypeBits == PTX::Bits::Bits64)
+					{
+						this->AddInstruction(new MOVInstruction(temp1_Hi, valueC_Hi));
+					}
+
+					// Assign temporaries for use with atomic operation
+
+					auto size = Utils::Math::DivUp(PTX::BitSize<T::TypeBits>::NumBits, 32);
+
+					auto sourceA = new SASS::Register(temp0_Lo->GetValue(), size);
+					auto sourceB = new SASS::Register(temp1_Lo->GetValue(), size);
+
+					// Flag
+
+					auto flags = ATOMCASInstruction::Flags::None;
+					if constexpr(B == PTX::Bits::Bits64)
+					{
+						flags |= ATOMCASInstruction::Flags::E;
+					}
+
+					// Type defaults to unsigned for size-based comparison (signed makes no difference)
+
 					auto type = ATOMCASInstruction::Type::X32;
 					if constexpr(T::TypeBits == PTX::Bits::Bits64)
 					{
@@ -265,6 +278,8 @@ void AtomicGenerator::GenerateInstruction(const PTX::AtomicInstruction<B, T, S> 
 
 	if constexpr(std::is_same<S, PTX::GlobalSpace>::value)
 	{
+		// Flags
+
 		auto type = InstructionType<ATOMInstruction>(instruction);
 		auto mode = InstructionMode<ATOMInstruction>(instruction);
 
@@ -276,9 +291,11 @@ void AtomicGenerator::GenerateInstruction(const PTX::AtomicInstruction<B, T, S> 
 
 		if constexpr(std::is_same<ATOMInstruction, SASS::Volta::ATOMGInstruction>::value)
 		{
-			auto cache = ATOMInstruction::Cache::STRONG_GPU;
+			// Volta instruction requires cache type
 
-			this->AddInstruction(new ATOMInstruction(SASS::PT, destination, address, value, nullptr, type, mode, cache, flags));
+			auto cache = ATOMInstruction::Cache::None;
+
+			this->AddInstruction(new ATOMInstruction(destination, address, value, type, mode, cache, flags));
 		}
 		else
 		{

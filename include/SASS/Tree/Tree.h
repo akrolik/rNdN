@@ -87,6 +87,7 @@
 
 #include "SASS/Tree/Instructions/Maxwell/Movement/MOVInstruction.h"
 #include "SASS/Tree/Instructions/Maxwell/Movement/MOV32IInstruction.h"
+#include "SASS/Tree/Instructions/Maxwell/Movement/PRMTInstruction.h"
 #include "SASS/Tree/Instructions/Maxwell/Movement/SELInstruction.h"
 #include "SASS/Tree/Instructions/Maxwell/Movement/SHFLInstruction.h"
 
@@ -119,6 +120,7 @@
 #include "SASS/Tree/Instructions/Volta/Float/MUFUInstruction.h"
 
 #include "SASS/Tree/Instructions/Volta/Integer/FLOInstruction.h"
+#include "SASS/Tree/Instructions/Volta/Integer/IABSInstruction.h"
 #include "SASS/Tree/Instructions/Volta/Integer/IADD3Instruction.h"
 #include "SASS/Tree/Instructions/Volta/Integer/IMADInstruction.h"
 #include "SASS/Tree/Instructions/Volta/Integer/ISETPInstruction.h"
@@ -140,6 +142,7 @@
 #include "SASS/Tree/Instructions/Volta/Misc/CS2RInstruction.h"
 
 #include "SASS/Tree/Instructions/Volta/Movement/MOVInstruction.h"
+#include "SASS/Tree/Instructions/Volta/Movement/PRMTInstruction.h"
 #include "SASS/Tree/Instructions/Volta/Movement/SELInstruction.h"
 #include "SASS/Tree/Instructions/Volta/Movement/SHFLInstruction.h"
 

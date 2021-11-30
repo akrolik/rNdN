@@ -24,7 +24,7 @@ public:
 
 private:
 	template<class BARInstruction, class MEMBARInstruction>
-	void GenerateBarrier(const PTX::BarrierInstruction *instruction);
+	void GenerateInstruction(const PTX::BarrierInstruction *instruction);
 };
 
 }
