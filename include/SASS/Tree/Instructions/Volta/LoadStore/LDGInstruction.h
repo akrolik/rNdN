@@ -186,7 +186,7 @@ public:
 		code += ", ";
 
 		// SourceA
-		code += m_sourceA->ToString();
+		code += m_sourceA->ToSizedString();
 
 		// SourceB
 		if (m_sourceB != nullptr)

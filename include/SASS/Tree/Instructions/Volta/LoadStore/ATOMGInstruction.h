@@ -201,7 +201,7 @@ public:
 		code += ", ";
 
 		// Address
-		code += m_address->ToString();
+		code += m_address->ToSizedString();
 		code += ", ";
 
 		// SourceA

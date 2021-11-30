@@ -89,7 +89,7 @@ public:
 		code += ", ";
 
 		// Source
-		code += m_source->ToString();
+		code += m_source->ToSizedString();
 
 		return code;
 	}

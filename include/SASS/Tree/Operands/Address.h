@@ -33,6 +33,15 @@ public:
 		return "[" + m_base->ToString() + "]";
 	}
 
+	std::string ToSizedString() const
+	{
+		if (m_offset != 0)
+		{
+			return "[" + m_base->ToSizedString() + "+" + Utils::Format::HexString(m_offset) + "]";
+		}
+		return "[" + m_base->ToSizedString() + "]";
+	}
+
 	// Binary
 
 	std::uint64_t ToBinary() const override

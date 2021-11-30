@@ -85,7 +85,7 @@ public:
 		std::string code;
 
 		// Destination
-		code += m_destination->ToString();
+		code += m_destination->ToSizedString();
 		code += ", ";
 
 		// Source

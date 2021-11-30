@@ -30,6 +30,15 @@ public:
 		return "R" + std::to_string(m_value);
 	}
 
+	std::string ToSizedString() const
+	{
+		if (m_range == 2)
+		{
+			return ToString() + ".64";
+		}
+		return ToString();
+	}
+
 	// Binary
 
 	std::uint64_t ToBinary() const override
