@@ -47,7 +47,7 @@ public:
 
 	// Basic Blocks
 
-	void CreateBasicBlock(const std::string& name);
+	SASS::BasicBlock *CreateBasicBlock(const std::string& name);
 	void CloseBasicBlock();
 
 	SASS::BasicBlock *GetCurrentBlock() { return m_currentBlock; }
