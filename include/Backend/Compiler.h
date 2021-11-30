@@ -39,7 +39,7 @@ public:
 	void Visit(const PTX::_TypedVariableDeclaration *declaration) override;
 
 private:
-	const PTX::Analysis::RegisterAllocation *AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function);
+	const PTX::Analysis::RegisterAllocation *AllocateRegisters(const PTX::FunctionDefinition<PTX::VoidType> *function, unsigned int computeCapability);
 	const Scheduler::HardwareProfile *GetHardwareProfile(unsigned int computeCapability);
 
 	SASS::Program *m_program = nullptr;

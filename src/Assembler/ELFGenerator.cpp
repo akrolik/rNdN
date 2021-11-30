@@ -33,8 +33,8 @@
 
 #define R_CUDA_ABS32_HI_20 0x2c
 #define R_CUDA_ABS32_LO_20 0x2b
-#define R_CUDA_ABS32_HI_32 0x38
-#define R_CUDA_ABS32_LO_32 0x39
+#define R_CUDA_ABS32_HI_32 0x39
+#define R_CUDA_ABS32_LO_32 0x38
 #define R_CUDA_ABS24_20 0x2d
 #define R_CUDA_ABS32_32 0x37
 

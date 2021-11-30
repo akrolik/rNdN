@@ -147,7 +147,7 @@ public:
 			case RelocationKind::ABS32_HI_20:
 				return "ABS32_HI_20";
 			case RelocationKind::ABS32_LO_32:
-				return "ABS32_HI_32";
+				return "ABS32_LO_32";
 			case RelocationKind::ABS32_HI_32:
 				return "ABS32_HI_32";
 			case RelocationKind::ABS24_20:
