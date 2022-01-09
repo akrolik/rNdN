@@ -3,6 +3,7 @@
 
 #include "Backend/Scheduler/ListBlockScheduler.h"
 #include "Backend/Scheduler/Profiles/Compute61Profile.h"
+#include "Backend/Scheduler/Profiles/Compute86Profile.h"
 
 #include "CUDA/BufferManager.h"
 #include "CUDA/Compiler.h"
@@ -151,9 +152,7 @@ SASS::Program *TestProgramMaxwell(unsigned int compute)
 		R4, new SASS::Address(R2_3), SASS::Maxwell::LDGInstruction::Type::U8,
 		SASS::Maxwell::LDGInstruction::Cache::None, SASS::Maxwell::LDGInstruction::Flags::E
 	));
-
 	block->AddInstruction(new SASS::Maxwell::IADD32IInstruction(R6, R4, new SASS::I32Immediate(0x1)));
-
 	block->AddInstruction(new SASS::Maxwell::STGInstruction(
 		new SASS::Address(R2_3), R6, SASS::Maxwell::STGInstruction::Type::U8,
 		SASS::Maxwell::STGInstruction::Cache::None, SASS::Maxwell::STGInstruction::Flags::E
@@ -163,6 +162,84 @@ SASS::Program *TestProgramMaxwell(unsigned int compute)
 	// Schedule instructions
 
 	Backend::Scheduler::Compute61Profile profile;
+	Backend::Scheduler::ListBlockScheduler scheduler(profile);
+
+	scheduler.Schedule(function);
+
+	// Build program
+
+	program->AddFunction(function);
+
+	return program;
+}
+
+SASS::Program *TestProgramVolta(unsigned int compute)
+{
+	// Generate SASS program
+
+	auto program = new SASS::Program();
+	program->SetComputeCapability(compute);
+
+	auto function = new SASS::Function("main");
+
+	function->AddParameter(8); // 0x160
+	function->SetRegisters(5 + 2); // 2 for per-thread PC
+
+	auto block = new SASS::BasicBlock("BB0");
+	function->AddBasicBlock(block);
+
+	auto R2 = new SASS::Register(2);
+	auto R3 = new SASS::Register(3);
+	auto R4 = new SASS::Register(4);
+	auto R6 = new SASS::Register(6);
+
+	auto R2_3 = new SASS::Register(2, 2);
+
+	auto P0 = new SASS::Predicate(0);
+
+	// Compute thread index
+
+	block->AddInstruction(new SASS::Volta::S2RInstruction(
+		R4, new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_CTAID_X)
+	));
+	block->AddInstruction(new SASS::Volta::S2RInstruction(
+		R2, new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_TID_X)
+	));
+	block->AddInstruction(new SASS::Volta::IMADInstruction(
+		R4, R4, new SASS::Constant(0x0, 0x0), R2
+	));
+
+	// Compute address
+
+	// IADD3 R2 , P0 , R4, c[0x0][0 x160], RZ ;
+	// IADD3.X R3, RZ, c[0x0][0 x164], RZ, P0 , !PT ;
+
+	block->AddInstruction(new SASS::Volta::IADD3Instruction(
+		R2, P0, R4, new SASS::Constant(0x0, 0x160), SASS::RZ
+	));
+	block->AddInstruction(new SASS::Volta::IADD3Instruction(
+		R3, SASS::RZ, new SASS::Constant(0x0, 0x164), SASS::RZ, P0, SASS::PT,
+		SASS::Volta::IADD3Instruction::Flags::X | SASS::Volta::IADD3Instruction::Flags::NOT_E
+	));
+
+	// Load, increment, store
+
+	block->AddInstruction(new SASS::Volta::LDGInstruction(
+		R4, new SASS::Address(R2_3), SASS::Volta::LDGInstruction::Type::U8,
+		SASS::Volta::LDGInstruction::Cache::None, SASS::Volta::LDGInstruction::Evict::None,
+		SASS::Volta::LDGInstruction::Prefetch::None, SASS::Volta::LDGInstruction::Flags::E
+	));
+	block->AddInstruction(new SASS::Volta::IADD3Instruction(R6, R4, new SASS::I32Immediate(0x1), SASS::RZ));
+	block->AddInstruction(new SASS::Volta::STGInstruction(
+		new SASS::Address(R2_3), R6, SASS::Volta::STGInstruction::Type::U8,
+		SASS::Volta::STGInstruction::Cache::None, SASS::Volta::STGInstruction::Evict::None,
+		SASS::Volta::STGInstruction::Flags::E
+	));
+	block->AddInstruction(new SASS::Volta::EXITInstruction());
+
+	// Schedule instructions
+
+	Backend::Scheduler::Compute86Profile profile;
 	Backend::Scheduler::ListBlockScheduler scheduler(profile);
 
 	scheduler.Schedule(function);
@@ -199,7 +276,7 @@ int main(int argc, const char *argv[])
 	}
 	else if (SASS::Volta::IsSupported(compute))
 	{
-		// ExecuteTest<std::uint8_t>(TestProgramVolta(compute), device);
+		ExecuteTest<std::uint8_t>(TestProgramVolta(compute), device);
 	}
 	else
 	{
