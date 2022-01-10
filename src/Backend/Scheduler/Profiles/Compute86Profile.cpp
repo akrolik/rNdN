@@ -26,19 +26,17 @@ Compute86Profile::FunctionalUnit Compute86Profile::GetFunctionalUnit(const SASS:
 		{
 			return FunctionalUnit::SpecialFunction;
 		}
-		//TODO: Split Integer from SinglePrecision
 		case SASS::Instruction::InstructionClass::Integer:
+		case SASS::Instruction::InstructionClass::Shift:
+		case SASS::Instruction::InstructionClass::Comparison:
+		{
+			return FunctionalUnit::I32;
+		}
 		case SASS::Instruction::InstructionClass::Control:
 		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
-			return FunctionalUnit::Core;
+			return FunctionalUnit::F32;
 		}
-		//TODO: HalfCore
-		// case SASS::Instruction::InstructionClass::Shift:
-		// case SASS::Instruction::InstructionClass::Comparison:
-		// {
-		// 	return FunctionalUnit::HalfCore;
-		// }
 	}
 	return FunctionalUnit::Core;
 }
@@ -61,24 +59,15 @@ std::uint8_t Compute86Profile::GetLatency(const SASS::Instruction *instruction) 
 		{
 			return 4; // Fixed pipeline depth
 		}
+		case SASS::Instruction::InstructionClass::Shift:
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::SinglePrecision:
-		{
-			//TODO: Unsure about the length of these instructions
-			return 6;
-			// if (dynamic_cast<const SASS::Volta::IMADInstruction *>(instruction))
-			// {
-			// 	return 6;
-			// }
-			// return 4;
-		}
-		case SASS::Instruction::InstructionClass::Shift:
 		{
 			return 5; // Fixed pipeline depth
 		}
 		case SASS::Instruction::InstructionClass::Comparison:
 		{
-			return 15; // Fixed pipeline depth
+			return 13; // Fixed pipeline depth
 		}
 	}
 	return 15;
@@ -110,12 +99,7 @@ std::uint8_t Compute86Profile::GetMinimumLatency(const SASS::Instruction *instru
 		}
 		case SASS::Instruction::InstructionClass::Comparison:
 		{
-			//TODO: ISETP requires minimum latency (likely another schedule issue)
-			if (dynamic_cast<const SASS::Volta::ISETPInstruction *>(instruction))
-			{
-				return 15;
-			}
-			return 1;
+			return 2; //TODO: Is this necessary?
 		}
 	}
 	return 15;
@@ -125,26 +109,25 @@ std::uint8_t Compute86Profile::GetBarrierLatency(const SASS::Instruction *instru
 {
 	switch (instruction->GetInstructionClass())
 	{
-		//TODO: Update all expected latencies
 		case SASS::Instruction::InstructionClass::S2R:
 		{
 			return 25;
 		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
 		{
-			return 200;
+			return 240;
 		}
 		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
 		{
-			return 30;
+			return 25;
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
-			return 32;
+			return 45;
 		}
 		case SASS::Instruction::InstructionClass::SpecialFunction:
 		{
-			return 16;
+			return 18;
 		}
 		case SASS::Instruction::InstructionClass::Control:
 		case SASS::Instruction::InstructionClass::Integer:
@@ -154,11 +137,6 @@ std::uint8_t Compute86Profile::GetBarrierLatency(const SASS::Instruction *instru
 		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
 		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
-			//TODO: ATOMG is currently a Store instruction, but also loads
-			if (dynamic_cast<const SASS::Volta::ATOMGInstruction *>(instruction))
-			{
-				return 200;
-			}
 			return 0;
 		}
 	}
@@ -167,31 +145,8 @@ std::uint8_t Compute86Profile::GetBarrierLatency(const SASS::Instruction *instru
 
 std::uint8_t Compute86Profile::GetReadLatency(const SASS::Instruction *instruction) const
 {
-	switch (instruction->GetInstructionClass())
-	{
-		case SASS::Instruction::InstructionClass::S2R:
-		case SASS::Instruction::InstructionClass::Control:
-		case SASS::Instruction::InstructionClass::Integer:
-		case SASS::Instruction::InstructionClass::SinglePrecision:
-		case SASS::Instruction::InstructionClass::DoublePrecision:
-		case SASS::Instruction::InstructionClass::SpecialFunction:
-		case SASS::Instruction::InstructionClass::Comparison:
-		case SASS::Instruction::InstructionClass::Shift:
-		{
-			return 0;
-		}
-		//TODO: Update read latencies (before read)
-		// case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
-		// case SASS::Instruction::InstructionClass::GlobalMemoryStore:
-		// {
-		// 	return 4;
-		// }
-		// case SASS::Instruction::InstructionClass::SharedMemoryLoad:
-		// case SASS::Instruction::InstructionClass::SharedMemoryStore:
-		// {
-		// 	return 2;
-		// }
-	}
+	// All instructions read immediately
+
 	return 0;
 }
 
@@ -209,14 +164,28 @@ std::uint8_t Compute86Profile::GetReadHold(const SASS::Instruction *instruction)
 			return 0;
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
+		{
+			return 12;
+		}
 		case SASS::Instruction::InstructionClass::SpecialFunction:
+		{
+			return 15;
+		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		{
+			return 10;
+		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		{
+			return 13;
+		}
 		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
+		{
+			return 8;
+		}
 		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
-			//TODO: Update expected latencies
-			return 15; // Unbuffered reads
+			return 9;
 		}
 	}
 	return 0;
@@ -226,12 +195,12 @@ std::uint8_t Compute86Profile::GetThroughputLatency(const SASS::Instruction *ins
 {
 	switch (instruction->GetInstructionClass())
 	{
-		case SASS::Instruction::InstructionClass::S2R:
 		case SASS::Instruction::InstructionClass::Control:
 		case SASS::Instruction::InstructionClass::SinglePrecision:
 		{
 			return 1;
 		}
+		case SASS::Instruction::InstructionClass::S2R:
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Comparison:
 		case SASS::Instruction::InstructionClass::Shift:

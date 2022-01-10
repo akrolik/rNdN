@@ -11,7 +11,9 @@ public:
 	enum class FunctionalUnit : std::uint8_t {
 		S2R,
 		Core,
-		HalfCore, // Half throughput
+		HalfCore, // Half throughput, Pascal
+		I32,
+		F32,
 		DoublePrecision,
 		SpecialFunction,
 		LoadStore
@@ -19,7 +21,7 @@ public:
 
 	// Convenience conversions for array storage
 
-	constexpr static unsigned int UNIT_COUNT = 6;
+	constexpr static unsigned int UNIT_COUNT = 8;
 	constexpr static unsigned int BARRIER_COUNT = 6;
 
 	static std::uint8_t FunctionalUnitIndex(FunctionalUnit unit)

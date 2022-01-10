@@ -739,7 +739,7 @@ void TestVoltaInteger(const std::unique_ptr<CUDA::Device>& device)
 	Test<std::uint32_t>("Integer", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
 	{
 		return new SASS::Volta::IADD3Instruction(RD, RS, new SASS::I32Immediate(1), SASS::RZ);
-	}, 4);
+	}, 5);
 
 	Test<std::uint32_t>("Integer MAD", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
 	{
@@ -783,13 +783,10 @@ void TestVoltaMUFU(const std::unique_ptr<CUDA::Device>& device)
 
 void TestVoltaConversion(const std::unique_ptr<CUDA::Device>& device)
 {
-	//TODO:
-	// Test<std::uint32_t>("I2I", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
-	// {
-	// 	return new SASS::Volta::I2IInstruction(
-	// 		RD, RS, SASS::Volta::I2IInstruction::DestinationType::S32, SASS::Volta::I2IInstruction::SourceType::S8
-	// 	);
-	// }, 2, true);
+	Test<std::uint16_t>("I2I", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
+	{
+		return new SASS::Volta::I2IInstruction(RD, RS, SASS::Volta::I2IInstruction::DestinationType::U16);
+	}, 2, true);
 
 	Test<float>("I2F (32-bit)", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
 	{
@@ -851,7 +848,7 @@ void TestVoltaShift(const std::unique_ptr<CUDA::Device>& device)
 			SASS::Volta::SHFInstruction::Direction::L,
 			SASS::Volta::SHFInstruction::Type::U32
 		);
-	}, 4);
+	}, 5);
 }
               
 void TestVoltaLoadStore(const std::unique_ptr<CUDA::Device>& device)
