@@ -20,7 +20,6 @@
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
-#include "Utils/Math.h"
 #include "Utils/Options.h"
 
 template<typename T>
