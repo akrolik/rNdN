@@ -177,6 +177,14 @@ ELFBinary *ELFGenerator::Generate(const BinaryProgram *program)
 		dataSegment->add_section_index(globalSection->get_index(), globalSection->get_addr_align());
 	}
 
+	// Dynamic shared variables allocated to module
+
+	if (program->GetDynamicSharedVariableCount() > 0)
+	{
+		//TODO: Add support for dynamic shared variables
+		Utils::Logger::LogError("Unsupported dynamic shared variable in ELF");
+	}
+
 	// Info buffer for accumulating properties
 
 	std::vector<char> infoBuffer;
