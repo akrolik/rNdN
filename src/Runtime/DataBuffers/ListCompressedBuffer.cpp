@@ -73,6 +73,8 @@ ListCompressedBuffer::ListCompressedBuffer(const TypedVectorBuffer<std::int64_t>
 			new HorseIR::Analysis::Shape::ConstantSize(cellSizes.size()),
 			{new HorseIR::Analysis::VectorShape(new HorseIR::Analysis::Shape::RangedSize(cellSizes))}
 	);
+
+	m_gpuConsistent = true;
 }
 
 ListCompressedBuffer::ListCompressedBuffer(TypedVectorBuffer<std::int32_t> *sizes, VectorBuffer *values) : m_sizes(sizes), m_values(values)
@@ -94,8 +96,8 @@ ListCompressedBuffer::ListCompressedBuffer(TypedVectorBuffer<std::int32_t> *size
 	auto dataAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), compressedSize);
 	auto sizeAddressesBuffer = new TypedVectorBuffer<CUdeviceptr>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Int64), compressedSize);
 
-	auto dataOffset = m_values->GetGPUReadBuffer()->GetGPUBuffer();
-	auto sizeOffset = m_sizes->GetGPUReadBuffer()->GetGPUBuffer();
+	auto dataOffset = m_values->GetGPUBufferAddress();
+	auto sizeOffset = m_sizes->GetGPUBufferAddress();
 
 	auto dataAddresses = dataAddressesBuffer->GetCPUWriteBuffer();
 	auto sizeAddresses = sizeAddressesBuffer->GetCPUWriteBuffer();
@@ -117,6 +119,8 @@ ListCompressedBuffer::ListCompressedBuffer(TypedVectorBuffer<std::int32_t> *size
 
 	m_dataAddresses = dataAddressesBuffer;
 	m_sizeAddresses = sizeAddressesBuffer;
+
+	m_gpuConsistent = true;
 }
 
 ListCompressedBuffer::~ListCompressedBuffer()

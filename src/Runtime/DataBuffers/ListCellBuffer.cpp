@@ -56,7 +56,7 @@ ListCellBuffer::ListCellBuffer(const std::vector<DataBuffer *>& cells) : m_cells
 	m_type = new HorseIR::ListType(cellTypes);
 	m_shape = new HorseIR::Analysis::ListShape(new HorseIR::Analysis::Shape::ConstantSize(cells.size()), cellShapes);
 
-	m_cpuConsistent = true; // Always CPU consistent
+	m_cpuConsistent = true;
 }
 
 ListCellBuffer::~ListCellBuffer()

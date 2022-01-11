@@ -60,7 +60,7 @@ void DataBuffer::RequireCPUConsistent(bool exclusive) const
 	{
 		if (!exclusive && !IsGPUConsistent())
 		{
-			Utils::Logger::LogError("Empty buffer cannot directly enter shared state");
+			Utils::Logger::LogError("Empty '" + KindString(m_kind) + "' buffer cannot directly enter shared state");
 		}
 
 		auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
@@ -83,7 +83,7 @@ void DataBuffer::RequireGPUConsistent(bool exclusive) const
 	{
 		if (!exclusive && !IsCPUConsistent())
 		{
-			Utils::Logger::LogError("Empty buffer cannot directly enter shared state");
+			Utils::Logger::LogError("Empty '" + KindString(m_kind) + "' buffer cannot directly enter shared state");
 		}
 
 		auto timeStart = Utils::Chrono::Start(TransferString("GPU"));

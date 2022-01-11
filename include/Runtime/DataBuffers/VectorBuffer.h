@@ -43,6 +43,8 @@ public:
 
 	// GPU/CPU buffer management
 
+	virtual CUdeviceptr GetGPUBufferAddress() const = 0;
+
 	virtual CUDA::Buffer *GetGPUWriteBuffer() override = 0;
 	virtual const CUDA::Buffer *GetGPUReadBuffer() const override = 0;
 
@@ -232,8 +234,14 @@ public:
 
 	// GPU functions
 
-	bool IsAllocatedOnCPU() const override { return (m_cpuBuffer != nullptr); }
-	bool IsAllocatedOnGPU() const override { return (m_gpuBuffer != nullptr); }
+	CUdeviceptr GetGPUBufferAddress() const override
+	{
+		if (!IsAllocatedOnGPU())
+		{
+			AllocateGPUBuffer();
+		}
+		return m_gpuBuffer->GetGPUBuffer();
+	}
 
 	TypedVectorData<T> *GetCPUWriteBuffer() override
 	{
@@ -392,6 +400,11 @@ public:
 	}
 
 protected:
+	// GPU/CPU management
+
+	bool IsAllocatedOnCPU() const override { return (m_cpuBuffer != nullptr); }
+	bool IsAllocatedOnGPU() const override { return (m_gpuBuffer != nullptr); }
+
 	void AllocateCPUBuffer() const override
 	{
 		auto timeAlloc_start = Utils::Chrono::Start("CPU allocation (" + std::to_string(m_elementCount * sizeof(T)) + " bytes)");
