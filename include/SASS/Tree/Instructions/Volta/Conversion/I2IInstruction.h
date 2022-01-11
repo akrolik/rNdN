@@ -20,7 +20,7 @@ public:
 	};
 
 	I2IInstruction(Register *destination, Composite *source, DestinationType destinationType)
-		: m_destination(destination), m_destinationType(destinationType) {}
+		: m_destination(destination), m_source(source), m_destinationType(destinationType) {}
 
 	// Properties
 
