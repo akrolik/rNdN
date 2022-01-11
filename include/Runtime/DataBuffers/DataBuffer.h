@@ -72,51 +72,8 @@ public:
 
 	// CPU/GPU management
 
-	virtual void RequireCPUConsistent(bool exclusive) const
-	{
-		if (!IsCPUConsistent())
-		{
-			if (!exclusive && !IsGPUConsistent())
-			{
-				Utils::Logger::LogError("Empty buffer cannot directly enter shared state" + m_tag);
-			}
-
-			auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
-			if (!IsAllocatedOnCPU())
-			{
-				AllocateCPUBuffer();
-			}
-			if (IsAllocatedOnGPU() && IsGPUConsistent())
-			{
-				TransferToCPU();
-			}
-			Utils::Chrono::End(timeStart);
-		}
-		SetCPUConsistent(exclusive);
-	}
-
-	virtual void RequireGPUConsistent(bool exclusive) const
-	{
-		if (!IsGPUConsistent())
-		{
-			if (!exclusive && !IsCPUConsistent())
-			{
-				Utils::Logger::LogError("Empty buffer cannot directly enter shared state" + m_tag);
-			}
-
-			auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
-			if (!IsAllocatedOnGPU())
-			{
-				AllocateGPUBuffer();
-			}
-			if (IsAllocatedOnCPU() && IsCPUConsistent())
-			{
-				TransferToGPU();
-			}
-			Utils::Chrono::End(timeStart);
-		}
-		SetGPUConsistent(exclusive);
-	}
+	virtual void RequireCPUConsistent(bool exclusive) const;
+	virtual void RequireGPUConsistent(bool exclusive) const;
 
 	virtual CUDA::Data *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
 	virtual const CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }

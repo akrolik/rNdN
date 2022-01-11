@@ -54,4 +54,50 @@ DataBuffer *DataBuffer::CreateEmpty(const HorseIR::Type *type, const HorseIR::An
 	Utils::Logger::LogError("Unable to create empty buffer for shape " + HorseIR::Analysis::ShapeUtils::ShapeString(shape));
 }
 
+void DataBuffer::RequireCPUConsistent(bool exclusive) const
+{
+	if (!IsCPUConsistent())
+	{
+		if (!exclusive && !IsGPUConsistent())
+		{
+			Utils::Logger::LogError("Empty buffer cannot directly enter shared state");
+		}
+
+		auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+		if (!IsAllocatedOnCPU())
+		{
+			AllocateCPUBuffer();
+		}
+		if (IsAllocatedOnGPU() && IsGPUConsistent())
+		{
+			TransferToCPU();
+		}
+		Utils::Chrono::End(timeStart);
+	}
+	SetCPUConsistent(exclusive);
+}
+
+void DataBuffer::RequireGPUConsistent(bool exclusive) const
+{
+	if (!IsGPUConsistent())
+	{
+		if (!exclusive && !IsCPUConsistent())
+		{
+			Utils::Logger::LogError("Empty buffer cannot directly enter shared state");
+		}
+
+		auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+		if (!IsAllocatedOnGPU())
+		{
+			AllocateGPUBuffer();
+		}
+		if (IsAllocatedOnCPU() && IsCPUConsistent())
+		{
+			TransferToGPU();
+		}
+		Utils::Chrono::End(timeStart);
+	}
+	SetGPUConsistent(exclusive);
+}
+
 }
