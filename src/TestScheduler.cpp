@@ -217,9 +217,6 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramMaxwell(const std::unique_p
 	);
 	auto inst18 = new SASS::Maxwell::EXITInstruction();
 
-	barrier->GetSchedule().SetStall(6);
-	block->AddInstruction(barrier);
-
 	inst12->GetSchedule().SetStall(6);
 	inst12->GetSchedule().SetWaitBarriers(SASS::Schedule::Barrier::SB0);
 	inst13->GetSchedule().SetStall(6);

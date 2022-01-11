@@ -458,6 +458,7 @@ void DivideGenerator::GenerateVolta(const PTX::DivideInstruction<T> *instruction
 			auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
 
 			auto [temp1, temp2] = this->m_builder.AllocateTemporaryRegisterPair<PTX::Bits::Bits64>(); // Paired for IMAD.HI
+			auto temp1_pair = new SASS::Register(temp1->GetValue(), 2);
 			auto temp3 = this->m_builder.AllocateTemporaryRegister();
 
 			auto pred = this->m_builder.AllocateTemporaryPredicate();
@@ -494,7 +495,7 @@ void DivideGenerator::GenerateVolta(const PTX::DivideInstruction<T> *instruction
 			this->AddInstruction(new SASS::Volta::MOVInstruction(temp1, SASS::RZ));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(temp3, temp3, temp2, SASS::RZ));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(
-				temp2, temp2, temp3, temp1, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
+				temp2, temp2, temp3, temp1_pair, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
 			));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(
 				temp2, temp2, sourceA, SASS::RZ, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
@@ -554,6 +555,7 @@ void DivideGenerator::GenerateVolta(const PTX::DivideInstruction<T> *instruction
 			auto temp3 = this->m_builder.AllocateTemporaryRegister();
 			auto temp4 = this->m_builder.AllocateTemporaryRegister();
 			auto [temp5, temp6] = this->m_builder.AllocateTemporaryRegisterPair<PTX::Bits::Bits64>(); // Paired for IMAD.HI
+			auto temp5_pair = new SASS::Register(temp5->GetValue(), 2);
 			auto temp7 = this->m_builder.AllocateTemporaryRegister();
 			auto temp8 = this->m_builder.AllocateTemporaryRegister();
 			auto temp9 = this->m_builder.AllocateTemporaryRegister();
@@ -607,7 +609,7 @@ void DivideGenerator::GenerateVolta(const PTX::DivideInstruction<T> *instruction
 				temp7, SASS::RZ, SASS::RZ, temp9, SASS::Volta::IMADInstruction::Mode::Default, SASS::Volta::IMADInstruction::Flags::NEG_C
 			));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(
-				temp6, temp6, temp8, temp5, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
+				temp6, temp6, temp8, temp5_pair, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
 			));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(
 				temp6, temp6, temp3, SASS::RZ, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32

@@ -277,6 +277,7 @@ void RemainderGenerator::GenerateVolta(const PTX::RemainderInstruction<T> *instr
 			auto sourceB = registerGenerator.Generate(instruction->GetSourceB());
 
 			auto [temp1, temp2] = this->m_builder.AllocateTemporaryRegisterPair<PTX::Bits::Bits64>(); // Paired for IMAD.HI
+			auto temp1_pair = new SASS::Register(temp1->GetValue(), 2);
 			auto temp3 = this->m_builder.AllocateTemporaryRegister();
 
 			auto pred = this->m_builder.AllocateTemporaryPredicate();
@@ -313,7 +314,7 @@ void RemainderGenerator::GenerateVolta(const PTX::RemainderInstruction<T> *instr
 			this->AddInstruction(new SASS::Volta::MOVInstruction(temp1, SASS::RZ));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(temp3, temp3, temp2, SASS::RZ));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(
-				temp2, temp2, temp3, temp1, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
+				temp2, temp2, temp3, temp1_pair, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
 			));
 			this->AddInstruction(new SASS::Volta::IMADInstruction(
 				temp2, temp2, sourceA, SASS::RZ, SASS::Volta::IMADInstruction::Mode::HI, SASS::Volta::IMADInstruction::Flags::U32
