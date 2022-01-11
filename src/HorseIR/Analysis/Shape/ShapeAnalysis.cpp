@@ -1243,18 +1243,14 @@ std::pair<std::vector<const Shape *>, std::vector<const Shape *>> ShapeAnalysis:
 
 			const auto& elementShapes1 = listShape1->GetElementShapes();
 			const auto& elementShapes2 = listShape2->GetElementShapes();
+			Require(elementShapes1.size() == elementShapes2.size());
 
-			auto elementCount1 = elementShapes1.size();
-			auto elementCount2 = elementShapes1.size();
-			Require(elementCount1 == elementCount2 || elementCount1 == 1 || elementCount2 == 1);
-
-			auto count = std::max(elementCount1, elementCount2);
 			std::vector<const Shape *> newElementShapes;
 			std::vector<const Shape *> newWriteShapes;
-			for (auto i = 0u; i < count; ++i)
+			for (auto i = 0u; i < elementShapes1.size(); ++i)
 			{
-				const auto l_inputShape1 = elementShapes1.at((elementCount1 == 1) ? 0 : i);
-				const auto l_inputShape2 = elementShapes2.at((elementCount2 == 1) ? 0 : i);
+				const auto l_inputShape1 = elementShapes1.at(i);
+				const auto l_inputShape2 = elementShapes2.at(i);
 
 				const auto [shapes, writeShapes] = AnalyzeCall(function, {l_inputShape1, l_inputShape2}, {});
 				Require(ShapeUtils::IsSingleShape(shapes));

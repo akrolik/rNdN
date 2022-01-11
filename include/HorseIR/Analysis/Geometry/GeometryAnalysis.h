@@ -49,9 +49,9 @@ public:
 	std::string DebugString(const Statement *statement, unsigned int indent = 0) const override;
 
 private:
-	const Shape *AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Operand *>& arguments);
-	const Shape *AnalyzeCall(const Function *function, const std::vector<const Operand *>& arguments);
-	const Shape *AnalyzeCall(const BuiltinFunction *function, const std::vector<const Operand *>& arguments);
+	const Shape *AnalyzeCall(const FunctionDeclaration *function, const std::vector<const Shape *>& returnShapes, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
+	const Shape *AnalyzeCall(const Function *function, const std::vector<const Shape *>& returnShapes, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
+	const Shape *AnalyzeCall(const BuiltinFunction *function, const std::vector<const Shape *>& returnShapes, const std::vector<const Shape *>& argumentShapes, const std::vector<const Operand *>& arguments);
 
 	const ShapeAnalysis& m_shapeAnalysis;
 

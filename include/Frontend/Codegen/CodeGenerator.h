@@ -149,7 +149,7 @@ public:
 		}
 		else
 		{
-			Utils::Logger::LogError("Unsupported thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry));
+			Utils::Logger::LogError("Unsupported thread geometry " + HorseIR::Analysis::ShapeUtils::ShapeString(inputOptions.ThreadGeometry) + " for kernel '" + function->GetName() + "'");
 		}
 
 		// Complete the codegen for the function by setting up the options and closing the scope
