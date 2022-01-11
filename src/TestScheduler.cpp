@@ -39,7 +39,7 @@ std::uint32_t ExecuteTest(const std::string& name, const std::unique_ptr<CUDA::D
 
 	// Create kernel invocation and buffers
 
-	auto threadCount = SASS::WARP_SIZE;
+	auto threadCount = SASS::WARP_SIZE * 4;
 
 	CUDA::Module module(compiler.GetBinary(), compiler.GetBinarySize());
 	CUDA::Kernel kernel("main", module);
@@ -195,14 +195,6 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramMaxwell(const std::unique_p
 
 	auto extraCycles = benchmark(block, R16, R0, P0, P1);
 
-	// Barrier wait
-
-	auto barrier = new SASS::Maxwell::MOVInstruction(R18, R16);
-	barrier->SetPredicate(P0);
-	barrier->GetSchedule().SetStall(6);
-	barrier->GetSchedule().SetWaitBarriers(SASS::Schedule::Barrier::SB0);
-	block->AddInstruction(barrier);
-
 	// Store the difference between clocks
 
 	auto inst12 = new SASS::Maxwell::CS2RInstruction(R7, new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_CLOCKLO));
@@ -214,21 +206,28 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramMaxwell(const std::unique_p
 
 	// Store value
 
-	auto inst15 = new SASS::Maxwell::MOVInstruction(R19, R17);
-	inst15->SetPredicate(P1);
+	auto inst15 = new SASS::Maxwell::MOVInstruction(R18, R16);
+	auto inst16 = new SASS::Maxwell::MOVInstruction(R19, R17);
+	inst15->SetPredicate(P0);
+	inst16->SetPredicate(P0);
 
-	auto inst16 = new SASS::Maxwell::STGInstruction(
+	auto inst17 = new SASS::Maxwell::STGInstruction(
 		new SASS::Address(R4_2), R18, (sizeof(T) <= 4 ? SASS::Maxwell::STGInstruction::Type::X32 : SASS::Maxwell::STGInstruction::Type::X64),
 		SASS::Maxwell::STGInstruction::Cache::None, SASS::Maxwell::STGInstruction::Flags::E
 	);
-	auto inst17 = new SASS::Maxwell::EXITInstruction();
+	auto inst18 = new SASS::Maxwell::EXITInstruction();
+
+	barrier->GetSchedule().SetStall(6);
+	block->AddInstruction(barrier);
 
 	inst12->GetSchedule().SetStall(6);
+	inst12->GetSchedule().SetWaitBarriers(SASS::Schedule::Barrier::SB0);
 	inst13->GetSchedule().SetStall(6);
 	inst14->GetSchedule().SetStall(2);
 	inst15->GetSchedule().SetStall(6);
-	inst16->GetSchedule().SetStall(2);
-	inst17->GetSchedule().SetStall(15);
+	inst16->GetSchedule().SetStall(6);
+	inst17->GetSchedule().SetStall(2);
+	inst18->GetSchedule().SetStall(15);
 
 	block->AddInstruction(inst12);
 	block->AddInstruction(inst13);
@@ -237,12 +236,13 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramMaxwell(const std::unique_p
 	{
 		block->AddInstruction(inst15);
 		block->AddInstruction(inst16);
+		block->AddInstruction(inst17);
 	}
-	block->AddInstruction(inst17);
+	block->AddInstruction(inst18);
 
 	program->AddFunction(function);
 
-	return { program, 6 + 6 + extraCycles }; // CS2R + MOV
+	return { program, 6 + extraCycles }; // CS2R
 }
 
 template<class T, class F>
@@ -368,14 +368,6 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramVolta(const std::unique_ptr
 
 	auto extraCycles = benchmark(block, R16, R0, P0, P1);
 
-	// Barrier wait
-
-	auto barrier = new SASS::Volta::MOVInstruction(R18, R16);
-	barrier->SetPredicate(P0);
-	barrier->GetSchedule().SetStall(4);
-	barrier->GetSchedule().SetWaitBarriers(SASS::Schedule::Barrier::SB0);
-	block->AddInstruction(barrier);
-
 	// Store the difference between clocks
 
 	auto inst12 = new SASS::Volta::CS2RInstruction(R7, new SASS::SpecialRegister(SASS::SpecialRegister::Kind::SR_CLOCKLO));
@@ -390,24 +382,29 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramVolta(const std::unique_ptr
 
 	// Store value
 
-	auto inst15 = new SASS::Volta::MOVInstruction(R19, R17);
+	auto inst15 = new SASS::Volta::MOVInstruction(R18, R16);
+	auto inst16 = new SASS::Volta::MOVInstruction(R19, R17);
 	inst15->SetPredicate(P0);
+	inst16->SetPredicate(P0);
 
-	auto inst16 = new SASS::Volta::STGInstruction(
+	auto inst17 = new SASS::Volta::STGInstruction(
 		new SASS::Address(R4_2), R18,
 		(sizeof(T) <= 4 ? SASS::Volta::STGInstruction::Type::X32 : SASS::Volta::STGInstruction::Type::X64),
 		SASS::Volta::STGInstruction::Cache::None,
 		SASS::Volta::STGInstruction::Evict::None,
 		SASS::Volta::STGInstruction::Flags::E
 	);
-	auto inst17 = new SASS::Volta::EXITInstruction();
+	auto inst18 = new SASS::Volta::EXITInstruction();
 
 	inst12->GetSchedule().SetStall(4);
+	inst12->GetSchedule().SetWaitBarriers(SASS::Schedule::Barrier::SB0);
+
 	inst13->GetSchedule().SetStall(4);
 	inst14->GetSchedule().SetStall(2);
 	inst15->GetSchedule().SetStall(4);
-	inst16->GetSchedule().SetStall(2);
-	inst17->GetSchedule().SetStall(15);
+	inst16->GetSchedule().SetStall(4);
+	inst17->GetSchedule().SetStall(2);
+	inst18->GetSchedule().SetStall(15);
 
 	block->AddInstruction(inst12);
 	block->AddInstruction(inst13);
@@ -416,12 +413,13 @@ std::pair<SASS::Program *, std::uint32_t> TestProgramVolta(const std::unique_ptr
 	{
 		block->AddInstruction(inst15);
 		block->AddInstruction(inst16);
+		block->AddInstruction(inst17);
 	}
-	block->AddInstruction(inst17);
+	block->AddInstruction(inst18);
 
 	program->AddFunction(function);
 
-	return { program, 4 + 4 + extraCycles }; // CS2R + MOV
+	return { program, 4 + extraCycles }; // CS2R
 }
 
 template<class T, class F>
@@ -458,9 +456,17 @@ void Test(const std::string& name, const std::unique_ptr<CUDA::Device>& device, 
 		auto inst0 = instruction(RD, RS, PD, PS, false);
 		inst0->GetSchedule().SetStall(1);
 		inst0->GetSchedule().SetYield(true);
+		if (write)
+		{
+			inst0->GetSchedule().SetWriteBarrier(SASS::Schedule::Barrier::SB0);
+		}
+		if (read)
+		{
+			inst0->GetSchedule().SetReadBarrier(SASS::Schedule::Barrier::SB0);
+		}
 		block->AddInstruction(inst0);
 
-		auto inst1 = instruction(RD, RS, PD, PS, true);
+		auto inst1 = instruction(RD, RS, PD, PS, false);
 		inst1->GetSchedule().SetStall(stall);
 		inst1->GetSchedule().SetYield(stall < 13);
 		if (write)
@@ -783,10 +789,10 @@ void TestVoltaMUFU(const std::unique_ptr<CUDA::Device>& device)
 
 void TestVoltaConversion(const std::unique_ptr<CUDA::Device>& device)
 {
-	Test<std::uint16_t>("I2I", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
-	{
-		return new SASS::Volta::I2IInstruction(RD, RS, SASS::Volta::I2IInstruction::DestinationType::U16);
-	}, 2, true);
+	// Test<std::uint16_t>("I2I", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
+	// {
+	// 	return new SASS::Volta::I2IInstruction(RD, RS, SASS::Volta::I2IInstruction::DestinationType::S8);
+	// }, 2, true);
 
 	Test<float>("I2F (32-bit)", device, [](SASS::Register *RD, SASS::Register *RS, SASS::Predicate *PD, SASS::Predicate *PS, bool throughput)
 	{
