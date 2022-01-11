@@ -4,7 +4,7 @@
 
 #include "Frontend/Codegen/Builder.h"
 #include "Frontend/Codegen/Generators/Data/TargetCellGenerator.h"
-#include "Frontend/Codegen/Generators/Indexing/ThreadIndexGenerator.h"
+#include "Frontend/Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Frontend/Codegen/Generators/Expressions/Builtins/ComparisonGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
@@ -144,17 +144,14 @@ private:
 					auto returnAddress0 = addressGenerator.GenerateAddress(returnParameter, 0, l_writeOffset);
 					auto returnAddress1 = addressGenerator.GenerateAddress(returnParameter, 1, l_writeOffset);
 
-					ThreadIndexGenerator<B> indexGenerator(this->m_builder);
-					auto globalIndex = indexGenerator.GenerateGlobalIndex();
-
-					auto globalIndex64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, globalIndex);
+					auto index64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, index);
 
 					OperandGenerator<B, PTX::Int64Type> operandGenerator64(this->m_builder);
 					operandGenerator64.SetBoundsCheck(false);
 					auto matchValue = operandGenerator64.GenerateRegister(valueOperand, slot, this->m_builder.UniqueIdentifier("slot"));
 
 					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, matchValue));
-					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, globalIndex64));
+					this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, index64));
 
 					// End control flow and increment both the matched (predicated) and running counts
 

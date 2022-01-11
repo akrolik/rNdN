@@ -6,7 +6,7 @@
 #include "Frontend/Codegen/Generators/Expressions/MoveGenerator.h"
 #include "Frontend/Codegen/Generators/Expressions/OperandGenerator.h"
 #include "Frontend/Codegen/Generators/Indexing/DataSizeGenerator.h"
-#include "Frontend/Codegen/Generators/Indexing/ThreadIndexGenerator.h"
+#include "Frontend/Codegen/Generators/Indexing/DataIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 
@@ -47,8 +47,8 @@ public:
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size0 = sizeGenerator.GenerateSize(arguments.at(0));
 
-		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateGlobalIndex();
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
 
 		this->m_builder.AddIfStatement("OFFSET", [&]()
 		{

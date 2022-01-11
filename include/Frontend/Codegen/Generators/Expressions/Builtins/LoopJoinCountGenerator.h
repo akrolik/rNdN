@@ -9,7 +9,6 @@
 #include "Frontend/Codegen/Generators/Indexing/DataIndexGenerator.h"
 #include "Frontend/Codegen/Generators/Indexing/DataSizeGenerator.h"
 #include "Frontend/Codegen/Generators/Indexing/PrefixSumGenerator.h"
-#include "Frontend/Codegen/Generators/Indexing/ThreadIndexGenerator.h"
 
 #include "HorseIR/Tree/Tree.h"
 #include "HorseIR/Utils/PrettyPrinter.h"
@@ -69,8 +68,8 @@ public:
 		auto resources = this->m_builder.GetLocalResources();
 		auto countPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
-		ThreadIndexGenerator<B> indexGenerator(this->m_builder);
-		auto index = indexGenerator.GenerateGlobalIndex();
+		DataIndexGenerator<B> indexGenerator(this->m_builder);
+		auto index = indexGenerator.GenerateDataIndex();
 
 		DataSizeGenerator<B> sizeGenerator(this->m_builder);
 		auto size = sizeGenerator.GenerateSize(dataArguments.at(1));

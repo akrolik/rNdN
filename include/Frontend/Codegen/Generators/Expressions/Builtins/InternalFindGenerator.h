@@ -242,8 +242,8 @@ public:
 
 					// Output all indexes, requires breaking the typical return pattern as there is an indeterminate quantity
 
-					ThreadIndexGenerator<B> indexGenerator(this->m_builder);
-					auto globalIndex = indexGenerator.GenerateGlobalIndex();
+					DataIndexGenerator<B> indexGenerator(this->m_builder);
+					auto index = indexGenerator.GenerateDataIndex();
 
 					DataSizeGenerator<B> sizeGenerator(this->m_builder);
 					auto size = sizeGenerator.GenerateSize(dataX);
@@ -254,7 +254,7 @@ public:
 						auto activePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 
 						this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-							activePredicate, globalIndex, size, PTX::UInt32Type::ComparisonOperator::Less
+							activePredicate, index, size, PTX::UInt32Type::ComparisonOperator::Less
 						));
 						this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(
 							storePredicate, activePredicate, matchPredicate
@@ -271,10 +271,10 @@ public:
 						auto returnAddress0 = addressGenerator.GenerateAddress(returnParameter, 0, m_writeOffset);
 						auto returnAddress1 = addressGenerator.GenerateAddress(returnParameter, 1, m_writeOffset);
 
-						auto globalIndex64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, globalIndex);
+						auto index64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, index);
 
 						this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress0, m_targetRegister));
-						this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, globalIndex64));
+						this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Int64Type, PTX::GlobalSpace>(returnAddress1, index64));
 
 						// End control flow and increment both the matched (predicated) and running counts
 
