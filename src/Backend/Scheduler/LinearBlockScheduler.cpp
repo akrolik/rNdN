@@ -23,7 +23,7 @@ void LinearBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 		auto& schedule = instruction->GetSchedule();
 		schedule.SetStall(latency);
-		schedule.SetYield(latency < 13);
+		schedule.SetYield(latency < 12);
 
 		if (barrierLatency > 0 || readHold > 0)
 		{

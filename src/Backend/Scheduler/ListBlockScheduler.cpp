@@ -368,7 +368,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					if (previousSchedule.GetReuseCache() == SASS::Schedule::ReuseCache::None)
 					{
-						previousSchedule.SetYield(barrierStall < 13);
+						previousSchedule.SetYield(barrierStall < 12);
 					}
 
 					// Insert barrier to wait until the instruction queue is ready
@@ -388,7 +388,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 					auto& barrierSchedule = barrierInstruction->GetSchedule();
 					barrierSchedule.SetStall(currentStall);
-					barrierSchedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
+					barrierSchedule.SetYield(currentStall < 12); // Higher stall counts cannot yield
 
 					scheduledInstructions.push_back(barrierInstruction);
 
@@ -453,7 +453,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			}
 
 			// Cap the stall by the maximum value. Legal since throughput is hardware regulated, and
-			// stalls > 15 can only be caused by throuput (variable length is handled through barriers
+			// stalls > 15 can only be caused by throughput (variable length is handled through barriers)
 
 			if (stall > 15)
 			{
@@ -493,7 +493,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				if (previousSchedule.GetReuseCache() == SASS::Schedule::ReuseCache::None)
 				{
-					previousSchedule.SetYield(stall < 13);
+					previousSchedule.SetYield(stall < 12);
 				}
 
 				auto latency = m_profile.GetLatency(instruction);
@@ -505,7 +505,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				}
 
 				schedule.SetStall(currentStall);
-				schedule.SetYield(currentStall < 13); // Higher stall counts cannot yield
+				schedule.SetYield(currentStall < 12); // Higher stall counts cannot yield
 
 				time += stall;
 			}
@@ -516,7 +516,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto latency = m_profile.GetLatency(instruction);
 
 				schedule.SetStall(latency);
-				schedule.SetYield(latency < 13); // Higher stall counts cannot yield
+				schedule.SetYield(latency < 12); // Higher stall counts cannot yield
 			}
 
 			scheduledInstructions.push_back(instruction);
