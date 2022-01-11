@@ -42,8 +42,8 @@ std::pair<TypedVectorBuffer<std::int64_t> *, DataBuffer *> SortEngine::Sort(cons
 
 	// Invalidate the CPU buffers as the GPU will be sorting in place
 
-	indexBuffer->InvalidateCPU();
-	dataBuffer->InvalidateCPU();
+	indexBuffer->RequireGPUConsistent(true);
+	dataBuffer->RequireGPUConsistent(true);
 
 	// Iteratively sort!
 

@@ -143,7 +143,7 @@ int main(int argc, const char *argv[])
 	for (const auto& result : results)
 	{
 		result->SetTag("output");
-		result->ValidateCPU();
+		result->RequireCPUConsistent(false);
 	}
 
 	Utils::Chrono::End(timeOutput_start);

@@ -70,14 +70,54 @@ public:
 	virtual const HorseIR::Type *GetType() const = 0;
 	virtual const HorseIR::Analysis::Shape *GetShape() const = 0;
 
-	// GPU/CPU management
+	// CPU/GPU management
 
-	virtual void InvalidateCPU() { m_cpuConsistent = false; }
-	virtual void InvalidateGPU() { m_gpuConsistent = false; }
+	virtual void RequireCPUConsistent(bool exclusive) const
+	{
+		if (!IsCPUConsistent())
+		{
+			if (!exclusive && !IsGPUConsistent())
+			{
+				Utils::Logger::LogError("Empty buffer cannot directly enter shared state" + m_tag);
+			}
 
-	virtual void ValidateCPU() const;
-	virtual void ValidateGPU() const;
-	
+			auto timeStart = Utils::Chrono::Start(TransferString("CPU"));
+			if (!IsAllocatedOnCPU())
+			{
+				AllocateCPUBuffer();
+			}
+			if (IsAllocatedOnGPU() && IsGPUConsistent())
+			{
+				TransferToCPU();
+			}
+			Utils::Chrono::End(timeStart);
+		}
+		SetCPUConsistent(exclusive);
+	}
+
+	virtual void RequireGPUConsistent(bool exclusive) const
+	{
+		if (!IsGPUConsistent())
+		{
+			if (!exclusive && !IsCPUConsistent())
+			{
+				Utils::Logger::LogError("Empty buffer cannot directly enter shared state" + m_tag);
+			}
+
+			auto timeStart = Utils::Chrono::Start(TransferString("GPU"));
+			if (!IsAllocatedOnGPU())
+			{
+				AllocateGPUBuffer();
+			}
+			if (IsAllocatedOnCPU() && IsCPUConsistent())
+			{
+				TransferToGPU();
+			}
+			Utils::Chrono::End(timeStart);
+		}
+		SetGPUConsistent(exclusive);
+	}
+
 	virtual CUDA::Data *GetGPUWriteBuffer() { CPUOnlyBuffer(); }
 	virtual const CUDA::Data *GetGPUReadBuffer() const { CPUOnlyBuffer(); }
 
@@ -107,10 +147,24 @@ protected:
 	DataBuffer(Kind kind) : m_kind(kind) {}
 	Kind m_kind;
 
+	// GPU/CPU management
+
+	void SetCPUConsistent(bool exclusive) const
+	{
+		m_cpuConsistent = true;
+		m_gpuConsistent &= !exclusive;
+	}
+
+	void SetGPUConsistent(bool exclusive) const
+	{
+		m_gpuConsistent = true;
+		m_cpuConsistent &= !exclusive;
+	}
+
 	bool IsCPUConsistent() const { return m_cpuConsistent; }
 	bool IsGPUConsistent() const { return m_gpuConsistent; }
 
-	virtual bool IsAllocatedOnCPU() const { return true; }
+	virtual bool IsAllocatedOnCPU() const { return false; }
 	virtual bool IsAllocatedOnGPU() const { return false; }
 
 	virtual void TransferToCPU() const { CPUOnlyBuffer(); }

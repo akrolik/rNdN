@@ -66,7 +66,7 @@ TypedVectorBuffer<std::int8_t> *LikeEngine::Like(const std::vector<const DataBuf
 	// Return buffer
 
 	auto returnBuffer = new TypedVectorBuffer<std::int8_t>(new HorseIR::BasicType(HorseIR::BasicType::BasicKind::Boolean), vectorSize);
-	returnBuffer->ValidateGPU();
+	returnBuffer->RequireGPUConsistent(true);
 	returnBuffer->Clear(DataBuffer::ClearMode::Zero);
 
 	// Size buffer

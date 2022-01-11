@@ -58,8 +58,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU() const override;
-	void ValidateGPU() const override;
+	void RequireCPUConsistent(bool exclusive) const override;
+	void RequireGPUConsistent(bool exclusive) const override;
 
 	// Printers
 
@@ -71,8 +71,12 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
+	// Type/shape
+
 	const HorseIR::TableType *m_type = new HorseIR::TableType();
 	const HorseIR::Analysis::TableShape *m_shape = nullptr;
+
+	// Data
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> m_columns;
 	robin_hood::unordered_map<std::string, ColumnBuffer *> m_columnMap;

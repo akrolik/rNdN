@@ -163,7 +163,7 @@ std::vector<DataBuffer *> ExecutionEngine::Execute(const HorseIR::Function *func
 			if (initialization != HorseIR::Analysis::DataInitializationAnalysis::Initialization::Copy)
 			{
 				returnBuffer = DataBuffer::CreateEmpty(type, shape);
-				returnBuffer->ValidateGPU();
+				returnBuffer->RequireGPUConsistent(true);
 			}
 
 			auto timeInitializeBuffer_start = Utils::Chrono::Start("Initialize buffer");

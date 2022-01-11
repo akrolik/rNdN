@@ -36,8 +36,12 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override {}
 
 private:
+	// Type/shape
+
 	const HorseIR::FunctionType *m_type = nullptr;
 	const HorseIR::Analysis::Shape *m_shape = nullptr;
+
+	// Data
 
 	const HorseIR::FunctionDeclaration *m_function = nullptr;
 };

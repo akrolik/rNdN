@@ -17,7 +17,7 @@ public:
 
 	virtual unsigned int GetElementCount() const = 0;
 
-	// Colum printing
+	// Column printing
 
 	virtual std::string DebugDumpElement(unsigned int index, unsigned int indent = 0, bool preindent = false) const = 0;
 

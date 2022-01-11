@@ -45,8 +45,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU() const override;
-	void ValidateGPU() const override;
+	void RequireCPUConsistent(bool exclusive) const override;
+	void RequireGPUConsistent(bool exclusive) const override;
 
 	// Printers
 
@@ -60,8 +60,12 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
+	// Type/shape
+
 	const HorseIR::EnumerationType *m_type = nullptr;
 	const HorseIR::Analysis::EnumerationShape *m_shape = nullptr;
+
+	// Data
 
 	//TODO: Support multiple column enums
 	VectorBuffer *m_keys = nullptr;

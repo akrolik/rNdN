@@ -90,28 +90,28 @@ ColumnBuffer *TableBuffer::GetColumn(const std::string& name)
 	return m_columnMap.at(name);
 }
 
-void TableBuffer::ValidateCPU() const
+void TableBuffer::RequireCPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("CPU table"));
 
 	for (const auto& [_, buffer] : m_columns)
 	{
-		buffer->ValidateCPU();
+		buffer->RequireCPUConsistent(exclusive);
 	}
-	DataBuffer::ValidateCPU();
+	SetCPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
-void TableBuffer::ValidateGPU() const
+void TableBuffer::RequireGPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("GPU table"));
 
 	for (const auto& [_, buffer] : m_columns)
 	{
-		buffer->ValidateGPU();
+		buffer->RequireGPUConsistent(exclusive);
 	}
-	DataBuffer::ValidateGPU();
+	SetGPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }

@@ -40,8 +40,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU() const override;
-	void ValidateGPU() const override;
+	void RequireCPUConsistent(bool exclusive) const override;
+	void RequireGPUConsistent(bool exclusive) const override;
 
 	// Printers
 
@@ -53,8 +53,12 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
+	// Type/shape
+
 	const HorseIR::KeyedTableType *m_type = nullptr;
 	const HorseIR::Analysis::KeyedTableShape *m_shape = nullptr;
+
+	// Data
 
 	TableBuffer *m_key = nullptr;
 	TableBuffer *m_value = nullptr;

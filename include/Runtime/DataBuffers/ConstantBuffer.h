@@ -52,7 +52,11 @@ template<typename T>
 class TypedConstantBuffer : public ConstantBuffer
 {
 public:
-	TypedConstantBuffer(const HorseIR::BasicType::BasicKind basicKind, const T& value) : ConstantBuffer(basicKind), m_value(value) {}
+	TypedConstantBuffer(const HorseIR::BasicType::BasicKind basicKind, const T& value) : ConstantBuffer(basicKind), m_value(value)
+	{
+		m_cpuConsistent = true;
+	}
+
 	~TypedConstantBuffer() override
 	{
 		delete m_gpuBuffer;
@@ -67,7 +71,7 @@ public:
 
 	const CUDA::Constant *GetGPUReadBuffer() const override
 	{
-		ValidateGPU();
+		RequireGPUConsistent(false);
 		return m_gpuBuffer;
 	}
 
@@ -77,6 +81,8 @@ public:
 	}
 
 private:
+	// CPU/GPU management
+
 	bool IsAllocatedOnCPU() const override { return true; }
 	bool IsAllocatedOnGPU() const override { return (m_gpuBuffer != nullptr); }
 
@@ -88,6 +94,8 @@ private:
 
 	void TransferToCPU() const override {} // Always consistent
 	void TransferToGPU() const override {} // Not needed
+
+	// Printing
 
 	std::string Description() const override
 	{

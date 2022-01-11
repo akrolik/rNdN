@@ -41,6 +41,8 @@ protected:
 	ListBuffer(HorseIR::ListType *type, HorseIR::Analysis::ListShape *shape);
 	ListBuffer() : ListBuffer(nullptr, nullptr) {}
 
+	// Type/shape
+
 	HorseIR::ListType *m_type = nullptr;
 	HorseIR::Analysis::ListShape *m_shape = nullptr;
 };

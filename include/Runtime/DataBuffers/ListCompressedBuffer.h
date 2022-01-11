@@ -37,8 +37,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU() const override;
-	void ValidateGPU() const override;
+	void RequireCPUConsistent(bool exclusive) const override;
+	void RequireGPUConsistent(bool exclusive) const override;
 
 	CUDA::Buffer *GetGPUWriteBuffer() override;
 	const CUDA::Buffer *GetGPUReadBuffer() const override;
@@ -60,6 +60,8 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
+	// CPU/GPU management
+
 	bool IsAllocatedOnCPU() const override { return true; } // Always allocated on CPU
 	bool IsAllocatedOnGPU() const override { return true; }
 
@@ -68,6 +70,8 @@ private:
 
 	void TransferToCPU() const override {} // Always consistent
 	void TransferToGPU() const override {} // Always consistent
+
+	// Data
 
 	void AllocateCells() const;
 

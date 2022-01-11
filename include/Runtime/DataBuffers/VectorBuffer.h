@@ -237,27 +237,25 @@ public:
 
 	TypedVectorData<T> *GetCPUWriteBuffer() override
 	{
-		ValidateCPU();
-		InvalidateGPU();
+		RequireCPUConsistent(true);
 		return m_cpuBuffer;
 	}
 
 	const TypedVectorData<T> *GetCPUReadBuffer() const override
 	{
-		ValidateCPU();
+		RequireCPUConsistent(false);
 		return m_cpuBuffer;
 	}
 
 	CUDA::Buffer *GetGPUWriteBuffer() override
 	{
-		ValidateGPU();
-		InvalidateCPU();
+		RequireGPUConsistent(true);
 		return m_gpuBuffer;
 	}
 
 	const CUDA::Buffer *GetGPUReadBuffer() const override
 	{
-		ValidateGPU();
+		RequireGPUConsistent(false);
 		return m_gpuBuffer;
 	}
 

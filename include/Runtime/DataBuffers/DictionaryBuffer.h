@@ -41,8 +41,8 @@ public:
 
 	// CPU/GPU management
 
-	void ValidateCPU() const override;
-	void ValidateGPU() const override;
+	void RequireCPUConsistent(bool exclusive) const override;
+	void RequireGPUConsistent(bool exclusive) const override;
 
 	// Printers
 
@@ -54,8 +54,12 @@ public:
 	void Clear(ClearMode mode = ClearMode::Zero) override;
 
 private:
+	// Type/shape
+
 	const HorseIR::DictionaryType *m_type = nullptr;
 	const HorseIR::Analysis::DictionaryShape *m_shape = nullptr;
+
+	// Data
 
 	VectorBuffer *m_keys = nullptr;
 	ListBuffer *m_values = nullptr;

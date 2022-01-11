@@ -38,24 +38,26 @@ void KeyedTableBuffer::SetTag(const std::string& tag)
 	m_value->SetTag((tag == "") ? "" : tag + "_value");
 }
 
-void KeyedTableBuffer::ValidateCPU() const
+void KeyedTableBuffer::RequireCPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("CPU ktable"));
 
-	m_key->ValidateCPU();
-	m_value->ValidateCPU();
-	DataBuffer::ValidateCPU();
+	m_key->RequireCPUConsistent(exclusive);
+	m_value->RequireCPUConsistent(exclusive);
+
+	SetCPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
-void KeyedTableBuffer::ValidateGPU() const
+void KeyedTableBuffer::RequireGPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("GPU ktable"));
 
-	m_key->ValidateGPU();
-	m_value->ValidateGPU();
-	DataBuffer::ValidateGPU();
+	m_key->RequireGPUConsistent(exclusive);
+	m_value->RequireGPUConsistent(exclusive);
+
+	SetGPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }

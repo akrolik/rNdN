@@ -116,7 +116,7 @@ void ListCellBuffer::ResizeCells(unsigned int size)
 	{
 		// Invalidate the GPU content as the cell buffers may have been reallocated
 
-		InvalidateGPU();
+		SetCPUConsistent(true);
 
 		// Propagate shape change
 
@@ -136,61 +136,53 @@ void ListCellBuffer::ResizeCells(unsigned int size)
 	}
 }
 
-void ListCellBuffer::ValidateCPU() const
+void ListCellBuffer::RequireCPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("CPU list"));
 
 	for (const auto buffer : m_cells)
 	{
-		buffer->ValidateCPU();
+		buffer->RequireCPUConsistent(exclusive);
 	}
-	DataBuffer::ValidateCPU();
+	DataBuffer::RequireCPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
-void ListCellBuffer::ValidateGPU() const
+void ListCellBuffer::RequireGPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("GPU list"));
 
 	for (const auto buffer : m_cells)
 	{
-		buffer->ValidateGPU();
+		buffer->RequireGPUConsistent(exclusive);
 	}
-	DataBuffer::ValidateGPU();
+	DataBuffer::RequireGPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
 CUDA::Buffer *ListCellBuffer::GetGPUWriteBuffer()
 {
-	ValidateGPU();
-	for (auto i = 0u; i < m_cells.size(); ++i)
-	{
-		m_cells.at(i)->GetGPUWriteBuffer();
-	}
+	RequireGPUConsistent(true);
 	return m_gpuBuffer;
 }
 
 const CUDA::Buffer *ListCellBuffer::GetGPUReadBuffer() const
 {
-	ValidateGPU();
-	for (auto i = 0u; i < m_cells.size(); ++i)
-	{
-		m_cells.at(i)->GetGPUReadBuffer();
-	}
+	RequireGPUConsistent(false);
 	return m_gpuBuffer;
 }
 
 const CUDA::Buffer *ListCellBuffer::GetGPUSizeBuffer() const
 {
-	ValidateGPU();
+	RequireGPUConsistent(false);
 	return m_gpuSizeBuffer;
 }
 
 CUDA::Buffer *ListCellBuffer::GetGPUSizeBuffer()
 {
-	ValidateGPU();
+	RequireGPUConsistent(false);
 	return m_gpuSizeBuffer;
 }
 
@@ -215,7 +207,7 @@ bool ListCellBuffer::ReallocateGPUBuffer()
 	{
 		// Invalidate the GPU content as the cell buffers may have been reallocated
 
-		InvalidateGPU();
+		SetCPUConsistent(true);
 
 		// Propagate shape change
 

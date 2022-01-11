@@ -35,26 +35,28 @@ void EnumerationBuffer::SetTag(const std::string& tag)
 	m_indexes->SetTag((tag == "") ? "" : tag + "_indexes");
 }
 
-void EnumerationBuffer::ValidateCPU() const
+void EnumerationBuffer::RequireCPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("CPU enum"));
 
-	m_keys->ValidateCPU();
-	m_values->ValidateCPU();
-	m_indexes->ValidateCPU();
-	ColumnBuffer::ValidateCPU();
+	m_keys->RequireCPUConsistent(exclusive);
+	m_values->RequireCPUConsistent(exclusive);
+	m_indexes->RequireCPUConsistent(exclusive);
+
+	SetCPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
-void EnumerationBuffer::ValidateGPU() const
+void EnumerationBuffer::RequireGPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("GPU enum"));
 
-	m_keys->ValidateGPU();
-	m_values->ValidateGPU();
-	m_indexes->ValidateGPU();
-	ColumnBuffer::ValidateGPU();
+	m_keys->RequireGPUConsistent(exclusive);
+	m_values->RequireGPUConsistent(exclusive);
+	m_indexes->RequireGPUConsistent(exclusive);
+
+	SetGPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }

@@ -52,24 +52,26 @@ void DictionaryBuffer::SetTag(const std::string& tag)
 	m_values->SetTag((tag == "") ? "" : tag + "_values");
 }
 
-void DictionaryBuffer::ValidateCPU() const
+void DictionaryBuffer::RequireCPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("CPU dictionary"));
 
-	m_keys->ValidateCPU();
-	m_values->ValidateCPU();
-	DataBuffer::ValidateCPU();
+	m_keys->RequireCPUConsistent(exclusive);
+	m_values->RequireCPUConsistent(exclusive);
+
+	DataBuffer::SetCPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
-void DictionaryBuffer::ValidateGPU() const
+void DictionaryBuffer::RequireGPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("GPU dictionary"));
 
-	m_keys->ValidateGPU();
-	m_values->ValidateGPU();
-	DataBuffer::ValidateGPU();
+	m_keys->RequireGPUConsistent(exclusive);
+	m_values->RequireGPUConsistent(exclusive);
+
+	DataBuffer::SetGPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }

@@ -165,49 +165,47 @@ size_t ListCompressedBuffer::GetCellCount() const
 	return m_dataAddresses->GetElementCount();
 }
 
-void ListCompressedBuffer::ValidateCPU() const
+void ListCompressedBuffer::RequireCPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("CPU list"));
 
-	m_values->ValidateCPU();
-	DataBuffer::ValidateCPU();
+	m_values->RequireCPUConsistent(exclusive);
+	SetCPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
-void ListCompressedBuffer::ValidateGPU() const
+void ListCompressedBuffer::RequireGPUConsistent(bool exclusive) const
 {
 	auto timeStart = Utils::Chrono::Start(TransferString("GPU list"));
 
-	m_values->ValidateGPU();
-	DataBuffer::ValidateGPU();
+	m_values->RequireGPUConsistent(exclusive);
+	SetGPUConsistent(exclusive);
 
 	Utils::Chrono::End(timeStart);
 }
 
 CUDA::Buffer *ListCompressedBuffer::GetGPUWriteBuffer()
 {
-	ValidateGPU();
-	m_values->GetGPUWriteBuffer();
+	RequireGPUConsistent(true);
 	return m_dataAddresses->GetGPUWriteBuffer();
 }
 
 const CUDA::Buffer *ListCompressedBuffer::GetGPUReadBuffer() const
 {
-	ValidateGPU();
-	m_values->GetGPUReadBuffer();
+	RequireGPUConsistent(false);
 	return m_dataAddresses->GetGPUReadBuffer();
 }
 
 const CUDA::Buffer *ListCompressedBuffer::GetGPUSizeBuffer() const
 {
-	m_sizes->ValidateGPU();
+	m_sizes->RequireGPUConsistent(false);
 	return m_sizeAddresses->GetGPUReadBuffer();
 }
 
 CUDA::Buffer *ListCompressedBuffer::GetGPUSizeBuffer()
 {
-	m_sizes->ValidateGPU();
+	m_sizes->RequireGPUConsistent(false);
 	return m_sizeAddresses->GetGPUWriteBuffer();
 }
 
