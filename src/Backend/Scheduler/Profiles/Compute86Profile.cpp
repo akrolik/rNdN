@@ -94,12 +94,9 @@ std::uint8_t Compute86Profile::GetMinimumLatency(const SASS::Instruction *instru
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Shift:
 		case SASS::Instruction::InstructionClass::SinglePrecision:
-		{
-			return 1; // Immediately available
-		}
 		case SASS::Instruction::InstructionClass::Comparison:
 		{
-			return 2; //TODO: Is this necessary?
+			return 1; // Immediately available
 		}
 	}
 	return 15;
@@ -115,11 +112,11 @@ std::uint8_t Compute86Profile::GetBarrierLatency(const SASS::Instruction *instru
 		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
 		{
-			return 240;
+			return 220;
 		}
 		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
 		{
-			return 25;
+			return 22;
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
@@ -177,7 +174,7 @@ std::uint8_t Compute86Profile::GetReadHold(const SASS::Instruction *instruction)
 		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
 		{
-			return 13;
+			return 14;
 		}
 		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
 		{
@@ -200,7 +197,6 @@ std::uint8_t Compute86Profile::GetThroughputLatency(const SASS::Instruction *ins
 		{
 			return 1;
 		}
-		case SASS::Instruction::InstructionClass::S2R:
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Comparison:
 		case SASS::Instruction::InstructionClass::Shift:
@@ -209,8 +205,9 @@ std::uint8_t Compute86Profile::GetThroughputLatency(const SASS::Instruction *ins
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
-			return 32;
+			return 64;
 		}
+		case SASS::Instruction::InstructionClass::S2R:
 		case SASS::Instruction::InstructionClass::SpecialFunction:
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
 		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
