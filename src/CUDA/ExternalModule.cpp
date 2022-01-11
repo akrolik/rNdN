@@ -7,19 +7,9 @@
 
 #include "Utils/Chrono.h"
 #include "Utils/Logger.h"
+#include "Utils/String.h"
 
 namespace CUDA {
-
-std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace)
-{
-	size_t pos = 0;
-	while ((pos = subject.find(search, pos)) != std::string::npos)
-	{
-		subject.replace(pos, search.length(), replace);
-		pos += replace.length();
-	}
-	return subject;
-}
 
 void ExternalModule::GenerateBinary(const std::unique_ptr<Device>& device)
 {
@@ -30,7 +20,7 @@ void ExternalModule::GenerateBinary(const std::unique_ptr<Device>& device)
 	command += " --gpu-name " + device->GetComputeCapability();
 	command += " --compile-only";
 	command += " --output-file " + m_name + ".cubin";
-	command += " --input-as-string \"" + ReplaceString(m_code, "\"", "\\\"") + "\"";
+	command += " --input-as-string \"" + Utils::String::ReplaceString(m_code, "\"", "\\\"") + "\"";
 
 	FILE *file = popen(command.c_str(), "r"); 
 	if (file != NULL)

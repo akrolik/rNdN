@@ -105,7 +105,7 @@ private:
 		operandGenerator.SetBoundsCheck(false);
 		auto value = operandGenerator.GenerateRegister(identifier, OperandGenerator<B, T>::LoadKind::Vector, cellIndex);
 
-		// murmur3 hash:
+		// murmur3 hash: https://github.com/aappleby/smhasher/
 		//
 		//   k ^= k >> 16;
 		//   k *= 0x85ebca6b; // 2246822507

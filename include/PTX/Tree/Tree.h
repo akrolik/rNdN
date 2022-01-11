@@ -39,6 +39,8 @@ namespace PTX {
 //   Unsupported operands:
 //      - Array indexing
 //      - mask()
+//
+// Many thanks to StackOverflow for explaining C++ templates used for types
 
 // Utility
 

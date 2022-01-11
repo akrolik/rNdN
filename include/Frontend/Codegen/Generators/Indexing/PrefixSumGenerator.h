@@ -41,7 +41,7 @@ public:
 		AddressGenerator<B, T> addressGenerator(this->m_builder);
 		auto sizeAddress = addressGenerator.GenerateAddress(g_size);
 
-		// Compute prefix sum
+		// Compute prefix sum, NVIDIA CUDA algorithm
 
 		return Generate(sizeAddress, value, mode, predicate);
 	}

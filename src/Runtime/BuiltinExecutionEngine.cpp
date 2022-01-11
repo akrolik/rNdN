@@ -362,7 +362,7 @@ std::vector<DataBuffer *> BuiltinExecutionEngine::Execute(const HorseIR::Builtin
 			}
 			else if (likeKind == Utils::Options::LikeKind::PCRELike)
 			{
-				// Transform from SQL like to regex
+				// Transform from SQL like to regex (thanks to Hanfeng)
 				//  - Escape: '.', '*', and '\'
 				//  - Replace: '%' by '.*' (0 or more) and '_' by '.' (exactly 1)
 

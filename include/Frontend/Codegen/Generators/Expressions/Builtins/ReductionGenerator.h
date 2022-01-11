@@ -174,6 +174,8 @@ public:
 			});
 		}
 
+		// https://developer.nvidia.com/blog/faster-parallel-reductions-kepler/
+
 		switch (Utils::Options::GetAlgorithm_ReductionKind())
 		{
 			case Utils::Options::ReductionKind::ShuffleBlock:

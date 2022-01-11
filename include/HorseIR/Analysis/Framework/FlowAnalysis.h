@@ -18,6 +18,8 @@
 namespace HorseIR {
 namespace Analysis {
 
+// Flow analysis framework built on McSAF (https://github.com/Sable/mclab-core)
+
 template<class F>
 class FlowAnalysis : public ConstVisitor, public StatementAnalysis
 {

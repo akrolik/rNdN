@@ -4,6 +4,32 @@
 
 namespace Utils {
 
+std::string String::ReplaceString(std::string string, const std::string& needle, const std::string& replace, bool recursive)
+{
+	// Inspired by: https://stackoverflow.com/questions/1494399/how-do-i-search-find-and-replace-in-a-standard-string
+
+	auto position = 0;
+	auto size = needle.size();
+
+	auto found = string.find(needle, position);
+	while (found != std::string::npos)
+	{
+		// Replace the current occurence
+
+		string.replace(found, size, replace);
+
+		// Find the next occurence after the current replacement if not recursive
+
+		if (!recursive)
+		{
+			position = found + size;
+		}
+		found = string.find(needle, position);
+	}
+
+	return string;
+}
+
 bool String::Like(const std::string& needle, const std::string& pattern)
 {
 	auto needleSize = needle.size();
@@ -22,6 +48,8 @@ bool String::Like(const std::string& needle, const std::string& pattern)
 
 bool String::Like_Internal(const char *needleData, const char *patternData, size_t needleSize, size_t patternSize, unsigned int i, unsigned int j)
 {
+	// Inspired by: https://www.codeproject.com/Tips/608266/A-Csharp-LIKE-implementation-that-mimics-SQL-LIKE
+
 	for (;i < patternSize; ++i)
 	{
 		auto pc = patternData[i];
@@ -65,17 +93,6 @@ bool String::Like_Internal(const char *needleData, const char *patternData, size
 	}
 
 	return (j == needleSize);
-}
-
-std::string String::ReplaceString(std::string subject, const std::string& search, const std::string& replace)
-{
-	size_t pos = 0;
-	while ((pos = subject.find(search, pos)) != std::string::npos)
-	{
-		subject.replace(pos, search.length(), replace);
-		pos += replace.length();
-	}
-	return subject;
 }
 
 }

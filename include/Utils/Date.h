@@ -64,6 +64,8 @@ public:
 		std::uint8_t hour, std::uint8_t minute, std::uint8_t second
 	)
 	{
+		// https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html
+
 		auto epoch = 0;
 
 		epoch += second;

@@ -65,6 +65,8 @@ class EnumerationType;
 class TableType;
 class KeyedTableType;
 
+// Inspired by the hierarchical visitor pattern (https://wiki.c2.com/?HierarchicalVisitorPattern)
+
 class HierarchicalVisitor
 {
 public:

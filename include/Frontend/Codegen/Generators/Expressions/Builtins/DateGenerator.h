@@ -296,7 +296,7 @@ public:
 	std::tuple<PTX::Register<PTX::Int32Type> *, PTX::Register<PTX::PredicateType> *> GenerateYear(
 		PTX::Register<PTX::Int16Type> *year, PTX::TypedOperand<PTX::Int32Type> *src
 	) {
-		// Extract year from unix time
+		// Extract year from unix time (https://github.com/eblot/newlib/blob/master/newlib/libc/time/mktm_r.c)
 		//
 		// days = time / SECONDS_PER_DAY
 		// year = UNIX_BASE_YEAR
@@ -370,7 +370,7 @@ public:
 
 	PTX::Register<PTX::Int32Type> *GenerateMonth(PTX::Register<PTX::Int16Type> *month, PTX::TypedOperand<PTX::Int32Type> *src)
 	{
-		// Extract month from unix time
+		// Extract month from unix time (https://github.com/eblot/newlib/blob/master/newlib/libc/time/mktm_r.c)
 		//
 		// [days, leap] = Year(year, src)
 		//

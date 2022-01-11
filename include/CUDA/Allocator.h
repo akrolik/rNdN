@@ -6,6 +6,8 @@
 
 #include "CUDA/Utils.h"
 
+// https://en.cppreference.com/w/cpp/named_req/Allocator
+
 namespace CUDA {
 
 template <class T>

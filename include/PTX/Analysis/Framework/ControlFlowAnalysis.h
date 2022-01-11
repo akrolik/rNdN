@@ -134,6 +134,7 @@ protected:
 		if (m_queuedWork.empty())
 		{
 			// Sort the unqueued work by reverse post-order
+			// https://homepages.dcc.ufmg.br/~fernando/classes/dcc888/ementa/slides/WorkList.pdf
 
 			std::vector<BasicBlock *> sortedWork(std::begin(m_unqueuedWork), std::end(m_unqueuedWork));
 			std::sort(std::begin(sortedWork), std::end(sortedWork), [&](auto& left, auto& right)

@@ -27,6 +27,8 @@
 namespace Frontend {
 namespace Codegen {
 
+// Inspired by: https://github.com/nosferalatu/SimpleGPUHashTable
+
 template<PTX::Bits B>
 class HashCreateInsertGenerator : public Generator, public HorseIR::ConstVisitor
 {

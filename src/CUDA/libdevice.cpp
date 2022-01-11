@@ -20,6 +20,9 @@ namespace CUDA {
 
 std::string Generate(const std::string& compute)
 {
+	// LLVM library API calls inspired by Halide project
+	// https://github.com/halide/Halide/blob/master/src/CodeGen_PTX_Dev.cpp
+
 	auto timeLibrary_start = Utils::Chrono::Start("Generate external library 'libdevice'");
 	auto timeDummy_start = Utils::Chrono::Start("Dummy LLVM library");
 
@@ -78,6 +81,9 @@ std::string Generate(const std::string& compute)
 	{
 		Utils::Logger::LogError("Cannot parse libdevice file " + diagnostic.getFilename().str() + " : " + diagnostic.getMessage().str(), "LLVM Error");
 	}
+
+	// Fix missing properties
+	// https://github.com/pocl/pocl/blob/master/lib/CL/devices/cuda/pocl-ptx-gen.cc#L612
 
 	libModule->setTargetTriple(targetString);
 	libModule->setDataLayout(dataLayout);

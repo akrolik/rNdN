@@ -498,6 +498,8 @@ public:
 	template<unsigned int SORT_CACHE_SIZE>
 	void Generate(const std::vector<const HorseIR::Operand *>& arguments)
 	{
+		// Thanks to Jason, COMP 400 student
+
 		auto resources = this->m_builder.GetLocalResources();
 
 		const auto indexArgument = arguments.at(0);

@@ -56,6 +56,8 @@ public:
 
 		if (inputOptions.InOrderBlocks)
 		{
+			// https://people.maths.ox.ac.uk/gilesm/cuda/lecs/lec4.pdf
+
 			auto resources = this->m_builder.GetLocalResources();
 
 			// Initialize a global variable for counting the number of initialized blocks

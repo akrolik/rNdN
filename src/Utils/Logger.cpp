@@ -4,6 +4,7 @@
 #include <iomanip>
 
 #include "Utils/Options.h"
+#include "Utils/String.h"
 
 namespace Utils {
 
@@ -14,17 +15,6 @@ void Logger::LogSection(const std::string& name, bool separate)
 		std::cout << std::endl;
 	}
 	std::cout << name << std::endl;
-}
-
-static std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace)
-{
-	size_t pos = 0;
-	while ((pos = subject.find(search, pos)) != std::string::npos)
-	{
-		subject.replace(pos, search.length(), replace);
-		pos += replace.length();
-	}
-	return subject;
 }
 
 void Logger::LogInfo(const std::string& info, unsigned int indentation, bool newline, const std::string& prefix)
@@ -38,7 +28,7 @@ void Logger::LogInfo(const std::string& info, unsigned int indentation, bool new
 	{
 		_prefix += std::string(indentation * 2, ' ') + "- ";
 	}
-	std::cout << _prefix << ReplaceString(info, "\n", "\n" + _prefix);
+	std::cout << _prefix << Utils::String::ReplaceString(info, "\n", "\n" + _prefix);
 	if (newline)
 	{
 		std::cout << std::endl;
@@ -63,7 +53,7 @@ void Logger::LogErrorPart(const std::string& error, const std::string& prefix)
 	{
 		_prefix = "[" + prefix + "] ";
 	}
-	std::cerr << _prefix << ReplaceString(error, "\n", "\n" + _prefix) << std::endl;
+	std::cerr << _prefix << Utils::String::ReplaceString(error, "\n", "\n" + _prefix) << std::endl;
 }
 
 void Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)

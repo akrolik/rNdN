@@ -385,7 +385,7 @@ private:
 		auto global = resources->template AllocateTemporary<T>();
 		this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(global, address));
 
-		// Generate the reduction
+		// Generate the reduction (CUDA programming guide)
 
 		auto predicate = GenerateCASReductionOperation(reductionOp, global, value, returnIndex);
 
