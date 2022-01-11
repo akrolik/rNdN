@@ -112,19 +112,19 @@ std::uint8_t Compute61Profile::GetBarrierLatency(const SASS::Instruction *instru
 		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
 		{
-			return 200;
+			return 175;
 		}
 		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
 		{
-			return 30;
+			return 25;
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
-			return 32;
+			return 45;
 		}
 		case SASS::Instruction::InstructionClass::SpecialFunction:
 		{
-			return 16;
+			return 13;
 		}
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::Control:
@@ -184,12 +184,21 @@ std::uint8_t Compute61Profile::GetReadHold(const SASS::Instruction *instruction)
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		case SASS::Instruction::InstructionClass::SpecialFunction:
+		{
+			return 10; // Unbuffered reads
+		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
+		{
+			return 13; // Unbuffered reads
+		}
 		case SASS::Instruction::InstructionClass::GlobalMemoryStore:
+		{
+			return 15; // Unbuffered reads
+		}
 		case SASS::Instruction::InstructionClass::SharedMemoryLoad:
 		case SASS::Instruction::InstructionClass::SharedMemoryStore:
 		{
-			return 15; // Unbuffered reads
+			return 8; // Unbuffered reads
 		}
 	}
 	return 0;
@@ -200,6 +209,9 @@ std::uint8_t Compute61Profile::GetThroughputLatency(const SASS::Instruction *ins
 	switch (instruction->GetInstructionClass())
 	{
 		case SASS::Instruction::InstructionClass::S2R:
+		{
+			return 4;
+		}
 		case SASS::Instruction::InstructionClass::Control:
 		case SASS::Instruction::InstructionClass::Integer:
 		case SASS::Instruction::InstructionClass::SinglePrecision:
@@ -213,7 +225,7 @@ std::uint8_t Compute61Profile::GetThroughputLatency(const SASS::Instruction *ins
 		}
 		case SASS::Instruction::InstructionClass::DoublePrecision:
 		{
-			return 16;
+			return 32;
 		}
 		case SASS::Instruction::InstructionClass::SpecialFunction:
 		case SASS::Instruction::InstructionClass::GlobalMemoryLoad:
