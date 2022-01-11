@@ -526,7 +526,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 			auto instructionUnit = m_profile.GetFunctionalUnit(instruction);
 			auto instructionUnitIndex = HardwareProfile::FunctionalUnitIndex(instructionUnit);
 
-			auto unitAvailable = m_profile.GetThroughputLatency(instruction);
+			auto unitAvailable = time + m_profile.GetThroughputLatency(instruction);
 			unitTime[instructionUnitIndex] = unitAvailable;
 
 			// Register reuse cache
@@ -798,16 +798,8 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// Get time when the instruction dependencies are satisfied
 
 				auto availableTime = properties.GetAvailableTime();
-
-				// Check if the unit is busy with another (independent) instruction
-
 				auto availableUnit = m_profile.GetFunctionalUnit(availableInstruction);
 				auto availableUnitIndex = HardwareProfile::FunctionalUnitIndex(availableUnit);
-
-				if (auto unitAvailableTime = unitTime[availableUnitIndex]; availableTime < unitAvailableTime)
-				{
-					availableTime = unitAvailableTime;
-				}
 
 				// Compute the stall time
 
@@ -877,6 +869,15 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// Hint for instruction execution
 
 				auto barrierTime = properties.GetBarrierTime();
+
+				// Check if the unit is busy with another (independent) instruction
+
+				if (auto unitAvailableTime = unitTime[availableUnitIndex]; barrierTime < unitAvailableTime)
+				{
+					barrierTime = unitAvailableTime;
+				}
+
+				// Compute expected stall
 
 				std::int32_t barrierStall = barrierTime - time;
 				if (barrierStall < stall)
