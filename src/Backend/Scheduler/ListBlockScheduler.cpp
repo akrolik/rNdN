@@ -71,7 +71,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto maxDependency = 0;
 				auto dependencies = edge.GetDependencies();
 
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead ||
+					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate ||
+					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
 				{
 					if (barrierLatency > maxDependency)
 					{
@@ -80,27 +82,45 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					else
 					{
 						auto successor = edge.GetEndInstruction();
-						auto readLatency = m_profile.GetReadLatency(successor);
-
-						auto diff = (int)latency - (int)readLatency;
-						if (diff > maxDependency)
+						if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead ||
+							dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
 						{
-							maxDependency = diff;
+							auto readLatency = m_profile.GetReadLatency(successor);
+							if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
+							{
+								readLatency = 0;
+							}
+
+							auto diff = (int)latency - (int)readLatency;
+							if (diff > maxDependency)
+							{
+								maxDependency = diff;
+							}
 						}
-					}
-				}
-				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
-				{
-					if (latency > maxDependency)
-					{
-						maxDependency = latency;
-					}
-				}
-				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
-				{
-					if (1 > maxDependency)
-					{
-						maxDependency = 1;
+
+						if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
+						{
+							auto throughput = m_profile.GetThroughputLatency(instruction);
+							auto successorLatency = m_profile.GetLatency(successor);
+							auto successorThroughput = m_profile.GetThroughputLatency(successor);
+
+							auto length = latency - throughput;
+							auto successorLength = successorLatency - successorThroughput;
+							if (successorLength < 0)
+							{
+								successorLength = 0;
+							}
+
+							auto delay = 1;
+							if (length > successorLength)
+							{
+								delay = (length - successorLength) + 1;
+							}
+							if (delay > maxDependency)
+							{
+								maxDependency = delay;
+							}
+						}
 					}
 				}
 
@@ -618,7 +638,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				// Update the earliest time at which the instruction can be executed
 				//  - Write/Read (true): instruction latency - read latency
 				//  - Read/Write (anti): 1
-				//  - Write/Write: 1
+				//  - Write/Write: latency to maintain order
 				// For instructions which have a barrier, delay 2 cycles (+1 for barrier)
 
 				auto successor = edge.GetEndInstruction();
@@ -628,12 +648,14 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 				auto barrierDelay = 0u;
 
 				auto dependencies = edge.GetDependencies();
-				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
+				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead ||
+					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate ||
+					dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
 				{
+					// For both RAW/WAW, if the previous instruction sets a barrier, wait a minimum of 2 cycles.
+
 					if (auto barrierLatency = m_profile.GetBarrierLatency(instruction); barrierLatency > 0)
 					{
-						// If the previous instruction sets a barrier, minimum 2 cycle stall
-
 						auto latency = 2;
 						if (delay < latency)
 						{
@@ -647,55 +669,66 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					}
 					else
 					{
-						// If no barrier, wait the full instruction length
+						// For WAW, need to maintain ordering, for RAW, ensure the value is written
 
-						auto latency = m_profile.GetLatency(instruction);
-						auto readLatency = m_profile.GetReadLatency(successor);
-
-						auto diff = (int)latency - (int)readLatency;
-						if (delay < diff)
+						if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate ||
+							dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteRead)
 						{
-							delay = diff;
+							// If no barrier, wait the full instruction length
+
+							auto latency = m_profile.GetLatency(instruction);
+							auto readLatency = m_profile.GetReadLatency(successor);
+
+							// Predicate dependencies used for masking have no read latency
+
+							if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
+							{
+								readLatency = 0;
+							}
+
+							auto diff = (int)latency - (int)readLatency;
+							if (delay < diff)
+							{
+								delay = diff;
+							}
+						}
+
+						if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
+						{
+							// Must wait so that it completes one cycle after the current instruction
+
+							auto instructionLatency = m_profile.GetLatency(instruction);
+							auto instructionThroughput = m_profile.GetThroughputLatency(instruction);
+
+							auto successorLatency = m_profile.GetLatency(successor);
+							auto successorThroughput = m_profile.GetThroughputLatency(successor);
+
+							auto instructionLength = instructionLatency - instructionThroughput;
+							auto successorLength = successorLatency - successorThroughput;
+							if (successorLength < 0)
+							{
+								successorLength = 0;
+							}
+
+							auto writeDelay = 1;
+							if (instructionLength > successorLength)
+							{
+								writeDelay = (instructionLength - successorLength) + 1;
+							}
+							if (delay < writeDelay)
+							{
+								delay = writeDelay;
+							}
 						}
 					}
 				}
-				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteReadPredicate)
-				{
-					// Predicate dependencies used for masking have no read latency
 
-					auto latency = m_profile.GetLatency(instruction);
-					if (delay < latency)
-					{
-						delay = latency;
-					}
-				}
-				
-				// For both RAW/WAW, if the previous instruction sets a barrier, wait a minimum of 2 cycles.
-				// Otherwise, must wait until the next cycle before executing
-
-				else if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::WriteWrite)
-				{
-					if (auto barrierLatency = m_profile.GetBarrierLatency(instruction); barrierLatency > 0)
-					{
-						auto latency = 2;
-						if (delay < latency)
-						{
-							delay = latency;
-						}
-
-						if (barrierDelay < barrierLatency)
-						{
-							barrierDelay = barrierLatency;
-						}
-					}
-					else if (delay < 1)
-					{
-						delay = 1;
-					}
-				}
+				// WAR requires the previous value has already been read
 
 				if (dependencies & SASS::Analysis::BlockDependencyGraph::DependencyKind::ReadWrite)
 				{
+					// If the instruction sets a read barrier, delay 2 cycles to become active
+
 					if (auto barrierLatency = m_profile.GetReadHold(instruction); barrierLatency > 0)
 					{
 						auto latency = 2;
@@ -711,6 +744,9 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 					}
 					else if (delay < 1)
 					{
+						// Must wait until the next cycle before executing, we assume that the read latency
+						// is small enough on all instructions to be irrelevant
+
 						delay = 1;
 					}
 				}
@@ -775,7 +811,7 @@ void ListBlockScheduler::ScheduleBlock(SASS::BasicBlock *block)
 
 				// Compute the stall time
 
-				std::int32_t stall = availableTime - time;
+				std::int32_t stall = (int)availableTime - (int)time;
 
 				// Require minimum stall count for some instructions (control)
 
