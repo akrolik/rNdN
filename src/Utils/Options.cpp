@@ -8,11 +8,62 @@ void Options::Initialize(int argc, const char *argv[])
 {
 	auto& instance = GetInstance();
 	auto results = instance.m_options.parse(argc, argv);
+
+	auto groups = {
+		"",
+		"Optimization",
+		"Debug",
+		"Frontend",
+		"Backend",
+		"Backend Scheduler",
+		"Assembler",
+		"Algorithm",
+		"Data"
+	};
+
+	if (results.count(Opt_Debug_options))
+	{
+		Utils::Logger::LogSection("Debug Options", false);
+
+		const auto& arguments = results.arguments();
+		const auto& defaults = results.defaults();
+
+		std::unordered_map<std::string, std::string> argumentsMap;
+		for (const auto& argument : arguments)
+		{
+			argumentsMap.emplace(argument.key(), argument.value());
+		}
+		for (const auto& argument : defaults)
+		{
+			argumentsMap.emplace(argument.key(), argument.value() + " (default)");
+		}
+
+		for (const auto& group : groups)
+		{
+			Utils::Logger::LogInfo(group == "" ? "<Default>" : group);
+			for (const auto& option : instance.m_options.group_help(group).options)
+			{
+				const auto& name = option.l;
+				if (auto it = argumentsMap.find(name); it != argumentsMap.end())
+				{
+					Utils::Logger::LogInfo("  --" + name + " = " + it->second);
+				}
+				else
+				{
+					Utils::Logger::LogInfo("  --" + name + " = <empty> (default)");
+				}
+			}
+		}
+
+		Utils::Logger::LogBlank(Utils::Logger::NoPrefix);
+	}
+
 	if (results.count(Opt_Help) > 0)
 	{
 		Utils::Logger::LogInfo(instance.m_options.help({"", "Optimization", "Debug", "Frontend", "Backend", "Backend Scheduler", "Assembler", "Algorithm", "Data"}), 0, true, Utils::Logger::NoPrefix);
 		std::exit(EXIT_SUCCESS);
 	}
+
 	instance.m_results = results;
 }
 
@@ -67,6 +118,11 @@ bool Options::IsOptimize_PtxasExpensive()
 }
 
 // Debug
+
+bool Options::IsDebug_Options()
+{
+	return Get(Opt_Debug_options);
+}
 
 bool Options::IsDebug_Load()
 {
@@ -574,6 +630,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Optimize_ptxas_expensive, "ptxas expensive optimizations", cxxopts::value<bool>()->default_value("true"))
 	;
 	m_options.add_options("Debug")
+		(Opt_Debug_options, "Debug options print")
 		(Opt_Debug_load, "Debug data loading")
 		(Opt_Debug_print, "Print debug logs")
 		(Opt_Debug_time, "Print execution timings")

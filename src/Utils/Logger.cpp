@@ -99,7 +99,12 @@ void Logger::LogTiming(const Chrono::Timing *timing, unsigned int indentation)
 
 void Logger::LogBlank(const std::string& prefix)
 {
-	std::cout << prefix << std::endl;
+	std::string _prefix = "";
+	if (prefix != NoPrefix)
+	{
+		_prefix = "[" + prefix + "] ";
+	}
+	std::cout << _prefix << std::endl;
 }
 
 }

@@ -17,6 +17,7 @@ public:
 	static constexpr char const *Opt_Optimize_ptxas_level = "optimize-ptxas-level";
 	static constexpr char const *Opt_Optimize_ptxas_expensive = "optimize-ptxas-expensive";
 
+	static constexpr char const *Opt_Debug_options = "debug-options";
 	static constexpr char const *Opt_Debug_load = "debug-load";
 	static constexpr char const *Opt_Debug_print = "debug-print";
 	static constexpr char const *Opt_Debug_time = "debug-time";
@@ -106,6 +107,7 @@ public:
 		Nanoseconds
 	};
 
+	static bool IsDebug_Options();
 	static bool IsDebug_Load();
 	static bool IsDebug_Print();
 	static bool IsDebug_Time();
