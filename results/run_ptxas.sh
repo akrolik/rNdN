@@ -1,8 +1,8 @@
 #!/bin/bash
 
-make -C ../build
+make -j -C ../build
 
 for i in {1..22}
 do
-	./run_single.sh $i "--backend=ptxas"
+	./run_single.sh $i "ptxas" "--backend=ptxas"
 done
