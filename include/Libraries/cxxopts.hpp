@@ -51,9 +51,14 @@ THE SOFTWARE.
 #  include <regex>
 #endif  // CXXOPTS_NO_REGEX
 
-#ifdef __cpp_lib_optional
-#include <optional>
-#define CXXOPTS_HAS_OPTIONAL
+// Nonstandard before C++17, which is coincidentally what we also need for <optional>
+#ifdef __has_include
+#  if __has_include(<optional>)
+#    include <optional>
+#    ifdef __cpp_lib_optional
+#      define CXXOPTS_HAS_OPTIONAL
+#    endif
+#  endif
 #endif
 
 #if __cplusplus >= 201603L
@@ -69,6 +74,10 @@ THE SOFTWARE.
 #define CXXOPTS__VERSION_MAJOR 3
 #define CXXOPTS__VERSION_MINOR 0
 #define CXXOPTS__VERSION_PATCH 0
+
+#if (__GNUC__ < 10 || (__GNUC__ == 10 && __GNUC_MINOR__ < 1)) && __GNUC__ >= 6
+  #define CXXOPTS_NULL_DEREF_IGNORE
+#endif
 
 namespace cxxopts
 {
@@ -921,60 +930,12 @@ namespace cxxopts
       }
     }
 
-    inline
-    void
-    parse_value(const std::string& text, uint8_t& value)
+    template <typename T,
+             typename std::enable_if<std::is_integral<T>::value>::type* = nullptr
+             >
+    void parse_value(const std::string& text, T& value)
     {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, int8_t& value)
-    {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, uint16_t& value)
-    {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, int16_t& value)
-    {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, uint32_t& value)
-    {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, int32_t& value)
-    {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, uint64_t& value)
-    {
-      integer_parser(text, value);
-    }
-
-    inline
-    void
-    parse_value(const std::string& text, int64_t& value)
-    {
-      integer_parser(text, value);
+        integer_parser(text, value);
     }
 
     inline
@@ -1006,7 +967,9 @@ namespace cxxopts
     // The fallback parser. It uses the stringstream parser to parse all types
     // that have not been overloaded explicitly.  It has to be placed in the
     // source code before all other more specialized templates.
-    template <typename T>
+    template <typename T,
+             typename std::enable_if<!std::is_integral<T>::value>::type* = nullptr
+             >
     void
     parse_value(const std::string& text, T& value) {
       stringstream_parser(text, value);
@@ -1016,6 +979,12 @@ namespace cxxopts
     void
     parse_value(const std::string& text, std::vector<T>& value)
     {
+      if (text.empty()) {
+        T v;
+        parse_value(text, v);
+        value.emplace_back(std::move(v));
+        return;
+      }
       std::stringstream in(text);
       std::string token;
       while(!in.eof() && std::getline(in, token, CXXOPTS_VECTOR_DELIMITER)) {
@@ -1386,11 +1355,9 @@ namespace cxxopts
       m_long_name = &details->long_name();
     }
 
-#if defined(__GNUC__)
-#if __GNUC__ <= 10 && __GNUC_MINOR__ <= 1
+#if defined(CXXOPTS_NULL_DEREF_IGNORE)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Werror=null-dereference"
-#endif
+#pragma GCC diagnostic ignored "-Wnull-dereference"
 #endif
 
     CXXOPTS_NODISCARD
@@ -1399,11 +1366,9 @@ namespace cxxopts
     {
       return m_count;
     }
-    
-#if defined(__GNUC__)
-#if __GNUC__ <= 10 && __GNUC_MINOR__ <= 1
+
+#if defined(CXXOPTS_NULL_DEREF_IGNORE)
 #pragma GCC diagnostic pop
-#endif
 #endif
 
     // TODO: maybe default options should count towards the number of arguments
@@ -1492,20 +1457,94 @@ namespace cxxopts
   class ParseResult
   {
     public:
+    class Iterator
+    {
+      public:
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = KeyValue;
+      using difference_type = void;
+      using pointer = const KeyValue*;
+      using reference = const KeyValue&;
+
+      Iterator() = default;
+      Iterator(const Iterator&) = default;
+
+      Iterator(const ParseResult *pr, bool end=false)
+      : m_pr(pr)
+      , m_iter(end? pr->m_defaults.end(): pr->m_sequential.begin())
+      {
+      }
+
+      Iterator& operator++()
+      {
+        ++m_iter;
+        if(m_iter == m_pr->m_sequential.end())
+        {
+          m_iter = m_pr->m_defaults.begin();
+          return *this;
+        }
+        return *this;
+      }
+
+      Iterator operator++(int)
+      {
+        Iterator retval = *this;
+        ++(*this);
+        return retval;
+      }
+
+      bool operator==(const Iterator& other) const
+      {
+        return m_iter == other.m_iter;
+      }
+
+      bool operator!=(const Iterator& other) const
+      {
+        return !(*this == other);
+      }
+
+      const KeyValue& operator*()
+      {
+        return *m_iter;
+      }
+
+      const KeyValue* operator->()
+      {
+        return m_iter.operator->();
+      }
+
+      private:
+      const ParseResult* m_pr;
+      std::vector<KeyValue>::const_iterator m_iter;
+    };
 
     ParseResult() = default;
     ParseResult(const ParseResult&) = default;
 
-    ParseResult(NameHashMap&& keys, ParsedHashMap&& values, std::vector<KeyValue> sequential, std::vector<std::string>&& unmatched_args)
+    ParseResult(NameHashMap&& keys, ParsedHashMap&& values, std::vector<KeyValue> sequential, 
+            std::vector<KeyValue> default_opts, std::vector<std::string>&& unmatched_args)
     : m_keys(std::move(keys))
     , m_values(std::move(values))
     , m_sequential(std::move(sequential))
+    , m_defaults(std::move(default_opts))
     , m_unmatched(std::move(unmatched_args))
     {
     }
 
     ParseResult& operator=(ParseResult&&) = default;
     ParseResult& operator=(const ParseResult&) = default;
+
+    Iterator
+    begin() const
+    {
+      return Iterator(this);
+    }
+
+    Iterator
+    end() const
+    {
+      return Iterator(this, true);
+    }
 
     size_t
     count(const std::string& o) const
@@ -1558,10 +1597,32 @@ namespace cxxopts
       return m_unmatched;
     }
 
+    const std::vector<KeyValue>&
+    defaults() const
+    {
+      return m_defaults;
+    }
+
+    const std::string
+    arguments_string() const
+    {
+      std::string result;
+      for(const auto& kv: m_sequential)
+      {
+        result += kv.key() + " = " + kv.value() + "\n";
+      }
+      for(const auto& kv: m_defaults)
+      {
+        result += kv.key() + " = " + kv.value() + " " + "(default)" + "\n";
+      }
+      return result;
+    }
+
     private:
     NameHashMap m_keys{};
     ParsedHashMap m_values{};
     std::vector<KeyValue> m_sequential{};
+    std::vector<KeyValue> m_defaults{};
     std::vector<std::string> m_unmatched{};
   };
 
@@ -1642,6 +1703,7 @@ namespace cxxopts
     const PositionalList& m_positional;
 
     std::vector<KeyValue> m_sequential{};
+    std::vector<KeyValue> m_defaults{};
     bool m_allow_unrecognised;
 
     ParsedHashMap m_parsed{};
@@ -1831,7 +1893,7 @@ namespace cxxopts
 
   namespace
   {
-    constexpr size_t OPTION_LONGEST = 50;
+    constexpr size_t OPTION_LONGEST = 30;
     constexpr size_t OPTION_DESC_GAP = 2;
 
     String
@@ -2088,6 +2150,7 @@ OptionParser::parse_default(const std::shared_ptr<OptionDetails>& details)
   // TODO: remove the duplicate code here
   auto& store = m_parsed[details->hash()];
   store.parse_default(details);
+  m_defaults.emplace_back(details->long_name(), details->value().get_default_value());
 }
 
 inline
@@ -2278,6 +2341,7 @@ OptionParser::parse(int argc, const char* const* argv)
           {
             if (m_allow_unrecognised)
             {
+              unmatched.push_back(std::string("-") + s[i]);
               continue;
             }
             //error
@@ -2384,7 +2448,7 @@ OptionParser::parse(int argc, const char* const* argv)
 
   finalise_aliases();
 
-  ParseResult parsed(std::move(m_keys), std::move(m_parsed), std::move(m_sequential), std::move(unmatched));
+  ParseResult parsed(std::move(m_keys), std::move(m_parsed), std::move(m_sequential), std::move(m_defaults), std::move(unmatched));
   return parsed;
 }
 
