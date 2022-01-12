@@ -423,7 +423,7 @@ static const Shape *MergeShape(const Shape *shape1, const Shape *shape2)
 	return new WildcardShape(shape1, shape2);
 }
 
-static bool IsDynamicShape(const Shape *shape)
+static bool IsDynamicShape(const Shape *shape, bool structure = true)
 {
 	switch (shape->GetKind())
 	{
@@ -435,9 +435,12 @@ static bool IsDynamicShape(const Shape *shape)
 		case Shape::Kind::List:
 		{
 			auto listShape = GetShape<ListShape>(shape);
-			if (IsDynamicSize(listShape->GetListSize()))
+			if (structure)
 			{
-				return true;
+				if (IsDynamicSize(listShape->GetListSize()))
+				{
+					return true;
+				}
 			}
 
 			for (auto elementShape : listShape->GetElementShapes())

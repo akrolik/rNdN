@@ -10,9 +10,9 @@ class RuntimeUtils
 public:
 	static bool IsDynamicReturnShape(const HorseIR::Analysis::Shape *dataShape, const HorseIR::Analysis::Shape *writeShape, const HorseIR::Analysis::Shape *threadGeometry)
 	{
-		// Statically defined output shapes
+		// Statically defined output shapes. For lists, allow the number of cells to be dynamic
 
-		if (!HorseIR::Analysis::ShapeUtils::IsDynamicShape(dataShape))
+		if (!HorseIR::Analysis::ShapeUtils::IsDynamicShape(dataShape, false))
 		{
 			return false;
 		}
