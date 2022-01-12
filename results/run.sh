@@ -4,5 +4,5 @@ make -C ../build
 
 for i in {1..22}
 do
-	./run_single.sh $i
+	./run_single.sh $i ""
 done
