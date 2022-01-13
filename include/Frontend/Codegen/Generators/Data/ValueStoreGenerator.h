@@ -465,8 +465,6 @@ private:
 
 		auto value = GenerateWriteValue<T>(operand, OperandGenerator<B, T>::LoadKind::Vector);
 
-		// Ensure the write is within bounds
-
 		auto writeIndex = resources->template GetIndexedRegister<T>(value);
 		if (writeIndex == nullptr)
 		{
@@ -476,23 +474,44 @@ private:
 			writeIndex = indexGenerator.GenerateIndex(indexKind);
 		}
 
-		DataSizeGenerator<B> sizeGenerator(this->m_builder);
-		auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
+		// Ensure the write is within bounds
 
-		this->m_builder.AddIfStatement("RET_" + std::to_string(returnIndex), [&]()
+		this->m_builder.AddIfStatement("RET_DATA_" + std::to_string(returnIndex), [&]()
 		{
-			auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+			DataSizeGenerator<B> sizeGenerator(this->m_builder);
+			auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
+
+			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				sizePredicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+				predicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
 			));
-			return std::make_tuple(sizePredicate, false);
+
+			return std::make_tuple(predicate, false);
 		},
 		[&]()
 		{
-			// Store the value into global space
+			this->m_builder.AddIfStatement("RET_GEO_" + std::to_string(returnIndex), [&]()
+			{
+				DataIndexGenerator<B> indexGenerator(this->m_builder);
+				auto index = indexGenerator.GenerateDataIndex();
 
-			auto address = GenerateAddress<T>(returnIndex, writeIndex);
-			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+				ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+				auto geometry = geometryGenerator.GenerateDataGeometry();
+
+				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					predicate, index, geometry, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+				));
+
+				return std::make_tuple(predicate, false);
+			},
+			[&]()
+			{
+				// Store the value into global space
+
+				auto address = GenerateAddress<T>(returnIndex, writeIndex);
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
+			});
 		});
 	}
 
