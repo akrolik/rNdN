@@ -4,7 +4,7 @@ DATA_PATH="/mnt/local/alex/data/tpc-h/"
 OUTPUT_PATH="q${1}_${2}.log"
 OPTIONS="$3"
 
-../build/bin/r3d3 $OPTIONS --debug-time --debug-options --data-load-tpch="$DATA_PATH" "../tests/tpch/q${1}.hir" | tee "$OUTPUT_PATH"
+../build/bin/rNdN $OPTIONS --debug-time --debug-options --data-load-tpch="$DATA_PATH" "../tests/tpch/q${1}.hir" | tee "$OUTPUT_PATH"
 
 RESULT=$(cat "$OUTPUT_PATH" | grep -v "\[" | grep -v "^Debug" | grep -v "^Loading" | grep -v "^Execut" | grep -v "^Init" | grep -v "^Parsing"| grep -v "^\$")
 EXPECTED=$(cat "expected/q${1}.log")

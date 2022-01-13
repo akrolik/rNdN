@@ -7,5 +7,5 @@ do
 	echo "Query $i"
 	echo "===================================="
 
-	./run_single.sh $i "r3d3" ""
+	./run_single.sh $i "rNdN" ""
 done
