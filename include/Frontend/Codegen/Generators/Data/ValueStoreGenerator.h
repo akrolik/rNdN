@@ -131,7 +131,9 @@ private:
 					}
 					else if (*vectorGeometry == *vectorShape)
 					{
-						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
+
+						auto geometryBounds = (*inputOptions.ReturnShapes.at(returnIndex) != *vectorShape);
+						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex, geometryBounds);
 						return;
 					}
 					else if (HorseIR::Analysis::ShapeUtils::IsSize<HorseIR::Analysis::Shape::CompressedSize>(vectorShape->GetSize()))
@@ -154,7 +156,8 @@ private:
 
 					if (*vectorGeometry == *cellVector)
 					{
-						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex);
+						auto geometryBounds = (*inputOptions.ReturnShapes.at(returnIndex) != *listShape);
+						GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::VectorData, returnIndex, geometryBounds);
 						return;
 					}
 					else if (HorseIR::Analysis::ShapeUtils::IsDynamicShape(cellVector))
@@ -206,7 +209,8 @@ private:
 						}
 						else if (*listShape == *listGeometry) // Compare the entire geometry, as the cells may differ
 						{
-							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex);
+							auto geometryBounds = (*inputOptions.ReturnShapes.at(returnIndex) != *listShape);
+							GenerateWriteVector<T>(operand, DataIndexGenerator<B>::Kind::ListData, returnIndex, geometryBounds);
 							return;
 						}
 						else if (HorseIR::Analysis::ShapeUtils::IsSize<HorseIR::Analysis::Shape::CompressedSize>(cellVector->GetSize()))
@@ -457,7 +461,7 @@ private:
 	}
 
 	template<class T>
-	void GenerateWriteVector(const HorseIR::Operand *operand, typename DataIndexGenerator<B>::Kind indexKind, unsigned int returnIndex)
+	void GenerateWriteVector(const HorseIR::Operand *operand, typename DataIndexGenerator<B>::Kind indexKind, unsigned int returnIndex, bool geometryBounds = false)
 	{
 		auto resources = this->m_builder.GetLocalResources();
 
@@ -476,42 +480,42 @@ private:
 
 		// Ensure the write is within bounds
 
-		this->m_builder.AddIfStatement("RET_DATA_" + std::to_string(returnIndex), [&]()
+		this->m_builder.AddIfStatement("RET_" + std::to_string(returnIndex), [&]()
 		{
-			DataSizeGenerator<B> sizeGenerator(this->m_builder);
-			auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
-
 			auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-			this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-				predicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
-			));
-
-			return std::make_tuple(predicate, false);
-		},
-		[&]()
-		{
-			this->m_builder.AddIfStatement("RET_GEO_" + std::to_string(returnIndex), [&]()
+			if (geometryBounds)
 			{
+				// For some indexed writes (when the write size differs from the actual size) we can use the geometry
+
 				DataIndexGenerator<B> indexGenerator(this->m_builder);
 				auto index = indexGenerator.GenerateDataIndex();
 
 				ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
 				auto geometry = geometryGenerator.GenerateDataGeometry();
 
-				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
 					predicate, index, geometry, PTX::UInt32Type::ComparisonOperator::GreaterEqual
 				));
-
-				return std::make_tuple(predicate, false);
-			},
-			[&]()
+			}
+			else
 			{
-				// Store the value into global space
+				// For typical vector kernels, the write shape is the same as the geometry
 
-				auto address = GenerateAddress<T>(returnIndex, writeIndex);
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
-			});
+				DataSizeGenerator<B> sizeGenerator(this->m_builder);
+				auto size = sizeGenerator.GenerateSize(returnIndex, m_cellIndex);
+
+				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+					predicate, writeIndex, size, PTX::UInt32Type::ComparisonOperator::GreaterEqual
+				));
+			}
+			return std::make_tuple(predicate, false);
+		},
+		[&]()
+		{
+			// Store the value into global space
+
+			auto address = GenerateAddress<T>(returnIndex, writeIndex);
+			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::GlobalSpace>(address, value));
 		});
 	}
 
