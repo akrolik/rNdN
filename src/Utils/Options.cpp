@@ -623,7 +623,7 @@ Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for Ho
 			cxxopts::value<std::string>()->default_value("full")
 		)
 		(Opt_Optimize_ptx, "PTX optimizer")
-		(Opt_Optimize_sass, "SASS optimizer")
+		(Opt_Optimize_sass, "SASS optimizer", cxxopts::value<bool>()->default_value("true"))
 		(Opt_Optimize_ptxas_level, "ptxas optimization level (0-4)",
 			cxxopts::value<unsigned int>()->default_value("4")
 		)
