@@ -609,7 +609,7 @@ const T& Options::Get(const std::string& name)
 
 // Initialization
 
-Options::Options() : m_options("r3d3", "Optimizing JIT compiler/assembler for HorseIR targetting NVIDIA GPUs")
+Options::Options() : m_options("rNdN", "Optimizing JIT compiler/assembler for HorseIR targetting NVIDIA GPUs")
 {
 	m_options.add_options()
 		("h,help", "Display this help menu")

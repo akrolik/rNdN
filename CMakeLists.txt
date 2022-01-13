@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
-project(r3d3)
+project(rNdN)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,11 +41,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_library(r3d3_common STATIC ${SOURCES})
-add_executable(r3d3 ${CMAKE_SOURCE_DIR}/Main.cpp ${BISON_HorseIRParser_OUTPUTS} ${FLEX_HorseIRScanner_OUTPUTS})
+add_library(rNdN_common STATIC ${SOURCES})
+add_executable(rNdN ${CMAKE_SOURCE_DIR}/Main.cpp ${BISON_HorseIRParser_OUTPUTS} ${FLEX_HorseIRScanner_OUTPUTS})
 add_executable(test_sass ${CMAKE_SOURCE_DIR}/TestSASS.cpp)
 add_executable(test_scheduler ${CMAKE_SOURCE_DIR}/TestScheduler.cpp)
 
-target_link_libraries(r3d3 r3d3_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
-target_link_libraries(test_sass r3d3_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
-target_link_libraries(test_scheduler r3d3_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
+target_link_libraries(rNdN rNdN_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
+target_link_libraries(test_sass rNdN_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)
+target_link_libraries(test_scheduler rNdN_common cuda ${CUDA_LIBRARIES} libnvptxcompiler_static.a libnvvm.so LLVM LLVMCore LLVMBitWriter LLVMIRReader LLVMPasses libpcre2-8.so)

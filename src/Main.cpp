@@ -41,7 +41,7 @@ int main(int argc, const char *argv[])
 
 	if (!Utils::Options::HasInputFile())
 	{
-		Utils::Logger::LogError("Missing filename (./r3d3 [options] filename), see --help");
+		Utils::Logger::LogError("Missing filename (./rNdN [options] filename), see --help");
 	}
 	auto filename = Utils::Options::GetInputFile();
 
