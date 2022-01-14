@@ -379,12 +379,6 @@ bool Options::IsBackendSchedule_CBarrier()
 	return Get(Opt_Backend_scheduler_cbarrier);
 }
 
-Options::BackendScheduleHeuristic Options::GetBackendSchedule_Heuristic()
-{
-	// Opt_Backend_scheduler_function
-	return BackendScheduleHeuristic::Default;
-}
-
 // Assembler
 
 bool Options::IsAssembler_LinkExternal()
@@ -708,7 +702,6 @@ Options::Options() : m_options("rNdN", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Backend_scheduler_dual, "Dual issue instructions", cxxopts::value<bool>()->default_value("false"))
 		(Opt_Backend_scheduler_reuse, "Register reuse flags", cxxopts::value<bool>()->default_value("false"))
 		(Opt_Backend_scheduler_cbarrier, "Data dependence counting barriers", cxxopts::value<bool>()->default_value("true"))
-		(Opt_Backend_scheduler_function, "Schedule heuristic function")
 	;
 	m_options.add_options("Assembler")
 		(Opt_Assembler_link_external, "Link external libraries (libdevice)")

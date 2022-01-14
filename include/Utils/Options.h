@@ -168,12 +168,6 @@ public:
 	static bool IsBackendSchedule_Reuse();
 	static bool IsBackendSchedule_CBarrier();
 
-	enum class BackendScheduleHeuristic {
-		Default
-	};
-
-	static BackendScheduleHeuristic GetBackendSchedule_Heuristic();
-
 	// Assembler
 
 	static bool IsAssembler_LinkExternal();
