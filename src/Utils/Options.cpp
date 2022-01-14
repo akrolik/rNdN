@@ -486,9 +486,9 @@ Options::LikeKind Options::GetAlgorithm_LikeKind()
 	{
 		return LikeKind::PCRELike;
 	}
-	else if (likeMode == "internal")
+	else if (likeMode == "cpu")
 	{
-		return LikeKind::InternalLike;
+		return LikeKind::CPULike;
 	}
 	else if (likeMode == "gpu")
 	{
@@ -740,7 +740,7 @@ Options::Options() : m_options("rNdN", "Optimizing JIT compiler/assembler for Ho
 		(Opt_Algo_hash_size, "Hash table size [data * 2^n]", cxxopts::value<unsigned int>()->default_value("1"))
 		(Opt_Algo_like, "Like mode\n"
 			"   - pcre         jpcre2 regex library\n"
-			"   - internal     Internal LIKE implementation\n"
+			"   - cpu          CPU LIKE implementation\n"
 			"   - gpu          GPU LIKE implementation\n"
 			"   - gpucache     GPU LIKE (cached data) implementation",
 			cxxopts::value<std::string>()->default_value("gpucache")

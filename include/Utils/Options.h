@@ -208,7 +208,7 @@ public:
 
 	enum class LikeKind {
 		PCRELike,
-		InternalLike,
+		CPULike,
 		GPULike,
 		GPULikeCache
 	};
