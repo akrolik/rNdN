@@ -43,56 +43,69 @@ bool String::Like(const std::string& needle, const std::string& pattern)
 	auto needleData = needle.c_str();
 	auto patternData = pattern.c_str();
 
-	return Like_Internal(needleData, patternData, needleSize, patternSize, 0, 0);
+	return Like(needleData, patternData);
 }
 
-bool String::Like_Internal(const char *needleData, const char *patternData, size_t needleSize, size_t patternSize, unsigned int i, unsigned int j)
+bool String::Like(const char *needleData, const char *patternData)
 {
 	// Inspired by: https://www.codeproject.com/Tips/608266/A-Csharp-LIKE-implementation-that-mimics-SQL-LIKE
 
-	for (;i < patternSize; ++i)
+	while (true)
 	{
-		auto pc = patternData[i];
-		if (pc == '\\' || pc == '_' || pc == '[')
+		auto pc = *patternData;
+		if (pc == '\0')
+		{
+			break;
+		}
+		else if (pc == '\\' || pc == '_' || pc == '[')
 		{
 			Utils::Logger::LogError("Unsupport pattern character '" + std::string(pc, 1) + "'");
 		}
 		else if (pc == '%')
 		{
-			if (i + 1 == patternSize)
+			auto pc1 = *(patternData + 1);
+			if (pc1 == '\0')
 			{
 				return true;
 			}
 
-			while (j < needleSize)
+			while (true)
 			{
-				if (needleData[j] == patternData[i + 1])
+				auto nc = *needleData;
+				if (nc == '\0')
 				{
-					if (String::Like_Internal(needleData, patternData, needleSize, patternSize, i + 2, j + 1))
+					return false;
+				}
+				else if (nc == pc1)
+				{
+					if (Like(needleData + 1, patternData + 2))
 					{
 						return true;
 					}
 				}
-				++j;
+				++needleData;
 			}
-
-			return false;
-		}
-		else if (j >= needleSize)
-		{
-			return false;
-		}
-		else if (needleData[j] == patternData[i])
-		{
-			++j;
 		}
 		else
 		{
-			return false;
+			auto pj = *needleData;
+			if (pj == '\0')
+			{
+				return false;
+			}
+			else if (pj == pc)
+			{
+				++needleData;
+			}
+			else
+			{
+				return false;
+			}
 		}
+		++patternData;
 	}
 
-	return (j == needleSize);
+	return (*needleData == '\0');
 }
 
 }
