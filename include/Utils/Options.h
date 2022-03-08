@@ -69,6 +69,7 @@ public:
 	static constexpr char const *Opt_Algo_member = "algo-member";
 
 	static constexpr char const *Opt_Data_load_tpch = "data-load-tpch";
+	static constexpr char const *Opt_Data_scale_tpch = "data-scale-tpch";
 	static constexpr char const *Opt_Data_resize = "data-resize";
 	static constexpr char const *Opt_Data_allocator = "data-allocator";
 	static constexpr char const *Opt_Data_page_size = "data-page-size";
@@ -230,6 +231,7 @@ public:
 
 	static bool IsData_LoadTPCH();
 	static const std::string& GetData_PathTPCH();
+	static unsigned int GetData_ScaleTPCH();
 
 	static float GetData_Resize();
 

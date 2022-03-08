@@ -14,7 +14,7 @@ Progress Progress::Start(const std::string& name, bool print)
 	return p;
 }
 
-void Progress::Update(unsigned int complete, unsigned int total)
+void Progress::Update(unsigned int complete, unsigned int total, bool approx)
 {
 	if (complete % 100 == 0 || complete == total)
 	{
@@ -37,7 +37,12 @@ void Progress::Update(unsigned int complete, unsigned int total)
 			std::cout << "] ";
 			if (total > 0)
 			{
-				std::cout << complete << "/" << total << " ";
+				std::cout << complete << "/";
+				if (approx)
+				{
+					std::cout << "~";
+				}
+				std::cout << total << " ";
 			}
 			std::cout << std::fixed << std::setprecision(1) << "(" << progress * 100 << " %)\r" << std::flush;
 		}

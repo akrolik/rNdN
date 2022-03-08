@@ -9,7 +9,7 @@ public:
 
 	// Status
 
-	void Update(unsigned int complete, unsigned int total);
+	void Update(unsigned int complete, unsigned int total, bool approx = false);
 	void Complete();
 
 	// Width

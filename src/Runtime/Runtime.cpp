@@ -30,9 +30,11 @@ void Runtime::LoadData()
 
 	if (Utils::Options::IsData_LoadTPCH())
 	{
-		// TPC-H data for benchmarking
+		// TPC-H data for benchmarking, scale factor for vector sizes
 
-		m_dataRegistry.LoadTPCHData();
+		auto scale = Utils::Options::GetData_ScaleTPCH();
+
+		m_dataRegistry.LoadTPCHData(scale);
 	}
 
 	auto timeDummy_start = Utils::Chrono::Start("CUDA dummy initialization");

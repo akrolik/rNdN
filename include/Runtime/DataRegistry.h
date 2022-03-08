@@ -22,7 +22,7 @@ public:
 	static void LoadStringDebugData(std::vector<std::pair<std::string, ColumnBuffer *>>& columns, unsigned long size);
 
 	void LoadDebugData();
-	void LoadTPCHData();
+	void LoadTPCHData(unsigned int scale = 1);
 
 	void AddTable(const std::string& db, const std::string& name, TableBuffer *table);
 	TableBuffer *GetTable(const std::string& name) const;
@@ -35,12 +35,12 @@ private:
 
 	void LoadTPCHNationTable();
 	void LoadTPCHRegionTable();
-	void LoadTPCHPartTable();
-	void LoadTPCHSupplierTable();
-	void LoadTPCHPartSupplierTable();
-	void LoadTPCHCustomerTable();
-	void LoadTPCHOrderTable();
-	void LoadTPCHLineItemTable();
+	void LoadTPCHPartTable(unsigned int scale);
+	void LoadTPCHSupplierTable(unsigned int scale);
+	void LoadTPCHPartSupplierTable(unsigned int scale);
+	void LoadTPCHCustomerTable(unsigned int scale);
+	void LoadTPCHOrderTable(unsigned int scale);
+	void LoadTPCHLineItemTable(unsigned int scale);
 
 	robin_hood::unordered_map<std::string, TableBuffer *> m_registry;
 };

@@ -535,6 +535,11 @@ const std::string& Options::GetData_PathTPCH()
 	return Get<std::string>(Opt_Data_load_tpch); 
 }
 
+unsigned int Options::GetData_ScaleTPCH()
+{
+	return Get<unsigned int>(Opt_Data_scale_tpch); 
+}
+
 float Options::GetData_Resize()
 {
 	return Get<float>(Opt_Data_resize);
@@ -753,6 +758,7 @@ Options::Options() : m_options("rNdN", "Optimizing JIT compiler/assembler for Ho
 	;
 	m_options.add_options("Data")
 		(Opt_Data_load_tpch, "Load TPC-H data path", cxxopts::value<std::string>())
+		(Opt_Data_scale_tpch, "TPC-H data scale", cxxopts::value<unsigned int>()->default_value("1"))
 		(Opt_Data_allocator, "GPU allocator algorithm\n"
 			"   - cuda     Default CUDA allocation scheme\n"
 			"   - linear   Pre-allocated data pages",

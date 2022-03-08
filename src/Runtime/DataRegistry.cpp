@@ -147,20 +147,20 @@ void DataRegistry::LoadDebugData()
 	Utils::Chrono::End(timeData_start);
 }
 
-void DataRegistry::LoadTPCHData()
+void DataRegistry::LoadTPCHData(unsigned int scale)
 {
-	Utils::Logger::LogSection("Loading TPC-H data");
+	Utils::Logger::LogSection("Loading TPC-H data (scale = " + std::to_string(scale) + ")");
 
-	auto timeData_start = Utils::Chrono::Start("Load TPC-H data");
+	auto timeData_start = Utils::Chrono::Start("Load TPC-H data (scale = " + std::to_string(scale) + ")");
 
 	LoadTPCHRegionTable();
 	LoadTPCHNationTable();
-	LoadTPCHSupplierTable();
-	LoadTPCHPartTable();
-	LoadTPCHPartSupplierTable();
-	LoadTPCHCustomerTable();
-	LoadTPCHOrderTable();
-	LoadTPCHLineItemTable();
+	LoadTPCHSupplierTable(scale);
+	LoadTPCHPartTable(scale);
+	LoadTPCHPartSupplierTable(scale);
+	LoadTPCHCustomerTable(scale);
+	LoadTPCHOrderTable(scale);
+	LoadTPCHLineItemTable(scale);
 
 	Utils::Chrono::End(timeData_start);
 }
@@ -282,7 +282,7 @@ void DataRegistry::LoadTPCHRegionTable()
 	AddTable("tpch", "region", table);
 }
 
-void DataRegistry::LoadTPCHPartTable()
+void DataRegistry::LoadTPCHPartTable(unsigned int scale)
 {
 	// CREATE TABLE PART (
 	//     P_PARTKEY     INTEGER NOT NULL,
@@ -295,7 +295,7 @@ void DataRegistry::LoadTPCHPartTable()
 	//     P_RETAILPRICE DECIMAL(15,2) NOT NULL,
 	//     P_COMMENT     VARCHAR(23) NOT NULL
 	// );
-	auto _size = 200000u;
+	auto _size = 200000u * scale;
 
 	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
@@ -354,7 +354,7 @@ void DataRegistry::LoadTPCHPartTable()
 	AddTable("tpch", "part", table);
 }
 
-void DataRegistry::LoadTPCHSupplierTable()
+void DataRegistry::LoadTPCHSupplierTable(unsigned int scale)
 {
 	// CREATE TABLE SUPPLIER (
 	//     S_SUPPKEY     INTEGER NOT NULL,
@@ -365,7 +365,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	//     S_ACCTBAL     DECIMAL(15,2) NOT NULL,
 	//     S_COMMENT     VARCHAR(101) NOT NULL
 	// );
-	auto size = 10000u;
+	auto size = 10000u * scale;
 
 	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
@@ -427,7 +427,7 @@ void DataRegistry::LoadTPCHSupplierTable()
 	AddTable("tpch", "supplier", table);
 }
 
-void DataRegistry::LoadTPCHPartSupplierTable()
+void DataRegistry::LoadTPCHPartSupplierTable(unsigned int scale)
 {
 	// CREATE TABLE PARTSUPP (
 	//     PS_PARTKEY     INTEGER NOT NULL,
@@ -436,7 +436,7 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	//     PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
 	//     PS_COMMENT     VARCHAR(199) NOT NULL
 	// );
-	auto size = 800000u;
+	auto size = 800000u * scale;
 
 	//TODO: Primary key
 	CUDA::Vector<std::int32_t> partVal(size); // FKey[part] value, PKey
@@ -500,7 +500,7 @@ void DataRegistry::LoadTPCHPartSupplierTable()
 	AddTable("tpch", "partsupp", new TableBuffer(columns));
 }
 
-void DataRegistry::LoadTPCHCustomerTable()
+void DataRegistry::LoadTPCHCustomerTable(unsigned int scale)
 {
 	// CREATE TABLE CUSTOMER (
 	//     C_CUSTKEY     INTEGER NOT NULL,
@@ -512,7 +512,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	//     C_MKTSEGMENT  CHAR(10) NOT NULL,
 	//     C_COMMENT     VARCHAR(117) NOT NULL
 	// );
-	auto size = 150000u;
+	auto size = 150000u * scale;
 
 	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
@@ -577,7 +577,7 @@ void DataRegistry::LoadTPCHCustomerTable()
 	AddTable("tpch", "customer", table);
 }
 
-void DataRegistry::LoadTPCHOrderTable()
+void DataRegistry::LoadTPCHOrderTable(unsigned int scale)
 {
 	// CREATE TABLE ORDERS (
 	//     O_ORDERKEY       INTEGER NOT NULL,
@@ -590,7 +590,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	//     O_SHIPPRIORITY   INTEGER NOT NULL,
 	//     O_COMMENT        VARCHAR(79) NOT NULL
 	// );
-	auto size = 1500000u;
+	auto size = 1500000u * scale;
 
 	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryMap;
 
@@ -658,7 +658,7 @@ void DataRegistry::LoadTPCHOrderTable()
 	AddTable("tpch", "orders", table);
 }
 
-void DataRegistry::LoadTPCHLineItemTable()
+void DataRegistry::LoadTPCHLineItemTable(unsigned int scale)
 {
 	// CREATE TABLE LINEITEM (
 	//     L_ORDERKEY        INTEGER NOT NULL,
@@ -678,7 +678,7 @@ void DataRegistry::LoadTPCHLineItemTable()
 	//     L_SHIPMODE        CHAR(10) NOT NULL,
 	//     L_COMMENT         VARCHAR(44) NOT NULL
 	// );
-	auto size = 6001215u;
+	auto size = 6001215u * scale;
 
 	robin_hood::unordered_map<std::int32_t, std::int64_t> primaryKey;
 
@@ -746,9 +746,42 @@ void DataRegistry::LoadTPCHLineItemTable()
 		comment[count] = StringBucket::HashString(l_comment);
 
 		count++;
-		progress.Update(count, size);
+		progress.Update(count, size, scale != 1);
 	}
+	progress.Update(count, count);
 	progress.Complete();
+
+	if (count > size)
+	{
+		Utils::Logger::LogError("TPC-H line item table exceeded allocated size [" + std::to_string(count) + " > " + std::to_string(size) + "]");
+	}
+
+	// Size is only an approximation for each scale factor
+
+	orderVal.resize(count);
+	orderKey.resize(count);
+
+	partVal.resize(count);
+	suppVal.resize(count);
+	lineNumber.resize(count);
+
+	quantity.resize(count);
+	extPrice.resize(count);
+	discount.resize(count);
+	tax.resize(count);
+
+	returnFlag.resize(count);
+	lineStatus.resize(count);
+
+	shipDate.resize(count);
+	commitDate.resize(count);
+	receiptDate.resize(count);
+
+	shipInstruct.resize(count);
+	shipMode.resize(count);
+	comment.resize(count);
+
+	// Setup table
 
 	std::vector<std::pair<std::string, ColumnBuffer *>> columns;
 
