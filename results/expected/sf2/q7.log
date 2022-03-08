@@ -1,0 +1,6 @@
+supp_nation         cust_nation         l_year              revenue             
+--------------------------------------------------------------------------------
+FRANCE              GERMANY             1995                105539285.812200    
+FRANCE              GERMANY             1996                103723316.323300    
+GERMANY             FRANCE              1995                109323017.822600    
+GERMANY             FRANCE              1996                104083198.383000    
