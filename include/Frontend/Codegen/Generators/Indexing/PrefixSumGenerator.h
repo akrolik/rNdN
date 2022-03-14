@@ -33,23 +33,7 @@ public:
 	template<class S>
 	PTX::Register<T> *Generate(PTX::TypedOperand<S> *value, PrefixSumMode mode, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
-		// Allocate global variable for the prefix sum
-
-		auto moduleResources = this->m_builder.GetGlobalResources();
-		auto g_size = moduleResources->template AllocateGlobalVariable<T>(this->m_builder.UniqueIdentifier("size"));
-
-		AddressGenerator<B, T> addressGenerator(this->m_builder);
-		auto sizeAddress = addressGenerator.GenerateAddress(g_size);
-
-		// Compute prefix sum, NVIDIA CUDA algorithm
-
-		return Generate(sizeAddress, value, mode, predicate);
-	}
-
-	template<class S>
-	PTX::Register<T> *Generate(PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, PTX::TypedOperand<S> *value, PrefixSumMode mode, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
-	{
-		auto [inclusive, exclusive] = Generate(g_prefixSumAddress, value, predicate);
+		auto [inclusive, exclusive] = Generate(value, predicate);
 		if (mode == PrefixSumMode::Exclusive)
 		{
 			return exclusive;
@@ -58,7 +42,7 @@ public:
 	}
 
 	template<class S>
-	std::pair<PTX::Register<T> *, PTX::Register<T> *> Generate(PTX::Address<B, T, PTX::GlobalSpace> *g_prefixSumAddress, PTX::TypedOperand<S> *value, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
+	std::pair<PTX::Register<T> *, PTX::Register<T> *> Generate(PTX::TypedOperand<S> *value, PTX::TypedOperand<PTX::PredicateType> *predicate = nullptr)
 	{
 		// A global prefix sum is computed in 4 stages:
 		//
@@ -237,8 +221,8 @@ public:
 			{
 				// Get the current static
 
-				this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::Bit64Type, PTX::GlobalSpace>(
-					blockStatus, g_blockStatusAddress
+				this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::Bit64Type, PTX::GlobalSpace>(
+					blockStatus, g_blockStatusAddress, new PTX::Bit64Value(0), PTX::Bit64Type::AtomicOperation::Or
 				));
 
 				// Extract number of blocks
@@ -296,10 +280,6 @@ public:
 
 				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Bit64Type>(value, new PTX::Bit64Value(0)));
 				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Bit64Type, PTX::GlobalSpace>(g_blockStatusAddress, value));
-
-				// Store count in the size variable
-
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_prefixSumAddress, blockPrefixSum));
 			},
 			[&]()
 			{

@@ -547,44 +547,44 @@ private:
 					AddressGenerator<B, PTX::UInt32Type> addressGenerator(this->m_builder);
 					auto sizeAddress = addressGenerator.GenerateAddress(sizeParameter);
 
-					if (m_prefixSums.find(predicate) != m_prefixSums.end())
-					{
-						writeIndex = m_prefixSums.at(predicate);
-
-						this->m_builder.AddIfStatement("COPY_" + std::to_string(returnIndex), [&]()
-						{
-							auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
-							auto lastIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
-
-							ThreadIndexGenerator<B> indexGenerator(this->m_builder);
-							auto index = indexGenerator.GenerateGlobalIndex();
-
-							ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
-							auto size = geometryGenerator.GenerateGlobalSize();
-
-							this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(lastIndex, size, new PTX::UInt32Value(1)));
-							this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-								sizePredicate, index, lastIndex, PTX::UInt32Type::ComparisonOperator::Equal
-							));
-
-							return std::make_pair(sizePredicate, true);
-						},
-						[&]()
-						{
-							auto size = m_prefixSizes.at(predicate);
-							this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(sizeAddress, size));
-						});
-					}
-					else
+					if (m_prefixSums.find(predicate) == m_prefixSums.end())
 					{
 						PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
-						auto [inclusive, exclusive] = prefixSumGenerator.template Generate<PTX::PredicateType>(sizeAddress, predicate);
+						auto [inclusive, exclusive] = prefixSumGenerator.template Generate<PTX::PredicateType>(predicate);
 
 						writeIndex = exclusive;
 
 						m_prefixSizes[predicate] = inclusive;
-						m_prefixSums[predicate] = writeIndex;
+						m_prefixSums[predicate] = exclusive;
 					}
+					else
+					{
+						writeIndex = m_prefixSums.at(predicate);
+					}
+
+					this->m_builder.AddIfStatement("COPY_" + std::to_string(returnIndex), [&]()
+					{
+						auto sizePredicate = resources->template AllocateTemporary<PTX::PredicateType>();
+						auto lastIndex = resources->template AllocateTemporary<PTX::UInt32Type>();
+
+						ThreadIndexGenerator<B> indexGenerator(this->m_builder);
+						auto index = indexGenerator.GenerateGlobalIndex();
+
+						ThreadGeometryGenerator<B> geometryGenerator(this->m_builder);
+						auto size = geometryGenerator.GenerateGlobalSize();
+
+						this->m_builder.AddStatement(new PTX::SubtractInstruction<PTX::UInt32Type>(lastIndex, size, new PTX::UInt32Value(1)));
+						this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
+							sizePredicate, index, lastIndex, PTX::UInt32Type::ComparisonOperator::Equal
+						));
+
+						return std::make_pair(sizePredicate, true);
+					},
+					[&]()
+					{
+						auto size = m_prefixSizes.at(predicate);
+						this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(sizeAddress, size));
+					});
 				}
 				else if (HorseIR::Analysis::ShapeUtils::IsShape<HorseIR::Analysis::ListShape>(shape))
 				{
