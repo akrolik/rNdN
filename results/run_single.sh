@@ -1,17 +1,26 @@
 #!/bin/bash
 
-DATA_PATH="/mnt/local/alex/data/tpc-h/"
-OUTPUT_PATH="q${1}_${2}.log"
-OPTIONS="$3"
+QUERY=${1}
+SF=${2}
+NAME=${3}
+OPTIONS=${4}
 
-../build/bin/rNdN $OPTIONS --debug-time --debug-options --data-load-tpch="$DATA_PATH" "../tests/tpch/q${1}.hir" | tee "$OUTPUT_PATH"
+DATA_PATH="/mnt/local/alex/data/tpc-h/sf${SF}"
+OUTPUT_PATH="q${QUERY}_sf${SF}_${NAME}.log"
+QUERY_PATH="../tests/tpch/q${QUERY}.hir"
+
+if [[ "$QUERY" == "11" && "$SF" != "1" ]]; then
+	QUERY_PATH="../tests/tpch/q${QUERY}_${SF}.hir"
+fi
+
+../build/bin/rNdN $OPTIONS --debug-time --data-page-size=10737418240 --data-page-count=1 --data-scale-tpch=${SF} --data-load-tpch="$DATA_PATH" "$QUERY_PATH" | tee "$OUTPUT_PATH"
 
 RESULT=$(cat "$OUTPUT_PATH" | grep -v "\[" | grep -v "^Debug" | grep -v "^Loading" | grep -v "^Execut" | grep -v "^Init" | grep -v "^Parsing"| grep -v "^\$")
-EXPECTED=$(cat "expected/q${1}.log")
+EXPECTED=$(cat "expected/sf${SF}/q${QUERY}.log")
 
 # Query 1 has double precision ouput that varies between runs, remove the decimal
 
-if [[ "$1" == "1" ]]; then
+if [[ "$QUERY" == "1" ]]; then
 	RESULT=$(echo "$RESULT" | sed 's/\([0-9]\{10,\}\)\.[0-9]*/\1.000000/g')
 	EXPECTED=$(echo "$EXPECTED" | sed 's/\([0-9]\{10,\}\)\.[0-9]*/\1.000000/g')
 fi
