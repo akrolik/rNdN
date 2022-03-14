@@ -53,15 +53,16 @@ public:
 
 		// Compute prefix sum, getting the offset for each thread
 
-		PrefixSumGenerator<B, PTX::Int64Type> prefixSumGenerator(this->m_builder);
+		PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
 		auto prefixSum = prefixSumGenerator.Generate(offsetsRegister, PrefixSumMode::Exclusive);
+		auto prefixSum64 = ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, prefixSum);
 
 		// Compute the count of data items
 
 		TargetGenerator<B, PTX::Int64Type> targetGenerator(this->m_builder);
 		auto countRegister = targetGenerator.Generate(targets.at(1), nullptr);
 
-		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(countRegister, offsetsRegister, prefixSum));
+		this->m_builder.AddStatement(new PTX::AddInstruction<PTX::Int64Type>(countRegister, offsetsRegister, prefixSum64));
 
 		// Only store for the last thread
 
@@ -83,7 +84,7 @@ public:
 
 		// Generate output
 
-		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(offsetsRegister, prefixSum));
+		this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(offsetsRegister, prefixSum64));
 	}
 };
 

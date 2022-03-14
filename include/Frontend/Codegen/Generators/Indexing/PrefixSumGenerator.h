@@ -225,19 +225,30 @@ public:
 			// Atomically check if the previous block has completed by checking a global counter
 
 			auto blockIndex = indexGenerator.GenerateBlockIndex();
-
 			auto completedBlocks = resources->template AllocateTemporary<PTX::UInt32Type>();
-			auto g_completedBlocks = globalResources->template AllocateGlobalVariable<PTX::UInt32Type>(this->m_builder.UniqueIdentifier("completedBlocks"));
 
-			AddressGenerator<B, PTX::UInt32Type> addressGenerator_32(this->m_builder);
-			auto g_completedBlocksAddress = addressGenerator_32.GenerateAddress(g_completedBlocks);
+			auto blockStatus = resources->template AllocateTemporary<PTX::Bit64Type>();
+			auto g_blockStatus = globalResources->template AllocateGlobalVariable<PTX::Bit64Type>(this->m_builder.UniqueIdentifier("blockStatus"));
+
+			AddressGenerator<B, PTX::Bit64Type> addressGenerator_64(this->m_builder);
+			auto g_blockStatusAddress = addressGenerator_64.GenerateAddress(g_blockStatus);
 
 			this->m_builder.AddDoWhileLoop("PROPAGATE", [&](Builder::LoopContext& loopContext)
 			{
-				// Get the current value by incrementing by 0
+				// Get the current static
 
-				this->m_builder.AddStatement(new PTX::AtomicInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(
-					completedBlocks, g_completedBlocksAddress, new PTX::UInt32Value(0), PTX::UInt32Type::AtomicOperation::Add
+				this->m_builder.AddStatement(new PTX::LoadInstruction<B, PTX::Bit64Type, PTX::GlobalSpace>(
+					blockStatus, g_blockStatusAddress
+				));
+
+				// Extract number of blocks
+
+				this->m_builder.AddStatement(new PTX::Unpack2Instruction<PTX::Bit64Type>(
+					new PTX::Braced2Register<PTX::Bit32Type>({
+						new PTX::SinkRegister<PTX::Bit32Type>(),
+						new PTX::Bit32RegisterAdapter<PTX::UIntType>(completedBlocks)
+					}),
+					blockStatus
 				));
 
 				// Check if we are next, or keep looping!
@@ -251,55 +262,57 @@ public:
 
 			// Get the prefix sum up to and including the previous block, and store for all in the block. This is the GLOBAL prefix sum up to this point!
 
-			this->m_builder.AddStatement(new PTX::LoadInstruction<B, T, PTX::GlobalSpace>(blockPrefixSum, g_prefixSumAddress));
+			this->m_builder.AddStatement(new PTX::Unpack2Instruction<PTX::Bit64Type>(
+				new PTX::Braced2Register<PTX::Bit32Type>({
+					new PTX::Bit32RegisterAdapter<PTX::UIntType>(blockPrefixSum),
+					new PTX::SinkRegister<PTX::Bit32Type>()
+				}),
+				blockStatus
+			));
+
 			this->m_builder.AddStatement(new PTX::StoreInstruction<B, T, PTX::SharedSpace>(s_blockPrefixSumAddress, blockPrefixSum));
 
 			// Update the global prefix sum to include this block
 
-			if constexpr(std::is_same<T, PTX::Int64Type>::value)
-			{
-				this->m_builder.AddStatement(new PTX::ReductionInstruction<B, PTX::UInt64Type, PTX::GlobalSpace>(
-					new PTX::AddressAdapter<B, PTX::UInt64Type, PTX::Int64Type, PTX::GlobalSpace>(g_prefixSumAddress),
-					new PTX::Unsigned64RegisterAdapter(prefixSum),
-					PTX::UInt64Type::ReductionOperation::Add
-				));
-			}
-			else
-			{
-				this->m_builder.AddStatement(new PTX::ReductionInstruction<B, T, PTX::GlobalSpace>(
-					g_prefixSumAddress, prefixSum, T::AtomicOperation::Add
-				));
-			}
-
-			// Proceed to next thread by incrementing the global counter
-
 			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(completedBlocks, completedBlocks, new PTX::UInt32Value(1)));
-
-			// Reset the block index (the kernel may be executed multiple times)
+			this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(blockPrefixSum, blockPrefixSum, prefixSum));
 
 			this->m_builder.AddIfElseStatement("UPDATE", [&]()
 			{
-				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
-				auto nctaidxP1 = resources->template AllocateTemporary<PTX::UInt32Type>();
 				auto nctaidx = specialGenerator.GenerateBlockCount();
 
-				this->m_builder.AddStatement(new PTX::AddInstruction<PTX::UInt32Type>(nctaidxP1, nctaidx, new PTX::UInt32Value(1)));
+				auto predicate = resources->template AllocateTemporary<PTX::PredicateType>();
 				this->m_builder.AddStatement(new PTX::SetPredicateInstruction<PTX::UInt32Type>(
-					predicate, blockIndex, nctaidx, PTX::UInt32Type::ComparisonOperator::NotEqual
+					predicate, completedBlocks, nctaidx, PTX::UInt32Type::ComparisonOperator::NotEqual
 				));
 
 				return std::make_pair(predicate, false);
 			},
 			[&]()
 			{
-				auto value = resources->template AllocateTemporary<PTX::UInt32Type>();
+				// Reset prefix sum for multiple executions
 
-				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::UInt32Type>(value, new PTX::UInt32Value(0)));
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, value));
+				auto value = resources->template AllocateTemporary<PTX::Bit64Type>();
+
+				this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Bit64Type>(value, new PTX::Bit64Value(0)));
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Bit64Type, PTX::GlobalSpace>(g_blockStatusAddress, value));
+
+				// Store count in the size variable
+
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_prefixSumAddress, blockPrefixSum));
 			},
 			[&]()
 			{
-				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::UInt32Type, PTX::GlobalSpace>(g_completedBlocksAddress, completedBlocks));
+				// Proceed to next thread by incrementing the global counter
+
+				this->m_builder.AddStatement(new PTX::Pack2Instruction<PTX::Bit64Type>(
+					blockStatus,
+					new PTX::Braced2Operand<PTX::Bit32Type>({
+						new PTX::Bit32Adapter<PTX::UIntType>(blockPrefixSum), 
+						new PTX::Bit32Adapter<PTX::UIntType>(completedBlocks)
+					})
+				));
+				this->m_builder.AddStatement(new PTX::StoreInstruction<B, PTX::Bit64Type, PTX::GlobalSpace>(g_blockStatusAddress, blockStatus));
 			});
 		});
 

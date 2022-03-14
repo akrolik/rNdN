@@ -64,10 +64,10 @@ public:
 		{
 			// Compression requires a prefix sum to compute the index
 
-			PrefixSumGenerator<B, PTX::Int64Type> prefixSumGenerator(this->m_builder);
+			PrefixSumGenerator<B, PTX::UInt32Type> prefixSumGenerator(this->m_builder);
 			auto offsetIndex = prefixSumGenerator.template Generate<PTX::PredicateType>(compressed, PrefixSumMode::Exclusive);
 
-			this->m_builder.AddStatement(new PTX::MoveInstruction<PTX::Int64Type>(dataRegister, offsetIndex));
+			ConversionGenerator::ConvertSource<PTX::Int64Type, PTX::UInt32Type>(this->m_builder, dataRegister, offsetIndex);
 
 			dataPredicate = resources->template AllocateTemporary<PTX::PredicateType>();
 			this->m_builder.AddStatement(new PTX::AndInstruction<PTX::PredicateType>(dataPredicate, inputPredicate, compressed));
