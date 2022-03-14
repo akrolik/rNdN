@@ -129,7 +129,7 @@ public:
 		}
 		if (m_data.size() > count)
 		{
-			string += ", ...";
+			string += ", ... [" + std::to_string(m_data.size()) + "]";
 		}
 		if (count != 1)
 		{
