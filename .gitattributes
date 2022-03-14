@@ -1,1 +1,2 @@
 results/expected/sf16/q10.log filter=lfs diff=lfs merge=lfs -text
+results/expected/sf8/q10.log filter=lfs diff=lfs merge=lfs -text
