@@ -47,6 +47,16 @@ public:
 		return Mnemonic() + LevelString(m_level);
 	}
 
+	std::vector<const Operand *> GetOperands() const
+	{
+		return {};
+	}
+
+	std::vector<Operand *> GetOperands()
+	{
+		return {};
+	}
+
 	// Visitors
 
 	void Accept(InstructionVisitor& visitor) override { visitor.Visit(this); }
