@@ -91,7 +91,7 @@ Alexander Krolik, Clark Verbrugge, and Laurie Hendren. r3d3: Optimized query com
 }
 ```
 
-Alexander Krolik. rNdN: Optimized Query Compilation for GPUs. PhD thesis, McGill University, March 2022. URL: TODO.
+Alexander Krolik. rNdN: Optimized query compilation for GPUs. PhD thesis, McGill University, May 2022. URL: TODO.
 
 ```
 @phdthesis{Krolik2022:Thesis,
@@ -99,7 +99,7 @@ Alexander Krolik. rNdN: Optimized Query Compilation for GPUs. PhD thesis, McGill
     title  = {{rNdN}: Optimized Query Compilation for GPUs},
     school = {McGill University},
     year   = {2022},
-    month  = {March},
+    month  = {May},
     url    = {}
 }
 ```
